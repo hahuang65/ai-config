@@ -1,0 +1,179 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "autoupdate": true,
+  "formatter": {
+    "rubocop": {
+      "disabled": true
+    }
+  },
+  "permission": {
+    "bash": {
+      // Default: ask for anything not explicitly listed
+      "*": "ask",
+
+      // --- Filesystem / shell basics (allow) ---
+      "cat *": "allow",
+      "date *": "allow",
+      "echo *": "allow",
+      "file *": "allow",
+      "find *": "allow",
+      "grep *": "allow",
+      "head *": "allow",
+      "ls": "allow",
+      "ls *": "allow",
+      "mkdir -p docs/claude": "allow",
+      "tail *": "allow",
+      "test -d *": "allow",
+      "test -f *": "allow",
+      "which *": "allow",
+
+      // --- AWS read-only (allow) ---
+      "aws * describe-*": "allow",
+      "aws * get-*": "allow",
+      "aws * list-*": "allow",
+
+      // --- AWS destructive (deny) ---
+      "aws * delete-*": "deny",
+      "aws * terminate-*": "deny",
+
+      // --- Docker (allow) ---
+      "docker compose *": "allow",
+
+      // --- Git read-only (allow) ---
+      "git branch": "allow",
+      "git branch *": "allow",
+      "git diff": "allow",
+      "git diff *": "allow",
+      "git fetch *": "allow",
+      "git log": "allow",
+      "git log *": "allow",
+      "git pull *": "allow",
+      "git show": "allow",
+      "git show *": "allow",
+      "git stash *": "allow",
+      "git status": "allow",
+      "git status *": "allow",
+      "git checkout *": "allow",
+      "git switch *": "allow",
+
+      // --- Git write (ask) ---
+      "git add *": "ask",
+      "git clean *": "ask",
+      "git commit *": "ask",
+
+      // --- Git destructive (deny) ---
+      "git clean -f *": "deny",
+      "git push --force *": "deny",
+      "git push -f *": "deny",
+      "git reset --hard *": "deny",
+
+      // --- Ruby / Rails (allow) ---
+      "rspec *": "allow",
+      "mise x -- rspec *": "allow",
+      "bundle exec rspec *": "allow",
+      "mise x -- bundle exec rspec *": "allow",
+      "rails test": "allow",
+      "mise x -- rails test": "allow",
+      "bundle exec rails test": "allow",
+      "mise x -- bundle exec rails test": "allow",
+      "rails test:*": "allow",
+      "mise x -- rails test:*": "allow",
+      "bundle exec rails test:*": "allow",
+      "mise x -- bundle exec rails test:*": "allow",
+      "rails data:*": "allow",
+      "mise x -- rails data:*": "allow",
+      "bundle exec rails data:*": "allow",
+      "mise x -- bundle exec rails data:*": "allow",
+      "rails assets:*": "allow",
+      "mise x -- rails assets:*": "allow",
+      "bundle exec rails assets:*": "allow",
+      "mise x -- bundle exec rails assets:*": "allow",
+      "rails db:*": "allow",
+      "mise x -- rails db:*": "allow",
+      "bundle exec rails db:*": "allow",
+      "mise x -- bundle exec rails db:*": "allow",
+      "rails spec": "allow",
+      "mise x -- rails spec": "allow",
+      "bundle exec rails spec": "allow",
+      "mise x -- bundle exec rails spec": "allow",
+      "rails spec:*": "allow",
+      "mise x -- rails spec:*": "allow",
+      "bundle exec rails spec:*": "allow",
+      "mise x -- bundle exec rails spec:*": "allow",
+      "rubocop *": "allow",
+      "mise x -- rubocop *": "allow",
+      "bundle exec rubocop *": "allow",
+      "mise x -- bundle exec rubocop *": "allow",
+
+      // --- Python (allow) ---
+      "black *": "allow",
+      "mypy *": "allow",
+      "pip list *": "allow",
+      "pytest *": "allow",
+      "python -m pytest *": "allow",
+      "ruff *": "allow",
+
+      // --- Package management ---
+      "brew --cache *": "allow",
+      "brew cat *": "allow",
+      "brew list": "allow",
+      "brew list *": "allow",
+      "brew info *": "allow",
+      "npm list": "allow",
+      "npm list *": "allow",
+
+      // --- Terraform (allow read-only, deny apply/destroy) ---
+      "terraform fmt *": "allow",
+      "terraform init *": "allow",
+      "terraform plan *": "allow",
+      "terraform show *": "allow",
+      "terraform validate *": "allow",
+      "terraform apply": "deny",
+      "terraform apply *": "deny",
+      "terraform destroy *": "deny",
+
+      // --- Go (allow) ---
+      "go build *": "allow",
+      "go get *": "allow",
+      "go mod tidy": "allow",
+      "go vet *": "allow",
+
+      // --- Make / destructive (deny) ---
+      "make apply": "deny",
+      "make deploy*": "deny",
+      "make push*": "deny",
+
+      // --- rm (deny) ---
+      "rm *": "deny",
+      "rm -rf *": "deny"
+    },
+    "edit": {
+      "*": "ask",
+      "docs/claude/*": "allow"
+    },
+    "glob": "allow",
+    "glob *": "allow",
+    "grep": "allow",
+    "grep *": "allow",
+    "list": "allow",
+    "read": {
+      "*": "allow",
+      "*.env": "ask",
+      "*.env.*": "ask",
+      "*.env.example": "allow",
+      "*.secrets.*": "deny",
+      "**/.aws/credentials": "deny",
+      "**/credentials*": "deny",
+    },
+    "skill": "allow",
+    "task": {
+      "*": "ask",
+      "explore": "allow",
+      "plan": "allow"
+    },
+    "todoread": "allow",
+    "todowrite": "allow",
+    "webfetch": "allow",
+    "websearch": "allow"
+  }
+}
