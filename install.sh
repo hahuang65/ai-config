@@ -57,6 +57,19 @@ dim "  ~/.claude/settings.json → $REPO_DIR/claude/settings.json"
 ln -sf "$REPO_DIR/claude/statusline.sh" "$HOME/.claude/statusline.sh"
 dim "  ~/.claude/statusline.sh → $REPO_DIR/claude/statusline.sh"
 
+# ── Git hooks ────────────────────────────────────────────────────────────────
+
+echo ""
+green "Configuring git hooks..."
+git -C "$REPO_DIR" config core.hooksPath .githooks
+dim "  core.hooksPath → .githooks"
+
+# ── Sync permissions (Claude → OpenCode) ────────────────────────────────────
+
+echo ""
+green "Syncing permissions from Claude Code to OpenCode..."
+python3 "$REPO_DIR/scripts/sync-permissions.py"
+
 # ── OpenCode config ──────────────────────────────────────────────────────────
 
 echo ""

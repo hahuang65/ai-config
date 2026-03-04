@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+REPO_DIR="$(git rev-parse --show-toplevel)"
+
+# Sync permissions from Claude Code to OpenCode
+python3 "$REPO_DIR/scripts/sync-permissions.py"
+
+# If the sync changed opencode.jsonc, stage it
+if ! git diff --quiet -- opencode/opencode.jsonc 2>/dev/null; then
+  git add opencode/opencode.jsonc
+fi

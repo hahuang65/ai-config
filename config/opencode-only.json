@@ -1,0 +1,34 @@
+{
+  "top_level": {
+    "$schema": "https://opencode.ai/config.json",
+    "autoupdate": true,
+    "formatter": {
+      "rubocop": {
+        "disabled": true
+      }
+    }
+  },
+  "permissions": {
+    "bash": {
+      "cat *": "allow",
+      "file *": "allow",
+      "head *": "allow",
+      "tail *": "allow",
+      "brew --cache *": "allow",
+      "brew cat *": "allow",
+      "brew list": "allow",
+      "brew list *": "allow",
+      "brew info *": "allow",
+      "npm list": "allow",
+      "npm list *": "allow"
+    },
+    "glob": "allow",
+    "glob *": "allow",
+    "grep": "allow",
+    "grep *": "allow",
+    "list": "allow",
+    "skill": "allow",
+    "todoread": "allow",
+    "todowrite": "allow"
+  }
+}
