@@ -25,17 +25,25 @@ Execute an approved plan, implementing all tasks without stopping, while trackin
    - Mark the task as completed in the plan document by changing `- [ ]` to `- [x]`
    - Run type checks / linters continuously to catch issues early
    - Do NOT stop to ask for confirmation between tasks
+   - **TDD is non-negotiable**: Write tests before or alongside implementation code. If the plan's todo list is missing test tasks, write tests anyway — every behavioral change must have test coverage. The absence of test tasks in the plan does not excuse the absence of tests in the implementation.
+   - **Test structure**: Maximize shared setup — use `before`/`let`/`subject`/`factory` blocks (or the codebase's equivalent) so common state is defined once. Write a test that validates the shared setup is correct. Each individual test should be minimal: load the shared setup, apply the bare minimum mutation for the scenario, and assert. No duplicated setup across tests.
 
 3. **Track progress**: Update the plan document after completing each task or phase so progress is always visible. The plan document is the source of truth for what's done and what remains.
 
 4. **Maintain code quality**:
    - Do not add unnecessary comments or documentation unless the plan says to
    - Follow existing code patterns and conventions in the codebase
-   - Each change should have significant test coverage
+   - Each change MUST have test coverage — this is a hard requirement, not a suggestion
    - Maintain strict typing - avoid `any` or `unknown` types
    - Keep code clean and consistent with surrounding code
 
-5. **When complete**: After all tasks are done, tell the user implementation is complete and summarize what was done.
+5. **Verify**: After all tasks are done, run the full test suite (or the relevant subset) and confirm all tests pass. If any tests fail, fix them before declaring completion.
+
+6. **Simplify**: You MUST invoke `/simplify` to review the changed code for reuse opportunities, quality issues, and efficiency improvements. Fix any issues found. Then re-run the test suite to confirm nothing broke.
+
+7. **Fact-check the plan**: You MUST invoke `/fact-check` on the plan document. This is not optional. Use the Skill tool to invoke `fact-check` with the plan file path as the argument. This verifies that all claims (file paths, line numbers, function names, behavior descriptions) match what was actually implemented. Do NOT skip this step.
+
+8. **When complete**: Tell the user implementation is complete and summarize what was done, including test coverage added. Do NOT commit to version control — leave that to the user.
 
 ## Handling Issues During Implementation
 
@@ -68,7 +76,8 @@ When the user references existing code ("make it look like the users table", "sa
 - Do not add features or improvements not in the plan
 - Do not refactor code that isn't part of the plan
 - The plan is the spec - follow it faithfully
-- If the plan says to do something, do it. If it doesn't mention something, don't do it.
+- If the plan says to do something, do it. If it doesn't mention something, don't do it — with one exception: **tests are always required**, even if the plan omits them
+- **NEVER commit to version control** — no `git add`, `git commit`, or `git push`. The user will commit when they are ready
 
 ## Visual Companion (when invoked from build-feature)
 

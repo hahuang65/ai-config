@@ -3,7 +3,7 @@ description: Generate a stunning magazine-quality slide deck as a self-contained
 ---
 Load the visual-explainer skill, then generate a slide deck for: $ARGUMENTS
 
-Follow the visual-explainer skill workflow. Read the reference template at `./templates/slide-deck.html` and slide patterns at `./references/slide-patterns.md` before generating. Also read `./references/css-patterns.md` for shared patterns (Mermaid zoom controls, depth tiers, overflow protection) and `./references/libraries.md` for Mermaid theming, Chart.js, and font pairings.
+Follow the visual-explainer skill workflow. The skill's references and templates are at `~/.claude/skills/visual-explainer/references/` and `~/.claude/skills/visual-explainer/templates/`. Read the reference template at `~/.claude/skills/visual-explainer/templates/slide-deck.html` and slide patterns at `~/.claude/skills/visual-explainer/references/slide-patterns.md` before generating. Also read `~/.claude/skills/visual-explainer/references/css-patterns.md` for shared patterns and `~/.claude/skills/visual-explainer/references/libraries.md` for Mermaid theming, Chart.js, and font pairings.
 
 **Slide output is always opt-in.** Only generate slides when this command is invoked or the user explicitly asks for a slide deck.
 
@@ -15,4 +15,4 @@ Follow the visual-explainer skill workflow. Read the reference template at `./te
 
 **Compositional variety:** Consecutive slides must vary their spatial approach. Alternate between centered, left-heavy, right-heavy, split, edge-aligned, and full-bleed. Three centered slides in a row means push one off-axis.
 
-Write to `~/.agent/diagrams/` and open the result in the browser.
+Write to the current feature directory under `docs/claude/` if one exists for this session. Otherwise, create a new directory `docs/claude/<YYYYMMDD-HHMM>-<slug>/` based on the content. Do NOT write to `~/.agent/diagrams/`. Open the result in the browser.

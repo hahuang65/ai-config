@@ -3,11 +3,11 @@ description: Verify the factual accuracy of a document against the actual codeba
 ---
 Load the visual-explainer skill, then verify the factual accuracy of a document that makes claims about a codebase. Read the file, extract every verifiable claim, check each against the actual code and git history, correct inaccuracies in place, and add a verification summary.
 
-For HTML files: read `./references/css-patterns.md` to match the existing page's styling when inserting the verification summary.
+For HTML files: read `~/.claude/skills/visual-explainer/references/css-patterns.md` to match the existing page's styling when inserting the verification summary.
 
 **Target file** — determine what to verify from `$1`:
 - Explicit path: verify that specific file (`.html`, `.md`, or any text document)
-- No argument: verify the most recently modified `.html` file in `~/.agent/diagrams/` (`ls -t ~/.agent/diagrams/*.html | head -1`)
+- No argument: verify the most recently modified `.html` file in the current feature directory under `docs/claude/` (`ls -t docs/claude/**/*.html | head -1`)
 
 Auto-detect the document type and adjust the verification strategy:
 - **HTML review pages** (diff-review, plan-review, project-recap): detect from page content, verify against the git ref or plan file the review was based on

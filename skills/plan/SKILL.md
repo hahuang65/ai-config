@@ -59,31 +59,39 @@ Create the file at the path described above with:
 - **Dependencies**: New libraries or services needed
 - **Considerations & Trade-offs**: Alternative approaches considered and why this one was chosen
 - **Migration / Data Changes**: Any database migrations, data backfills, or config changes
-- **Testing Strategy**: What tests to write or update
+- **Testing Strategy**: What tests to write or update. This MUST include concrete, specific test cases — not vague descriptions. Each test case must name the test file, describe the scenario, and state the expected outcome. Every test case listed here MUST appear as a task in the Todo List.
 
 ### Step 3: Wait for Annotation
 
 After writing the plan, STOP and tell the user the exact file path, then:
 
-> The plan is ready for your review. Open `<file-path>` in your editor, add inline notes anywhere you want to correct, reject, or refine, then tell me to address your notes.
+> The plan is ready for your review at `<file-path>`.
 >
-> Common annotation patterns:
+> To annotate, add `//` comments anywhere in the file:
 >
-> - Correct assumptions: "this should be a PATCH, not a PUT"
-> - Reject approaches: "remove this section entirely, we don't need caching here"
-> - Add constraints: "the signatures of these functions should not change"
-> - Provide domain knowledge: "use drizzle:generate for migrations, not raw SQL"
-> - Redirect design: "this field should be on the list, not on individual items"
+> ```markdown
+> ### `src/api/users.ts`
+>
+> // this should be a PATCH, not a PUT
+> - Update the `updateUser` handler to accept partial updates via PUT
+>
+> // remove this section entirely, we don't need caching here
+> - Add Redis caching layer for user lookups
+>
+> // use drizzle:generate for migrations, not raw SQL
+> ```
+>
+> Just type `//` followed by your note — corrections, rejections, constraints, or domain knowledge. Then tell me to address your notes.
 
 ### Step 4: Address Annotations
 
 When the user says they've added notes:
 
 1. Read the updated plan document
-2. Find ALL inline notes/annotations the user added
+2. Find ALL `//` annotations the user added (lines starting with `//` or containing `//` after content)
 3. Address every single note - do not skip any
 4. Update the plan document accordingly
-5. Remove the user's inline notes as you address them (so they don't accumulate)
+5. Remove the user's `//` annotations as you address them (so they don't accumulate)
 6. STOP and tell the user the plan is updated, ready for another review
 
 **Do NOT implement yet.** Repeat this cycle until the user explicitly says the plan is approved.
@@ -106,10 +114,24 @@ When the user approves the plan (or asks for a todo list), append a detailed tas
 
 Tasks should be granular enough that each one is a single, clear unit of work. Group them into logical phases.
 
+**Test tasks are mandatory.** The Todo List MUST include tasks for every test case from the Testing Strategy. Tests are not optional — if the Testing Strategy says to test it, there must be a corresponding `- [ ]` item. Place test tasks in a dedicated phase or interleave them with implementation tasks for TDD ordering (write test before the code it validates).
+
+### Step 6: Generate Visual Plan
+
+After the Todo List is generated, invoke `/generate-visual-plan` to produce an HTML page with state machines, before/after comparisons, file maps, edge cases, and code snippets from the approved plan. The output MUST be written to `visual-plan.html` in the same feature directory as `plan.md` (e.g., `docs/claude/20260304-1430-auth-flow/visual-plan.html`). Do NOT write to `~/.agent/diagrams/` or any other location. Open it in the browser.
+
+Then tell the user:
+
+> **The plan is approved and the todo list is ready.**
+> I've also generated a visual implementation plan at `<diagram-path>` (opened in your browser).
+>
+> Say **"implement"** when you're ready for me to start building.
+
 **Still do NOT implement.** Wait for the user to trigger implementation.
 
 ## Important Guidelines
 
+- **Always prefer the cleaner, more maintainable approach.** When choosing between approaches, favor the one that is simpler to understand, easier to maintain long-term, and produces less technical debt — even if it requires slightly more upfront effort. Avoid clever shortcuts that trade long-term clarity for short-term convenience.
 - Use a real markdown file, not chat summaries - the file IS the specification
 - Include actual code snippets, not vague descriptions
 - Reference existing code patterns in the codebase when proposing changes
@@ -118,6 +140,3 @@ Tasks should be granular enough that each one is a single, clear unit of work. G
 - Every annotation from the user must be addressed; never ignore feedback
 - Keep the plan focused - actively suggest cutting scope if it grows too large
 
-## Visual Companion (when invoked from build-feature)
-
-When this skill is invoked as part of the `build-feature` workflow, the orchestrator may generate a visual implementation plan (HTML page with state machines, before/after panels, file maps, edge cases) after the plan is approved — but only if the `visual-explainer` skill is available. If it is not available, the visual step is silently skipped. The plan skill itself does NOT generate the visual — it focuses purely on the markdown artifact and annotation cycles.

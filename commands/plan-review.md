@@ -3,7 +3,7 @@ description: Generate a visual HTML plan review — current codebase state vs. p
 ---
 Load the visual-explainer skill, then generate a comprehensive visual plan review as a self-contained HTML page, comparing the current codebase against a proposed implementation plan.
 
-Follow the visual-explainer skill workflow. Read the reference template, CSS patterns, and mermaid theming references before generating. Use a blueprint/editorial aesthetic with current-state vs. planned-state panels, but vary fonts and palette from previous diagrams.
+Follow the visual-explainer skill workflow. The skill's references and templates are at `~/.claude/skills/visual-explainer/references/` and `~/.claude/skills/visual-explainer/templates/`. Read the relevant reference files (css-patterns.md, libraries.md) and template files before generating. Use a blueprint/editorial aesthetic with current-state vs. planned-state panels, but vary fonts and palette from previous diagrams.
 
 **Inputs:**
 - Plan file: `$1` (path to a markdown plan, spec, or RFC document)
@@ -79,7 +79,7 @@ Verify each claim against the code and the plan. If something cannot be verified
 
 **Optional illustrations** — if `surf` CLI is available (`which surf`), consider generating a conceptual illustration of the planned system via `surf gemini --generate-image` when it would help the reader visualize the change. Embed as base64 data URI. See css-patterns.md "Generated Images" for container styles. Skip if surf isn't available or the plan is purely structural.
 
-Include responsive section navigation. Use a current-vs-planned visual language throughout: blue/neutral for current state, green/purple for planned additions, amber for areas of concern, red for gaps or risks. Write to `~/.agent/diagrams/` and open in browser.
+Include responsive section navigation. Use a current-vs-planned visual language throughout: blue/neutral for current state, green/purple for planned additions, amber for areas of concern, red for gaps or risks. Write to the current feature directory under `docs/claude/` if one exists for this session. Otherwise, create a new directory `docs/claude/<YYYYMMDD-HHMM>-<slug>/` based on the content. Do NOT write to `~/.agent/diagrams/`. Open in browser.
 
 Ultrathink.
 

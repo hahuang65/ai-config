@@ -3,7 +3,7 @@ description: Generate a visual HTML implementation plan — detailed feature spe
 ---
 Load the visual-explainer skill, then generate a comprehensive visual implementation plan for `$ARGUMENTS` as a self-contained HTML page.
 
-Follow the visual-explainer skill workflow. Read the reference template, CSS patterns, and mermaid theming references before generating. Use an editorial or blueprint aesthetic, but vary fonts and palette from previous diagrams.
+Follow the visual-explainer skill workflow. The skill's references and templates are at `~/.claude/skills/visual-explainer/references/` and `~/.claude/skills/visual-explainer/templates/`. Read the relevant reference files (css-patterns.md, libraries.md) and template files before generating. Use an editorial or blueprint aesthetic, but vary fonts and palette from previous diagrams.
 
 **Data gathering phase** — understand the context before designing:
 
@@ -68,7 +68,7 @@ Verify each against the code. If something cannot be verified, mark it as uncert
 
 7. **Edge Cases** — table listing scenarios and expected behaviors. Be thorough — include error conditions, concurrent operations, boundary values. *Visual treatment: same table style as Commands section.*
 
-8. **Test Requirements** — table or card grid showing test categories and specific tests to add. Group by: unit tests, integration tests, edge case tests. *Visual treatment: compact table with file references.*
+8. **Test Requirements** — list every individual test case from the plan's Testing Strategy. Each test must appear as its own row with: test file path, test name/description, scenario being validated, and expected outcome. Group by: unit tests, integration tests, edge case tests. Do NOT summarize or collapse tests into categories — every test case must be individually visible. *Visual treatment: table with file path column, test name column, scenario column, and expected result column.*
 
 9. **File References** — table mapping files to the changes needed. Include file paths and brief descriptions. *Visual treatment: compact reference table, can use `<details>` if many files.*
 
@@ -102,6 +102,6 @@ Verify each against the code. If something cannot be verified, mark it as uncert
 - Never use `display: flex` on `<li>` for markers — use absolute positioning
 - Test tables with wide content don't overflow their container
 
-Write to `~/.agent/diagrams/` with a descriptive filename (e.g., `feature-name-plan.html`). Open the result in the browser. Tell the user the file path.
+Write to the current feature directory under `docs/claude/` if one exists for this session. Otherwise, create a new directory `docs/claude/<YYYYMMDD-HHMM>-<slug>/` based on the content. Do NOT write to `~/.agent/diagrams/`. Open the result in the browser. Tell the user the file path.
 
 Ultrathink.

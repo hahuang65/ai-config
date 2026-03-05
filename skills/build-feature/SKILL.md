@@ -61,13 +61,9 @@ Invoke the research skill to deeply understand the relevant area of the codebase
 
 Use the Skill tool to invoke `research` with the relevant scope derived from `$ARGUMENTS`.
 
-### Visual: Architecture Diagram (optional)
+The research skill will automatically generate a visual architecture diagram (`architecture.html`) if `visual-explainer` is available.
 
-**If the `visual-explainer` skill is available**, generate a visual architecture diagram of the researched area using it. Produce an HTML page showing the system architecture, module relationships, and data flows discovered during research. Write to `architecture.html` in the feature directory and open it in the browser.
-
-**If `visual-explainer` is not available**, skip this step entirely — do not error or warn.
-
-After the research document (and optional diagram) are ready, STOP and tell the user:
+After the research phase completes, STOP and tell the user:
 
 > **Phase 1 complete.** I've written the research document at `<file-path>`.
 > *(If diagram was generated: "I've also generated an architecture diagram at `<diagram-path>` (opened in your browser).")*
@@ -95,11 +91,7 @@ The plan skill will handle:
 
 **The plan phase is complete when the user explicitly approves the plan.**
 
-### Visual: Plan Visualization (optional)
-
-**If the `visual-explainer` skill is available**, produce a visual implementation plan using it. Follow the `/generate-visual-plan` workflow: generate an HTML page with state machines, before/after comparisons, file maps, edge cases, and code snippets from the approved plan. Write to `visual-plan.html` in the feature directory and open in the browser.
-
-**If `visual-explainer` is not available**, skip this step entirely — do not error or warn.
+The plan skill will automatically generate a visual implementation plan (`visual-plan.html`) if `visual-explainer` is available.
 
 Then tell the user:
 

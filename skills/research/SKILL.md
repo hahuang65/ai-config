@@ -57,7 +57,28 @@ Surface-level reading is NOT acceptable. You must read deeply, understand intric
    - **Edge Cases & Gotchas**: Non-obvious behavior, implicit assumptions, potential pitfalls
    - **Current State**: Any known issues, tech debt, or areas of concern
 
-4. **Stop and wait for review**: After writing the document, STOP. Tell the user the exact file path and ask them to review it. Do NOT proceed to planning or implementation.
+4. **Generate visual architecture diagram**: After writing the research document, invoke `/generate-web-diagram` to produce an HTML architecture diagram of the researched area — showing module relationships, data flows, and component boundaries discovered during research. The output MUST be written to `architecture.html` in the same feature directory as `research.md` (e.g., `docs/claude/20260304-1430-auth-flow/architecture.html`). Do NOT write to `~/.agent/diagrams/` or any other location. Open it in the browser.
+
+5. **Stop and wait for review**: After writing the document and generating the diagram, STOP. Tell the user the exact file path, then:
+
+   > The research document is ready for your review at `<file-path>`.
+   > I've also generated a visual architecture diagram at `<diagram-path>` (opened in your browser).
+   >
+   > To annotate, add `//` comments anywhere in the file:
+   >
+   > ```markdown
+   > ## Data Flow
+   >
+   > // this actually goes through the message queue first, not directly to the handler
+   > Requests are routed directly from the API gateway to the handler...
+   >
+   > // wrong — we deprecated this in v2.3, it uses the new adapter now
+   > The legacy adapter transforms the response before...
+   > ```
+   >
+   > Just type `//` followed by your note — corrections, missing context, or things I got wrong. Then tell me to address your notes.
+
+   Do NOT proceed to planning or implementation.
 
 ## Important Guidelines
 
@@ -72,6 +93,3 @@ Surface-level reading is NOT acceptable. You must read deeply, understand intric
 
 The result is a research document in `docs/claude/` that serves as a verified knowledge base for subsequent planning and implementation phases. The user will review it to confirm you understood the system correctly before any work begins.
 
-## Visual Companion (when invoked from build-feature)
-
-When this skill is invoked as part of the `build-feature` workflow, the orchestrator may generate a visual architecture diagram after the research document is written — but only if the `visual-explainer` skill is available. If it is not available, the visual step is silently skipped. The research skill itself does NOT generate the diagram — it focuses purely on the markdown artifact.
