@@ -6,12 +6,13 @@
 <title>Research — Skill Guide</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Fira+Code:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif&family=JetBrains+Mono:wght@400;500;600;700&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
-  /* ============ THEME — Blueprint: teal + slate ============ */
+  /* ============ THEME — Editorial blueprint: teal + slate ============ */
   :root {
+    --font-display: 'Instrument Serif', Georgia, serif;
     --font-body: 'DM Sans', system-ui, sans-serif;
-    --font-mono: 'Fira Code', 'SF Mono', Consolas, monospace;
+    --font-mono: 'JetBrains Mono', 'SF Mono', Consolas, monospace;
 
     --bg: #f0f4f8;
     --surface: #ffffff;
@@ -35,6 +36,8 @@
     --amber-dim: rgba(217, 119, 6, 0.07);
     --rose: #be123c;
     --rose-dim: rgba(190, 18, 60, 0.05);
+    --indigo: #4f46e5;
+    --indigo-dim: rgba(79, 70, 229, 0.06);
   }
 
   @media (prefers-color-scheme: dark) {
@@ -61,6 +64,8 @@
       --amber-dim: rgba(251, 191, 36, 0.08);
       --rose: #fb7185;
       --rose-dim: rgba(251, 113, 133, 0.08);
+      --indigo: #818cf8;
+      --indigo-dim: rgba(129, 140, 248, 0.08);
     }
   }
 
@@ -87,7 +92,7 @@
     max-width: 1200px;
     margin: 0 auto;
     display: grid;
-    grid-template-columns: 160px 1fr;
+    grid-template-columns: 170px 1fr;
     gap: 0 36px;
   }
   .main { min-width: 0; }
@@ -177,11 +182,13 @@
 
   /* ============ TYPOGRAPHY ============ */
   h1 {
-    font-size: clamp(32px, 4.5vw, 46px);
-    font-weight: 700;
-    letter-spacing: -1.5px;
-    line-height: 1.1;
-    margin-bottom: 8px;
+    font-family: var(--font-display);
+    font-size: clamp(38px, 5vw, 56px);
+    font-weight: 400;
+    font-style: italic;
+    letter-spacing: -1px;
+    line-height: 1.05;
+    margin-bottom: 10px;
     color: var(--text-bright);
   }
 
@@ -198,7 +205,7 @@
   .hero-sub {
     font-size: 15px;
     color: var(--text-dim);
-    max-width: 580px;
+    max-width: 600px;
     line-height: 1.65;
     margin-bottom: 48px;
   }
@@ -271,7 +278,7 @@
   /* ============ KPI ============ */
   .kpi-row {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
     gap: 14px;
   }
   .kpi-card {
@@ -281,11 +288,11 @@
     padding: 18px;
   }
   .kpi-card__value {
-    font-size: 32px;
-    font-weight: 700;
+    font-family: var(--font-display);
+    font-size: 36px;
+    font-weight: 400;
     line-height: 1.1;
     color: var(--text-bright);
-    letter-spacing: -1px;
   }
   .kpi-card__label {
     font-family: var(--font-mono);
@@ -347,11 +354,16 @@
     color: var(--text-bright);
     padding-top: 7px;
   }
-  .step__body p {
+  .step__body p, .step__body ul {
     font-size: 13px;
     color: var(--text-dim);
     line-height: 1.6;
   }
+  .step__body ul {
+    padding-left: 18px;
+    margin-top: 6px;
+  }
+  .step__body ul li { margin-bottom: 2px; }
   .step__body code {
     font-family: var(--font-mono);
     font-size: 11px;
@@ -427,6 +439,39 @@
   }
   .callout--amber { border-left-color: var(--amber); background: var(--amber-dim); }
   .callout--rose { border-left-color: var(--rose); background: var(--rose-dim); }
+  .callout--emerald { border-left-color: var(--emerald); background: var(--emerald-dim); }
+  .callout--indigo { border-left-color: var(--indigo); background: var(--indigo-dim); }
+
+  /* ============ ANNOTATION DEMO ============ */
+  .annotation-demo {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 20px 24px;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    line-height: 1.8;
+    overflow-x: auto;
+  }
+  .annotation-demo .md-heading {
+    color: var(--text-bright);
+    font-weight: 700;
+    font-size: 13px;
+  }
+  .annotation-demo .md-text {
+    color: var(--text-dim);
+  }
+  .annotation-demo .annotation {
+    color: var(--amber);
+    font-style: italic;
+    display: block;
+    padding: 4px 0;
+    border-left: 3px solid var(--amber);
+    padding-left: 12px;
+    margin: 4px 0;
+    background: var(--amber-dim);
+    border-radius: 0 4px 4px 0;
+  }
 
   /* ============ RESPONSIVE ============ */
   @media (max-width: 768px) {
@@ -443,11 +488,12 @@
   <div class="toc-title">Guide</div>
   <a href="#s1">Overview</a>
   <a href="#s2">Core Principle</a>
-  <a href="#s3">Process</a>
-  <a href="#s4">Document Contents</a>
+  <a href="#s3">Process (5 Steps)</a>
+  <a href="#s4">Document Sections</a>
   <a href="#s5">File Naming</a>
-  <a href="#s6">Guidelines</a>
-  <a href="#s7">Quick Start</a>
+  <a href="#s6">Annotation Convention</a>
+  <a href="#s7">Guidelines</a>
+  <a href="#s8">Output</a>
 </nav>
 
 <div class="main">
@@ -456,26 +502,30 @@
   <div class="anim" style="--i:0">
     <div class="hero-label">Skill Guide</div>
     <h1>Research</h1>
-    <p class="hero-sub">Deep-read a codebase area and produce a detailed, persistent research document. Surface-level reading is not acceptable. Trace every flow, identify every edge case, understand every interaction.</p>
+    <p class="hero-sub">Deep-read a codebase area and produce a detailed, persistent research document. Surface-level reading is not acceptable. Trace every flow, identify every edge case, understand every interaction. Based on Boris Tane's research-first workflow.</p>
   </div>
 
   <!-- KPIs -->
   <div class="kpi-row anim-scale" style="--i:2; margin-bottom: 48px;">
     <div class="kpi-card">
-      <div class="kpi-card__value" style="color: var(--teal);">8</div>
+      <div class="kpi-card__value" style="color: var(--teal);">5</div>
+      <div class="kpi-card__label">Process Steps</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-card__value">8</div>
       <div class="kpi-card__label">Required Sections</div>
     </div>
     <div class="kpi-card">
-      <div class="kpi-card__value">1</div>
-      <div class="kpi-card__label">Deliverable</div>
+      <div class="kpi-card__value" style="color: var(--emerald);">2</div>
+      <div class="kpi-card__label">Deliverables</div>
     </div>
     <div class="kpi-card">
-      <div class="kpi-card__value">0</div>
+      <div class="kpi-card__value" style="color: var(--rose);">0</div>
       <div class="kpi-card__label">Code Changes</div>
     </div>
     <div class="kpi-card">
-      <div class="kpi-card__value" style="color: var(--emerald);">100%</div>
-      <div class="kpi-card__label">Read Coverage</div>
+      <div class="kpi-card__value" style="color: var(--amber);">//</div>
+      <div class="kpi-card__label">Annotation Marker</div>
     </div>
   </div>
 
@@ -486,7 +536,7 @@
 
   <div class="bp-card bp-card--hero anim" style="--i:4; margin-bottom: 20px;">
     <p style="font-size: 14px; line-height: 1.7;">
-      The research skill performs a deep investigation of a specified codebase area and produces a persistent markdown artifact — <code>research.md</code> — capturing all findings. This document becomes the verified knowledge base for subsequent planning and implementation.
+      The research skill performs a deep investigation of a specified codebase area and produces two persistent artifacts: a markdown research document (<code>research.md</code>) and a visual architecture diagram (<code>architecture.html</code>). Together, these form a verified knowledge base for subsequent planning and implementation phases. The user reviews and annotates them before any work begins.
     </p>
   </div>
 
@@ -500,6 +550,7 @@
         <li>Maps component relationships</li>
         <li>Catalogues edge cases and gotchas</li>
         <li>Documents current state and tech debt</li>
+        <li>Generates a visual architecture diagram</li>
       </ul>
     </div>
     <div class="bp-card">
@@ -520,7 +571,7 @@
   </div>
 
   <div class="bp-card bp-card--recessed anim" style="--i:7; margin-bottom: 16px;">
-    <div style="font-size: 20px; font-weight: 600; color: var(--text-bright); margin-bottom: 10px;">
+    <div style="font-family: var(--font-display); font-size: 24px; font-style: italic; color: var(--text-bright); margin-bottom: 10px;">
       Surface-level reading is NOT acceptable.
     </div>
     <p style="font-size: 13px; color: var(--text-dim); line-height: 1.7;">
@@ -529,16 +580,17 @@
   </div>
 
   <div class="callout anim" style="--i:8">
-    <strong>The written artifact is the deliverable</strong> — not a verbal summary in chat. The file in <code>docs/claude/</code> is the source of truth. It should be readable by anyone, standalone, without conversation context.
+    <strong>The written artifact is the deliverable</strong> &mdash; not a verbal summary in chat. The file in <code>docs/claude/</code> is the source of truth. It should be readable by anyone, standalone, without conversation context.
   </div>
 
   <!-- SECTION 3: PROCESS -->
   <div id="s3" class="sec-head anim" style="--i:9; color: var(--teal);">
-    <span class="num" style="background: var(--teal-dim); color: var(--teal);">3</span> Process
+    <span class="num" style="background: var(--teal-dim); color: var(--teal);">3</span> Process &mdash; 5 Steps
   </div>
 
   <div class="bp-card anim" style="--i:10; padding: 8px 24px;">
     <div class="steps">
+
       <div class="step">
         <div class="step__marker">
           <div class="step__num"></div>
@@ -546,9 +598,10 @@
         </div>
         <div class="step__body">
           <h4>Identify the scope</h4>
-          <p>Determine what area, module, or topic to research based on the arguments provided. A clear scope prevents unbounded exploration.</p>
+          <p>Determine what area, module, or topic to research based on <code>$ARGUMENTS</code>. A clear scope prevents unbounded exploration.</p>
         </div>
       </div>
+
       <div class="step">
         <div class="step__marker">
           <div class="step__num"></div>
@@ -556,9 +609,20 @@
         </div>
         <div class="step__body">
           <h4>Deep-read the code</h4>
-          <p>Read every file in the target area. Trace data flows from input to output. Understand component interactions. Identify patterns and conventions. Note dependencies. Look for edge cases and error handling. Examine tests. Check configuration.</p>
+          <p>Thoroughly explore the relevant code. This means:</p>
+          <ul>
+            <li>Read every file in the target area, not just entry points</li>
+            <li>Trace data flows from input to output</li>
+            <li>Understand how components interact with each other</li>
+            <li>Identify patterns, conventions, and architectural decisions</li>
+            <li>Note dependencies on other parts of the system</li>
+            <li>Look for edge cases, error handling, and implicit assumptions</li>
+            <li>Examine tests to understand expected behavior</li>
+            <li>Check configuration files for relevant settings</li>
+          </ul>
         </div>
       </div>
+
       <div class="step">
         <div class="step__marker">
           <div class="step__num"></div>
@@ -566,28 +630,46 @@
         </div>
         <div class="step__body">
           <h4>Write the research document</h4>
-          <p>Create <code>research.md</code> with all 8 required sections. Be exhaustive. Include specific file paths and line references. Call out anything unclear or buggy explicitly.</p>
+          <p>Create <code>research.md</code> at the appropriate path (see File Naming below). The document must include all 8 required sections. Be exhaustive &mdash; include specific file paths and line references. Call out anything unclear or buggy explicitly.</p>
         </div>
       </div>
+
       <div class="step">
         <div class="step__marker">
-          <div class="step__num"></div>
+          <div class="step__num" style="border-color: var(--emerald); color: var(--emerald);"></div>
+          <div class="step__line"></div>
+        </div>
+        <div class="step__body">
+          <h4>Generate visual architecture diagram</h4>
+          <p>After writing the research document, invoke <code>/generate-web-diagram</code> to produce an HTML architecture diagram showing module relationships, data flows, and component boundaries discovered during research.</p>
+          <div class="callout--emerald callout" style="margin-top: 10px; margin-bottom: 0;">
+            <strong>Output location:</strong> Write to <code>architecture.html</code> in the <strong>same feature directory</strong> as <code>research.md</code>.<br>
+            Example: <code>docs/claude/20260304-1430-auth-flow/architecture.html</code><br>
+            Do NOT write to <code>~/.agent/diagrams/</code> or any other location. Open it in the browser.
+          </div>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step__marker">
+          <div class="step__num" style="border-color: var(--amber); color: var(--amber);"></div>
         </div>
         <div class="step__body">
           <h4>Stop and wait for review</h4>
-          <p>Tell the user the exact file path and ask them to review it. Do NOT proceed to planning or implementation. The user must confirm understanding before any work begins.</p>
+          <p>Tell the user the exact file paths for both <code>research.md</code> and <code>architecture.html</code>, then stop. Invite the user to annotate using the <code>//</code> convention (see below). Do NOT proceed to planning or implementation.</p>
         </div>
       </div>
+
     </div>
   </div>
 
   <!-- SECTION 4: DOCUMENT CONTENTS -->
   <div id="s4" class="sec-head anim" style="--i:11; color: var(--emerald);">
-    <span class="num" style="background: var(--emerald-dim); color: var(--emerald);">4</span> Document Contents
+    <span class="num" style="background: var(--emerald-dim); color: var(--emerald);">4</span> Document Sections
   </div>
 
   <p class="anim" style="--i:12; font-size: 13px; color: var(--text-dim); margin-bottom: 16px; line-height: 1.6;">
-    Every research document must include these 8 sections. Completeness matters more than brevity.
+    Every <code>research.md</code> must include these 8 sections. Completeness matters more than brevity.
   </p>
 
   <div class="two-col anim" style="--i:13; margin-bottom: 16px;">
@@ -632,11 +714,12 @@
 
   <div class="bp-card anim" style="--i:15; margin-bottom: 16px; padding: 0; overflow: hidden;">
     <div style="padding: 16px 20px; border-bottom: 1px solid var(--border); font-family: var(--font-mono); font-size: 11px; color: var(--text-dim);">
-      Standalone invocation
+      Standalone invocation &mdash; directory structure
     </div>
     <div class="file-tree">
       <span class="dir">docs/claude/&lt;YYYYMMDD-HHMM&gt;-&lt;slug&gt;/</span><br>
-      &nbsp;&nbsp;<span class="file">research.md</span> <span class="comment">&larr; your deliverable</span>
+      &nbsp;&nbsp;<span class="file">research.md</span> <span class="comment">&larr; written research document</span><br>
+      &nbsp;&nbsp;<span class="file">architecture.html</span> <span class="comment">&larr; visual diagram</span>
     </div>
   </div>
 
@@ -644,9 +727,11 @@
     <div class="bp-card bp-card--recessed">
       <div class="bp-card__label" style="color: var(--teal);">Standalone</div>
       <p style="font-family: var(--font-mono); font-size: 12px; line-height: 1.8; color: var(--text-dim);">
-        Derive slug from arguments<br>
-        Get timestamp: <code style="background:none;padding:0;">date +%Y%m%d-%H%M</code><br>
-        Create directory, write <code style="background:none;padding:0;">research.md</code>
+        1. Derive a short slug from arguments<br>
+        &nbsp;&nbsp;&nbsp;(lowercase, hyphens, max ~5 words)<br>
+        2. Get timestamp: <code style="background:none;padding:0;">date +%Y%m%d-%H%M</code><br>
+        3. Create directory under <code style="background:none;padding:0;">docs/claude/</code><br>
+        4. Write both files into it
       </p>
     </div>
     <div class="bp-card bp-card--recessed">
@@ -654,7 +739,8 @@
       <p style="font-family: var(--font-mono); font-size: 12px; line-height: 1.8; color: var(--text-dim);">
         Orchestrator provides directory path<br>
         Write <code style="background:none;padding:0;">research.md</code> into that directory<br>
-        Orchestrator generates visual companion
+        Write <code style="background:none;padding:0;">architecture.html</code> alongside it<br>
+        Same rules, different path source
       </p>
     </div>
   </div>
@@ -662,15 +748,44 @@
   <div class="callout--amber callout anim" style="--i:17">
     <strong>Examples:</strong><br>
     <code>docs/claude/20260227-1430-notification-system/research.md</code><br>
+    <code>docs/claude/20260227-1430-notification-system/architecture.html</code><br>
     <code>docs/claude/20260227-1545-task-scheduling-flow/research.md</code>
   </div>
 
-  <!-- SECTION 6: GUIDELINES -->
-  <div id="s6" class="sec-head anim" style="--i:18; color: var(--rose);">
-    <span class="num" style="background: var(--rose-dim); color: var(--rose);">6</span> Guidelines
+  <!-- SECTION 6: ANNOTATION CONVENTION -->
+  <div id="s6" class="sec-head anim" style="--i:18; color: var(--indigo);">
+    <span class="num" style="background: var(--indigo-dim); color: var(--indigo);">6</span> Annotation Convention
   </div>
 
-  <div class="bp-card bp-card--recessed anim" style="--i:19; margin-bottom: 16px;">
+  <div class="bp-card anim" style="--i:19; margin-bottom: 16px;">
+    <p style="font-size: 14px; line-height: 1.7; margin-bottom: 16px;">
+      After the research document is delivered, the user reviews it and adds inline corrections using <code>//</code> comments. This is a lightweight way to mark errors, add missing context, or flag things the agent got wrong &mdash; without rewriting the document.
+    </p>
+    <p style="font-size: 13px; color: var(--text-dim); line-height: 1.6; margin-bottom: 16px;">
+      Type <code>//</code> followed by your note anywhere in the markdown file. Then tell the agent to address your notes.
+    </p>
+
+    <div class="annotation-demo">
+      <span class="md-heading">## Data Flow</span><br>
+      <br>
+      <span class="annotation">// this actually goes through the message queue first, not directly to the handler</span>
+      <span class="md-text">Requests are routed directly from the API gateway to the handler...</span><br>
+      <br>
+      <span class="annotation">// wrong &mdash; we deprecated this in v2.3, it uses the new adapter now</span>
+      <span class="md-text">The legacy adapter transforms the response before...</span>
+    </div>
+  </div>
+
+  <div class="callout--indigo callout anim" style="--i:20">
+    <strong>Review prompt delivered to the user:</strong> "The research document is ready for your review at <code>&lt;file-path&gt;</code>. I've also generated a visual architecture diagram at <code>&lt;diagram-path&gt;</code> (opened in your browser). To annotate, add <code>//</code> comments anywhere in the file. Just type <code>//</code> followed by your note &mdash; corrections, missing context, or things I got wrong. Then tell me to address your notes."
+  </div>
+
+  <!-- SECTION 7: GUIDELINES -->
+  <div id="s7" class="sec-head anim" style="--i:21; color: var(--rose);">
+    <span class="num" style="background: var(--rose-dim); color: var(--rose);">7</span> Guidelines
+  </div>
+
+  <div class="bp-card bp-card--recessed anim" style="--i:22; margin-bottom: 16px;">
     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; font-size: 13px; line-height: 1.7;">
       <div style="min-width: 0;">
         <strong style="color: var(--text-bright);">Be exhaustive</strong>
@@ -688,45 +803,42 @@
         <strong style="color: var(--text-bright);">No solutions yet</strong>
         <p style="color: var(--text-dim); margin-top: 4px;">Research documents what IS, not what SHOULD BE. Proposed solutions come during the plan phase, after the user validates your understanding.</p>
       </div>
+      <div style="min-width: 0;">
+        <strong style="color: var(--text-bright);">No code changes</strong>
+        <p style="color: var(--text-dim); margin-top: 4px;">Do NOT make changes to any code during research. The only files you create are <code>research.md</code> and <code>architecture.html</code>.</p>
+      </div>
+      <div style="min-width: 0;">
+        <strong style="color: var(--text-bright);">The file is the deliverable</strong>
+        <p style="color: var(--text-dim); margin-top: 4px;">The written artifact matters, not a verbal summary in chat. It should be readable standalone, without conversation context.</p>
+      </div>
     </div>
   </div>
 
-  <!-- SECTION 7: QUICK START -->
-  <div id="s7" class="sec-head anim" style="--i:20; color: var(--teal);">
-    <span class="num" style="background: var(--teal-dim); color: var(--teal);">7</span> Quick Start
+  <!-- SECTION 8: OUTPUT -->
+  <div id="s8" class="sec-head anim" style="--i:23; color: var(--emerald);">
+    <span class="num" style="background: var(--emerald-dim); color: var(--emerald);">8</span> Output
   </div>
 
-  <div class="bp-card anim" style="--i:21; padding: 8px 24px; margin-bottom: 48px;">
-    <div class="steps">
-      <div class="step">
-        <div class="step__marker">
-          <div class="step__num"></div>
-          <div class="step__line"></div>
-        </div>
-        <div class="step__body">
-          <h4>Invoke research</h4>
-          <p>Type <code>/research notification system</code> with the area you want investigated.</p>
-        </div>
+  <div class="bp-card bp-card--hero anim" style="--i:24; margin-bottom: 48px;">
+    <p style="font-size: 14px; line-height: 1.7; margin-bottom: 14px;">
+      The result is two files in <code>docs/claude/</code> that serve as a verified knowledge base for subsequent planning and implementation:
+    </p>
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px;">
+      <div class="bp-card" style="padding: 16px 18px; border-color: var(--teal); border-top: 3px solid var(--teal);">
+        <div class="bp-card__label" style="color: var(--teal);">research.md</div>
+        <p style="font-size: 12px; color: var(--text-dim); line-height: 1.6;">
+          Comprehensive written research with all 8 sections. The primary deliverable. Reviewed and annotated by the user using <code>//</code> comments.
+        </p>
       </div>
-      <div class="step">
-        <div class="step__marker">
-          <div class="step__num"></div>
-          <div class="step__line"></div>
-        </div>
-        <div class="step__body">
-          <h4>Wait for the document</h4>
-          <p>The agent reads deeply and writes <code>research.md</code>. This takes time — that's the point.</p>
-        </div>
+      <div class="bp-card" style="padding: 16px 18px; border-color: var(--emerald); border-top: 3px solid var(--emerald);">
+        <div class="bp-card__label" style="color: var(--emerald);">architecture.html</div>
+        <p style="font-size: 12px; color: var(--text-dim); line-height: 1.6;">
+          Visual architecture diagram showing module relationships, data flows, and component boundaries. Opens in the browser for quick spatial understanding.
+        </p>
       </div>
-      <div class="step">
-        <div class="step__marker">
-          <div class="step__num"></div>
-        </div>
-        <div class="step__body">
-          <h4>Review and validate</h4>
-          <p>Open the file, check the agent's understanding. If something is wrong, say so. When satisfied, proceed to planning with <code>/plan</code>.</p>
-        </div>
-      </div>
+    </div>
+    <div class="callout anim" style="--i:25; margin-bottom: 0; margin-top: 16px;">
+      <strong>What happens next:</strong> The user reviews both artifacts, adds <code>//</code> annotations to correct any misunderstandings, then confirms the research is accurate. Only then does the workflow proceed to planning with <code>/plan</code>.
     </div>
   </div>
 
