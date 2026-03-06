@@ -130,6 +130,8 @@
       "*": "allow",
       "*/.claude/*": "allow",
       "*/.config/opencode/*": "allow",
+      "~/.claude/*": "allow",
+      "~/.claude/skills/**": "allow",
       "**/.aws/credentials": "deny",
       "**/credentials*": "deny",
       "*.secrets.*": "deny",

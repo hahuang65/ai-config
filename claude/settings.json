@@ -95,6 +95,8 @@
       "Bash(terraform plan *)",
       "Bash(terraform show *)",
       "Bash(terraform validate *)",
+      "Read(~/.claude/*)",
+      "Read(~/.claude/skills/**)",
       "Glob(~/.claude/skills/**)",
       "Grep(~/.claude/skills/**)",
       "Search",
