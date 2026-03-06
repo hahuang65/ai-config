@@ -44,6 +44,18 @@ Before writing the plan:
 - Read relevant source files referenced in the research or related to `$ARGUMENTS`
 - Base the plan on the ACTUAL codebase, not assumptions
 
+### Step 1b: Detect Frontend Work
+
+After reading context, check whether the feature involves frontend/UI work:
+
+1. **Check arguments**: Does `$ARGUMENTS` mention UI, page, component, frontend, form, dashboard, layout, or similar terms?
+2. **Check research**: Does `research.md` (if it exists) reference frontend files (`.tsx`, `.jsx`, `.vue`, `.svelte`, `.html`, `.css`, `.scss`)?
+3. **Check file scope**: Will the feature touch files in directories like `src/components/`, `src/pages/`, `src/views/`, `app/`, `templates/`, or similar frontend paths?
+
+If **any** of these are true AND the `frontend-design` skill is available, invoke it using the Skill tool before writing the plan. Use the design thinking framework from that skill to commit to a bold aesthetic direction — purpose, tone, constraints, and differentiator. Capture these decisions for inclusion in the plan document (Step 2).
+
+**If the `frontend-design` skill is not available, or the feature does not involve frontend work, skip this step entirely — do not error or warn.**
+
 ### Step 2: Write the plan document
 
 Create the file at the path described above with:
@@ -51,6 +63,14 @@ Create the file at the path described above with:
 - **Goal**: What we're building and why (1-2 sentences)
 - **Research Reference**: The relative path or name of the research file used to generate the plan
 - **Approach**: High-level strategy and architectural decisions
+- **Frontend Design Direction** *(only if Step 1b activated)*: Include this section after Approach. It must contain:
+  - **Aesthetic**: The chosen design direction (e.g., "brutalist/raw", "luxury/refined", "retro-futuristic")
+  - **Typography**: Specific display + body font pairing (sourced from Google Fonts or similar — never Inter, Roboto, Arial, or system defaults)
+  - **Color Palette**: CSS custom properties with hex values for dominant, accent, background, and text colors
+  - **Motion Strategy**: Specific animation approach (e.g., "staggered reveal on page load via animation-delay, scale-on-hover for cards")
+  - **Spatial Composition**: Layout strategy (e.g., "asymmetric CSS Grid with overlapping hero section")
+  - **Differentiator**: The one memorable thing about this interface
+  - **Coding Guidelines**: Concrete rules the implement phase must follow (e.g., "All colors via CSS variables", "CSS-only animations preferred over JS", "No generic font stacks")
 - **Detailed Changes**: For each file that will be modified or created:
   - File path
   - What changes are needed and why
