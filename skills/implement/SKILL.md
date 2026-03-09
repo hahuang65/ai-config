@@ -2,6 +2,7 @@
 name: implement
 description: Execute an approved plan document from .claude/docs/, implementing all tasks while tracking progress in the plan. Use after the plan has been reviewed, annotated, and approved by the user.
 argument-hint: [plan-filename]
+model: sonnet
 ---
 
 # Implementation Phase
@@ -20,8 +21,8 @@ Execute an approved plan, implementing all tasks without stopping, while trackin
 
 1. **Read the plan**: Read the plan document thoroughly. Understand every task, every code snippet, every constraint.
 
-2. **Implement everything**: Execute all tasks in the todo list, in order. For each task:
-   - Implement the changes exactly as specified in the plan, using test driven development
+2. **Implement everything**: Execute all tasks in the todo list, in order. You MUST use the `test-driven-development` skill (invoke it via the Skill tool) to guide implementation. For each task:
+   - Implement the changes exactly as specified in the plan, following the TDD skill's red-green-refactor cycle
    - Mark the task as completed in the plan document by changing `- [ ]` to `- [x]`
    - Run type checks / linters continuously to catch issues early
    - Do NOT stop to ask for confirmation between tasks
@@ -37,13 +38,39 @@ Execute an approved plan, implementing all tasks without stopping, while trackin
    - Maintain strict typing - avoid `any` or `unknown` types
    - Keep code clean and consistent with surrounding code
 
-5. **Verify**: After all tasks are done, run the full test suite (or the relevant subset) and confirm all tests pass. If any tests fail, fix them before declaring completion.
+5. **Verify (comprehensive)**: You MUST run a systematic verification loop after all tasks are done. This is not optional.
+   1. **Type check**: Run the project's type checker (e.g., `npx tsc --noEmit`, `mypy`, `go vet`, `bundle exec srb tc`)
+   2. **Lint**: Run the project's linter (e.g., `npx eslint .`, `ruff check .`, `rubocop`, `golangci-lint run`)
+   3. **Test**: Run the full test suite and confirm all tests pass
+   4. **Build**: Run the build command if one exists (e.g., `npm run build`, `go build ./...`)
 
-6. **Simplify**: You MUST invoke `/simplify` to review the changed code for reuse opportunities, quality issues, and efficiency improvements. Fix any issues found. Then re-run the test suite to confirm nothing broke.
+   If any step fails, fix the issue before proceeding. Repeat the loop until all 4 pass cleanly.
 
-7. **Fact-check the plan**: You MUST invoke `/fact-check` on the plan document. This is not optional. Use the Skill tool to invoke `fact-check` with the plan file path as the argument. This verifies that all claims (file paths, line numbers, function names, behavior descriptions) match what was actually implemented. Do NOT skip this step.
+6. **Security review**: You MUST scan the changed files for common security issues. This is not optional.
+   - Hardcoded secrets (API keys, passwords, tokens, connection strings)
+   - SQL injection (string concatenation in queries)
+   - XSS vulnerabilities (unescaped user input in HTML/JSX)
+   - Path traversal (user-controlled file paths)
+   - Missing authentication/authorization checks on new endpoints
+   - Sensitive data in logs
 
-8. **When complete**: Tell the user implementation is complete and summarize what was done, including test coverage added. Do NOT commit to version control — leave that to the user.
+   If CRITICAL issues are found, fix them immediately. Report any findings to the user.
+
+7. **Simplify**: You MUST invoke `/simplify` to review the changed code for reuse opportunities, quality issues, and efficiency improvements. Fix any issues found. Then re-run the test suite to confirm nothing broke.
+
+8. **Code review**: You MUST review all changed files with a quality lens. This is not optional.
+   - Functions over 50 lines → split
+   - Files over 800 lines → extract modules
+   - Deep nesting (>4 levels) → flatten with early returns
+   - Missing error handling → add
+   - Mutation patterns → refactor to immutable
+   - Dead code or unused imports → remove
+
+   Fix any HIGH issues found. Re-run tests after fixes.
+
+9. **Fact-check the plan**: You MUST invoke `/fact-check` on the plan document. This is not optional. Use the Skill tool to invoke `fact-check` with the plan file path as the argument. This verifies that all claims (file paths, line numbers, function names, behavior descriptions) match what was actually implemented. Do NOT skip this step.
+
+10. **When complete**: Tell the user implementation is complete and summarize what was done, including test coverage added. Do NOT commit to version control — leave that to the user.
 
 ## Handling Issues During Implementation
 

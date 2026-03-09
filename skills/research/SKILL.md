@@ -2,6 +2,7 @@
 name: research
 description: Deep-read a codebase area and produce a detailed research document. Use when you need to thoroughly understand how a system, feature, or module works before making changes. Based on Boris Tane's research-first workflow.
 argument-hint: [folder-or-topic]
+model: opus
 ---
 
 # Research Phase

@@ -2,6 +2,7 @@
 name: plan
 description: Create a detailed implementation plan for a feature or change, then support iterative annotation cycles where the user adds inline notes and you refine the plan. Use after research is complete or when the user wants to plan before coding.
 argument-hint: [feature-description]
+model: opus
 ---
 
 # Planning Phase
@@ -55,6 +56,18 @@ After reading context, check whether the feature involves frontend/UI work:
 If **any** of these are true AND the `frontend-design` skill is available, invoke it using the Skill tool before writing the plan. Use the design thinking framework from that skill to commit to a bold aesthetic direction — purpose, tone, constraints, and differentiator. Capture these decisions for inclusion in the plan document (Step 2).
 
 **If the `frontend-design` skill is not available, or the feature does not involve frontend work, skip this step entirely — do not error or warn.**
+
+### Step 1c: Detect Domain Context
+
+After reading context, check whether the feature involves specific domains where reference skills exist:
+
+1. **API design**: Does the feature involve creating or modifying REST API endpoints, adding pagination, designing error responses, or implementing rate limiting? If a skill named `api-design` is available, invoke it to load REST API patterns (URL naming, status codes, pagination strategies, error response format, versioning).
+
+2. **Frontend patterns**: Does the feature involve UI components, state management, custom hooks, performance optimization, or accessibility? If a skill named `frontend-patterns` is available, invoke it to load component patterns, state management strategies, and performance techniques.
+
+When a domain skill is loaded, reference its patterns in the plan — e.g., "Use cursor-based pagination per the api-design skill" rather than inventing patterns from scratch.
+
+**If no domain skills match, or the relevant skills are not installed, skip this step entirely.**
 
 ### Step 2: Write the plan document
 

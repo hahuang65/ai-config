@@ -1,0 +1,17 @@
+{
+  "hooks": {
+    "Stop": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "~/.dotfiles/ai/scripts/hooks/cost-tracker.sh",
+            "timeout": 10000
+          }
+        ],
+        "description": "Log estimated token costs to ~/.claude/metrics/costs.jsonl"
+      }
+    ]
+  }
+}

@@ -1,0 +1,809 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Build-Feature Pipeline vs ECC Architecture</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@400;500;600;700;800&family=Fragment+Mono:wght@400&display=swap" rel="stylesheet">
+<style>
+:root {
+  --font-body: 'Bricolage Grotesque', system-ui, sans-serif;
+  --font-mono: 'Fragment Mono', 'SF Mono', Consolas, monospace;
+  --bg: #faf9f6;
+  --surface: #ffffff;
+  --surface-elevated: #ffffff;
+  --border: rgba(0, 0, 0, 0.08);
+  --border-bright: rgba(0, 0, 0, 0.15);
+  --text: #1c1917;
+  --text-dim: #78716c;
+  --accent: #b45309;
+  --accent-dim: rgba(180, 83, 9, 0.08);
+  --yours: #0e7490;
+  --yours-dim: rgba(14, 116, 144, 0.08);
+  --yours-border: rgba(14, 116, 144, 0.3);
+  --ecc: #7c3aed;
+  --ecc-dim: rgba(124, 58, 237, 0.06);
+  --ecc-border: rgba(124, 58, 237, 0.25);
+  --gap: #dc2626;
+  --gap-dim: rgba(220, 38, 38, 0.06);
+  --gap-border: rgba(220, 38, 38, 0.2);
+  --green: #059669;
+  --green-dim: rgba(5, 150, 105, 0.08);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #0c0a09;
+    --surface: #1c1917;
+    --surface-elevated: #292524;
+    --border: rgba(255, 255, 255, 0.06);
+    --border-bright: rgba(255, 255, 255, 0.12);
+    --text: #fafaf9;
+    --text-dim: #a8a29e;
+    --accent: #f59e0b;
+    --accent-dim: rgba(245, 158, 11, 0.1);
+    --yours: #22d3ee;
+    --yours-dim: rgba(34, 211, 238, 0.08);
+    --yours-border: rgba(34, 211, 238, 0.25);
+    --ecc: #a78bfa;
+    --ecc-dim: rgba(167, 139, 250, 0.08);
+    --ecc-border: rgba(167, 139, 250, 0.2);
+    --gap: #f87171;
+    --gap-dim: rgba(248, 113, 113, 0.08);
+    --gap-border: rgba(248, 113, 113, 0.2);
+    --green: #34d399;
+    --green-dim: rgba(52, 211, 153, 0.1);
+  }
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  font-family: var(--font-body);
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.5;
+  min-height: 100vh;
+  background-image: radial-gradient(ellipse 80% 60% at 50% 0%, var(--accent-dim), transparent);
+}
+
+.container {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 48px 24px;
+}
+
+header {
+  text-align: center;
+  margin-bottom: 56px;
+}
+
+header h1 {
+  font-size: clamp(1.8rem, 4vw, 2.8rem);
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  margin-bottom: 12px;
+  background: linear-gradient(135deg, var(--accent), var(--text));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+header p {
+  font-size: 1.05rem;
+  color: var(--text-dim);
+  max-width: 640px;
+  margin: 0 auto;
+}
+
+.legend {
+  display: flex;
+  gap: 24px;
+  justify-content: center;
+  margin-bottom: 40px;
+  flex-wrap: wrap;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+
+.legend-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.legend-dot.yours { background: var(--yours); }
+.legend-dot.ecc { background: var(--ecc); }
+.legend-dot.gap { background: var(--gap); }
+.legend-dot.shared { background: var(--green); }
+
+/* Two-column comparison */
+.comparison {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 32px;
+  margin-bottom: 56px;
+}
+
+@media (max-width: 800px) {
+  .comparison { grid-template-columns: 1fr; }
+}
+
+.system-panel {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 28px;
+  position: relative;
+  overflow: hidden;
+}
+
+.system-panel::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+}
+
+.system-panel.yours::before { background: var(--yours); }
+.system-panel.ecc::before { background: var(--ecc); }
+
+.system-panel h2 {
+  font-size: 1.3rem;
+  font-weight: 700;
+  margin-bottom: 4px;
+  letter-spacing: -0.02em;
+}
+
+.system-panel.yours h2 { color: var(--yours); }
+.system-panel.ecc h2 { color: var(--ecc); }
+
+.system-panel .subtitle {
+  font-size: 0.82rem;
+  color: var(--text-dim);
+  margin-bottom: 20px;
+  font-family: var(--font-mono);
+}
+
+.layer {
+  margin-bottom: 16px;
+}
+
+.layer-label {
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-dim);
+  margin-bottom: 8px;
+}
+
+.layer-items {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 0.78rem;
+  font-weight: 500;
+  border: 1px solid;
+  white-space: nowrap;
+}
+
+.chip.yours {
+  background: var(--yours-dim);
+  border-color: var(--yours-border);
+  color: var(--yours);
+}
+
+.chip.ecc {
+  background: var(--ecc-dim);
+  border-color: var(--ecc-border);
+  color: var(--ecc);
+}
+
+.chip.shared {
+  background: var(--green-dim);
+  border-color: rgba(5, 150, 105, 0.2);
+  color: var(--green);
+}
+
+.chip.gap-chip {
+  background: var(--gap-dim);
+  border-color: var(--gap-border);
+  color: var(--gap);
+}
+
+/* Pipeline flow */
+.pipeline-section {
+  margin-bottom: 56px;
+}
+
+.pipeline-section h3 {
+  font-size: 1.3rem;
+  font-weight: 700;
+  text-align: center;
+  margin-bottom: 8px;
+  letter-spacing: -0.02em;
+}
+
+.pipeline-section > p {
+  text-align: center;
+  color: var(--text-dim);
+  font-size: 0.9rem;
+  margin-bottom: 28px;
+}
+
+.mermaid-wrap {
+  position: relative;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 24px;
+  overflow: auto;
+}
+
+.mermaid-wrap .zoom-controls {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  display: flex;
+  gap: 4px;
+  z-index: 10;
+}
+
+.mermaid-wrap .zoom-controls button {
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  border: 1px solid var(--border-bright);
+  background: var(--surface);
+  color: var(--text-dim);
+  cursor: pointer;
+  font-size: 14px;
+  font-family: var(--font-mono);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.mermaid-wrap .zoom-controls button:hover {
+  background: var(--accent-dim);
+  color: var(--accent);
+}
+
+.mermaid .nodeLabel { color: var(--text) !important; }
+.mermaid .edgeLabel { color: var(--text-dim) !important; background-color: var(--bg) !important; }
+.mermaid .edgeLabel rect { fill: var(--bg) !important; }
+.mermaid .node rect, .mermaid .node circle, .mermaid .node polygon { stroke-width: 1.5px; }
+.mermaid .edge-pattern-solid { stroke-width: 1.5px; }
+.mermaid .edgeLabel { font-family: var(--font-mono) !important; font-size: 13px !important; }
+.mermaid .nodeLabel { font-family: var(--font-body) !important; font-size: 15px !important; }
+
+/* Gaps section */
+.gaps-section {
+  margin-bottom: 56px;
+}
+
+.gaps-section h3 {
+  font-size: 1.3rem;
+  font-weight: 700;
+  text-align: center;
+  margin-bottom: 8px;
+  letter-spacing: -0.02em;
+}
+
+.gaps-section > p {
+  text-align: center;
+  color: var(--text-dim);
+  font-size: 0.9rem;
+  margin-bottom: 28px;
+}
+
+.gaps-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+  gap: 16px;
+}
+
+.gap-card {
+  background: var(--surface);
+  border: 1px solid var(--gap-border);
+  border-radius: 12px;
+  padding: 20px;
+  position: relative;
+  overflow: hidden;
+}
+
+.gap-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: var(--gap);
+}
+
+.gap-card .gap-number {
+  position: absolute;
+  top: 14px;
+  right: 16px;
+  font-size: 2rem;
+  font-weight: 800;
+  color: var(--gap);
+  opacity: 0.15;
+  line-height: 1;
+}
+
+.gap-card h4 {
+  font-size: 0.95rem;
+  font-weight: 700;
+  margin-bottom: 6px;
+  color: var(--gap);
+}
+
+.gap-card .gap-desc {
+  font-size: 0.82rem;
+  color: var(--text-dim);
+  line-height: 1.5;
+  margin-bottom: 10px;
+}
+
+.gap-card .gap-ecc {
+  font-size: 0.78rem;
+  font-family: var(--font-mono);
+  color: var(--text-dim);
+  padding: 6px 10px;
+  background: var(--ecc-dim);
+  border-radius: 6px;
+  border: 1px solid var(--ecc-border);
+}
+
+.gap-card .gap-ecc strong {
+  color: var(--ecc);
+}
+
+/* Recommendations */
+.recs-section h3 {
+  font-size: 1.3rem;
+  font-weight: 700;
+  text-align: center;
+  margin-bottom: 8px;
+  letter-spacing: -0.02em;
+}
+
+.recs-section > p {
+  text-align: center;
+  color: var(--text-dim);
+  font-size: 0.9rem;
+  margin-bottom: 28px;
+}
+
+.recs-table-wrap {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.recs-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+}
+
+.recs-table th {
+  text-align: left;
+  padding: 12px 16px;
+  font-weight: 600;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-dim);
+  border-bottom: 1px solid var(--border-bright);
+  background: var(--surface-elevated);
+}
+
+.recs-table td {
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--border);
+  vertical-align: top;
+}
+
+.recs-table tr:last-child td { border-bottom: none; }
+
+.impact-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.impact-badge.high {
+  background: rgba(220, 38, 38, 0.1);
+  color: var(--gap);
+}
+
+.impact-badge.medium {
+  background: rgba(245, 158, 11, 0.1);
+  color: var(--accent);
+}
+
+.impact-badge.low {
+  background: var(--green-dim);
+  color: var(--green);
+}
+
+footer {
+  text-align: center;
+  padding: 32px 0 16px;
+  font-size: 0.75rem;
+  color: var(--text-dim);
+  font-family: var(--font-mono);
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+<header>
+  <h1>Build-Feature Pipeline vs ECC</h1>
+  <p>Architecture comparison — your 3-phase skill pipeline alongside the Everything Claude Code plugin, highlighting gaps and improvement opportunities</p>
+</header>
+
+<div class="legend">
+  <div class="legend-item"><div class="legend-dot yours"></div> Your Pipeline</div>
+  <div class="legend-item"><div class="legend-dot ecc"></div> ECC System</div>
+  <div class="legend-item"><div class="legend-dot gap"></div> Gap / Missing</div>
+  <div class="legend-item"><div class="legend-dot shared"></div> Both Have</div>
+</div>
+
+<!-- Side-by-side comparison -->
+<div class="comparison">
+  <div class="system-panel yours">
+    <h2>Your /build-feature Pipeline</h2>
+    <div class="subtitle">~/.claude/skills/ (symlinked from dotfiles)</div>
+
+    <div class="layer">
+      <div class="layer-label">Orchestration</div>
+      <div class="layer-items">
+        <span class="chip yours">build-feature</span>
+        <span class="chip yours">research</span>
+        <span class="chip yours">plan</span>
+        <span class="chip yours">implement</span>
+      </div>
+    </div>
+
+    <div class="layer">
+      <div class="layer-label">Visual Layer</div>
+      <div class="layer-items">
+        <span class="chip yours">visual-explainer</span>
+        <span class="chip yours">generate-web-diagram</span>
+        <span class="chip yours">generate-slides</span>
+        <span class="chip yours">diff-review</span>
+        <span class="chip yours">fact-check</span>
+      </div>
+    </div>
+
+    <div class="layer">
+      <div class="layer-label">Superpowers</div>
+      <div class="layer-items">
+        <span class="chip shared">brainstorming</span>
+        <span class="chip shared">TDD</span>
+        <span class="chip shared">code-review</span>
+        <span class="chip shared">debugging</span>
+        <span class="chip yours">git-worktrees</span>
+        <span class="chip yours">verification</span>
+      </div>
+    </div>
+
+    <div class="layer">
+      <div class="layer-label">Missing Layers</div>
+      <div class="layer-items">
+        <span class="chip gap-chip">No hooks</span>
+        <span class="chip gap-chip">No domain skills</span>
+        <span class="chip gap-chip">No always-on rules</span>
+        <span class="chip gap-chip">No model routing</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="system-panel ecc">
+    <h2>Everything Claude Code</h2>
+    <div class="subtitle">claude-plugin with 13 agents, 50+ skills, 33 commands</div>
+
+    <div class="layer">
+      <div class="layer-label">Agents (13)</div>
+      <div class="layer-items">
+        <span class="chip ecc">planner</span>
+        <span class="chip ecc">architect</span>
+        <span class="chip ecc">tdd-guide</span>
+        <span class="chip ecc">code-reviewer</span>
+        <span class="chip ecc">security-reviewer</span>
+        <span class="chip ecc">build-error-resolver</span>
+        <span class="chip ecc">e2e-runner</span>
+        <span class="chip ecc">refactor-cleaner</span>
+      </div>
+    </div>
+
+    <div class="layer">
+      <div class="layer-label">Domain Knowledge Skills</div>
+      <div class="layer-items">
+        <span class="chip ecc">api-design</span>
+        <span class="chip ecc">frontend-patterns</span>
+        <span class="chip ecc">backend-patterns</span>
+        <span class="chip ecc">coding-standards</span>
+        <span class="chip ecc">e2e-testing</span>
+        <span class="chip ecc">eval-harness</span>
+        <span class="chip ecc">content-engine</span>
+      </div>
+    </div>
+
+    <div class="layer">
+      <div class="layer-label">Always-On Rules (9 common)</div>
+      <div class="layer-items">
+        <span class="chip ecc">coding-style</span>
+        <span class="chip ecc">dev-workflow</span>
+        <span class="chip ecc">git-workflow</span>
+        <span class="chip ecc">testing</span>
+        <span class="chip ecc">security</span>
+        <span class="chip ecc">patterns</span>
+        <span class="chip ecc">agents</span>
+        <span class="chip ecc">performance</span>
+      </div>
+    </div>
+
+    <div class="layer">
+      <div class="layer-label">Hooks (automated)</div>
+      <div class="layer-items">
+        <span class="chip ecc">post-edit-format</span>
+        <span class="chip ecc">post-edit-typecheck</span>
+        <span class="chip ecc">quality-gate</span>
+        <span class="chip ecc">security-scan</span>
+        <span class="chip ecc">cost-tracker</span>
+        <span class="chip ecc">session-persist</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Pipeline flow diagram -->
+<div class="pipeline-section">
+  <h3>Pipeline Flow Comparison</h3>
+  <p>Your pipeline (top) vs ECC's development workflow (bottom)</p>
+  <div class="mermaid-wrap">
+    <div class="zoom-controls">
+      <button onclick="zoomMermaid(this, 1.2)" title="Zoom in">+</button>
+      <button onclick="zoomMermaid(this, 0.8)" title="Zoom out">-</button>
+      <button onclick="resetZoom(this)" title="Reset">R</button>
+    </div>
+    <pre class="mermaid">
+flowchart TD
+  subgraph yours["Your /build-feature"]
+    R1["Research<br/>Deep-read + diagram"] --> P1["Plan<br/>Annotation cycles"]
+    P1 --> I1["Implement<br/>Execute + TDD"]
+    I1 --> S1["Simplify<br/>Code cleanup"]
+    S1 --> F1["Fact-check<br/>Verify claims"]
+  end
+
+  subgraph ecc["ECC Workflow"]
+    PL["Planner Agent<br/>Opus model"] --> TDD["TDD Guide<br/>Sonnet model"]
+    TDD --> CR["Code Reviewer<br/>Sonnet model"]
+    CR --> SR["Security Reviewer<br/>Sonnet model"]
+    SR --> VL["Verification Loop<br/>Build+test+lint"]
+  end
+
+  subgraph hooks["ECC Hooks Layer"]
+    H1["Post-Edit<br/>Auto-format + typecheck"]
+    H2["Quality Gate<br/>After every edit"]
+    H3["Session End<br/>Cost track + learn"]
+  end
+
+  ecc -.->|triggers| hooks
+
+  classDef yourStyle fill:#0e749022,stroke:#0e7490,stroke-width:2px
+  classDef eccStyle fill:#7c3aed22,stroke:#7c3aed,stroke-width:2px
+  classDef hookStyle fill:#f59e0b22,stroke:#f59e0b,stroke-width:1.5px
+  class R1,P1,I1,S1,F1 yourStyle
+  class PL,TDD,CR,SR,VL eccStyle
+  class H1,H2,H3 hookStyle
+    </pre>
+  </div>
+</div>
+
+<!-- Gaps section -->
+<div class="gaps-section">
+  <h3>6 Identified Gaps</h3>
+  <p>What ECC has that your pipeline doesn't</p>
+
+  <div class="gaps-grid">
+    <div class="gap-card">
+      <div class="gap-number">1</div>
+      <h4>No Automated Hooks</h4>
+      <div class="gap-desc">Quality checks (formatting, type checking, security scans) only happen when the implement skill explicitly says to. No automatic triggers after edits.</div>
+      <div class="gap-ecc"><strong>ECC:</strong> PostToolUse hooks auto-format, typecheck, and run quality gates after every file edit</div>
+    </div>
+
+    <div class="gap-card">
+      <div class="gap-number">2</div>
+      <h4>No Domain-Knowledge Skills</h4>
+      <div class="gap-desc">When planning an API or frontend feature, the AI has no embedded reference for patterns, status codes, pagination, component composition, etc.</div>
+      <div class="gap-ecc"><strong>ECC:</strong> api-design, frontend-patterns, backend-patterns, e2e-testing skills provide reusable domain knowledge</div>
+    </div>
+
+    <div class="gap-card">
+      <div class="gap-number">3</div>
+      <h4>No Model Routing</h4>
+      <div class="gap-desc">Every phase runs on whatever model the user selected. No cost optimization for lighter tasks or quality optimization for complex reasoning.</div>
+      <div class="gap-ecc"><strong>ECC:</strong> Agent definitions specify model tiers — Opus for planning, Sonnet for reviews, Haiku for workers</div>
+    </div>
+
+    <div class="gap-card">
+      <div class="gap-number">4</div>
+      <h4>No Always-On Rules</h4>
+      <div class="gap-desc">Coding standards depend entirely on the project's CLAUDE.md. If it's missing or sparse, no baseline quality standards are enforced.</div>
+      <div class="gap-ecc"><strong>ECC:</strong> 9 common-* rules with alwaysApply: true set immutability, testing, security, and style standards globally</div>
+    </div>
+
+    <div class="gap-card">
+      <div class="gap-number">5</div>
+      <h4>No Security Review Step</h4>
+      <div class="gap-desc">The implement phase does simplify and fact-check, but never runs a security review. OWASP Top 10, hardcoded secrets, and injection patterns go unchecked.</div>
+      <div class="gap-ecc"><strong>ECC:</strong> security-reviewer agent runs automatically before commits, checking OWASP Top 10 and secret detection</div>
+    </div>
+
+    <div class="gap-card">
+      <div class="gap-number">6</div>
+      <h4>No Cost Tracking or Learning</h4>
+      <div class="gap-desc">No visibility into how many tokens each pipeline phase consumes. No session-end learning to extract reusable patterns from completed work.</div>
+      <div class="gap-ecc"><strong>ECC:</strong> cost-tracker.js tracks tokens per session; evaluate-session.js extracts patterns; continuous-learning hooks observe tool use</div>
+    </div>
+  </div>
+</div>
+
+<!-- Recommendations table -->
+<div class="recs-section">
+  <h3>Recommended Improvements</h3>
+  <p>Prioritized by impact and effort</p>
+
+  <div class="recs-table-wrap">
+    <table class="recs-table">
+      <thead>
+        <tr>
+          <th>Priority</th>
+          <th>Improvement</th>
+          <th>Closes Gap</th>
+          <th>Effort</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><span class="impact-badge high">High</span></td>
+          <td>Add verification-loop step (build+test+lint+typecheck+security) to implement phase</td>
+          <td>#1, #5</td>
+          <td>Low</td>
+        </tr>
+        <tr>
+          <td><span class="impact-badge high">High</span></td>
+          <td>Add security review step between implementation and simplify/fact-check</td>
+          <td>#5</td>
+          <td>Low</td>
+        </tr>
+        <tr>
+          <td><span class="impact-badge high">High</span></td>
+          <td>Create domain-knowledge skills (api-design, frontend-patterns) that plan phase can reference</td>
+          <td>#2</td>
+          <td>Medium</td>
+        </tr>
+        <tr>
+          <td><span class="impact-badge medium">Med</span></td>
+          <td>Add post-edit hooks for auto-format and type checking during implementation</td>
+          <td>#1</td>
+          <td>Medium</td>
+        </tr>
+        <tr>
+          <td><span class="impact-badge medium">Med</span></td>
+          <td>Create always-on common rules (coding-style, testing, security baselines)</td>
+          <td>#4</td>
+          <td>Medium</td>
+        </tr>
+        <tr>
+          <td><span class="impact-badge medium">Med</span></td>
+          <td>Add code-review gate after implementation (before declaring completion)</td>
+          <td>#1</td>
+          <td>Low</td>
+        </tr>
+        <tr>
+          <td><span class="impact-badge low">Low</span></td>
+          <td>Define agent profiles with model tier suggestions per pipeline phase</td>
+          <td>#3</td>
+          <td>Low</td>
+        </tr>
+        <tr>
+          <td><span class="impact-badge low">Low</span></td>
+          <td>Add session cost tracking and pattern learning hooks</td>
+          <td>#6</td>
+          <td>High</td>
+        </tr>
+        <tr>
+          <td><span class="impact-badge low">Low</span></td>
+          <td>Package skills as a Claude Code plugin for portability</td>
+          <td>N/A</td>
+          <td>High</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+</div>
+
+<footer>
+  Architecture comparison generated 2026-03-09 &middot; /build-feature research phase
+</footer>
+
+<script type="module">
+  import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';
+
+  const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+  mermaid.initialize({
+    startOnLoad: true,
+    theme: 'base',
+    look: 'classic',
+    themeVariables: {
+      primaryColor: isDark ? '#1c2333' : '#f0fdf4',
+      primaryBorderColor: isDark ? '#22d3ee' : '#0e7490',
+      primaryTextColor: isDark ? '#fafaf9' : '#1c1917',
+      secondaryColor: isDark ? '#1e1b2e' : '#f5f3ff',
+      secondaryBorderColor: isDark ? '#a78bfa' : '#7c3aed',
+      secondaryTextColor: isDark ? '#fafaf9' : '#1c1917',
+      tertiaryColor: isDark ? '#27201a' : '#fef3c7',
+      tertiaryBorderColor: isDark ? '#f59e0b' : '#d97706',
+      tertiaryTextColor: isDark ? '#fafaf9' : '#1c1917',
+      lineColor: isDark ? '#64748b' : '#94a3b8',
+      fontSize: '15px',
+      fontFamily: "'Bricolage Grotesque', system-ui, sans-serif",
+    }
+  });
+
+  // Zoom controls
+  window.zoomMermaid = function(btn, factor) {
+    const wrap = btn.closest('.mermaid-wrap');
+    const svg = wrap.querySelector('svg');
+    if (!svg) return;
+    const current = parseFloat(svg.style.transform?.match(/scale\(([^)]+)\)/)?.[1] || '1');
+    const next = Math.max(0.3, Math.min(3, current * factor));
+    svg.style.transform = `scale(${next})`;
+    svg.style.transformOrigin = 'top left';
+  };
+
+  window.resetZoom = function(btn) {
+    const wrap = btn.closest('.mermaid-wrap');
+    const svg = wrap.querySelector('svg');
+    if (svg) svg.style.transform = '';
+  };
+</script>
+
+</body>
+</html>
