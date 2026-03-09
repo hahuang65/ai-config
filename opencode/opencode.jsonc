@@ -32,6 +32,8 @@
       "echo *": "allow",
       "open */docs/claude/*.html": "allow",
       "open docs/claude/*.html": "allow",
+      "xdg-open */docs/claude/*.html": "allow",
+      "xdg-open docs/claude/*.html": "allow",
       "test -d *": "allow",
       "test -f *": "allow",
       "which *": "allow",

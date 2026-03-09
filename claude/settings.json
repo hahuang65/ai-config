@@ -20,6 +20,8 @@
       "Bash(echo *)",
       "Bash(open */docs/claude/*.html)",
       "Bash(open docs/claude/*.html)",
+      "Bash(xdg-open */docs/claude/*.html)",
+      "Bash(xdg-open docs/claude/*.html)",
       "Read(*/.claude/*)",
       "Read(*/.config/opencode/*)",
       "Bash(test -d *)",
