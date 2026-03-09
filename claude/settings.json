@@ -141,18 +141,17 @@
       "Read(*.env.*)"
     ]
   },
+  "model": "opus",
   "statusLine": {
     "type": "command",
     "command": "bash ~/.claude/statusline.sh"
   },
   "enabledPlugins": {
-    "superpowers@superpowers-marketplace": true,
     "lua-lsp@claude-plugins-official": true,
     "ruby-skills@ruby-skills": true,
     "ruby-lsp@ruby-skills": true,
     "astral@astral-sh": true,
     "bash-language-server@claude-code-lsps": true,
     "terraform-ls@claude-code-lsps": true
-  },
-  "model": "opus"
+  }
 }

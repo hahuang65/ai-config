@@ -59,6 +59,18 @@ for cmd in "$REPO_DIR"/commands/*.md; do
   dim "  ~/.config/opencode/commands/$name → $cmd"
 done
 
+# ── Agents (Claude Code subagents: ~/.claude/agents/) ────────────────────────
+
+echo ""
+green "Installing agents..."
+mkdir -p "$HOME/.claude/agents"
+for agent in "$REPO_DIR"/agents/*.md; do
+  [ -f "$agent" ] || continue
+  name="$(basename "$agent")"
+  ln -sf "$agent" "$HOME/.claude/agents/$name"
+  dim "  ~/.claude/agents/$name → $agent"
+done
+
 # ── Claude Code config ───────────────────────────────────────────────────────
 
 echo ""

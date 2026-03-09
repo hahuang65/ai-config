@@ -17,26 +17,24 @@ Execute an approved plan, implementing all tasks without stopping, while trackin
   - Or if no argument is given, look in `docs/claude/` for the most recent `*/plan.md` file and confirm with the user that it's the right one
 - The user has explicitly approved the plan (do not assume approval)
 
+## Rules Adherence
+
+Before writing any code, read and comply with all rule files in `rules/` (or `~/.claude/rules/` for global rules). These rules govern coding style, testing, security, performance, and git workflow. The skill itself — not just the agents it invokes — must follow these rules when writing implementation code, fixing issues, or making any code changes.
+
 ## Process
 
 1. **Read the plan**: Read the plan document thoroughly. Understand every task, every code snippet, every constraint.
 
-2. **Implement everything**: Execute all tasks in the todo list, in order. You MUST use the `test-driven-development` skill (invoke it via the Skill tool) to guide implementation. For each task:
-   - Implement the changes exactly as specified in the plan, following the TDD skill's red-green-refactor cycle
+2. **Implement everything**: Execute all tasks in the todo list, in order. You MUST use the `tdd-guide` agent (via the Agent tool) to guide implementation. For each task:
+   - Implement the changes exactly as specified in the plan, following the tdd-guide's red-green-refactor cycle
    - Mark the task as completed in the plan document by changing `- [ ]` to `- [x]`
    - Run type checks / linters continuously to catch issues early
    - Do NOT stop to ask for confirmation between tasks
-   - **TDD is non-negotiable**: Write tests before or alongside implementation code. If the plan's todo list is missing test tasks, write tests anyway — every behavioral change must have test coverage. The absence of test tasks in the plan does not excuse the absence of tests in the implementation.
-   - **Test structure**: Maximize shared setup — use `before`/`let`/`subject`/`factory` blocks (or the codebase's equivalent) so common state is defined once. Write a test that validates the shared setup is correct. Each individual test should be minimal: load the shared setup, apply the bare minimum mutation for the scenario, and assert. No duplicated setup across tests.
+   - If the plan's todo list is missing test tasks, write tests anyway — every behavioral change must have test coverage. The absence of test tasks in the plan does not excuse the absence of tests in the implementation.
 
 3. **Track progress**: Update the plan document after completing each task or phase so progress is always visible. The plan document is the source of truth for what's done and what remains.
 
-4. **Maintain code quality**:
-   - Do not add unnecessary comments or documentation unless the plan says to
-   - Follow existing code patterns and conventions in the codebase
-   - Each change MUST have test coverage — this is a hard requirement, not a suggestion
-   - Maintain strict typing - avoid `any` or `unknown` types
-   - Keep code clean and consistent with surrounding code
+4. **Maintain code quality**: Follow existing code patterns and conventions in the codebase. Do not add unnecessary comments or documentation unless the plan says to. The `tdd-guide` and `code-reviewer` agents enforce the rules in `rules/` — write code that will pass their review.
 
 5. **Verify (comprehensive)**: You MUST run a systematic verification loop after all tasks are done. This is not optional.
    1. **Type check**: Run the project's type checker (e.g., `npx tsc --noEmit`, `mypy`, `go vet`, `bundle exec srb tc`)
@@ -46,31 +44,23 @@ Execute an approved plan, implementing all tasks without stopping, while trackin
 
    If any step fails, fix the issue before proceeding. Repeat the loop until all 4 pass cleanly.
 
-6. **Security review**: You MUST scan the changed files for common security issues. This is not optional.
-   - Hardcoded secrets (API keys, passwords, tokens, connection strings)
-   - SQL injection (string concatenation in queries)
-   - XSS vulnerabilities (unescaped user input in HTML/JSX)
-   - Path traversal (user-controlled file paths)
-   - Missing authentication/authorization checks on new endpoints
-   - Sensitive data in logs
+6. **Security review**: You MUST run the `security-reviewer` agent (via the Agent tool) on all changed files. This is not optional. If CRITICAL issues are found, fix them immediately. Report any findings to the user.
 
-   If CRITICAL issues are found, fix them immediately. Report any findings to the user.
+7. **Database review** *(if the feature touches database code)*: If the implementation involved SQL queries, migrations, schema changes, or ORM operations, you MUST run the `database-reviewer` agent (via the Agent tool). Fix any CRITICAL or HIGH issues found.
 
-7. **Simplify**: You MUST invoke `/simplify` to review the changed code for reuse opportunities, quality issues, and efficiency improvements. Fix any issues found. Then re-run the test suite to confirm nothing broke.
+8. **Simplify**: You MUST invoke `/simplify` to review the changed code for reuse opportunities, quality issues, and efficiency improvements. Fix any issues found. Then re-run the test suite to confirm nothing broke.
 
-8. **Code review**: You MUST review all changed files with a quality lens. This is not optional.
-   - Functions over 50 lines → split
-   - Files over 800 lines → extract modules
-   - Deep nesting (>4 levels) → flatten with early returns
-   - Missing error handling → add
-   - Mutation patterns → refactor to immutable
-   - Dead code or unused imports → remove
+9. **Refactor cleanup**: You MUST run the `refactor-cleaner` agent (via the Agent tool) on the changed files. Remove SAFE items, verify CAREFUL items. Re-run tests after cleanup.
 
-   Fix any HIGH issues found. Re-run tests after fixes.
+10. **Code review**: You MUST run the `code-reviewer` agent (via the Agent tool) on all changed files. This is not optional. The agent reads and enforces the project's `rules/` files, applies confidence-based filtering (>80% confidence threshold), and reports findings by severity. Fix any CRITICAL and HIGH issues found. Re-run tests after fixes.
 
-9. **Fact-check the plan**: You MUST invoke `/fact-check` on the plan document. This is not optional. Use the Skill tool to invoke `fact-check` with the plan file path as the argument. This verifies that all claims (file paths, line numbers, function names, behavior descriptions) match what was actually implemented. Do NOT skip this step.
+11. **Documentation update** *(if the feature warrants it)*: If the implementation added new features, changed APIs, or modified architecture, run the `doc-updater` agent (via the Agent tool). Skip for trivial changes.
 
-10. **When complete**: Tell the user implementation is complete and summarize what was done, including test coverage added. Do NOT commit to version control — leave that to the user.
+12. **Fact-check the plan**: You MUST invoke `/fact-check` on the plan document. This is not optional. Use the Skill tool to invoke `fact-check` with the plan file path as the argument. This verifies that all claims (file paths, line numbers, function names, behavior descriptions) match what was actually implemented. Do NOT skip this step.
+
+13. **Refresh visual plan** *(if the plan changed)*: If `/fact-check` made corrections to `plan.md`, or if deviations were noted during implementation (step 3), regenerate `visual-plan.html` by invoking `/generate-visual-plan` so the visual stays in sync with the final plan state.
+
+14. **When complete**: Tell the user implementation is complete and summarize what was done, including test coverage added. Do NOT commit to version control — leave that to the user.
 
 ## Handling Issues During Implementation
 

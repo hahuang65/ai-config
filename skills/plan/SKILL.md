@@ -35,6 +35,10 @@ When invoked **from build-feature**, the orchestrator will provide the directory
 
 **Never write code until the plan is reviewed and approved.** The plan is a shared mutable document between you and the user. The user will annotate it with corrections, constraints, and domain knowledge. You will refine it until the user says it's ready.
 
+## Rules Adherence
+
+Before writing the plan, read and comply with all rule files in `rules/` (or `~/.claude/rules/` for global rules). These rules govern coding style, testing, security, performance, and git workflow. Code snippets in the plan must follow `coding-style.md`. The testing strategy must follow `testing.md`. Architectural decisions must respect `security.md` and `performance.md`.
+
 ## Process
 
 ### Step 1: Read Context
@@ -57,7 +61,11 @@ If **any** of these are true AND the `frontend-design` skill is available, invok
 
 **If the `frontend-design` skill is not available, or the feature does not involve frontend work, skip this step entirely — do not error or warn.**
 
-### Step 1c: Detect Domain Context
+### Step 1c: Architecture Review
+
+Use the `architect` agent (via the Agent tool) to evaluate the feature's architectural implications. Incorporate the architect's findings into the plan's **Approach** and **Considerations & Trade-offs** sections.
+
+### Step 1d: Detect Domain Context
 
 After reading context, check whether the feature involves specific domains where reference skills exist:
 
@@ -128,6 +136,8 @@ When the user says they've added notes:
 6. STOP and tell the user the plan is updated, ready for another review
 
 **Do NOT implement yet.** Repeat this cycle until the user explicitly says the plan is approved.
+
+If `visual-plan.html` already exists from a previous approval cycle, regenerate it after addressing annotations so the visual stays in sync with the plan.
 
 ### Step 5: Generate Todo List
 
