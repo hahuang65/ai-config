@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Visual Plan — Skill Token Optimization</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,400;0,600;0,700;0,800;1,400;1,700&family=Noto+Sans+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --font-body: 'Crimson Pro', Georgia, serif;
+  --font-mono: 'Noto Sans Mono', 'SF Mono', Consolas, monospace;
+  --bg: #f7f5f0;
+  --surface: #ffffff;
+  --surface2: #f0ece4;
+  --surface-elevated: #fffdf8;
+  --border: rgba(50, 40, 30, 0.10);
+  --border-bright: rgba(50, 40, 30, 0.20);
+  --text: #2c2a25;
+  --text-dim: #7a7468;
+  --gold: #b57614;
+  --gold-dim: rgba(181, 118, 20, 0.08);
+  --sage: #4f7942;
+  --sage-dim: rgba(79, 121, 66, 0.08);
+  --rose: #b4436c;
+  --rose-dim: rgba(180, 67, 108, 0.08);
+  --slate: #4a6670;
+  --slate-dim: rgba(74, 102, 112, 0.08);
+  --ember: #c2410c;
+  --ember-dim: rgba(194, 65, 12, 0.08);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #1c1a17;
+    --surface: #2a2723;
+    --surface2: #33302b;
+    --surface-elevated: #3a3630;
+    --border: rgba(235, 225, 210, 0.08);
+    --border-bright: rgba(235, 225, 210, 0.16);
+    --text: #e8e0d4;
+    --text-dim: #9e9588;
+    --gold: #e0a030;
+    --gold-dim: rgba(224, 160, 48, 0.12);
+    --sage: #7cc06a;
+    --sage-dim: rgba(124, 192, 106, 0.10);
+    --rose: #e07098;
+    --rose-dim: rgba(224, 112, 152, 0.10);
+    --slate: #7eb8c8;
+    --slate-dim: rgba(126, 184, 200, 0.10);
+    --ember: #fb923c;
+    --ember-dim: rgba(251, 146, 60, 0.12);
+  }
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  background: var(--bg);
+  background-image:
+    radial-gradient(ellipse at 25% 0%, var(--gold-dim) 0%, transparent 50%),
+    radial-gradient(ellipse at 75% 100%, var(--sage-dim) 0%, transparent 40%);
+  color: var(--text);
+  font-family: var(--font-body);
+  font-size: 18px;
+  line-height: 1.6;
+  padding: 48px 40px 80px;
+  min-height: 100vh;
+}
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(14px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.anim { animation: fadeUp 0.4s ease-out both; animation-delay: calc(var(--i, 0) * 0.06s); }
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: 0.01ms !important; animation-delay: 0ms !important; } }
+
+.page { max-width: 960px; margin: 0 auto; }
+
+/* ── NAV ── */
+nav {
+  position: sticky; top: 16px; z-index: 100;
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 8px; padding: 8px 16px; margin-bottom: 32px;
+  display: flex; gap: 16px; flex-wrap: wrap; align-items: center;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+  font-family: var(--font-mono); font-size: 11px; text-transform: uppercase; letter-spacing: 1px;
+}
+nav a { color: var(--text-dim); text-decoration: none; transition: color 0.2s; }
+nav a:hover { color: var(--gold); }
+
+/* ── HEADER ── */
+.header-label { font-family: var(--font-mono); font-size: 12px; letter-spacing: 2px; text-transform: uppercase; color: var(--gold); margin-bottom: 8px; }
+h1 { font-size: 44px; font-weight: 800; letter-spacing: -1.5px; line-height: 1.1; margin-bottom: 8px; font-style: italic; }
+.subtitle { font-size: 20px; color: var(--text-dim); margin-bottom: 40px; font-style: italic; }
+
+/* ── SECTIONS ── */
+.section { margin-bottom: 48px; }
+.section-label { font-family: var(--font-mono); font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
+.section-label .dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+
+/* ── CARDS ── */
+.card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 20px 24px; }
+.card--hero { background: var(--surface-elevated); box-shadow: 0 4px 24px rgba(0,0,0,0.06); padding: 28px 32px; }
+.card--recessed { background: var(--surface2); box-shadow: inset 0 1px 3px rgba(0,0,0,0.04); }
+
+/* ── BEFORE / AFTER ── */
+.compare { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+.compare-panel { border-radius: 10px; padding: 20px 24px; border: 1px solid var(--border); min-width: 0; }
+.compare-panel--before { background: var(--rose-dim); border-color: color-mix(in srgb, var(--border) 50%, var(--rose) 30%); }
+.compare-panel--after { background: var(--sage-dim); border-color: color-mix(in srgb, var(--border) 50%, var(--sage) 30%); }
+.compare-label { font-family: var(--font-mono); font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 12px; }
+.compare-label--before { color: var(--rose); }
+.compare-label--after { color: var(--sage); }
+.step { margin-bottom: 10px; font-size: 15px; line-height: 1.5; padding-left: 24px; position: relative; }
+.step::before { content: attr(data-n); position: absolute; left: 0; font-family: var(--font-mono); font-size: 12px; font-weight: 600; color: var(--text-dim); top: 2px; }
+.step code { font-family: var(--font-mono); font-size: 13px; background: rgba(0,0,0,0.05); padding: 1px 5px; border-radius: 3px; }
+@media (prefers-color-scheme: dark) { .step code { background: rgba(255,255,255,0.08); } }
+
+/* ── MERMAID ── */
+.mermaid-wrap { position: relative; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 24px; overflow: hidden; }
+.mermaid-inner { overflow: auto; cursor: grab; display: flex; justify-content: center; }
+.mermaid-inner:active { cursor: grabbing; }
+.zoom-controls { position: absolute; top: 12px; right: 12px; display: flex; gap: 4px; z-index: 10; }
+.zoom-btn { width: 28px; height: 28px; border: 1px solid var(--border); border-radius: 6px; background: var(--surface); color: var(--text-dim); font-family: var(--font-mono); font-size: 14px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: border-color 0.2s; }
+.zoom-btn:hover { border-color: var(--border-bright); color: var(--text); }
+.mermaid-caption { font-family: var(--font-mono); font-size: 12px; color: var(--text-dim); text-align: center; margin-top: 12px; }
+
+/* ── CODE ── */
+.file-path { font-family: var(--font-mono); font-size: 12px; color: var(--text-dim); margin-bottom: 8px; }
+.code-block { background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; padding: 16px 20px; font-family: var(--font-mono); font-size: 13px; line-height: 1.6; white-space: pre-wrap; word-break: break-word; overflow-wrap: break-word; }
+.code-block .hl { color: var(--gold); font-weight: 600; }
+.code-block .del { color: var(--rose); text-decoration: line-through; opacity: 0.7; }
+.code-block .add { color: var(--sage); font-weight: 500; }
+.code-explain { font-size: 15px; color: var(--text-dim); margin-top: 10px; line-height: 1.5; }
+
+/* ── TABLES ── */
+.table-wrap { overflow-x: auto; border: 1px solid var(--border); border-radius: 10px; }
+table { width: 100%; border-collapse: collapse; font-size: 15px; }
+thead { position: sticky; top: 0; z-index: 2; }
+th { background: var(--surface2); font-family: var(--font-mono); font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; padding: 10px 14px; text-align: left; border-bottom: 1px solid var(--border); }
+td { padding: 10px 14px; border-bottom: 1px solid var(--border); vertical-align: top; overflow-wrap: break-word; min-width: 0; }
+tr:nth-child(even) td { background: var(--surface2); }
+td code { font-family: var(--font-mono); font-size: 12px; background: rgba(0,0,0,0.04); padding: 1px 5px; border-radius: 3px; }
+@media (prefers-color-scheme: dark) { td code { background: rgba(255,255,255,0.06); } }
+
+/* ── CALLOUTS ── */
+.callout { border-radius: 0 8px 8px 0; padding: 16px 20px; font-size: 15px; line-height: 1.6; border: 1px solid var(--border); }
+.callout--gold { border-left: 3px solid var(--gold); background: var(--gold-dim); }
+.callout--rose { border-left: 3px solid var(--rose); background: var(--rose-dim); }
+.callout--slate { border-left: 3px solid var(--slate); background: var(--slate-dim); }
+.callout strong { font-weight: 700; }
+.callout code { font-family: var(--font-mono); font-size: 13px; }
+
+/* ── FILE MAP ── */
+.file-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.file-item { display: flex; align-items: baseline; gap: 8px; font-size: 14px; padding: 6px 10px; background: var(--surface); border: 1px solid var(--border); border-radius: 6px; min-width: 0; }
+.file-item code { font-family: var(--font-mono); font-size: 12px; overflow-wrap: break-word; min-width: 0; }
+.badge { font-family: var(--font-mono); font-size: 10px; padding: 2px 6px; border-radius: 3px; white-space: nowrap; flex-shrink: 0; }
+.badge--new { background: var(--sage-dim); color: var(--sage); }
+.badge--mod { background: var(--gold-dim); color: var(--gold); }
+.badge--same { background: var(--slate-dim); color: var(--slate); }
+
+/* ── RESPONSIVE ── */
+@media (max-width: 768px) {
+  body { padding: 20px; font-size: 16px; }
+  h1 { font-size: 30px; }
+  .compare { grid-template-columns: 1fr; }
+  .file-grid { grid-template-columns: 1fr; }
+  nav { gap: 10px; }
+}
+</style>
+</head>
+<body>
+
+<div class="page">
+
+<nav class="anim" style="--i:0">
+  <a href="#problem">Problem</a>
+  <a href="#flow">Flow</a>
+  <a href="#files">Files</a>
+  <a href="#changes">Changes</a>
+  <a href="#edge-cases">Edge Cases</a>
+  <a href="#tests">Tests</a>
+  <a href="#notes">Notes</a>
+</nav>
+
+<!-- ══════ HEADER ══════ -->
+<header class="section anim" style="--i:1">
+  <div class="header-label">Implementation Plan</div>
+  <h1>Skill Token Optimization</h1>
+  <p class="subtitle">Reduce /build-feature token cost by ~53% — from 681K to 318K chars — by eliminating redundant VE skill reloads across 7 command files.</p>
+</header>
+
+<!-- ══════ PROBLEM: BEFORE / AFTER ══════ -->
+<section id="problem" class="section anim" style="--i:2">
+  <div class="section-label"><span class="dot" style="background:var(--rose)"></span> The Problem</div>
+  <div class="compare">
+    <div class="compare-panel compare-panel--before">
+      <div class="compare-label compare-label--before">Current: Every VE command</div>
+      <div class="step" data-n="1">Command says <code>Load the visual-explainer skill</code></div>
+      <div class="step" data-n="2">Skill tool loads full SKILL.md — <strong>33,179 chars</strong></div>
+      <div class="step" data-n="3">Command says <code>Read css-patterns.md + libraries.md</code></div>
+      <div class="step" data-n="4">Read tool loads references — <strong>61,500 chars</strong></div>
+      <div class="step" data-n="5">Total per invocation: <strong>~94K chars</strong></div>
+      <div class="step" data-n="6">In a full /build-feature run: <strong>4-6 invocations = 376-564K</strong></div>
+    </div>
+    <div class="compare-panel compare-panel--after">
+      <div class="compare-label compare-label--after">After: VE commands read core.md</div>
+      <div class="step" data-n="1">Command says <code>Read core.md</code></div>
+      <div class="step" data-n="2">Read tool loads compact extract — <strong>~6K chars</strong></div>
+      <div class="step" data-n="3">Command reads only needed references</div>
+      <div class="step" data-n="4">css-patterns.md + libraries.md when genuinely needed</div>
+      <div class="step" data-n="5">Total per invocation: <strong>~67K chars</strong> (with refs) or <strong>~6K</strong> (fact-check)</div>
+      <div class="step" data-n="6">In a full /build-feature run: <strong>~318K total</strong></div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════ STATE MACHINE ══════ -->
+<section id="flow" class="section anim" style="--i:3">
+  <div class="section-label"><span class="dot" style="background:var(--gold)"></span> Command Resolution Flow</div>
+  <div class="mermaid-wrap">
+    <div class="zoom-controls">
+      <button class="zoom-btn" onclick="zoomDiagram(1.2)" title="Zoom in">+</button>
+      <button class="zoom-btn" onclick="zoomDiagram(0.8)" title="Zoom out">−</button>
+      <button class="zoom-btn" onclick="resetZoom()" title="Reset">⟲</button>
+    </div>
+    <div class="mermaid-inner" id="mermaid-container">
+      <pre class="mermaid">
+flowchart TD
+  CMD["User invokes<br/>/diff-review, /plan-review,<br/>/generate-visual-plan, etc."]
+  GWD["/generate-web-diagram"]
+  FC["/fact-check"]
+
+  CMD -->|"reads"| CORE["core.md<br/>~6K chars"]
+  CMD -->|"reads"| REFS["css-patterns.md +<br/>libraries.md<br/>~61K chars"]
+  GWD -->|"loads full skill"| VE["SKILL.md<br/>33K chars"]
+  VE -->|"reads"| REFS
+  FC -->|"inspects target file"| TARGET["Target HTML<br/>own style block"]
+
+  CORE --> HTML["Generate HTML"]
+  REFS --> HTML
+  VE --> HTML2["Generate HTML"]
+  TARGET --> VERIFY["Verify + Correct"]
+
+  classDef gold fill:#b5761422,stroke:#b57614,stroke-width:2px
+  classDef sage fill:#4f794222,stroke:#4f7942,stroke-width:2px
+  classDef rose fill:#b4436c22,stroke:#b4436c,stroke-width:2px
+  classDef slate fill:#4a667022,stroke:#4a6670,stroke-width:1.5px
+
+  class CORE gold
+  class VE rose
+  class FC,TARGET,VERIFY slate
+  class HTML,HTML2 sage
+      </pre>
+    </div>
+    <div class="mermaid-caption">Three resolution paths: most commands read core.md (gold), /generate-web-diagram loads full SKILL.md (rose), /fact-check inspects the target file directly (slate).</div>
+  </div>
+</section>
+
+<!-- ══════ NEW FILE: core.md ══════ -->
+<section id="files" class="section anim" style="--i:4">
+  <div class="section-label"><span class="dot" style="background:var(--sage)"></span> New File</div>
+  <div class="card card--hero">
+    <div class="file-path">skills/visual-explainer/core.md — ~6K chars</div>
+    <p style="font-size:16px; margin-bottom:12px;">A curated extract of VE's quality-critical guidance. Contains: aesthetic directions, typography rules, color constraints, style principles, Mermaid guidance, overflow prevention, output rules, quality checks, anti-patterns, and the slop test. Commands read this instead of the 33K SKILL.md.</p>
+    <div class="code-block"><span class="hl"># Visual Explainer — Core Quality Guide</span>
+
+<span class="hl">## Aesthetic Direction</span>
+Constrained aesthetics (prefer): Blueprint, Editorial, Paper/ink, Monochrome terminal
+Forbidden: Neon dashboard, gradient mesh, Inter + violet/indigo
+
+<span class="hl">## Typography</span>
+Forbidden as --font-body: Inter, Roboto, Arial, Helvetica, system-ui
+Good pairings: DM Sans/Fira Code, Instrument Serif/JetBrains Mono, ...
+
+<span class="hl">## Color</span>
+Forbidden: #8b5cf6, #7c3aed, cyan-magenta-pink, gradient text, glowing shadows
+Good: Terracotta+sage, Teal+slate, Rose+cranberry, Amber+emerald, Blue+gold
+
+<span class="hl">## Style Principles</span>  (surfaces, depth, animation rules)
+<span class="hl">## Mermaid</span>            (theming, zoom, layout, classDef rules)
+<span class="hl">## Overflow Prevention</span> (min-width:0, overflow-wrap, no flex on li)
+<span class="hl">## Output</span>             (docs/claude/ location, open in browser)
+<span class="hl">## AI Illustrations</span>   (surf CLI, base64, when to skip)
+<span class="hl">## Quality Checks</span>     (squint test, swap test, both themes, slop test)
+<span class="hl">## File Structure</span>     (self-contained HTML, CDN fonts only)
+<span class="hl">## Verification</span>       (fact sheet before generating)</div>
+  </div>
+</section>
+
+<!-- ══════ MODIFIED COMMANDS ══════ -->
+<section id="changes" class="section anim" style="--i:5">
+  <div class="section-label"><span class="dot" style="background:var(--gold)"></span> Modified Commands</div>
+
+  <!-- diff-review -->
+  <div class="card" style="margin-bottom:16px;">
+    <div class="file-path">commands/diff-review.md</div>
+    <div class="code-block"><span class="del">Load the visual-explainer skill, then generate a comprehensive visual diff review...</span>
+<span class="del">Follow the visual-explainer skill workflow. The skill's references and templates</span>
+<span class="del">are at ~/.claude/skills/visual-explainer/references/ and templates/. Read the</span>
+<span class="del">relevant reference files (css-patterns.md, libraries.md) and template files...</span>
+
+<span class="add">Generate a comprehensive visual diff review as a self-contained HTML page.</span>
+<span class="add"></span>
+<span class="add">Before generating, read these reference files:</span>
+<span class="add">- ~/.claude/skills/visual-explainer/core.md (quality guide)</span>
+<span class="add">- ~/.claude/skills/visual-explainer/references/css-patterns.md</span>
+<span class="add">- ~/.claude/skills/visual-explainer/references/libraries.md</span></div>
+    <p class="code-explain">Also compress inline boilerplate: Mermaid zoom → "per core.md", overflow prevention → "per core.md", verification checkpoint → "per core.md". Remove standalone Visual hierarchy and Optional illustrations sections.</p>
+  </div>
+
+  <!-- Same pattern for others -->
+  <div class="card" style="margin-bottom:16px;">
+    <div class="file-path">commands/generate-visual-plan.md &nbsp;·&nbsp; commands/plan-review.md &nbsp;·&nbsp; commands/project-recap.md &nbsp;·&nbsp; commands/generate-slides.md</div>
+    <p style="font-size:15px; color:var(--text-dim);">Same transformation: replace "Load the visual-explainer skill" with targeted <code>Read</code> instructions pointing to <code>core.md</code> + selective references. Compress inline boilerplate to one-line references.</p>
+  </div>
+
+  <!-- fact-check (major) -->
+  <div class="card" style="border-left: 3px solid var(--ember);">
+    <div class="file-path">commands/fact-check.md — major change</div>
+    <div class="code-block"><span class="del">Load the visual-explainer skill, then verify the factual accuracy...</span>
+<span class="del">For HTML files: read ~/.claude/skills/visual-explainer/references/css-patterns.md</span>
+<span class="del">to match the existing page's styling...</span>
+
+<span class="add">Verify the factual accuracy of a document that makes claims about a codebase.</span>
+<span class="add"></span>
+<span class="add">For HTML files: inspect the target file's own &lt;style&gt; block to match its</span>
+<span class="add">existing aesthetic. Do not load the visual-explainer skill — the target</span>
+<span class="add">file's own CSS is the source of truth for styling.</span></div>
+    <p class="code-explain">Removes VE dependency entirely. Saves 33K (SKILL.md) + 42K (css-patterns.md) = <strong>75K per invocation</strong>. Also removes "Ultrathink." which was cargo-culted from VE commands.</p>
+  </div>
+</section>
+
+<!-- ══════ EDGE CASES ══════ -->
+<section id="edge-cases" class="section anim" style="--i:6">
+  <div class="section-label"><span class="dot" style="background:var(--slate)"></span> Edge Cases</div>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Scenario</th><th>Expected Behavior</th></tr></thead>
+      <tbody>
+        <tr><td><code>/generate-web-diagram</code> still loads full SKILL.md</td><td>Unchanged. This is the general-purpose command that needs everything. No regression.</td></tr>
+        <tr><td><code>/fact-check</code> on a markdown file (no HTML styling needed)</td><td>Works identically — VE was never used for markdown fact-checking anyway.</td></tr>
+        <tr><td><code>/fact-check</code> on an HTML file with custom CSS</td><td>Reads the target file's own <code>&lt;style&gt;</code> block, matches its variables and card patterns. No VE load needed.</td></tr>
+        <tr><td>core.md drifts from SKILL.md after VE update</td><td>Header comment in core.md says "review when SKILL.md changes." Quality constraints change rarely. /fact-check can verify sync.</td></tr>
+        <tr><td>Command invoked standalone (not in /build-feature)</td><td>Still reads core.md + references. Works identically — no dependency on prior VE load.</td></tr>
+        <tr><td>VE skill invoked directly (proactive table rendering)</td><td>Unchanged. SKILL.md is not modified. Direct invocations still load full skill.</td></tr>
+        <tr><td>Command needs a template file (architecture.html, mermaid-flowchart.html)</td><td>Commands still reference templates directly when needed. core.md doesn't replace templates.</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- ══════ TESTS ══════ -->
+<section id="tests" class="section anim" style="--i:7">
+  <div class="section-label"><span class="dot" style="background:var(--sage)"></span> Test Requirements</div>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Test</th><th>Scenario</th><th>Expected Outcome</th></tr></thead>
+      <tbody>
+        <tr><td><code>test-diff-review</code></td><td>Run <code>/diff-review main</code></td><td>HTML has correct aesthetics, Mermaid zoom works, overflow protected, both themes</td></tr>
+        <tr><td><code>test-visual-plan</code></td><td>Run <code>/generate-visual-plan</code> on existing plan</td><td>State machines, code snippets, proper fonts, no slop patterns</td></tr>
+        <tr><td><code>test-fact-check-html</code></td><td>Run <code>/fact-check</code> on HTML review page</td><td>Verification summary matches page styling without VE load</td></tr>
+        <tr><td><code>test-fact-check-md</code></td><td>Run <code>/fact-check</code> on markdown plan</td><td>Verification summary appended correctly</td></tr>
+        <tr><td><code>test-generate-web-diagram</code></td><td>Run <code>/generate-web-diagram</code></td><td>Full VE quality, same as before (still loads full skill)</td></tr>
+        <tr><td><code>test-project-recap</code></td><td>Run <code>/project-recap</code></td><td>Architecture diagram, KPI cards, proper aesthetics</td></tr>
+        <tr><td><code>test-build-feature-flow</code></td><td>Run <code>/build-feature</code> end-to-end</td><td>All phases complete, visual artifacts generated, quality maintained</td></tr>
+        <tr><td><code>test-core-completeness</code></td><td>Compare core.md sections vs SKILL.md quality sections</td><td>Every quality constraint in SKILL.md appears in core.md</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- ══════ FILE MAP ══════ -->
+<section class="section anim" style="--i:8">
+  <div class="section-label"><span class="dot" style="background:var(--text-dim)"></span> File Map</div>
+  <div class="file-grid">
+    <div class="file-item"><span class="badge badge--new">NEW</span><code>skills/visual-explainer/core.md</code></div>
+    <div class="file-item"><span class="badge badge--mod">MOD</span><code>commands/diff-review.md</code></div>
+    <div class="file-item"><span class="badge badge--mod">MOD</span><code>commands/generate-visual-plan.md</code></div>
+    <div class="file-item"><span class="badge badge--mod">MOD</span><code>commands/plan-review.md</code></div>
+    <div class="file-item"><span class="badge badge--mod">MOD</span><code>commands/project-recap.md</code></div>
+    <div class="file-item"><span class="badge badge--mod">MOD</span><code>commands/generate-slides.md</code></div>
+    <div class="file-item"><span class="badge badge--mod">MOD</span><code>commands/fact-check.md</code></div>
+    <div class="file-item"><span class="badge badge--same">SAME</span><code>commands/generate-web-diagram.md</code></div>
+    <div class="file-item"><span class="badge badge--same">SAME</span><code>skills/visual-explainer/SKILL.md</code></div>
+  </div>
+</section>
+
+<!-- ══════ NOTES ══════ -->
+<section id="notes" class="section anim" style="--i:9">
+  <div class="section-label"><span class="dot" style="background:var(--gold)"></span> Implementation Notes</div>
+
+  <div class="callout callout--gold" style="margin-bottom:12px;">
+    <strong>Drift prevention.</strong> core.md has a header: "Extracted from SKILL.md — review when SKILL.md changes." The quality constraints it contains (forbidden fonts, colors, anti-patterns) change rarely. When they do change, core.md is the only file that needs updating — commands reference it, they don't inline the rules.
+  </div>
+
+  <div class="callout callout--rose" style="margin-bottom:12px;">
+    <strong>Do not modify SKILL.md.</strong> The full skill remains the single source of truth for <code>/generate-web-diagram</code> and direct VE invocations. core.md is an extract, not a replacement. Two tiers: core.md for specialized commands, SKILL.md for general-purpose.
+  </div>
+
+  <div class="callout callout--slate">
+    <strong>Token budget.</strong> Before: ~681K chars per /build-feature run. After: ~318K chars. Savings come from: fact-check decoupled (~150K), 4 commands read 6K core.md instead of 33K SKILL.md (~108K), inline boilerplate compressed (~5K). References (css-patterns + libraries) are still read when genuinely needed.
+  </div>
+</section>
+
+</div>
+
+<!-- ── Mermaid ── -->
+<script type="module">
+  import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';
+  const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+  mermaid.initialize({
+    startOnLoad: true,
+    theme: 'base',
+    themeVariables: {
+      primaryColor: isDark ? '#3a3630' : '#fffdf8',
+      primaryBorderColor: isDark ? '#e0a030' : '#b57614',
+      primaryTextColor: isDark ? '#e8e0d4' : '#2c2a25',
+      secondaryColor: isDark ? '#2a3828' : '#f0f7ed',
+      secondaryBorderColor: isDark ? '#7cc06a' : '#4f7942',
+      secondaryTextColor: isDark ? '#e8e0d4' : '#2c2a25',
+      tertiaryColor: isDark ? '#33302b' : '#f5f2ed',
+      tertiaryBorderColor: isDark ? '#7eb8c8' : '#4a6670',
+      tertiaryTextColor: isDark ? '#e8e0d4' : '#2c2a25',
+      lineColor: isDark ? '#9e9588' : '#7a7468',
+      fontSize: '15px',
+      fontFamily: "'Crimson Pro', Georgia, serif",
+    }
+  });
+</script>
+
+<!-- ── Mermaid zoom ── -->
+<script>
+  let currentScale = 1;
+  const container = document.getElementById('mermaid-container');
+
+  function zoomDiagram(factor) {
+    currentScale *= factor;
+    currentScale = Math.max(0.3, Math.min(3, currentScale));
+    const svg = container.querySelector('svg');
+    if (svg) svg.style.transform = `scale(${currentScale})`;
+  }
+
+  function resetZoom() {
+    currentScale = 1;
+    const svg = container.querySelector('svg');
+    if (svg) svg.style.transform = 'scale(1)';
+  }
+
+  container.addEventListener('wheel', (e) => {
+    if (e.ctrlKey || e.metaKey) {
+      e.preventDefault();
+      zoomDiagram(e.deltaY < 0 ? 1.1 : 0.9);
+    }
+  }, { passive: false });
+
+  let isDragging = false, startX, startY, scrollLeft, scrollTop;
+  container.addEventListener('mousedown', (e) => {
+    if (currentScale <= 1) return;
+    isDragging = true;
+    startX = e.pageX - container.offsetLeft;
+    startY = e.pageY - container.offsetTop;
+    scrollLeft = container.scrollLeft;
+    scrollTop = container.scrollTop;
+  });
+  container.addEventListener('mouseleave', () => isDragging = false);
+  container.addEventListener('mouseup', () => isDragging = false);
+  container.addEventListener('mousemove', (e) => {
+    if (!isDragging) return;
+    e.preventDefault();
+    container.scrollLeft = scrollLeft - (e.pageX - container.offsetLeft - startX);
+    container.scrollTop = scrollTop - (e.pageY - container.offsetTop - startY);
+  });
+</script>
+
+</body>
+</html>

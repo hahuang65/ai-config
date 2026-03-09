@@ -94,3 +94,5 @@ Surface-level reading is NOT acceptable. You must read deeply, understand intric
 
 The result is a research document in `docs/claude/` that serves as a verified knowledge base for subsequent planning and implementation phases. The user will review it to confirm you understood the system correctly before any work begins.
 
+Ultrathink.
+

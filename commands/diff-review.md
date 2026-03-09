@@ -1,9 +1,14 @@
 ---
 description: Generate a visual HTML diff review — before/after architecture comparison with code review analysis
 ---
-Load the visual-explainer skill, then generate a comprehensive visual diff review as a self-contained HTML page.
+Generate a comprehensive visual diff review as a self-contained HTML page.
 
-Follow the visual-explainer skill workflow. The skill's references and templates are at `~/.claude/skills/visual-explainer/references/` and `~/.claude/skills/visual-explainer/templates/`. Read the relevant reference files (css-patterns.md, libraries.md) and template files before generating. Use a GitHub-diff-inspired aesthetic with red/green before/after panels, but vary fonts and palette from previous diagrams.
+Before generating, read these reference files:
+- `~/.claude/skills/visual-explainer/core.md` (quality guide — aesthetic, typography, color, style, checks)
+- `~/.claude/skills/visual-explainer/references/css-patterns.md` (CSS patterns, Mermaid zoom, card depth)
+- `~/.claude/skills/visual-explainer/references/libraries.md` (Mermaid theming, font imports)
+
+Use a GitHub-diff-inspired aesthetic with red/green before/after panels, but vary fonts and palette from previous diagrams.
 
 **Scope detection** — determine what to diff based on `$1`:
 - Branch name (e.g. `main`, `develop`): working tree vs that branch
@@ -24,18 +29,13 @@ Follow the visual-explainer skill workflow. The skill's references and templates
 - Check whether `README.md` or `docs/*.md` need updates given any new or changed features
 - Reconstruct decision rationale: if this work was done in the current session, mine the conversation for approaches discussed, alternatives rejected, and trade-offs made. Check for progress docs (`~/.agent/memory/{project}/progress.md`, `~/.pi/agent/memory/{project}/progress.md`) or plan files that may contain reasoning. For committed changes, read commit messages and PR descriptions.
 
-**Verification checkpoint** — before generating HTML, produce a structured fact sheet of every claim you will present in the review:
-- Every quantitative figure: line counts, file counts, function counts, test counts
-- Every function, type, and module name you will reference
-- Every behavior description: what code does, what changed, before vs. after
-- For each, cite the source: the git command output that produced it, or the file:line where you read it
-Verify each claim against the code. If something cannot be verified, mark it as uncertain rather than stating it as fact. This fact sheet is your source of truth during HTML generation — do not deviate from it.
+Apply the verification checkpoint from core.md before generating HTML.
 
 **Diagram structure** — the page should include:
 1. **Executive summary** — not just a dry before/after. Lead with the *intuition*: why do these changes exist? What problem were they solving, what was the core insight? Then the factual scope (X files, Y lines, Z new modules). Aim for "aha moment" clarity — a reader who only sees this section should understand the essence of the change. *Visual treatment: this is the visual anchor — use hero depth (larger type 20-24px, subtle accent-tinted background, more padding than other sections).*
 2. **KPI dashboard** — lines added/removed, files changed, new modules, test counts. Include a **housekeeping** indicator: whether CHANGELOG.md was updated (green/red badge) and whether docs need changes (green/yellow/red).
-3. **Module architecture** — how the file structure changed, with a Mermaid dependency graph of the current state. Wrap in `.mermaid-wrap` with zoom controls (+/−/reset buttons), Ctrl/Cmd+scroll zoom, and click-and-drag panning (grab/grabbing cursors). See css-patterns.md "Mermaid Zoom Controls" for the full pattern.
-4. **Major feature comparisons** — side-by-side before/after panels for each significant area of change (UI, data flow, API surface, config, etc.). Overflow prevention: apply `min-width: 0` on all grid/flex children and `overflow-wrap: break-word` on panels. Never use `display: flex` on `<li>` for marker characters — use absolute positioning instead (see css-patterns.md Overflow Protection).
+3. **Module architecture** — how the file structure changed, with a Mermaid dependency graph of the current state. Wrap in `.mermaid-wrap` with zoom controls per core.md and css-patterns.md.
+4. **Major feature comparisons** — side-by-side before/after panels for each significant area of change (UI, data flow, API surface, config, etc.). Apply overflow prevention per core.md.
 5. **Flow diagrams** — Mermaid flowchart, sequence, or state diagrams for any new lifecycle/pipeline/interaction patterns. Same zoom controls as section 3.
 6. **File map** — full tree with color-coded new/modified/deleted indicators. *Visual treatment: compact — consider `<details>` collapsed by default for pages with many sections.*
 7. **Test coverage** — before/after test file counts and what's covered
@@ -59,9 +59,7 @@ Verify each claim against the code. If something cannot be verified, mark it as 
 
 **Visual hierarchy**: Sections 1-3 should dominate the viewport on load (hero depth, larger type, more padding). Sections 6+ are reference material and should feel lighter (flat or recessed depth, compact layout, collapsible where appropriate).
 
-**Optional illustrations** — if `surf` CLI is available (`which surf`), consider generating a hero banner or conceptual illustration via `surf gemini --generate-image` when it would enhance the page. Embed as base64 data URI. See css-patterns.md "Generated Images" for container styles. Skip if surf isn't available or the diff is purely structural.
-
-Include responsive section navigation. Use diff-style visual language throughout: red for removed/before, green for added/after, yellow for modified, blue for neutral context. Write to the current feature directory under `docs/claude/` if one exists for this session. Otherwise, create a new directory `docs/claude/<YYYYMMDD-HHMM>-<slug>/` based on the content. Do NOT write to `~/.agent/diagrams/`. Open in browser.
+Include responsive section navigation. Use diff-style visual language throughout: red for removed/before, green for added/after, yellow for modified, blue for neutral context. Follow output and AI illustration rules from core.md.
 
 Ultrathink.
 

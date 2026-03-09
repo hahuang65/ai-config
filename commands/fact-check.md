@@ -1,9 +1,9 @@
 ---
 description: Verify the factual accuracy of a document against the actual codebase, correct inaccuracies in place
 ---
-Load the visual-explainer skill, then verify the factual accuracy of a document that makes claims about a codebase. Read the file, extract every verifiable claim, check each against the actual code and git history, correct inaccuracies in place, and add a verification summary.
+Verify the factual accuracy of a document that makes claims about a codebase. Read the file, extract every verifiable claim, check each against the actual code and git history, correct inaccuracies in place, and add a verification summary.
 
-For HTML files: read `~/.claude/skills/visual-explainer/references/css-patterns.md` to match the existing page's styling when inserting the verification summary.
+For HTML files: inspect the target file's own `<style>` block to match its existing aesthetic (colors, fonts, card patterns) when inserting the verification summary. Do not load the visual-explainer skill — the target file's own CSS is the source of truth for styling.
 
 **Target file** — determine what to verify from `$1`:
 - Explicit path: verify that specific file (`.html`, `.md`, or any text document)
@@ -57,7 +57,5 @@ Include in the summary:
 This is not a re-review. It does not second-guess analysis, opinions, or design judgments. It does not change the document's structure or organization. It is a fact-checker — it verifies that the data presented matches reality, corrects what doesn't, and leaves everything else alone.
 
 Write corrections to the original file.
-
-Ultrathink.
 
 $ARGUMENTS

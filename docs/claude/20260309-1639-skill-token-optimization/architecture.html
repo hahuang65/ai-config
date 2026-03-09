@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Token Flow — /build-feature Pipeline</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@400;600;700;800&family=Fragment+Mono:wght@400&display=swap" rel="stylesheet">
+<style>
+:root {
+  --font-body: 'Bricolage Grotesque', system-ui, sans-serif;
+  --font-mono: 'Fragment Mono', 'SF Mono', Consolas, monospace;
+  --bg: #fbf1c7;
+  --surface: #f9f5d7;
+  --surface2: #f2e5bc;
+  --surface-elevated: #ffffff;
+  --border: rgba(60, 56, 54, 0.12);
+  --border-bright: rgba(60, 56, 54, 0.25);
+  --text: #3c3836;
+  --text-dim: #7c6f64;
+  --red: #cc241d;
+  --red-dim: rgba(204, 36, 29, 0.08);
+  --green: #98971a;
+  --green-dim: rgba(152, 151, 26, 0.08);
+  --yellow: #d79921;
+  --yellow-dim: rgba(215, 153, 33, 0.10);
+  --blue: #458588;
+  --blue-dim: rgba(69, 133, 136, 0.08);
+  --purple: #b16286;
+  --purple-dim: rgba(177, 98, 134, 0.08);
+  --aqua: #689d6a;
+  --aqua-dim: rgba(104, 157, 106, 0.08);
+  --orange: #d65d0e;
+  --orange-dim: rgba(214, 93, 14, 0.10);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #282828;
+    --surface: #3c3836;
+    --surface2: #504945;
+    --surface-elevated: #504945;
+    --border: rgba(235, 219, 178, 0.08);
+    --border-bright: rgba(235, 219, 178, 0.18);
+    --text: #ebdbb2;
+    --text-dim: #a89984;
+    --red: #fb4934;
+    --red-dim: rgba(251, 73, 52, 0.12);
+    --green: #b8bb26;
+    --green-dim: rgba(184, 187, 38, 0.10);
+    --yellow: #fabd2f;
+    --yellow-dim: rgba(250, 189, 47, 0.12);
+    --blue: #83a598;
+    --blue-dim: rgba(131, 165, 152, 0.10);
+    --purple: #d3869b;
+    --purple-dim: rgba(211, 134, 155, 0.10);
+    --aqua: #8ec07c;
+    --aqua-dim: rgba(142, 192, 124, 0.10);
+    --orange: #fe8019;
+    --orange-dim: rgba(254, 128, 25, 0.12);
+  }
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  background: var(--bg);
+  background-image:
+    radial-gradient(ellipse at 15% 0%, var(--yellow-dim) 0%, transparent 45%),
+    radial-gradient(ellipse at 85% 100%, var(--blue-dim) 0%, transparent 35%);
+  color: var(--text);
+  font-family: var(--font-body);
+  padding: 48px 40px;
+  min-height: 100vh;
+}
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(14px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.anim { animation: fadeUp 0.4s ease-out both; animation-delay: calc(var(--i, 0) * 0.07s); }
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: 0.01ms !important; animation-delay: 0ms !important; } }
+
+.page { max-width: 1100px; margin: 0 auto; }
+
+h1 { font-size: 42px; font-weight: 800; letter-spacing: -1.5px; line-height: 1.1; margin-bottom: 6px; }
+.subtitle { font-family: var(--font-mono); font-size: 13px; color: var(--text-dim); margin-bottom: 40px; }
+
+/* KPI row */
+.kpi-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 32px; }
+.kpi { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 18px 20px; text-align: center; }
+.kpi--hero { background: var(--surface-elevated); border-color: var(--red); box-shadow: 0 4px 20px rgba(0,0,0,0.06); }
+.kpi-value { font-size: 32px; font-weight: 800; letter-spacing: -1px; line-height: 1.2; }
+.kpi-label { font-family: var(--font-mono); font-size: 11px; color: var(--text-dim); margin-top: 4px; text-transform: uppercase; letter-spacing: 1px; }
+.kpi--red .kpi-value { color: var(--red); }
+.kpi--orange .kpi-value { color: var(--orange); }
+.kpi--blue .kpi-value { color: var(--blue); }
+.kpi--green .kpi-value { color: var(--green); }
+
+/* Phase cards */
+.phase { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 24px 28px; margin-bottom: 16px; }
+.phase--research { border-left: 4px solid var(--blue); }
+.phase--plan { border-left: 4px solid var(--aqua); }
+.phase--implement { border-left: 4px solid var(--orange); }
+.phase-header { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 16px; flex-wrap: wrap; gap: 8px; }
+.phase-title { font-size: 20px; font-weight: 700; }
+.phase-total { font-family: var(--font-mono); font-size: 14px; font-weight: 600; }
+
+/* Load items */
+.loads { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.load-item { display: flex; justify-content: space-between; align-items: center; background: var(--surface2); border: 1px solid var(--border); border-radius: 6px; padding: 8px 12px; font-size: 13px; min-width: 0; }
+.load-name { overflow-wrap: break-word; min-width: 0; }
+.load-chars { font-family: var(--font-mono); font-size: 12px; color: var(--text-dim); white-space: nowrap; margin-left: 8px; flex-shrink: 0; }
+.load-item--waste { background: var(--red-dim); border-color: color-mix(in srgb, var(--border) 50%, var(--red) 30%); }
+.load-item--waste .load-name { color: var(--red); font-weight: 600; }
+.load-item--agent { background: var(--purple-dim); border-color: color-mix(in srgb, var(--border) 50%, var(--purple) 30%); }
+.load-item--ve { background: var(--yellow-dim); border-color: color-mix(in srgb, var(--border) 50%, var(--yellow) 30%); }
+.load-item span.badge { font-family: var(--font-mono); font-size: 10px; padding: 1px 6px; border-radius: 3px; margin-left: 6px; vertical-align: middle; }
+.badge--agent { background: var(--purple-dim); color: var(--purple); }
+.badge--skill { background: var(--blue-dim); color: var(--blue); }
+.badge--cmd { background: var(--aqua-dim); color: var(--aqua); }
+.badge--ref { background: var(--yellow-dim); color: var(--yellow); }
+.badge--waste { background: var(--red-dim); color: var(--red); }
+
+/* Flow arrow */
+.flow-arrow { display: flex; justify-content: center; align-items: center; gap: 8px; color: var(--text-dim); font-family: var(--font-mono); font-size: 12px; padding: 6px 0; }
+.flow-arrow svg { width: 20px; height: 20px; fill: none; stroke: var(--border-bright); stroke-width: 2; stroke-linecap: round; }
+
+/* Waste section */
+.waste-section { background: var(--red-dim); border: 1px solid color-mix(in srgb, var(--border) 50%, var(--red) 30%); border-radius: 12px; padding: 24px 28px; margin-top: 24px; }
+.waste-section h2 { font-size: 20px; font-weight: 700; color: var(--red); margin-bottom: 16px; }
+.waste-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.waste-card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 20px; }
+.waste-card h3 { font-size: 15px; font-weight: 700; margin-bottom: 8px; }
+.waste-card .waste-amount { font-size: 28px; font-weight: 800; color: var(--red); font-family: var(--font-mono); }
+.waste-card p { font-size: 13px; color: var(--text-dim); margin-top: 8px; line-height: 1.5; }
+.waste-card .detail { font-family: var(--font-mono); font-size: 12px; color: var(--text-dim); margin-top: 6px; }
+
+/* Legend */
+.legend { display: flex; gap: 20px; flex-wrap: wrap; margin-bottom: 24px; }
+.legend-item { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--text-dim); font-family: var(--font-mono); }
+.legend-swatch { width: 12px; height: 12px; border-radius: 3px; }
+
+/* Callout */
+.callout { background: var(--surface2); border: 1px solid var(--border); border-left: 3px solid var(--yellow); border-radius: 0 8px 8px 0; padding: 14px 18px; font-size: 13px; line-height: 1.6; color: var(--text-dim); margin-top: 24px; }
+.callout strong { color: var(--text); }
+
+@media (max-width: 768px) {
+  body { padding: 20px; }
+  h1 { font-size: 28px; }
+  .kpi-row { grid-template-columns: 1fr 1fr; }
+  .loads { grid-template-columns: 1fr; }
+  .waste-grid { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+
+<div class="page">
+
+<h1 class="anim" style="--i:0">Token Flow in /build-feature</h1>
+<p class="subtitle anim" style="--i:1">what loads, when, and where the waste is</p>
+
+<!-- KPI Dashboard -->
+<div class="kpi-row">
+  <div class="kpi kpi--hero kpi--red anim" style="--i:2">
+    <div class="kpi-value">~681K</div>
+    <div class="kpi-label">Total chars loaded</div>
+  </div>
+  <div class="kpi kpi--orange anim" style="--i:3">
+    <div class="kpi-value">~514K</div>
+    <div class="kpi-label">VE reload waste</div>
+  </div>
+  <div class="kpi kpi--blue anim" style="--i:4">
+    <div class="kpi-value">4-6x</div>
+    <div class="kpi-label">VE SKILL.md reloads</div>
+  </div>
+  <div class="kpi kpi--green anim" style="--i:5">
+    <div class="kpi-value">30</div>
+    <div class="kpi-label">Total files</div>
+  </div>
+</div>
+
+<!-- Legend -->
+<div class="legend anim" style="--i:6">
+  <div class="legend-item"><div class="legend-swatch" style="background:var(--blue-dim);border:1px solid var(--blue)"></div>skill</div>
+  <div class="legend-item"><div class="legend-swatch" style="background:var(--aqua-dim);border:1px solid var(--aqua)"></div>command</div>
+  <div class="legend-item"><div class="legend-swatch" style="background:var(--purple-dim);border:1px solid var(--purple)"></div>agent (own context)</div>
+  <div class="legend-item"><div class="legend-swatch" style="background:var(--yellow-dim);border:1px solid var(--yellow)"></div>VE + references</div>
+  <div class="legend-item"><div class="legend-swatch" style="background:var(--red-dim);border:1px solid var(--red)"></div>redundant reload</div>
+</div>
+
+<!-- Phase 1: Research -->
+<div class="phase phase--research anim" style="--i:7">
+  <div class="phase-header">
+    <div class="phase-title">Phase 1: Research</div>
+    <div class="phase-total" style="color:var(--blue)">~126K chars</div>
+  </div>
+  <div class="loads">
+    <div class="load-item"><span class="load-name">build-feature/SKILL.md <span class="badge badge--skill">skill</span></span><span class="load-chars">8,079</span></div>
+    <div class="load-item"><span class="load-name">research/SKILL.md <span class="badge badge--skill">skill</span></span><span class="load-chars">4,815</span></div>
+    <div class="load-item"><span class="load-name">generate-web-diagram <span class="badge badge--cmd">cmd</span></span><span class="load-chars">1,295</span></div>
+    <div class="load-item load-item--ve"><span class="load-name">visual-explainer/SKILL.md <span class="badge badge--ref">1st</span></span><span class="load-chars">33,179</span></div>
+    <div class="load-item load-item--ve"><span class="load-name">css-patterns.md <span class="badge badge--ref">ref</span></span><span class="load-chars">42,300</span></div>
+    <div class="load-item load-item--ve"><span class="load-name">libraries.md <span class="badge badge--ref">ref</span></span><span class="load-chars">19,200</span></div>
+    <div class="load-item load-item--ve"><span class="load-name">template (arch/mermaid) <span class="badge badge--ref">ref</span></span><span class="load-chars">~17,500</span></div>
+  </div>
+</div>
+
+<div class="flow-arrow anim" style="--i:8">
+  <svg viewBox="0 0 20 20"><path d="M10 4 L10 16 M6 12 L10 16 L14 12"/></svg>
+  user reviews research
+</div>
+
+<!-- Phase 2: Plan -->
+<div class="phase phase--plan anim" style="--i:9">
+  <div class="phase-header">
+    <div class="phase-title">Phase 2: Plan</div>
+    <div class="phase-total" style="color:var(--aqua)">~133K chars</div>
+  </div>
+  <div class="loads">
+    <div class="load-item"><span class="load-name">plan/SKILL.md <span class="badge badge--skill">skill</span></span><span class="load-chars">10,598</span></div>
+    <div class="load-item load-item--agent"><span class="load-name">architect <span class="badge badge--agent">agent</span></span><span class="load-chars">3,081</span></div>
+    <div class="load-item"><span class="load-name">generate-visual-plan <span class="badge badge--cmd">cmd</span></span><span class="load-chars">7,526</span></div>
+    <div class="load-item load-item--waste"><span class="load-name">visual-explainer/SKILL.md <span class="badge badge--waste">2nd</span></span><span class="load-chars">33,179</span></div>
+    <div class="load-item load-item--waste"><span class="load-name">css-patterns.md <span class="badge badge--waste">re-read</span></span><span class="load-chars">42,300</span></div>
+    <div class="load-item load-item--waste"><span class="load-name">libraries.md <span class="badge badge--waste">re-read</span></span><span class="load-chars">19,200</span></div>
+    <div class="load-item load-item--ve"><span class="load-name">template <span class="badge badge--ref">ref</span></span><span class="load-chars">~17,500</span></div>
+  </div>
+</div>
+
+<div class="flow-arrow anim" style="--i:10">
+  <svg viewBox="0 0 20 20"><path d="M10 4 L10 16 M6 12 L10 16 L14 12"/></svg>
+  user approves plan
+</div>
+
+<!-- Phase 3: Implement -->
+<div class="phase phase--implement anim" style="--i:11">
+  <div class="phase-header">
+    <div class="phase-title">Phase 3: Implement</div>
+    <div class="phase-total" style="color:var(--orange)">~422K chars</div>
+  </div>
+  <div class="loads">
+    <div class="load-item"><span class="load-name">implement/SKILL.md <span class="badge badge--skill">skill</span></span><span class="load-chars">7,872</span></div>
+    <div class="load-item load-item--agent"><span class="load-name">tdd-guide <span class="badge badge--agent">agent</span></span><span class="load-chars">2,614</span></div>
+    <div class="load-item load-item--agent"><span class="load-name">security-reviewer <span class="badge badge--agent">agent</span></span><span class="load-chars">3,386</span></div>
+    <div class="load-item load-item--agent"><span class="load-name">refactor-cleaner <span class="badge badge--agent">agent</span></span><span class="load-chars">2,565</span></div>
+    <div class="load-item load-item--agent"><span class="load-name">code-reviewer <span class="badge badge--agent">agent</span></span><span class="load-chars">4,376</span></div>
+    <div class="load-item"><span class="load-name">fact-check (plan) <span class="badge badge--cmd">cmd</span></span><span class="load-chars">4,784</span></div>
+    <div class="load-item load-item--waste"><span class="load-name">visual-explainer/SKILL.md <span class="badge badge--waste">3rd</span></span><span class="load-chars">33,179</span></div>
+    <div class="load-item load-item--waste"><span class="load-name">css-patterns.md <span class="badge badge--waste">re-read</span></span><span class="load-chars">42,300</span></div>
+    <div class="load-item"><span class="load-name">generate-visual-plan <span class="badge badge--cmd">cmd</span></span><span class="load-chars">7,526</span></div>
+    <div class="load-item load-item--waste"><span class="load-name">visual-explainer/SKILL.md <span class="badge badge--waste">4th</span></span><span class="load-chars">33,179</span></div>
+    <div class="load-item load-item--waste"><span class="load-name">css-patterns + libraries <span class="badge badge--waste">re-read</span></span><span class="load-chars">~61,500</span></div>
+    <div class="load-item"><span class="load-name">diff-review <span class="badge badge--cmd">cmd</span></span><span class="load-chars">8,747</span></div>
+    <div class="load-item load-item--waste"><span class="load-name">visual-explainer/SKILL.md <span class="badge badge--waste">5th</span></span><span class="load-chars">33,179</span></div>
+    <div class="load-item load-item--waste"><span class="load-name">css-patterns + libraries + tpl <span class="badge badge--waste">re-read</span></span><span class="load-chars">~78,800</span></div>
+    <div class="load-item"><span class="load-name">fact-check (diff) <span class="badge badge--cmd">cmd</span></span><span class="load-chars">4,784</span></div>
+    <div class="load-item load-item--waste"><span class="load-name">visual-explainer/SKILL.md <span class="badge badge--waste">6th</span></span><span class="load-chars">33,179</span></div>
+    <div class="load-item load-item--waste"><span class="load-name">css-patterns.md <span class="badge badge--waste">re-read</span></span><span class="load-chars">42,300</span></div>
+  </div>
+</div>
+
+<!-- Waste Analysis -->
+<div class="waste-section anim" style="--i:12">
+  <h2>Redundancy Hotspots</h2>
+  <div class="waste-grid">
+    <div class="waste-card">
+      <h3>#1: VE SKILL.md Reloads</h3>
+      <div class="waste-amount">~166K</div>
+      <p>The 33K visual-explainer skill reloads 5 extra times after its first load. Each reload is pure waste — the instructions don't change between invocations.</p>
+      <div class="detail">33,179 chars x 5 redundant loads = 165,895 chars</div>
+    </div>
+    <div class="waste-card">
+      <h3>#2: Reference File Re-reads</h3>
+      <div class="waste-amount">~315K</div>
+      <p>css-patterns.md (42K) and libraries.md (19K) are re-read 4-5 times each. Templates (13-17K) are re-read 3-4 times. Same content, no changes between reads.</p>
+      <div class="detail">~78K per read x 4 redundant reads = ~315K chars</div>
+    </div>
+    <div class="waste-card">
+      <h3>#3: fact-check Loads Full VE</h3>
+      <div class="waste-amount">~66K</div>
+      <p>fact-check only needs css-patterns.md for HTML styling. Loading the full 33K VE skill is unnecessary — it adds diagram-making instructions irrelevant to fact-checking.</p>
+      <div class="detail">33K per invocation x 2 invocations = ~66K wasted</div>
+    </div>
+    <div class="waste-card">
+      <h3>#4: Cross-Command Duplication</h3>
+      <div class="waste-amount">~5-7K</div>
+      <p>Overflow prevention, Mermaid zoom, verification checkpoint, output location, and surf illustrations repeat across 5+ command files verbatim.</p>
+      <div class="detail">~300-400 chars x 4-6 appearances each = ~5-7K total</div>
+    </div>
+  </div>
+</div>
+
+<div class="callout anim" style="--i:13">
+  <strong>Key insight:</strong> The VE reload problem accounts for ~75% of all token waste. Eliminating just VE SKILL.md reloads and reference re-reads would reduce total /build-feature token cost from ~681K to ~200K — a 70% reduction. Agents run in their own context, so their sizes don't affect the main conversation budget.
+</div>
+
+</div>
+
+</body>
+</html>

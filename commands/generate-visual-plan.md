@@ -1,9 +1,14 @@
 ---
 description: Generate a visual HTML implementation plan — detailed feature specification with state machines, code snippets, and edge cases
 ---
-Load the visual-explainer skill, then generate a comprehensive visual implementation plan for `$ARGUMENTS` as a self-contained HTML page.
+Generate a comprehensive visual implementation plan for `$ARGUMENTS` as a self-contained HTML page.
 
-Follow the visual-explainer skill workflow. The skill's references and templates are at `~/.claude/skills/visual-explainer/references/` and `~/.claude/skills/visual-explainer/templates/`. Read the relevant reference files (css-patterns.md, libraries.md) and template files before generating. Use an editorial or blueprint aesthetic, but vary fonts and palette from previous diagrams.
+Before generating, read these reference files:
+- `~/.claude/skills/visual-explainer/core.md` (quality guide — aesthetic, typography, color, style, checks)
+- `~/.claude/skills/visual-explainer/references/css-patterns.md` (CSS patterns, Mermaid zoom, card depth)
+- `~/.claude/skills/visual-explainer/references/libraries.md` (Mermaid theming, font imports)
+
+Use an editorial or blueprint aesthetic, but vary fonts and palette from previous diagrams.
 
 **Data gathering phase** — understand the context before designing:
 
@@ -40,13 +45,7 @@ Follow the visual-explainer skill workflow. The skill's references and templates
 
 4. **Edge cases.** Walk through unusual scenarios: concurrent operations, error conditions, boundary values, user mistakes.
 
-**Verification checkpoint** — before generating HTML, produce a structured fact sheet:
-- Every state variable (new and modified) with its type and purpose
-- Every function/command/API with its signature
-- Every file that needs modification with the specific changes
-- Every edge case with expected behavior
-- Every assumption about the codebase that the plan relies on
-Verify each against the code. If something cannot be verified, mark it as uncertain. This fact sheet is your source of truth during HTML generation.
+Apply the verification checkpoint from core.md before generating HTML.
 
 **Diagram structure** — the page should include:
 
@@ -54,7 +53,7 @@ Verify each against the code. If something cannot be verified, mark it as uncert
 
 2. **The Problem** — side-by-side comparison panels showing current behavior vs. desired behavior. Use concrete examples, not abstract descriptions. Show what the user experiences or what the code does, step by step. *Visual treatment: two-column grid with rose-tinted "Before" header and sage-tinted "After" header. Numbered flow steps with arrows between them.*
 
-3. **State Machine** — Mermaid flowchart or stateDiagram showing the states and transitions. Label edges with the triggers (commands, events, conditions). *Wrap in `.mermaid-wrap` with zoom controls. Use `flowchart TD` instead of `stateDiagram-v2` if labels need special characters like colons or parentheses. Add explanatory caption below the diagram.*
+3. **State Machine** — Mermaid flowchart or stateDiagram showing the states and transitions. Label edges with the triggers (commands, events, conditions). *Wrap in `.mermaid-wrap` with zoom controls per core.md. Use `flowchart TD` instead of `stateDiagram-v2` if labels need special characters like colons or parentheses. Add explanatory caption below the diagram.*
 
 4. **State Variables** — card grid showing new state and existing state (if modified). Use code blocks with proper `white-space: pre-wrap`. *Visual treatment: two cards side-by-side, elevated depth, monospace labels.*
 
@@ -83,25 +82,4 @@ Verify each against the code. If something cannot be verified, mark it as uncert
 - Sections 4-6 are core implementation details (elevated cards, readable code blocks)
 - Sections 7-10 are reference material (flat or recessed depth, compact layout)
 
-**Typography and color:**
-- Pick a distinctive font pairing (not Inter/Roboto)
-- Use semantic accent colors: gold for primary accents, sage for "after"/success states, rose for "before"/warning states
-- Both light and dark themes must work
-
-**Optional hero image** — if `surf` CLI is available (`which surf`), consider generating a conceptual illustration that captures the feature's essence. Use for abstract concepts that benefit from visual metaphor. Skip for purely structural changes. Embed as base64 data URI using the `.hero-img-wrap` pattern from css-patterns.md.
-
-**Code block requirements:**
-- Always use `white-space: pre-wrap` and `word-break: break-word`
-- Include file path headers where relevant
-- Use syntax-appropriate highlighting via CSS classes if desired
-- Keep snippets focused — show the pattern, not the full implementation
-
-**Overflow prevention:**
-- Apply `min-width: 0` on all grid/flex children
-- Use `overflow-wrap: break-word` on all text containers
-- Never use `display: flex` on `<li>` for markers — use absolute positioning
-- Test tables with wide content don't overflow their container
-
-Write to the current feature directory under `docs/claude/` if one exists for this session. Otherwise, create a new directory `docs/claude/<YYYYMMDD-HHMM>-<slug>/` based on the content. Do NOT write to `~/.agent/diagrams/`. Open the result in the browser. Tell the user the file path.
-
-Ultrathink.
+Use semantic accent colors: gold for primary accents, sage for "after"/success states, rose for "before"/warning states. Follow typography, color, overflow prevention, and code block rules from core.md. Follow output and AI illustration rules from core.md.

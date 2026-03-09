@@ -183,3 +183,5 @@ Then tell the user:
 - Every annotation from the user must be addressed; never ignore feedback
 - Keep the plan focused - actively suggest cutting scope if it grows too large
 
+Ultrathink.
+
