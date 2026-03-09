@@ -49,33 +49,23 @@ Before writing the plan:
 - Read relevant source files referenced in the research or related to `$ARGUMENTS`
 - Base the plan on the ACTUAL codebase, not assumptions
 
-### Step 1b: Detect Frontend Work
-
-After reading context, check whether the feature involves frontend/UI work:
-
-1. **Check arguments**: Does `$ARGUMENTS` mention UI, page, component, frontend, form, dashboard, layout, or similar terms?
-2. **Check research**: Does `research.md` (if it exists) reference frontend files (`.tsx`, `.jsx`, `.vue`, `.svelte`, `.html`, `.css`, `.scss`)?
-3. **Check file scope**: Will the feature touch files in directories like `src/components/`, `src/pages/`, `src/views/`, `app/`, `templates/`, or similar frontend paths?
-
-If **any** of these are true AND the `frontend-design` skill is available, invoke it using the Skill tool before writing the plan. Use the design thinking framework from that skill to commit to a bold aesthetic direction — purpose, tone, constraints, and differentiator. Capture these decisions for inclusion in the plan document (Step 2).
-
-**If the `frontend-design` skill is not available, or the feature does not involve frontend work, skip this step entirely — do not error or warn.**
-
-### Step 1c: Architecture Review
+### Step 1b: Architecture Review
 
 Use the `architect` agent (via the Agent tool) to evaluate the feature's architectural implications. Incorporate the architect's findings into the plan's **Approach** and **Considerations & Trade-offs** sections.
 
-### Step 1d: Detect Domain Context
+### Step 1c: Detect Domain Context
 
-After reading context, check whether the feature involves specific domains where reference skills exist:
+After reading context, check whether the feature involves specific domains where reference skills exist. For each that matches, invoke the corresponding skill to load its patterns before writing the plan:
 
-1. **API design**: Does the feature involve creating or modifying REST API endpoints, adding pagination, designing error responses, or implementing rate limiting? If a skill named `api-design` is available, invoke it to load REST API patterns (URL naming, status codes, pagination strategies, error response format, versioning).
+1. **Frontend design**: Does the feature involve frontend/UI work? Check `$ARGUMENTS` for UI/page/component/frontend/form/dashboard/layout terms, `research.md` for frontend files (`.tsx`, `.jsx`, `.vue`, `.svelte`, `.html`, `.css`, `.scss`), and file scope for frontend directories (`src/components/`, `src/pages/`, `app/`, `templates/`). If yes and `frontend-design` is available, invoke it to commit to a bold aesthetic direction — purpose, tone, constraints, differentiator. Capture these decisions for the **Frontend Design Direction** section in the plan.
 
-2. **Frontend patterns**: Does the feature involve UI components, state management, custom hooks, performance optimization, or accessibility? If a skill named `frontend-patterns` is available, invoke it to load component patterns, state management strategies, and performance techniques.
+2. **Frontend patterns**: Does the feature involve UI components, state management, custom hooks, performance optimization, or accessibility? If `frontend-patterns` is available, invoke it to load component patterns, state management strategies, and performance techniques.
+
+3. **API design**: Does the feature involve creating or modifying REST API endpoints, adding pagination, designing error responses, or implementing rate limiting? If `api-design` is available, invoke it to load REST API patterns (URL naming, status codes, pagination strategies, error response format, versioning).
 
 When a domain skill is loaded, reference its patterns in the plan — e.g., "Use cursor-based pagination per the api-design skill" rather than inventing patterns from scratch.
 
-**If no domain skills match, or the relevant skills are not installed, skip this step entirely.**
+**If no domain skills match, or the relevant skills are not installed, skip this step entirely — do not error or warn.**
 
 ### Step 2: Write the plan document
 
@@ -84,7 +74,7 @@ Create the file at the path described above with:
 - **Goal**: What we're building and why (1-2 sentences)
 - **Research Reference**: The relative path or name of the research file used to generate the plan
 - **Approach**: High-level strategy and architectural decisions
-- **Frontend Design Direction** *(only if Step 1b activated)*: Include this section after Approach. It must contain:
+- **Frontend Design Direction** *(only if frontend-design was loaded in Step 1c)*: Include this section after Approach. It must contain:
   - **Aesthetic**: The chosen design direction (e.g., "brutalist/raw", "luxury/refined", "retro-futuristic")
   - **Typography**: Specific display + body font pairing (sourced from Google Fonts or similar — never Inter, Roboto, Arial, or system defaults)
   - **Color Palette**: CSS custom properties with hex values for dominant, accent, background, and text colors

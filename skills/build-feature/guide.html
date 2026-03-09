@@ -3,1294 +3,1280 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Build Feature — Workflow Guide</title>
+<title>/build-feature Pipeline Guide</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=Noto+Sans+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
-  /* ============ THEME — Teal + copper, scholarly blueprint ============ */
+:root {
+  --font-body: 'IBM Plex Sans', system-ui, sans-serif;
+  --font-mono: 'IBM Plex Mono', 'SF Mono', Consolas, monospace;
+
+  --bg: #f0f2f5;
+  --surface: #ffffff;
+  --surface-elevated: #ffffff;
+  --surface-recessed: #e8ebf0;
+  --border: rgba(30, 58, 95, 0.10);
+  --border-bright: rgba(30, 58, 95, 0.20);
+  --text: #1e293b;
+  --text-dim: #64748b;
+  --accent: #1e3a5f;
+  --accent-dim: rgba(30, 58, 95, 0.08);
+  --gold: #d4a73a;
+  --gold-dim: rgba(212, 167, 58, 0.10);
+  --research: #0891b2;
+  --research-dim: rgba(8, 145, 178, 0.10);
+  --plan: #d97706;
+  --plan-dim: rgba(217, 119, 6, 0.10);
+  --implement: #059669;
+  --implement-dim: rgba(5, 150, 105, 0.10);
+  --must: #be123c;
+  --must-dim: rgba(190, 18, 60, 0.10);
+  --cond: #d97706;
+  --cond-dim: rgba(217, 119, 6, 0.10);
+  --opt: #64748b;
+  --opt-dim: rgba(100, 116, 139, 0.08);
+  --grid-color: rgba(30, 58, 95, 0.04);
+}
+
+@media (prefers-color-scheme: dark) {
   :root {
-    --font-body: 'Crimson Pro', Georgia, serif;
-    --font-mono: 'Noto Sans Mono', 'SF Mono', Consolas, monospace;
-    --font-sans: system-ui, -apple-system, sans-serif;
+    --bg: #0c1220;
+    --surface: #131b2e;
+    --surface-elevated: #1a2540;
+    --surface-recessed: #0a0f1a;
+    --border: rgba(212, 167, 58, 0.08);
+    --border-bright: rgba(212, 167, 58, 0.18);
+    --text: #e2e8f0;
+    --text-dim: #8b9dc3;
+    --accent: #5b8cc9;
+    --accent-dim: rgba(91, 140, 201, 0.12);
+    --gold: #e8c56a;
+    --gold-dim: rgba(232, 197, 106, 0.12);
+    --research: #22d3ee;
+    --research-dim: rgba(34, 211, 238, 0.12);
+    --plan: #fbbf24;
+    --plan-dim: rgba(251, 191, 36, 0.10);
+    --implement: #34d399;
+    --implement-dim: rgba(52, 211, 153, 0.12);
+    --must: #fb7185;
+    --must-dim: rgba(251, 113, 133, 0.12);
+    --cond: #fbbf24;
+    --cond-dim: rgba(251, 191, 36, 0.10);
+    --opt: #8b9dc3;
+    --opt-dim: rgba(139, 157, 195, 0.08);
+    --grid-color: rgba(91, 140, 201, 0.04);
+  }
+}
 
-    --bg: #f7f8f6;
-    --surface: #ffffff;
-    --surface2: #eef0ec;
-    --surface-elevated: #ffffff;
-    --border: rgba(0, 0, 0, 0.08);
-    --border-bright: rgba(0, 0, 0, 0.16);
-    --text: #1c2826;
-    --text-dim: #5e706a;
-    --text-bright: #0d1b17;
+* { margin: 0; padding: 0; box-sizing: border-box; }
 
-    --teal: #155e5e;
-    --teal-dim: rgba(21, 94, 94, 0.07);
-    --copper: #a0522d;
-    --copper-dim: rgba(160, 82, 45, 0.07);
-    --sage: #3d6b4f;
-    --sage-dim: rgba(61, 107, 79, 0.07);
-    --slate: #4a5568;
-    --slate-dim: rgba(74, 85, 104, 0.06);
-    --wine: #7c2d3e;
-    --wine-dim: rgba(124, 45, 62, 0.06);
-    --amber: #8b6914;
-    --amber-dim: rgba(139, 105, 20, 0.07);
-  }
+body {
+  font-family: var(--font-body);
+  background-color: var(--bg);
+  background-image:
+    linear-gradient(var(--grid-color) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid-color) 1px, transparent 1px);
+  background-size: 24px 24px;
+  color: var(--text);
+  line-height: 1.6;
+  min-height: 100vh;
+}
 
-  @media (prefers-color-scheme: dark) {
-    :root {
-      --bg: #0e1614;
-      --surface: #151f1c;
-      --surface2: #1c2a26;
-      --surface-elevated: #213530;
-      --border: rgba(255, 255, 255, 0.07);
-      --border-bright: rgba(255, 255, 255, 0.14);
-      --text: #d4ddd8;
-      --text-dim: #8a9e96;
-      --text-bright: #ecf2ef;
+.container {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 40px 24px 80px;
+}
 
-      --teal: #4fd1c5;
-      --teal-dim: rgba(79, 209, 197, 0.1);
-      --copper: #ed9a6a;
-      --copper-dim: rgba(237, 154, 106, 0.1);
-      --sage: #68d391;
-      --sage-dim: rgba(104, 211, 145, 0.08);
-      --slate: #a0aec0;
-      --slate-dim: rgba(160, 174, 192, 0.08);
-      --wine: #f687b3;
-      --wine-dim: rgba(246, 135, 179, 0.08);
-      --amber: #f6e05e;
-      --amber-dim: rgba(246, 224, 94, 0.08);
-    }
-  }
+/* --- HEADER --- */
+.header {
+  text-align: center;
+  padding: 48px 24px 40px;
+  margin-bottom: 48px;
+  background: var(--surface);
+  border: 1px solid var(--border-bright);
+  border-radius: 12px;
+  position: relative;
+  overflow: hidden;
+}
 
-  /* ============ RESET + BASE ============ */
-  * { margin: 0; padding: 0; box-sizing: border-box; }
+.header::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, var(--research), var(--plan), var(--implement));
+}
 
-  body {
-    background: var(--bg);
-    background-image:
-      radial-gradient(ellipse at 20% 0%, var(--teal-dim) 0%, transparent 50%),
-      radial-gradient(ellipse at 80% 95%, var(--copper-dim) 0%, transparent 40%);
-    color: var(--text);
-    font-family: var(--font-body);
-    padding: 48px 40px;
-    min-height: 100vh;
-    overflow-wrap: break-word;
-  }
+.header h1 {
+  font-family: var(--font-mono);
+  font-size: clamp(1.6rem, 4vw, 2.4rem);
+  font-weight: 700;
+  color: var(--text);
+  letter-spacing: -0.02em;
+  margin-bottom: 8px;
+}
 
-  a { color: var(--teal); text-decoration: underline; text-underline-offset: 2px; }
-  a:hover { color: var(--copper); }
+.header h1 span { color: var(--gold); }
 
-  /* ============ NAV ============ */
-  .wrap {
-    max-width: 1300px;
-    margin: 0 auto;
-    display: grid;
-    grid-template-columns: 175px 1fr;
-    gap: 0 40px;
-  }
-  .main { min-width: 0; }
+.header .subtitle {
+  font-size: 1rem;
+  color: var(--text-dim);
+  max-width: 560px;
+  margin: 0 auto 32px;
+}
 
-  .toc {
-    position: sticky;
-    top: 24px;
-    align-self: start;
-    padding: 14px 0;
-    grid-row: 1 / -1;
-    max-height: calc(100dvh - 48px);
-    overflow-y: auto;
-  }
-  .toc::-webkit-scrollbar { width: 3px; }
-  .toc::-webkit-scrollbar-thumb { background: var(--surface2); border-radius: 2px; }
+.phase-flow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0;
+  flex-wrap: wrap;
+}
 
-  .toc-title {
-    font-family: var(--font-mono);
-    font-size: 9px;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 2px;
-    color: var(--text-dim);
-    padding: 0 0 10px;
-    margin-bottom: 8px;
-    border-bottom: 1px solid var(--border);
-  }
+.phase-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 20px;
+  border-radius: 6px;
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+  font-weight: 600;
+  border: 1px solid;
+}
 
-  .toc a {
-    display: block;
-    font-family: var(--font-sans);
-    font-size: 11px;
-    color: var(--text-dim);
-    text-decoration: none;
-    padding: 4px 8px;
-    border-radius: 5px;
-    border-left: 2px solid transparent;
-    transition: all 0.15s;
-    line-height: 1.4;
-    margin-bottom: 1px;
-  }
-  .toc a:hover { color: var(--text); background: var(--surface2); }
-  .toc a.active { color: var(--text); border-left-color: var(--copper); }
+.phase-pill.research { background: var(--research-dim); border-color: var(--research); color: var(--research); }
+.phase-pill.plan { background: var(--plan-dim); border-color: var(--plan); color: var(--plan); }
+.phase-pill.implement { background: var(--implement-dim); border-color: var(--implement); color: var(--implement); }
 
-  @media (max-width: 1000px) {
-    .wrap { grid-template-columns: 1fr; padding-top: 0; }
-    body { padding-top: 0; }
-    .toc {
-      position: sticky; top: 0; z-index: 200; max-height: none;
-      display: flex; gap: 4px; align-items: center;
-      overflow-x: auto; -webkit-overflow-scrolling: touch;
-      background: var(--bg); border-bottom: 1px solid var(--border);
-      padding: 10px 0; margin: 0 -40px; padding-left: 40px; padding-right: 40px;
-      grid-row: auto;
-    }
-    .toc::-webkit-scrollbar { display: none; }
-    .toc-title { display: none; }
-    .toc a {
-      white-space: nowrap; flex-shrink: 0; border-left: none;
-      border-bottom: 2px solid transparent; border-radius: 4px 4px 0 0;
-      padding: 6px 10px; font-size: 10px;
-    }
-    .toc a.active { border-left: none; border-bottom-color: var(--copper); background: var(--surface); }
-    .main { padding-top: 20px; }
-    .sec-head { scroll-margin-top: 52px; }
-  }
+.phase-arrow {
+  font-size: 1.2rem;
+  color: var(--text-dim);
+  padding: 0 8px;
+}
 
-  /* ============ ANIMATION ============ */
-  @keyframes fadeUp {
-    from { opacity: 0; transform: translateY(14px); }
-    to { opacity: 1; transform: translateY(0); }
-  }
-  @keyframes fadeScale {
-    from { opacity: 0; transform: scale(0.92); }
-    to { opacity: 1; transform: scale(1); }
-  }
+.phase-num {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  font-size: 0.7rem;
+  font-weight: 700;
+  background: currentColor;
+}
 
-  .anim {
-    animation: fadeUp 0.45s ease-out both;
-    animation-delay: calc(var(--i, 0) * 0.06s);
-  }
-  .anim-scale {
-    animation: fadeScale 0.35s ease-out both;
-    animation-delay: calc(var(--i, 0) * 0.06s);
-  }
+.phase-num span {
+  color: var(--surface);
+}
 
-  @media (prefers-reduced-motion: reduce) {
-    *, *::before, *::after {
-      animation-duration: 0.01ms !important;
-      animation-delay: 0ms !important;
-      transition-duration: 0.01ms !important;
-    }
-  }
+@media (prefers-color-scheme: dark) {
+  .phase-num span { color: var(--bg); }
+}
 
-  /* ============ TYPOGRAPHY ============ */
-  h1 {
-    font-size: clamp(38px, 5vw, 56px);
-    font-weight: 600;
-    letter-spacing: -1.5px;
-    line-height: 1.08;
-    margin-bottom: 8px;
-    color: var(--text-bright);
-  }
-  h1 em {
-    font-style: italic;
-    font-weight: 400;
-    color: var(--copper);
-  }
+/* --- SECTIONS --- */
+.section {
+  margin-bottom: 48px;
+}
 
-  .hero-label {
-    font-family: var(--font-mono);
-    font-size: 10px;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 3px;
-    color: var(--teal);
-    margin-bottom: 14px;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-  }
-  .hero-label::before {
-    content: '';
-    display: inline-block;
-    width: 24px;
-    height: 2px;
-    background: var(--teal);
-  }
+.section-title {
+  font-family: var(--font-mono);
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--gold);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-bottom: 20px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--border-bright);
+}
 
-  .hero-sub {
-    font-family: var(--font-sans);
-    font-size: 16px;
-    color: var(--text-dim);
-    max-width: 640px;
-    line-height: 1.65;
-    margin-bottom: 48px;
-  }
+.section-title .num {
+  color: var(--text-dim);
+  margin-right: 8px;
+}
 
-  /* ============ SECTION HEADS ============ */
-  .sec-head {
-    font-family: var(--font-mono);
-    font-size: 10px;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 2.5px;
-    padding: 10px 0 20px;
-    margin-top: 52px;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-  }
-  .sec-head .num {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 24px;
-    height: 24px;
-    border-radius: 6px;
-    font-size: 11px;
-    font-weight: 700;
-  }
+/* --- MASTER TABLE --- */
+.table-wrap {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow-x: auto;
+  min-width: 0;
+}
 
-  /* ============ CARDS ============ */
-  .ve-card {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    padding: 22px 26px;
-    position: relative;
-  }
-  .ve-card > * { min-width: 0; }
+.checklist-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.82rem;
+  min-width: 900px;
+}
 
-  .ve-card--hero {
-    background: color-mix(in srgb, var(--surface) 92%, var(--teal) 8%);
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06), 0 1px 3px rgba(0, 0, 0, 0.04);
-    border-color: color-mix(in srgb, var(--border) 50%, var(--teal) 50%);
-    padding: 30px 34px;
-  }
+.checklist-table thead {
+  background: var(--surface-recessed);
+  position: sticky;
+  top: 0;
+  z-index: 2;
+}
 
-  .ve-card--recessed {
-    background: var(--surface2);
-    box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.04);
-  }
+.checklist-table th {
+  font-family: var(--font-mono);
+  font-weight: 600;
+  text-align: left;
+  padding: 10px 12px;
+  border-bottom: 2px solid var(--border-bright);
+  color: var(--text-dim);
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  white-space: nowrap;
+}
 
-  .ve-card__label {
-    font-family: var(--font-mono);
-    font-size: 10px;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 1.5px;
-    margin-bottom: 10px;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-  }
-  .ve-card__label::before {
-    content: '';
-    width: 7px;
-    height: 7px;
-    border-radius: 50%;
-    background: currentColor;
-  }
+.checklist-table td {
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--border);
+  vertical-align: top;
+  overflow-wrap: break-word;
+}
 
-  /* ============ PHASE CARDS ============ */
-  .phase-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 16px;
-    margin-bottom: 16px;
-  }
-  .phase-grid > * { min-width: 0; }
+.checklist-table tr:last-child td { border-bottom: none; }
 
-  @media (max-width: 768px) {
-    .phase-grid { grid-template-columns: 1fr; }
-  }
+.checklist-table .phase-label {
+  font-family: var(--font-mono);
+  font-weight: 600;
+  font-size: 0.72rem;
+  padding: 3px 8px;
+  border-radius: 4px;
+  white-space: nowrap;
+}
 
-  .phase-card {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    padding: 22px 24px;
-    border-top: 3px solid var(--border);
-    transition: box-shadow 0.2s ease;
-  }
-  .phase-card:hover {
-    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.05);
-  }
-  .phase-card--research { border-top-color: var(--teal); }
-  .phase-card--plan { border-top-color: var(--copper); }
-  .phase-card--implement { border-top-color: var(--sage); }
-  .phase-card--visual { border-top-color: var(--amber); }
+.checklist-table .phase-label.research { background: var(--research-dim); color: var(--research); }
+.checklist-table .phase-label.plan { background: var(--plan-dim); color: var(--plan); }
+.checklist-table .phase-label.implement { background: var(--implement-dim); color: var(--implement); }
+.checklist-table .phase-label.post { background: var(--gold-dim); color: var(--gold); }
 
-  .phase-card h3 {
-    font-family: var(--font-body);
-    font-size: 22px;
-    font-weight: 500;
-    margin-bottom: 6px;
-  }
+.sev-must { background: var(--must-dim); color: var(--must); padding: 2px 6px; border-radius: 3px; font-family: var(--font-mono); font-size: 0.7rem; font-weight: 600; }
+.sev-cond { background: var(--cond-dim); color: var(--cond); padding: 2px 6px; border-radius: 3px; font-family: var(--font-mono); font-size: 0.7rem; font-weight: 600; }
+.sev-opt { background: var(--opt-dim); color: var(--opt); padding: 2px 6px; border-radius: 3px; font-family: var(--font-mono); font-size: 0.7rem; font-weight: 600; }
 
-  .phase-card p {
-    font-family: var(--font-sans);
-    font-size: 13px;
-    color: var(--text-dim);
-    line-height: 1.65;
-  }
+.agent-tag {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  color: var(--accent);
+  background: var(--accent-dim);
+  padding: 2px 6px;
+  border-radius: 3px;
+}
 
-  .phase-card .tag {
-    font-family: var(--font-mono);
-    font-size: 10px;
-    font-weight: 600;
-    padding: 2px 8px;
-    border-radius: 4px;
-    display: inline-block;
-    margin-bottom: 8px;
-  }
+.cmd-tag {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  color: var(--gold);
+  background: var(--gold-dim);
+  padding: 2px 6px;
+  border-radius: 3px;
+}
 
-  /* ============ FLOW CONNECTOR ============ */
-  .flow-connector {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    gap: 8px;
-    color: var(--text-dim);
-    font-family: var(--font-mono);
-    font-size: 11px;
-    padding: 8px 0;
-  }
-  .flow-connector svg {
-    width: 20px; height: 20px; fill: none;
-    stroke: var(--border-bright); stroke-width: 2;
-    stroke-linecap: round; stroke-linejoin: round;
-  }
+.stop-tag {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--must);
+  background: var(--must-dim);
+  padding: 2px 6px;
+  border-radius: 3px;
+  letter-spacing: 0.05em;
+}
 
-  /* ============ MERMAID ============ */
-  .mermaid-wrap {
-    position: relative;
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 12px;
-    padding: 32px 24px;
-    overflow: auto;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    min-height: 480px;
-    scrollbar-width: thin;
-    scrollbar-color: var(--border) transparent;
-  }
-  .mermaid-wrap::-webkit-scrollbar { width: 6px; height: 6px; }
-  .mermaid-wrap::-webkit-scrollbar-track { background: transparent; }
-  .mermaid-wrap::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
-  .mermaid-wrap::-webkit-scrollbar-thumb:hover { background: var(--text-dim); }
+.checklist-table .step-num {
+  font-family: var(--font-mono);
+  font-weight: 600;
+  color: var(--text-dim);
+  font-size: 0.78rem;
+}
 
-  .mermaid-wrap .mermaid { zoom: 1.3; }
-  .mermaid-wrap { cursor: grab; }
-  .mermaid-wrap.is-panning { cursor: grabbing; user-select: none; }
+.phase-sep td {
+  background: var(--surface-recessed);
+  padding: 6px 12px;
+  font-family: var(--font-mono);
+  font-weight: 700;
+  font-size: 0.78rem;
+  color: var(--text-dim);
+  letter-spacing: 0.04em;
+}
 
-  .zoom-controls {
-    position: absolute;
-    top: 8px; right: 8px;
-    display: flex; gap: 2px; z-index: 10;
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 6px; padding: 2px;
-  }
-  .zoom-controls button {
-    width: 28px; height: 28px; border: none;
-    background: transparent; color: var(--text-dim);
-    font-family: var(--font-mono); font-size: 14px;
-    cursor: pointer; border-radius: 4px;
-    display: flex; align-items: center; justify-content: center;
-    transition: background 0.15s ease, color 0.15s ease;
-  }
-  .zoom-controls button:hover { background: var(--border); color: var(--text); }
+/* --- AGENT CARDS --- */
+.agent-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 16px;
+}
 
-  .mermaid .nodeLabel { color: var(--text) !important; font-family: var(--font-sans) !important; font-size: 14px !important; }
-  .mermaid .edgeLabel { color: var(--text-dim) !important; background-color: var(--bg) !important; font-family: var(--font-mono) !important; font-size: 11px !important; }
-  .mermaid .edgeLabel rect { fill: var(--bg) !important; }
-  .mermaid .node rect, .mermaid .node circle, .mermaid .node polygon { stroke-width: 1.5px !important; }
+.agent-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 20px;
+  min-width: 0;
+}
 
-  /* ============ COMMAND TABLE ============ */
-  .table-wrap {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 12px;
-    overflow: hidden;
-  }
-  .table-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+.agent-card:hover {
+  border-color: var(--border-bright);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+}
 
-  .data-table {
-    width: 100%;
-    border-collapse: collapse;
-    font-family: var(--font-sans);
-    font-size: 13px;
-    line-height: 1.5;
-  }
-  .data-table thead { position: sticky; top: 0; z-index: 2; }
-  .data-table th {
-    background: var(--surface2);
-    font-family: var(--font-mono);
-    font-size: 10px; font-weight: 600;
-    text-transform: uppercase; letter-spacing: 1px;
-    color: var(--text-dim); text-align: left;
-    padding: 12px 16px;
-    border-bottom: 2px solid var(--border-bright);
-    white-space: nowrap;
-  }
-  .data-table td {
-    padding: 12px 16px;
-    border-bottom: 1px solid var(--border);
-    vertical-align: top; color: var(--text);
-  }
-  .data-table tbody tr:nth-child(even) { background: var(--teal-dim); }
-  .data-table tbody tr { transition: background 0.15s ease; }
-  .data-table tbody tr:hover { background: var(--border); }
-  .data-table tbody tr:last-child td { border-bottom: none; }
-  .data-table code {
-    font-family: var(--font-mono); font-size: 11px;
-    background: var(--teal-dim); color: var(--teal);
-    padding: 1px 5px; border-radius: 3px;
-  }
+.agent-card .agent-name {
+  font-family: var(--font-mono);
+  font-weight: 700;
+  font-size: 0.95rem;
+  color: var(--accent);
+  margin-bottom: 8px;
+}
 
-  /* ============ FILE TREE ============ */
-  .file-tree {
-    font-family: var(--font-mono);
-    font-size: 12px;
-    line-height: 2;
-    color: var(--text-dim);
-    padding: 18px 22px;
-    background: var(--surface2);
-    border: 1px solid var(--border);
-    border-radius: 10px;
-  }
-  .file-tree .dir { color: var(--teal); font-weight: 600; }
-  .file-tree .file { color: var(--text); }
-  .file-tree .comment { color: var(--text-dim); font-style: italic; font-size: 11px; }
-  .file-tree .optional { color: var(--copper); font-style: italic; font-size: 11px; }
+.agent-card .agent-purpose {
+  font-size: 0.82rem;
+  color: var(--text-dim);
+  margin-bottom: 12px;
+  line-height: 1.5;
+}
 
-  /* ============ QUICK START ============ */
-  .qs-steps {
-    display: grid;
-    grid-template-columns: 1fr;
-    gap: 0;
-    counter-reset: qs;
-  }
-  .qs-step {
-    display: grid;
-    grid-template-columns: 44px 1fr;
-    gap: 0 16px;
-    padding: 20px 0;
-    border-bottom: 1px solid var(--border);
-    align-items: start;
-  }
-  .qs-step:last-child { border-bottom: none; }
-  .qs-step__num {
-    counter-increment: qs;
-    font-family: var(--font-mono);
-    font-size: 11px;
-    font-weight: 700;
-    color: var(--copper);
-    padding-top: 2px;
-  }
-  .qs-step__num::before { content: counter(qs, decimal-leading-zero); }
-  .qs-step__body h4 {
-    font-family: var(--font-body);
-    font-size: 18px;
-    font-weight: 500;
-    margin-bottom: 4px;
-  }
-  .qs-step__body p {
-    font-family: var(--font-sans);
-    font-size: 13px;
-    color: var(--text-dim);
-    line-height: 1.55;
-  }
-  .qs-step__body code {
-    font-family: var(--font-mono);
-    font-size: 11px;
-    background: var(--teal-dim);
-    color: var(--teal);
-    padding: 1px 5px;
-    border-radius: 3px;
-  }
+.agent-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
 
-  /* ============ CALLOUT ============ */
-  .callout {
-    padding: 18px 22px;
-    border-radius: 8px;
-    border-left: 4px solid var(--copper);
-    background: var(--copper-dim);
-    margin: 20px 0;
-    font-family: var(--font-sans);
-    font-size: 13px;
-    line-height: 1.65;
-    color: var(--text);
-  }
-  .callout strong { font-weight: 600; }
-  .callout code {
-    font-family: var(--font-mono); font-size: 11px;
-    background: var(--teal-dim); color: var(--teal);
-    padding: 1px 5px; border-radius: 3px;
-  }
-  .callout--teal { border-left-color: var(--teal); background: var(--teal-dim); }
-  .callout--sage { border-left-color: var(--sage); background: var(--sage-dim); }
-  .callout--amber { border-left-color: var(--amber); background: var(--amber-dim); }
+.meta-tag {
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  padding: 3px 8px;
+  border-radius: 4px;
+  border: 1px solid var(--border);
+  color: var(--text-dim);
+  white-space: nowrap;
+}
 
-  /* ============ KPI ============ */
-  .kpi-row {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-    gap: 14px;
-  }
-  .kpi-card {
-    background: var(--surface-elevated);
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    padding: 20px;
-  }
-  .kpi-card__value {
-    font-family: var(--font-body);
-    font-size: 34px;
-    font-weight: 600;
-    line-height: 1.1;
-    color: var(--text-bright);
-  }
-  .kpi-card__label {
-    font-family: var(--font-mono);
-    font-size: 9px;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 1.5px;
-    color: var(--text-dim);
-    margin-top: 6px;
-  }
+.meta-tag.model-opus { border-color: var(--must); color: var(--must); background: var(--must-dim); }
+.meta-tag.model-sonnet { border-color: var(--implement); color: var(--implement); background: var(--implement-dim); }
 
-  /* ============ PRINCIPLE GRID ============ */
-  .principle-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 2px;
-    background: var(--border);
-    border-radius: 10px;
-    overflow: hidden;
-  }
-  .principle-grid > div {
-    background: var(--surface);
-    padding: 22px 24px;
-    font-family: var(--font-sans);
-    font-size: 13px;
-    line-height: 1.65;
-  }
-  .principle-grid > div strong {
-    display: block;
-    color: var(--text-bright);
-    font-weight: 600;
-    margin-bottom: 4px;
-  }
-  .principle-grid > div p {
-    color: var(--text-dim);
-    margin: 0;
-  }
-  .principle-grid > div code {
-    font-family: var(--font-mono); font-size: 11px;
-    background: var(--teal-dim); color: var(--teal);
-    padding: 1px 5px; border-radius: 3px;
-  }
+/* --- COMMAND TABLE --- */
+.cmd-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.82rem;
+  min-width: 700px;
+}
 
-  @media (max-width: 768px) {
-    .principle-grid { grid-template-columns: 1fr; }
-  }
+.cmd-table th {
+  font-family: var(--font-mono);
+  font-weight: 600;
+  text-align: left;
+  padding: 10px 12px;
+  border-bottom: 2px solid var(--border-bright);
+  color: var(--text-dim);
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  white-space: nowrap;
+}
 
-  /* ============ SESSION BANNER ============ */
-  .session-banner {
-    display: grid;
-    grid-template-columns: auto 1fr;
-    gap: 0 20px;
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    padding: 22px 26px;
-    align-items: center;
-  }
-  .session-icon {
-    width: 44px; height: 44px;
-    border-radius: 10px;
-    background: var(--amber-dim);
-    border: 1px solid color-mix(in srgb, var(--border) 50%, var(--amber) 50%);
-    display: flex; align-items: center; justify-content: center;
-    font-size: 20px;
-  }
-  .session-banner h3 {
-    font-family: var(--font-body);
-    font-size: 19px;
-    font-weight: 500;
-    margin-bottom: 2px;
-  }
-  .session-banner p {
-    font-family: var(--font-sans);
-    font-size: 13px;
-    color: var(--text-dim);
-    line-height: 1.55;
-  }
+.cmd-table td {
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--border);
+  vertical-align: top;
+  overflow-wrap: break-word;
+}
 
-  /* ============ VISUAL INTEGRATION ============ */
-  .vi-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr 1fr;
-    gap: 14px;
-  }
-  @media (max-width: 768px) {
-    .vi-grid { grid-template-columns: 1fr; }
-  }
-  .vi-item {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    padding: 18px 20px;
-    font-family: var(--font-sans);
-    font-size: 12px;
-    color: var(--text-dim);
-    line-height: 1.6;
-  }
-  .vi-item strong {
-    display: block;
-    font-family: var(--font-mono);
-    font-size: 10px;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-    color: var(--amber);
-    margin-bottom: 6px;
-  }
+.cmd-table tr:last-child td { border-bottom: none; }
 
-  /* ============ RESPONSIVE ============ */
-  @media (max-width: 768px) {
-    body { padding: 20px; }
-    .phase-grid { grid-template-columns: 1fr; }
-    .kpi-row { grid-template-columns: 1fr 1fr; }
-    .vi-grid { grid-template-columns: 1fr; }
-  }
+/* --- FILE TREE --- */
+.file-tree {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 24px;
+  font-family: var(--font-mono);
+  font-size: 0.82rem;
+  line-height: 1.8;
+  overflow-wrap: break-word;
+}
+
+.file-tree .dir { color: var(--accent); font-weight: 600; }
+.file-tree .file { color: var(--text-dim); }
+.file-tree .file-desc { color: var(--text-dim); font-family: var(--font-body); font-size: 0.78rem; opacity: 0.7; }
+.file-tree .indent { padding-left: 20px; position: relative; }
+.file-tree .indent::before {
+  content: '';
+  position: absolute;
+  left: 6px;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  background: var(--border-bright);
+}
+.tree-branch {
+  position: relative;
+  padding-left: 20px;
+}
+.tree-branch::before {
+  content: '';
+  position: absolute;
+  left: 6px;
+  top: 0;
+  height: 12px;
+  width: 10px;
+  border-left: 1px solid var(--border-bright);
+  border-bottom: 1px solid var(--border-bright);
+  border-bottom-left-radius: 4px;
+}
+
+/* --- RULES TABLE --- */
+.rules-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+  gap: 12px;
+}
+
+.rule-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 14px 16px;
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  min-width: 0;
+}
+
+.rule-card .rule-name {
+  font-family: var(--font-mono);
+  font-weight: 600;
+  font-size: 0.82rem;
+  color: var(--text);
+  white-space: nowrap;
+}
+
+.rule-card .rule-phases {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.rule-card .rule-phases .phase-dot {
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  padding: 2px 6px;
+  border-radius: 3px;
+  font-weight: 600;
+}
+
+.rule-card .rule-phases .phase-dot.r { background: var(--research-dim); color: var(--research); }
+.rule-card .rule-phases .phase-dot.p { background: var(--plan-dim); color: var(--plan); }
+.rule-card .rule-phases .phase-dot.i { background: var(--implement-dim); color: var(--implement); }
+
+/* --- MERMAID --- */
+.mermaid-wrap {
+  position: relative;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 24px;
+  overflow: hidden;
+}
+
+.mermaid-viewport {
+  overflow: auto;
+  cursor: grab;
+  min-height: 300px;
+}
+
+.mermaid-viewport:active { cursor: grabbing; }
+
+.mermaid-viewport svg {
+  display: block;
+  margin: 0 auto;
+  transform-origin: center center;
+}
+
+.zoom-controls {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  display: flex;
+  gap: 4px;
+  z-index: 10;
+}
+
+.zoom-btn {
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--surface-elevated);
+  border: 1px solid var(--border-bright);
+  border-radius: 6px;
+  cursor: pointer;
+  font-family: var(--font-mono);
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text-dim);
+  transition: background 0.15s, color 0.15s;
+}
+
+.zoom-btn:hover { background: var(--accent-dim); color: var(--accent); }
+
+.mermaid .nodeLabel { color: var(--text) !important; }
+.mermaid .edgeLabel { color: var(--text-dim) !important; background-color: var(--bg) !important; }
+.mermaid .edgeLabel rect { fill: var(--bg) !important; }
+.mermaid .nodeLabel { font-family: var(--font-body) !important; font-size: 14px !important; }
+.mermaid .edgeLabel { font-family: var(--font-mono) !important; font-size: 12px !important; }
+
+/* --- ANIMATIONS --- */
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.section {
+  animation: fadeInUp 0.4s ease-out both;
+}
+
+.section:nth-child(2) { animation-delay: 0.05s; }
+.section:nth-child(3) { animation-delay: 0.1s; }
+.section:nth-child(4) { animation-delay: 0.15s; }
+.section:nth-child(5) { animation-delay: 0.2s; }
+.section:nth-child(6) { animation-delay: 0.25s; }
+.section:nth-child(7) { animation-delay: 0.3s; }
+.section:nth-child(8) { animation-delay: 0.35s; }
+
+@media (prefers-reduced-motion: reduce) {
+  .section { animation: none; opacity: 1; }
+}
+
+/* --- RESPONSIVE --- */
+@media (max-width: 768px) {
+  .container { padding: 20px 12px 60px; }
+  .header { padding: 32px 16px 28px; }
+  .checklist-table { font-size: 0.75rem; }
+  .agent-grid { grid-template-columns: 1fr; }
+  .rules-grid { grid-template-columns: 1fr; }
+}
 </style>
 </head>
 <body>
+<div class="container">
 
-<div class="wrap">
-
-<nav class="toc" id="toc">
-  <div class="toc-title">Guide</div>
-  <a href="#s1">Overview</a>
-  <a href="#s2">Workflow Diagram</a>
-  <a href="#s3">Phase 1: Research</a>
-  <a href="#s4">Phase 2: Plan</a>
-  <a href="#s5">Phase 3: Implement</a>
-  <a href="#s6">File Structure</a>
-  <a href="#s7">Commands</a>
-  <a href="#s8">Quick Start</a>
-  <a href="#s9">Key Principles</a>
-  <a href="#s10">Session Management</a>
-  <a href="#s11">Visual Integration</a>
-</nav>
-
-<div class="main">
-
-  <!-- HERO -->
-  <div class="anim" style="--i:0">
-    <div class="hero-label">Workflow Guide</div>
-    <h1>Build <em>Feature</em></h1>
-    <p class="hero-sub">A disciplined 3-phase workflow for building features with AI assistance. Research deeply, plan meticulously with annotation cycles, then execute the whole thing. Visual HTML companions are generated at each phase transition when the visual-explainer skill is available.</p>
+<!-- ===== 1. HEADER ===== -->
+<header class="header">
+  <h1><span>/</span>build-feature Pipeline Guide</h1>
+  <p class="subtitle">Complete checkpoint reference for testing the 3-phase workflow</p>
+  <div class="phase-flow">
+    <span class="phase-pill research">
+      <span class="phase-num"><span>1</span></span>
+      Research
+    </span>
+    <span class="phase-arrow">&rarr;</span>
+    <span class="phase-pill plan">
+      <span class="phase-num"><span>2</span></span>
+      Plan
+    </span>
+    <span class="phase-arrow">&rarr;</span>
+    <span class="phase-pill implement">
+      <span class="phase-num"><span>3</span></span>
+      Implement
+    </span>
   </div>
+</header>
 
-  <!-- KPIs -->
-  <div class="kpi-row anim-scale" style="--i:2; margin-bottom: 52px;">
-    <div class="kpi-card">
-      <div class="kpi-card__value">3</div>
-      <div class="kpi-card__label">Phases</div>
+<!-- ===== 2. MASTER PIPELINE CHECKLIST ===== -->
+<section class="section">
+  <h2 class="section-title"><span class="num">02</span> Master Pipeline Checklist</h2>
+  <div class="table-wrap">
+    <table class="checklist-table">
+      <thead>
+        <tr>
+          <th>Phase</th>
+          <th>#</th>
+          <th>Task / Checkpoint</th>
+          <th>Agent / Command</th>
+          <th>Req?</th>
+          <th>Observable Output</th>
+        </tr>
+      </thead>
+      <tbody>
+        <!-- PHASE 1: RESEARCH -->
+        <tr class="phase-sep"><td colspan="6">PHASE 1 &mdash; RESEARCH</td></tr>
+        <tr>
+          <td><span class="phase-label research">Research</span></td>
+          <td class="step-num">1.1</td>
+          <td>Create feature directory <code>docs/claude/&lt;timestamp&gt;-&lt;slug&gt;/</code></td>
+          <td>&mdash;</td>
+          <td><span class="sev-must">MUST</span></td>
+          <td>Directory created on disk</td>
+        </tr>
+        <tr>
+          <td><span class="phase-label research">Research</span></td>
+          <td class="step-num">1.2</td>
+          <td>Identify scope from <code>$ARGUMENTS</code></td>
+          <td>&mdash;</td>
+          <td><span class="sev-must">MUST</span></td>
+          <td>Scope statement in research.md overview</td>
+        </tr>
+        <tr>
+          <td><span class="phase-label research">Research</span></td>
+          <td class="step-num">1.3</td>
+          <td>Deep-read code (every file in target area, trace data flows, examine tests, check configs)</td>
+          <td>&mdash;</td>
+          <td><span class="sev-must">MUST</span></td>
+          <td>Extensive Read/Grep tool calls visible in transcript</td>
+        </tr>
+        <tr>
+          <td><span class="phase-label research">Research</span></td>
+          <td class="step-num">1.4</td>
+          <td>Write <code>research.md</code> with 8 required sections: Overview, Architecture, Key Files, Data Flow, Patterns, Dependencies, Edge Cases, Current State</td>
+          <td>&mdash;</td>
+          <td><span class="sev-must">MUST</span></td>
+          <td>File written with all 8 sections populated</td>
+        </tr>
+        <tr>
+          <td><span class="phase-label research">Research</span></td>
+          <td class="step-num">1.5</td>
+          <td>Invoke <code>/generate-web-diagram</code> &rarr; <code>architecture.html</code></td>
+          <td><span class="cmd-tag">/generate-web-diagram</span></td>
+          <td><span class="sev-cond">COND</span></td>
+          <td>HTML file created, opened in browser (only if VE available)</td>
+        </tr>
+        <tr>
+          <td><span class="phase-label research">Research</span></td>
+          <td class="step-num">1.6</td>
+          <td><span class="stop-tag">STOP</span> &mdash; wait for user review ("move to planning")</td>
+          <td>&mdash;</td>
+          <td><span class="sev-must">MUST</span></td>
+          <td>Message: "Phase 1 complete. Please review..."</td>
+        </tr>
+
+        <!-- PHASE 2: PLAN -->
+        <tr class="phase-sep"><td colspan="6">PHASE 2 &mdash; PLAN</td></tr>
+        <tr>
+          <td><span class="phase-label plan">Plan</span></td>
+          <td class="step-num">2.1</td>
+          <td>Read context &mdash; check <code>docs/claude/</code> for research.md, read relevant source files</td>
+          <td>&mdash;</td>
+          <td><span class="sev-must">MUST</span></td>
+          <td>Read calls to research.md and source files</td>
+        </tr>
+        <tr>
+          <td><span class="phase-label plan">Plan</span></td>
+          <td class="step-num">2.2</td>
+          <td>Architecture review</td>
+          <td><span class="agent-tag">architect</span></td>
+          <td><span class="sev-must">MUST</span></td>
+          <td>Agent tool call to architect agent</td>
+        </tr>
+        <tr>
+          <td><span class="phase-label plan">Plan</span></td>
+          <td class="step-num">2.3</td>
+          <td>Detect domain context &mdash; invoke <code>frontend-design</code>, <code>frontend-patterns</code>, <code>api-design</code> skills if applicable</td>
+          <td><span class="cmd-tag">domain skills</span></td>
+          <td><span class="sev-cond">COND</span></td>
+          <td>Skill invocations for matching domains (if installed)</td>
+        </tr>
+        <tr>
+          <td><span class="phase-label plan">Plan</span></td>
+          <td class="step-num">2.4</td>
+          <td>Write <code>plan.md</code> with required sections: Goal, Research Ref, Approach, Detailed Changes, New Files, Dependencies, Considerations, Migration, Testing Strategy</td>
+          <td>&mdash;</td>
+          <td><span class="sev-must">MUST</span></td>
+          <td>File written with all sections; code snippets (not pseudocode)</td>
+        </tr>
+        <tr>
+          <td><span class="phase-label plan">Plan</span></td>
+          <td class="step-num">2.5</td>
+          <td><span class="stop-tag">STOP</span> &mdash; wait for user annotation (<code>//</code> comments)</td>
+          <td>&mdash;</td>
+          <td><span class="sev-must">MUST</span></td>
+          <td>Message: "The plan is ready for your review..."</td>
+        </tr>
+        <tr>
+          <td><span class="phase-label plan">Plan</span></td>
+          <td class="step-num">2.6</td>
+          <td>Address ALL <code>//</code> annotations, update plan, remove processed annotations</td>
+          <td>&mdash;</td>
+          <td><span class="sev-must">MUST</span></td>
+          <td>Plan.md updated, no remaining <code>//</code> lines</td>
+        </tr>
+        <tr>
+          <td><span class="phase-label plan">Plan</span></td>
+          <td class="step-num">2.7</td>
+          <td>Repeat annotation cycle until user approves (1-6 iterations typical)</td>
+          <td>&mdash;</td>
+          <td><span class="sev-must">MUST</span></td>
+          <td>Cycle continues until explicit approval</td>
+        </tr>
+        <tr>
+          <td><span class="phase-label plan">Plan</span></td>
+          <td class="step-num">2.8</td>
+          <td>Generate Todo List (test tasks mandatory, grouped by phase)</td>
+          <td>&mdash;</td>
+          <td><span class="sev-must">MUST</span></td>
+          <td>Todo List section appended to plan.md with <code>- [ ]</code> items</td>
+        </tr>
+        <tr>
+          <td><span class="phase-label plan">Plan</span></td>
+          <td class="step-num">2.9</td>
+          <td>Invoke <code>/generate-visual-plan</code> &rarr; <code>visual-plan.html</code></td>
+          <td><span class="cmd-tag">/generate-visual-plan</span></td>
+          <td><span class="sev-cond">COND</span></td>
+          <td>HTML file created, opened in browser (only if VE available)</td>
+        </tr>
+        <tr>
+          <td><span class="phase-label plan">Plan</span></td>
+          <td class="step-num">2.10</td>
+          <td><span class="stop-tag">STOP</span> &mdash; wait for user to say "implement"</td>
+          <td>&mdash;</td>
+          <td><span class="sev-must">MUST</span></td>
+          <td>Message: "Phase 2 complete. Say implement..."</td>
+        </tr>
+
+        <!-- PHASE 3: IMPLEMENT -->
+        <tr class="phase-sep"><td colspan="6">PHASE 3 &mdash; IMPLEMENT</td></tr>
+        <tr>
+          <td><span class="phase-label implement">Impl</span></td>
+          <td class="step-num">3.1</td>
+          <td>Read the plan document thoroughly</td>
+          <td>&mdash;</td>
+          <td><span class="sev-must">MUST</span></td>
+          <td>Read call to plan.md</td>
+        </tr>
+        <tr>
+          <td><span class="phase-label implement">Impl</span></td>
+          <td class="step-num">3.2</td>
+          <td>Implement ALL tasks via <code>tdd-guide</code> agent (red-green-refactor cycle)</td>
+          <td><span class="agent-tag">tdd-guide</span></td>
+          <td><span class="sev-must">MUST</span></td>
+          <td>Agent tool calls; test-first implementation visible</td>
+        </tr>
+        <tr>
+          <td><span class="phase-label implement">Impl</span></td>
+          <td class="step-num">3.3</td>
+          <td>Track progress &mdash; mark tasks <code>- [x]</code> in plan.md after each completion</td>
+          <td>&mdash;</td>
+          <td><span class="sev-must">MUST</span></td>
+          <td>Plan.md checkboxes updated incrementally</td>
+        </tr>
+        <tr>
+          <td><span class="phase-label implement">Impl</span></td>
+          <td class="step-num">3.4</td>
+          <td>Maintain code quality &mdash; follow existing patterns, no unnecessary comments</td>
+          <td>&mdash;</td>
+          <td><span class="sev-must">MUST</span></td>
+          <td>Code matches codebase conventions</td>
+        </tr>
+        <tr>
+          <td><span class="phase-label implement">Impl</span></td>
+          <td class="step-num">3.5</td>
+          <td>Verification loop: type check + lint + test + build (all 4 must pass)</td>
+          <td>&mdash;</td>
+          <td><span class="sev-must">MUST</span></td>
+          <td>All 4 commands run and pass; loop repeats on failure</td>
+        </tr>
+        <tr>
+          <td><span class="phase-label implement">Impl</span></td>
+          <td class="step-num">3.6</td>
+          <td>Security review on all changed files</td>
+          <td><span class="agent-tag">security-reviewer</span></td>
+          <td><span class="sev-must">MUST</span></td>
+          <td>Agent call; CRITICAL issues fixed immediately</td>
+        </tr>
+        <tr>
+          <td><span class="phase-label implement">Impl</span></td>
+          <td class="step-num">3.7</td>
+          <td>Database review (if feature touches DB code)</td>
+          <td><span class="agent-tag">database-reviewer</span></td>
+          <td><span class="sev-cond">COND</span></td>
+          <td>Agent call; CRITICAL/HIGH issues fixed</td>
+        </tr>
+        <tr>
+          <td><span class="phase-label implement">Impl</span></td>
+          <td class="step-num">3.8</td>
+          <td>Invoke <code>/simplify</code></td>
+          <td><span class="cmd-tag">/simplify</span></td>
+          <td><span class="sev-must">MUST</span></td>
+          <td>Simplify skill runs; re-run tests after</td>
+        </tr>
+        <tr>
+          <td><span class="phase-label implement">Impl</span></td>
+          <td class="step-num">3.9</td>
+          <td>Refactor cleanup on changed files</td>
+          <td><span class="agent-tag">refactor-cleaner</span></td>
+          <td><span class="sev-must">MUST</span></td>
+          <td>Agent call; SAFE items removed; re-run tests</td>
+        </tr>
+        <tr>
+          <td><span class="phase-label implement">Impl</span></td>
+          <td class="step-num">3.10</td>
+          <td>Code review on all changed files (&gt;80% confidence threshold)</td>
+          <td><span class="agent-tag">code-reviewer</span></td>
+          <td><span class="sev-must">MUST</span></td>
+          <td>Agent call; CRITICAL/HIGH fixed; re-run tests</td>
+        </tr>
+        <tr>
+          <td><span class="phase-label implement">Impl</span></td>
+          <td class="step-num">3.11</td>
+          <td>Documentation update (if feature warrants it)</td>
+          <td><span class="agent-tag">doc-updater</span></td>
+          <td><span class="sev-cond">COND</span></td>
+          <td>Agent call; READMEs/CHANGELOG updated</td>
+        </tr>
+        <tr>
+          <td><span class="phase-label implement">Impl</span></td>
+          <td class="step-num">3.12</td>
+          <td>Invoke <code>/fact-check</code> on plan.md</td>
+          <td><span class="cmd-tag">/fact-check</span></td>
+          <td><span class="sev-must">MUST</span></td>
+          <td>Fact-check skill runs on plan file</td>
+        </tr>
+        <tr>
+          <td><span class="phase-label implement">Impl</span></td>
+          <td class="step-num">3.13</td>
+          <td>Refresh <code>visual-plan.html</code> if plan changed (deviations, corrections, task changes)</td>
+          <td><span class="cmd-tag">/generate-visual-plan</span></td>
+          <td><span class="sev-cond">COND</span></td>
+          <td>Regenerated HTML if plan diverged</td>
+        </tr>
+        <tr>
+          <td><span class="phase-label implement">Impl</span></td>
+          <td class="step-num">3.14</td>
+          <td>Summary to user &mdash; NEVER commit</td>
+          <td>&mdash;</td>
+          <td><span class="sev-must">MUST</span></td>
+          <td>Message: "Implementation complete." No git commit.</td>
+        </tr>
+
+        <!-- POST-IMPLEMENTATION -->
+        <tr class="phase-sep"><td colspan="6">POST-IMPLEMENTATION &mdash; BUILD-FEATURE ORCHESTRATOR</td></tr>
+        <tr>
+          <td><span class="phase-label post">Post</span></td>
+          <td class="step-num">P.1</td>
+          <td>Invoke <code>/diff-review</code> &rarr; <code>diff-review.html</code></td>
+          <td><span class="cmd-tag">/diff-review</span></td>
+          <td><span class="sev-cond">COND</span></td>
+          <td>HTML diff review created, opened in browser (only if VE available)</td>
+        </tr>
+        <tr>
+          <td><span class="phase-label post">Post</span></td>
+          <td class="step-num">P.2</td>
+          <td>Invoke <code>/fact-check</code> on diff-review.html</td>
+          <td><span class="cmd-tag">/fact-check</span></td>
+          <td><span class="sev-cond">COND</span></td>
+          <td>Fact-check runs on generated HTML (only if VE available)</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- ===== 3. AGENT REGISTRY ===== -->
+<section class="section">
+  <h2 class="section-title"><span class="num">03</span> Agent Registry</h2>
+  <div class="agent-grid">
+    <div class="agent-card">
+      <div class="agent-name">tdd-guide</div>
+      <div class="agent-purpose">Test-Driven Development specialist enforcing write-tests-first methodology. Guides red-green-refactor cycle, ensures 80%+ coverage. Reads <code>testing.md</code> and <code>coding-style.md</code>.</div>
+      <div class="agent-meta">
+        <span class="meta-tag model-sonnet">sonnet</span>
+        <span class="meta-tag">Phase 3 &mdash; step 3.2</span>
+        <span class="meta-tag">implement skill</span>
+        <span class="meta-tag">MUST</span>
+      </div>
     </div>
-    <div class="kpi-card">
-      <div class="kpi-card__value">3</div>
-      <div class="kpi-card__label">Sub-Skills</div>
+    <div class="agent-card">
+      <div class="agent-name">architect</div>
+      <div class="agent-purpose">Software architecture specialist for system design, scalability, and technical decision-making. Evaluates trade-offs, proposes ADRs. Reads <code>coding-style.md</code>, <code>performance.md</code>, <code>security.md</code>.</div>
+      <div class="agent-meta">
+        <span class="meta-tag model-opus">opus</span>
+        <span class="meta-tag">Phase 2 &mdash; step 2.2</span>
+        <span class="meta-tag">plan skill</span>
+        <span class="meta-tag">MUST</span>
+      </div>
     </div>
-    <div class="kpi-card">
-      <div class="kpi-card__value">11</div>
-      <div class="kpi-card__label">Slash Commands</div>
+    <div class="agent-card">
+      <div class="agent-name">security-reviewer</div>
+      <div class="agent-purpose">Security vulnerability detection and remediation. Covers OWASP Top 10, secrets detection, input validation, auth/authz. Severity levels: CRITICAL, HIGH, MEDIUM. Reads <code>security.md</code>.</div>
+      <div class="agent-meta">
+        <span class="meta-tag model-sonnet">sonnet</span>
+        <span class="meta-tag">Phase 3 &mdash; step 3.6</span>
+        <span class="meta-tag">implement skill</span>
+        <span class="meta-tag">MUST</span>
+      </div>
     </div>
-    <div class="kpi-card">
-      <div class="kpi-card__value">5</div>
-      <div class="kpi-card__label">Artifacts Per Feature</div>
+    <div class="agent-card">
+      <div class="agent-name">database-reviewer</div>
+      <div class="agent-purpose">Database specialist for query optimization, schema design, RLS, connection management. Runs EXPLAIN ANALYZE, checks indexes and N+1 patterns. Reads <code>security.md</code>, <code>performance.md</code>.</div>
+      <div class="agent-meta">
+        <span class="meta-tag model-sonnet">sonnet</span>
+        <span class="meta-tag">Phase 3 &mdash; step 3.7</span>
+        <span class="meta-tag">implement skill</span>
+        <span class="meta-tag">COND: DB code</span>
+      </div>
+    </div>
+    <div class="agent-card">
+      <div class="agent-name">refactor-cleaner</div>
+      <div class="agent-purpose">Code cleanup specialist for dead code detection, unused dependency removal. Categorizes findings: SAFE (remove), CAREFUL (verify), RISKY (confirm). Reads <code>coding-style.md</code>.</div>
+      <div class="agent-meta">
+        <span class="meta-tag model-sonnet">sonnet</span>
+        <span class="meta-tag">Phase 3 &mdash; step 3.9</span>
+        <span class="meta-tag">implement skill</span>
+        <span class="meta-tag">MUST</span>
+      </div>
+    </div>
+    <div class="agent-card">
+      <div class="agent-name">code-reviewer</div>
+      <div class="agent-purpose">Expert code review with confidence-based filtering (&gt;80% threshold). Reviews CRITICAL security, HIGH quality, MEDIUM performance, LOW practices. Reads all 4 rule files.</div>
+      <div class="agent-meta">
+        <span class="meta-tag model-sonnet">sonnet</span>
+        <span class="meta-tag">Phase 3 &mdash; step 3.10</span>
+        <span class="meta-tag">implement skill</span>
+        <span class="meta-tag">MUST</span>
+      </div>
+    </div>
+    <div class="agent-card">
+      <div class="agent-name">doc-updater</div>
+      <div class="agent-purpose">Documentation specialist ensuring docs match code reality. Updates READMEs, CHANGELOGs, architecture docs. Verifies paths and examples. Reads <code>git-workflow.md</code>.</div>
+      <div class="agent-meta">
+        <span class="meta-tag model-sonnet">sonnet</span>
+        <span class="meta-tag">Phase 3 &mdash; step 3.11</span>
+        <span class="meta-tag">implement skill</span>
+        <span class="meta-tag">COND: significant changes</span>
+      </div>
     </div>
   </div>
+</section>
 
-  <!-- SECTION 1: OVERVIEW -->
-  <div id="s1" class="sec-head anim" style="--i:3; color: var(--teal);">
-    <span class="num" style="background: var(--teal-dim); color: var(--teal);">1</span> Overview
+<!-- ===== 4. COMMAND REGISTRY ===== -->
+<section class="section">
+  <h2 class="section-title"><span class="num">04</span> Command Registry (Visual Explainer)</h2>
+  <div class="table-wrap">
+    <table class="cmd-table">
+      <thead>
+        <tr>
+          <th>Command</th>
+          <th>Produces</th>
+          <th>Phase</th>
+          <th>Reads / References</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><code>/generate-web-diagram</code></td>
+          <td><code>architecture.html</code></td>
+          <td><span class="phase-label research">Research</span></td>
+          <td>research.md, source files discovered during research</td>
+        </tr>
+        <tr>
+          <td><code>/generate-visual-plan</code></td>
+          <td><code>visual-plan.html</code></td>
+          <td><span class="phase-label plan">Plan</span></td>
+          <td>plan.md (approved, with Todo List)</td>
+        </tr>
+        <tr>
+          <td><code>/diff-review</code></td>
+          <td><code>diff-review.html</code></td>
+          <td><span class="phase-label post">Post-Impl</span></td>
+          <td>git diff against branch point, plan.md, changed files</td>
+        </tr>
+        <tr>
+          <td><code>/fact-check</code></td>
+          <td>Corrections to target file</td>
+          <td><span class="phase-label implement">Impl</span> + <span class="phase-label post">Post</span></td>
+          <td>Target file (plan.md or diff-review.html) vs actual code/git</td>
+        </tr>
+        <tr>
+          <td><code>/plan-review</code></td>
+          <td>Risk assessment HTML</td>
+          <td>Standalone</td>
+          <td>plan.md vs codebase</td>
+        </tr>
+        <tr>
+          <td><code>/project-recap</code></td>
+          <td>Mental model HTML</td>
+          <td>Standalone</td>
+          <td>Codebase structure, recent changes</td>
+        </tr>
+        <tr>
+          <td><code>/generate-slides</code></td>
+          <td>Slide deck HTML</td>
+          <td>Standalone</td>
+          <td>Any topic; research.md or plan.md if relevant</td>
+        </tr>
+      </tbody>
+    </table>
   </div>
+</section>
 
-  <div class="ve-card ve-card--hero anim" style="--i:4; margin-bottom: 20px;">
-    <p style="font-family: var(--font-sans); font-size: 15px; line-height: 1.7; color: var(--text);">
-      <code>/build-feature</code> orchestrates three sub-skills &mdash; <strong>research</strong>, <strong>plan</strong>, and <strong>implement</strong> &mdash; into a single disciplined workflow based on Boris Tane's AI coding methodology. The <strong>visual-explainer</strong> skill is optionally invoked at each phase boundary to produce rich HTML companions (architecture diagrams, visual plans, diff reviews). If visual-explainer is not installed, all visual steps are silently skipped &mdash; the workflow proceeds normally with just the markdown artifacts.
-    </p>
-  </div>
-
-  <div class="phase-grid anim" style="--i:5">
-    <div class="phase-card phase-card--research">
-      <div class="tag" style="background: var(--teal-dim); color: var(--teal);">Phase 1</div>
-      <h3>Research</h3>
-      <p>Deep-read the codebase. Produce a markdown research doc and an HTML architecture diagram. You review both before moving on.</p>
-    </div>
-    <div class="phase-card phase-card--plan">
-      <div class="tag" style="background: var(--copper-dim); color: var(--copper);">Phase 2</div>
-      <h3>Plan + Annotate</h3>
-      <p>Write a detailed implementation plan with real code snippets. You annotate, the agent addresses notes. Repeat 1&ndash;6 times until you approve.</p>
-    </div>
-    <div class="phase-card phase-card--implement">
-      <div class="tag" style="background: var(--sage-dim); color: var(--sage);">Phase 3</div>
-      <h3>Implement</h3>
-      <p>Execute every task from the plan. Track progress by checking off items. After completion, a fact-checked diff review HTML is generated.</p>
-    </div>
-    <div class="phase-card phase-card--visual">
-      <div class="tag" style="background: var(--amber-dim); color: var(--amber);">Optional</div>
-      <h3>Visual Companions</h3>
-      <p>Generated by sub-skills directly via visual-explainer. Self-contained HTML with Mermaid diagrams, CSS Grid layouts, styled tables, and dark/light theme support.</p>
+<!-- ===== 5. ARTIFACTS PRODUCED ===== -->
+<section class="section">
+  <h2 class="section-title"><span class="num">05</span> Artifacts Produced</h2>
+  <div class="file-tree">
+    <div class="dir">docs/claude/&lt;YYYYMMDD-HHMM&gt;-&lt;slug&gt;/</div>
+    <div class="indent">
+      <div class="tree-branch"><span class="file">research.md</span> <span class="file-desc">&mdash; Phase 1: 8-section research document</span></div>
+      <div class="tree-branch"><span class="file">architecture.html</span> <span class="file-desc">&mdash; Phase 1: visual architecture diagram (VE conditional)</span></div>
+      <div class="tree-branch"><span class="file">plan.md</span> <span class="file-desc">&mdash; Phase 2: implementation plan + todo list</span></div>
+      <div class="tree-branch"><span class="file">visual-plan.html</span> <span class="file-desc">&mdash; Phase 2: visual implementation plan (VE conditional)</span></div>
+      <div class="tree-branch"><span class="file">diff-review.html</span> <span class="file-desc">&mdash; Post-impl: fact-checked visual diff review (VE conditional)</span></div>
     </div>
   </div>
+</section>
 
-  <!-- SECTION 2: WORKFLOW DIAGRAM -->
-  <div id="s2" class="sec-head anim" style="--i:6; color: var(--copper);">
-    <span class="num" style="background: var(--copper-dim); color: var(--copper);">2</span> Workflow Diagram
+<!-- ===== 6. RULES APPLIED ===== -->
+<section class="section">
+  <h2 class="section-title"><span class="num">06</span> Rules Applied</h2>
+  <div class="rules-grid">
+    <div class="rule-card">
+      <div>
+        <div class="rule-name">coding-style.md</div>
+        <div class="rule-phases">
+          <span class="phase-dot p">Plan</span>
+          <span class="phase-dot i">Impl</span>
+        </div>
+      </div>
+    </div>
+    <div class="rule-card">
+      <div>
+        <div class="rule-name">testing.md</div>
+        <div class="rule-phases">
+          <span class="phase-dot p">Plan</span>
+          <span class="phase-dot i">Impl</span>
+        </div>
+      </div>
+    </div>
+    <div class="rule-card">
+      <div>
+        <div class="rule-name">security.md</div>
+        <div class="rule-phases">
+          <span class="phase-dot p">Plan</span>
+          <span class="phase-dot i">Impl</span>
+        </div>
+      </div>
+    </div>
+    <div class="rule-card">
+      <div>
+        <div class="rule-name">performance.md</div>
+        <div class="rule-phases">
+          <span class="phase-dot p">Plan</span>
+          <span class="phase-dot i">Impl</span>
+        </div>
+      </div>
+    </div>
+    <div class="rule-card">
+      <div>
+        <div class="rule-name">git-workflow.md</div>
+        <div class="rule-phases">
+          <span class="phase-dot i">Impl</span>
+        </div>
+      </div>
+    </div>
+    <div class="rule-card">
+      <div>
+        <div class="rule-name">development-workflow.md</div>
+        <div class="rule-phases">
+          <span class="phase-dot r">Research</span>
+          <span class="phase-dot p">Plan</span>
+          <span class="phase-dot i">Impl</span>
+        </div>
+      </div>
+    </div>
   </div>
+</section>
 
-  <div class="mermaid-wrap anim" style="--i:7">
+<!-- ===== 7. PIPELINE FLOW DIAGRAM ===== -->
+<section class="section">
+  <h2 class="section-title"><span class="num">07</span> Pipeline Flow Diagram</h2>
+  <div class="mermaid-wrap" id="pipeline-diagram">
     <div class="zoom-controls">
-      <button onclick="zoomDiagram(this, 1.2)" title="Zoom in">+</button>
-      <button onclick="zoomDiagram(this, 0.8)" title="Zoom out">&minus;</button>
-      <button onclick="resetZoom(this)" title="Reset zoom">&#8634;</button>
+      <button class="zoom-btn" onclick="zoomIn('pipeline-diagram')">+</button>
+      <button class="zoom-btn" onclick="zoomOut('pipeline-diagram')">&#x2212;</button>
+      <button class="zoom-btn" onclick="zoomReset('pipeline-diagram')" style="font-size:11px">R</button>
     </div>
-    <pre class="mermaid">
+    <div class="mermaid-viewport">
+      <pre class="mermaid">
 flowchart TD
-    START["You: /build-feature add auth tokens"] --> R["Phase 1: Research"]
-    R --> RMD["research.md"]
-    R -.-> RHTML["architecture.html"]
-    RMD --> REVIEW1{"You review research"}
-    RHTML -.-> REVIEW1
-    REVIEW1 -->|"move to planning"| P["Phase 2: Plan"]
-    REVIEW1 -->|corrections| R
-    P --> PMD["plan.md"]
-    PMD --> ANNOTATE{"You annotate plan"}
-    ANNOTATE -->|notes added| ADDR["Address annotations"]
-    ADDR --> PMD
-    ANNOTATE -->|"approved"| TODO["Generate todo list"]
-    TODO -.-> VPHTML["visual-plan.html"]
-    VPHTML -.-> WAIT{"You: implement"}
-    TODO --> WAIT
-    WAIT --> I["Phase 3: Implement"]
-    I --> CODE["Execute all tasks"]
-    CODE --> TRACK["Check off items in plan.md"]
-    TRACK --> DONE["All tasks complete"]
-    DONE -.-> DIFF["diff-review.html"]
-    DONE --> FIN["Done"]
-    DIFF -.-> FACT["Fact-check the review"]
-    FACT -.-> FIN
+  START(["/build-feature args"]) --> R1["1. Create feature dir"]
+  R1 --> R2["2. Deep-read codebase"]
+  R2 --> R3["3. Write research.md"]
+  R3 --> RVE{"VE available?"}
+  RVE -->|Yes| R4["4. architecture.html"]
+  RVE -->|No| RSTOP
+  R4 --> RSTOP(["STOP: User reviews research"])
 
-    classDef phase fill:#155e5e22,stroke:#155e5e,stroke-width:2px
-    classDef artifact fill:#a0522d18,stroke:#a0522d,stroke-width:1.5px
-    classDef decision fill:#3d6b4f15,stroke:#3d6b4f,stroke-width:1.5px
-    classDef user fill:#7c2d3e15,stroke:#7c2d3e,stroke-width:1.5px
-    classDef visual fill:#8b691418,stroke:#8b6914,stroke-width:1.5px,stroke-dasharray:5 3
+  RSTOP -->|"move to planning"| P1["5. Read context + research.md"]
+  P1 --> P2["6. Architect agent"]
+  P2 --> P3{"Domain skills?"}
+  P3 -->|Yes| P3a["7. Load domain skills"]
+  P3 -->|No| P4
+  P3a --> P4["8. Write plan.md"]
+  P4 --> PSTOP(["STOP: User annotates"])
 
-    class R,P,I phase
-    class RMD,PMD artifact
-    class RHTML,VPHTML,DIFF visual
-    class REVIEW1,ANNOTATE,WAIT decision
-    class START,FIN,TODO,ADDR,CODE,TRACK,DONE,FACT user
-    </pre>
-  </div>
+  PSTOP -->|"// annotations"| P5["9. Address all annotations"]
+  P5 --> PAPPROVE{"Approved?"}
+  PAPPROVE -->|No| PSTOP
+  PAPPROVE -->|Yes| P6["10. Generate Todo List"]
+  P6 --> PVE{"VE available?"}
+  PVE -->|Yes| P7["11. visual-plan.html"]
+  PVE -->|No| ISTOP
+  P7 --> ISTOP(["STOP: User says implement"])
 
-  <div style="display: flex; gap: 20px; flex-wrap: wrap; margin-top: 12px; margin-bottom: 20px;" class="anim" style="--i:8">
-    <span style="display:flex;align-items:center;gap:6px;font-family:var(--font-mono);font-size:11px;color:var(--text-dim);">
-      <span style="width:12px;height:12px;border-radius:3px;background:var(--teal-dim);border:1.5px solid var(--teal);display:inline-block;"></span> Phase
-    </span>
-    <span style="display:flex;align-items:center;gap:6px;font-family:var(--font-mono);font-size:11px;color:var(--text-dim);">
-      <span style="width:12px;height:12px;border-radius:3px;background:var(--copper-dim);border:1.5px solid var(--copper);display:inline-block;"></span> Artifact
-    </span>
-    <span style="display:flex;align-items:center;gap:6px;font-family:var(--font-mono);font-size:11px;color:var(--text-dim);">
-      <span style="width:12px;height:12px;border-radius:3px;background:var(--amber-dim);border:1.5px dashed var(--amber);display:inline-block;"></span> Visual (optional)
-    </span>
-    <span style="display:flex;align-items:center;gap:6px;font-family:var(--font-mono);font-size:11px;color:var(--text-dim);">
-      <span style="width:12px;height:12px;border-radius:3px;background:var(--sage-dim);border:1.5px solid var(--sage);display:inline-block;"></span> Decision gate
-    </span>
-    <span style="display:flex;align-items:center;gap:6px;font-family:var(--font-mono);font-size:11px;color:var(--text-dim);">
-      <span style="width:12px;height:12px;border-radius:3px;background:var(--wine-dim);border:1.5px solid var(--wine);display:inline-block;"></span> Action step
-    </span>
-  </div>
+  ISTOP -->|"implement"| I1["12. TDD implementation"]
+  I1 --> I2["13. Verify: type + lint + test + build"]
+  I2 --> I3["14. Security review"]
+  I3 --> IDB{"DB code?"}
+  IDB -->|Yes| I4["15. Database review"]
+  IDB -->|No| I5
+  I4 --> I5["16. /simplify"]
+  I5 --> I6["17. Refactor cleanup"]
+  I6 --> I7["18. Code review"]
+  I7 --> IDOC{"Docs needed?"}
+  IDOC -->|Yes| I8["19. Doc updater"]
+  IDOC -->|No| I9
+  I8 --> I9["20. /fact-check plan.md"]
+  I9 --> IVP{"Plan changed?"}
+  IVP -->|Yes| I10["21. Refresh visual-plan.html"]
+  IVP -->|No| IEND
+  I10 --> IEND["22. Summary to user"]
 
-  <div class="callout--teal callout anim" style="--i:9">
-    <strong>Dotted arrows</strong> indicate optional visual-explainer steps. If the skill is not installed, those nodes are skipped entirely &mdash; the solid-line workflow continues uninterrupted.
-  </div>
+  IEND --> POSTVE{"VE available?"}
+  POSTVE -->|Yes| POST1["23. /diff-review"]
+  POSTVE -->|No| DONE
+  POST1 --> POST2["24. /fact-check diff-review.html"]
+  POST2 --> DONE([Done])
 
-  <!-- SECTION 3: RESEARCH -->
-  <div id="s3" class="sec-head anim" style="--i:10; color: var(--teal);">
-    <span class="num" style="background: var(--teal-dim); color: var(--teal);">3</span> Phase 1 &mdash; Research
-  </div>
+  classDef stopNode fill:#be123c22,stroke:#be123c,stroke-width:2px
+  classDef decisionNode fill:#d4a73a22,stroke:#d4a73a,stroke-width:2px
+  classDef researchNode fill:#0891b222,stroke:#0891b2,stroke-width:1.5px
+  classDef planNode fill:#d9770622,stroke:#d97706,stroke-width:1.5px
+  classDef implNode fill:#05966922,stroke:#059669,stroke-width:1.5px
+  classDef postNode fill:#d4a73a22,stroke:#d4a73a,stroke-width:1.5px
+  classDef termNode fill:#1e3a5f22,stroke:#1e3a5f,stroke-width:2px
 
-  <div class="ve-card anim" style="--i:11; margin-bottom: 16px;">
-    <div class="ve-card__label" style="color: var(--teal);">What happens</div>
-    <p style="font-family: var(--font-sans); font-size: 13px; line-height: 1.7; color: var(--text);">
-      The research sub-skill reads every relevant file, traces data flows end-to-end, identifies patterns and edge cases, and writes a comprehensive <code>research.md</code>. If visual-explainer is available, it also generates an <code>architecture.html</code> with module dependency diagrams and opens it in your browser.
-    </p>
-  </div>
-
-  <div class="callout--teal callout anim" style="--i:12">
-    <strong>Your job:</strong> Review the research document. Does the agent understand the system correctly? If not, say so and the research will be revised. When satisfied, say <code>"move to planning"</code>.
-  </div>
-
-  <div class="phase-grid anim" style="--i:13">
-    <div class="ve-card ve-card--recessed">
-      <div class="ve-card__label" style="color: var(--teal);">research.md includes</div>
-      <ul style="font-family: var(--font-sans); font-size: 12px; line-height: 2; list-style: none; padding: 0;">
-        <li style="padding-left:14px;position:relative;"><span style="position:absolute;left:0;color:var(--text-dim);font-weight:600;">&#8250;</span> System overview and scope</li>
-        <li style="padding-left:14px;position:relative;"><span style="position:absolute;left:0;color:var(--text-dim);font-weight:600;">&#8250;</span> Architecture and component relationships</li>
-        <li style="padding-left:14px;position:relative;"><span style="position:absolute;left:0;color:var(--text-dim);font-weight:600;">&#8250;</span> Key files with their roles</li>
-        <li style="padding-left:14px;position:relative;"><span style="position:absolute;left:0;color:var(--text-dim);font-weight:600;">&#8250;</span> Data flow traces</li>
-        <li style="padding-left:14px;position:relative;"><span style="position:absolute;left:0;color:var(--text-dim);font-weight:600;">&#8250;</span> Patterns and conventions</li>
-        <li style="padding-left:14px;position:relative;"><span style="position:absolute;left:0;color:var(--text-dim);font-weight:600;">&#8250;</span> Edge cases and gotchas</li>
-      </ul>
-    </div>
-    <div class="ve-card ve-card--recessed">
-      <div class="ve-card__label" style="color: var(--amber);">architecture.html (optional)</div>
-      <ul style="font-family: var(--font-sans); font-size: 12px; line-height: 2; list-style: none; padding: 0;">
-        <li style="padding-left:14px;position:relative;"><span style="position:absolute;left:0;color:var(--text-dim);font-weight:600;">&#8250;</span> Module dependency diagram (Mermaid)</li>
-        <li style="padding-left:14px;position:relative;"><span style="position:absolute;left:0;color:var(--text-dim);font-weight:600;">&#8250;</span> Data flow visualization</li>
-        <li style="padding-left:14px;position:relative;"><span style="position:absolute;left:0;color:var(--text-dim);font-weight:600;">&#8250;</span> Dark/light theme support</li>
-        <li style="padding-left:14px;position:relative;"><span style="position:absolute;left:0;color:var(--text-dim);font-weight:600;">&#8250;</span> Zoom controls on all diagrams</li>
-        <li style="padding-left:14px;position:relative;"><span style="position:absolute;left:0;color:var(--text-dim);font-weight:600;">&#8250;</span> Staggered entrance animations</li>
-        <li style="padding-left:14px;position:relative;"><span style="position:absolute;left:0;color:var(--text-dim);font-weight:600;">&#8250;</span> Opens automatically in browser</li>
-      </ul>
+  class RSTOP,PSTOP,ISTOP stopNode
+  class RVE,P3,PAPPROVE,PVE,IDB,IDOC,IVP,POSTVE decisionNode
+  class R1,R2,R3,R4 researchNode
+  class P1,P2,P3a,P4,P5,P6,P7 planNode
+  class I1,I2,I3,I4,I5,I6,I7,I8,I9,I10,IEND implNode
+  class POST1,POST2 postNode
+  class START,DONE termNode
+      </pre>
     </div>
   </div>
+</section>
 
-  <!-- SECTION 4: PLAN -->
-  <div id="s4" class="sec-head anim" style="--i:14; color: var(--copper);">
-    <span class="num" style="background: var(--copper-dim); color: var(--copper);">4</span> Phase 2 &mdash; Plan + Annotate
-  </div>
-
-  <div class="ve-card anim" style="--i:15; margin-bottom: 16px;">
-    <div class="ve-card__label" style="color: var(--copper);">What happens</div>
-    <p style="font-family: var(--font-sans); font-size: 13px; line-height: 1.7; color: var(--text);">
-      The plan sub-skill writes a detailed <code>plan.md</code> with real code snippets, file-by-file changes, testing strategy, and trade-offs. You open it in your editor, add inline annotations, and the agent addresses every note. This annotation cycle repeats (typically 1&ndash;6 times) until you explicitly approve. Then a granular todo list is generated and, if visual-explainer is available, a <code>visual-plan.html</code> with state machines, before/after panels, and edge case tables.
-    </p>
-  </div>
-
-  <div class="callout anim" style="--i:16">
-    <strong>Annotation patterns you can use:</strong><br>
-    <code>"this should be a PATCH, not a PUT"</code> &mdash; correct assumptions<br>
-    <code>"remove this section entirely"</code> &mdash; reject approaches<br>
-    <code>"the signatures of these functions should not change"</code> &mdash; add constraints<br>
-    <code>"use drizzle:generate for migrations"</code> &mdash; provide domain knowledge
-  </div>
-
-  <div class="callout--sage callout anim" style="--i:17">
-    <strong>No code is written until you approve the plan.</strong> This is the most important guard rail in the entire workflow. All creative decisions happen here &mdash; not during implementation.
-  </div>
-
-  <!-- SECTION 5: IMPLEMENT -->
-  <div id="s5" class="sec-head anim" style="--i:18; color: var(--sage);">
-    <span class="num" style="background: var(--sage-dim); color: var(--sage);">5</span> Phase 3 &mdash; Implement
-  </div>
-
-  <div class="ve-card anim" style="--i:19; margin-bottom: 16px;">
-    <div class="ve-card__label" style="color: var(--sage);">What happens</div>
-    <p style="font-family: var(--font-sans); font-size: 13px; line-height: 1.7; color: var(--text);">
-      The implement sub-skill executes every task from the plan's todo list, checking off items as it goes. It runs type checks and linters continuously. After all tasks are complete, if visual-explainer is available, it generates a <code>diff-review.html</code> comparing the working tree against the branch point, then automatically <strong>fact-checks</strong> the review (correcting any fabricated numbers or function names) before opening it in your browser.
-    </p>
-  </div>
-
-  <div class="phase-grid anim" style="--i:20">
-    <div class="ve-card ve-card--recessed">
-      <div class="ve-card__label" style="color: var(--sage);">diff-review.html includes</div>
-      <ul style="font-family: var(--font-sans); font-size: 12px; line-height: 2; list-style: none; padding: 0;">
-        <li style="padding-left:14px;position:relative;"><span style="position:absolute;left:0;color:var(--text-dim);font-weight:600;">&#8250;</span> Executive summary with KPI dashboard</li>
-        <li style="padding-left:14px;position:relative;"><span style="position:absolute;left:0;color:var(--text-dim);font-weight:600;">&#8250;</span> Before/after architecture diagrams</li>
-        <li style="padding-left:14px;position:relative;"><span style="position:absolute;left:0;color:var(--text-dim);font-weight:600;">&#8250;</span> Side-by-side code comparisons</li>
-        <li style="padding-left:14px;position:relative;"><span style="position:absolute;left:0;color:var(--text-dim);font-weight:600;">&#8250;</span> Good / Bad / Ugly code review</li>
-        <li style="padding-left:14px;position:relative;"><span style="position:absolute;left:0;color:var(--text-dim);font-weight:600;">&#8250;</span> Decision log with rationale</li>
-        <li style="padding-left:14px;position:relative;"><span style="position:absolute;left:0;color:var(--text-dim);font-weight:600;">&#8250;</span> Verification summary (fact-checked)</li>
-      </ul>
-    </div>
-    <div class="ve-card ve-card--recessed">
-      <div class="ve-card__label" style="color: var(--slate);">During implementation</div>
-      <ul style="font-family: var(--font-sans); font-size: 12px; line-height: 2; list-style: none; padding: 0;">
-        <li style="padding-left:14px;position:relative;"><span style="position:absolute;left:0;color:var(--text-dim);font-weight:600;">&#8250;</span> Terse corrections are fine: <code>"wider"</code>, <code>"still cropped"</code></li>
-        <li style="padding-left:14px;position:relative;"><span style="position:absolute;left:0;color:var(--text-dim);font-weight:600;">&#8250;</span> Agent acts immediately &mdash; context is established</li>
-        <li style="padding-left:14px;position:relative;"><span style="position:absolute;left:0;color:var(--text-dim);font-weight:600;">&#8250;</span> Type checks and linters run continuously</li>
-        <li style="padding-left:14px;position:relative;"><span style="position:absolute;left:0;color:var(--text-dim);font-weight:600;">&#8250;</span> Run <code>/fact-check</code> on any HTML page anytime</li>
-      </ul>
-    </div>
-  </div>
-
-  <!-- SECTION 6: FILE STRUCTURE -->
-  <div id="s6" class="sec-head anim" style="--i:21; color: var(--amber);">
-    <span class="num" style="background: var(--amber-dim); color: var(--amber);">6</span> File Structure
-  </div>
-
-  <div class="ve-card anim" style="--i:22; margin-bottom: 16px; padding: 0; overflow: hidden;">
-    <div style="padding: 16px 22px; border-bottom: 1px solid var(--border); font-family: var(--font-mono); font-size: 11px; color: var(--text-dim);">
-      docs/claude/ &mdash; one timestamped directory per feature
-    </div>
-    <div class="file-tree">
-      <span class="dir">docs/claude/20260304-1430-cursor-pagination/</span><br>
-      &nbsp;&nbsp;<span class="file">research.md</span> <span class="comment">&larr; Phase 1 deep-read</span><br>
-      &nbsp;&nbsp;<span class="file">architecture.html</span> <span class="optional">&larr; Phase 1 visual (optional)</span><br>
-      &nbsp;&nbsp;<span class="file">plan.md</span> <span class="comment">&larr; Phase 2 annotated plan</span><br>
-      &nbsp;&nbsp;<span class="file">visual-plan.html</span> <span class="optional">&larr; Phase 2 visual (optional)</span><br>
-      &nbsp;&nbsp;<span class="file">diff-review.html</span> <span class="optional">&larr; Phase 3 fact-checked review (optional)</span>
-    </div>
-  </div>
-
-  <div class="callout--teal callout anim" style="--i:23">
-    <strong>Naming convention:</strong> <code>&lt;YYYYMMDD-HHMM&gt;-&lt;slug&gt;</code> &mdash; the slug is derived from the feature description (lowercase, hyphens, no special characters, max ~5 words). The directory is created once at the start of the workflow and reused across all three phases.
-  </div>
-
-  <div class="callout--amber callout anim" style="--i:24">
-    <strong>Cleanup options:</strong> After the feature is complete, you can keep the directory for reference, delete it, add <code>docs/claude/</code> to <code>.gitignore</code>, or commit the directory alongside the feature for posterity.
-  </div>
-
-  <!-- SECTION 7: COMMANDS -->
-  <div id="s7" class="sec-head anim" style="--i:25; color: var(--copper);">
-    <span class="num" style="background: var(--copper-dim); color: var(--copper);">7</span> Commands
-  </div>
-
-  <div class="table-wrap anim" style="--i:26; margin-bottom: 16px;">
-    <div class="table-scroll">
-      <table class="data-table">
-        <thead>
-          <tr>
-            <th>Command</th>
-            <th>What it does</th>
-            <th>When to use</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr>
-            <td><code>/build-feature</code></td>
-            <td>Full 3-phase workflow: research, plan, implement</td>
-            <td>Building any non-trivial feature</td>
-          </tr>
-          <tr>
-            <td><code>/research</code></td>
-            <td>Phase 1 only: deep-read and write research.md</td>
-            <td>Understanding a system before deciding what to do</td>
-          </tr>
-          <tr>
-            <td><code>/plan</code></td>
-            <td>Phase 2 only: write plan.md with annotation cycles</td>
-            <td>When you already understand the code but need a plan</td>
-          </tr>
-          <tr>
-            <td><code>/implement</code></td>
-            <td>Phase 3 only: execute an approved plan</td>
-            <td>When you have an approved plan ready to go</td>
-          </tr>
-          <tr>
-            <td><code>/generate-web-diagram</code></td>
-            <td>Generate a standalone HTML diagram for any topic</td>
-            <td>Ad-hoc architecture or flow diagrams</td>
-          </tr>
-          <tr>
-            <td><code>/generate-visual-plan</code></td>
-            <td>Visual HTML implementation plan with state machines</td>
-            <td>When you want a visual spec for a feature</td>
-          </tr>
-          <tr>
-            <td><code>/generate-slides</code></td>
-            <td>Magazine-quality slide deck as HTML</td>
-            <td>Presentations, team updates</td>
-          </tr>
-          <tr>
-            <td><code>/diff-review</code></td>
-            <td>Visual HTML diff review of changes</td>
-            <td>After any code changes, not just build-feature</td>
-          </tr>
-          <tr>
-            <td><code>/plan-review</code></td>
-            <td>Compare a plan against the codebase with risk assessment</td>
-            <td>Auditing someone else's plan or RFC</td>
-          </tr>
-          <tr>
-            <td><code>/project-recap</code></td>
-            <td>Mental model snapshot of a project's current state</td>
-            <td>Context-switching back to a project after time away</td>
-          </tr>
-          <tr>
-            <td><code>/fact-check</code></td>
-            <td>Verify document accuracy against actual code</td>
-            <td>After any visual-explainer output to catch errors</td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-  </div>
-
-  <div class="callout--teal callout anim" style="--i:27">
-    <strong>Note:</strong> The visual commands (<code>/generate-web-diagram</code>, <code>/generate-visual-plan</code>, <code>/generate-slides</code>, <code>/diff-review</code>, <code>/plan-review</code>, <code>/project-recap</code>, <code>/fact-check</code>) require the <strong>visual-explainer</strong> skill to be installed. The first four commands (<code>/build-feature</code>, <code>/research</code>, <code>/plan</code>, <code>/implement</code>) work independently.
-  </div>
-
-  <!-- SECTION 8: QUICK START -->
-  <div id="s8" class="sec-head anim" style="--i:28; color: var(--sage);">
-    <span class="num" style="background: var(--sage-dim); color: var(--sage);">8</span> Quick Start
-  </div>
-
-  <div class="ve-card anim" style="--i:29; padding: 8px 26px;">
-    <div class="qs-steps">
-      <div class="qs-step">
-        <div class="qs-step__num"></div>
-        <div class="qs-step__body">
-          <h4>Invoke the workflow</h4>
-          <p>Type <code>/build-feature add cursor-based pagination to the users API</code></p>
-        </div>
-      </div>
-      <div class="qs-step">
-        <div class="qs-step__num"></div>
-        <div class="qs-step__body">
-          <h4>Review research</h4>
-          <p>Read <code>research.md</code> and browse the architecture diagram in your browser (if generated). Confirm it's correct or point out what's wrong.</p>
-        </div>
-      </div>
-      <div class="qs-step">
-        <div class="qs-step__num"></div>
-        <div class="qs-step__body">
-          <h4>Say "move to planning"</h4>
-          <p>The agent writes <code>plan.md</code>. Open it in your editor, add inline notes, and tell the agent to address them. Repeat the annotation cycle until satisfied.</p>
-        </div>
-      </div>
-      <div class="qs-step">
-        <div class="qs-step__num"></div>
-        <div class="qs-step__body">
-          <h4>Approve the plan</h4>
-          <p>Say <code>"approved"</code> or <code>"looks good"</code>. The agent generates a granular todo list and optionally a visual plan HTML.</p>
-        </div>
-      </div>
-      <div class="qs-step">
-        <div class="qs-step__num"></div>
-        <div class="qs-step__body">
-          <h4>Say "implement"</h4>
-          <p>The agent executes every task, checks them off, and produces a fact-checked diff review when done. That's it.</p>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- SECTION 9: KEY PRINCIPLES -->
-  <div id="s9" class="sec-head anim" style="--i:30; color: var(--wine);">
-    <span class="num" style="background: var(--wine-dim); color: var(--wine);">9</span> Key Principles
-  </div>
-
-  <div class="principle-grid anim" style="--i:31; margin-bottom: 20px;">
-    <div>
-      <strong>Never code before approval</strong>
-      <p>The plan must be explicitly approved. This guard rail prevents wasted work on wrong designs.</p>
-    </div>
-    <div>
-      <strong>Markdown files are the deliverables</strong>
-      <p>Not chat summaries. The files in <code>docs/claude/</code> are the source of truth, readable by anyone.</p>
-    </div>
-    <div>
-      <strong>Visual HTML pages are companions</strong>
-      <p>They provide spatial understanding that markdown cannot. Architecture diagrams, state machines, before/after panels &mdash; all generated by sub-skills via visual-explainer.</p>
-    </div>
-    <div>
-      <strong>You inject the judgment</strong>
-      <p>Through annotations: domain knowledge, business constraints, engineering trade-offs. The agent does the work, you steer.</p>
-    </div>
-    <div>
-      <strong>Implementation should be boring</strong>
-      <p>All creative decisions happen during planning. If implementation surprises you, the plan wasn't detailed enough.</p>
-    </div>
-    <div>
-      <strong>Terse corrections are fine</strong>
-      <p>During implementation, the context is already established. One-word feedback like <code>"wider"</code> or <code>"still cropped"</code> is perfectly clear.</p>
-    </div>
-  </div>
-
-  <!-- SECTION 10: SESSION MANAGEMENT -->
-  <div id="s10" class="sec-head anim" style="--i:32; color: var(--amber);">
-    <span class="num" style="background: var(--amber-dim); color: var(--amber);">10</span> Session Management
-  </div>
-
-  <div class="session-banner anim" style="--i:33; margin-bottom: 16px;">
-    <div class="session-icon">
-      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: var(--amber);">
-        <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
-      </svg>
-    </div>
-    <div>
-      <h3>Single Long Session</h3>
-      <p>The entire workflow runs in one session. By the time implementation starts, deep understanding has been built through research and planning. All artifacts &mdash; markdown and visual HTML &mdash; live together in the feature directory, survive context compaction, and can be re-read at any point.</p>
-    </div>
-  </div>
-
-  <div class="callout anim" style="--i:34">
-    <strong>Context compaction:</strong> Because all state is persisted to files in <code>docs/claude/</code>, the workflow is resilient to long conversations. The agent can always re-read the research document, the plan, and the todo list to recover context.
-  </div>
-
-  <!-- SECTION 11: VISUAL INTEGRATION -->
-  <div id="s11" class="sec-head anim" style="--i:35; color: var(--slate);">
-    <span class="num" style="background: var(--slate-dim); color: var(--slate);">11</span> Visual Integration
-  </div>
-
-  <div class="ve-card anim" style="--i:36; margin-bottom: 16px;">
-    <div class="ve-card__label" style="color: var(--amber);">How it works</div>
-    <p style="font-family: var(--font-sans); font-size: 13px; line-height: 1.7; color: var(--text);">
-      The visual-explainer skill is <strong>optional</strong>. All visual steps are skipped gracefully if it is not installed &mdash; no errors, no warnings. When available, visual companions are generated by the sub-skills directly (research generates architecture.html, plan generates visual-plan.html, implement generates diff-review.html). Visual-explainer also activates <strong>proactively</strong> during any phase: when about to render a complex table (4+ rows or 3+ columns) in the terminal, it generates an HTML table instead and opens it in the browser.
-    </p>
-  </div>
-
-  <div class="vi-grid anim" style="--i:37; margin-bottom: 16px;">
-    <div class="vi-item">
-      <strong>Mermaid Diagrams</strong>
-      Flowcharts, sequence diagrams, state machines, ER diagrams. Automatic node positioning with deep theme integration.
-    </div>
-    <div class="vi-item">
-      <strong>CSS Grid Layouts</strong>
-      Architecture overviews, component maps, system-level diagrams where spatial arrangement matters.
-    </div>
-    <div class="vi-item">
-      <strong>Styled Tables</strong>
-      Data comparisons, risk matrices, configuration diffs. Sortable columns, striped rows, responsive scrolling.
-    </div>
-    <div class="vi-item">
-      <strong>Dark / Light Themes</strong>
-      Every generated page respects <code>prefers-color-scheme</code>. Both modes are fully designed, not afterthoughts.
-    </div>
-    <div class="vi-item">
-      <strong>Zoom Controls</strong>
-      All diagrams have +/- zoom buttons, scroll-to-zoom (Ctrl+wheel), and click-drag panning for large diagrams.
-    </div>
-    <div class="vi-item">
-      <strong>Proactive Rendering</strong>
-      Complex tables are intercepted before terminal output and rendered as rich HTML pages instead, opened in the browser automatically.
-    </div>
-  </div>
-
-  <div class="callout--sage callout anim" style="--i:38; margin-bottom: 52px;">
-    <strong>Fact-checking:</strong> After generating any visual output, <code>/fact-check</code> can be run to verify all claims, numbers, function names, and file paths against the actual codebase and git history. This happens automatically for diff reviews during the build-feature workflow.
-  </div>
-
-</div><!-- /main -->
-</div><!-- /wrap -->
+</div><!-- .container -->
 
 <script type="module">
   import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';
 
   const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-
   mermaid.initialize({
     startOnLoad: true,
     theme: 'base',
     look: 'classic',
     themeVariables: {
-      primaryColor: isDark ? '#155e5e' : '#ccfbf1',
-      primaryBorderColor: isDark ? '#4fd1c5' : '#155e5e',
-      primaryTextColor: isDark ? '#d4ddd8' : '#1c2826',
-      secondaryColor: isDark ? '#3d1c0a' : '#fef3c7',
-      secondaryBorderColor: isDark ? '#ed9a6a' : '#a0522d',
-      secondaryTextColor: isDark ? '#d4ddd8' : '#1c2826',
-      tertiaryColor: isDark ? '#1a3326' : '#dcfce7',
-      tertiaryBorderColor: isDark ? '#68d391' : '#3d6b4f',
-      tertiaryTextColor: isDark ? '#d4ddd8' : '#1c2826',
-      lineColor: isDark ? '#8a9e96' : '#5e706a',
+      primaryColor: isDark ? '#1a2540' : '#e8f4f8',
+      primaryBorderColor: isDark ? '#5b8cc9' : '#1e3a5f',
+      primaryTextColor: isDark ? '#e2e8f0' : '#1e293b',
+      secondaryColor: isDark ? '#1e293b' : '#fef9e7',
+      secondaryBorderColor: isDark ? '#d97706' : '#d97706',
+      secondaryTextColor: isDark ? '#e2e8f0' : '#1e293b',
+      tertiaryColor: isDark ? '#1a2a20' : '#ecfdf5',
+      tertiaryBorderColor: isDark ? '#059669' : '#059669',
+      tertiaryTextColor: isDark ? '#e2e8f0' : '#1e293b',
+      lineColor: isDark ? '#475569' : '#94a3b8',
       fontSize: '14px',
-      fontFamily: "system-ui, -apple-system, sans-serif",
-      noteBkgColor: isDark ? '#1c2a26' : '#fefce8',
-      noteTextColor: isDark ? '#d4ddd8' : '#1c2826',
-      noteBorderColor: isDark ? '#f6e05e' : '#8b6914',
+      fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
+      noteBkgColor: isDark ? '#1e293b' : '#fefce8',
+      noteTextColor: isDark ? '#e2e8f0' : '#1e293b',
+      noteBorderColor: isDark ? '#fbbf24' : '#d97706',
     }
   });
 </script>
+
 <script>
-  var INITIAL_ZOOM = 1.3;
+  // Zoom controls
+  const zoomState = {};
 
-  function zoomDiagram(btn, factor) {
-    var wrap = btn.closest('.mermaid-wrap');
-    var target = wrap.querySelector('.mermaid');
-    var current = parseFloat(target.dataset.zoom || INITIAL_ZOOM);
-    var next = Math.min(Math.max(current * factor, 0.5), 5);
-    target.dataset.zoom = next;
-    target.style.zoom = next;
+  function getState(id) {
+    if (!zoomState[id]) zoomState[id] = { scale: 1, panX: 0, panY: 0 };
+    return zoomState[id];
   }
 
-  function resetZoom(btn) {
-    var wrap = btn.closest('.mermaid-wrap');
-    var target = wrap.querySelector('.mermaid');
-    target.dataset.zoom = INITIAL_ZOOM;
-    target.style.zoom = INITIAL_ZOOM;
+  function applyTransform(id) {
+    const wrap = document.getElementById(id);
+    const svg = wrap.querySelector('svg');
+    if (!svg) return;
+    const s = getState(id);
+    svg.style.transform = `scale(${s.scale}) translate(${s.panX}px, ${s.panY}px)`;
   }
 
-  document.querySelectorAll('.mermaid-wrap').forEach(function(wrap) {
-    wrap.addEventListener('wheel', function(e) {
+  function zoomIn(id) {
+    const s = getState(id);
+    s.scale = Math.min(s.scale * 1.2, 4);
+    applyTransform(id);
+  }
+
+  function zoomOut(id) {
+    const s = getState(id);
+    s.scale = Math.max(s.scale / 1.2, 0.3);
+    applyTransform(id);
+  }
+
+  function zoomReset(id) {
+    const s = getState(id);
+    s.scale = 1; s.panX = 0; s.panY = 0;
+    applyTransform(id);
+  }
+
+  // Ctrl+scroll zoom
+  document.querySelectorAll('.mermaid-viewport').forEach(vp => {
+    const wrap = vp.closest('.mermaid-wrap');
+    if (!wrap?.id) return;
+    vp.addEventListener('wheel', e => {
       if (!e.ctrlKey && !e.metaKey) return;
       e.preventDefault();
-      var target = wrap.querySelector('.mermaid');
-      var current = parseFloat(target.dataset.zoom || INITIAL_ZOOM);
-      var factor = e.deltaY < 0 ? 1.1 : 0.9;
-      var next = Math.min(Math.max(current * factor, 0.5), 5);
-      target.dataset.zoom = next;
-      target.style.zoom = next;
+      const s = getState(wrap.id);
+      const delta = e.deltaY > 0 ? 0.9 : 1.1;
+      s.scale = Math.min(Math.max(s.scale * delta, 0.3), 4);
+      applyTransform(wrap.id);
     }, { passive: false });
 
-    var startX, startY, scrollL, scrollT;
-    wrap.addEventListener('mousedown', function(e) {
-      if (e.target.closest('.zoom-controls')) return;
-      wrap.classList.add('is-panning');
-      startX = e.clientX; startY = e.clientY;
-      scrollL = wrap.scrollLeft; scrollT = wrap.scrollTop;
+    // Click-drag pan
+    let dragging = false, startX, startY;
+    vp.addEventListener('mousedown', e => {
+      dragging = true;
+      startX = e.clientX;
+      startY = e.clientY;
+      vp.style.cursor = 'grabbing';
     });
-    window.addEventListener('mousemove', function(e) {
-      if (!wrap.classList.contains('is-panning')) return;
-      wrap.scrollLeft = scrollL - (e.clientX - startX);
-      wrap.scrollTop = scrollT - (e.clientY - startY);
+    window.addEventListener('mousemove', e => {
+      if (!dragging) return;
+      const s = getState(wrap.id);
+      s.panX += (e.clientX - startX) / s.scale;
+      s.panY += (e.clientY - startY) / s.scale;
+      startX = e.clientX;
+      startY = e.clientY;
+      applyTransform(wrap.id);
     });
-    window.addEventListener('mouseup', function() {
-      wrap.classList.remove('is-panning');
+    window.addEventListener('mouseup', () => {
+      dragging = false;
+      vp.style.cursor = 'grab';
     });
   });
-
-  // Scroll spy
-  (function() {
-    var toc = document.getElementById('toc');
-    var links = toc.querySelectorAll('a');
-    var sections = [];
-    links.forEach(function(link) {
-      var id = link.getAttribute('href').slice(1);
-      var el = document.getElementById(id);
-      if (el) sections.push({ id: id, el: el, link: link });
-    });
-    var observer = new IntersectionObserver(function(entries) {
-      entries.forEach(function(entry) {
-        if (entry.isIntersecting) {
-          links.forEach(function(l) { l.classList.remove('active'); });
-          var match = sections.find(function(s) { return s.el === entry.target; });
-          if (match) {
-            match.link.classList.add('active');
-            if (window.innerWidth <= 1000) {
-              match.link.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
-            }
-          }
-        }
-      });
-    }, { rootMargin: '-10% 0px -80% 0px' });
-    sections.forEach(function(s) { observer.observe(s.el); });
-    links.forEach(function(link) {
-      link.addEventListener('click', function(e) {
-        e.preventDefault();
-        var id = link.getAttribute('href').slice(1);
-        var el = document.getElementById(id);
-        if (el) {
-          el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-          history.replaceState(null, '', '#' + id);
-        }
-      });
-    });
-  })();
 </script>
-
 </body>
 </html>

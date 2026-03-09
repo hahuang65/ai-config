@@ -58,7 +58,7 @@ Before writing any code, read and comply with all rule files in `rules/` (or `~/
 
 12. **Fact-check the plan**: You MUST invoke `/fact-check` on the plan document. This is not optional. Use the Skill tool to invoke `fact-check` with the plan file path as the argument. This verifies that all claims (file paths, line numbers, function names, behavior descriptions) match what was actually implemented. Do NOT skip this step.
 
-13. **Refresh visual plan** *(if the plan changed)*: If `/fact-check` made corrections to `plan.md`, or if deviations were noted during implementation (step 3), regenerate `visual-plan.html` by invoking `/generate-visual-plan` so the visual stays in sync with the final plan state.
+13. **Refresh visual artifacts**: If `visual-plan.html` exists in the feature directory AND any of these are true — `/fact-check` made corrections to `plan.md`, deviations were noted during implementation (step 3), or tasks were added/removed — regenerate `visual-plan.html` by invoking `/generate-visual-plan` so the visual stays in sync with the final plan state. This is the last step before reporting completion.
 
 14. **When complete**: Tell the user implementation is complete and summarize what was done, including test coverage added. Do NOT commit to version control — leave that to the user.
 
