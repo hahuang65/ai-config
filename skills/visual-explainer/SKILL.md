@@ -206,6 +206,8 @@ Three approaches depending on complexity:
 
 **`stateDiagram-v2` label caveat:** Transition labels have a strict parser — colons, parentheses, `<br/>`, HTML entities, and most special characters cause silent parse failures ("Syntax error in text"). If your labels need any of these (e.g., `cancel()`, `curate: true`, multi-line labels), use `flowchart TD` instead with rounded nodes and quoted edge labels (`|"label text"|`). Flowcharts handle all special characters and support `<br/>` for line breaks. Reserve `stateDiagram-v2` for simple single-word or plain-text labels.
 
+**Multi-line node labels — never use `\n`:** In Mermaid `graph TD` / `flowchart TD`, the escape sequence `\n` is **not** interpreted as a newline — it renders literally as the two characters `\n` inside the node box. To break a label across lines, use `<br/>` inside the node's quoted string: `NODE["First line<br/>Second line"]`. This applies to all node shapes (rectangles, rounded, diamonds, etc.).
+
 ### Mind Maps / Hierarchical Breakdowns
 **Use Mermaid.** Use `mindmap` syntax for hierarchical branching from a root node. Mermaid handles the radial layout automatically. Style with `themeVariables` to control node colors at each depth level.
 
