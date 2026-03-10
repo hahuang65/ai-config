@@ -35,12 +35,20 @@ for rule in "$REPO_DIR"/rules/*.md; do
 done
 
 # ── Commands for Claude Code (~/.claude/commands/) ───────────────────────────
+#
+# Skip commands that have a matching skill (skills/ dir with same basename),
+# since Claude Code registers both as slash commands, causing duplicates.
 
 echo ""
 green "Installing commands for Claude Code..."
 mkdir -p "$HOME/.claude/commands"
 for cmd in "$REPO_DIR"/commands/*.md; do
   name="$(basename "$cmd")"
+  skill_name="${name%.md}"
+  if [ -d "$REPO_DIR/skills/$skill_name" ]; then
+    dim "  ~/.claude/commands/$name — skipped (registered as skill)"
+    continue
+  fi
   ln -sf "$cmd" "$HOME/.claude/commands/$name"
   dim "  ~/.claude/commands/$name → $cmd"
 done
