@@ -3,6 +3,11 @@ set -euo pipefail
 
 REPO_DIR="$(git rev-parse --show-toplevel)"
 
+# Validate pipeline integrity
+if [[ -f "$REPO_DIR/scripts/test-pipeline.sh" ]]; then
+  bash "$REPO_DIR/scripts/test-pipeline.sh"
+fi
+
 # Sync permissions from Claude Code to OpenCode
 python3 "$REPO_DIR/scripts/sync-permissions.py"
 

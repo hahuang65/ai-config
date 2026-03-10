@@ -1,0 +1,810 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>/build-feature Pipeline Architecture</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@400;500;600;700;800&family=Fragment+Mono:wght@400&display=swap" rel="stylesheet">
+<style>
+:root {
+  --font-body: 'Bricolage Grotesque', system-ui, sans-serif;
+  --font-mono: 'Fragment Mono', 'SF Mono', Consolas, monospace;
+
+  --bg: #f4f6f9;
+  --surface: #ffffff;
+  --surface2: #edf0f5;
+  --surface-elevated: #ffffff;
+  --border: rgba(30, 58, 95, 0.09);
+  --border-bright: rgba(30, 58, 95, 0.18);
+  --text: #1a2744;
+  --text-dim: #6b7a94;
+  --accent: #1e3a5f;
+  --accent-dim: rgba(30, 58, 95, 0.07);
+  --gold: #b5761a;
+  --gold-dim: rgba(181, 118, 26, 0.08);
+  --teal: #0f766e;
+  --teal-dim: rgba(15, 118, 110, 0.07);
+  --sage: #4d7c0f;
+  --sage-dim: rgba(77, 124, 15, 0.07);
+  --rose: #9f1239;
+  --rose-dim: rgba(159, 18, 57, 0.07);
+  --amber: #b45309;
+  --amber-dim: rgba(180, 83, 9, 0.07);
+  --grid-color: rgba(30, 58, 95, 0.04);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #0e1525;
+    --surface: #15202f;
+    --surface2: #1a2840;
+    --surface-elevated: #1f2e48;
+    --border: rgba(181, 118, 26, 0.10);
+    --border-bright: rgba(181, 118, 26, 0.22);
+    --text: #dde4f0;
+    --text-dim: #7d8da6;
+    --accent: #5da4d9;
+    --accent-dim: rgba(93, 164, 217, 0.10);
+    --gold: #e0a84c;
+    --gold-dim: rgba(224, 168, 76, 0.12);
+    --teal: #5eead4;
+    --teal-dim: rgba(94, 234, 212, 0.10);
+    --sage: #bef264;
+    --sage-dim: rgba(190, 242, 100, 0.10);
+    --rose: #fda4af;
+    --rose-dim: rgba(253, 164, 175, 0.10);
+    --amber: #fbbf24;
+    --amber-dim: rgba(251, 191, 36, 0.10);
+    --grid-color: rgba(93, 164, 217, 0.03);
+  }
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  background: var(--bg);
+  background-image:
+    repeating-linear-gradient(-45deg, transparent, transparent 40px, var(--grid-color) 40px, var(--grid-color) 41px),
+    radial-gradient(ellipse at 30% 0%, var(--accent-dim) 0%, transparent 50%),
+    radial-gradient(ellipse at 80% 90%, var(--gold-dim) 0%, transparent 40%);
+  color: var(--text);
+  font-family: var(--font-body);
+  padding: 40px;
+  min-height: 100vh;
+  overflow-wrap: break-word;
+}
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-in {
+  animation: fadeUp 0.4s ease-out both;
+  animation-delay: calc(var(--i, 0) * 0.06s);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-delay: 0ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+.page { max-width: 1100px; margin: 0 auto; }
+
+.page-label {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 400;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  color: var(--gold);
+  margin-bottom: 8px;
+}
+
+h1 {
+  font-size: 36px;
+  font-weight: 800;
+  letter-spacing: -1px;
+  margin-bottom: 6px;
+  text-wrap: balance;
+}
+
+.subtitle {
+  color: var(--text-dim);
+  font-size: 14px;
+  margin-bottom: 36px;
+  font-family: var(--font-mono);
+  line-height: 1.5;
+}
+
+h2 {
+  font-size: 20px;
+  font-weight: 700;
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+h2 .num {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--gold);
+  background: var(--gold-dim);
+  padding: 2px 8px;
+  border-radius: 4px;
+}
+
+/* ── Mermaid ── */
+.mermaid-wrap {
+  position: relative;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 32px 24px;
+  overflow: auto;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 420px;
+  margin-bottom: 32px;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) transparent;
+  cursor: grab;
+}
+.mermaid-wrap::-webkit-scrollbar { width: 6px; height: 6px; }
+.mermaid-wrap::-webkit-scrollbar-track { background: transparent; }
+.mermaid-wrap::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+.mermaid-wrap::-webkit-scrollbar-thumb:hover { background: var(--text-dim); }
+.mermaid-wrap.is-panning { cursor: grabbing; user-select: none; }
+
+.mermaid-wrap .mermaid { zoom: 1.3; }
+
+.mermaid .nodeLabel { color: var(--text) !important; }
+.mermaid .edgeLabel { color: var(--text-dim) !important; background-color: var(--bg) !important; }
+.mermaid .edgeLabel rect { fill: var(--bg) !important; }
+.mermaid .nodeLabel { font-family: var(--font-body) !important; font-size: 15px !important; }
+.mermaid .edgeLabel { font-family: var(--font-mono) !important; font-size: 12px !important; }
+
+.zoom-controls {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  display: flex;
+  gap: 2px;
+  z-index: 10;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 2px;
+}
+
+.zoom-controls button {
+  width: 28px;
+  height: 28px;
+  border: none;
+  background: transparent;
+  color: var(--text-dim);
+  font-family: var(--font-mono);
+  font-size: 14px;
+  cursor: pointer;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.zoom-controls button:hover {
+  background: var(--border);
+  color: var(--text);
+}
+
+/* ── Layer sections ── */
+.layer {
+  margin-bottom: 24px;
+}
+
+.layer-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.layer-badge {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 400;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  padding: 3px 10px;
+  border-radius: 4px;
+}
+
+.layer-badge--orch { background: var(--gold-dim); color: var(--gold); }
+.layer-badge--skill { background: var(--accent-dim); color: var(--accent); }
+.layer-badge--agent { background: var(--teal-dim); color: var(--teal); }
+.layer-badge--cmd { background: var(--sage-dim); color: var(--sage); }
+.layer-badge--ref { background: var(--amber-dim); color: var(--amber); }
+.layer-badge--rule { background: var(--rose-dim); color: var(--rose); }
+
+.card-grid {
+  display: grid;
+  gap: 12px;
+}
+
+.card-grid--2 { grid-template-columns: 1fr 1fr; }
+.card-grid--3 { grid-template-columns: 1fr 1fr 1fr; }
+.card-grid--4 { grid-template-columns: 1fr 1fr 1fr 1fr; }
+
+.ve-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 14px 18px;
+  min-width: 0;
+}
+
+.ve-card--elevated {
+  background: var(--surface-elevated);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.03);
+}
+
+.ve-card--hero {
+  background: color-mix(in srgb, var(--surface) 92%, var(--gold) 8%);
+  box-shadow: 0 4px 20px rgba(0,0,0,0.06);
+  border-color: color-mix(in srgb, var(--border) 50%, var(--gold) 50%);
+}
+
+.ve-card__label {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 400;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.ve-card__label::before {
+  content: '';
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.ve-card h3 {
+  font-size: 15px;
+  font-weight: 700;
+  margin-bottom: 4px;
+}
+
+.ve-card .desc {
+  color: var(--text-dim);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.ve-card .model-tag {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  padding: 1px 6px;
+  border-radius: 3px;
+  display: inline-block;
+  margin-top: 6px;
+}
+
+.model-tag--opus { background: var(--gold-dim); color: var(--gold); }
+.model-tag--sonnet { background: var(--accent-dim); color: var(--accent); }
+.model-tag--builtin { background: var(--sage-dim); color: var(--sage); }
+
+.node-list {
+  list-style: none;
+  font-size: 12px;
+  line-height: 1.8;
+}
+
+.node-list li {
+  padding-left: 14px;
+  position: relative;
+}
+
+.node-list li::before {
+  content: '\203A';
+  color: var(--text-dim);
+  font-weight: 600;
+  position: absolute;
+  left: 0;
+}
+
+.node-list code {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  background: var(--accent-dim);
+  color: var(--accent);
+  padding: 1px 5px;
+  border-radius: 3px;
+}
+
+/* ── Flow arrows ── */
+.flow-arrow {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+  color: var(--text-dim);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  padding: 4px 0;
+  margin-bottom: 16px;
+}
+
+.flow-arrow svg {
+  width: 20px;
+  height: 20px;
+  fill: none;
+  stroke: var(--border-bright);
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+/* ── Dep table ── */
+.dep-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+
+.dep-table th {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--text-dim);
+  text-align: left;
+  padding: 8px 12px;
+  border-bottom: 2px solid var(--border-bright);
+}
+
+.dep-table td {
+  padding: 7px 12px;
+  border-bottom: 1px solid var(--border);
+  vertical-align: top;
+}
+
+.dep-table tr:last-child td { border-bottom: none; }
+
+.dep-table code {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  background: var(--accent-dim);
+  color: var(--accent);
+  padding: 1px 5px;
+  border-radius: 3px;
+}
+
+/* ── Callout ── */
+.callout {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--rose);
+  border-radius: 0 8px 8px 0;
+  padding: 14px 18px;
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--text-dim);
+  margin-top: 24px;
+}
+
+.callout strong { color: var(--text); font-weight: 600; }
+.callout code {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  background: var(--accent-dim);
+  color: var(--accent);
+  padding: 1px 5px;
+  border-radius: 3px;
+}
+
+@media (max-width: 768px) {
+  body { padding: 20px; }
+  .card-grid--2, .card-grid--3, .card-grid--4 { grid-template-columns: 1fr; }
+  h1 { font-size: 28px; }
+}
+</style>
+</head>
+<body>
+
+<div class="page">
+
+<div class="page-label animate-in" style="--i:0">Architecture Diagram</div>
+<h1 class="animate-in" style="--i:1">/build-feature Pipeline</h1>
+<p class="subtitle animate-in" style="--i:2">4-layer architecture &mdash; 4 skills, 6 agents, 13 commands, 6 rules, 10 VE references<br>Zero automated tests currently exist for this system.</p>
+
+<!-- ── Mermaid Overview ── -->
+<h2 class="animate-in" style="--i:3"><span class="num">00</span> Pipeline Flow</h2>
+
+<div class="mermaid-wrap animate-in" style="--i:4">
+  <div class="zoom-controls">
+    <button onclick="zoomDiagram(this, 1.2)" title="Zoom in">+</button>
+    <button onclick="zoomDiagram(this, 0.8)" title="Zoom out">&minus;</button>
+    <button onclick="resetZoom(this)" title="Reset zoom">&#8634;</button>
+  </div>
+  <pre class="mermaid">
+flowchart TD
+  BF["build-feature<br/>Orchestrator"]
+  BF -->|"Skill tool"| R["research<br/>Phase 1"]
+  BF -->|"Skill tool"| P["plan<br/>Phase 2"]
+  BF -->|"Skill tool"| I["implement<br/>Phase 3"]
+
+  R -->|"invokes"| GAD["/generate-architecture-diagram"]
+  P -->|"Agent tool"| ARCH["architect"]
+  P -->|"invokes"| GVP["/generate-visual-plan"]
+  I -->|"Agent tool"| TDD["tdd-guide<br/>batched 3-5"]
+  I -->|"Agent tool"| CR["code-reviewer<br/>+ security"]
+  I -->|"Agent tool"| RC["refactor-cleaner"]
+  I -->|"invokes"| FC["/fact-check"]
+  BF -.->|"optional"| DR["/diff-review"]
+
+  GAD --> REF["VE References<br/>+ Rules"]
+  GVP --> REF
+  DR --> REF
+  TDD --> RULES["rules/"]
+  CR --> RULES
+  ARCH --> RULES
+
+  classDef orch fill:#b5761a22,stroke:#b5761a,stroke-width:2px
+  classDef skill fill:#1e3a5f22,stroke:#1e3a5f,stroke-width:2px
+  classDef agent fill:#0f766e22,stroke:#0f766e,stroke-width:1.5px
+  classDef cmd fill:#4d7c0f22,stroke:#4d7c0f,stroke-width:1.5px
+  classDef ref fill:#b4530922,stroke:#b45309,stroke-width:1px
+
+  class BF orch
+  class R,P,I skill
+  class ARCH,TDD,CR,RC agent
+  class GAD,GVP,FC,DR cmd
+  class REF,RULES ref
+  </pre>
+</div>
+
+<!-- ── Layer 4: Orchestrator ── -->
+<div class="layer animate-in" style="--i:5">
+  <div class="layer-header">
+    <span class="layer-badge layer-badge--orch">Layer 4</span>
+    <h2 style="margin-bottom:0"><span class="num">01</span> Orchestrator</h2>
+  </div>
+  <div class="card-grid card-grid--2">
+    <div class="ve-card ve-card--hero">
+      <div class="ve-card__label" style="color:var(--gold)">Skill</div>
+      <h3>build-feature</h3>
+      <div class="desc">3-phase workflow: Research &rarr; Plan (with annotation cycles) &rarr; Implement. Produces artifacts in <code>docs/claude/&lt;timestamp&gt;-&lt;slug&gt;/</code>. Optional VE integration at each phase transition.</div>
+      <div class="desc" style="margin-top:8px"><strong>Invokes:</strong> research, plan, implement skills + /diff-review, /fact-check</div>
+      <span class="model-tag model-tag--opus">disable-model-invocation</span>
+    </div>
+    <div class="ve-card">
+      <div class="ve-card__label" style="color:var(--text-dim)">Artifacts Produced</div>
+      <ul class="node-list">
+        <li><code>research.md</code> Phase 1 &mdash; always</li>
+        <li><code>architecture.html</code> Phase 1 &mdash; if VE</li>
+        <li><code>plan.md</code> Phase 2 &mdash; always</li>
+        <li><code>visual-plan.html</code> Phase 2 &mdash; if VE</li>
+        <li><code>diff-review.html</code> Phase 3 &mdash; if VE</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<div class="flow-arrow animate-in" style="--i:6">
+  <svg viewBox="0 0 20 20"><path d="M10 4 L10 16 M6 12 L10 16 L14 12"/></svg>
+  invokes via Skill tool
+</div>
+
+<!-- ── Layer 3: Phase Skills ── -->
+<div class="layer animate-in" style="--i:7">
+  <div class="layer-header">
+    <span class="layer-badge layer-badge--skill">Layer 3</span>
+    <h2 style="margin-bottom:0"><span class="num">02</span> Phase Skills</h2>
+  </div>
+  <div class="card-grid card-grid--3">
+    <div class="ve-card ve-card--elevated" style="border-left:3px solid var(--accent)">
+      <div class="ve-card__label" style="color:var(--accent)">Phase 1</div>
+      <h3>research</h3>
+      <div class="desc">Deep-reads codebase. Writes <code>research.md</code> with 8 sections. Invokes <code>/generate-architecture-diagram</code>. STOPs for user review.</div>
+      <span class="model-tag model-tag--opus">opus</span>
+    </div>
+    <div class="ve-card ve-card--elevated" style="border-left:3px solid var(--gold)">
+      <div class="ve-card__label" style="color:var(--gold)">Phase 2</div>
+      <h3>plan</h3>
+      <div class="desc">Reads research + source. Conditionally invokes <code>architect</code> agent and domain skills. Writes plan, runs annotation cycles, generates todo list. Invokes <code>/generate-visual-plan</code>.</div>
+      <span class="model-tag model-tag--opus">opus</span>
+    </div>
+    <div class="ve-card ve-card--elevated" style="border-left:3px solid var(--teal)">
+      <div class="ve-card__label" style="color:var(--teal)">Phase 3</div>
+      <h3>implement</h3>
+      <div class="desc">Reads plan. Runs 13-step process: TDD batches &rarr; verify loop &rarr; DB review &rarr; simplify &rarr; refactor &rarr; code review &rarr; doc update &rarr; fact-check &rarr; visual refresh.</div>
+      <span class="model-tag model-tag--sonnet">sonnet</span>
+    </div>
+  </div>
+</div>
+
+<div class="flow-arrow animate-in" style="--i:8">
+  <svg viewBox="0 0 20 20"><path d="M10 4 L10 16 M6 12 L10 16 L14 12"/></svg>
+  invoke via Agent tool + Skill tool
+</div>
+
+<!-- ── Layer 2: Agents & Commands ── -->
+<div class="layer animate-in" style="--i:9">
+  <div class="layer-header">
+    <span class="layer-badge layer-badge--agent">Layer 2a</span>
+    <h2 style="margin-bottom:0"><span class="num">03</span> Agents</h2>
+  </div>
+  <div class="card-grid card-grid--3">
+    <div class="ve-card" style="border-left:3px solid var(--teal)">
+      <div class="ve-card__label" style="color:var(--teal)">TDD</div>
+      <h3>tdd-guide</h3>
+      <div class="desc">Red-green-refactor. Batched 3-5 tasks. 80%+ coverage.</div>
+      <div class="desc" style="margin-top:4px">Rules: <code>testing</code> <code>coding-style</code></div>
+      <span class="model-tag model-tag--sonnet">sonnet</span>
+    </div>
+    <div class="ve-card" style="border-left:3px solid var(--gold)">
+      <div class="ve-card__label" style="color:var(--gold)">Architecture</div>
+      <h3>architect</h3>
+      <div class="desc">Conditional: 5+ files, new modules, API/DB design. Trade-off analysis.</div>
+      <div class="desc" style="margin-top:4px">Rules: <code>coding-style</code> <code>performance</code> <code>security</code></div>
+      <span class="model-tag model-tag--opus">opus</span>
+    </div>
+    <div class="ve-card" style="border-left:3px solid var(--rose)">
+      <div class="ve-card__label" style="color:var(--rose)">Review + Security</div>
+      <h3>code-reviewer</h3>
+      <div class="desc">OWASP Top 10, quality, performance. Auto-fixes CRITICAL. &gt;80% confidence filter.</div>
+      <div class="desc" style="margin-top:4px">Rules: all 4 rule files</div>
+      <span class="model-tag model-tag--sonnet">sonnet</span>
+    </div>
+    <div class="ve-card" style="border-left:3px solid var(--sage)">
+      <div class="ve-card__label" style="color:var(--sage)">Cleanup</div>
+      <h3>refactor-cleaner</h3>
+      <div class="desc">Dead code detection. SAFE/CAREFUL/RISKY categories.</div>
+      <div class="desc" style="margin-top:4px">Rules: <code>coding-style</code></div>
+      <span class="model-tag model-tag--sonnet">sonnet</span>
+    </div>
+    <div class="ve-card" style="border-left:3px solid var(--amber)">
+      <div class="ve-card__label" style="color:var(--amber)">Database</div>
+      <h3>database-reviewer</h3>
+      <div class="desc">Conditional: DB code touched. EXPLAIN ANALYZE, N+1, RLS, indexes.</div>
+      <div class="desc" style="margin-top:4px">Rules: <code>security</code> <code>performance</code></div>
+      <span class="model-tag model-tag--sonnet">sonnet</span>
+    </div>
+    <div class="ve-card" style="border-left:3px solid var(--text-dim)">
+      <div class="ve-card__label" style="color:var(--text-dim)">Docs</div>
+      <h3>doc-updater</h3>
+      <div class="desc">Conditional: significant changes. Syncs READMEs, CHANGELOG, architecture docs.</div>
+      <div class="desc" style="margin-top:4px">Rules: <code>git-workflow</code></div>
+      <span class="model-tag model-tag--sonnet">sonnet</span>
+    </div>
+  </div>
+</div>
+
+<div class="layer animate-in" style="--i:10; margin-top:20px;">
+  <div class="layer-header">
+    <span class="layer-badge layer-badge--cmd">Layer 2b</span>
+    <h2 style="margin-bottom:0"><span class="num">04</span> Commands</h2>
+  </div>
+  <div class="card-grid card-grid--4">
+    <div class="ve-card">
+      <div class="ve-card__label" style="color:var(--sage)">/generate-architecture-diagram</div>
+      <div class="desc">Blueprint/editorial HTML. Reads core + css-core + css-mermaid + libraries + architecture template.</div>
+    </div>
+    <div class="ve-card">
+      <div class="ve-card__label" style="color:var(--sage)">/generate-visual-plan</div>
+      <div class="desc">State machines, code snippets, edge cases. Reads core + all 3 CSS modules + libraries.</div>
+    </div>
+    <div class="ve-card">
+      <div class="ve-card__label" style="color:var(--sage)">/diff-review</div>
+      <div class="desc">Before/after panels, KPI, decision log. Reads core + all 3 CSS modules + libraries.</div>
+    </div>
+    <div class="ve-card">
+      <div class="ve-card__label" style="color:var(--sage)">/fact-check</div>
+      <div class="desc">Extracts claims, verifies against code/git. Corrects in place. No VE refs needed.</div>
+    </div>
+  </div>
+  <div class="card-grid card-grid--4" style="margin-top:12px">
+    <div class="ve-card">
+      <div class="ve-card__label" style="color:var(--sage)">/simplify</div>
+      <div class="desc">Built-in Claude Code skill. No local command file. Reviews reuse, quality, efficiency.</div>
+    </div>
+    <div class="ve-card">
+      <div class="ve-card__label" style="color:var(--sage)">/plan-review</div>
+      <div class="desc">Risk assessment. Reads core + all 3 CSS modules + libraries.</div>
+    </div>
+    <div class="ve-card">
+      <div class="ve-card__label" style="color:var(--sage)">/project-recap</div>
+      <div class="desc">Mental model snapshot. Reads core + all 3 CSS modules + libraries.</div>
+    </div>
+    <div class="ve-card">
+      <div class="ve-card__label" style="color:var(--sage)">/generate-web-diagram</div>
+      <div class="desc">General-purpose HTML diagram. Reads core + all 3 CSS modules + libraries.</div>
+    </div>
+  </div>
+</div>
+
+<div class="flow-arrow animate-in" style="--i:11">
+  <svg viewBox="0 0 20 20"><path d="M10 4 L10 16 M6 12 L10 16 L14 12"/></svg>
+  read reference files
+</div>
+
+<!-- ── Layer 1: References & Rules ── -->
+<div class="layer animate-in" style="--i:12">
+  <div class="layer-header">
+    <span class="layer-badge layer-badge--ref">Layer 1a</span>
+    <h2 style="margin-bottom:0"><span class="num">05</span> VE References</h2>
+  </div>
+  <div class="card-grid card-grid--3">
+    <div class="ve-card" style="border-left:3px solid var(--amber)">
+      <h3 style="font-size:13px">core.md</h3>
+      <div class="desc">93 lines. Aesthetic, typography, color, Mermaid, overflow, quality checks. Read by all VE commands.</div>
+    </div>
+    <div class="ve-card" style="border-left:3px solid var(--amber)">
+      <h3 style="font-size:13px">css-core.md</h3>
+      <div class="desc">461 lines. Theme, cards, code blocks, overflow, responsive. Always read.</div>
+    </div>
+    <div class="ve-card" style="border-left:3px solid var(--amber)">
+      <h3 style="font-size:13px">css-mermaid.md</h3>
+      <div class="desc">282 lines. Mermaid containers, zoom JS, connectors. Read when diagrams needed.</div>
+    </div>
+    <div class="ve-card" style="border-left:3px solid var(--amber)">
+      <h3 style="font-size:13px">css-components.md</h3>
+      <div class="desc">992 lines. Grids, KPIs, before/after, collapsible, prose, animations.</div>
+    </div>
+    <div class="ve-card" style="border-left:3px solid var(--amber)">
+      <h3 style="font-size:13px">libraries.md</h3>
+      <div class="desc">488 lines. Mermaid theming JS, Chart.js, anime.js CDN patterns.</div>
+    </div>
+    <div class="ve-card" style="border-left:3px solid var(--amber)">
+      <h3 style="font-size:13px">4 templates</h3>
+      <div class="desc">architecture.html, mermaid-flowchart.html, data-table.html, slide-deck.html</div>
+    </div>
+  </div>
+</div>
+
+<div class="layer animate-in" style="--i:13; margin-top:20px;">
+  <div class="layer-header">
+    <span class="layer-badge layer-badge--rule">Layer 1b</span>
+    <h2 style="margin-bottom:0"><span class="num">06</span> Rules</h2>
+  </div>
+  <div class="ve-card">
+    <table class="dep-table">
+      <thead>
+        <tr><th>Rule File</th><th>Read By</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><code>coding-style.md</code></td><td>tdd-guide, architect, code-reviewer, refactor-cleaner</td></tr>
+        <tr><td><code>testing.md</code></td><td>tdd-guide, code-reviewer</td></tr>
+        <tr><td><code>security.md</code></td><td>architect, code-reviewer, database-reviewer</td></tr>
+        <tr><td><code>performance.md</code></td><td>architect, code-reviewer, database-reviewer</td></tr>
+        <tr><td><code>git-workflow.md</code></td><td>doc-updater</td></tr>
+        <tr><td><code>development-workflow.md</code></td><td>(context only &mdash; loaded as CLAUDE.md)</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ── Domain Skills (conditional) ── -->
+<div class="layer animate-in" style="--i:14; margin-top:24px;">
+  <div class="layer-header">
+    <span class="layer-badge layer-badge--skill">Conditional</span>
+    <h2 style="margin-bottom:0"><span class="num">07</span> Domain Skills</h2>
+  </div>
+  <div class="card-grid card-grid--3">
+    <div class="ve-card">
+      <h3 style="font-size:13px">api-design</h3>
+      <div class="desc">REST patterns. Loaded by /plan when API work detected.</div>
+    </div>
+    <div class="ve-card">
+      <h3 style="font-size:13px">frontend-patterns</h3>
+      <div class="desc">Component, state, perf patterns. Loaded by /plan when frontend work detected.</div>
+    </div>
+    <div class="ve-card">
+      <h3 style="font-size:13px">frontend-design</h3>
+      <div class="desc">Built-in Claude Code skill. Aesthetic direction, typography, color, motion strategy.</div>
+    </div>
+  </div>
+</div>
+
+<div class="callout animate-in" style="--i:15">
+  <strong>Testing gap:</strong> This entire system &mdash; 40+ interconnected markdown files, frontmatter schemas, cross-references, symlink installation, step numbering, and reference paths &mdash; has zero automated validation. Every change requires manual grep sweeps to find stale references.
+</div>
+
+</div>
+
+<script type="module">
+  import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';
+
+  const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+  mermaid.initialize({
+    startOnLoad: true,
+    theme: 'base',
+    look: 'classic',
+    themeVariables: {
+      primaryColor: isDark ? '#1a2840' : '#edf2f8',
+      primaryBorderColor: isDark ? '#5da4d9' : '#1e3a5f',
+      primaryTextColor: isDark ? '#dde4f0' : '#1a2744',
+      secondaryColor: isDark ? '#27201a' : '#fef8f0',
+      secondaryBorderColor: isDark ? '#e0a84c' : '#b5761a',
+      secondaryTextColor: isDark ? '#dde4f0' : '#1a2744',
+      tertiaryColor: isDark ? '#0f2a2a' : '#f0fdf4',
+      tertiaryBorderColor: isDark ? '#5eead4' : '#0f766e',
+      tertiaryTextColor: isDark ? '#dde4f0' : '#1a2744',
+      lineColor: isDark ? '#4a5a75' : '#94a3b8',
+      fontSize: '15px',
+      fontFamily: 'var(--font-body)',
+      noteBkgColor: isDark ? '#1a2840' : '#fefce8',
+      noteTextColor: isDark ? '#dde4f0' : '#1a2744',
+      noteBorderColor: isDark ? '#e0a84c' : '#b5761a',
+    }
+  });
+</script>
+
+<script>
+var INITIAL_ZOOM = 1.3;
+
+function zoomDiagram(btn, factor) {
+  var wrap = btn.closest('.mermaid-wrap');
+  var target = wrap.querySelector('.mermaid');
+  var current = parseFloat(target.dataset.zoom || INITIAL_ZOOM);
+  var next = Math.min(Math.max(current * factor, 0.5), 5);
+  target.dataset.zoom = next;
+  target.style.zoom = next;
+}
+
+function resetZoom(btn) {
+  var wrap = btn.closest('.mermaid-wrap');
+  var target = wrap.querySelector('.mermaid');
+  target.dataset.zoom = INITIAL_ZOOM;
+  target.style.zoom = INITIAL_ZOOM;
+}
+
+document.querySelectorAll('.mermaid-wrap').forEach(function(wrap) {
+  wrap.addEventListener('wheel', function(e) {
+    if (!e.ctrlKey && !e.metaKey) return;
+    e.preventDefault();
+    var target = wrap.querySelector('.mermaid');
+    var current = parseFloat(target.dataset.zoom || INITIAL_ZOOM);
+    var factor = e.deltaY < 0 ? 1.1 : 0.9;
+    var next = Math.min(Math.max(current * factor, 0.5), 5);
+    target.dataset.zoom = next;
+    target.style.zoom = next;
+  }, { passive: false });
+
+  var startX, startY, scrollL, scrollT;
+  wrap.addEventListener('mousedown', function(e) {
+    if (e.target.closest('.zoom-controls')) return;
+    wrap.classList.add('is-panning');
+    startX = e.clientX;
+    startY = e.clientY;
+    scrollL = wrap.scrollLeft;
+    scrollT = wrap.scrollTop;
+  });
+  window.addEventListener('mousemove', function(e) {
+    if (!wrap.classList.contains('is-panning')) return;
+    wrap.scrollLeft = scrollL - (e.clientX - startX);
+    wrap.scrollTop = scrollT - (e.clientY - startY);
+  });
+  window.addEventListener('mouseup', function() {
+    wrap.classList.remove('is-panning');
+  });
+});
+</script>
+
+</body>
+</html>
