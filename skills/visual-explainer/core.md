@@ -52,7 +52,7 @@ Use CSS custom properties. Define: `--bg`, `--surface`, `--border`, `--text`, `-
 
 - Always use `theme: 'base'` with custom `themeVariables` matching your page palette.
 - Always center with `display: flex; justify-content: center`.
-- Add zoom controls (+/−/reset) to every `.mermaid-wrap`. See css-patterns.md "Mermaid Zoom Controls."
+- Add zoom controls (+/−/reset) to every `.mermaid-wrap`. See css-mermaid.md "Mermaid Containers."
 - Prefer `flowchart TD` over `LR` for complex diagrams. Use `LR` only for simple 3-4 node linear flows.
 - Max 10-12 nodes per diagram. For 15+, use hybrid: simple Mermaid overview + CSS Grid cards.
 - Never define `.node` as a page-level CSS class (Mermaid uses it internally).

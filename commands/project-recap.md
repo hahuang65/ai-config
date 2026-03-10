@@ -5,7 +5,9 @@ Generate a comprehensive visual project recap as a self-contained HTML page.
 
 Before generating, read these reference files:
 - `~/.claude/skills/visual-explainer/core.md` (quality guide — aesthetic, typography, color, style, checks)
-- `~/.claude/skills/visual-explainer/references/css-patterns.md` (CSS patterns, Mermaid zoom, card depth)
+- `~/.claude/skills/visual-explainer/references/css-core.md` (theme, cards, code blocks, overflow)
+- `~/.claude/skills/visual-explainer/references/css-mermaid.md` (Mermaid containers, zoom controls, connectors)
+- `~/.claude/skills/visual-explainer/references/css-components.md` (grids, KPI cards, before/after, collapsible, animations)
 - `~/.claude/skills/visual-explainer/references/libraries.md` (Mermaid theming, font imports)
 
 Use a warm editorial or paper/ink aesthetic with muted blues and greens, but vary fonts and palette from previous diagrams.
@@ -31,10 +33,10 @@ Apply the verification checkpoint from core.md before generating HTML.
 
 **Diagram structure** — the page should include:
 1. **Project identity** — not the README blurb. A *current-state* summary: what this project does, who uses it, what stage it's at (early dev, stable, actively shipping features). Include version, key dependencies, and the one-sentence "elevator pitch" for someone who forgot what they were building.
-2. **Architecture snapshot** — Mermaid diagram of the system as it exists today. Focus on the conceptual modules and their relationships, not every file. Label nodes with what they do, not just file names. Wrap in `.mermaid-wrap` with zoom controls per core.md and css-patterns.md. *Visual treatment: this is the visual anchor — use hero depth (elevated container, larger padding, subtle accent-tinted background). The rest of the page hangs off this diagram.*
+2. **Architecture snapshot** — Mermaid diagram of the system as it exists today. Focus on the conceptual modules and their relationships, not every file. Label nodes with what they do, not just file names. Wrap in `.mermaid-wrap` with zoom controls per core.md and css-mermaid.md. *Visual treatment: this is the visual anchor — use hero depth (elevated container, larger padding, subtle accent-tinted background). The rest of the page hangs off this diagram.*
 3. **Recent activity** — not raw git log. A human-readable narrative grouped by theme: feature work, bug fixes, refactors, infrastructure. Timeline visualization with the most significant changes called out. For each theme, a one-sentence summary of what happened and why it mattered.
 4. **Decision log** — key design decisions from the time window. Extracted from commit messages, conversation history, plan docs, progress docs. Each entry: what was decided, why, what was considered. This is the highest-value section for fighting cognitive debt — the reasoning that evaporates first.
-5. **State of things** — *visual treatment: use the KPI card pattern from css-patterns.md — large hero numbers for working/broken/blocked/in-progress counts, with color-coded trend indicators.* A dashboard of:
+5. **State of things** — *visual treatment: use the KPI card pattern from css-components.md — large hero numbers for working/broken/blocked/in-progress counts, with color-coded trend indicators.* A dashboard of:
    - What's working (stable, shipped, tested)
    - What's in progress (uncommitted work, open branches, active TODOs)
    - What's broken or degraded (known bugs, failing tests, tech debt items)

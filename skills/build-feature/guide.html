@@ -647,8 +647,8 @@ body {
         <tr>
           <td><span class="phase-label research">Research</span></td>
           <td class="step-num">1.5</td>
-          <td>Invoke <code>/generate-web-diagram</code> &rarr; <code>architecture.html</code></td>
-          <td><span class="cmd-tag">/generate-web-diagram</span></td>
+          <td>Invoke <code>/generate-architecture-diagram</code> &rarr; <code>architecture.html</code></td>
+          <td><span class="cmd-tag">/generate-architecture-diagram</span></td>
           <td><span class="sev-cond">COND</span></td>
           <td>HTML file created, opened in browser (only if VE available)</td>
         </tr>
@@ -789,14 +789,6 @@ body {
         <tr>
           <td><span class="phase-label implement">Impl</span></td>
           <td class="step-num">3.6</td>
-          <td>Security review on all changed files</td>
-          <td><span class="agent-tag">security-reviewer</span></td>
-          <td><span class="sev-must">MUST</span></td>
-          <td>Agent call; CRITICAL issues fixed immediately</td>
-        </tr>
-        <tr>
-          <td><span class="phase-label implement">Impl</span></td>
-          <td class="step-num">3.7</td>
           <td>Database review (if feature touches DB code)</td>
           <td><span class="agent-tag">database-reviewer</span></td>
           <td><span class="sev-cond">COND</span></td>
@@ -804,7 +796,7 @@ body {
         </tr>
         <tr>
           <td><span class="phase-label implement">Impl</span></td>
-          <td class="step-num">3.8</td>
+          <td class="step-num">3.7</td>
           <td>Invoke <code>/simplify</code></td>
           <td><span class="cmd-tag">/simplify</span></td>
           <td><span class="sev-must">MUST</span></td>
@@ -812,7 +804,7 @@ body {
         </tr>
         <tr>
           <td><span class="phase-label implement">Impl</span></td>
-          <td class="step-num">3.9</td>
+          <td class="step-num">3.8</td>
           <td>Refactor cleanup on changed files</td>
           <td><span class="agent-tag">refactor-cleaner</span></td>
           <td><span class="sev-must">MUST</span></td>
@@ -820,15 +812,15 @@ body {
         </tr>
         <tr>
           <td><span class="phase-label implement">Impl</span></td>
-          <td class="step-num">3.10</td>
-          <td>Code review on all changed files (&gt;80% confidence threshold)</td>
+          <td class="step-num">3.9</td>
+          <td>Code review on all changed files, including OWASP Top 10 security checks (&gt;80% confidence threshold)</td>
           <td><span class="agent-tag">code-reviewer</span></td>
           <td><span class="sev-must">MUST</span></td>
           <td>Agent call; CRITICAL/HIGH fixed; re-run tests</td>
         </tr>
         <tr>
           <td><span class="phase-label implement">Impl</span></td>
-          <td class="step-num">3.11</td>
+          <td class="step-num">3.10</td>
           <td>Documentation update (if feature warrants it)</td>
           <td><span class="agent-tag">doc-updater</span></td>
           <td><span class="sev-cond">COND</span></td>
@@ -836,7 +828,7 @@ body {
         </tr>
         <tr>
           <td><span class="phase-label implement">Impl</span></td>
-          <td class="step-num">3.12</td>
+          <td class="step-num">3.11</td>
           <td>Invoke <code>/fact-check</code> on plan.md</td>
           <td><span class="cmd-tag">/fact-check</span></td>
           <td><span class="sev-must">MUST</span></td>
@@ -844,7 +836,7 @@ body {
         </tr>
         <tr>
           <td><span class="phase-label implement">Impl</span></td>
-          <td class="step-num">3.13</td>
+          <td class="step-num">3.12</td>
           <td>Refresh <code>visual-plan.html</code> if plan changed (deviations, corrections, task changes)</td>
           <td><span class="cmd-tag">/generate-visual-plan</span></td>
           <td><span class="sev-cond">COND</span></td>
@@ -852,7 +844,7 @@ body {
         </tr>
         <tr>
           <td><span class="phase-label implement">Impl</span></td>
-          <td class="step-num">3.14</td>
+          <td class="step-num">3.13</td>
           <td>Summary to user &mdash; NEVER commit</td>
           <td>&mdash;</td>
           <td><span class="sev-must">MUST</span></td>
@@ -907,21 +899,11 @@ body {
       </div>
     </div>
     <div class="agent-card">
-      <div class="agent-name">security-reviewer</div>
-      <div class="agent-purpose">Security vulnerability detection and remediation. Covers OWASP Top 10, secrets detection, input validation, auth/authz. Severity levels: CRITICAL, HIGH, MEDIUM. Reads <code>security.md</code>.</div>
-      <div class="agent-meta">
-        <span class="meta-tag model-sonnet">sonnet</span>
-        <span class="meta-tag">Phase 3 &mdash; step 3.6</span>
-        <span class="meta-tag">implement skill</span>
-        <span class="meta-tag">MUST</span>
-      </div>
-    </div>
-    <div class="agent-card">
       <div class="agent-name">database-reviewer</div>
       <div class="agent-purpose">Database specialist for query optimization, schema design, RLS, connection management. Runs EXPLAIN ANALYZE, checks indexes and N+1 patterns. Reads <code>security.md</code>, <code>performance.md</code>.</div>
       <div class="agent-meta">
         <span class="meta-tag model-sonnet">sonnet</span>
-        <span class="meta-tag">Phase 3 &mdash; step 3.7</span>
+        <span class="meta-tag">Phase 3 &mdash; step 3.6</span>
         <span class="meta-tag">implement skill</span>
         <span class="meta-tag">COND: DB code</span>
       </div>
@@ -931,17 +913,17 @@ body {
       <div class="agent-purpose">Code cleanup specialist for dead code detection, unused dependency removal. Categorizes findings: SAFE (remove), CAREFUL (verify), RISKY (confirm). Reads <code>coding-style.md</code>.</div>
       <div class="agent-meta">
         <span class="meta-tag model-sonnet">sonnet</span>
-        <span class="meta-tag">Phase 3 &mdash; step 3.9</span>
+        <span class="meta-tag">Phase 3 &mdash; step 3.8</span>
         <span class="meta-tag">implement skill</span>
         <span class="meta-tag">MUST</span>
       </div>
     </div>
     <div class="agent-card">
       <div class="agent-name">code-reviewer</div>
-      <div class="agent-purpose">Expert code review with confidence-based filtering (&gt;80% threshold). Reviews CRITICAL security, HIGH quality, MEDIUM performance, LOW practices. Reads all 4 rule files.</div>
+      <div class="agent-purpose">Expert code review with integrated security analysis (OWASP Top 10, secrets detection, input validation, auth/authz) and confidence-based filtering (&gt;80% threshold). Reviews CRITICAL security, HIGH quality, MEDIUM performance, LOW practices. Auto-fixes CRITICAL security issues. Reads all 4 rule files.</div>
       <div class="agent-meta">
         <span class="meta-tag model-sonnet">sonnet</span>
-        <span class="meta-tag">Phase 3 &mdash; step 3.10</span>
+        <span class="meta-tag">Phase 3 &mdash; step 3.9</span>
         <span class="meta-tag">implement skill</span>
         <span class="meta-tag">MUST</span>
       </div>
@@ -951,7 +933,7 @@ body {
       <div class="agent-purpose">Documentation specialist ensuring docs match code reality. Updates READMEs, CHANGELOGs, architecture docs. Verifies paths and examples. Reads <code>git-workflow.md</code>.</div>
       <div class="agent-meta">
         <span class="meta-tag model-sonnet">sonnet</span>
-        <span class="meta-tag">Phase 3 &mdash; step 3.11</span>
+        <span class="meta-tag">Phase 3 &mdash; step 3.10</span>
         <span class="meta-tag">implement skill</span>
         <span class="meta-tag">COND: significant changes</span>
       </div>
@@ -974,7 +956,7 @@ body {
       </thead>
       <tbody>
         <tr>
-          <td><code>/generate-web-diagram</code></td>
+          <td><code>/generate-architecture-diagram</code></td>
           <td><code>architecture.html</code></td>
           <td><span class="phase-label research">Research</span></td>
           <td>research.md, source files discovered during research</td>

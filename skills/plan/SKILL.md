@@ -37,7 +37,7 @@ When invoked **from build-feature**, the orchestrator will provide the directory
 
 ## Rules Adherence
 
-Before writing the plan, read and comply with all rule files in `rules/` (or `~/.claude/rules/` for global rules). These rules govern coding style, testing, security, performance, and git workflow. Code snippets in the plan must follow `coding-style.md`. The testing strategy must follow `testing.md`. Architectural decisions must respect `security.md` and `performance.md`.
+Comply with the project rules already loaded in context (coding-style, testing, security, performance, git-workflow). Code snippets must follow coding-style rules. The testing strategy must follow testing rules. Architectural decisions must respect security and performance rules.
 
 ## Process
 
@@ -49,9 +49,11 @@ Before writing the plan:
 - Read relevant source files referenced in the research or related to `$ARGUMENTS`
 - Base the plan on the ACTUAL codebase, not assumptions
 
-### Step 1b: Architecture Review
+### Step 1b: Architecture Review (conditional)
 
-Use the `architect` agent (via the Agent tool) to evaluate the feature's architectural implications. Incorporate the architect's findings into the plan's **Approach** and **Considerations & Trade-offs** sections.
+For features that involve architectural decisions (new modules, cross-cutting changes, API design, database schema changes, or features touching 5+ files), use the `architect` agent (via the Agent tool) to evaluate architectural implications. Incorporate findings into the plan's **Approach** and **Considerations & Trade-offs** sections.
+
+Skip the architect for simple features (bug fixes, single-file changes, UI tweaks, configuration changes) — the planning skill's own analysis is sufficient.
 
 ### Step 1c: Detect Domain Context
 

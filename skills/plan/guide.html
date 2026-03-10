@@ -570,10 +570,10 @@ body {
           </tr>
           <tr>
             <td class="step-num">1b</td>
-            <td><strong>Architecture Review</strong><small>Evaluate architectural implications</small></td>
+            <td><strong>Architecture Review (conditional)</strong><small>Evaluate architectural implications for complex features</small></td>
             <td><code>architect</code> agent</td>
-            <td><span class="badge badge--must">Must</span></td>
-            <td>Architect findings feed into Approach &amp; Trade-offs</td>
+            <td><span class="badge badge--conditional">Conditional</span></td>
+            <td>Architect findings feed into Approach &amp; Trade-offs. Skip for bug fixes, single-file changes, UI tweaks, config.</td>
           </tr>
           <tr>
             <td class="step-num">1c</td>
@@ -649,9 +649,9 @@ body {
     <div class="ve-card ve-card--elevated" style="border-left: 3px solid var(--terracotta);">
       <div class="ve-card__label" style="color: var(--terracotta);">Agent</div>
       <h4><code>architect</code></h4>
-      <p>Evaluates architectural implications of the feature. Findings go into Approach and Considerations sections.</p>
+      <p>Evaluates architectural implications for complex features (new modules, cross-cutting changes, API design, DB schema, 5+ files). Skipped for simple features. Findings go into Approach and Considerations sections.</p>
       <div style="margin-top: 10px; display: flex; gap: 6px; flex-wrap: wrap;">
-        <span class="badge badge--must">Must</span>
+        <span class="badge badge--conditional">Conditional</span>
         <span class="badge badge--opus">Opus</span>
       </div>
     </div>

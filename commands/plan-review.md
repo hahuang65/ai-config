@@ -5,7 +5,9 @@ Generate a comprehensive visual plan review as a self-contained HTML page, compa
 
 Before generating, read these reference files:
 - `~/.claude/skills/visual-explainer/core.md` (quality guide — aesthetic, typography, color, style, checks)
-- `~/.claude/skills/visual-explainer/references/css-patterns.md` (CSS patterns, Mermaid zoom, card depth)
+- `~/.claude/skills/visual-explainer/references/css-core.md` (theme, cards, code blocks, overflow)
+- `~/.claude/skills/visual-explainer/references/css-mermaid.md` (Mermaid containers, zoom controls, connectors)
+- `~/.claude/skills/visual-explainer/references/css-components.md` (grids, KPI cards, before/after, collapsible, animations)
 - `~/.claude/skills/visual-explainer/references/libraries.md` (Mermaid theming, font imports)
 
 Use a blueprint/editorial aesthetic with current-state vs. planned-state panels, but vary fonts and palette from previous diagrams.
@@ -43,7 +45,7 @@ Apply the verification checkpoint from core.md before generating HTML.
 
 2. **Impact dashboard** — files to modify, files to create, files to delete, estimated lines added/removed, new test files planned, dependencies affected. Include a **completeness** indicator: whether the plan covers tests (green/red), docs updates (green/yellow/red), and migration/rollback (green/grey for N/A).
 
-3. **Current architecture** — Mermaid diagram of how the affected subsystem works *today*. Focus only on the parts the plan touches — don't diagram the entire codebase. Show the data flow, dependencies, and call paths that will change. Wrap in `.mermaid-wrap` with zoom controls per core.md and css-patterns.md. *Visual treatment: use matching Mermaid layout direction and node names as section 4 so the visual diff is obvious.*
+3. **Current architecture** — Mermaid diagram of how the affected subsystem works *today*. Focus only on the parts the plan touches — don't diagram the entire codebase. Show the data flow, dependencies, and call paths that will change. Wrap in `.mermaid-wrap` with zoom controls per core.md and css-mermaid.md. *Visual treatment: use matching Mermaid layout direction and node names as section 4 so the visual diff is obvious.*
 
 4. **Planned architecture** — Mermaid diagram of how the subsystem will work *after* the plan is implemented. Use the same node names and layout direction as the current architecture diagram so the differences are visually obvious. Same zoom controls as section 3. *Highlight new nodes with a glow or accent border, removed nodes with strikethrough or reduced opacity, changed edges with a different stroke color.*
 

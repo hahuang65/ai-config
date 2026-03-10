@@ -1,0 +1,1044 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Skill Token Reduction — Implementation Plan</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=Fira+Code:wght@400;500;600&display=swap" rel="stylesheet">
+<script type="module">
+import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';
+
+function getTheme() {
+  return document.documentElement.getAttribute('data-theme');
+}
+
+function getMermaidConfig(theme) {
+  const isDark = theme === 'dark';
+  return {
+    startOnLoad: false,
+    theme: 'base',
+    themeVariables: {
+      primaryColor: isDark ? '#1e3a5f' : '#e8f0fe',
+      primaryTextColor: isDark ? '#e2e8f0' : '#1a202c',
+      primaryBorderColor: isDark ? '#d4a73a' : '#1e3a5f',
+      lineColor: isDark ? '#d4a73a' : '#1e3a5f',
+      secondaryColor: isDark ? '#2a2a3e' : '#f0f4ff',
+      tertiaryColor: isDark ? '#1a2332' : '#fafbff',
+      fontFamily: 'DM Sans, sans-serif',
+      fontSize: '14px',
+      noteBkgColor: isDark ? '#2a3a4e' : '#fff8e1',
+      noteTextColor: isDark ? '#e2e8f0' : '#1a202c',
+      noteBorderColor: isDark ? '#d4a73a' : '#d4a73a',
+    },
+    flowchart: { curve: 'basis', padding: 20 },
+  };
+}
+
+async function renderMermaid() {
+  const theme = getTheme();
+  mermaid.initialize(getMermaidConfig(theme));
+  const els = document.querySelectorAll('.mermaid');
+  for (const el of els) {
+    const id = 'mermaid-' + Math.random().toString(36).slice(2, 9);
+    const source = el.getAttribute('data-source') || el.textContent;
+    el.setAttribute('data-source', source);
+    try {
+      const { svg } = await mermaid.render(id, source);
+      el.innerHTML = svg;
+    } catch(e) {
+      console.error('Mermaid render error:', e);
+    }
+  }
+}
+
+renderMermaid();
+
+window.toggleTheme = function() {
+  const html = document.documentElement;
+  const current = html.getAttribute('data-theme');
+  const next = current === 'dark' ? 'light' : 'dark';
+  html.setAttribute('data-theme', next);
+  document.querySelector('.theme-toggle').textContent = next === 'dark' ? '\u2600' : '\u263E';
+  renderMermaid();
+};
+</script>
+<style>
+  :root {
+    --font-body: 'DM Sans', sans-serif;
+    --font-mono: 'Fira Code', monospace;
+    --transition: 0.3s ease;
+  }
+
+  [data-theme="dark"] {
+    --bg: #0f1724;
+    --bg-alt: #141e30;
+    --surface: #1a2744;
+    --surface-raised: #1e3050;
+    --surface-glow: #243656;
+    --border: rgba(212, 167, 58, 0.15);
+    --border-accent: rgba(212, 167, 58, 0.35);
+    --text: #e2e8f0;
+    --text-dim: #8899aa;
+    --text-muted: #5a6a7a;
+    --accent: #d4a73a;
+    --accent-dim: rgba(212, 167, 58, 0.15);
+    --accent-glow: rgba(212, 167, 58, 0.08);
+    --teal: #0891b2;
+    --teal-dim: rgba(8, 145, 178, 0.15);
+    --green: #059669;
+    --green-dim: rgba(5, 150, 105, 0.15);
+    --red: #dc2626;
+    --red-dim: rgba(220, 38, 38, 0.12);
+    --rose: #be123c;
+    --rose-dim: rgba(190, 18, 60, 0.12);
+    --grid-line: rgba(212, 167, 58, 0.04);
+  }
+
+  [data-theme="light"] {
+    --bg: #f5f7fa;
+    --bg-alt: #eef1f6;
+    --surface: #ffffff;
+    --surface-raised: #ffffff;
+    --surface-glow: #f8fafc;
+    --border: rgba(30, 58, 95, 0.12);
+    --border-accent: rgba(30, 58, 95, 0.25);
+    --text: #1a202c;
+    --text-dim: #4a5568;
+    --text-muted: #a0aec0;
+    --accent: #b8860b;
+    --accent-dim: rgba(184, 134, 11, 0.1);
+    --accent-glow: rgba(184, 134, 11, 0.05);
+    --teal: #0e7490;
+    --teal-dim: rgba(14, 116, 144, 0.1);
+    --green: #047857;
+    --green-dim: rgba(4, 120, 87, 0.1);
+    --red: #b91c1c;
+    --red-dim: rgba(185, 28, 28, 0.08);
+    --rose: #9f1239;
+    --rose-dim: rgba(159, 18, 57, 0.08);
+    --grid-line: rgba(30, 58, 95, 0.04);
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    font-family: var(--font-body);
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.65;
+    min-height: 100vh;
+    transition: background var(--transition), color var(--transition);
+    overflow-x: hidden;
+  }
+
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background:
+      linear-gradient(var(--grid-line) 1px, transparent 1px),
+      linear-gradient(90deg, var(--grid-line) 1px, transparent 1px);
+    background-size: 48px 48px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .theme-toggle {
+    position: fixed;
+    top: 1.25rem;
+    right: 1.25rem;
+    z-index: 100;
+    background: var(--surface);
+    border: 1px solid var(--border-accent);
+    color: var(--accent);
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    font-size: 1.3rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all var(--transition);
+    box-shadow: 0 2px 12px rgba(0,0,0,0.15);
+  }
+  .theme-toggle:hover {
+    background: var(--accent);
+    color: var(--bg);
+    transform: scale(1.1);
+  }
+
+  .container {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 0 1.5rem;
+    position: relative;
+    z-index: 1;
+  }
+
+  /* Hero */
+  .hero {
+    padding: 5rem 0 3rem;
+    text-align: center;
+    position: relative;
+  }
+  .hero::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 10%;
+    right: 10%;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--accent), transparent);
+  }
+  .hero-label {
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 0.75rem;
+  }
+  .hero h1 {
+    font-size: clamp(1.8rem, 4.5vw, 3rem);
+    font-weight: 700;
+    line-height: 1.15;
+    margin-bottom: 0.75rem;
+    background: linear-gradient(135deg, var(--text), var(--accent));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  .hero-subtitle {
+    font-size: 1.05rem;
+    color: var(--text-dim);
+    max-width: 640px;
+    margin: 0 auto 2.5rem;
+  }
+
+  /* KPI row */
+  .kpi-row {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1.25rem;
+    max-width: 680px;
+    margin: 0 auto;
+  }
+  .kpi {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1.5rem 1rem;
+    text-align: center;
+    transition: all var(--transition);
+  }
+  .kpi:hover {
+    border-color: var(--accent);
+    box-shadow: 0 0 24px var(--accent-glow);
+    transform: translateY(-2px);
+  }
+  .kpi-value {
+    font-size: 2.2rem;
+    font-weight: 700;
+    color: var(--accent);
+    font-family: var(--font-mono);
+    line-height: 1.1;
+  }
+  .kpi-label {
+    font-size: 0.8rem;
+    color: var(--text-dim);
+    margin-top: 0.35rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+  }
+
+  /* Sections */
+  section {
+    padding: 3.5rem 0;
+    position: relative;
+  }
+  section + section::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 15%;
+    right: 15%;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--border-accent), transparent);
+  }
+
+  .section-label {
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 0.5rem;
+  }
+  .section-title {
+    font-size: 1.6rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+  }
+  .section-desc {
+    color: var(--text-dim);
+    font-size: 0.95rem;
+    margin-bottom: 2rem;
+    max-width: 700px;
+  }
+
+  /* Cards */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1.75rem;
+    transition: all var(--transition);
+  }
+  .card:hover {
+    border-color: var(--border-accent);
+    box-shadow: 0 4px 24px rgba(0,0,0,0.08);
+  }
+  .card h3 {
+    font-size: 1.1rem;
+    font-weight: 600;
+    margin-bottom: 0.75rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  .card p, .card li {
+    color: var(--text-dim);
+    font-size: 0.9rem;
+    line-height: 1.7;
+  }
+  .card ul { list-style: none; padding: 0; }
+  .card ul li {
+    padding: 0.25rem 0 0.25rem 1.25rem;
+    position: relative;
+  }
+  .card ul li::before {
+    content: '\25B8';
+    position: absolute;
+    left: 0;
+    color: var(--accent);
+    font-size: 0.7em;
+    top: 0.55rem;
+  }
+
+  /* Badge */
+  .badge {
+    display: inline-block;
+    font-family: var(--font-mono);
+    font-size: 0.65rem;
+    letter-spacing: 0.06em;
+    padding: 0.15rem 0.55rem;
+    border-radius: 6px;
+    text-transform: uppercase;
+    font-weight: 600;
+  }
+  .badge-gold { background: var(--accent-dim); color: var(--accent); }
+  .badge-teal { background: var(--teal-dim); color: var(--teal); }
+  .badge-green { background: var(--green-dim); color: var(--green); }
+  .badge-red { background: var(--red-dim); color: var(--red); }
+
+  /* Category A / B grids */
+  .cat-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.25rem;
+    margin-bottom: 1.5rem;
+  }
+  .cat-grid .card.full-width {
+    grid-column: 1 / -1;
+  }
+
+  /* Mermaid */
+  .mermaid-wrap {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 2rem 1rem;
+    margin: 1.5rem 0;
+    display: flex;
+    justify-content: center;
+    overflow-x: auto;
+    min-width: 0;
+  }
+  .mermaid-wrap .mermaid {
+    min-width: 0;
+  }
+  .mermaid-wrap svg {
+    max-width: 100%;
+    height: auto;
+  }
+
+  /* Before / After table */
+  .budget-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    font-size: 0.88rem;
+    margin: 1rem 0;
+  }
+  .budget-table thead th {
+    background: var(--surface);
+    border-bottom: 2px solid var(--accent);
+    padding: 0.75rem 1rem;
+    text-align: left;
+    font-weight: 600;
+    font-size: 0.78rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--text-dim);
+  }
+  .budget-table tbody td {
+    padding: 0.65rem 1rem;
+    border-bottom: 1px solid var(--border);
+    vertical-align: middle;
+  }
+  .budget-table tbody tr:hover {
+    background: var(--accent-glow);
+  }
+  .budget-table .num {
+    font-family: var(--font-mono);
+    font-size: 0.85rem;
+    text-align: right;
+  }
+  .budget-table .savings {
+    color: var(--green);
+    font-weight: 600;
+  }
+  .budget-table .total-row td {
+    font-weight: 700;
+    border-top: 2px solid var(--accent);
+    border-bottom: none;
+    padding-top: 0.85rem;
+  }
+
+  /* Checklist */
+  .checklist {
+    list-style: none;
+    padding: 0;
+  }
+  .checklist li {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.65rem;
+    padding: 0.5rem 0.75rem;
+    border-radius: 8px;
+    font-size: 0.88rem;
+    transition: background var(--transition);
+    min-width: 0;
+    overflow-wrap: break-word;
+  }
+  .checklist li:hover {
+    background: var(--accent-glow);
+  }
+  .check-box {
+    flex-shrink: 0;
+    width: 18px;
+    height: 18px;
+    border: 2px solid var(--text-muted);
+    border-radius: 4px;
+    margin-top: 2px;
+    transition: all var(--transition);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.65rem;
+    color: transparent;
+  }
+  .check-box.checked {
+    background: var(--green);
+    border-color: var(--green);
+    color: white;
+  }
+  .checklist .task-id {
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    color: var(--accent);
+    min-width: 2.5rem;
+    flex-shrink: 0;
+  }
+  .checklist .task-text {
+    color: var(--text-dim);
+    flex: 1;
+    min-width: 0;
+    overflow-wrap: break-word;
+  }
+
+  /* Dependency graph */
+  .dep-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 1rem;
+  }
+  .dep-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 1.25rem;
+  }
+  .dep-card h4 {
+    font-size: 0.85rem;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+    color: var(--accent);
+    font-family: var(--font-mono);
+  }
+  .dep-card p {
+    font-size: 0.82rem;
+    color: var(--text-dim);
+    line-height: 1.6;
+  }
+  .dep-arrow {
+    font-family: var(--font-mono);
+    color: var(--accent);
+    font-size: 0.75rem;
+  }
+
+  /* Pipeline comparison */
+  .pipeline-compare {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.25rem;
+    margin: 1.5rem 0;
+  }
+  .pipeline-panel {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1.5rem;
+  }
+  .pipeline-panel h4 {
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  .pipeline-panel.before h4 { color: var(--red); }
+  .pipeline-panel.after h4 { color: var(--green); }
+  .pipeline-step {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.45rem 0.65rem;
+    border-radius: 6px;
+    margin-bottom: 0.35rem;
+    font-size: 0.82rem;
+    background: var(--accent-glow);
+    min-width: 0;
+  }
+  .pipeline-step .step-name {
+    overflow-wrap: break-word;
+    min-width: 0;
+  }
+  .pipeline-step .step-tokens {
+    font-family: var(--font-mono);
+    font-size: 0.78rem;
+    color: var(--text-dim);
+    white-space: nowrap;
+    margin-left: 0.5rem;
+    flex-shrink: 0;
+  }
+  .pipeline-step.eliminated {
+    text-decoration: line-through;
+    opacity: 0.5;
+  }
+  .pipeline-step.new {
+    border-left: 3px solid var(--green);
+  }
+  .pipeline-step.reduced {
+    border-left: 3px solid var(--teal);
+  }
+
+  /* Stagger animations */
+  .animate-in {
+    opacity: 0;
+    transform: translateY(24px);
+    transition: opacity 0.6s ease, transform 0.6s ease;
+  }
+  .animate-in.visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .animate-in { opacity: 1; transform: none; transition: none; }
+  }
+
+  /* Mobile */
+  @media (max-width: 768px) {
+    .kpi-row { grid-template-columns: 1fr; max-width: 300px; }
+    .cat-grid { grid-template-columns: 1fr; }
+    .pipeline-compare { grid-template-columns: 1fr; }
+    .hero { padding: 3rem 0 2rem; }
+    .kpi-value { font-size: 1.8rem; }
+    .container { padding: 0 1rem; }
+  }
+
+  /* Code */
+  code {
+    font-family: var(--font-mono);
+    font-size: 0.82em;
+    background: var(--accent-dim);
+    padding: 0.15em 0.4em;
+    border-radius: 4px;
+    overflow-wrap: break-word;
+  }
+
+  /* File size indicator */
+  .file-size {
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    color: var(--text-muted);
+    padding: 0.1rem 0.4rem;
+    background: var(--accent-glow);
+    border-radius: 4px;
+  }
+</style>
+</head>
+<body>
+
+<button class="theme-toggle" onclick="toggleTheme()">&#9788;</button>
+
+<div class="container">
+
+  <!-- HERO -->
+  <header class="hero animate-in">
+    <div class="hero-label">Implementation Plan v3</div>
+    <h1>Skill Token Reduction</h1>
+    <p class="hero-subtitle">
+      Reduce total token consumption per <code>/build-feature</code> run by ~42% through VE reference splitting and agent pipeline optimization.
+    </p>
+    <div class="kpi-row">
+      <div class="kpi">
+        <div class="kpi-value">42%</div>
+        <div class="kpi-label">Total Reduction</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-value">21</div>
+        <div class="kpi-label">Tasks</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-value">2</div>
+        <div class="kpi-label">Categories</div>
+      </div>
+    </div>
+  </header>
+
+  <!-- CATEGORY A -->
+  <section class="animate-in">
+    <div class="section-label">Category A</div>
+    <h2 class="section-title">VE Reference Optimization</h2>
+    <p class="section-desc">
+      Split the monolithic <code>css-patterns.md</code> (42K chars, 1733 lines) into three targeted modules.
+      Commands read only what they need instead of loading everything.
+    </p>
+
+    <!-- Mermaid: CSS split diagram -->
+    <div class="mermaid-wrap">
+      <div class="mermaid">
+flowchart TD
+    A["css-patterns.md&lt;br/&gt;&lt;b&gt;42,275 chars · 1,733 lines&lt;/b&gt;"]
+    A -->|"extract 9 sections"| B["css-core.md&lt;br/&gt;&lt;b&gt;~462 lines · ~11K chars&lt;/b&gt;&lt;br/&gt;Theme · Cards · Code Blocks&lt;br/&gt;Overflow · Responsive · Badges"]
+    A -->|"extract 2 sections"| C["css-mermaid.md&lt;br/&gt;&lt;b&gt;~279 lines · ~7K chars&lt;/b&gt;&lt;br/&gt;Mermaid Containers&lt;br/&gt;Zoom Controls · Connectors"]
+    A -->|"extract 8 sections"| D["css-components.md&lt;br/&gt;&lt;b&gt;~988 lines · ~24K chars&lt;/b&gt;&lt;br/&gt;Grids · KPI · Animations&lt;br/&gt;Before/After · Prose · Images"]
+    style A fill:#7f1d1d22,stroke:#dc2626,stroke-width:2px
+    style B fill:#059669aa,stroke:#059669,stroke-width:2px,color:#fff
+    style C fill:#0891b2aa,stroke:#0891b2,stroke-width:2px,color:#fff
+    style D fill:#d4a73a44,stroke:#d4a73a,stroke-width:2px
+      </div>
+    </div>
+
+    <div class="cat-grid">
+      <div class="card">
+        <h3><span class="badge badge-gold">A1</span> New Architecture Command</h3>
+        <p>Create <code>/generate-architecture-diagram</code> — a lightweight command reading <code>core.md</code> + targeted CSS modules instead of loading the full 33K VE SKILL.md.</p>
+      </div>
+      <div class="card">
+        <h3><span class="badge badge-gold">A2–A4</span> Split css-patterns.md</h3>
+        <ul>
+          <li><code>css-core.md</code> <span class="file-size">~11K</span> — Always loaded (theme, cards, overflow)</li>
+          <li><code>css-mermaid.md</code> <span class="file-size">~7K</span> — Diagram pages only</li>
+          <li><code>css-components.md</code> <span class="file-size">~24K</span> — Rich layout pages</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3><span class="badge badge-gold">A5</span> Delete Original</h3>
+        <p>Remove <code>css-patterns.md</code> after content is distributed to the three new modules. Zero content loss.</p>
+      </div>
+      <div class="card">
+        <h3><span class="badge badge-gold">A6</span> Trim libraries.md</h3>
+        <p>Remove the Google Fonts section (56 lines) — redundant with <code>core.md</code> Typography. Saves ~3K chars per read.</p>
+      </div>
+      <div class="card full-width">
+        <h3><span class="badge badge-gold">A7–A10</span> Update All References</h3>
+        <p>Update 8 files to point at new module names: <code>SKILL.md</code>, <code>research/SKILL.md</code>, 5 VE commands, and <code>slide-patterns.md</code>. Each change follows the same pattern — replace the single <code>css-patterns.md</code> reference with the relevant subset of new modules.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- CATEGORY B -->
+  <section class="animate-in">
+    <div class="section-label">Category B</div>
+    <h2 class="section-title">Agent Pipeline Optimization</h2>
+    <p class="section-desc">
+      Reduce total agent tokens across all context windows by eliminating redundant reads, batching invocations, and merging overlapping agents.
+    </p>
+
+    <div class="pipeline-compare">
+      <div class="pipeline-panel before">
+        <h4><span class="badge badge-red">Before</span> ~470K total tokens</h4>
+        <div class="pipeline-step">
+          <span class="step-name">Rules re-read (plan + implement)</span>
+          <span class="step-tokens">~12K</span>
+        </div>
+        <div class="pipeline-step">
+          <span class="step-name">tdd-guide (20 solo invocations)</span>
+          <span class="step-tokens">~92K</span>
+        </div>
+        <div class="pipeline-step">
+          <span class="step-name">security-reviewer (separate pass)</span>
+          <span class="step-tokens">~15K</span>
+        </div>
+        <div class="pipeline-step">
+          <span class="step-name">architect (always runs)</span>
+          <span class="step-tokens">~15K</span>
+        </div>
+      </div>
+      <div class="pipeline-panel after">
+        <h4><span class="badge badge-green">After</span> ~275K total tokens</h4>
+        <div class="pipeline-step eliminated">
+          <span class="step-name">Rules re-read removed</span>
+          <span class="step-tokens">0</span>
+        </div>
+        <div class="pipeline-step reduced">
+          <span class="step-name">tdd-guide (5 batched invocations)</span>
+          <span class="step-tokens">~23K</span>
+        </div>
+        <div class="pipeline-step eliminated">
+          <span class="step-name">security merged into code-reviewer</span>
+          <span class="step-tokens">0</span>
+        </div>
+        <div class="pipeline-step new">
+          <span class="step-name">architect (conditional, skips simple)</span>
+          <span class="step-tokens">0–15K</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="cat-grid">
+      <div class="card">
+        <h3><span class="badge badge-teal">B1–B2</span> Remove Redundant Rule Reads</h3>
+        <p>Rules are already loaded as CLAUDE.md global instructions. Remove the "read all rule files" instruction from <code>plan/SKILL.md</code> and <code>implement/SKILL.md</code>. Saves ~12K in redundant disk reads.</p>
+      </div>
+      <div class="card">
+        <h3><span class="badge badge-teal">B3</span> Batch tdd-guide Calls</h3>
+        <p>Invoke tdd-guide with 3-5 related tasks per invocation instead of one. For 20 todos: 20 invocations drop to ~5. Each saves ~4.6K in overhead. <strong>Total: ~69K saved.</strong></p>
+      </div>
+      <div class="card">
+        <h3><span class="badge badge-teal">B4</span> Merge Security into Code Review</h3>
+        <p>Both agents read the same files. Code-reviewer already has a Security (CRITICAL) checklist. Merge adds OWASP Top 10 checks + auto-fix policy. Delete <code>security-reviewer.md</code>. Saves ~15K.</p>
+      </div>
+      <div class="card">
+        <h3><span class="badge badge-teal">B5</span> Conditional Architect</h3>
+        <p>Skip architect for simple features (bug fixes, single-file changes, UI tweaks). Run only for multi-module features, API design, or DB schema changes. Saves ~15K for ~30-40% of features.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- TOKEN BUDGET TABLE -->
+  <section class="animate-in">
+    <div class="section-label">Token Budget</div>
+    <h2 class="section-title">Before vs After</h2>
+    <p class="section-desc">Main context savings per <code>/build-feature</code> run, plus agent pipeline savings.</p>
+
+    <h3 style="font-size: 0.95rem; margin-bottom: 0.75rem;">Category A: Main Context</h3>
+    <table class="budget-table">
+      <thead>
+        <tr>
+          <th>Phase</th>
+          <th class="num">Before</th>
+          <th class="num">After</th>
+          <th class="num">Savings</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Phase 1: Research</td>
+          <td class="num">~126K</td>
+          <td class="num">~56K</td>
+          <td class="num savings">~70K</td>
+        </tr>
+        <tr>
+          <td>Phase 2: Plan</td>
+          <td class="num">~83K</td>
+          <td class="num">~74K</td>
+          <td class="num savings">~9K</td>
+        </tr>
+        <tr>
+          <td>Phase 3: Implement</td>
+          <td class="num">~86K</td>
+          <td class="num">~77K</td>
+          <td class="num savings">~9K</td>
+        </tr>
+        <tr>
+          <td>Diff-review</td>
+          <td class="num">~79K</td>
+          <td class="num">~70K</td>
+          <td class="num savings">~9K</td>
+        </tr>
+        <tr class="total-row">
+          <td>Main Context Total</td>
+          <td class="num">~374K</td>
+          <td class="num">~277K</td>
+          <td class="num savings">~97K (26%)</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h3 style="font-size: 0.95rem; margin: 1.5rem 0 0.75rem;">Category B: Agent Tokens</h3>
+    <table class="budget-table">
+      <thead>
+        <tr>
+          <th>Change</th>
+          <th class="num">Before</th>
+          <th class="num">After</th>
+          <th class="num">Savings</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Rules re-read (plan + implement)</td>
+          <td class="num">~12K</td>
+          <td class="num">0</td>
+          <td class="num savings">~12K</td>
+        </tr>
+        <tr>
+          <td>tdd-guide batching (20 todos)</td>
+          <td class="num">~92K</td>
+          <td class="num">~23K</td>
+          <td class="num savings">~69K</td>
+        </tr>
+        <tr>
+          <td>security-reviewer eliminated</td>
+          <td class="num">~15K</td>
+          <td class="num">0</td>
+          <td class="num savings">~15K</td>
+        </tr>
+        <tr>
+          <td>Architect skipped (simple features)</td>
+          <td class="num">~15K</td>
+          <td class="num">0</td>
+          <td class="num savings">~15K</td>
+        </tr>
+        <tr class="total-row">
+          <td>Agent Savings Total</td>
+          <td class="num"></td>
+          <td class="num"></td>
+          <td class="num savings">~96–111K</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="card" style="margin-top: 1.5rem; border-left: 3px solid var(--accent);">
+      <h3 style="color: var(--accent);">Grand Total: ~193–208K combined savings from v2 baseline</h3>
+      <p>For a typical 20-todo <code>/build-feature</code> run, total tokens across all windows drops from <strong>~470K to ~275K</strong>. From the original v1 baseline (681K), total savings reach <strong>~500–515K</strong>.</p>
+    </div>
+  </section>
+
+  <!-- DEPENDENCY / ORDERING -->
+  <section class="animate-in">
+    <div class="section-label">Execution Order</div>
+    <h2 class="section-title">Dependencies &amp; Ordering</h2>
+    <p class="section-desc">Tasks that must happen before others. Categories A and B are independent and can proceed in parallel.</p>
+
+    <div class="mermaid-wrap">
+      <div class="mermaid">
+flowchart TD
+    subgraph catA["Category A: VE Reference"]
+      A2["A2: Create css-core.md"]
+      A3["A3: Create css-mermaid.md"]
+      A4["A4: Create css-components.md"]
+      A5["A5: Delete css-patterns.md"]
+      A6["A6: Trim libraries.md"]
+      A7["A7: Update SKILL.md refs"]
+      A1["A1: New arch-diagram cmd"]
+      A8["A8: Update research skill"]
+      A9["A9a-e: Update 5 commands"]
+      A10["A10: Update slide-patterns"]
+
+      A2 --> A5
+      A3 --> A5
+      A4 --> A5
+      A5 --> A7
+      A7 --> A9
+      A7 --> A10
+      A5 --> A1
+      A1 --> A8
+    end
+
+    subgraph catB["Category B: Agent Pipeline"]
+      B1["B1: Plan rules removal"]
+      B2["B2: Implement rules removal"]
+      B3["B3: Batch tdd-guide"]
+      B4a["B4a: Enhance code-reviewer"]
+      B4b["B4b: Remove security step"]
+      B5["B5: Conditional architect"]
+      B6["B6: Delete security-reviewer"]
+
+      B4a --> B4b
+      B4b --> B6
+    end
+
+    style catA fill:#1e3a5f22,stroke:#1e3a5f
+    style catB fill:#0891b222,stroke:#0891b2
+      </div>
+    </div>
+
+    <div class="dep-grid">
+      <div class="dep-card">
+        <h4>Critical Path A</h4>
+        <p>
+          <span class="dep-arrow">A2+A3+A4</span> (create modules)
+          <span class="dep-arrow"> &rarr; A5</span> (delete original)
+          <span class="dep-arrow"> &rarr; A7</span> (update SKILL.md)
+          <span class="dep-arrow"> &rarr; A9+A10</span> (update commands)
+        </p>
+      </div>
+      <div class="dep-card">
+        <h4>Critical Path B</h4>
+        <p>
+          <span class="dep-arrow">B4a</span> (enhance code-reviewer)
+          <span class="dep-arrow"> &rarr; B4b</span> (remove security step)
+          <span class="dep-arrow"> &rarr; B6</span> (delete agent file)
+        </p>
+      </div>
+      <div class="dep-card">
+        <h4>Independent Tasks</h4>
+        <p>B1, B2, B3, B5, and A6 have no dependencies and can be done in any order.</p>
+      </div>
+      <div class="dep-card">
+        <h4>Parallel Execution</h4>
+        <p>Categories A and B are fully independent. Both critical paths can proceed simultaneously.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- CHECKLIST -->
+  <section class="animate-in">
+    <div class="section-label">Checklist</div>
+    <h2 class="section-title">All 21 Tasks</h2>
+    <p class="section-desc">Click checkboxes to track progress. State is stored in your browser.</p>
+
+    <div class="cat-grid">
+      <div class="card">
+        <h3><span class="badge badge-gold">Category A</span> VE Reference (14 tasks)</h3>
+        <ul class="checklist" id="checklist-a">
+          <li><span class="check-box" data-task="a2"></span><span class="task-id">A2</span><span class="task-text">Create <code>css-core.md</code> — extract 9 sections from css-patterns.md</span></li>
+          <li><span class="check-box" data-task="a3"></span><span class="task-id">A3</span><span class="task-text">Create <code>css-mermaid.md</code> — extract Mermaid + Connectors</span></li>
+          <li><span class="check-box" data-task="a4"></span><span class="task-id">A4</span><span class="task-text">Create <code>css-components.md</code> — extract 8 remaining sections</span></li>
+          <li><span class="check-box" data-task="a5"></span><span class="task-id">A5</span><span class="task-text">Delete <code>css-patterns.md</code></span></li>
+          <li><span class="check-box" data-task="a6"></span><span class="task-id">A6</span><span class="task-text">Trim <code>libraries.md</code> — remove Google Fonts section</span></li>
+          <li><span class="check-box" data-task="a7"></span><span class="task-id">A7</span><span class="task-text">Update <code>SKILL.md</code> — replace css-patterns.md references</span></li>
+          <li><span class="check-box" data-task="a1"></span><span class="task-id">A1</span><span class="task-text">Create <code>generate-architecture-diagram.md</code> command</span></li>
+          <li><span class="check-box" data-task="a8"></span><span class="task-id">A8</span><span class="task-text">Update <code>research/SKILL.md</code> to use new command</span></li>
+          <li><span class="check-box" data-task="a9a"></span><span class="task-id">A9a</span><span class="task-text">Update <code>diff-review.md</code> references</span></li>
+          <li><span class="check-box" data-task="a9b"></span><span class="task-id">A9b</span><span class="task-text">Update <code>generate-visual-plan.md</code> references</span></li>
+          <li><span class="check-box" data-task="a9c"></span><span class="task-id">A9c</span><span class="task-text">Update <code>plan-review.md</code> references</span></li>
+          <li><span class="check-box" data-task="a9d"></span><span class="task-id">A9d</span><span class="task-text">Update <code>project-recap.md</code> references</span></li>
+          <li><span class="check-box" data-task="a9e"></span><span class="task-id">A9e</span><span class="task-text">Update <code>generate-web-diagram.md</code> references</span></li>
+          <li><span class="check-box" data-task="a10"></span><span class="task-id">A10</span><span class="task-text">Update <code>slide-patterns.md</code> references</span></li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3><span class="badge badge-teal">Category B</span> Agent Pipeline (7 tasks)</h3>
+        <ul class="checklist" id="checklist-b">
+          <li><span class="check-box" data-task="b1"></span><span class="task-id">B1</span><span class="task-text">Remove redundant rules read from <code>plan/SKILL.md</code></span></li>
+          <li><span class="check-box" data-task="b2"></span><span class="task-id">B2</span><span class="task-text">Remove redundant rules read from <code>implement/SKILL.md</code></span></li>
+          <li><span class="check-box" data-task="b3"></span><span class="task-id">B3</span><span class="task-text">Batch tdd-guide: 3-5 tasks per invocation</span></li>
+          <li><span class="check-box" data-task="b4a"></span><span class="task-id">B4a</span><span class="task-text">Enhance <code>code-reviewer.md</code> — OWASP + auto-fix</span></li>
+          <li><span class="check-box" data-task="b4b"></span><span class="task-id">B4b</span><span class="task-text">Remove security-reviewer step from implement</span></li>
+          <li><span class="check-box" data-task="b5"></span><span class="task-id">B5</span><span class="task-text">Make architect conditional in <code>plan/SKILL.md</code></span></li>
+          <li><span class="check-box" data-task="b6"></span><span class="task-id">B6</span><span class="task-text">Delete <code>security-reviewer.md</code></span></li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <footer style="text-align: center; padding: 3rem 0 2rem; color: var(--text-muted); font-size: 0.78rem; font-family: var(--font-mono);">
+    Generated 2026-03-09 &middot; Skill Token Reduction Plan v3
+  </footer>
+
+</div>
+
+<script>
+// Checkbox persistence
+const STORAGE_KEY = 'skill-token-plan-checks';
+
+function loadChecks() {
+  try {
+    return JSON.parse(localStorage.getItem(STORAGE_KEY)) || {};
+  } catch { return {}; }
+}
+
+function saveChecks(checks) {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(checks));
+}
+
+function initChecklist() {
+  const checks = loadChecks();
+  document.querySelectorAll('.check-box').forEach(box => {
+    const task = box.getAttribute('data-task');
+    if (checks[task]) {
+      box.classList.add('checked');
+      box.textContent = '\u2713';
+    }
+    box.addEventListener('click', () => {
+      const current = loadChecks();
+      if (box.classList.contains('checked')) {
+        box.classList.remove('checked');
+        box.textContent = '';
+        delete current[task];
+      } else {
+        box.classList.add('checked');
+        box.textContent = '\u2713';
+        current[task] = true;
+      }
+      saveChecks(current);
+    });
+  });
+}
+
+// Staggered entrance animations
+function initAnimations() {
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach((entry, i) => {
+      if (entry.isIntersecting) {
+        setTimeout(() => {
+          entry.target.classList.add('visible');
+        }, i * 120);
+        observer.unobserve(entry.target);
+      }
+    });
+  }, { threshold: 0.1 });
+
+  document.querySelectorAll('.animate-in').forEach(el => observer.observe(el));
+}
+
+initChecklist();
+initAnimations();
+</script>
+
+</body>
+</html>

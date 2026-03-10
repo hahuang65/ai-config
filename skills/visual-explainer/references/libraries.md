@@ -75,7 +75,7 @@ Always use `theme: 'base'` — it's the only theme where all `themeVariables` ar
 Mermaid renders SVG. Override its classes for pixel-perfect control that `themeVariables` can't reach:
 
 ```css
-/* Container — see css-patterns.md "Mermaid Zoom Controls" for the full zoom pattern */
+/* Container — see css-mermaid.md "Mermaid Containers" for the full zoom pattern */
 .mermaid-wrap {
   position: relative;
   background: var(--surface);
@@ -485,59 +485,4 @@ When using anime.js, set initial opacity to 0 in CSS so elements don't flash bef
 }
 ```
 
-## Google Fonts — Typography
-
-Always load with `display=swap` for fast rendering. Pick a distinctive pairing — body + mono at minimum, optionally a display font for the title.
-
-**FORBIDDEN as `--font-body` (AI slop signals):**
-- Inter — the single most overused AI default font
-- Roboto — generic Android/Google default
-- Arial, Helvetica — system defaults with no character
-- system-ui alone without a named font — signals zero design intent
-
-```html
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
-```
-
-Define as CSS variables for easy reference:
-```css
-:root {
-  --font-body: 'Outfit', system-ui, sans-serif;
-  --font-mono: 'Space Mono', 'SF Mono', Consolas, monospace;
-}
-```
-
-**Font pairings** (rotate — never use the same pairing twice in a row):
-
-| Body / Headings | Mono / Labels | Feel | Use for |
-|---|---|---|---|
-| DM Sans | Fira Code | Friendly, developer | Blueprint, technical docs |
-| Instrument Serif | JetBrains Mono | Editorial, refined | Plan reviews, decision logs |
-| IBM Plex Sans | IBM Plex Mono | Reliable, readable | Architecture diagrams |
-| Bricolage Grotesque | Fragment Mono | Bold, characterful | Data tables, dashboards |
-| Plus Jakarta Sans | Azeret Mono | Rounded, approachable | Status reports, audits |
-| Outfit | Space Mono | Clean geometric, modern | Flowcharts, pipelines |
-| Sora | IBM Plex Mono | Technical, precise | ER diagrams, schemas |
-| Crimson Pro | Noto Sans Mono | Scholarly, serious | RFC reviews, specs |
-| Fraunces | Source Code Pro | Warm, distinctive | Project recaps |
-| Geist | Geist Mono | Vercel-inspired, sharp | Modern API docs |
-| Red Hat Display | Red Hat Mono | Cohesive family | System overviews |
-| Libre Franklin | Inconsolata | Classic, reliable | Data-dense tables |
-| Playfair Display | Roboto Mono | Elegant contrast | Executive summaries |
-
-The first 5 pairings are recommended for most use cases. Vary across consecutive diagrams.
-
-### Typography by Content Voice
-
-For prose-heavy pages (documentation, articles, essays), match typography to the content's voice:
-
-| Voice | Fonts | Best For |
-|-------|-------|----------|
-| **Literary / Thoughtful** | Literata, Lora, Newsreader, Merriweather | Essays, personal posts, long-form articles |
-| **Technical / Precise** | IBM Plex Sans + Mono, Geist + Geist Mono, Source family | Documentation, READMEs, API references |
-| **Bold / Contemporary** | Bricolage Grotesque, Space Grotesk, DM Sans | Product pages, feature announcements |
-| **Minimal / Focused** | Source Serif 4 + Source Sans 3, Karla + Inconsolata | Tutorials, how-tos, focused reading |
-
-**Literata** deserves special mention — it has optical sizing designed specifically for screen reading. Google's answer to Georgia, but modernized.
+<!-- For font pairings, typography guidance, and content voice matching, see core.md Typography section. -->

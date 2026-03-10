@@ -725,15 +725,7 @@ td .step-num {
               <td>All 4 checks pass cleanly</td>
             </tr>
             <tr>
-              <td><span class="step-num step-must">6</span></td>
-              <td>Security review &mdash; fix CRITICAL immediately. Reports CRITICAL / HIGH / MEDIUM.</td>
-              <td><span class="badge badge--agent">security-reviewer</span></td>
-              <td><span class="badge badge--must">MUST</span></td>
-              <td><span class="badge badge--yes">Yes (CRITICAL)</span></td>
-              <td>Security findings report</td>
-            </tr>
-            <tr>
-              <td><span class="step-num step-cond">7</span></td>
+              <td><span class="step-num step-cond">6</span></td>
               <td>Database review &mdash; only if DB code touched. Fix CRITICAL / HIGH.</td>
               <td><span class="badge badge--agent">database-reviewer</span></td>
               <td><span class="badge badge--cond">COND</span></td>
@@ -741,7 +733,7 @@ td .step-num {
               <td>DB review findings</td>
             </tr>
             <tr>
-              <td><span class="step-num step-must">8</span></td>
+              <td><span class="step-num step-must">7</span></td>
               <td>Simplify &mdash; review for reuse, quality, efficiency. Re-run tests after.</td>
               <td><span class="badge badge--cmd">/simplify</span></td>
               <td><span class="badge badge--must">MUST</span></td>
@@ -749,7 +741,7 @@ td .step-num {
               <td>Simplified code, tests still pass</td>
             </tr>
             <tr>
-              <td><span class="step-num step-must">9</span></td>
+              <td><span class="step-num step-must">8</span></td>
               <td>Refactor cleanup &mdash; remove SAFE items, verify CAREFUL items. Re-run tests.</td>
               <td><span class="badge badge--agent">refactor-cleaner</span></td>
               <td><span class="badge badge--must">MUST</span></td>
@@ -757,15 +749,15 @@ td .step-num {
               <td>Dead code removed, tests pass</td>
             </tr>
             <tr>
-              <td><span class="step-num step-must">10</span></td>
-              <td>Code review &mdash; &gt;80% confidence threshold. Fix CRITICAL / HIGH. Re-run tests.</td>
+              <td><span class="step-num step-must">9</span></td>
+              <td>Code review including OWASP Top 10 security checks &mdash; &gt;80% confidence threshold. Fix CRITICAL / HIGH. Re-run tests.</td>
               <td><span class="badge badge--agent">code-reviewer</span></td>
               <td><span class="badge badge--must">MUST</span></td>
               <td><span class="badge badge--yes">Yes (CRIT+HIGH)</span></td>
               <td>Code review report, issues resolved</td>
             </tr>
             <tr>
-              <td><span class="step-num step-cond">11</span></td>
+              <td><span class="step-num step-cond">10</span></td>
               <td>Documentation update &mdash; if new features, API changes, or architecture mods</td>
               <td><span class="badge badge--agent">doc-updater</span></td>
               <td><span class="badge badge--cond">COND</span></td>
@@ -773,7 +765,7 @@ td .step-num {
               <td>Updated docs</td>
             </tr>
             <tr>
-              <td><span class="step-num step-must">12</span></td>
+              <td><span class="step-num step-must">11</span></td>
               <td>Fact-check plan.md &mdash; verify all claims match actual implementation</td>
               <td><span class="badge badge--cmd">/fact-check</span></td>
               <td><span class="badge badge--must">MUST</span></td>
@@ -781,7 +773,7 @@ td .step-num {
               <td>Corrections applied to plan.md</td>
             </tr>
             <tr>
-              <td><span class="step-num step-cond">13</span></td>
+              <td><span class="step-num step-cond">12</span></td>
               <td>Refresh visual-plan.html &mdash; if it exists AND fact-check corrected plan, deviations noted, or tasks added/removed. <em>Last step before reporting.</em></td>
               <td><span class="badge badge--cmd">/generate-visual-plan</span></td>
               <td><span class="badge badge--cond">COND</span></td>
@@ -789,7 +781,7 @@ td .step-num {
               <td>visual-plan.html regenerated</td>
             </tr>
             <tr>
-              <td><span class="step-num step-must">14</span></td>
+              <td><span class="step-num step-must">13</span></td>
               <td>Complete &mdash; summarize what was done including test coverage. NEVER commit.</td>
               <td>&mdash;</td>
               <td><span class="badge badge--must">MUST</span></td>
@@ -818,19 +810,9 @@ td .step-num {
       </div>
 
       <div class="ve-card ve-card--elevated agent-card">
-        <div class="agent-name">security-reviewer</div>
-        <div class="agent-meta">
-          <span class="badge badge--must">Step 6</span>
-          <span class="badge badge--agent">Sonnet</span>
-          <span class="badge badge--must">MUST</span>
-        </div>
-        <p class="agent-desc">Reviews all changed files for security issues. Reports CRITICAL / HIGH / MEDIUM severity. CRITICAL must be fixed immediately.</p>
-      </div>
-
-      <div class="ve-card ve-card--elevated agent-card">
         <div class="agent-name">database-reviewer</div>
         <div class="agent-meta">
-          <span class="badge badge--cond">Step 7</span>
+          <span class="badge badge--cond">Step 6</span>
           <span class="badge badge--agent">Sonnet</span>
           <span class="badge badge--cond">COND</span>
         </div>
@@ -840,7 +822,7 @@ td .step-num {
       <div class="ve-card ve-card--elevated agent-card">
         <div class="agent-name">refactor-cleaner</div>
         <div class="agent-meta">
-          <span class="badge badge--must">Step 9</span>
+          <span class="badge badge--must">Step 8</span>
           <span class="badge badge--agent">Sonnet</span>
           <span class="badge badge--must">MUST</span>
         </div>
@@ -850,17 +832,17 @@ td .step-num {
       <div class="ve-card ve-card--elevated agent-card">
         <div class="agent-name">code-reviewer</div>
         <div class="agent-meta">
-          <span class="badge badge--must">Step 10</span>
+          <span class="badge badge--must">Step 9</span>
           <span class="badge badge--agent">Sonnet</span>
           <span class="badge badge--must">MUST</span>
         </div>
-        <p class="agent-desc">Reads and enforces project <code>rules/</code> files. Applies confidence-based filtering (&gt;80% threshold). Reports findings by severity. Fix CRITICAL and HIGH.</p>
+        <p class="agent-desc">Reads and enforces project <code>rules/</code> files with integrated security analysis (OWASP Top 10, secrets detection, input validation, auth/authz). Applies confidence-based filtering (&gt;80% threshold). Auto-fixes CRITICAL security issues. Reports findings by severity. Fix CRITICAL and HIGH.</p>
       </div>
 
       <div class="ve-card ve-card--elevated agent-card">
         <div class="agent-name">doc-updater</div>
         <div class="agent-meta">
-          <span class="badge badge--cond">Step 11</span>
+          <span class="badge badge--cond">Step 10</span>
           <span class="badge badge--agent">Sonnet</span>
           <span class="badge badge--cond">COND</span>
         </div>

@@ -19,15 +19,15 @@ Execute an approved plan, implementing all tasks without stopping, while trackin
 
 ## Rules Adherence
 
-Before writing any code, read and comply with all rule files in `rules/` (or `~/.claude/rules/` for global rules). These rules govern coding style, testing, security, performance, and git workflow. The skill itself — not just the agents it invokes — must follow these rules when writing implementation code, fixing issues, or making any code changes.
+Comply with the project rules already loaded in context (coding-style, testing, security, performance, git-workflow). The skill itself — not just the agents it invokes — must follow these rules when writing implementation code, fixing issues, or making any code changes.
 
 ## Process
 
 1. **Read the plan**: Read the plan document thoroughly. Understand every task, every code snippet, every constraint.
 
-2. **Implement everything**: Execute all tasks in the todo list, in order. You MUST use the `tdd-guide` agent (via the Agent tool) to guide implementation. For each task:
-   - Implement the changes exactly as specified in the plan, following the tdd-guide's red-green-refactor cycle
-   - Mark the task as completed in the plan document by changing `- [ ]` to `- [x]`
+2. **Implement everything**: Execute all tasks in the todo list, in order. You MUST use the `tdd-guide` agent (via the Agent tool) to guide implementation. **Batch tasks**: invoke the tdd-guide with 3-5 related tasks per invocation rather than one task at a time — this reduces agent overhead while maintaining TDD discipline. Group tasks by the file or module they affect. For each batch:
+   - Implement the changes exactly as specified in the plan, following the tdd-guide's red-green-refactor cycle for each task in the batch
+   - Mark each task as completed in the plan document by changing `- [ ]` to `- [x]`
    - Run type checks / linters continuously to catch issues early
    - Do NOT stop to ask for confirmation between tasks
    - If the plan's todo list is missing test tasks, write tests anyway — every behavioral change must have test coverage. The absence of test tasks in the plan does not excuse the absence of tests in the implementation.
@@ -44,23 +44,21 @@ Before writing any code, read and comply with all rule files in `rules/` (or `~/
 
    If any step fails, fix the issue before proceeding. Repeat the loop until all 4 pass cleanly.
 
-6. **Security review**: You MUST run the `security-reviewer` agent (via the Agent tool) on all changed files. This is not optional. If CRITICAL issues are found, fix them immediately. Report any findings to the user.
+6. **Database review** *(if the feature touches database code)*: If the implementation involved SQL queries, migrations, schema changes, or ORM operations, you MUST run the `database-reviewer` agent (via the Agent tool). Fix any CRITICAL or HIGH issues found.
 
-7. **Database review** *(if the feature touches database code)*: If the implementation involved SQL queries, migrations, schema changes, or ORM operations, you MUST run the `database-reviewer` agent (via the Agent tool). Fix any CRITICAL or HIGH issues found.
+7. **Simplify**: You MUST invoke `/simplify` to review the changed code for reuse opportunities, quality issues, and efficiency improvements. Fix any issues found. Then re-run the test suite to confirm nothing broke.
 
-8. **Simplify**: You MUST invoke `/simplify` to review the changed code for reuse opportunities, quality issues, and efficiency improvements. Fix any issues found. Then re-run the test suite to confirm nothing broke.
+8. **Refactor cleanup**: You MUST run the `refactor-cleaner` agent (via the Agent tool) on the changed files. Remove SAFE items, verify CAREFUL items. Re-run tests after cleanup.
 
-9. **Refactor cleanup**: You MUST run the `refactor-cleaner` agent (via the Agent tool) on the changed files. Remove SAFE items, verify CAREFUL items. Re-run tests after cleanup.
+9. **Code review**: You MUST run the `code-reviewer` agent (via the Agent tool) on all changed files. This is not optional. The agent reads and enforces the project's `rules/` files, applies confidence-based filtering (>80% confidence threshold), and reports findings by severity — including OWASP Top 10 security checks. Fix any CRITICAL and HIGH issues found. Re-run tests after fixes.
 
-10. **Code review**: You MUST run the `code-reviewer` agent (via the Agent tool) on all changed files. This is not optional. The agent reads and enforces the project's `rules/` files, applies confidence-based filtering (>80% confidence threshold), and reports findings by severity. Fix any CRITICAL and HIGH issues found. Re-run tests after fixes.
+10. **Documentation update** *(if the feature warrants it)*: If the implementation added new features, changed APIs, or modified architecture, run the `doc-updater` agent (via the Agent tool). Skip for trivial changes.
 
-11. **Documentation update** *(if the feature warrants it)*: If the implementation added new features, changed APIs, or modified architecture, run the `doc-updater` agent (via the Agent tool). Skip for trivial changes.
+11. **Fact-check the plan**: You MUST invoke `/fact-check` on the plan document. This is not optional. Use the Skill tool to invoke `fact-check` with the plan file path as the argument. This verifies that all claims (file paths, line numbers, function names, behavior descriptions) match what was actually implemented. Do NOT skip this step.
 
-12. **Fact-check the plan**: You MUST invoke `/fact-check` on the plan document. This is not optional. Use the Skill tool to invoke `fact-check` with the plan file path as the argument. This verifies that all claims (file paths, line numbers, function names, behavior descriptions) match what was actually implemented. Do NOT skip this step.
+12. **Refresh visual artifacts**: If `visual-plan.html` exists in the feature directory AND any of these are true — `/fact-check` made corrections to `plan.md`, deviations were noted during implementation (step 3), or tasks were added/removed — regenerate `visual-plan.html` by invoking `/generate-visual-plan` so the visual stays in sync with the final plan state. This is the last step before reporting completion.
 
-13. **Refresh visual artifacts**: If `visual-plan.html` exists in the feature directory AND any of these are true — `/fact-check` made corrections to `plan.md`, deviations were noted during implementation (step 3), or tasks were added/removed — regenerate `visual-plan.html` by invoking `/generate-visual-plan` so the visual stays in sync with the final plan state. This is the last step before reporting completion.
-
-14. **When complete**: Tell the user implementation is complete and summarize what was done, including test coverage added. Do NOT commit to version control — leave that to the user.
+13. **When complete**: Tell the user implementation is complete and summarize what was done, including test coverage added. Do NOT commit to version control — leave that to the user.
 
 ## Handling Issues During Implementation
 

@@ -19,6 +19,7 @@ This skill orchestrates three sub-skills, optionally using visual-explainer at p
 - `/implement [plan-filename]` - Phase 3 only
 
 If visual-explainer is installed, these commands are also available standalone:
+- `/generate-architecture-diagram` - Generate a visual HTML architecture diagram
 - `/generate-web-diagram` - Generate an HTML diagram for any topic
 - `/generate-visual-plan` - Generate a visual implementation plan
 - `/generate-slides` - Generate a magazine-quality slide deck

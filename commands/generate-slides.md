@@ -5,7 +5,7 @@ Generate a slide deck for: $ARGUMENTS
 
 Before generating, read these reference files:
 - `~/.claude/skills/visual-explainer/core.md` (quality guide — aesthetic, typography, color, style, checks)
-- `~/.claude/skills/visual-explainer/references/slide-patterns.md` (slide engine, types, presets — also instructs reading css-patterns.md and libraries.md)
+- `~/.claude/skills/visual-explainer/references/slide-patterns.md` (slide engine, types, presets — also instructs reading css-core.md, css-mermaid.md, css-components.md, and libraries.md)
 - `~/.claude/skills/visual-explainer/templates/slide-deck.html` (reference template)
 
 **Slide output is always opt-in.** Only generate slides when this command is invoked or the user explicitly asks for a slide deck.

@@ -707,7 +707,7 @@ body {
           </tr>
           <tr>
             <td class="step-num">5</td>
-            <td class="task-description">Invoke <code>/generate-web-diagram</code> &rarr; <code>architecture.html</code></td>
+            <td class="task-description">Invoke <code>/generate-architecture-diagram</code> &rarr; <code>architecture.html</code></td>
             <td><span class="required-cond">Conditional</span></td>
             <td class="output-cell"><code>architecture.html</code> in same directory; opened in browser</td>
           </tr>
@@ -806,7 +806,7 @@ body {
       </div>
       <div class="command-block command-block--elevated">
         <h4>Commands</h4>
-        <p><code>/generate-web-diagram</code></p>
+        <p><code>/generate-architecture-diagram</code></p>
         <p style="font-size: 0.85rem; color: var(--text-dim);">
           Produces <code>architecture.html</code> in the same feature directory as <code>research.md</code>. Visualizes module relationships, data flows, and component boundaries. Opens in browser automatically.
         </p>
@@ -833,7 +833,7 @@ flowchart TD
   D --> E["Trace flows and interactions"]
   E --> F["Write research.md<br/>8 required sections"]
   F --> G{VE available?}
-  G -->|Yes| H["Invoke /generate-web-diagram"]
+  G -->|Yes| H["Invoke /generate-architecture-diagram"]
   G -->|No| I["Skip diagram"]
   H --> J["architecture.html created"]
   J --> K["STOP: present file paths<br/>show annotation format"]
