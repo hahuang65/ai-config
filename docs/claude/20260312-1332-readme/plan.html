@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Plan: README.md for ai-config</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Fira+Code:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --font-body: 'DM Sans', system-ui, sans-serif;
+    --font-mono: 'Fira Code', 'SF Mono', Consolas, monospace;
+    --bg: #f0f4f8;
+    --surface: #ffffff;
+    --surface2: #e8eef4;
+    --surface-elevated: #f8fafc;
+    --border: rgba(30, 58, 95, 0.10);
+    --border-bright: rgba(30, 58, 95, 0.20);
+    --text: #1e3a5f;
+    --text-dim: #6b8299;
+    --accent: #1e3a5f;
+    --accent-dim: rgba(30, 58, 95, 0.06);
+    --gold: #d4a73a;
+    --gold-dim: rgba(212, 167, 58, 0.08);
+    --teal: #0891b2;
+    --teal-dim: rgba(8, 145, 178, 0.08);
+    --sage: #059669;
+    --sage-dim: rgba(5, 150, 105, 0.08);
+    --rose: #be123c;
+    --rose-dim: rgba(190, 18, 60, 0.08);
+    --amber: #d97706;
+    --amber-dim: rgba(217, 119, 6, 0.08);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #0c1220; --surface: #131b2e; --surface2: #1a2540;
+      --surface-elevated: #1e2d4a;
+      --border: rgba(180, 210, 240, 0.08); --border-bright: rgba(180, 210, 240, 0.15);
+      --text: #d0dff0; --text-dim: #7a94b0;
+      --accent: #8bb8e0; --accent-dim: rgba(139, 184, 224, 0.10);
+      --gold: #fbbf24; --gold-dim: rgba(251, 191, 36, 0.12);
+      --teal: #22d3ee; --teal-dim: rgba(34, 211, 238, 0.10);
+      --sage: #34d399; --sage-dim: rgba(52, 211, 153, 0.10);
+      --rose: #fb7185; --rose-dim: rgba(251, 113, 133, 0.10);
+      --amber: #fbbf24; --amber-dim: rgba(251, 191, 36, 0.10);
+    }
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: var(--bg);
+    background-image: radial-gradient(circle, var(--border) 1px, transparent 1px);
+    background-size: 24px 24px;
+    color: var(--text); font-family: var(--font-body);
+    padding: 40px; min-height: 100vh; overflow-wrap: break-word;
+  }
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(14px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .anim { animation: fadeUp 0.45s ease-out both; animation-delay: calc(var(--i, 0) * 0.06s); }
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation-duration: 0.01ms !important; animation-delay: 0ms !important; }
+  }
+
+  .page { max-width: 1100px; margin: 0 auto; }
+  h1 { font-size: 36px; font-weight: 700; letter-spacing: -0.8px; margin-bottom: 6px; }
+  .subtitle { font-family: var(--font-mono); font-size: 13px; color: var(--text-dim); margin-bottom: 48px; }
+  h2 { font-size: 18px; font-weight: 600; margin: 48px 0 20px; display: flex; align-items: center; gap: 10px; }
+  h2 .dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
+
+  .ve-card {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 10px;
+    padding: 18px 22px; position: relative;
+  }
+  .ve-card--elevated { background: var(--surface-elevated); box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+  .ve-card--hero {
+    background: color-mix(in srgb, var(--surface) 92%, var(--accent) 8%);
+    box-shadow: 0 4px 20px rgba(0,0,0,0.06);
+    border-color: color-mix(in srgb, var(--border) 50%, var(--accent) 50%);
+    padding: 24px 28px;
+  }
+  .ve-card--recessed {
+    background: color-mix(in srgb, var(--bg) 70%, var(--surface) 30%);
+    box-shadow: inset 0 1px 3px rgba(0,0,0,0.04);
+  }
+  .ve-card__label {
+    font-family: var(--font-mono); font-size: 10px; font-weight: 600;
+    text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 10px;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .ve-card__label::before { content: ''; width: 8px; height: 8px; border-radius: 50%; background: currentColor; }
+  .label-gold { color: var(--gold); }
+  .label-teal { color: var(--teal); }
+  .label-sage { color: var(--sage); }
+  .label-rose { color: var(--rose); }
+  .label-amber { color: var(--amber); }
+  .label-accent { color: var(--accent); }
+
+  .card-title { font-weight: 600; font-size: 15px; margin-bottom: 6px; }
+  .card-desc { font-size: 13px; color: var(--text-dim); line-height: 1.55; }
+  .card-desc code {
+    font-family: var(--font-mono); font-size: 11px; background: var(--accent-dim);
+    color: var(--accent); padding: 1px 5px; border-radius: 3px;
+  }
+  .node-list { list-style: none; font-size: 12px; line-height: 1.9; }
+  .node-list li { padding-left: 14px; position: relative; }
+  .node-list li::before { content: '\203A'; color: var(--text-dim); font-weight: 600; position: absolute; left: 0; }
+  .node-list code {
+    font-family: var(--font-mono); font-size: 11px; background: var(--accent-dim);
+    color: var(--accent); padding: 1px 5px; border-radius: 3px;
+  }
+
+  .tag {
+    font-family: var(--font-mono); font-size: 10px; font-weight: 500;
+    padding: 2px 7px; border-radius: 4px; display: inline-block;
+  }
+  .tag-gold { background: var(--gold-dim); color: var(--gold); }
+  .tag-teal { background: var(--teal-dim); color: var(--teal); }
+  .tag-sage { background: var(--sage-dim); color: var(--sage); }
+  .tag-rose { background: var(--rose-dim); color: var(--rose); }
+  .tag-amber { background: var(--amber-dim); color: var(--amber); }
+
+  .callout {
+    background: var(--surface2); border: 1px solid var(--border);
+    border-left: 3px solid var(--gold); border-radius: 0 8px 8px 0;
+    padding: 14px 18px; font-size: 13px; line-height: 1.6; color: var(--text-dim);
+  }
+  .callout strong { color: var(--text); }
+  .callout code {
+    font-family: var(--font-mono); font-size: 11px; background: var(--accent-dim);
+    color: var(--accent); padding: 1px 5px; border-radius: 3px;
+  }
+
+  /* Section map */
+  .section-map { display: grid; grid-template-columns: 1fr; gap: 8px; }
+  .section-row {
+    display: grid; grid-template-columns: 80px 1fr auto; gap: 12px; align-items: center;
+    background: var(--surface); border: 1px solid var(--border); border-radius: 8px;
+    padding: 10px 16px; font-size: 13px;
+  }
+  .section-row--hero {
+    background: color-mix(in srgb, var(--surface) 88%, var(--gold) 12%);
+    border-color: color-mix(in srgb, var(--border) 50%, var(--gold) 50%);
+  }
+  .section-num { font-family: var(--font-mono); font-size: 11px; font-weight: 600; color: var(--text-dim); }
+  .section-name { font-weight: 600; }
+  .section-weight {
+    font-family: var(--font-mono); font-size: 11px; color: var(--text-dim);
+    background: var(--accent-dim); padding: 2px 8px; border-radius: 4px;
+  }
+
+  /* Todo grid */
+  .todo-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .todo-item {
+    display: flex; gap: 8px; font-size: 12px; line-height: 1.5; align-items: flex-start;
+  }
+  .todo-box {
+    width: 14px; height: 14px; border: 2px solid var(--border-bright);
+    border-radius: 3px; flex-shrink: 0; margin-top: 2px;
+  }
+
+  @media (max-width: 768px) {
+    body { padding: 20px; }
+    .section-row { grid-template-columns: 60px 1fr; }
+    .section-weight { display: none; }
+    .todo-grid { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<div class="page">
+
+<h1 class="anim" style="--i:0">Plan: README.md</h1>
+<p class="subtitle anim" style="--i:1">ai-config repository documentation &mdash; importance-ordered, workflow-first</p>
+
+<!-- ============================================================ -->
+<!-- SECTION MAP: Document Structure -->
+<!-- ============================================================ -->
+<h2 class="anim" style="--i:2"><span class="dot" style="background:var(--gold)"></span> Document Structure</h2>
+
+<div class="callout anim" style="--i:3">
+  <strong>Structural decision</strong> &mdash; The README is organized by importance, not by component type.
+  The <code>/build-feature</code> workflow leads because it's the primary onboarding goal.
+  Repository structure and infrastructure are reference material at the end.
+</div>
+
+<div class="section-map anim" style="--i:4">
+  <div class="section-row">
+    <div class="section-num">S1</div>
+    <div class="section-name">Title + One-liner</div>
+    <div class="section-weight">~2 lines</div>
+  </div>
+  <div class="section-row">
+    <div class="section-num">S2</div>
+    <div class="section-name">Quick Start</div>
+    <div class="section-weight">~4 lines</div>
+  </div>
+  <div class="section-row section-row--hero">
+    <div class="section-num">S3</div>
+    <div class="section-name">/build-feature Workflow</div>
+    <div class="section-weight">~40% of doc</div>
+  </div>
+  <div class="section-row">
+    <div class="section-num">S4</div>
+    <div class="section-name">Skill / Rule / Agent Graph</div>
+    <div class="section-weight">~15 lines</div>
+  </div>
+  <div class="section-row">
+    <div class="section-num">S5</div>
+    <div class="section-name">Repository Structure</div>
+    <div class="section-weight">~15 lines</div>
+  </div>
+  <div class="section-row">
+    <div class="section-num">S6</div>
+    <div class="section-name">Components (tables)</div>
+    <div class="section-weight">~60 lines</div>
+  </div>
+  <div class="section-row">
+    <div class="section-num">S7</div>
+    <div class="section-name">Dual-Tool Support</div>
+    <div class="section-weight">~20 lines</div>
+  </div>
+  <div class="section-row">
+    <div class="section-num">S8</div>
+    <div class="section-name">Installation Details</div>
+    <div class="section-weight">~15 lines</div>
+  </div>
+  <div class="section-row">
+    <div class="section-num">S9</div>
+    <div class="section-name">Infrastructure</div>
+    <div class="section-weight">~30 lines</div>
+  </div>
+  <div class="section-row">
+    <div class="section-num">S10</div>
+    <div class="section-name">License</div>
+    <div class="section-weight">~2 lines</div>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- HERO SECTION BREAKDOWN -->
+<!-- ============================================================ -->
+<h2 class="anim" style="--i:5"><span class="dot" style="background:var(--teal)"></span> Section 3 Breakdown: /build-feature</h2>
+
+<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px" class="anim" style="--i:6">
+
+  <div class="ve-card ve-card--elevated anim" style="--i:6">
+    <div class="ve-card__label label-teal">Phase 1: Research</div>
+    <ul class="node-list">
+      <li>7 numbered steps</li>
+      <li>Sub-bullet: research.md sections</li>
+      <li>Sub-bullet: <strong>visual regen mandatory</strong></li>
+      <li>Agent: none (skill-only)</li>
+    </ul>
+  </div>
+
+  <div class="ve-card ve-card--elevated anim" style="--i:7">
+    <div class="ve-card__label label-sage">Phase 2: Plan</div>
+    <ul class="node-list">
+      <li>9 numbered steps</li>
+      <li>Sub-bullet: plan.md sections</li>
+      <li>Agent: <code>architect</code> <span class="tag tag-amber">opus</span></li>
+      <li>Reference skills auto-loaded</li>
+      <li>Sub-bullet: <strong>visual regen mandatory</strong></li>
+    </ul>
+  </div>
+
+  <div class="ve-card ve-card--elevated anim" style="--i:8">
+    <div class="ve-card__label label-rose">Phase 3: Implement</div>
+    <ul class="node-list">
+      <li>15 numbered steps</li>
+      <li>Each agent step names the agent</li>
+      <li>5 agents: tdd-guide, code-reviewer, refactor-cleaner, database-reviewer, doc-updater</li>
+      <li>Sub-bullet: <strong>visual regen mandatory</strong></li>
+      <li><strong>Never commits</strong></li>
+    </ul>
+  </div>
+
+</div>
+
+<div class="callout anim" style="--i:9" style="margin-top:16px;border-left-color:var(--rose)">
+  <strong>Key callouts in Section 3</strong> &mdash;
+  Annotation cycles (<code>//</code> convention) and the Visual Sync Guarantee each get their own short paragraph
+  after the phase lists, so they stand out as cross-cutting invariants.
+</div>
+
+<!-- ============================================================ -->
+<!-- COMPONENTS SECTIONS OVERVIEW -->
+<!-- ============================================================ -->
+<h2 class="anim" style="--i:10"><span class="dot" style="background:var(--sage)"></span> Reference Sections (S5&ndash;S9)</h2>
+
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+  <div class="ve-card ve-card--elevated anim" style="--i:11">
+    <div class="ve-card__label label-sage">S6: Components</div>
+    <div class="card-desc">
+      Four tables: Skills (8 rows), Commands (13 rows), Agents (7 rows with model + rules), Rules (6 rows).
+      Compact reference &mdash; no prose between tables.
+    </div>
+  </div>
+  <div class="ve-card ve-card--elevated anim" style="--i:12">
+    <div class="ve-card__label label-accent">S7: Dual-Tool</div>
+    <div class="card-desc">
+      Comparison table (Claude Code vs OpenCode) covering config location, skills, commands, agents, rules, permissions, hooks.
+      Then a short paragraph on permission sync.
+    </div>
+  </div>
+  <div class="ve-card ve-card--elevated anim" style="--i:13">
+    <div class="ve-card__label label-amber">S8: Installation</div>
+    <div class="card-desc">
+      Expands on <code>install.sh</code>: 9-step symlink process, command/skill duality, git hooks.
+    </div>
+  </div>
+  <div class="ve-card ve-card--elevated anim" style="--i:14">
+    <div class="ve-card__label label-rose">S9: Infrastructure</div>
+    <div class="card-desc">
+      Permission sync pipeline (6 steps), test-pipeline.sh (7 validation categories), sr.ht CI mirror.
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- PROPOSED TODO LIST -->
+<!-- ============================================================ -->
+<h2 class="anim" style="--i:15"><span class="dot" style="background:var(--sage)"></span> Todo List (Completed)</h2>
+
+<div class="ve-card ve-card--recessed anim" style="--i:16">
+  <div class="ve-card__label label-sage">Phase 1: Write README.md</div>
+  <div class="todo-grid" style="margin-top:8px">
+    <div class="todo-item" style="text-decoration:line-through;opacity:0.6"><div class="todo-box" style="background:var(--sage);border-color:var(--sage)"></div>Create <code>README.md</code> at repo root</div>
+    <div class="todo-item" style="text-decoration:line-through;opacity:0.6"><div class="todo-box" style="background:var(--sage);border-color:var(--sage)"></div>S1: Title + one-liner</div>
+    <div class="todo-item" style="text-decoration:line-through;opacity:0.6"><div class="todo-box" style="background:var(--sage);border-color:var(--sage)"></div>S2: Quick Start</div>
+    <div class="todo-item" style="text-decoration:line-through;opacity:0.6"><div class="todo-box" style="background:var(--sage);border-color:var(--sage)"></div>S3: /build-feature Workflow (hero)</div>
+    <div class="todo-item" style="text-decoration:line-through;opacity:0.6"><div class="todo-box" style="background:var(--sage);border-color:var(--sage)"></div>S4: Skill / Rule / Agent graph</div>
+    <div class="todo-item" style="text-decoration:line-through;opacity:0.6"><div class="todo-box" style="background:var(--sage);border-color:var(--sage)"></div>S5: Repository Structure</div>
+    <div class="todo-item" style="text-decoration:line-through;opacity:0.6"><div class="todo-box" style="background:var(--sage);border-color:var(--sage)"></div>S6: Components tables</div>
+    <div class="todo-item" style="text-decoration:line-through;opacity:0.6"><div class="todo-box" style="background:var(--sage);border-color:var(--sage)"></div>S7: Dual-Tool Support</div>
+    <div class="todo-item" style="text-decoration:line-through;opacity:0.6"><div class="todo-box" style="background:var(--sage);border-color:var(--sage)"></div>S8: Installation Details</div>
+    <div class="todo-item" style="text-decoration:line-through;opacity:0.6"><div class="todo-box" style="background:var(--sage);border-color:var(--sage)"></div>S9: Infrastructure</div>
+    <div class="todo-item" style="text-decoration:line-through;opacity:0.6"><div class="todo-box" style="background:var(--sage);border-color:var(--sage)"></div>S10: License</div>
+  </div>
+</div>
+
+<div class="ve-card ve-card--recessed anim" style="--i:17" style="margin-top:8px">
+  <div class="ve-card__label label-sage">Phase 2: Verify</div>
+  <div class="todo-grid" style="margin-top:8px">
+    <div class="todo-item" style="text-decoration:line-through;opacity:0.6"><div class="todo-box" style="background:var(--sage);border-color:var(--sage)"></div>Render check: GFM preview</div>
+    <div class="todo-item" style="text-decoration:line-through;opacity:0.6"><div class="todo-box" style="background:var(--sage);border-color:var(--sage)"></div>Accuracy check: <code>/fact-check</code></div>
+    <div class="todo-item" style="text-decoration:line-through;opacity:0.6"><div class="todo-box" style="background:var(--sage);border-color:var(--sage)"></div>Pre-commit: <code>test-pipeline.sh</code> (298/298 passed)</div>
+  </div>
+</div>
+
+</div><!-- .page -->
+
+</body>
+</html>
