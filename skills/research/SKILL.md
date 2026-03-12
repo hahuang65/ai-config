@@ -58,7 +58,7 @@ Surface-level reading is NOT acceptable. You must read deeply, understand intric
    - **Edge Cases & Gotchas**: Non-obvious behavior, implicit assumptions, potential pitfalls
    - **Current State**: Any known issues, tech debt, or areas of concern
 
-4. **Generate visual architecture diagram**: After writing the research document, invoke `/generate-architecture-diagram` to produce an HTML architecture diagram of the researched area — showing module relationships, data flows, and component boundaries discovered during research. The output MUST be written to `architecture.html` in the same feature directory as `research.md` (e.g., `docs/claude/20260304-1430-auth-flow/architecture.html`). Do NOT write to `~/.agent/diagrams/` or any other location. Open it in the browser.
+4. **Generate visual research diagram**: After writing the research document, invoke `/generate-architecture-diagram` to produce an HTML architecture diagram of the researched area — showing module relationships, data flows, and component boundaries discovered during research. The output MUST be written to `research.html` in the same feature directory as `research.md` (e.g., `docs/claude/20260304-1430-auth-flow/research.html`). Do NOT write to `~/.agent/diagrams/` or any other location. Open it in the browser.
 
 5. **Stop and wait for review**: After writing the document and generating the diagram, STOP. Tell the user the exact file path, then:
 
@@ -80,6 +80,20 @@ Surface-level reading is NOT acceptable. You must read deeply, understand intric
    > Just type `//` followed by your note — corrections, missing context, or things I got wrong. Then tell me to address your notes.
 
    Do NOT proceed to planning or implementation.
+
+6. **Address annotations**: When the user says they've added notes:
+
+   1. Read the updated research document
+   2. Find ALL `//` annotations the user added (lines starting with `//` or containing `//` after content)
+   3. Address every single note — do not skip any
+   4. Update the research document accordingly
+   5. Remove the user's `//` annotations as you address them (so they don't accumulate)
+   6. **Regenerate `research.html`** to stay in sync with the updated research document. This is mandatory — even if the user says to move on to planning, the visual MUST be updated first.
+   7. STOP and tell the user the research is updated, ready for another review
+
+   **Do NOT proceed to planning or implementation.** Repeat this cycle until the user explicitly says the research is acceptable.
+
+   **Non-negotiable**: The visual HTML file (`research.html`) MUST always mirror the markdown (`research.md`). Whenever the markdown changes — whether from annotations, corrections, or any other update — regenerate the HTML before proceeding to ANY next step, including moving to the plan phase.
 
 ## Important Guidelines
 

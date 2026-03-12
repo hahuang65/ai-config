@@ -149,7 +149,7 @@ test_phase_research() {
   done
 
   check_content_cached "$content" "$label" "generate-architecture-diagram"
-  check_content_cached "$content" "$label" "architecture\.html"
+  check_content_cached "$content" "$label" "research\.html"
   check_content_cached "$content" "$label" "STOP"
 }
 
@@ -180,7 +180,7 @@ test_phase_plan() {
   check_content_cached "$content" "$label" "//"
   check_content_cached "$content" "$label" "[Tt]odo [Ll]ist"
   check_content_cached "$content" "$label" "generate-visual-plan"
-  check_content_cached "$content" "$label" "visual-plan\.html"
+  check_content_cached "$content" "$label" "plan\.html"
 }
 
 # ---------------------------------------------------------------------------
@@ -211,7 +211,7 @@ test_phase_implement_steps_7_to_13() {
   check_content_cached "$content" "$label" "OWASP"
   check_content_cached "$content" "$label" "doc-updater"
   check_content_cached "$content" "$label" "fact-check"
-  check_content_cached "$content" "$label" "visual-plan\.html"
+  check_content_cached "$content" "$label" "plan\.html"
   check_content_cached "$content" "$label" "generate-visual-plan"
   check_content_cached "$content" "$label" "never commit|NEVER commit|do not commit"
 }

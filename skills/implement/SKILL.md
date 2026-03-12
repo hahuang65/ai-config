@@ -56,9 +56,17 @@ Comply with the project rules already loaded in context (coding-style, testing, 
 
 11. **Fact-check the plan**: You MUST invoke `/fact-check` on the plan document. This is not optional. Use the Skill tool to invoke `fact-check` with the plan file path as the argument. This verifies that all claims (file paths, line numbers, function names, behavior descriptions) match what was actually implemented. Do NOT skip this step.
 
-12. **Refresh visual artifacts**: If `visual-plan.html` exists in the feature directory AND any of these are true — `/fact-check` made corrections to `plan.md`, deviations were noted during implementation (step 3), or tasks were added/removed — regenerate `visual-plan.html` by invoking `/generate-visual-plan` so the visual stays in sync with the final plan state. This is the last step before reporting completion.
+12. **Refresh visual plan**: If `plan.html` exists in the feature directory, regenerate it by invoking `/generate-visual-plan` so the visual stays in sync with the final plan state. This is mandatory — the visual MUST always mirror the markdown. Do not skip this step regardless of whether changes were made to the plan.
 
-13. **When complete**: Tell the user implementation is complete and summarize what was done, including test coverage added. Do NOT commit to version control — leave that to the user.
+13. **Generate diff review**: If the `visual-explainer` skill is available, generate a visual diff review. Follow the `/diff-review` workflow: compare the current working tree against the branch point (typically `main`) to produce an HTML page with executive summary, KPI dashboard, architecture comparison, before/after panels, code review analysis, and decision log. Write to `diff-review.html` in the feature directory and open in the browser. Then run `/fact-check` on the generated HTML to verify claims against actual code and git history. If `visual-explainer` is not available, skip this step silently.
+
+14. **Verify plan-to-implementation sync**: Read the final `plan.md` and compare it against the actual implementation. Ensure:
+    - All todo items are checked off (`- [x]`)
+    - The plan's detailed changes section accurately reflects what was actually implemented (update if deviations occurred)
+    - Any implementation decisions that diverged from the plan are documented in the plan
+    - The visual `plan.html` reflects the final state
+
+15. **When complete**: Tell the user implementation is complete and summarize what was done, including test coverage added. Do NOT commit to version control — leave that to the user.
 
 ## Handling Issues During Implementation
 
@@ -94,6 +102,11 @@ When the user references existing code ("make it look like the users table", "sa
 - If the plan says to do something, do it. If it doesn't mention something, don't do it — with one exception: **tests are always required**, even if the plan omits them
 - **NEVER commit to version control** — no `git add`, `git commit`, or `git push`. The user will commit when they are ready
 
-## Visual Companion (when invoked from build-feature)
+## Visual Sync Guarantee
 
-When this skill is invoked as part of the `build-feature` workflow, the orchestrator may generate a visual diff review (HTML page with executive summary, KPI dashboard, architecture comparison, code review analysis, and decision log) after all implementation tasks are complete — but only if the `visual-explainer` skill is available. If it is not available, the visual step is silently skipped. The implement skill itself does NOT generate the review — it focuses purely on executing the plan.
+All visual HTML files in the feature directory MUST mirror their markdown counterparts at all times. The implement skill is responsible for:
+
+- **`plan.html`**: Regenerated after implementation to reflect final plan state (checked-off tasks, deviations noted). This is mandatory regardless of whether changes were detected.
+- **`diff-review.html`**: Generated after implementation if `visual-explainer` is available. Summarizes what changed with executive summary, KPI dashboard, architecture comparison, and code review analysis.
+
+If `visual-explainer` is not available, visual steps are silently skipped — the workflow proceeds with just the markdown artifacts.

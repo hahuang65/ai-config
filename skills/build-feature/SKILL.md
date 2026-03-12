@@ -36,14 +36,14 @@ Each feature gets a single directory under `docs/claude/` in the project root:
 docs/claude/<YYYYMMDD-HHMM>-<slug>/
 ```
 
-All artifacts live together in that directory, named by what they are:
+All artifacts live together in that directory. Visual HTML files share the same base name as their markdown counterpart:
 
 ```
 docs/claude/20260304-1430-cursor-pagination/
   research.md          # Phase 1 output
-  architecture.html    # Phase 1 visual companion (if visual-explainer available)
+  research.html        # Phase 1 visual companion (if visual-explainer available)
   plan.md              # Phase 2 output
-  visual-plan.html     # Phase 2 visual companion (if visual-explainer available)
+  plan.html            # Phase 2 visual companion (if visual-explainer available)
   diff-review.html     # Phase 3 visual companion (if visual-explainer available)
 ```
 
@@ -62,7 +62,7 @@ Invoke the research skill to deeply understand the relevant area of the codebase
 
 Use the Skill tool to invoke `research` with the relevant scope derived from `$ARGUMENTS`.
 
-The research skill will automatically generate a visual architecture diagram (`architecture.html`) if `visual-explainer` is available.
+The research skill will automatically generate a visual architecture diagram (`research.html`) if `visual-explainer` is available.
 
 After the research phase completes, STOP and tell the user:
 
@@ -84,20 +84,19 @@ Once the user confirms the research is acceptable, invoke the plan skill.
 Use the Skill tool to invoke `plan` with the feature description from `$ARGUMENTS`.
 
 The plan skill will handle:
-1. Writing a plan document with detailed implementation steps and code snippets
-2. Waiting for the user to annotate
-3. Addressing all annotations and updating the plan
-4. Repeating the annotation cycle (typically 1-6 times)
-5. Generating a granular todo list when the plan is approved
+1. Writing a plan document with detailed implementation steps, code snippets, and a proposed task list
+2. Generating a visual implementation plan (`plan.html`) alongside the markdown — both presented together for easier review
+3. Waiting for the user to annotate the markdown
+4. Addressing all annotations, updating the plan and regenerating the visual to stay in sync
+5. Repeating the annotation cycle (typically 1-6 times)
+6. Finalizing the todo list and visual plan when the user approves
 
 **The plan phase is complete when the user explicitly approves the plan.**
-
-The plan skill will automatically generate a visual implementation plan (`visual-plan.html`) if `visual-explainer` is available.
 
 Then tell the user:
 
 > **Phase 2 complete.** The plan is approved and the todo list is ready.
-> *(If visual was generated: "I've also generated a visual plan at `<diagram-path>` (opened in your browser) for a spatial overview.")*
+> *(If visual was generated: "I've also updated the visual plan at `<diagram-path>` (opened in your browser) for a spatial overview.")*
 >
 > Say **"implement"** when you're ready for me to start building.
 
@@ -116,12 +115,9 @@ The implement skill will:
 2. Track progress by checking off items in the plan document
 3. Run type checks and linters continuously
 4. Handle feedback corrections from the user
-
-### Visual: Diff Review (optional)
-
-**If the `visual-explainer` skill is available**, generate a visual diff review using it. Follow the `/diff-review` workflow: compare the current working tree against the branch point (typically `main`) to produce an HTML page with executive summary, KPI dashboard, architecture comparison, before/after panels, code review analysis, and decision log. Write to `diff-review.html` in the feature directory and open in the browser. Then run `/fact-check` on the generated HTML to verify claims against actual code and git history.
-
-**If `visual-explainer` is not available**, skip the diff review and fact-check steps entirely — do not error or warn.
+5. Regenerate `plan.html` to reflect the final implementation state
+6. Generate a visual diff review (`diff-review.html`) if `visual-explainer` is available
+7. Verify plan-to-implementation sync — ensuring the plan, visual, and code all agree
 
 Tell the user:
 

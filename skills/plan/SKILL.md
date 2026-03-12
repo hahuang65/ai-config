@@ -92,15 +92,37 @@ Create the file at the path described above with:
 - **Dependencies**: New libraries or services needed
 - **Considerations & Trade-offs**: Alternative approaches considered and why this one was chosen
 - **Migration / Data Changes**: Any database migrations, data backfills, or config changes
-- **Testing Strategy**: What tests to write or update. This MUST include concrete, specific test cases — not vague descriptions. Each test case must name the test file, describe the scenario, and state the expected outcome. Every test case listed here MUST appear as a task in the Todo List.
+- **Testing Strategy**: What tests to write or update. This MUST include concrete, specific test cases — not vague descriptions. Each test case must name the test file, describe the scenario, and state the expected outcome. Every test case listed here MUST appear as a task in the Proposed Todo List.
+- **Proposed Todo List**: A granular task checklist covering all implementation work. This is a draft — the user may adjust it during annotation cycles.
 
-### Step 3: Wait for Annotation
+```markdown
+## Proposed Todo List
 
-After writing the plan, STOP and tell the user the exact file path, then:
+### Phase 1: [Phase Name]
+- [ ] Task 1 description
+- [ ] Task 2 description
+
+### Phase 2: [Phase Name]
+- [ ] Task 3 description
+- [ ] Task 4 description
+```
+
+Tasks should be granular enough that each one is a single, clear unit of work. Group them into logical phases.
+
+**Test tasks are mandatory.** The Proposed Todo List MUST include tasks for every test case from the Testing Strategy. Tests are not optional — if the Testing Strategy says to test it, there must be a corresponding `- [ ]` item. Place test tasks in a dedicated phase or interleave them with implementation tasks for TDD ordering (write test before the code it validates).
+
+### Step 3: Generate Visual Plan
+
+After writing the plan document, invoke `/generate-visual-plan` to produce an HTML page with state machines, before/after comparisons, file maps, edge cases, code snippets, and the proposed task list from the plan. The output MUST be written to `plan.html` in the same feature directory as `plan.md` (e.g., `docs/claude/20260304-1430-auth-flow/plan.html`). Do NOT write to `~/.agent/diagrams/` or any other location. Open it in the browser.
+
+### Step 4: Stop and Wait for Annotation
+
+After writing both the plan document and the visual plan, STOP and tell the user the exact file paths, then:
 
 > The plan is ready for your review at `<file-path>`.
+> I've also generated a visual plan at `<diagram-path>` (opened in your browser) to help you parse the approach.
 >
-> To annotate, add `//` comments anywhere in the file:
+> To annotate, add `//` comments anywhere in the markdown file:
 >
 > ```markdown
 > ### `src/api/users.ts`
@@ -116,49 +138,36 @@ After writing the plan, STOP and tell the user the exact file path, then:
 >
 > Just type `//` followed by your note — corrections, rejections, constraints, or domain knowledge. Then tell me to address your notes.
 
-### Step 4: Address Annotations
+Do NOT proceed to implementation.
+
+### Step 5: Address Annotations
 
 When the user says they've added notes:
 
 1. Read the updated plan document
 2. Find ALL `//` annotations the user added (lines starting with `//` or containing `//` after content)
-3. Address every single note - do not skip any
-4. Update the plan document accordingly
+3. Address every single note — do not skip any
+4. Update the plan document accordingly (including the Proposed Todo List if annotations affect scope or tasks)
 5. Remove the user's `//` annotations as you address them (so they don't accumulate)
-6. STOP and tell the user the plan is updated, ready for another review
+6. **Regenerate `plan.html`** to stay in sync with the updated plan. This is mandatory — even if the user says to approve or move on, the visual MUST be updated first.
+7. STOP and tell the user the plan is updated, ready for another review
 
 **Do NOT implement yet.** Repeat this cycle until the user explicitly says the plan is approved.
 
-If `visual-plan.html` already exists from a previous approval cycle, regenerate it after addressing annotations so the visual stays in sync with the plan.
+**Non-negotiable**: The visual HTML file (`plan.html`) MUST always mirror the markdown (`plan.md`). Whenever the markdown changes — whether from annotations, corrections, or any other update — regenerate the HTML before proceeding to ANY next step, including approval or implementation.
 
-### Step 5: Generate Todo List
+### Step 6: Finalize on Approval
 
-When the user approves the plan (or asks for a todo list), append a detailed task checklist to the plan document:
+When the user approves the plan:
 
-```markdown
-## Todo List
+1. **Finalize the Todo List**: Review the Proposed Todo List in `plan.md`. Rename the section from "Proposed Todo List" to "Todo List". Ensure it reflects the final agreed-upon scope after all annotation cycles — no stale tasks from earlier drafts, no missing tasks from later revisions.
 
-### Phase 1: [Phase Name]
-- [ ] Task 1 description
-- [ ] Task 2 description
-
-### Phase 2: [Phase Name]
-- [ ] Task 3 description
-- [ ] Task 4 description
-```
-
-Tasks should be granular enough that each one is a single, clear unit of work. Group them into logical phases.
-
-**Test tasks are mandatory.** The Todo List MUST include tasks for every test case from the Testing Strategy. Tests are not optional — if the Testing Strategy says to test it, there must be a corresponding `- [ ]` item. Place test tasks in a dedicated phase or interleave them with implementation tasks for TDD ordering (write test before the code it validates).
-
-### Step 6: Generate Visual Plan
-
-After the Todo List is generated, invoke `/generate-visual-plan` to produce an HTML page with state machines, before/after comparisons, file maps, edge cases, and code snippets from the approved plan. The output MUST be written to `visual-plan.html` in the same feature directory as `plan.md` (e.g., `docs/claude/20260304-1430-auth-flow/visual-plan.html`). Do NOT write to `~/.agent/diagrams/` or any other location. Open it in the browser.
+2. **Finalize the Visual Plan**: Regenerate `plan.html` from the final `plan.md` to ensure the visual includes the approved task list and any changes made during annotation. Open it in the browser.
 
 Then tell the user:
 
 > **The plan is approved and the todo list is ready.**
-> I've also generated a visual implementation plan at `<diagram-path>` (opened in your browser).
+> I've also updated the visual implementation plan at `<diagram-path>` (opened in your browser).
 >
 > Say **"implement"** when you're ready for me to start building.
 
