@@ -115,6 +115,10 @@ Feature artifacts can be:
 - Deleted after the feature ships
 - Excluded via `.gitignore` on `docs/claude/`
 
+### Example Artifacts
+
+The [`example/`](example/) directory contains sample artifacts from a complete `/build-feature` run (adding API rate limiting to a FastAPI app). Open the HTML files in a browser to see what each phase produces.
+
 ## Skill / Rule / Agent Graph
 
 ```text
