@@ -10,14 +10,6 @@ cd ~/.dotfiles/ai
 ./install.sh
 ```
 
-**See it in action** — sample artifacts from a full `/build-feature` run:
-
-| Phase | Markdown | Visual |
-|-------|----------|--------|
-| Research | [research.md](example/research.md) | [research.html](https://hahuang65.github.io/ai-config/example/research.html) |
-| Plan | [plan.md](example/plan.md) | [plan.html](https://hahuang65.github.io/ai-config/example/plan.html) |
-| Implement | — | [diff-review.html](https://hahuang65.github.io/ai-config/example/diff-review.html) |
-
 ## The /build-feature Workflow
 
 The centerpiece of this repository is `/build-feature` — a disciplined 3-phase workflow (Research → Plan → Implement) for building software features with AI assistance. It enforces a "think before you code" discipline:
@@ -25,6 +17,14 @@ The centerpiece of this repository is `/build-feature` — a disciplined 3-phase
 1. deep-read the codebase first
 2. write a detailed plan with iterative user review
 3. implement with TDD and multi-agent verification.
+
+**See it in action** — sample artifacts from a full `/build-feature` run:
+
+| Phase | Markdown | Visual |
+|-------|----------|--------|
+| Research | [research.md](example/research.md) | [research.html](https://hahuang65.github.io/ai-config/example/research.html) |
+| Plan | [plan.md](example/plan.md) | [plan.html](https://hahuang65.github.io/ai-config/example/plan.html) |
+| Implement | — | [diff-review.html](https://hahuang65.github.io/ai-config/example/diff-review.html) |
 
 All artifacts live in a feature directory:
 
