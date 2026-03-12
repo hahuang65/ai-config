@@ -18,7 +18,7 @@ The centerpiece of this repository is `/build-feature` — a disciplined 3-phase
 2. write a detailed plan with iterative user review
 3. implement with TDD and multi-agent verification.
 
-**See it in action** — sample artifacts from a full `/build-feature` run:
+**See it in action** — the [`example/`](example/) directory has sample artifacts from a full `/build-feature` pipeline ([README](example/README.md)):
 
 | Phase | Markdown | Visual |
 |-------|----------|--------|
@@ -125,7 +125,7 @@ Feature artifacts can be:
 
 ### Example Artifacts
 
-The [`example/`](example/) directory contains sample artifacts from a complete `/build-feature` run (adding API rate limiting to a FastAPI app):
+The [`example/`](example/) directory contains sample artifacts from a complete `/build-feature` run (adding API rate limiting to a FastAPI app). See the [example README](example/README.md) for details.
 
 | Phase | Markdown | Visual |
 |-------|----------|--------|
