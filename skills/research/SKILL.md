@@ -58,7 +58,7 @@ Surface-level reading is NOT acceptable. You must read deeply, understand intric
    - **Edge Cases & Gotchas**: Non-obvious behavior, implicit assumptions, potential pitfalls
    - **Current State**: Any known issues, tech debt, or areas of concern
 
-4. **Generate visual research diagram**: After writing the research document, invoke `/generate-architecture-diagram` to produce an HTML architecture diagram of the researched area — showing module relationships, data flows, and component boundaries discovered during research. The output MUST be written to `research.html` in the same feature directory as `research.md` (e.g., `docs/claude/20260304-1430-auth-flow/research.html`). Do NOT write to `~/.agent/diagrams/` or any other location. Open it in the browser.
+4. **Generate visual research diagram**: After writing the research document, invoke `/generate-architecture-diagram` to produce an HTML diagram of the researched area — showing module relationships, data flows, and component boundaries discovered during research. The output MUST be written to `research.html` in the same feature directory as `research.md` (e.g., `docs/claude/20260304-1430-auth-flow/research.html`). Do NOT write to `~/.agent/diagrams/` or any other location. Open it in the browser. **Important**: The generated HTML must use "Research" (not "Architecture") in its `<title>` and `<h1>` header — e.g., `<title>Research — Auth Flow</title>` and `<h1>Auth Flow — Research</h1>`. This is a research document, not an architecture diagram.
 
 5. **Stop and wait for review**: After writing the document and generating the diagram, STOP. Tell the user the exact file path, then:
 
