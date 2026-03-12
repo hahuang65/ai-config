@@ -44,7 +44,7 @@ mermaid.initialize({
 **2. CSS zoom** for diagrams that still render too small:
 ```css
 .mermaid-wrap--scaled .mermaid {
-  zoom: 1.3;
+  zoom: 2;
 }
 ```
 
@@ -101,9 +101,8 @@ Add zoom controls to every `.mermaid-wrap` container for complex diagrams.
      goes into negative space which can't be scrolled to.
      Supported in all browsers (Firefox added support in v126, June 2024).
      Note: zoom is not animatable, so no transition. */
-  /* Optional: start at >1 for complex diagrams that render too small.
-     The diagram stays centered, renders larger, and zoom controls still work. */
-  zoom: 1.4;
+  /* Initial zoom is set dynamically by fitMermaidDiagrams() after render.
+     It calculates the max zoom that fits the SVG within the container. */
 }
 
 .zoom-controls {
@@ -171,14 +170,45 @@ CSS `zoom` actually changes the element's layout size. The content grows downwar
 Add once at the end of the page. Handles button clicks and scroll-to-zoom on all `.mermaid-wrap` containers:
 
 ```javascript
-// Match this to the CSS zoom value (or 1 if not set)
-var INITIAL_ZOOM = 1.4;
+// After Mermaid renders, fit each diagram to its container at max zoom.
+// Call this after mermaid.run() completes or on DOMContentLoaded.
+function fitMermaidDiagrams() {
+  document.querySelectorAll('.mermaid-wrap').forEach(function(wrap) {
+    var mEl = wrap.querySelector('.mermaid');
+    var svg = mEl && mEl.querySelector('svg');
+    if (!svg) return;
+
+    // Reset zoom to 1 so we can measure the natural SVG size
+    mEl.style.zoom = 1;
+    var pad = 64; // total horizontal padding inside .mermaid-wrap
+    var svgW = svg.getBoundingClientRect().width;
+    var svgH = svg.getBoundingClientRect().height;
+    var wrapW = wrap.clientWidth - pad;
+    var wrapH = wrap.clientHeight - pad;
+    var zoom = Math.min(wrapW / svgW, wrapH / svgH);
+    zoom = Math.max(zoom, 2.5); // minimum 2.5x so diagrams are always readable
+
+    mEl.style.zoom = zoom;
+    mEl.dataset.zoom = zoom;
+    mEl.dataset.fitZoom = zoom; // remember for reset button
+  });
+}
+
+// Run after Mermaid finishes rendering
+if (typeof mermaid !== 'undefined') {
+  // mermaid.run() returns a promise; also handle startOnLoad via observer
+  var observer = new MutationObserver(function(mutations, obs) {
+    var hasSvg = document.querySelector('.mermaid svg');
+    if (hasSvg) { obs.disconnect(); setTimeout(fitMermaidDiagrams, 100); }
+  });
+  observer.observe(document.body, { childList: true, subtree: true });
+}
 
 function zoomDiagram(btn, factor) {
   var wrap = btn.closest('.mermaid-wrap');
   var target = wrap.querySelector('.mermaid');
-  var current = parseFloat(target.dataset.zoom || INITIAL_ZOOM);
-  var next = Math.min(Math.max(current * factor, 0.5), 5);
+  var current = parseFloat(target.dataset.zoom || 1);
+  var next = Math.min(Math.max(current * factor, 0.5), 8);
   target.dataset.zoom = next;
   target.style.zoom = next;
 }
@@ -186,8 +216,9 @@ function zoomDiagram(btn, factor) {
 function resetZoom(btn) {
   var wrap = btn.closest('.mermaid-wrap');
   var target = wrap.querySelector('.mermaid');
-  target.dataset.zoom = INITIAL_ZOOM;
-  target.style.zoom = INITIAL_ZOOM;
+  var fitZoom = parseFloat(target.dataset.fitZoom || 1);
+  target.dataset.zoom = fitZoom;
+  target.style.zoom = fitZoom;
 }
 
 document.querySelectorAll('.mermaid-wrap').forEach(function(wrap) {
@@ -196,9 +227,9 @@ document.querySelectorAll('.mermaid-wrap').forEach(function(wrap) {
     if (!e.ctrlKey && !e.metaKey) return;
     e.preventDefault();
     var target = wrap.querySelector('.mermaid');
-    var current = parseFloat(target.dataset.zoom || INITIAL_ZOOM);
+    var current = parseFloat(target.dataset.zoom || 1);
     var factor = e.deltaY < 0 ? 1.1 : 0.9;
-    var next = Math.min(Math.max(current * factor, 0.5), 5);
+    var next = Math.min(Math.max(current * factor, 0.5), 8);
     target.dataset.zoom = next;
     target.style.zoom = next;
   }, { passive: false });
@@ -224,7 +255,7 @@ document.querySelectorAll('.mermaid-wrap').forEach(function(wrap) {
 });
 ```
 
-Scroll-to-zoom requires Ctrl/Cmd+scroll to avoid hijacking normal page scroll. Cursor changes to `grab`/`grabbing` to signal pan mode. The zoom range is capped at 0.5x–5x.
+`fitMermaidDiagrams()` measures each SVG at zoom=1, then calculates the maximum zoom that fits both width and height within the container (minus padding). The reset button restores to this fitted zoom rather than a hardcoded value. Scroll-to-zoom requires Ctrl/Cmd+scroll to avoid hijacking normal page scroll. Cursor changes to `grab`/`grabbing` to signal pan mode. The zoom range is capped at 0.5x–8x.
 
 ## Connectors
 

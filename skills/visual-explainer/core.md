@@ -58,6 +58,23 @@ Use CSS custom properties. Define: `--bg`, `--surface`, `--border`, `--text`, `-
 - Never define `.node` as a page-level CSS class (Mermaid uses it internally).
 - Never set `color:` in `classDef` — let CSS overrides handle text color via `var(--text)`.
 - Use semi-transparent fills (8-digit hex) for node backgrounds.
+- Set Mermaid `fontSize` in `themeVariables` to at least `'18px'`.
+- Use the `fitMermaidDiagrams()` auto-fit script from css-mermaid.md. It measures each SVG after render and sets the maximum zoom that fits within the container. Do NOT use a hardcoded zoom value.
+
+## Scale & Sizing
+
+Generated pages should feel spacious and readable at arm's length. Apply a **1.5× scale** relative to the reference CSS snippets in this skill:
+
+- Base body font size: `16px` minimum (not 12-13px).
+- Card labels (`.ve-card__label`): `14px` minimum.
+- Code blocks: `15px` minimum font size.
+- Tags/badges: `13px` minimum.
+- List text (`.node-list`): `15px` minimum.
+- Card padding: `24px 30px` minimum (not 16px 20px).
+- Spacing/gaps: scale proportionally (e.g., `24px` gap instead of `16px`).
+- H1: `2.4rem`+, H2: `1.6rem`+, H3: `1.25rem`+.
+
+The reference CSS snippets below show *minimum* structural patterns. When using them, scale all `font-size`, `padding`, `gap`, and `margin` values up by ~50%.
 
 ## Overflow Prevention
 
