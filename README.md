@@ -297,6 +297,14 @@ Runs automatically on every commit via `.githooks/pre-commit` and during `instal
 
 `.builds/mirror.yml` — sr.ht CI mirrors the repository to GitHub on push.
 
+## Acknowledgements
+
+This project stands on the shoulders of others:
+
+- **[Boris Tane's Claude Code workflow](https://boristane.com/blog/how-i-use-claude-code/)** — The research → plan → implement pipeline at the heart of this repo is directly based on Boris's method. The `/build-feature` workflow, annotation cycles, and the "think before you code" discipline all originate from his approach. This project extends the pipeline with visual companions, multi-agent verification, and dual-tool support, but the core methodology is his.
+- **[nicobailon/visual-explainer](https://github.com/nicobailon/visual-explainer)** — The `visual-explainer` skill is taken wholesale from this repository, with only minor modifications. All the HTML visual generation (research, plan, diff-review, architecture diagrams, slides, etc.) is powered by this work.
+- **[affaan-m/everything-claude-code](https://github.com/affaan-m/everything-claude-code)** — The rules and agent definitions in this repo are borrowed and adapted from this collection. The coding-style, testing, security, and performance rules, as well as the agent configurations (architect, tdd-guide, code-reviewer, etc.), draw heavily from this source.
+
 ## License
 
 MIT — see [LICENSE](LICENSE).
