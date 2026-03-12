@@ -20,7 +20,7 @@ Phase 3: Implementation  → code changes + diff-review.html
 | File | Description |
 |------|-------------|
 | [research.md](research.md) | Deep investigation of the codebase area. Covers architecture, key files, data flow, patterns, dependencies, edge cases, and current state. |
-| [research.html](research.html) | Visual architecture diagram showing module relationships, request pipeline, and component boundaries. Open in a browser. |
+| [research.html](https://hahuang65.github.io/ai-config/example/research.html) | Visual architecture diagram showing module relationships, request pipeline, and component boundaries. |
 
 The user reviews the research, optionally adds `//` annotations to correct misunderstandings, and Claude updates both files before proceeding.
 
@@ -29,7 +29,7 @@ The user reviews the research, optionally adds `//` annotations to correct misun
 | File | Description |
 |------|-------------|
 | [plan.md](plan.md) | Detailed implementation plan with code snippets, file-by-file changes, testing strategy, and a todo checklist. |
-| [plan.html](plan.html) | Visual plan with state machine diagram, before/after comparison panels, code blocks, edge case table, test requirements, and todo list. Open in a browser. |
+| [plan.html](https://hahuang65.github.io/ai-config/example/plan.html) | Visual plan with state machine diagram, before/after comparison panels, code blocks, edge case table, test requirements, and todo list. |
 
 The user annotates `plan.md` with `//` comments (corrections, constraints, domain knowledge). Claude addresses every annotation, updates both files, and repeats until the user approves. The todo list starts as "Proposed Todo List" and is finalized to "Todo List" on approval.
 
@@ -37,7 +37,7 @@ The user annotates `plan.md` with `//` comments (corrections, constraints, domai
 
 | File | Description |
 |------|-------------|
-| [diff-review.html](diff-review.html) | Post-implementation visual diff review with executive summary, KPI dashboard, module architecture diagram, before/after panels, code review (good/bad/ugly), decision log, and re-entry context. Open in a browser. |
+| [diff-review.html](https://hahuang65.github.io/ai-config/example/diff-review.html) | Post-implementation visual diff review with executive summary, KPI dashboard, module architecture diagram, before/after panels, code review (good/bad/ugly), decision log, and re-entry context. |
 
 During implementation, Claude executes the todo list, checking off items in `plan.md` as they're completed. After all tasks are done, it runs verification (type checks, linting, tests, build), code review agents, and generates the diff review.
 

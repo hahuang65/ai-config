@@ -10,6 +10,14 @@ cd ~/.dotfiles/ai
 ./install.sh
 ```
 
+**See it in action** — sample artifacts from a full `/build-feature` run:
+
+| Phase | Markdown | Visual |
+|-------|----------|--------|
+| Research | [research.md](example/research.md) | [research.html](https://hahuang65.github.io/ai-config/example/research.html) |
+| Plan | [plan.md](example/plan.md) | [plan.html](https://hahuang65.github.io/ai-config/example/plan.html) |
+| Implement | — | [diff-review.html](https://hahuang65.github.io/ai-config/example/diff-review.html) |
+
 ## The /build-feature Workflow
 
 The centerpiece of this repository is `/build-feature` — a disciplined 3-phase workflow (Research → Plan → Implement) for building software features with AI assistance. It enforces a "think before you code" discipline:
@@ -117,7 +125,13 @@ Feature artifacts can be:
 
 ### Example Artifacts
 
-The [`example/`](example/) directory contains sample artifacts from a complete `/build-feature` run (adding API rate limiting to a FastAPI app). Open the HTML files in a browser to see what each phase produces.
+The [`example/`](example/) directory contains sample artifacts from a complete `/build-feature` run (adding API rate limiting to a FastAPI app):
+
+| Phase | Markdown | Visual |
+|-------|----------|--------|
+| Research | [research.md](example/research.md) | [research.html](https://hahuang65.github.io/ai-config/example/research.html) |
+| Plan | [plan.md](example/plan.md) | [plan.html](https://hahuang65.github.io/ai-config/example/plan.html) |
+| Implement | — | [diff-review.html](https://hahuang65.github.io/ai-config/example/diff-review.html) |
 
 ## Skill / Rule / Agent Graph
 
