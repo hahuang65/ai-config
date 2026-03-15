@@ -152,6 +152,7 @@
     "ruby-lsp@ruby-skills": true,
     "astral@astral-sh": true,
     "bash-language-server@claude-code-lsps": true,
-    "terraform-ls@claude-code-lsps": true
+    "terraform-ls@claude-code-lsps": true,
+    "gopls-lsp@claude-plugins-official": true
   }
 }
