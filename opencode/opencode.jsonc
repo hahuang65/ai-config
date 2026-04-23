@@ -135,6 +135,8 @@
     "read": {
       "*": "allow",
       "*/.claude/*": "allow",
+      "*/.claude/skills/*": "allow",
+      "*/.claude/skills/visual-explainer/*": "allow",
       "*/.config/opencode/*": "allow",
       "~/.claude/*": "allow",
       "~/.claude/skills/**": "allow",

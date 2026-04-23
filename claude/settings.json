@@ -27,6 +27,8 @@
       "Bash(rm */docs/claude/*.md)",
       "Bash(rm docs/claude/*.md)",
       "Read(*/.claude/*)",
+      "Read(*/.claude/skills/*)",
+      "Read(*/.claude/skills/visual-explainer/*)",
       "Read(*/.config/opencode/*)",
       "Bash(test -d *)",
       "Bash(test -f *)",
