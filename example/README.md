@@ -1,11 +1,11 @@
-# Example: /build-feature Artifacts
+# Example: /build Artifacts
 
-This directory contains sample artifacts from the `/build-feature` pipeline, demonstrating what Claude Code produces at each phase. The example feature is **API rate limiting** for a Python/FastAPI application.
+This directory contains sample artifacts from the `/build` pipeline, demonstrating what Claude Code produces at each phase. The example feature is **API rate limiting** for a Python/FastAPI application.
 
 ## Pipeline Overview
 
 ```
-/build-feature "Add API rate limiting"
+/build "Add API rate limiting"
 
 Phase 1: Research        → research.md + research.html
 Phase 2: Plan            → plan.md + plan.html

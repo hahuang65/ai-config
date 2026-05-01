@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>/build-feature Pipeline Guide</title>
+<title>/build Pipeline Guide</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -574,7 +574,7 @@ body {
 
 <!-- ===== 1. HEADER ===== -->
 <header class="header">
-  <h1><span>/</span>build-feature Pipeline Guide</h1>
+  <h1><span>/</span>build Pipeline Guide</h1>
   <p class="subtitle">Complete checkpoint reference for testing the 3-phase workflow</p>
   <div class="phase-flow">
     <span class="phase-pill research">
@@ -1090,7 +1090,7 @@ body {
     <div class="mermaid-viewport">
       <pre class="mermaid">
 flowchart TD
-  START(["/build-feature args"]) --> R1["1. Create feature dir"]
+  START(["/build args"]) --> R1["1. Create feature dir"]
   R1 --> R2["2. Deep-read codebase"]
   R2 --> R3["3. Write research.md"]
   R3 --> RVE{"VE available?"}

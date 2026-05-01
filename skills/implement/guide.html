@@ -653,7 +653,7 @@ td .step-num {
         </div>
         <div>
           <div class="kv-label">Trigger</div>
-          <div class="kv-value"><code>/implement [plan-filename]</code><br>or Phase 3 of <code>/build-feature</code></div>
+          <div class="kv-value"><code>/implement [plan-filename]</code><br>or Phase 3 of <code>/build</code></div>
         </div>
         <div>
           <div class="kv-label">Output</div>
@@ -947,14 +947,14 @@ flowchart TD
     </div>
   </div>
 
-  <!-- ── 8. Post-Implementation (build-feature) ── -->
+  <!-- ── 8. Post-Implementation (build) ── -->
   <div class="section">
-    <h2><span class="section-num">07</span> Post-Implementation (from build-feature)</h2>
-    <p>When <code>/implement</code> is invoked as Phase 3 of <code>/build-feature</code>, the orchestrator adds these steps after completion:</p>
+    <h2><span class="section-num">07</span> Post-Implementation (from build)</h2>
+    <p>When <code>/implement</code> is invoked as Phase 3 of <code>/build</code>, the orchestrator adds these steps after completion:</p>
     <div class="ve-card ve-card--elevated">
       <ul class="post-steps">
         <li><code>/diff-review</code> &mdash; Visual diff review generating an HTML page with executive summary, KPI dashboard, architecture comparison, code review analysis, and decision log (requires <code>visual-explainer</code> skill)</li>
-        <li><code>/fact-check</code> &mdash; Additional fact-check pass on the plan document from the build-feature orchestrator level</li>
+        <li><code>/fact-check</code> &mdash; Additional fact-check pass on the plan document from the build orchestrator level</li>
       </ul>
     </div>
     <p style="margin-top: 12px;">The implement skill itself does NOT generate the visual diff review &mdash; it focuses purely on executing the plan. The orchestrator handles visual artifacts when the <code>visual-explainer</code> skill is available.</p>

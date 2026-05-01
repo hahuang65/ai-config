@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Validates internal consistency of markdown/YAML configuration files
-# for the /build-feature pipeline.
+# for the /build pipeline.
 set -euo pipefail
 
 REPO_DIR="$(cd "$(dirname "$0")/.." && pwd)"
@@ -228,13 +228,13 @@ test_phase_implement() {
 }
 
 # ---------------------------------------------------------------------------
-# 7. Phase: orchestrator (build-feature)
+# 7. Phase: orchestrator (build)
 # ---------------------------------------------------------------------------
 
 test_phase_orchestrator() {
-  echo "Phase: orchestrator (build-feature)"
-  local file="$REPO_DIR/skills/build-feature/SKILL.md"
-  local label="skills/build-feature/SKILL.md"
+  echo "Phase: orchestrator (build)"
+  local file="$REPO_DIR/skills/build/SKILL.md"
+  local label="skills/build/SKILL.md"
   [[ -f "$file" ]] || { fail "$label" "file not found"; return; }
   local content
   content="$(<"$file")"
@@ -265,7 +265,7 @@ check_skill_references_phases() {
   for phase in research plan implement; do
     local target="$REPO_DIR/skills/$phase/SKILL.md"
     if [[ -f "$target" ]]; then
-      pass "skills/$phase/SKILL.md exists (referenced from build-feature)"
+      pass "skills/$phase/SKILL.md exists (referenced from build)"
     else
       fail "cross-ref" "skills/$phase/SKILL.md not found"
     fi

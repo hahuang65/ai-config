@@ -1,11 +1,11 @@
 ---
-name: build-feature
+name: build
 description: Full feature development workflow combining research, planning with annotation cycles, and implementation — with visual-explainer integration for rich HTML diagrams at each phase transition. Based on Boris Tane's disciplined AI coding workflow.
 argument-hint: [feature-description]
 disable-model-invocation: true
 ---
 
-# Build Feature - Full Workflow
+# Build - Full Workflow
 
 A disciplined 3-phase workflow for building features with AI assistance. Each phase produces a persistent markdown artifact in `docs/claude/` that serves as shared state between you and the user.
 

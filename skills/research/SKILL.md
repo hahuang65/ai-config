@@ -11,7 +11,7 @@ Perform a deep, thorough investigation of the specified area of the codebase and
 
 ## File Naming Convention
 
-When invoked **standalone** (not from build-feature), create a feature directory under `docs/claude/`:
+When invoked **standalone** (not from build), create a feature directory under `docs/claude/`:
 
 ```
 docs/claude/<YYYYMMDD-HHMM>-<slug>/research.md
@@ -27,7 +27,7 @@ To generate:
 - `docs/claude/20260227-1430-notification-system/research.md`
 - `docs/claude/20260227-1545-task-scheduling-flow/research.md`
 
-When invoked **from build-feature**, the orchestrator will provide the directory path. Write `research.md` into the provided directory.
+When invoked **from build**, the orchestrator will provide the directory path. Write `research.md` into the provided directory.
 
 ## Core Principle
 

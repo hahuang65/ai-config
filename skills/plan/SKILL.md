@@ -11,7 +11,7 @@ Create a detailed implementation plan as a persistent markdown artifact and iter
 
 ## File Naming Convention
 
-When invoked **standalone** (not from build-feature), create a feature directory under `docs/claude/`:
+When invoked **standalone** (not from build), create a feature directory under `docs/claude/`:
 
 ```text
 docs/claude/<YYYYMMDD-HHMM>-<slug>/plan.md
@@ -29,7 +29,7 @@ To generate:
 - `docs/claude/20260227-1430-cursor-pagination/plan.md`
 - `docs/claude/20260227-1545-sortable-ids/plan.md`
 
-When invoked **from build-feature**, the orchestrator will provide the directory path. Write `plan.md` into the provided directory.
+When invoked **from build**, the orchestrator will provide the directory path. Write `plan.md` into the provided directory.
 
 ## Core Principle
 

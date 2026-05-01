@@ -10,15 +10,15 @@ cd ~/.dotfiles/ai
 ./install.sh
 ```
 
-## The /build-feature Workflow
+## The /build Workflow
 
-The centerpiece of this repository is `/build-feature` — a disciplined 3-phase workflow (Research → Plan → Implement) for building software features with AI assistance. It enforces a "think before you code" discipline:
+The centerpiece of this repository is `/build` — a disciplined 3-phase workflow (Research → Plan → Implement) for building software features with AI assistance. It enforces a "think before you code" discipline:
 
 1. deep-read the codebase first
 2. write a detailed plan with iterative user review
 3. implement with TDD and multi-agent verification.
 
-**See it in action** — the [`example/`](example/) directory has sample artifacts from a full `/build-feature` pipeline ([README](example/README.md)):
+**See it in action** — the [`example/`](example/) directory has sample artifacts from a full `/build` pipeline ([README](example/README.md)):
 
 | Phase | Markdown | Visual |
 |-------|----------|--------|
@@ -39,7 +39,7 @@ docs/claude/<YYYYMMDD-HHMM>-<slug>/
 
 ### Phase 1: Research
 
-**Entry**: `/build-feature [description]` or `/research [topic]`
+**Entry**: `/build [description]` or `/research [topic]`
 
 1. Creates feature directory under `docs/claude/`
 2. Deep-reads the target codebase area exhaustively (every file, not just entry points)
@@ -125,7 +125,7 @@ Feature artifacts can be:
 
 ### Example Artifacts
 
-The [`example/`](example/) directory contains sample artifacts from a complete `/build-feature` run (adding API rate limiting to a FastAPI app). See the [example README](example/README.md) for details.
+The [`example/`](example/) directory contains sample artifacts from a complete `/build` run (adding API rate limiting to a FastAPI app). See the [example README](example/README.md) for details.
 
 | Phase | Markdown | Visual |
 |-------|----------|--------|
@@ -136,7 +136,7 @@ The [`example/`](example/) directory contains sample artifacts from a complete `
 ## Skill / Rule / Agent Graph
 
 ```text
-/build-feature (orchestrator)
+/build (orchestrator)
 ├── research (opus)
 │   └── visual-explainer → research.html
 │
@@ -161,7 +161,7 @@ Agents read a subset relevant to their role.
 
 ```text
 .
-├── skills/           8 workflow skills (build-feature, research, plan, implement, ...)
+├── skills/           8 workflow skills (build, research, plan, implement, ...)
 ├── commands/         13 slash commands (/diff-review, /fact-check, ...)
 ├── agents/           7 sub-agents (architect, tdd-guide, code-reviewer, ...)
 ├── rules/            6 always-on rules (coding-style, testing, security, ...)
@@ -181,7 +181,7 @@ Agents read a subset relevant to their role.
 
 | Name | Model | Role |
 |------|-------|------|
-| `build-feature` | — | Orchestrator: coordinates research → plan → implement |
+| `build` | — | Orchestrator: coordinates research → plan → implement |
 | `research` | opus | Deep-read codebase area, produce detailed research document |
 | `plan` | opus | Create implementation plan, refine through annotation cycles |
 | `implement` | sonnet | Execute approved plan with TDD and multi-agent verification |
@@ -194,7 +194,7 @@ Agents read a subset relevant to their role.
 
 | Command | Description |
 |---------|-------------|
-| `/build-feature` | Full feature workflow — research, plan with annotations, implement |
+| `/build` | Full feature workflow — research, plan with annotations, implement |
 | `/research` | Deep-read a codebase area, produce research document |
 | `/plan` | Create implementation plan with annotation cycles |
 | `/implement` | Execute an approved plan, track progress |
@@ -262,7 +262,7 @@ This repository serves two AI coding tools with different config formats:
 8. **Permission sync** → runs `sync-permissions.py`
 9. **OpenCode config** → `opencode.jsonc`, `tui.json` symlinked to `~/.config/opencode/`
 
-The command/skill duality means that commands sharing a name with a skill (e.g., `build-feature`, `research`, `plan`, `implement`, `refactor`) are skipped for Claude Code (where skills take precedence) but installed for OpenCode (which reads all commands).
+The command/skill duality means that commands sharing a name with a skill (e.g., `build`, `research`, `plan`, `implement`, `refactor`) are skipped for Claude Code (where skills take precedence) but installed for OpenCode (which reads all commands).
 
 ## Infrastructure
 
@@ -301,7 +301,7 @@ Runs automatically on every commit via `.githooks/pre-commit` and during `instal
 
 This project stands on the shoulders of others:
 
-- **[Boris Tane's Claude Code workflow](https://boristane.com/blog/how-i-use-claude-code/)** — The research → plan → implement pipeline at the heart of this repo is directly based on Boris's method. The `/build-feature` workflow, annotation cycles, and the "think before you code" discipline all originate from his approach. This project extends the pipeline with visual companions, multi-agent verification, and dual-tool support, but the core methodology is his.
+- **[Boris Tane's Claude Code workflow](https://boristane.com/blog/how-i-use-claude-code/)** — The research → plan → implement pipeline at the heart of this repo is directly based on Boris's method. The `/build` workflow, annotation cycles, and the "think before you code" discipline all originate from his approach. This project extends the pipeline with visual companions, multi-agent verification, and dual-tool support, but the core methodology is his.
 - **[nicobailon/visual-explainer](https://github.com/nicobailon/visual-explainer)** — The `visual-explainer` skill is taken wholesale from this repository, with only minor modifications. All the HTML visual generation (research, plan, diff-review, architecture diagrams, slides, etc.) is powered by this work.
 - **[affaan-m/everything-claude-code](https://github.com/affaan-m/everything-claude-code)** — The rules and agent definitions in this repo are borrowed and adapted from this collection. The coding-style, testing, security, and performance rules, as well as the agent configurations (architect, tdd-guide, code-reviewer, etc.), draw heavily from this source.
 
