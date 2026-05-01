@@ -239,11 +239,27 @@ test_phase_implement_coach() {
   local content
   content="$(<"$file")"
 
+  # Coaching-phase checks (Steps 1-5)
   check_content_cached "$content" "$label" "Coach the user"
   check_content_cached "$content" "$label" "tests first|Write ALL tests upfront"
   check_content_cached "$content" "$label" "Expected API"
   check_content_cached "$content" "$label" "Tests to satisfy"
   check_content_cached "$content" "$label" "check|verify"
+  check_content_cached "$content" "$label" "type check"
+  check_content_cached "$content" "$label" "lint"
+  check_content_cached "$content" "$label" "test suite|full test"
+  check_content_cached "$content" "$label" "build"
+
+  # Post-completion checks (Steps 6-14, mirrors implement)
+  check_content_cached "$content" "$label" "database-reviewer"
+  check_content_cached "$content" "$label" "/simplify"
+  check_content_cached "$content" "$label" "refactor-cleaner"
+  check_content_cached "$content" "$label" "code-reviewer"
+  check_content_cached "$content" "$label" "OWASP"
+  check_content_cached "$content" "$label" "doc-updater"
+  check_content_cached "$content" "$label" "fact-check"
+  check_content_cached "$content" "$label" "plan\.html"
+  check_content_cached "$content" "$label" "generate-visual-plan"
   check_content_cached "$content" "$label" "never commit|NEVER commit|do not commit"
 }
 
