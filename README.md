@@ -72,7 +72,9 @@ docs/claude/<YYYYMMDD-HHMM>-<slug>/
 
 ### Phase 3: Implement
 
-**Entry**: User says "implement" or `/implement [plan-path]`
+**Entry**: User says "implement" or `/implement [plan-path]` or `/implement-coach [plan-path]`
+
+#### Traditional Mode (`/implement`)
 
 1. Reads the plan document thoroughly
 2. Executes tasks via **`tdd-guide` agent** (Sonnet) in batches of 3–5 related tasks
@@ -89,6 +91,18 @@ docs/claude/<YYYYMMDD-HHMM>-<slug>/
 13. **Generates `diff-review.html`** via visual-explainer, then runs `/fact-check` on it
 14. **Verifies plan-to-implementation sync** — all todo items checked off, detailed changes match implementation, deviations documented
 15. **NEVER commits** — leaves that to the user
+
+#### Coach Mode (`/implement-coach`)
+
+1. Writes ALL tests upfront based on the plan's Testing Strategy
+2. Walks user through each module/class/function one at a time
+3. Presents expected API, test cases, and test code for each component
+4. Waits for user to implement, then verifies tests pass
+5. Guides user through fixes if tests fail
+6. Repeats until all modules are implemented
+7. Runs final verification (full test suite, type check, lint, build)
+8. Offers optional code review via **`code-reviewer`** and **`refactor-cleaner`** agents
+9. **NEVER commits** — leaves that to the user
 
 ### Annotation Cycles
 
@@ -145,12 +159,18 @@ The [`example/`](example/) directory contains sample artifacts from a complete `
 │   ├── frontend-patterns / api-design (loaded if detected)
 │   └── visual-explainer → plan.html
 │
-└── implement (sonnet)
-    ├── tdd-guide (sonnet) → TDD execution
-    ├── code-reviewer (sonnet) → OWASP + quality review
-    ├── refactor-cleaner (sonnet) → dead code removal
-    ├── database-reviewer (sonnet) → conditional DB review
-    ├── doc-updater (sonnet) → conditional doc updates
+├── implement (sonnet)
+│   ├── tdd-guide (sonnet) → TDD execution
+│   ├── code-reviewer (sonnet) → OWASP + quality review
+│   ├── refactor-cleaner (sonnet) → dead code removal
+│   ├── database-reviewer (sonnet) → conditional DB review
+│   ├── doc-updater (sonnet) → conditional doc updates
+│   └── visual-explainer → plan.html, diff-review.html
+│
+└── implement-coach (sonnet)
+    ├── Writes tests first (TDD)
+    ├── Guides user through each module/class
+    ├── Verifies tests pass after user implementation
     └── visual-explainer → plan.html, diff-review.html
 
 Rules (6 files) loaded as always-on context in every session.
@@ -161,8 +181,8 @@ Agents read a subset relevant to their role.
 
 ```text
 .
-├── skills/           8 workflow skills (build, research, plan, implement, ...)
-├── commands/         13 slash commands (/diff-review, /fact-check, ...)
+├── skills/           9 workflow skills (build, research, plan, implement, implement-coach, ...)
+├── commands/         14 slash commands (/diff-review, /fact-check, /implement-coach, ...)
 ├── agents/           7 sub-agents (architect, tdd-guide, code-reviewer, ...)
 ├── rules/            6 always-on rules (coding-style, testing, security, ...)
 ├── claude/           Claude Code config (settings.json, hooks.json, statusline.sh)
@@ -185,6 +205,7 @@ Agents read a subset relevant to their role.
 | `research` | opus | Deep-read codebase area, produce detailed research document |
 | `plan` | opus | Create implementation plan, refine through annotation cycles |
 | `implement` | sonnet | Execute approved plan with TDD and multi-agent verification |
+| `implement-coach` | sonnet | Coach user through implementation with TDD (tests first, user writes code) |
 | `refactor` | sonnet | Code restructuring with incremental test verification |
 | `visual-explainer` | — | Generate self-contained HTML pages for visual explanations |
 | `frontend-patterns` | — | Reference patterns for component composition, state, a11y |
@@ -197,7 +218,8 @@ Agents read a subset relevant to their role.
 | `/build` | Full feature workflow — research, plan with annotations, implement |
 | `/research` | Deep-read a codebase area, produce research document |
 | `/plan` | Create implementation plan with annotation cycles |
-| `/implement` | Execute an approved plan, track progress |
+| `/implement` | Execute an approved plan, track progress (AI implements) |
+| `/implement-coach` | Coach-guided implementation (tests first, you write the code) |
 | `/diff-review` | Visual HTML diff review — before/after architecture comparison |
 | `/fact-check` | Verify document accuracy against codebase, correct in place |
 | `/generate-architecture-diagram` | Visual HTML module topology and data flows |

@@ -228,6 +228,26 @@ test_phase_implement() {
 }
 
 # ---------------------------------------------------------------------------
+# 6b. Phase: implement-coach
+# ---------------------------------------------------------------------------
+
+test_phase_implement_coach() {
+  echo "Phase: implement-coach"
+  local file="$REPO_DIR/skills/implement-coach/SKILL.md"
+  local label="skills/implement-coach/SKILL.md"
+  [[ -f "$file" ]] || { fail "$label" "file not found"; return; }
+  local content
+  content="$(<"$file")"
+
+  check_content_cached "$content" "$label" "Coach the user"
+  check_content_cached "$content" "$label" "tests first|Write ALL tests upfront"
+  check_content_cached "$content" "$label" "Expected API"
+  check_content_cached "$content" "$label" "Tests to satisfy"
+  check_content_cached "$content" "$label" "check|verify"
+  check_content_cached "$content" "$label" "never commit|NEVER commit|do not commit"
+}
+
+# ---------------------------------------------------------------------------
 # 7. Phase: orchestrator (build)
 # ---------------------------------------------------------------------------
 
@@ -240,7 +260,7 @@ test_phase_orchestrator() {
   content="$(<"$file")"
 
   check_content_cached "$content" "$label" "docs/claude/"
-  for phase in research plan implement; do
+  for phase in research plan implement implement-coach; do
     check_content_cached "$content" "$label" "$phase"
   done
 
@@ -262,7 +282,7 @@ test_phase_orchestrator() {
 # ---------------------------------------------------------------------------
 
 check_skill_references_phases() {
-  for phase in research plan implement; do
+  for phase in research plan implement implement-coach; do
     local target="$REPO_DIR/skills/$phase/SKILL.md"
     if [[ -f "$target" ]]; then
       pass "skills/$phase/SKILL.md exists (referenced from build)"
@@ -499,6 +519,8 @@ main() {
   test_phase_plan
   echo ""
   test_phase_implement
+  echo ""
+  test_phase_implement_coach
   echo ""
   test_phase_orchestrator
   echo ""

@@ -16,7 +16,8 @@ A disciplined 3-phase workflow for building features with AI assistance. Each ph
 This skill orchestrates three sub-skills, optionally using visual-explainer at phase transitions. You can also use each phase independently:
 - `/research [folder-or-topic]` - Phase 1 only
 - `/plan [feature-description]` - Phase 2 only
-- `/implement [plan-filename]` - Phase 3 only
+- `/implement [plan-filename]` - Phase 3 only (AI implements)
+- `/implement-coach [plan-filename]` - Phase 3 only (user implements with TDD coaching)
 
 If visual-explainer is installed, these commands are also available standalone:
 - `/generate-architecture-diagram` - Generate a visual HTML architecture diagram
@@ -106,11 +107,22 @@ Then tell the user:
 
 ## Phase 3: Implementation
 
-Once the user triggers implementation, invoke the implement skill with the plan filename.
+Once the user triggers implementation, ask which mode they want:
 
-Use the Skill tool to invoke `implement` with the plan document filename from Phase 2.
+> **Phase 3: Implementation**
+> Choose your implementation mode:
+> - **`/implement`** — AI implements the code for you (traditional mode)
+> - **`/implement-coach`** — You implement the code with AI coaching (TDD-guided, tests written first)
+>
+> Say "implement" for traditional mode, or "coach me" for coached mode.
 
-The implement skill will:
+If the user says "implement" or doesn't specify, invoke `implement` with the plan filename.
+If the user says "coach me" or "guided", invoke `implement-coach` with the plan filename.
+
+Use the Skill tool to invoke the chosen skill with the plan document filename from Phase 2.
+
+### Traditional Mode (`implement`)
+
 1. Execute all tasks from the plan
 2. Track progress by checking off items in the plan document
 3. Run type checks and linters continuously
@@ -119,7 +131,18 @@ The implement skill will:
 6. Generate a visual diff review (`diff-review.html`) if `visual-explainer` is available
 7. Verify plan-to-implementation sync — ensuring the plan, visual, and code all agree
 
-Tell the user:
+### Coach Mode (`implement-coach`)
+
+1. Write ALL tests upfront based on the plan's Testing Strategy
+2. Walk the user through each module/class one at a time
+3. Present the expected API, test cases, and test code for each component
+4. Wait for the user to implement, then verify tests pass
+5. Guide the user through fixes if tests fail
+6. Repeat until all modules are implemented
+7. Run final verification (full test suite, type check, lint, build)
+8. Offer optional code review via `code-reviewer` and `refactor-cleaner` agents
+
+After completion, tell the user:
 
 > **Implementation complete.** All tasks from the plan have been executed.
 > *(If diff review was generated: "I've generated a fact-checked visual diff review at `<diagram-path>` (opened in your browser) summarizing everything that changed.")*
