@@ -182,6 +182,10 @@ Tell the user implementation is complete and summarize:
 - Code review findings addressed: <summary>
 - `prd.html`, `tasks.html`, `diff-review.html` (if generated): refreshed
 
+Then add this pointer:
+
+> If you notice structural issues now that the code is done — a file that got too big, a helper worth extracting, a rename worth doing — run `/refactor` separately. It's a user-directed restructuring skill and intentionally lives outside the implement phase.
+
 Do NOT commit to version control — leave that to the user.
 
 ## Handling Issues During Implementation

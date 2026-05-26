@@ -236,6 +236,8 @@ If `visual-explainer` is not available, skip silently.
 > - `prd.html` / `tasks.html` refreshed: ✅
 > - `diff-review.html` generated: ✅ / N/A
 >
+> If you notice structural issues now that the code is done — a file that got too big, a helper worth extracting, a rename worth doing — run `/refactor` separately. It's a user-directed restructuring skill and intentionally lives outside the implement phase.
+>
 > Code is not committed — commit when you're ready.
 
 ## Handling Issues During Guidance
