@@ -6,1040 +6,254 @@
 <title>/implement Skill Guide</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Fira+Code:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
 :root {
-  --font-heading: 'DM Sans', system-ui, sans-serif;
-  --font-body: 'Fira Code', 'SF Mono', Consolas, monospace;
-  --font-mono: 'Fira Code', 'SF Mono', Consolas, monospace;
-
-  --bg: #0c0f14;
-  --bg-glow: rgba(217, 119, 6, 0.04);
-  --surface: #111520;
-  --surface-elevated: #161c28;
-  --surface-recessed: #0a0d11;
-  --border: rgba(255, 255, 255, 0.06);
-  --border-bright: rgba(255, 255, 255, 0.12);
-  --text: #d4d8c0;
-  --text-dim: #6b7a6b;
-  --text-bright: #e8ecda;
-  --amber: #d97706;
-  --amber-dim: rgba(217, 119, 6, 0.12);
-  --amber-bright: #fbbf24;
-  --emerald: #059669;
-  --emerald-dim: rgba(5, 150, 105, 0.12);
-  --emerald-bright: #34d399;
-  --red: #dc2626;
-  --red-dim: rgba(220, 38, 38, 0.12);
-  --yellow: #ca8a04;
-  --yellow-dim: rgba(202, 138, 4, 0.12);
+  --font-body: 'IBM Plex Sans', system-ui, sans-serif;
+  --font-mono: 'IBM Plex Mono', 'SF Mono', Consolas, monospace;
+  --bg: #f0f2f5;
+  --surface: #ffffff;
+  --surface-recessed: #e8ebf0;
+  --border: rgba(30, 58, 95, 0.10);
+  --border-bright: rgba(30, 58, 95, 0.20);
+  --text: #1e293b;
+  --text-dim: #64748b;
+  --accent: #1e3a5f;
+  --accent-dim: rgba(30, 58, 95, 0.08);
+  --gold: #d4a73a;
+  --gold-dim: rgba(212, 167, 58, 0.10);
+  --red: #be123c;
+  --red-dim: rgba(190, 18, 60, 0.10);
+  --green: #059669;
+  --green-dim: rgba(5, 150, 105, 0.10);
+  --refactor: #d97706;
+  --refactor-dim: rgba(217, 119, 6, 0.10);
+  --must: #be123c;
+  --must-dim: rgba(190, 18, 60, 0.10);
+  --grid: rgba(30, 58, 95, 0.04);
 }
-
-@media (prefers-color-scheme: light) {
+@media (prefers-color-scheme: dark) {
   :root {
-    --bg: #f5f3ef;
-    --bg-glow: rgba(217, 119, 6, 0.06);
-    --surface: #ffffff;
-    --surface-elevated: #ffffff;
-    --surface-recessed: #edeae4;
-    --border: rgba(0, 0, 0, 0.08);
-    --border-bright: rgba(0, 0, 0, 0.15);
-    --text: #1a2010;
-    --text-dim: #6b7a6b;
-    --text-bright: #0d1208;
-    --amber: #b45309;
-    --amber-dim: rgba(180, 83, 9, 0.1);
-    --amber-bright: #d97706;
-    --emerald: #047857;
-    --emerald-dim: rgba(4, 120, 87, 0.1);
-    --emerald-bright: #059669;
-    --red: #b91c1c;
-    --red-dim: rgba(185, 28, 28, 0.1);
-    --yellow: #a16207;
-    --yellow-dim: rgba(161, 98, 7, 0.1);
+    --bg: #0c1220;
+    --surface: #131b2e;
+    --surface-recessed: #0a0f1a;
+    --border: rgba(212, 167, 58, 0.08);
+    --border-bright: rgba(212, 167, 58, 0.18);
+    --text: #e2e8f0;
+    --text-dim: #8b9dc3;
+    --accent: #5b8cc9;
+    --accent-dim: rgba(91, 140, 201, 0.12);
+    --gold: #e8c56a;
+    --gold-dim: rgba(232, 197, 106, 0.12);
+    --red: #fb7185;
+    --red-dim: rgba(251, 113, 133, 0.12);
+    --green: #34d399;
+    --green-dim: rgba(52, 211, 153, 0.12);
+    --refactor: #fbbf24;
+    --refactor-dim: rgba(251, 191, 36, 0.10);
+    --must: #fb7185;
+    --must-dim: rgba(251, 113, 133, 0.12);
+    --grid: rgba(91, 140, 201, 0.04);
   }
 }
-
-*, *::before, *::after {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
-}
-
-body {
-  font-family: var(--font-body);
-  font-size: 14px;
-  line-height: 1.6;
-  color: var(--text);
-  background: var(--bg);
-  background-image:
-    radial-gradient(ellipse at 30% 0%, var(--bg-glow) 0%, transparent 50%),
-    radial-gradient(circle, var(--border) 1px, transparent 1px);
-  background-size: 100% 100%, 24px 24px;
-  overflow-wrap: break-word;
-  -webkit-font-smoothing: antialiased;
-}
-
-.container {
-  max-width: 1100px;
-  margin: 0 auto;
-  padding: 40px 24px 80px;
-}
-
-/* ── Typography ── */
-h1, h2, h3, h4 {
-  font-family: var(--font-heading);
-  font-weight: 600;
-  color: var(--text-bright);
-}
-
-h2 {
-  font-size: 20px;
-  margin-bottom: 16px;
-  padding-bottom: 8px;
-  border-bottom: 1px solid var(--border);
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-h2 .section-num {
-  font-family: var(--font-mono);
-  font-size: 12px;
-  color: var(--amber);
-  background: var(--amber-dim);
-  padding: 2px 8px;
-  border-radius: 4px;
-  letter-spacing: 0.5px;
-}
-
-h3 {
-  font-size: 15px;
-  margin-bottom: 10px;
-  color: var(--emerald-bright);
-}
-
-p {
-  margin-bottom: 12px;
-  color: var(--text-dim);
-  font-size: 13px;
-}
-
-a {
-  color: var(--amber);
-  text-decoration: underline;
-  text-underline-offset: 2px;
-}
-
-a:hover {
-  color: var(--amber-bright);
-}
-
-code {
-  font-family: var(--font-mono);
-  font-size: 12px;
-  background: var(--surface-recessed);
-  border: 1px solid var(--border);
-  padding: 1px 5px;
-  border-radius: 3px;
-  color: var(--amber-bright);
-}
-
-/* ── Header ── */
-.header {
-  text-align: center;
-  padding: 48px 0 40px;
-  position: relative;
-}
-
-.header::before {
-  content: '$ /implement';
-  display: block;
-  font-family: var(--font-mono);
-  font-size: 12px;
-  color: var(--emerald);
-  letter-spacing: 2px;
-  text-transform: uppercase;
-  margin-bottom: 16px;
-  opacity: 0.7;
-}
-
-.header h1 {
-  font-family: var(--font-heading);
-  font-size: 36px;
-  font-weight: 700;
-  color: var(--amber);
-  margin-bottom: 8px;
-  letter-spacing: -0.5px;
-}
-
-.header .subtitle {
-  font-family: var(--font-mono);
-  font-size: 14px;
-  color: var(--text-dim);
-}
-
-.header .subtitle strong {
-  color: var(--emerald-bright);
-  font-weight: 500;
-}
-
-/* ── Cards ── */
-.ve-card {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  padding: 20px 24px;
-  position: relative;
-  min-width: 0;
-}
-
-.ve-card--elevated {
-  background: var(--surface-elevated);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15), 0 1px 2px rgba(0, 0, 0, 0.08);
-}
-
-.ve-card--hero {
-  background: color-mix(in srgb, var(--surface) 92%, var(--amber) 8%);
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.12);
-  border-color: color-mix(in srgb, var(--border) 50%, var(--amber) 50%);
-}
-
-.ve-card--recessed {
-  background: var(--surface-recessed);
-  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.1);
-}
-
-.ve-card__label {
-  font-family: var(--font-mono);
-  font-size: 10px;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 1.5px;
-  color: var(--amber);
-  margin-bottom: 12px;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.ve-card__label::before {
-  content: '';
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: currentColor;
-}
-
-/* ── Section spacing ── */
-.section {
-  margin-bottom: 48px;
-}
-
-/* ── Overview Grid ── */
-.overview-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-  gap: 12px;
-}
-
-.overview-grid > * {
-  min-width: 0;
-}
-
-.kv-label {
-  font-size: 10px;
-  text-transform: uppercase;
-  letter-spacing: 1.5px;
-  color: var(--text-dim);
-  margin-bottom: 6px;
-}
-
-.kv-value {
-  font-size: 13px;
-  color: var(--text-bright);
-}
-
-.kv-value .tag {
-  display: inline-block;
-  padding: 2px 8px;
-  border-radius: 4px;
-  font-size: 11px;
-  font-weight: 500;
-}
-
-.tag--amber {
-  background: var(--amber-dim);
-  color: var(--amber-bright);
-}
-
-.tag--emerald {
-  background: var(--emerald-dim);
-  color: var(--emerald-bright);
-}
-
-/* ── Checklist Table ── */
-.table-wrap {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  overflow: hidden;
-}
-
-.table-scroll {
-  overflow-x: auto;
-  scrollbar-width: thin;
-  scrollbar-color: var(--border) transparent;
-}
-
-.table-scroll::-webkit-scrollbar { height: 6px; }
-.table-scroll::-webkit-scrollbar-track { background: transparent; }
-.table-scroll::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
-
-table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 12px;
-  min-width: 800px;
-}
-
-thead {
-  background: var(--surface-elevated);
-}
-
-th {
-  text-align: left;
-  padding: 10px 14px;
-  font-size: 10px;
-  text-transform: uppercase;
-  letter-spacing: 1.2px;
-  color: var(--amber);
-  border-bottom: 1px solid var(--border-bright);
-  white-space: nowrap;
-  font-weight: 600;
-}
-
-td {
-  padding: 10px 14px;
-  border-bottom: 1px solid var(--border);
-  vertical-align: top;
-  color: var(--text);
-}
-
-tr:last-child td {
-  border-bottom: none;
-}
-
-tr:hover {
-  background: var(--amber-dim);
-}
-
-td .step-num {
-  display: inline-block;
-  width: 22px;
-  height: 22px;
-  line-height: 22px;
-  text-align: center;
-  border-radius: 4px;
-  font-size: 11px;
-  font-weight: 600;
-}
-
-.step-must {
-  background: var(--emerald-dim);
-  color: var(--emerald-bright);
-}
-
-.step-cond {
-  background: var(--yellow-dim);
-  color: var(--yellow);
-}
-
-.badge {
-  display: inline-block;
-  padding: 1px 6px;
-  border-radius: 3px;
-  font-size: 10px;
-  font-weight: 500;
-  letter-spacing: 0.5px;
-}
-
-.badge--must {
-  background: var(--emerald-dim);
-  color: var(--emerald-bright);
-}
-
-.badge--cond {
-  background: var(--yellow-dim);
-  color: var(--yellow);
-}
-
-.badge--agent {
-  background: var(--amber-dim);
-  color: var(--amber-bright);
-}
-
-.badge--cmd {
-  background: rgba(99, 102, 241, 0.12);
-  color: #818cf8;
-}
-
-@media (prefers-color-scheme: light) {
-  .badge--cmd {
-    background: rgba(79, 70, 229, 0.1);
-    color: #4f46e5;
-  }
-}
-
-.badge--yes {
-  background: var(--emerald-dim);
-  color: var(--emerald-bright);
-}
-
-.badge--no {
-  color: var(--text-dim);
-}
-
-/* ── Agent Cards ── */
-.agent-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-  gap: 14px;
-}
-
-.agent-grid > * {
-  min-width: 0;
-}
-
-.agent-card {
-  border-left: 3px solid var(--amber);
-}
-
-.agent-card .agent-name {
-  font-family: var(--font-mono);
-  font-size: 14px;
-  color: var(--amber-bright);
-  margin-bottom: 8px;
-}
-
-.agent-card .agent-meta {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  margin-bottom: 10px;
-}
-
-.agent-card .agent-desc {
-  font-size: 12px;
-  color: var(--text-dim);
-  margin-bottom: 0;
-}
-
-/* ── Commands Table ── */
-.cmd-table {
-  min-width: 600px;
-}
-
-/* ── Mermaid ── */
-.mermaid-wrap {
-  position: relative;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  padding: 32px 24px;
-  overflow: auto;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  min-height: 400px;
-  scrollbar-width: thin;
-  scrollbar-color: var(--border) transparent;
-  cursor: grab;
-}
-
-.mermaid-wrap::-webkit-scrollbar { width: 6px; height: 6px; }
-.mermaid-wrap::-webkit-scrollbar-track { background: transparent; }
-.mermaid-wrap::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
-.mermaid-wrap::-webkit-scrollbar-thumb:hover { background: var(--text-dim); }
-
-.mermaid-wrap.is-panning { cursor: grabbing; user-select: none; }
-
-.mermaid-wrap .mermaid {
-  zoom: 1.3;
-}
-
-.mermaid .nodeLabel { color: var(--text) !important; }
-.mermaid .edgeLabel { color: var(--text-dim) !important; background-color: var(--bg) !important; }
-.mermaid .edgeLabel rect { fill: var(--bg) !important; }
-.mermaid .nodeLabel { font-family: var(--font-body) !important; font-size: 14px !important; }
-.mermaid .edgeLabel { font-family: var(--font-mono) !important; font-size: 12px !important; }
-
-.zoom-controls {
-  position: absolute;
-  top: 8px;
-  right: 8px;
-  display: flex;
-  gap: 2px;
-  z-index: 10;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  padding: 2px;
-}
-
-.zoom-controls button {
-  width: 28px;
-  height: 28px;
-  border: none;
-  background: transparent;
-  color: var(--text-dim);
-  font-family: var(--font-mono);
-  font-size: 14px;
-  cursor: pointer;
-  border-radius: 4px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: background 0.15s ease, color 0.15s ease;
-}
-
-.zoom-controls button:hover {
-  background: var(--border);
-  color: var(--text);
-}
-
-/* ── Error handling rules ── */
-.rule-list {
-  list-style: none;
-  padding: 0;
-}
-
-.rule-list li {
-  padding: 10px 14px 10px 28px;
-  position: relative;
-  border-bottom: 1px solid var(--border);
-  font-size: 13px;
-}
-
-.rule-list li:last-child {
-  border-bottom: none;
-}
-
-.rule-list li::before {
-  position: absolute;
-  left: 10px;
-  font-size: 12px;
-}
-
-.rule-list .rule-minor::before {
-  content: '~';
-  color: var(--emerald);
-}
-
-.rule-list .rule-significant::before {
-  content: '!';
-  color: var(--amber);
-  font-weight: 700;
-}
-
-.rule-list .rule-test::before {
-  content: 'x';
-  color: var(--red);
-  font-weight: 700;
-}
-
-.rule-list .rule-never::before {
-  content: '#';
-  color: var(--red);
-  font-weight: 700;
-}
-
-/* ── Post-impl ── */
-.post-steps {
-  list-style: none;
-  padding: 0;
-  counter-reset: post;
-}
-
-.post-steps li {
-  padding: 10px 14px 10px 40px;
-  position: relative;
-  border-bottom: 1px solid var(--border);
-  font-size: 13px;
-  counter-increment: post;
-}
-
-.post-steps li:last-child {
-  border-bottom: none;
-}
-
-.post-steps li::before {
-  content: counter(post);
-  position: absolute;
-  left: 10px;
-  width: 20px;
-  height: 20px;
-  line-height: 20px;
-  text-align: center;
-  border-radius: 4px;
-  font-size: 11px;
-  font-weight: 600;
-  background: var(--amber-dim);
-  color: var(--amber);
-}
-
-/* ── Animations ── */
-.ve-card, .table-wrap, .mermaid-wrap {
-  opacity: 0;
-  animation: fadeUp 0.4s ease forwards;
-}
-
-@keyframes fadeUp {
-  from { opacity: 0; transform: translateY(12px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
-.section:nth-child(2) .ve-card,
-.section:nth-child(2) .table-wrap { animation-delay: 0.1s; }
-.section:nth-child(3) .ve-card,
-.section:nth-child(3) .table-wrap { animation-delay: 0.15s; }
-.section:nth-child(4) .ve-card,
-.section:nth-child(4) .table-wrap { animation-delay: 0.2s; }
-.section:nth-child(5) .ve-card,
-.section:nth-child(5) .table-wrap { animation-delay: 0.25s; }
-.section:nth-child(6) .ve-card,
-.section:nth-child(6) .table-wrap,
-.section:nth-child(6) .mermaid-wrap { animation-delay: 0.3s; }
-.section:nth-child(7) .ve-card,
-.section:nth-child(7) .table-wrap { animation-delay: 0.35s; }
-.section:nth-child(8) .ve-card,
-.section:nth-child(8) .table-wrap { animation-delay: 0.4s; }
-
-@media (prefers-reduced-motion: reduce) {
-  .ve-card, .table-wrap, .mermaid-wrap {
-    opacity: 1 !important;
-    animation: none !important;
-  }
-}
-
-/* ── Responsive ── */
-@media (max-width: 768px) {
-  .container { padding: 24px 16px 60px; }
-  .header h1 { font-size: 28px; }
-  .overview-grid { grid-template-columns: 1fr; }
-  .agent-grid { grid-template-columns: 1fr; }
-  table { font-size: 11px; }
-}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: var(--font-body); background-color: var(--bg); background-image: linear-gradient(var(--grid) 1px, transparent 1px), linear-gradient(90deg, var(--grid) 1px, transparent 1px); background-size: 24px 24px; color: var(--text); line-height: 1.6; }
+.container { max-width: 1180px; margin: 0 auto; padding: 40px 24px 80px; }
+.header { text-align: center; padding: 48px 24px 40px; margin-bottom: 48px; background: var(--surface); border: 1px solid var(--border-bright); border-radius: 12px; position: relative; overflow: hidden; }
+.header::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; background: linear-gradient(90deg, var(--red), var(--green), var(--refactor)); }
+.header h1 { font-family: var(--font-mono); font-size: clamp(1.6rem, 4vw, 2.4rem); font-weight: 700; letter-spacing: -0.02em; margin-bottom: 8px; }
+.header h1 span { color: var(--gold); }
+.header .subtitle { font-size: 1rem; color: var(--text-dim); max-width: 620px; margin: 0 auto 32px; }
+.cycle { display: flex; align-items: center; justify-content: center; gap: 0; flex-wrap: wrap; }
+.cycle-step { display: inline-flex; align-items: center; gap: 6px; padding: 8px 18px; border-radius: 6px; font-family: var(--font-mono); font-size: 0.82rem; font-weight: 700; border: 1px solid; }
+.cycle-step.red { background: var(--red-dim); border-color: var(--red); color: var(--red); }
+.cycle-step.green { background: var(--green-dim); border-color: var(--green); color: var(--green); }
+.cycle-step.refactor { background: var(--refactor-dim); border-color: var(--refactor); color: var(--refactor); }
+.cycle-arrow { font-size: 1.1rem; color: var(--text-dim); padding: 0 8px; }
+.section { margin-bottom: 48px; }
+.section-title { font-family: var(--font-mono); font-size: 1.1rem; font-weight: 700; color: var(--gold); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 20px; padding-bottom: 8px; border-bottom: 1px solid var(--border-bright); }
+.section-title .num { color: var(--text-dim); margin-right: 8px; }
+.card-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; }
+.card { background: var(--surface); border: 1px solid var(--border); border-left: 4px solid var(--accent); border-radius: 8px; padding: 20px; }
+.card.good { border-left-color: var(--green); }
+.card.bad { border-left-color: var(--red); }
+.card h3 { font-family: var(--font-mono); font-size: 0.95rem; font-weight: 700; margin-bottom: 12px; }
+.card.good h3 { color: var(--green); }
+.card.bad h3 { color: var(--red); }
+.card p { font-size: 0.9rem; margin-bottom: 12px; }
+.card ul { list-style: none; padding: 0; font-size: 0.85rem; }
+.card li { padding: 4px 0; padding-left: 16px; position: relative; color: var(--text-dim); }
+.card.good li::before { content: '✓'; position: absolute; left: 0; color: var(--green); font-weight: 700; }
+.card.bad li::before { content: '✗'; position: absolute; left: 0; color: var(--red); font-weight: 700; }
+.callout { background: var(--surface); border: 1px solid var(--gold); border-radius: 8px; padding: 16px 20px; margin: 20px 0; }
+.callout strong { color: var(--gold); font-family: var(--font-mono); }
+.callout.warn { border-color: var(--must); }
+.callout.warn strong { color: var(--must); }
+.cmd-tag { font-family: var(--font-mono); font-size: 0.78rem; color: var(--gold); background: var(--gold-dim); padding: 2px 6px; border-radius: 3px; }
+.agent-tag { font-family: var(--font-mono); font-size: 0.78rem; color: var(--accent); background: var(--accent-dim); padding: 2px 6px; border-radius: 3px; }
+.must-tag { font-family: var(--font-mono); font-size: 0.7rem; font-weight: 700; color: var(--must); background: var(--must-dim); padding: 2px 6px; border-radius: 3px; }
+.cond-tag { font-family: var(--font-mono); font-size: 0.7rem; font-weight: 700; color: var(--refactor); background: var(--refactor-dim); padding: 2px 6px; border-radius: 3px; }
+table { width: 100%; border-collapse: collapse; font-size: 0.85rem; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
+thead { background: var(--surface-recessed); }
+th, td { padding: 10px 14px; text-align: left; border-bottom: 1px solid var(--border); vertical-align: top; }
+th { font-family: var(--font-mono); font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-dim); }
+tr:last-child td { border-bottom: none; }
+code { font-family: var(--font-mono); font-size: 0.85em; background: var(--accent-dim); padding: 2px 6px; border-radius: 3px; }
+.pre { background: var(--surface-recessed); padding: 16px 20px; border-radius: 6px; font-family: var(--font-mono); font-size: 0.82rem; overflow-x: auto; white-space: pre; line-height: 1.6; }
+.pre.bad { border-left: 3px solid var(--red); }
+.pre.good { border-left: 3px solid var(--green); }
 </style>
 </head>
 <body>
-
 <div class="container">
 
-  <!-- ── 1. Header ── -->
-  <header class="header">
-    <h1>/implement Skill Guide</h1>
-    <p class="subtitle">Phase 3 checkpoint reference &mdash; plan execution with <strong>14 steps</strong></p>
-  </header>
-
-  <!-- ── 2. Skill Overview ── -->
-  <div class="section">
-    <h2><span class="section-num">01</span> Skill Overview</h2>
-    <div class="ve-card ve-card--hero">
-      <div class="overview-grid">
-        <div>
-          <div class="kv-label">Model</div>
-          <div class="kv-value"><span class="tag tag--amber">Sonnet</span></div>
-        </div>
-        <div>
-          <div class="kv-label">Trigger</div>
-          <div class="kv-value"><code>/implement [plan-filename]</code><br>or Phase 3 of <code>/build</code></div>
-        </div>
-        <div>
-          <div class="kv-label">Output</div>
-          <div class="kv-value">Modified source code, updated plan.md (tasks checked off), optionally refreshed visual-plan.html</div>
-        </div>
-        <div>
-          <div class="kv-label">Pre-requisites</div>
-          <div class="kv-value">Approved plan in <code>docs/claude/</code>, Rules Adherence (reads <code>rules/</code> before writing code)</div>
-        </div>
-      </div>
-    </div>
+<div class="header">
+  <h1><span>/</span>implement &amp; <span>/</span>implement-coach</h1>
+  <p class="subtitle">Vertical-slice TDD execution of an approved <code>tasks.md</code>. One test, one implementation, repeat. Coach mode lets the user write the code; AI writes one test at a time. Inputs: <code>prd.md</code> + <code>tasks.md</code>.</p>
+  <div class="cycle">
+    <span class="cycle-step red">RED</span>
+    <span class="cycle-arrow">→</span>
+    <span class="cycle-step green">GREEN</span>
+    <span class="cycle-arrow">→</span>
+    <span class="cycle-step refactor">REFACTOR</span>
+    <span class="cycle-arrow">↺</span>
   </div>
-
-  <!-- ── 3. The Big Checklist ── -->
-  <div class="section">
-    <h2><span class="section-num">02</span> The Big Checklist &mdash; 14 Steps</h2>
-    <div class="table-wrap">
-      <div class="table-scroll">
-        <table>
-          <thead>
-            <tr>
-              <th>Step</th>
-              <th>Task</th>
-              <th>Agent / Command</th>
-              <th>Required?</th>
-              <th>Fix-if-fail?</th>
-              <th>Observable Output</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td><span class="step-num step-must">1</span></td>
-              <td>Read the plan thoroughly &mdash; understand every task, snippet, constraint</td>
-              <td>&mdash;</td>
-              <td><span class="badge badge--must">MUST</span></td>
-              <td>&mdash;</td>
-              <td>Plan document loaded</td>
-            </tr>
-            <tr>
-              <td><span class="step-num step-must">2</span></td>
-              <td>Implement everything via TDD cycle. Mark tasks <code>[x]</code>. Run checks continuously. Write tests even if plan omits them.</td>
-              <td><span class="badge badge--agent">tdd-guide</span></td>
-              <td><span class="badge badge--must">MUST</span></td>
-              <td><span class="badge badge--yes">Yes</span></td>
-              <td>Source files modified, tests passing, plan tasks checked</td>
-            </tr>
-            <tr>
-              <td><span class="step-num step-must">3</span></td>
-              <td>Track progress &mdash; update plan.md after each task/phase</td>
-              <td>&mdash;</td>
-              <td><span class="badge badge--must">MUST</span></td>
-              <td>&mdash;</td>
-              <td>plan.md reflects current state</td>
-            </tr>
-            <tr>
-              <td><span class="step-num step-must">4</span></td>
-              <td>Maintain code quality &mdash; follow existing patterns, no unnecessary comments</td>
-              <td>&mdash;</td>
-              <td><span class="badge badge--must">MUST</span></td>
-              <td>&mdash;</td>
-              <td>Code matches codebase conventions</td>
-            </tr>
-            <tr>
-              <td><span class="step-num step-must">5</span></td>
-              <td>Verify (comprehensive) &mdash; Type check + Lint + Test + Build. Repeat until all pass.</td>
-              <td>&mdash;</td>
-              <td><span class="badge badge--must">MUST</span></td>
-              <td><span class="badge badge--yes">Yes</span></td>
-              <td>All 4 checks pass cleanly</td>
-            </tr>
-            <tr>
-              <td><span class="step-num step-cond">6</span></td>
-              <td>Database review &mdash; only if DB code touched. Fix CRITICAL / HIGH.</td>
-              <td><span class="badge badge--agent">database-reviewer</span></td>
-              <td><span class="badge badge--cond">COND</span></td>
-              <td><span class="badge badge--yes">Yes (CRIT+HIGH)</span></td>
-              <td>DB review findings</td>
-            </tr>
-            <tr>
-              <td><span class="step-num step-must">7</span></td>
-              <td>Simplify &mdash; review for reuse, quality, efficiency. Re-run tests after.</td>
-              <td><span class="badge badge--cmd">/simplify</span></td>
-              <td><span class="badge badge--must">MUST</span></td>
-              <td><span class="badge badge--yes">Yes</span></td>
-              <td>Simplified code, tests still pass</td>
-            </tr>
-            <tr>
-              <td><span class="step-num step-must">8</span></td>
-              <td>Refactor cleanup &mdash; remove SAFE items, verify CAREFUL items. Re-run tests.</td>
-              <td><span class="badge badge--agent">refactor-cleaner</span></td>
-              <td><span class="badge badge--must">MUST</span></td>
-              <td><span class="badge badge--yes">Yes</span></td>
-              <td>Dead code removed, tests pass</td>
-            </tr>
-            <tr>
-              <td><span class="step-num step-must">9</span></td>
-              <td>Code review including OWASP Top 10 security checks &mdash; &gt;80% confidence threshold. Fix CRITICAL / HIGH. Re-run tests.</td>
-              <td><span class="badge badge--agent">code-reviewer</span></td>
-              <td><span class="badge badge--must">MUST</span></td>
-              <td><span class="badge badge--yes">Yes (CRIT+HIGH)</span></td>
-              <td>Code review report, issues resolved</td>
-            </tr>
-            <tr>
-              <td><span class="step-num step-cond">10</span></td>
-              <td>Documentation update &mdash; if new features, API changes, or architecture mods</td>
-              <td><span class="badge badge--agent">doc-updater</span></td>
-              <td><span class="badge badge--cond">COND</span></td>
-              <td>&mdash;</td>
-              <td>Updated docs</td>
-            </tr>
-            <tr>
-              <td><span class="step-num step-must">11</span></td>
-              <td>Fact-check plan.md &mdash; verify all claims match actual implementation</td>
-              <td><span class="badge badge--cmd">/fact-check</span></td>
-              <td><span class="badge badge--must">MUST</span></td>
-              <td><span class="badge badge--yes">Yes</span></td>
-              <td>Corrections applied to plan.md</td>
-            </tr>
-            <tr>
-              <td><span class="step-num step-cond">12</span></td>
-              <td>Refresh visual-plan.html &mdash; if it exists AND fact-check corrected plan, deviations noted, or tasks added/removed. <em>Last step before reporting.</em></td>
-              <td><span class="badge badge--cmd">/generate-visual-plan</span></td>
-              <td><span class="badge badge--cond">COND</span></td>
-              <td>&mdash;</td>
-              <td>visual-plan.html regenerated</td>
-            </tr>
-            <tr>
-              <td><span class="step-num step-must">13</span></td>
-              <td>Complete &mdash; summarize what was done including test coverage. NEVER commit.</td>
-              <td>&mdash;</td>
-              <td><span class="badge badge--must">MUST</span></td>
-              <td>&mdash;</td>
-              <td>Summary to user, no git operations</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-    </div>
-  </div>
-
-  <!-- ── 4. Agent Registry ── -->
-  <div class="section">
-    <h2><span class="section-num">03</span> Agent Registry</h2>
-    <div class="agent-grid">
-
-      <div class="ve-card ve-card--elevated agent-card">
-        <div class="agent-name">tdd-guide</div>
-        <div class="agent-meta">
-          <span class="badge badge--must">Step 2</span>
-          <span class="badge badge--agent">Sonnet</span>
-          <span class="badge badge--must">MUST</span>
-        </div>
-        <p class="agent-desc">Guides red-green-refactor TDD cycle for each task. Ensures tests are written for every behavioral change, even when plan omits test tasks.</p>
-      </div>
-
-      <div class="ve-card ve-card--elevated agent-card">
-        <div class="agent-name">database-reviewer</div>
-        <div class="agent-meta">
-          <span class="badge badge--cond">Step 6</span>
-          <span class="badge badge--agent">Sonnet</span>
-          <span class="badge badge--cond">COND</span>
-        </div>
-        <p class="agent-desc">Reviews SQL queries, migrations, schema changes, ORM operations. Only invoked if feature touches database code. Fix CRITICAL and HIGH.</p>
-      </div>
-
-      <div class="ve-card ve-card--elevated agent-card">
-        <div class="agent-name">refactor-cleaner</div>
-        <div class="agent-meta">
-          <span class="badge badge--must">Step 8</span>
-          <span class="badge badge--agent">Sonnet</span>
-          <span class="badge badge--must">MUST</span>
-        </div>
-        <p class="agent-desc">Identifies dead code, unused imports, unnecessary abstractions. Items marked SAFE are removed; CAREFUL items are verified before removal. Re-run tests after.</p>
-      </div>
-
-      <div class="ve-card ve-card--elevated agent-card">
-        <div class="agent-name">code-reviewer</div>
-        <div class="agent-meta">
-          <span class="badge badge--must">Step 9</span>
-          <span class="badge badge--agent">Sonnet</span>
-          <span class="badge badge--must">MUST</span>
-        </div>
-        <p class="agent-desc">Reads and enforces project <code>rules/</code> files with integrated security analysis (OWASP Top 10, secrets detection, input validation, auth/authz). Applies confidence-based filtering (&gt;80% threshold). Auto-fixes CRITICAL security issues. Reports findings by severity. Fix CRITICAL and HIGH.</p>
-      </div>
-
-      <div class="ve-card ve-card--elevated agent-card">
-        <div class="agent-name">doc-updater</div>
-        <div class="agent-meta">
-          <span class="badge badge--cond">Step 10</span>
-          <span class="badge badge--agent">Sonnet</span>
-          <span class="badge badge--cond">COND</span>
-        </div>
-        <p class="agent-desc">Updates documentation when implementation adds new features, changes APIs, or modifies architecture. Skipped for trivial changes.</p>
-      </div>
-
-    </div>
-  </div>
-
-  <!-- ── 5. Commands Invoked ── -->
-  <div class="section">
-    <h2><span class="section-num">04</span> Commands Invoked</h2>
-    <div class="table-wrap">
-      <div class="table-scroll">
-        <table class="cmd-table">
-          <thead>
-            <tr>
-              <th>Command</th>
-              <th>Step</th>
-              <th>Required?</th>
-              <th>Purpose</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td><code>/simplify</code></td>
-              <td><span class="step-num step-must">8</span></td>
-              <td><span class="badge badge--must">MUST</span></td>
-              <td>Review changed code for reuse opportunities, quality issues, efficiency improvements</td>
-            </tr>
-            <tr>
-              <td><code>/fact-check</code></td>
-              <td><span class="step-num step-must">12</span></td>
-              <td><span class="badge badge--must">MUST</span></td>
-              <td>Verify all claims in plan.md match actual implementation (file paths, function names, behavior)</td>
-            </tr>
-            <tr>
-              <td><code>/generate-visual-plan</code></td>
-              <td><span class="step-num step-cond">13</span></td>
-              <td><span class="badge badge--cond">COND</span></td>
-              <td>Regenerate visual-plan.html if it exists AND plan changed (fact-check corrections, deviations, tasks added/removed)</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-    </div>
-  </div>
-
-  <!-- ── 6. Verification Loop Flow ── -->
-  <div class="section">
-    <h2><span class="section-num">05</span> Verification Loop Flow</h2>
-    <p>Step 5 runs this loop until all four checks pass cleanly. Failures at any stage loop back for fixes.</p>
-    <div class="mermaid-wrap">
-      <div class="zoom-controls">
-        <button onclick="zoomDiagram(this, 1.2)" title="Zoom in">+</button>
-        <button onclick="zoomDiagram(this, 0.8)" title="Zoom out">&minus;</button>
-        <button onclick="resetZoom(this)" title="Reset zoom">&#8634;</button>
-      </div>
-      <pre class="mermaid">
-flowchart TD
-    START["All tasks complete"] --> TC{"Type Check"}
-    TC -->|Pass| LINT{"Lint"}
-    TC -->|Fail| FIX1["Fix type errors"] --> TC
-    LINT -->|Pass| TEST{"Run full test suite"}
-    LINT -->|Fail| FIX2["Fix lint issues"] --> LINT
-    TEST -->|Pass| BUILD{"Build"}
-    TEST -->|Fail| FIX3["Fix test failures"] --> TC
-    BUILD -->|Pass| DONE["All 4 pass cleanly"]
-    BUILD -->|Fail| FIX4["Fix build errors"] --> TC
-
-    classDef check fill:#d9770622,stroke:#d97706,stroke-width:2px
-    classDef fix fill:#dc262622,stroke:#dc2626,stroke-width:1px
-    classDef done fill:#05966922,stroke:#059669,stroke-width:2px
-    classDef start fill:#05966911,stroke:#059669,stroke-width:1px
-
-    class TC,LINT,TEST,BUILD check
-    class FIX1,FIX2,FIX3,FIX4 fix
-    class DONE done
-    class START start
-      </pre>
-    </div>
-  </div>
-
-  <!-- ── 7. Error Handling Rules ── -->
-  <div class="section">
-    <h2><span class="section-num">06</span> Error Handling Rules</h2>
-    <div class="ve-card ve-card--elevated">
-      <ul class="rule-list">
-        <li class="rule-minor">
-          <strong>Minor issues</strong> &mdash; Fix and continue. Note the deviation in plan.md.
-        </li>
-        <li class="rule-significant">
-          <strong>Significant deviations</strong> &mdash; If something in the plan cannot be implemented as written, STOP. Tell the user. Wait for guidance before continuing.
-        </li>
-        <li class="rule-test">
-          <strong>Test failures</strong> &mdash; Fix if the cause is clear. If not, stop and report.
-        </li>
-        <li class="rule-never">
-          <strong>NEVER commit</strong> &mdash; No <code>git add</code>, <code>git commit</code>, or <code>git push</code>. The user commits when ready.
-        </li>
-      </ul>
-    </div>
-  </div>
-
-  <!-- ── 8. Post-Implementation (build) ── -->
-  <div class="section">
-    <h2><span class="section-num">07</span> Post-Implementation (from build)</h2>
-    <p>When <code>/implement</code> is invoked as Phase 3 of <code>/build</code>, the orchestrator adds these steps after completion:</p>
-    <div class="ve-card ve-card--elevated">
-      <ul class="post-steps">
-        <li><code>/diff-review</code> &mdash; Visual diff review generating an HTML page with executive summary, KPI dashboard, architecture comparison, code review analysis, and decision log (requires <code>visual-explainer</code> skill)</li>
-        <li><code>/fact-check</code> &mdash; Additional fact-check pass on the plan document from the build orchestrator level</li>
-      </ul>
-    </div>
-    <p style="margin-top: 12px;">The implement skill itself does NOT generate the visual diff review &mdash; it focuses purely on executing the plan. The orchestrator handles visual artifacts when the <code>visual-explainer</code> skill is available.</p>
-  </div>
-
 </div>
 
-<script type="module">
-  import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';
+<div class="section">
+  <div class="section-title"><span class="num">01</span>The Two Modes</div>
+  <table>
+    <thead><tr><th>Mode</th><th>Who writes the test</th><th>Who writes the impl</th><th>Cadence</th></tr></thead>
+    <tbody>
+      <tr><td><span class="cmd-tag">/implement</span></td><td>AI</td><td>AI</td><td>Per slice: AI does RED→GREEN→REFACTOR, marks complete, moves on</td></tr>
+      <tr><td><span class="cmd-tag">/implement-coach</span></td><td>AI</td><td><strong>User</strong></td><td>AI writes ONE test → user codes → AI verifies → AI writes next test</td></tr>
+    </tbody>
+  </table>
+  <p style="margin-top:14px; font-size:0.9rem; color: var(--text-dim);">Both modes use the same TDD philosophy. Coach mode hands the keyboard to the user during the GREEN step.</p>
+</div>
 
-  const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-  mermaid.initialize({
-    startOnLoad: true,
-    theme: 'base',
-    look: 'classic',
-    themeVariables: {
-      primaryColor: isDark ? '#1a2010' : '#fef9ee',
-      primaryBorderColor: isDark ? '#d97706' : '#b45309',
-      primaryTextColor: isDark ? '#d4d8c0' : '#1a2010',
-      secondaryColor: isDark ? '#111520' : '#f0fdf4',
-      secondaryBorderColor: isDark ? '#059669' : '#047857',
-      secondaryTextColor: isDark ? '#d4d8c0' : '#1a2010',
-      tertiaryColor: isDark ? '#1c1410' : '#fef3c7',
-      tertiaryBorderColor: isDark ? '#d97706' : '#b45309',
-      tertiaryTextColor: isDark ? '#d4d8c0' : '#1a2010',
-      lineColor: isDark ? '#4a5568' : '#94a3b8',
-      fontSize: '16px',
-      fontFamily: "'Fira Code', 'SF Mono', Consolas, monospace",
-      noteBkgColor: isDark ? '#111520' : '#fefce8',
-      noteTextColor: isDark ? '#d4d8c0' : '#1a2010',
-      noteBorderColor: isDark ? '#fbbf24' : '#d97706',
-    }
-  });
-</script>
+<div class="section">
+  <div class="section-title"><span class="num">02</span>Good Tests vs Bad Tests</div>
+  <div class="card-grid">
+    <div class="card good">
+      <h3>Good tests</h3>
+      <p>Specifications written through the public interface.</p>
+      <ul>
+        <li>Describe <em>what</em>, not <em>how</em></li>
+        <li>Use vocabulary from <code>CONTEXT.md</code></li>
+        <li>Survive an internal refactor with zero changes</li>
+        <li>Exercise real code paths end-to-end</li>
+        <li>Pin behavior, not data structures</li>
+      </ul>
+    </div>
+    <div class="card bad">
+      <h3>Bad tests</h3>
+      <p>Coupled to implementation details. Warning sign: they break when you rename an internal function despite identical behavior.</p>
+      <ul>
+        <li>Mock internal collaborators</li>
+        <li>Test private methods</li>
+        <li>Verify through side channels (DB queries instead of the API)</li>
+        <li>Check signatures and shapes instead of behavior</li>
+        <li>Pass when behavior breaks, fail when it doesn't</li>
+      </ul>
+    </div>
+  </div>
+</div>
 
-<script>
-  var INITIAL_ZOOM = 1.3;
+<div class="section">
+  <div class="section-title"><span class="num">03</span>Vertical, Never Horizontal</div>
+  <div class="card-grid">
+    <div>
+      <p style="font-size:0.95rem; margin-bottom: 10px;"><strong style="color: var(--red); font-family: var(--font-mono);">WRONG — horizontal:</strong></p>
+      <div class="pre bad">RED:   test1, test2, test3, test4, test5
+GREEN: impl1, impl2, impl3, impl4, impl5</div>
+      <p style="font-size: 0.85rem; color: var(--text-dim); margin-top: 10px;">Tests written in batches test <em>imagined</em> behavior. They check the shape of things — signatures, data structures — instead of user-facing behavior. They become insensitive to real changes.</p>
+    </div>
+    <div>
+      <p style="font-size:0.95rem; margin-bottom: 10px;"><strong style="color: var(--green); font-family: var(--font-mono);">RIGHT — vertical:</strong></p>
+      <div class="pre good">RED→GREEN: test1 → impl1
+RED→GREEN: test2 → impl2
+RED→GREEN: test3 → impl3
+(refactor between cycles when GREEN)</div>
+      <p style="font-size: 0.85rem; color: var(--text-dim); margin-top: 10px;">Each test responds to what you learned from the previous cycle. Because you just wrote the code, you know exactly what behavior matters and how to verify it.</p>
+    </div>
+  </div>
+</div>
 
-  function zoomDiagram(btn, factor) {
-    var wrap = btn.closest('.mermaid-wrap');
-    var target = wrap.querySelector('.mermaid');
-    var current = parseFloat(target.dataset.zoom || INITIAL_ZOOM);
-    var next = Math.min(Math.max(current * factor, 0.5), 5);
-    target.dataset.zoom = next;
-    target.style.zoom = next;
-  }
+<div class="section">
+  <div class="section-title"><span class="num">04</span>Per-Slice Workflow</div>
+  <table>
+    <thead><tr><th>Step</th><th>Action</th><th>Coach difference</th></tr></thead>
+    <tbody>
+      <tr><td>1. Confirm interface</td><td>Identify the public interface this slice will expose. Look for deep modules — small interface, deep implementation.</td><td>same</td></tr>
+      <tr><td>2. Tracer bullet</td><td>Write ONE test for the end-to-end happy path. It must fail for the right reason (no impl yet, not a syntax error).</td><td>AI writes test</td></tr>
+      <tr><td>3. GREEN</td><td>Write minimal code to make the test pass.</td><td><strong>User writes code</strong>, AI verifies on "check"</td></tr>
+      <tr><td>4. Next criterion</td><td>For each remaining acceptance criterion, write the next test, then write code.</td><td>AI writes test; user writes code</td></tr>
+      <tr><td>5. Refactor</td><td>After all tests for the slice pass — only while GREEN — extract, deepen, simplify. Run tests after each step.</td><td>Done together; AI suggests, user executes</td></tr>
+      <tr><td>6. Mark complete</td><td>Check off acceptance criteria in <code>tasks.md</code>, append <code>**Status:** ✅ Complete</code>.</td><td>same</td></tr>
+    </tbody>
+  </table>
+  <div class="callout warn">
+    <strong>Never refactor while RED.</strong> Get to GREEN first. Refactoring with failing tests means you can't tell whether you're changing behavior accidentally.
+  </div>
+  <div class="callout warn" style="margin-top: 10px;">
+    <strong>Never queue tests in coach mode.</strong> Only the test you're currently solving exists. Don't preview the next one — the user should implement against the current test without anticipating.
+  </div>
+</div>
 
-  function resetZoom(btn) {
-    var wrap = btn.closest('.mermaid-wrap');
-    var target = wrap.querySelector('.mermaid');
-    target.dataset.zoom = INITIAL_ZOOM;
-    target.style.zoom = INITIAL_ZOOM;
-  }
+<div class="section">
+  <div class="section-title"><span class="num">05</span>Post-Implementation: Verification &amp; Review</div>
+  <table>
+    <thead><tr><th>Step</th><th>Trigger</th><th>Severity</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Type check / lint / test / build</strong></td><td>Always — verification loop</td><td><span class="must-tag">MUST</span></td></tr>
+      <tr><td><span class="agent-tag">tdd-guide</span></td><td>Always — guides the RED→GREEN→REFACTOR cycle for each slice</td><td><span class="must-tag">MUST</span></td></tr>
+      <tr><td><span class="agent-tag">database-reviewer</span></td><td>If SQL / migrations / ORM was touched</td><td><span class="cond-tag">CONDITIONAL</span></td></tr>
+      <tr><td><span class="cmd-tag">/simplify</span></td><td>Always — looks for reuse, quality, efficiency</td><td><span class="must-tag">MUST</span></td></tr>
+      <tr><td><span class="agent-tag">refactor-cleaner</span></td><td>Always — dead code, unused imports</td><td><span class="must-tag">MUST</span></td></tr>
+      <tr><td><span class="agent-tag">code-reviewer</span></td><td>Always — OWASP Top 10, &gt;80% confidence</td><td><span class="must-tag">MUST</span></td></tr>
+      <tr><td><span class="agent-tag">doc-updater</span></td><td>If features / APIs / architecture changed</td><td><span class="cond-tag">CONDITIONAL</span></td></tr>
+      <tr><td><span class="cmd-tag">/fact-check</span> on <code>prd.md</code> &amp; <code>tasks.md</code></td><td>Always — catch drift between docs and code</td><td><span class="must-tag">MUST</span></td></tr>
+      <tr><td>Refresh <code>prd.html</code> + <code>tasks.html</code></td><td>Always — visual sync guarantee</td><td><span class="must-tag">MUST</span></td></tr>
+      <tr><td><span class="cmd-tag">/diff-review</span> → <code>diff-review.html</code></td><td>If <code>visual-explainer</code> is installed</td><td><span class="cond-tag">CONDITIONAL</span></td></tr>
+    </tbody>
+  </table>
+  <p style="margin-top:14px; font-size:0.9rem; color: var(--text-dim);">In coach mode, <span class="agent-tag">database-reviewer</span> and <span class="agent-tag">code-reviewer</span> findings are surfaced to the user to fix (they own the code). Other cleanup is AI-driven.</p>
+</div>
 
-  document.querySelectorAll('.mermaid-wrap').forEach(function(wrap) {
-    wrap.addEventListener('wheel', function(e) {
-      if (!e.ctrlKey && !e.metaKey) return;
-      e.preventDefault();
-      var target = wrap.querySelector('.mermaid');
-      var current = parseFloat(target.dataset.zoom || INITIAL_ZOOM);
-      var factor = e.deltaY < 0 ? 1.1 : 0.9;
-      var next = Math.min(Math.max(current * factor, 0.5), 5);
-      target.dataset.zoom = next;
-      target.style.zoom = next;
-    }, { passive: false });
+<div class="section">
+  <div class="section-title"><span class="num">06</span>Never Commits</div>
+  <div class="callout warn">
+    <strong>Neither mode runs git commit.</strong> No <code>git add</code>, no <code>git commit</code>, no <code>git push</code>. The user reviews the final state and commits when ready.
+  </div>
+</div>
 
-    var startX, startY, scrollL, scrollT;
-    wrap.addEventListener('mousedown', function(e) {
-      if (e.target.closest('.zoom-controls')) return;
-      wrap.classList.add('is-panning');
-      startX = e.clientX;
-      startY = e.clientY;
-      scrollL = wrap.scrollLeft;
-      scrollT = wrap.scrollTop;
-    });
-    window.addEventListener('mousemove', function(e) {
-      if (!wrap.classList.contains('is-panning')) return;
-      wrap.scrollLeft = scrollL - (e.clientX - startX);
-      wrap.scrollTop = scrollT - (e.clientY - startY);
-    });
-    window.addEventListener('mouseup', function() {
-      wrap.classList.remove('is-panning');
-    });
-  });
-</script>
+<div class="section">
+  <div class="section-title"><span class="num">07</span>Per-Slice Checklist</div>
+  <div class="card-grid">
+    <div class="card good">
+      <h3>Before claiming a slice done</h3>
+      <ul>
+        <li>Every test describes behavior, not implementation</li>
+        <li>Every test uses the public interface only</li>
+        <li>Every test would survive an internal refactor</li>
+        <li>Code is minimal for the tests it satisfies</li>
+        <li>No speculative features beyond the slice's acceptance criteria</li>
+        <li>Test names use <code>CONTEXT.md</code> vocabulary</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3>Handling deviations</h3>
+      <ul>
+        <li><strong>Minor issue:</strong> fix and continue; note the deviation in the slice body</li>
+        <li><strong>Can't implement as written:</strong> STOP and tell the user; wait for guidance</li>
+        <li><strong>Test failure during refactor:</strong> revert the refactor step; refactoring must not change behavior</li>
+        <li><strong>User reverts work:</strong> start fresh with the narrowed scope; don't patch a bad approach</li>
+      </ul>
+    </div>
+  </div>
+</div>
 
+</div>
 </body>
 </html>

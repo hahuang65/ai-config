@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PRD — Order Placement</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --font-body: 'IBM Plex Sans', system-ui, sans-serif;
+  --font-mono: 'IBM Plex Mono', 'SF Mono', Consolas, monospace;
+  --bg: #f0f2f5; --surface: #ffffff; --surface-recessed: #e8ebf0;
+  --border: rgba(30, 58, 95, 0.10); --border-bright: rgba(30, 58, 95, 0.20);
+  --text: #1e293b; --text-dim: #64748b;
+  --accent: #1e3a5f; --accent-dim: rgba(30, 58, 95, 0.08);
+  --gold: #d4a73a; --gold-dim: rgba(212, 167, 58, 0.10);
+  --prd: #0891b2; --prd-dim: rgba(8, 145, 178, 0.10);
+  --customer: #8b5cf6; --customer-dim: rgba(139, 92, 246, 0.12);
+  --service: #d97706; --service-dim: rgba(217, 119, 6, 0.10);
+  --sre: #059669; --sre-dim: rgba(5, 150, 105, 0.10);
+  --must: #be123c; --must-dim: rgba(190, 18, 60, 0.10);
+  --grid: rgba(30, 58, 95, 0.04);
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #0c1220; --surface: #131b2e; --surface-recessed: #0a0f1a;
+    --border: rgba(212, 167, 58, 0.08); --border-bright: rgba(212, 167, 58, 0.18);
+    --text: #e2e8f0; --text-dim: #8b9dc3;
+    --accent: #5b8cc9; --accent-dim: rgba(91, 140, 201, 0.12);
+    --gold: #e8c56a; --gold-dim: rgba(232, 197, 106, 0.12);
+    --prd: #22d3ee; --prd-dim: rgba(34, 211, 238, 0.12);
+    --customer: #a78bfa; --customer-dim: rgba(167, 139, 250, 0.14);
+    --service: #fbbf24; --service-dim: rgba(251, 191, 36, 0.10);
+    --sre: #34d399; --sre-dim: rgba(52, 211, 153, 0.12);
+    --must: #fb7185; --must-dim: rgba(251, 113, 133, 0.12);
+    --grid: rgba(91, 140, 201, 0.04);
+  }
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: var(--font-body); background-color: var(--bg); background-image: linear-gradient(var(--grid) 1px, transparent 1px), linear-gradient(90deg, var(--grid) 1px, transparent 1px); background-size: 24px 24px; color: var(--text); line-height: 1.6; }
+.container { max-width: 1180px; margin: 0 auto; padding: 40px 24px 80px; }
+.header { text-align: center; padding: 48px 24px 40px; margin-bottom: 48px; background: var(--surface); border: 1px solid var(--border-bright); border-radius: 12px; position: relative; overflow: hidden; }
+.header::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; background: var(--prd); }
+.header h1 { font-family: var(--font-mono); font-size: clamp(1.6rem, 4vw, 2.4rem); font-weight: 700; letter-spacing: -0.02em; margin-bottom: 8px; }
+.header h1 span { color: var(--gold); }
+.header .subtitle { font-size: 1rem; color: var(--text-dim); max-width: 680px; margin: 0 auto; }
+.section { margin-bottom: 48px; }
+.section-title { font-family: var(--font-mono); font-size: 1.1rem; font-weight: 700; color: var(--gold); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 20px; padding-bottom: 8px; border-bottom: 1px solid var(--border-bright); }
+.section-title .num { color: var(--text-dim); margin-right: 8px; }
+.problem-solution { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+@media (max-width: 720px) { .problem-solution { grid-template-columns: 1fr; } }
+.ps-card { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 22px; }
+.ps-card.problem { border-left: 4px solid var(--must); }
+.ps-card.solution { border-left: 4px solid var(--prd); }
+.ps-card h3 { font-family: var(--font-mono); font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 12px; }
+.ps-card.problem h3 { color: var(--must); }
+.ps-card.solution h3 { color: var(--prd); }
+.ps-card p { font-size: 0.95rem; }
+.ps-card ol { margin-top: 10px; padding-left: 22px; font-size: 0.9rem; }
+.ps-card ol li { padding: 4px 0; }
+.stories-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 12px; }
+.story { background: var(--surface); border: 1px solid var(--border); border-left: 4px solid var(--customer); border-radius: 6px; padding: 12px 14px; display: flex; gap: 12px; align-items: flex-start; }
+.story.service { border-left-color: var(--service); }
+.story.sre { border-left-color: var(--sre); }
+.story .num { font-family: var(--font-mono); font-weight: 700; font-size: 0.85rem; color: var(--text-dim); min-width: 22px; }
+.story .actor-tag { font-family: var(--font-mono); font-size: 0.65rem; font-weight: 700; padding: 2px 6px; border-radius: 3px; text-transform: uppercase; letter-spacing: 0.05em; white-space: nowrap; margin-bottom: 4px; display: inline-block; }
+.story.customer .actor-tag { background: var(--customer-dim); color: var(--customer); }
+.story.service .actor-tag { background: var(--service-dim); color: var(--service); }
+.story.sre .actor-tag { background: var(--sre-dim); color: var(--sre); }
+.story .text { font-size: 0.85rem; }
+.modules { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; }
+.module { background: var(--surface); border: 1px solid var(--border); border-left: 4px solid var(--prd); border-radius: 8px; padding: 16px 18px; }
+.module h4 { font-family: var(--font-mono); color: var(--prd); font-size: 0.95rem; margin-bottom: 8px; }
+.module .desc { font-size: 0.88rem; color: var(--text-dim); }
+.module .depth { display: inline-block; font-family: var(--font-mono); font-size: 0.7rem; padding: 2px 6px; border-radius: 3px; background: var(--gold-dim); color: var(--gold); margin-top: 8px; }
+.decision-list { list-style: none; padding: 0; }
+.decision-list li { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 14px 18px; margin-bottom: 10px; font-size: 0.9rem; }
+.decision-list li strong { font-family: var(--font-mono); color: var(--text); }
+.decision-list li .adr { font-family: var(--font-mono); font-size: 0.75rem; background: var(--accent-dim); color: var(--accent); padding: 1px 6px; border-radius: 3px; }
+table { width: 100%; border-collapse: collapse; font-size: 0.85rem; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
+thead { background: var(--surface-recessed); }
+th, td { padding: 10px 14px; text-align: left; border-bottom: 1px solid var(--border); vertical-align: top; }
+th { font-family: var(--font-mono); font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-dim); }
+tr:last-child td { border-bottom: none; }
+code { font-family: var(--font-mono); font-size: 0.85em; background: var(--accent-dim); padding: 2px 6px; border-radius: 3px; }
+.oos { background: var(--surface); border: 1px solid var(--border); border-top: 4px solid var(--must); border-radius: 8px; padding: 18px 22px; }
+.oos h4 { font-family: var(--font-mono); color: var(--must); font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 10px; }
+.oos ul { list-style: none; padding: 0; font-size: 0.9rem; }
+.oos li { padding: 5px 0 5px 20px; position: relative; color: var(--text); }
+.oos li::before { content: '✗'; position: absolute; left: 0; color: var(--must); font-weight: 700; }
+.callout { background: var(--surface); border: 1px solid var(--gold); border-radius: 8px; padding: 14px 18px; font-size: 0.9rem; margin-bottom: 12px; }
+.callout strong { color: var(--gold); font-family: var(--font-mono); }
+</style>
+</head>
+<body>
+<div class="container">
+
+<div class="header">
+  <h1><span>PRD</span> — Order Placement</h1>
+  <p class="subtitle">Customer-facing order placement endpoint with idempotency keys, persistent order history, cancellation, and at-least-once event emission for downstream consumers (Fulfillment, Billing).</p>
+</div>
+
+<div class="section">
+  <div class="section-title"><span class="num">01</span>Problem &amp; Solution</div>
+  <div class="problem-solution">
+    <div class="ps-card problem">
+      <h3>Problem</h3>
+      <p>Customers can browse the catalog and add Items to a Cart, but there is no way to convert a Cart into a persisted Order. Without persisted Orders, downstream systems (Fulfillment, Billing) have nothing to consume, Customers have no order history, and naïve retries risk creating duplicate purchases on flaky mobile connections.</p>
+    </div>
+    <div class="ps-card solution">
+      <h3>Solution</h3>
+      <p>Add a customer-facing order placement endpoint that:</p>
+      <ol>
+        <li>Accepts a Cart and produces a persisted Order with <code>pending</code> status</li>
+        <li>Deduplicates retries via <code>Idempotency-Key</code> (24h, per Customer)</li>
+        <li>Emits <code>OrderPlaced</code> for downstream consumers</li>
+        <li>Exposes order history per Customer</li>
+        <li>Allows Customers to cancel <code>pending</code> Orders</li>
+      </ol>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <div class="section-title"><span class="num">02</span>User Stories</div>
+  <div class="stories-grid">
+    <div class="story customer"><span class="num">1</span><div><span class="actor-tag">Customer</span><div class="text">place an Order from my Cart, so that I receive the Items I selected</div></div></div>
+    <div class="story customer"><span class="num">2</span><div><span class="actor-tag">Customer</span><div class="text">a retried request with the same Idempotency-Key returns the same Order, so a flaky connection doesn't charge me twice</div></div></div>
+    <div class="story customer"><span class="num">3</span><div><span class="actor-tag">Customer</span><div class="text">a request without an Idempotency-Key is rejected, so the system fails loud rather than silently duplicating</div></div></div>
+    <div class="story customer"><span class="num">4</span><div><span class="actor-tag">Customer</span><div class="text">see my Order history with statuses, so I can confirm what I've purchased</div></div></div>
+    <div class="story customer"><span class="num">5</span><div><span class="actor-tag">Customer</span><div class="text">cancel a <code>pending</code> Order before Fulfillment ships it</div></div></div>
+    <div class="story customer"><span class="num">6</span><div><span class="actor-tag">Customer</span><div class="text">a cancel attempt on a <code>confirmed</code> Order is rejected with a clear error pointing to support</div></div></div>
+    <div class="story customer"><span class="num">7</span><div><span class="actor-tag">Customer</span><div class="text">my Order history is visible only to me</div></div></div>
+    <div class="story service"><span class="num">8</span><div><span class="actor-tag">Fulfillment</span><div class="text">an <code>OrderPlaced</code> event per new Order, to start picking</div></div></div>
+    <div class="story service"><span class="num">9</span><div><span class="actor-tag">Fulfillment</span><div class="text">an <code>OrderCanceled</code> event so I can halt picking</div></div></div>
+    <div class="story service"><span class="num">10</span><div><span class="actor-tag">Billing</span><div class="text"><code>OrderPlaced</code> with the total and Customer identity, to issue an Invoice</div></div></div>
+    <div class="story service"><span class="num">11</span><div><span class="actor-tag">Billing</span><div class="text">every event carries a stable <code>event_id</code> for dedupe on at-least-once delivery</div></div></div>
+    <div class="story sre"><span class="num">12</span><div><span class="actor-tag">SRE</span><div class="text">Orders persist before events are emitted, so we never publish an event for a missing Order on partition recovery</div></div></div>
+    <div class="story sre"><span class="num">13</span><div><span class="actor-tag">SRE</span><div class="text">a Redis outage degrades idempotency to "duplicates possible" rather than blocking checkout</div></div></div>
+  </div>
+</div>
+
+<div class="section">
+  <div class="section-title"><span class="num">03</span>Implementation Decisions — Modules</div>
+  <div class="modules">
+    <div class="module">
+      <h4>OrderService</h4>
+      <p class="desc">Owns Order persistence, state transitions, and event emission. Small public surface: <code>place_order</code>, <code>cancel_order</code>, <code>list_orders</code>. Internal complexity (transactional outbox, state machine validation) is fully encapsulated.</p>
+      <span class="depth">Deep module</span>
+    </div>
+    <div class="module">
+      <h4>IdempotencyStore</h4>
+      <p class="desc">Redis-backed lookup keyed on <code>(customer_id, idempotency_key)</code>. Public surface: <code>get</code>, <code>put</code>. Internals handle TTL, key encoding, and degrade-on-outage semantics.</p>
+      <span class="depth">Deep module</span>
+    </div>
+    <div class="module">
+      <h4>EventPublisher</h4>
+      <p class="desc">Generic at-least-once publisher with transactional-outbox semantics. Used here for <code>OrderPlaced</code> and <code>OrderCanceled</code>. Shared with other contexts.</p>
+      <span class="depth">Existing shared module</span>
+    </div>
+    <div class="module">
+      <h4>HTTP layer</h4>
+      <p class="desc">Thin handlers that validate inputs, call OrderService, map errors to status codes. Authorization checks Customer ownership.</p>
+      <span class="depth">Shallow by design</span>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <div class="section-title"><span class="num">04</span>Implementation Decisions — Choices</div>
+  <ul class="decision-list">
+    <li><strong>Lifecycle:</strong> linear <code>pending → confirmed</code> or <code>pending → canceled</code>. No back-transitions. <span class="adr">ADR-0002</span></li>
+    <li><strong>Idempotency:</strong> client-supplied <code>Idempotency-Key</code> header (required); Redis 24h TTL; per-Customer scoping. <span class="adr">ADR-0001</span></li>
+    <li><strong>Events:</strong> at-least-once delivery; consumers required to dedupe on <code>event_id</code>. <span class="adr">ADR-0003</span></li>
+    <li><strong>Ordering:</strong> emit <code>OrderPlaced</code> AFTER the Order row commits, never before. Use transactional outbox for the publish.</li>
+    <li><strong>Authorization:</strong> order history and cancel endpoints verify the requesting Customer owns the Order. 403 on mismatch.</li>
+    <li><strong>Cancel from confirmed:</strong> rejected with 409 and error code <code>ORDER_NOT_CANCELLABLE</code>. UI maps to "contact support" — refunds live in Billing.</li>
+  </ul>
+</div>
+
+<div class="section">
+  <div class="section-title"><span class="num">05</span>Testing Decisions</div>
+  <div class="callout">
+    <strong>Good tests here</strong> exercise the OrderService through its public interface only — never reach into Redis or the DB directly. A test reads like a specification: "places an Order with <code>pending</code> status and emits OrderPlaced," not "calls <code>_persist_order</code> then <code>_publish_event</code>."
+  </div>
+  <table>
+    <thead><tr><th>Module</th><th>Coverage</th></tr></thead>
+    <tbody>
+      <tr><td><strong>OrderService</strong></td><td>Placement, cancel transitions, authorization, event-emission ordering (event must come AFTER row commit)</td></tr>
+      <tr><td><strong>IdempotencyStore</strong></td><td>Hit/miss semantics, TTL expiration, Redis-outage degradation (warning logged, request still succeeds)</td></tr>
+      <tr><td><strong>HTTP layer</strong></td><td>Request validation, status codes, content negotiation, error code shapes</td></tr>
+      <tr><td><strong>State machine</strong></td><td>Every allowed transition gets a test; every forbidden transition asserts the 409 response</td></tr>
+    </tbody>
+  </table>
+  <p style="margin-top: 14px; font-size: 0.9rem; color: var(--text-dim);"><strong>Prior art:</strong> Catalog context tests use real Postgres and real Redis via testcontainers. We match that pattern — no mocking of internal collaborators.</p>
+</div>
+
+<div class="section">
+  <div class="section-title"><span class="num">06</span>Out of Scope</div>
+  <div class="oos">
+    <h4>Deliberately excluded</h4>
+    <ul>
+      <li>Refunds (Billing's concern; see <span class="adr" style="background: var(--accent-dim); color: var(--accent); padding: 1px 6px; border-radius: 3px; font-family: var(--font-mono);">ADR-0002</span>)</li>
+      <li>Partial cancellation of individual OrderLines — Order is the unit of cancellation</li>
+      <li>Order modification after placement — Customers create a new Order to change Items</li>
+      <li>Guest checkout — Customer identity is required</li>
+      <li>Multi-currency totals — single-currency for now; revisit when the requirement is real</li>
+      <li>Inventory checks at order placement — Fulfillment handles backorders</li>
+    </ul>
+  </div>
+</div>
+
+<div class="section">
+  <div class="section-title"><span class="num">07</span>Further Notes</div>
+  <ul class="decision-list">
+    <li><strong>Price snapshotting:</strong> Catalog is source of truth for Item prices. We snapshot the price into each OrderLine at order time so a future price change doesn't retroactively alter an existing Order.</li>
+    <li><strong>Telemetry:</strong> every endpoint emits a structured log with <code>customer_id</code>, <code>order_id</code>, <code>idempotency_hit</code>, latency. Grafana dashboard surfaces idempotency hit rate as a healthcheck metric.</li>
+  </ul>
+</div>
+
+</div>
+</body>
+</html>

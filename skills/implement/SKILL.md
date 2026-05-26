@@ -1,112 +1,223 @@
 ---
 name: implement
-description: Execute an approved plan document from .claude/docs/, implementing all tasks while tracking progress in the plan. Use after the plan has been reviewed, annotated, and approved by the user.
-argument-hint: [plan-filename]
+description: Execute approved vertical-slice tasks from docs/claude/<slug>/tasks.md, slice by slice, using red-green-refactor TDD. Use after /tasks has produced an approved tasks.md.
+argument-hint: [feature-dir-or-slug]
 model: sonnet
 ---
 
 # Implementation Phase
 
-Execute an approved plan, implementing all tasks without stopping, while tracking progress in the plan document.
+Execute approved vertical-slice tasks **one slice at a time** using strict red-green-refactor TDD. Each slice is a tracer bullet that cuts through every layer end-to-end.
 
 ## Prerequisites
 
-- An approved plan document must exist in a feature directory under `docs/claude/`. The user will either:
-  - Provide the directory path as `$ARGUMENTS` (e.g., `/implement docs/claude/20260227-1430-cursor-pagination/`)
-  - Provide just the slug or partial path and you resolve it
-  - Or if no argument is given, look in `docs/claude/` for the most recent `*/plan.md` file and confirm with the user that it's the right one
-- The user has explicitly approved the plan (do not assume approval)
+- An approved `tasks.md` must exist in a feature directory under `docs/claude/`. The user will either:
+  - Provide the directory path as `$ARGUMENTS` (e.g. `/implement docs/claude/20260227-1430-cursor-pagination/`)
+  - Provide a slug or partial path you resolve
+  - Or no argument — find the most recent `docs/claude/*/tasks.md` and confirm it's the right one
+- The user has explicitly approved the tasks (do not assume approval)
+- `CONTEXT.md` (at the repo root) and any relevant ADRs in `docs/adr/` have been read so test names and module names match the project's vocabulary
 
 ## Rules Adherence
 
-Comply with the project rules already loaded in context (coding-style, testing, security, performance, git-workflow). The skill itself — not just the agents it invokes — must follow these rules when writing implementation code, fixing issues, or making any code changes.
+Comply with the project rules already loaded in context (coding-style, testing, security, performance, git-workflow). The skill itself — not just the agents it invokes — must follow these rules.
+
+## TDD Philosophy (non-negotiable)
+
+This skill uses **vertical-slice TDD** — one test, one implementation, repeat. Do NOT write all tests upfront, then all implementation.
+
+**Good tests** test behavior through public interfaces. They read like specifications — *what* the system does, not *how*. They survive refactors because they don't care about internal structure.
+
+**Bad tests** couple to implementation. They mock internal collaborators, test private methods, or verify through side channels. Warning sign: a test that fails when you rename an internal function despite identical behavior.
+
+**Anti-pattern to avoid:**
+```
+WRONG (horizontal):
+  RED:   test1, test2, test3, test4, test5
+  GREEN: impl1, impl2, impl3, impl4, impl5
+```
+
+Tests written in bulk test *imagined* behavior, not *actual* behavior. They check the shape of things — data structures, signatures — rather than user-facing behavior.
+
+**Correct pattern:**
+```
+RIGHT (vertical):
+  RED→GREEN: test1 → impl1
+  RED→GREEN: test2 → impl2
+  RED→GREEN: test3 → impl3
+  (refactor between cycles when GREEN)
+```
+
+Each test responds to what you learned from the previous cycle. Because you just wrote the code, you know exactly what behavior matters and how to verify it.
 
 ## Process
 
-1. **Read the plan**: Read the plan document thoroughly. Understand every task, every code snippet, every constraint.
+### Step 1: Read context
 
-2. **Implement everything**: Execute all tasks in the todo list, in order. You MUST use the `tdd-guide` agent (via the Agent tool) to guide implementation. **Batch tasks**: invoke the tdd-guide with 3-5 related tasks per invocation rather than one task at a time — this reduces agent overhead while maintaining TDD discipline. Group tasks by the file or module they affect. For each batch:
-   - Implement the changes exactly as specified in the plan, following the tdd-guide's red-green-refactor cycle for each task in the batch
-   - Mark each task as completed in the plan document by changing `- [ ]` to `- [x]`
-   - Run type checks / linters continuously to catch issues early
-   - Do NOT stop to ask for confirmation between tasks
-   - If the plan's todo list is missing test tasks, write tests anyway — every behavioral change must have test coverage. The absence of test tasks in the plan does not excuse the absence of tests in the implementation.
+1. Read `tasks.md` thoroughly. Understand every slice, its acceptance criteria, and the dependency order.
+2. Read the linked `prd.md` for surrounding context (user stories, decisions).
+3. Read `CONTEXT.md` and any relevant ADRs.
 
-3. **Track progress**: Update the plan document after completing each task or phase so progress is always visible. The plan document is the source of truth for what's done and what remains.
+### Step 2: For each slice (in dependency order)
 
-4. **Maintain code quality**: Follow existing code patterns and conventions in the codebase. Do not add unnecessary comments or documentation unless the plan says to. The `tdd-guide` and `code-reviewer` agents enforce the rules in `rules/` — write code that will pass their review.
+Work one slice at a time. Do NOT batch multiple slices together — each slice gets its own RED→GREEN→REFACTOR cycle before the next slice begins.
 
-5. **Verify (comprehensive)**: You MUST run a systematic verification loop after all tasks are done. This is not optional.
-   1. **Type check**: Run the project's type checker (e.g., `npx tsc --noEmit`, `mypy`, `go vet`, `bundle exec srb tc`)
-   2. **Lint**: Run the project's linter (e.g., `npx eslint .`, `ruff check .`, `rubocop`, `golangci-lint run`)
-   3. **Test**: Run the full test suite and confirm all tests pass
-   4. **Build**: Run the build command if one exists (e.g., `npm run build`, `go build ./...`)
+For the current slice:
 
-   If any step fails, fix the issue before proceeding. Repeat the loop until all 4 pass cleanly.
+#### 2a. Confirm interface
 
-6. **Database review** *(if the feature touches database code)*: If the implementation involved SQL queries, migrations, schema changes, or ORM operations, you MUST run the `database-reviewer` agent (via the Agent tool). Fix any CRITICAL or HIGH issues found.
+Before writing any test, identify the public interface this slice will expose. Look for [deep modules](https://github.com/mattpocock/skills/blob/main/skills/engineering/tdd/deep-modules.md) — small interface, deep implementation. The interface is what tests will exercise; everything behind it is free to refactor.
 
-7. **Simplify**: You MUST invoke `/simplify` to review the changed code for reuse opportunities, quality issues, and efficiency improvements. Fix any issues found. Then re-run the test suite to confirm nothing broke.
+#### 2b. Tracer bullet
 
-8. **Refactor cleanup**: You MUST run the `refactor-cleaner` agent (via the Agent tool) on the changed files. Remove SAFE items, verify CAREFUL items. Re-run tests after cleanup.
+Write ONE test that confirms ONE thing about the slice's end-to-end behavior. This is the tracer bullet — it proves the path works through every layer.
 
-9. **Code review**: You MUST run the `code-reviewer` agent (via the Agent tool) on all changed files. This is not optional. The agent reads and enforces the project's `rules/` files, applies confidence-based filtering (>80% confidence threshold), and reports findings by severity — including OWASP Top 10 security checks. Fix any CRITICAL and HIGH issues found. Re-run tests after fixes.
+```
+RED:   Write the one test → it fails
+GREEN: Write the minimal code that makes it pass → it passes
+```
 
-10. **Documentation update** *(if the feature warrants it)*: If the implementation added new features, changed APIs, or modified architecture, run the `doc-updater` agent (via the Agent tool). Skip for trivial changes.
+Use the `tdd-guide` agent (via the Agent tool) to guide this cycle.
 
-11. **Fact-check the plan**: You MUST invoke `/fact-check` on the plan document. This is not optional. Use the Skill tool to invoke `fact-check` with the plan file path as the argument. This verifies that all claims (file paths, line numbers, function names, behavior descriptions) match what was actually implemented. Do NOT skip this step.
+#### 2c. Incremental loop
 
-12. **Refresh visual plan**: If `plan.html` exists in the feature directory, regenerate it by invoking `/generate-visual-plan` so the visual stays in sync with the final plan state. This is mandatory — the visual MUST always mirror the markdown. Do not skip this step regardless of whether changes were made to the plan.
+For each remaining acceptance criterion in this slice:
 
-13. **Generate diff review**: If the `visual-explainer` skill is available, generate a visual diff review. Follow the `/diff-review` workflow: compare the current working tree against the branch point (typically `main`) to produce an HTML page with executive summary, KPI dashboard, architecture comparison, before/after panels, code review analysis, and decision log. Write to `diff-review.html` in the feature directory and open in the browser. Then run `/fact-check` on the generated HTML to verify claims against actual code and git history. If `visual-explainer` is not available, skip this step silently.
+```
+RED:   Write next test → fails
+GREEN: Minimal code to pass → passes
+```
 
-14. **Verify plan-to-implementation sync**: Read the final `plan.md` and compare it against the actual implementation. Ensure:
-    - All todo items are checked off (`- [x]`)
-    - The plan's detailed changes section accurately reflects what was actually implemented (update if deviations occurred)
-    - Any implementation decisions that diverged from the plan are documented in the plan
-    - The visual `plan.html` reflects the final state
+Rules per cycle:
+- One test at a time
+- Only enough code to pass the current test
+- Don't anticipate future tests
+- Tests must exercise the public interface, never internal state
+- Tests must use vocabulary from `CONTEXT.md` (test names like `it("cancels an Order", ...)`, not `it("calls cancelOrder()", ...)`)
 
-15. **When complete**: Tell the user implementation is complete and summarize what was done, including test coverage added. Do NOT commit to version control — leave that to the user.
+#### 2d. Refactor (only while GREEN)
+
+After the slice's tests all pass, look for refactor opportunities:
+- Extract duplication
+- Deepen modules (move complexity behind simple interfaces)
+- Apply SOLID where natural
+- Run tests after every refactor step
+
+**Never refactor while RED.** Get to GREEN first.
+
+#### 2e. Per-slice checklist
+
+Before marking the slice complete:
+- [ ] Every test describes behavior, not implementation
+- [ ] Every test uses the public interface only
+- [ ] Every test would survive an internal refactor
+- [ ] The code is minimal for the tests it satisfies
+- [ ] No speculative features added beyond the acceptance criteria
+
+#### 2f. Mark slice complete
+
+Update `tasks.md`: check off the acceptance criteria boxes (`- [ ]` → `- [x]`) for the slice and append a `**Status:** ✅ Complete` line under the slice title.
+
+Then move to the next slice. Do NOT stop to ask permission between slices — implementation should be boring at this point. Stop only if a slice cannot be implemented as written; in that case, surface the issue and wait for guidance.
+
+### Step 3: Comprehensive verification
+
+After all slices are done, run the systematic verification loop. This is not optional.
+
+1. **Type check** — `npx tsc --noEmit`, `mypy`, `go vet`, `bundle exec srb tc`, etc.
+2. **Lint** — `npx eslint .`, `ruff check .`, `rubocop`, `golangci-lint run`, etc.
+3. **Test** — full test suite, all tests must pass
+4. **Build** — if a build command exists (e.g. `npm run build`, `go build ./...`)
+
+If any step fails, fix the issue (still TDD: add a failing test that reproduces it where applicable) and re-run the loop. Repeat until all four pass cleanly.
+
+### Step 4: Database review *(conditional)*
+
+If the implementation involved SQL queries, migrations, schema changes, or ORM operations, you MUST run the `database-reviewer` agent (via the Agent tool). Fix any CRITICAL or HIGH issues found.
+
+### Step 5: Simplify
+
+You MUST invoke `/simplify` to review changed code for reuse opportunities, quality issues, and efficiency improvements. Fix anything it surfaces. Re-run the test suite to confirm nothing broke.
+
+### Step 6: Refactor cleanup
+
+You MUST run the `refactor-cleaner` agent (via the Agent tool) on the changed files. Remove SAFE items, verify CAREFUL items. Re-run tests after cleanup.
+
+### Step 7: Code review
+
+You MUST run the `code-reviewer` agent (via the Agent tool) on all changed files. The agent reads and enforces the project's `rules/` files, applies confidence-based filtering, and reports findings by severity (including OWASP Top 10). Fix CRITICAL and HIGH issues. Re-run tests after fixes.
+
+### Step 8: Documentation update *(conditional)*
+
+If the implementation added new features, changed APIs, or modified architecture, run the `doc-updater` agent. Skip for trivial changes.
+
+### Step 9: Fact-check the PRD and tasks
+
+You MUST invoke `/fact-check` on both `prd.md` and `tasks.md`. This verifies that claims (module names, decisions, behavior descriptions) match what was actually implemented. Update either document if it drifted from the implementation.
+
+### Step 10: Refresh visuals
+
+Regenerate `prd.html` and `tasks.html` so they mirror the final markdown. Open them in the browser. Mandatory — the visuals MUST always mirror the markdown.
+
+### Step 11: Generate diff review
+
+If `visual-explainer` is available, generate a visual diff review via `/diff-review`: compare the current working tree against the branch point (typically `main`). Write to `diff-review.html` in the feature directory and open in the browser. Then run `/fact-check` on the generated HTML.
+
+If `visual-explainer` is not available, skip silently.
+
+### Step 12: Verify task-to-implementation sync
+
+Read the final `tasks.md` and compare against the implementation:
+- All acceptance criteria checked off (`- [x]`)
+- Each slice marked `**Status:** ✅ Complete`
+- Any deviation from the original slice documented in the slice body
+- Both `tasks.html` and `prd.html` reflect the final state
+
+### Step 13: Completion
+
+Tell the user implementation is complete and summarize:
+- Slices completed: <n>
+- Tests added: <count>, all passing
+- Type check / lint / build: ✅
+- Code review findings addressed: <summary>
+- `prd.html`, `tasks.html`, `diff-review.html` (if generated): refreshed
+
+Do NOT commit to version control — leave that to the user.
 
 ## Handling Issues During Implementation
 
-- **Minor issues**: Fix them and continue. Note the deviation in the plan.
-- **Significant deviations**: If something in the plan can't be implemented as written, STOP and tell the user what the issue is. Wait for guidance before continuing.
-- **Test failures**: Fix them if the cause is clear. If not, stop and report.
+- **Minor issues**: fix and continue. Note the deviation in the slice body.
+- **A slice can't be implemented as written**: STOP and tell the user. Wait for guidance.
+- **Test failures during refactor**: revert the refactor step. Refactor must not change behavior.
 
 ## Feedback Loop
 
-After implementation, the user may test and provide terse corrections:
+After implementation, the user may give terse corrections:
+- Short and direct: "wider", "still cropped", "move this to the admin app"
+- Act immediately — you have full context from the PRD and tasks; brief corrections are enough
 
-- These will be short and direct: "wider", "still cropped", "move this to the admin app"
-- Act on them immediately without asking for clarification
-- You have full context from the plan and session - brief corrections are sufficient
-
-When something goes in a wrong direction and the user reverts changes:
-
-- Do not try to patch a bad approach
+When something goes wrong and the user reverts:
+- Do not patch a bad approach
 - Start fresh with the narrowed scope the user provides
-- A clean restart almost always produces better results than incremental fixes
+- A clean restart almost always beats incremental fixes
 
 ## Referencing Existing Code
 
-When the user references existing code ("make it look like the users table", "same pattern as the auth middleware"), read that reference code first and match it precisely. Most features in a mature codebase are variations on existing patterns.
+When the user references existing code ("make it look like the users table", "same pattern as the auth middleware"), read that reference and match it precisely. Most features in a mature codebase are variations on existing patterns.
 
 ## Important Guidelines
 
-- Implementation should be "boring" - all creative decisions were made during planning
-- Do not stop between tasks to ask for permission to continue
-- Do not add features or improvements not in the plan
-- Do not refactor code that isn't part of the plan
-- The plan is the spec - follow it faithfully
-- If the plan says to do something, do it. If it doesn't mention something, don't do it — with one exception: **tests are always required**, even if the plan omits them
-- **NEVER commit to version control** — no `git add`, `git commit`, or `git push`. The user will commit when they are ready
+- **One slice at a time. One test at a time within a slice.** Vertical, not horizontal.
+- Tests must verify behavior through public interfaces. Survive refactors.
+- Test names and module names use `CONTEXT.md` vocabulary.
+- Do NOT batch tests across slices. Do NOT batch implementations across tests.
+- Do NOT add features beyond the slice's acceptance criteria.
+- **NEVER commit to version control** — no `git add`, `git commit`, or `git push`. The user commits when ready.
 
 ## Visual Sync Guarantee
 
 All visual HTML files in the feature directory MUST mirror their markdown counterparts at all times. The implement skill is responsible for:
+- **`prd.html`** and **`tasks.html`**: regenerated after implementation if drift is detected (or to reflect completion status).
+- **`diff-review.html`**: generated after implementation if `visual-explainer` is available.
 
-- **`plan.html`**: Regenerated after implementation to reflect final plan state (checked-off tasks, deviations noted). This is mandatory regardless of whether changes were detected.
-- **`diff-review.html`**: Generated after implementation if `visual-explainer` is available. Summarizes what changed with executive summary, KPI dashboard, architecture comparison, and code review analysis.
-
-If `visual-explainer` is not available, visual steps are silently skipped — the workflow proceeds with just the markdown artifacts.
+If `visual-explainer` is not available, visual steps are silently skipped.

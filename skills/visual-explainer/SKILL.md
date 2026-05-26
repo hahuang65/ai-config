@@ -173,7 +173,7 @@ Keep animations purposeful: entrance reveals, hover feedback, and user-initiated
 
 ### 4. Deliver
 
-**Output location:** Write to the current feature directory under `docs/claude/` if one exists for this session (e.g., `docs/claude/20260304-1430-auth-flow/`). Otherwise, create a new directory `docs/claude/<YYYYMMDD-HHMM>-<slug>/` based on the content. When the visual is a companion to a markdown file, use the same base name with `.html` extension (e.g., `research.md` -> `research.html`, `plan.md` -> `plan.html`). For standalone visuals, use a descriptive filename: `diff-review.html`, `diagram.html`, `slides.html`, etc.
+**Output location:** Write to the current feature directory under `docs/claude/` if one exists for this session (e.g., `docs/claude/20260304-1430-auth-flow/`). Otherwise, create a new directory `docs/claude/<YYYYMMDD-HHMM>-<slug>/` based on the content. When the visual is a companion to a markdown file, use the same base name with `.html` extension (e.g., `prd.md` -> `prd.html`, `tasks.md` -> `tasks.html`). For standalone visuals, use a descriptive filename: `diff-review.html`, `diagram.html`, `slides.html`, etc.
 
 **Open in browser:**
 - macOS: `open docs/claude/<dir>/filename.html`

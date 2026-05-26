@@ -1,251 +1,264 @@
 ---
 name: implement-coach
-description: Coach the user through implementing code according to an approved plan, writing tests ahead of time and walking through each class/function. The user implements the code while the AI provides guidance, API specifications, and test verification. Use after the plan has been reviewed, annotated, and approved by the user.
-argument-hint: [plan-filename]
+description: Coach the user through implementing approved vertical-slice tasks. The AI writes ONE test at a time and waits for the user to implement; never batches tests upfront. Use after /tasks has produced an approved tasks.md and the user wants to write the code themselves.
+argument-hint: [feature-dir-or-slug]
 model: sonnet
 ---
 
 # Implementation Coaching Phase
 
-Coach the user through implementing an approved plan, writing tests first and walking through each class/function step-by-step. The user writes the code; you provide guidance, API specifications, and test verification.
+Coach the user through approved vertical-slice tasks **one slice at a time, one test at a time**. You write the test; the user writes the code; you verify.
 
 ## Prerequisites
 
-- An approved plan document must exist in a feature directory under `docs/claude/`. The user will either:
-  - Provide the directory path as `$ARGUMENTS` (e.g., `/implement-coach docs/claude/20260227-1430-cursor-pagination/`)
-  - Provide just the slug or partial path and you resolve it
-  - Or if no argument is given, look in `docs/claude/` for the most recent `*/plan.md` file and confirm with the user that it's the right one
-- The user has explicitly approved the plan (do not assume approval)
-- The plan's "Todo List" section (not "Proposed Todo List") must be present, indicating approval
+- An approved `tasks.md` must exist in a feature directory under `docs/claude/`. The user will either:
+  - Provide the directory path as `$ARGUMENTS` (e.g. `/implement-coach docs/claude/20260227-1430-cursor-pagination/`)
+  - Provide a slug or partial path you resolve
+  - Or no argument — find the most recent `docs/claude/*/tasks.md` and confirm it's the right one
+- The user has explicitly approved the tasks (do not assume approval)
+- `CONTEXT.md` (at the repo root) and any relevant ADRs in `docs/adr/` have been read so test names use the project's vocabulary
 
 ## Rules Adherence
 
-Comply with the project rules already loaded in context (coding-style, testing, security, performance, git-workflow). Guide the user to follow these rules when they implement code.
+Comply with the project rules already loaded in context. Guide the user to follow them while implementing.
+
+## TDD Philosophy (non-negotiable)
+
+This skill uses **vertical-slice TDD** — one test, one implementation, repeat. **Do NOT write all tests upfront.**
+
+The old "write all tests, then have the user implement" pattern is the **horizontal anti-pattern**. It produces crap tests:
+- Tests written in bulk test *imagined* behavior, not *actual* behavior
+- They test the *shape* of things (signatures, data structures) instead of user-facing behavior
+- They become insensitive to real changes — pass when behavior breaks, fail when behavior is fine
+- The user outruns their headlights, committing to test structure before understanding the implementation
+
+**Correct pattern:**
+```
+For each acceptance criterion:
+  AI: write ONE test         → it fails (RED)
+  USER: implement minimum    → test passes (GREEN)
+  Together: refactor if useful → tests still pass
+  → next criterion
+```
+
+**Good tests** test behavior through public interfaces. They read like specifications. They survive refactors because they don't care about internal structure.
+
+**Bad tests** couple to implementation: mock internal collaborators, test private methods, verify through side channels. Warning sign: a test that fails when you rename an internal function despite identical behavior.
 
 ## Process
 
-### Step 1: Read and Analyze the Plan
+### Step 1: Read context
 
-1. Read the approved plan document thoroughly
-2. Understand every task, every code snippet, every constraint
-3. Identify all modules, classes, functions, and methods that need to be created or modified
-4. Group related tasks by file/module for efficient guidance
-
-### Step 2: Write All Tests First
-
-Before guiding the user through implementation, write ALL the tests upfront:
-
-1. For each task in the Todo List that requires code changes, identify the corresponding test cases from the Testing Strategy section
-2. Create test files for all new modules/classes
-3. Write comprehensive tests that cover:
-   - Happy path scenarios
-   - Edge cases
-   - Error conditions
-4. Make sure tests are written but will fail (since implementation doesn't exist yet)
-5. Run the test suite to confirm tests fail (red phase of TDD)
+1. Read `tasks.md` thoroughly. Understand every slice, its acceptance criteria, and the dependency order.
+2. Read the linked `prd.md` for surrounding context (user stories, decisions).
+3. Read `CONTEXT.md` and any relevant ADRs.
 
 Tell the user:
-> I've written all the tests upfront based on the plan's Testing Strategy.
-> You can find them at:
-> - `<test-file-1>`
-> - `<test-file-2>`
-> ...
+
+> I've read `tasks.md` and the linked PRD. We'll work one slice at a time. For each slice:
 >
-> Currently, these tests are failing (as expected) since the implementation doesn't exist yet.
-> We'll now walk through each module together.
+> 1. I'll confirm the public interface
+> 2. I'll write ONE failing test (the tracer bullet)
+> 3. You implement just enough code to pass it
+> 4. I run the test and confirm it passes
+> 5. We repeat for the next acceptance criterion in the slice
+> 6. We refactor together when all the slice's tests pass
+>
+> Ready? Confirm and we'll start with **Slice 1: <title>**.
 
-### Step 3: Coach Through Each Module/Class
+### Step 2: For each slice (in dependency order)
 
-For each module, class, or significant unit of code identified in the plan:
+#### 2a. Confirm interface
 
-1. **Present the module/class to implement:**
-   ```
-   ## Module: `<file-path>`
+Before writing any test, present the public interface for this slice:
 
-   ### Class/Function: `<name>`
+```
+## Slice <n>: <title>
 
-   **Purpose:** <brief description from plan>
+**Acceptance criteria:**
+- [ ] <criterion 1>
+- [ ] <criterion 2>
+- [ ] <criterion 3>
 
-   **Expected API:**
-   <show the interface/signature based on plan's Detailed Changes>
+**Proposed public interface:**
 
-   **Tests to satisfy:**
-   - `<test-name-1>`: <what it tests>
-   - `<test-name-2>`: <what it tests>
-   ...
+<show the signature/shape — e.g. function signature, class API, REST endpoint, UI component props>
 
-   Here are the specific tests your implementation needs to pass:
-   <show relevant test code snippets>
-   ```
+Look [deep, not shallow](https://github.com/mattpocock/skills/blob/main/skills/engineering/tdd/deep-modules.md): small interface, deep implementation. Internals are free to refactor; the interface is what tests pin.
 
-2. **Wait for user to implement:**
-   - Tell the user: "Please implement this class/function. Once done, tell me to 'check' or 'verify'."
-   - Do NOT write the implementation code yourself
-   - Do NOT proceed until the user says they're ready
+Does this interface match what you had in mind? Say "yes" to proceed, or push back.
+```
 
-3. **Verify the implementation:**
-   When the user says to check/verify:
-   - Run the specific tests for the module just implemented
-   - If tests pass: congratulate and move to next module
-   - If tests fail:
-     - Show the user the test failure output
-     - Guide them on what needs to be fixed
-     - Wait for them to fix and ask to check again
+Wait for the user's confirmation before writing any test.
 
-4. **Repeat** for each module/class in the plan
+#### 2b. Tracer bullet
 
-### Step 4: Mid-Implementation Review (Optional)
+Write ONE test that covers ONE acceptance criterion — the end-to-end happy path. Make sure it:
+- Uses the public interface only
+- Uses `CONTEXT.md` vocabulary in its name (e.g. `it("cancels an Order", ...)`)
+- Would survive an internal refactor
 
-After completing ~50% of the modules, offer a quick review:
-> We've completed half the implementation. Would you like me to:
-> - Run the full test suite to see overall progress?
-> - Review the code so far for any obvious issues?
-> - Continue to the next module?
+Run the test to confirm it fails for the right reason (no implementation yet — not a syntax error). Then tell the user:
 
-### Step 5: Final Verification
+```
+**Tracer bullet for Slice <n>**
 
-After all modules are implemented, run a systematic verification loop. This is not optional.
+Test file: `<path>`
 
-1. **Type check:** Run the project's type checker (e.g., `npx tsc --noEmit`, `mypy`, `go vet`, `bundle exec srb tc`)
-2. **Lint:** Run the project's linter (e.g., `npx eslint .`, `ruff check .`, `rubocop`, `golangci-lint run`)
-3. **Test:** Run the full test suite and confirm all tests pass
-4. **Build:** Run the build command if one exists (e.g., `npm run build`, `go build ./...`)
+```<lang>
+<the test code>
+```
 
-If any step fails, guide the user through fixing the issue. Repeat the loop until all 4 pass cleanly.
+Currently failing (RED):
+```
+<the failure output, briefly>
+```
 
-### Step 6: Database Review *(if the feature touches database code)*
+Please implement just enough to make this test pass. Tell me "check" when ready.
+```
 
-If the implementation involved SQL queries, migrations, schema changes, or ORM operations, you MUST run the `database-reviewer` agent (via the Agent tool) on the changed files. Present findings to the user. For CRITICAL or HIGH issues, guide the user to fix them — they wrote the code, they fix the issues. Re-run tests after each fix.
+**Do NOT write the implementation yourself.** Do NOT preview the next test.
 
-### Step 7: Simplify
+#### 2c. Verify
 
-You MUST invoke `/simplify` to review the changed code for reuse opportunities, quality issues, and efficiency improvements. For mechanical improvements (e.g., consolidating duplicate logic into an existing helper), apply them directly. For changes that involve behavioral judgment, present them to the user and let them decide. Re-run the test suite after any changes.
+When the user says check:
+- Run the specific test
+- If it passes: confirm `✅ <test name>` and move to the next acceptance criterion (2d)
+- If it fails: show the failure, point at the likely cause, wait for them to retry. Do not write the fix.
 
-### Step 8: Refactor Cleanup
+#### 2d. Incremental loop
 
-You MUST run the `refactor-cleaner` agent (via the Agent tool) on the changed files. Apply SAFE items directly (dead code removal, unused imports). For CAREFUL items, surface them to the user for verification. Re-run tests after cleanup.
+For each remaining acceptance criterion in this slice, repeat:
 
-### Step 9: Code Review
+```
+RED:  AI writes ONE next test → fails for the right reason
+GREEN: USER implements minimum → test passes
+```
 
-You MUST run the `code-reviewer` agent (via the Agent tool) on all changed files. This is not optional. The agent reads and enforces the project's `rules/` files, applies confidence-based filtering (>80% confidence threshold), and reports findings by severity — including OWASP Top 10 security checks. Present the findings to the user grouped by severity. For CRITICAL and HIGH issues, guide the user to fix them — coaching philosophy: the user writes the code. Re-run tests after each fix.
+Rules:
+- One test at a time. **NEVER queue up multiple tests.**
+- Test name uses `CONTEXT.md` vocabulary
+- Test uses public interface only
+- Do NOT preview future tests to the user — they should implement against the current one without anticipating
+- Do NOT add features beyond what the current test requires
 
-### Step 10: Documentation Update *(if the feature warrants it)*
+#### 2e. Refactor together (only while GREEN)
 
-If the implementation added new features, changed APIs, or modified architecture, run the `doc-updater` agent (via the Agent tool). The AI handles documentation directly — this is not implementation code. Skip for trivial changes.
+After all the slice's tests pass, offer refactor candidates:
 
-### Step 11: Fact-Check the Plan
+> All tests for Slice <n> are passing. Refactor opportunities I see:
+> - <candidate 1>
+> - <candidate 2>
+>
+> Want to apply any? I'll keep the tests running after each step.
 
-You MUST invoke `/fact-check` on the plan document. This is not optional. Use the Skill tool to invoke `fact-check` with the plan file path as the argument. This verifies that all claims (file paths, line numbers, function names, behavior descriptions) match what was actually implemented. Do NOT skip this step.
+If the user says yes, guide refactors one step at a time, re-running the test suite after each. **Never refactor while RED.**
 
-### Step 12: Refresh Visual Plan
+#### 2f. Per-slice checklist
 
-If `plan.html` exists in the feature directory, regenerate it by invoking `/generate-visual-plan` so the visual stays in sync with the final plan state. This is mandatory — the visual MUST always mirror the markdown. Do not skip this step regardless of whether changes were made to the plan.
+Before marking the slice complete, confirm with the user:
+- [ ] Every test describes behavior, not implementation
+- [ ] Every test uses the public interface only
+- [ ] Every test would survive an internal refactor
+- [ ] The code is minimal for the tests it satisfies
+- [ ] No speculative features added beyond the acceptance criteria
 
-### Step 13: Generate Diff Review
+#### 2g. Mark slice complete
 
-If the `visual-explainer` skill is available, generate a visual diff review. Follow the `/diff-review` workflow: compare the current working tree against the branch point (typically `main`) to produce an HTML page with executive summary, KPI dashboard, architecture comparison, before/after panels, code review analysis, and decision log. Write to `diff-review.html` in the feature directory and open in the browser. Then run `/fact-check` on the generated HTML to verify claims against actual code and git history. If `visual-explainer` is not available, skip this step silently.
+Update `tasks.md`: check off the acceptance criteria boxes (`- [ ]` → `- [x]`) and append `**Status:** ✅ Complete` under the slice title. Then move to the next slice.
 
-### Step 14: Verify Plan-to-Implementation Sync
+### Step 3: Mid-implementation review (optional)
 
-Read the final `plan.md` and compare it against the actual implementation. Ensure:
-- All todo items are checked off (`- [x]`)
-- The plan's detailed changes section accurately reflects what was actually implemented (update if deviations occurred)
-- Any implementation decisions that diverged from the plan are documented in the plan
-- The visual `plan.html` reflects the final state
+After ~50% of slices are done, offer:
 
-### Step 15: Completion
+> Halfway through. Want to:
+> - Run the full test suite for a pulse check?
+> - Pause and review code quality so far?
+> - Continue to the next slice?
 
-When everything is done:
+### Step 4: Final verification
+
+After all slices are done, run the systematic verification loop. This is not optional.
+
+1. **Type check** — `npx tsc --noEmit`, `mypy`, `go vet`, `bundle exec srb tc`, etc.
+2. **Lint** — `npx eslint .`, `ruff check .`, `rubocop`, `golangci-lint run`, etc.
+3. **Test** — full test suite, all passing
+4. **Build** — if a build command exists
+
+If anything fails, guide the user through the fix. Repeat until all four pass cleanly.
+
+### Step 5: Database review *(conditional)*
+
+If the implementation involved SQL queries, migrations, schema changes, or ORM operations, run the `database-reviewer` agent (via the Agent tool). Present findings to the user. For CRITICAL or HIGH issues, **guide the user to fix them** — they wrote the code, they fix the issues. Re-run tests after each fix.
+
+### Step 6: Simplify
+
+Invoke `/simplify` to review changed code for reuse, quality, and efficiency. For mechanical improvements (consolidating duplicates into an existing helper), apply directly. For changes that involve behavioral judgment, present them to the user and let them decide. Re-run tests after changes.
+
+### Step 7: Refactor cleanup
+
+Run the `refactor-cleaner` agent (via the Agent tool). Apply SAFE items directly (dead code, unused imports). For CAREFUL items, surface them to the user. Re-run tests after cleanup.
+
+### Step 8: Code review
+
+Run the `code-reviewer` agent (via the Agent tool). The agent reads and enforces the project's `rules/` files, applies confidence-based filtering, and reports findings by severity (including OWASP Top 10). Present findings to the user grouped by severity. For CRITICAL and HIGH issues, **guide the user to fix them** — coaching philosophy: the user writes the code. Re-run tests after fixes.
+
+### Step 9: Documentation update *(conditional)*
+
+If the implementation added new features, changed APIs, or modified architecture, run the `doc-updater` agent. AI handles documentation directly — that's not implementation code. Skip for trivial changes.
+
+### Step 10: Fact-check the PRD and tasks
+
+Invoke `/fact-check` on both `prd.md` and `tasks.md`. Update either document if it drifted from the implementation.
+
+### Step 11: Refresh visuals
+
+Regenerate `prd.html` and `tasks.html` so they mirror the final markdown. Open in the browser.
+
+### Step 12: Generate diff review
+
+If `visual-explainer` is available, generate `diff-review.html` via `/diff-review`: compare working tree against the branch point. Open in the browser. Run `/fact-check` on the generated HTML.
+
+If `visual-explainer` is not available, skip silently.
+
+### Step 13: Completion
+
 > **Implementation complete!** 🎉
 >
-> You've implemented all modules according to the plan. Here's what was accomplished:
-> - Modules implemented: <list>
-> - Tests written: <count>
-> - All tests passing: ✅
-> - Type check: ✅ / ❌
-> - Lint: ✅ / ❌
+> You implemented all slices yourself. Here's what was accomplished:
+> - Slices implemented: <list>
+> - Tests written: <count>, all passing ✅
+> - Type check / lint / build: ✅
 > - Database review: ✅ / N/A
 > - Code review: ✅
 > - Documentation: ✅ / N/A
-> - Plan fact-checked: ✅
-> - `plan.html` refreshed: ✅
+> - `prd.md` / `tasks.md` fact-checked: ✅
+> - `prd.html` / `tasks.html` refreshed: ✅
 > - `diff-review.html` generated: ✅ / N/A
 >
-> The code has not been committed — you can commit when ready.
+> Code is not committed — commit when you're ready.
 
 ## Handling Issues During Guidance
 
-- **User asks for help:** Provide hints, explain the API, show examples from the codebase — but don't write the implementation
-- **User's implementation doesn't match plan:** If it works and passes tests, accept it. If it deviates significantly, note it
-- **Tests keep failing:** Help debug — show how to read stack traces, suggest debugging approaches
-- **User wants to deviate from plan:** Stop and confirm with user if they want to update the plan first
+- **User asks for help**: Provide hints, explain the API, point at examples in the codebase — but do not write the implementation
+- **User's implementation deviates from interface**: If it works and tests pass, accept. If it diverges meaningfully, note it.
+- **Tests keep failing**: Help debug — show how to read stack traces, suggest where to look. Do not write the fix.
+- **User wants to deviate from the slice**: Stop and ask whether to update `tasks.md` first.
 
 ## Key Principles
 
-1. **Tests first:** Always write tests before asking the user to implement
-2. **Guide, don't implement:** You provide the API specification and tests; the user writes the code
-3. **Verify continuously:** Check tests after each module implementation
-4. **Be patient:** Wait for the user to implement — don't rush ahead
-5. **Celebrate progress:** Acknowledge when tests pass, show progress through the plan
-
-## Example Interaction Flow
-
-```
-AI: Let's implement the plan for cursor-pagination. I've written all tests upfront.
-
-AI: ## Module: `src/api/pagination.ts`
-
-### Class: `CursorPaginator`
-
-**Purpose:** Handle cursor-based pagination for API responses
-
-**Expected API:**
-```typescript
-class CursorPaginator<T> {
-  constructor(items: T[], cursor?: string);
-  getItems(): T[];
-  getNextCursor(): string | null;
-  hasMore(): boolean;
-}
-```
-
-**Tests to satisfy:**
-- `should return items for first page`
-- `should return next cursor when more items exist`
-- `should return null cursor when no more items`
-
-Here are the specific tests:
-[shows test code]
-
-Please implement this class. Once done, tell me to 'check'.
-
-User: Done, please check.
-
-AI: Running tests... ❌ Test failed: "should return next cursor when more items exist"
-Here's the error: <error details>
-Looks like getNextCursor() is returning null. Can you check your logic?
-
-User: Fixed it.
-
-AI: Running tests... ✅ All 3 tests pass! Great job!
-Let's move to the next module...
-```
-
-## Important Guidelines
-
-- **Never write implementation code during coaching (Steps 1-5)** — that's the user's job
-- **Always write tests first** — this is TDD coaching
-- **Show, don't tell** — show the API, show the tests, show the errors
-- **Wait for user** — don't implement modules ahead of time
-- **Follow the plan** — use the approved plan as the specification
-- **Post-completion cleanup is AI-driven (Steps 6-14)** — once tests pass and verification is clean, the AI handles cleanup, documentation, and visual artifacts directly. Findings from `database-reviewer` and `code-reviewer` are an exception: surface them to the user and guide them to fix, since the user owns the implementation code.
-- **NEVER commit to version control** — no `git add`, `git commit`, or `git push`
+1. **One test at a time. Never write tests in batches.** The old "write all tests upfront" pattern is rejected — it produces tests of imagined behavior, not actual behavior.
+2. **Guide, don't implement.** During Steps 2-3 you write tests; the user writes code.
+3. **Test through the interface.** Behavior, not implementation.
+4. **Be patient.** Wait for the user. Don't write the next test before the current one is green.
+5. **CONTEXT.md vocabulary everywhere** — in test names, helper names, error messages.
+6. **Post-completion cleanup is AI-driven (Steps 5-12)** — once tests pass and verification is clean, the AI handles cleanup, documentation, and visual artifacts directly. Findings from `database-reviewer` and `code-reviewer` are an exception: surface them and guide the user, since they own the implementation code.
+7. **NEVER commit to version control** — no `git add`, `git commit`, or `git push`.
 
 ## Visual Sync Guarantee
 
-All visual HTML files in the feature directory MUST mirror their markdown counterparts at all times. The implement-coach skill is responsible for:
+All visual HTML files in the feature directory MUST mirror their markdown counterparts at all times:
+- **`prd.html`** and **`tasks.html`**: regenerated after implementation to reflect completion status and any drift fixes.
+- **`diff-review.html`**: generated if `visual-explainer` is available.
 
-- **`plan.html`**: Regenerated after implementation to reflect final plan state (checked-off tasks, deviations noted). This is mandatory regardless of whether changes were detected.
-- **`diff-review.html`**: Generated after implementation if `visual-explainer` is available. Summarizes what changed with executive summary, KPI dashboard, architecture comparison, and code review analysis.
-
-If `visual-explainer` is not available, visual steps are silently skipped — the workflow proceeds with just the markdown artifacts.
+If `visual-explainer` is not available, visual steps are silently skipped.

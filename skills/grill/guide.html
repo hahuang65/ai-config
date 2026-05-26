@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>/grill Skill Guide</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --font-body: 'IBM Plex Sans', system-ui, sans-serif;
+  --font-mono: 'IBM Plex Mono', 'SF Mono', Consolas, monospace;
+  --bg: #f0f2f5; --surface: #ffffff; --surface-recessed: #e8ebf0;
+  --border: rgba(30, 58, 95, 0.10); --border-bright: rgba(30, 58, 95, 0.20);
+  --text: #1e293b; --text-dim: #64748b;
+  --accent: #1e3a5f; --accent-dim: rgba(30, 58, 95, 0.08);
+  --gold: #d4a73a; --gold-dim: rgba(212, 167, 58, 0.10);
+  --grill: #8b5cf6; --grill-dim: rgba(139, 92, 246, 0.10);
+  --must: #be123c; --must-dim: rgba(190, 18, 60, 0.10);
+  --grid: rgba(30, 58, 95, 0.04);
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #0c1220; --surface: #131b2e; --surface-recessed: #0a0f1a;
+    --border: rgba(212, 167, 58, 0.08); --border-bright: rgba(212, 167, 58, 0.18);
+    --text: #e2e8f0; --text-dim: #8b9dc3;
+    --accent: #5b8cc9; --accent-dim: rgba(91, 140, 201, 0.12);
+    --gold: #e8c56a; --gold-dim: rgba(232, 197, 106, 0.12);
+    --grill: #a78bfa; --grill-dim: rgba(167, 139, 250, 0.12);
+    --must: #fb7185; --must-dim: rgba(251, 113, 133, 0.12);
+    --grid: rgba(91, 140, 201, 0.04);
+  }
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: var(--font-body); background-color: var(--bg); background-image: linear-gradient(var(--grid) 1px, transparent 1px), linear-gradient(90deg, var(--grid) 1px, transparent 1px); background-size: 24px 24px; color: var(--text); line-height: 1.6; }
+.container { max-width: 1180px; margin: 0 auto; padding: 40px 24px 80px; }
+.header { text-align: center; padding: 48px 24px 40px; margin-bottom: 48px; background: var(--surface); border: 1px solid var(--border-bright); border-radius: 12px; position: relative; overflow: hidden; }
+.header::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; background: var(--grill); }
+.header h1 { font-family: var(--font-mono); font-size: clamp(1.6rem, 4vw, 2.4rem); font-weight: 700; letter-spacing: -0.02em; margin-bottom: 8px; }
+.header h1 span { color: var(--gold); }
+.header .subtitle { font-size: 1rem; color: var(--text-dim); max-width: 620px; margin: 0 auto; }
+.section { margin-bottom: 48px; }
+.section-title { font-family: var(--font-mono); font-size: 1.1rem; font-weight: 700; color: var(--gold); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 20px; padding-bottom: 8px; border-bottom: 1px solid var(--border-bright); }
+.section-title .num { color: var(--text-dim); margin-right: 8px; }
+.card-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; }
+.card { background: var(--surface); border: 1px solid var(--border); border-left: 4px solid var(--grill); border-radius: 8px; padding: 20px; }
+.card h3 { font-family: var(--font-mono); font-size: 0.95rem; font-weight: 700; color: var(--grill); margin-bottom: 10px; }
+.card p { font-size: 0.9rem; margin-bottom: 10px; }
+.card ul { list-style: none; padding: 0; font-size: 0.85rem; }
+.card li { padding: 4px 0; padding-left: 16px; position: relative; color: var(--text-dim); }
+.card li::before { content: '→'; position: absolute; left: 0; color: var(--gold); font-weight: 700; }
+.card .quote { font-style: italic; color: var(--text-dim); border-left: 2px solid var(--grill); padding-left: 12px; margin-top: 10px; font-size: 0.85rem; }
+.callout { background: var(--surface); border: 1px solid var(--gold); border-radius: 8px; padding: 16px 20px; margin: 20px 0; }
+.callout strong { color: var(--gold); font-family: var(--font-mono); }
+.callout.warn { border-color: var(--must); }
+.callout.warn strong { color: var(--must); }
+table { width: 100%; border-collapse: collapse; font-size: 0.85rem; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
+thead { background: var(--surface-recessed); }
+th, td { padding: 10px 14px; text-align: left; border-bottom: 1px solid var(--border); vertical-align: top; }
+th { font-family: var(--font-mono); font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-dim); }
+tr:last-child td { border-bottom: none; }
+code { font-family: var(--font-mono); font-size: 0.85em; background: var(--accent-dim); padding: 2px 6px; border-radius: 3px; }
+.pre { background: var(--surface-recessed); padding: 16px 20px; border-radius: 6px; font-family: var(--font-mono); font-size: 0.82rem; overflow-x: auto; white-space: pre; line-height: 1.6; }
+.cmd-tag { font-family: var(--font-mono); font-size: 0.78rem; color: var(--gold); background: var(--gold-dim); padding: 2px 6px; border-radius: 3px; }
+.must-tag { font-family: var(--font-mono); font-size: 0.7rem; font-weight: 700; color: var(--must); background: var(--must-dim); padding: 2px 6px; border-radius: 3px; }
+</style>
+</head>
+<body>
+<div class="container">
+
+<div class="header">
+  <h1><span>/</span>grill</h1>
+  <p class="subtitle">Interactive domain-modeling session. Interview the user one question at a time, sharpen terminology, capture decisions inline — updating <code>CONTEXT.md</code> and <code>docs/adr/</code> as the conversation progresses. Based on Matt Pocock's <code>grill-with-docs</code>.</p>
+</div>
+
+<div class="section">
+  <div class="section-title"><span class="num">01</span>Place in the Pipeline</div>
+  <p style="font-size: 0.95rem; margin-bottom: 16px;">Phase 1 of <span class="cmd-tag">/build</span>. The grilling session is the design phase. Phase 2 (<span class="cmd-tag">/prd</span>) just transcribes its outcome — it does NOT re-interview.</p>
+  <div class="pre">/build "feature"
+  ├── Phase 1: /grill        ← YOU ARE HERE
+  ├── Phase 2: /prd
+  ├── Phase 3: /tasks
+  └── Phase 4: /implement (or /implement-coach)</div>
+</div>
+
+<div class="section">
+  <div class="section-title"><span class="num">02</span>What It Produces</div>
+  <div class="card-grid">
+    <div class="card">
+      <h3>CONTEXT.md (repo root)</h3>
+      <p>Shared domain glossary. Long-lived; accretes across every <code>/build</code> run. Definitions are tight (1-2 sentences), opinionated (aliases listed under <code>Avoid</code>), and devoid of implementation detail.</p>
+      <ul>
+        <li>Updated <em>inline</em> as terms resolve — never batched</li>
+        <li>If absent, created lazily when the first term is resolved</li>
+        <li>For multi-context repos, lives under each bounded context, with a root <code>CONTEXT-MAP.md</code></li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3>docs/adr/*.md (repo root)</h3>
+      <p>Architectural Decision Records. Numbered sequentially. Each captures <em>what was decided</em> and <em>why</em> in 1-3 sentences.</p>
+      <ul>
+        <li>Offered <strong>sparingly</strong>: only when hard-to-reverse AND surprising AND result of a real trade-off</li>
+        <li>If any of the three is missing, skip — don't document the obvious</li>
+        <li><code>docs/adr/</code> is created lazily on first ADR</li>
+      </ul>
+    </div>
+  </div>
+  <div class="callout">
+    <strong>Why repo root?</strong> These artifacts outlive any single feature. They're the durable spine that successive <code>/build</code> runs sharpen — not feature-scoped.
+  </div>
+</div>
+
+<div class="section">
+  <div class="section-title"><span class="num">03</span>Conversation Tactics</div>
+  <div class="card-grid">
+    <div class="card">
+      <h3>Challenge the glossary</h3>
+      <p>When a user term conflicts with existing language in <code>CONTEXT.md</code>, call it out.</p>
+      <div class="quote">"Your glossary defines 'cancellation' as X, but you seem to mean Y — which is it?"</div>
+    </div>
+    <div class="card">
+      <h3>Sharpen fuzzy language</h3>
+      <p>When the user uses overloaded terms, propose a precise canonical term.</p>
+      <div class="quote">"You're saying 'account' — do you mean the Customer or the User? Those are different things."</div>
+    </div>
+    <div class="card">
+      <h3>Stress-test with scenarios</h3>
+      <p>Invent concrete scenarios that probe edge cases and force precision about boundaries between concepts.</p>
+      <div class="quote">"If a Customer has two pending Orders and one ships, does the OrderPlaced event for the other still fire?"</div>
+    </div>
+    <div class="card">
+      <h3>Cross-reference with code</h3>
+      <p>When the user describes how something works, check whether the code agrees. Surface contradictions.</p>
+      <div class="quote">"Your code cancels entire Orders, but you just said partial cancellation is possible — which is right?"</div>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <div class="section-title"><span class="num">04</span>Interaction Pattern</div>
+  <table>
+    <thead><tr><th>Rule</th><th>Why</th></tr></thead>
+    <tbody>
+      <tr><td><strong>One question at a time</strong></td><td>Batched questions are overwhelming and the user's later answers usually depend on earlier ones</td></tr>
+      <tr><td><strong>Recommend an answer</strong> for each question</td><td>"What do you think?" wastes turns; users push back faster against a concrete proposal</td></tr>
+      <tr><td><strong>Walk down branches sequentially</strong></td><td>Resolve dependencies between decisions one-by-one — don't ask questions whose answer is blocked on another decision</td></tr>
+      <tr><td><strong>Explore code instead of asking</strong> when possible</td><td>If the codebase already answers a question, don't bother the user</td></tr>
+      <tr><td><strong>Update inline</strong>, never batch</td><td>Capture decisions as they happen — batched updates lose nuance and risk drift</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="section">
+  <div class="section-title"><span class="num">05</span>ADR Bar (all three required)</div>
+  <div class="card-grid">
+    <div class="card">
+      <h3>1. Hard to reverse</h3>
+      <p>The cost of changing your mind later is meaningful. If you can swap it out next sprint, skip.</p>
+    </div>
+    <div class="card">
+      <h3>2. Surprising without context</h3>
+      <p>A future reader will look at the code and wonder "why on earth did they do it this way?" If it's the obvious choice, no one will ask.</p>
+    </div>
+    <div class="card">
+      <h3>3. Real trade-off</h3>
+      <p>There were genuine alternatives and you picked one for specific reasons. If there was no real alternative, there's nothing to document beyond "we did the obvious thing."</p>
+    </div>
+  </div>
+  <div class="callout warn">
+    <strong>If any of the three is missing, skip the ADR.</strong> The point of an ADR isn't to document everything — it's to stop the next engineer from "fixing" something that was deliberate.
+  </div>
+</div>
+
+<div class="section">
+  <div class="section-title"><span class="num">06</span>Format References</div>
+  <table>
+    <thead><tr><th>File</th><th>Purpose</th></tr></thead>
+    <tbody>
+      <tr><td><code>CONTEXT-FORMAT.md</code></td><td>How <code>CONTEXT.md</code> is structured — bold term names, tight definitions, aliases to avoid, optional example dialogue</td></tr>
+      <tr><td><code>ADR-FORMAT.md</code></td><td>How ADRs are structured — title, 1-3 sentences, sequential numbering, optional status/considered/consequences sections</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="section">
+  <div class="section-title"><span class="num">07</span>Completion</div>
+  <p style="font-size: 0.95rem; margin-bottom: 14px;">The grill phase ends when all three are true:</p>
+  <ul style="font-size: 0.9rem; list-style: none; padding: 0;">
+    <li style="padding: 6px 0 6px 22px; position: relative;"><span style="position: absolute; left: 0; color: var(--gold); font-weight: 700;">→</span> All ambiguous terms have been pinned down</li>
+    <li style="padding: 6px 0 6px 22px; position: relative;"><span style="position: absolute; left: 0; color: var(--gold); font-weight: 700;">→</span> Cardinality and lifecycle questions are answered</li>
+    <li style="padding: 6px 0 6px 22px; position: relative;"><span style="position: absolute; left: 0; color: var(--gold); font-weight: 700;">→</span> ADR-worthy decisions are recorded</li>
+    <li style="padding: 6px 0 6px 22px; position: relative;"><span style="position: absolute; left: 0; color: var(--gold); font-weight: 700;">→</span> User has no questions you can't answer from the codebase</li>
+  </ul>
+  <div class="callout">
+    <strong>Then:</strong> tell the user what changed (terms added, ADRs created), say <em>"say 'draft the PRD' when ready"</em>, and <span class="must-tag">STOP</span>. The orchestrator does not advance autonomously.
+  </div>
+</div>
+
+</div>
+</body>
+</html>

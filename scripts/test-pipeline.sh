@@ -129,80 +129,102 @@ test_frontmatter_commands() {
 }
 
 # ---------------------------------------------------------------------------
-# 4. Phase: research
+# 4. Phase: grill
 # ---------------------------------------------------------------------------
 
-test_phase_research() {
-  echo "Phase: research"
-  local file="$REPO_DIR/skills/research/SKILL.md"
-  local label="skills/research/SKILL.md"
+test_phase_grill() {
+  echo "Phase: grill"
+  local file="$REPO_DIR/skills/grill/SKILL.md"
+  local label="skills/grill/SKILL.md"
   [[ -f "$file" ]] || { fail "$label" "file not found"; return; }
   local content
   content="$(<"$file")"
 
-  check_content_cached "$content" "$label" "Identify the scope"
-  check_content_cached "$content" "$label" "Deep-read the code"
-  check_content_cached "$content" "$label" "Write the research document"
-
-  for section in Overview Architecture "Key Files" "Data Flow" Patterns Dependencies "Edge Cases" "Current State"; do
-    check_content_cached "$content" "$label" "$section"
-  done
-
-  check_content_cached "$content" "$label" "generate-architecture-diagram"
-  check_content_cached "$content" "$label" "research\.html"
-  check_content_cached "$content" "$label" "STOP"
+  check_content_cached "$content" "$label" "one at a time"
+  check_content_cached "$content" "$label" "CONTEXT\.md"
+  check_content_cached "$content" "$label" "docs/adr/"
+  check_content_cached "$content" "$label" "[Cc]hallenge against the glossary"
+  check_content_cached "$content" "$label" "[Ss]harpen fuzzy language"
+  check_content_cached "$content" "$label" "[Cc]ross-reference with code"
+  check_content_cached "$content" "$label" "[Hh]ard to reverse"
+  check_content_cached "$content" "$label" "real trade-off"
+  check_content_cached "$content" "$label" "draft the PRD"
 }
 
 # ---------------------------------------------------------------------------
-# 5. Phase: plan
+# 5. Phase: prd
 # ---------------------------------------------------------------------------
 
-test_phase_plan() {
-  echo "Phase: plan"
-  local file="$REPO_DIR/skills/plan/SKILL.md"
-  local label="skills/plan/SKILL.md"
+test_phase_prd() {
+  echo "Phase: prd"
+  local file="$REPO_DIR/skills/prd/SKILL.md"
+  local label="skills/prd/SKILL.md"
   [[ -f "$file" ]] || { fail "$label" "file not found"; return; }
   local content
   content="$(<"$file")"
 
   check_content_cached "$content" "$label" "[Rr]ead [Cc]ontext"
-  check_content_cached "$content" "$label" "research\.md"
-  check_content_cached "$content" "$label" "architect"
-  check_content_cached "$content" "$label" "frontend-design|frontend-patterns|api-design"
-  check_content_cached "$content" "$label" "Write the plan document"
+  check_content_cached "$content" "$label" "CONTEXT\.md"
+  check_content_cached "$content" "$label" "[Ss]ynthesize"
+  check_content_cached "$content" "$label" "[Dd]eep module"
+  check_content_cached "$content" "$label" "Write the PRD"
 
-  for section in Goal "Research Reference" Approach "Detailed Changes" "New Files" Dependencies Considerations "Testing Strategy"; do
+  for section in "Problem Statement" Solution "User Stories" "Implementation Decisions" "Testing Decisions" "Out of Scope"; do
     check_content_cached "$content" "$label" "$section"
   done
 
-  check_content_cached "$content" "$label" "Wait for Annotation|STOP"
+  check_content_cached "$content" "$label" "[Ww]ait for [Aa]nnotation|STOP"
   check_content_cached "$content" "$label" "Address Annotations"
   check_content_cached "$content" "$label" "//"
-  check_content_cached "$content" "$label" "[Tt]odo [Ll]ist"
   check_content_cached "$content" "$label" "generate-visual-plan"
-  check_content_cached "$content" "$label" "plan\.html"
+  check_content_cached "$content" "$label" "prd\.html"
+}
+
+# ---------------------------------------------------------------------------
+# 5b. Phase: tasks
+# ---------------------------------------------------------------------------
+
+test_phase_tasks() {
+  echo "Phase: tasks"
+  local file="$REPO_DIR/skills/tasks/SKILL.md"
+  local label="skills/tasks/SKILL.md"
+  [[ -f "$file" ]] || { fail "$label" "file not found"; return; }
+  local content
+  content="$(<"$file")"
+
+  check_content_cached "$content" "$label" "vertical slice|vertical-slice|tracer bullet"
+  check_content_cached "$content" "$label" "[Hh]oriz" # rejects horizontal slices
+  check_content_cached "$content" "$label" "HITL"
+  check_content_cached "$content" "$label" "AFK"
+  check_content_cached "$content" "$label" "[Aa]cceptance criteria"
+  check_content_cached "$content" "$label" "[Bb]locked by"
+  check_content_cached "$content" "$label" "tasks\.md"
+  check_content_cached "$content" "$label" "tasks\.html"
+  check_content_cached "$content" "$label" "--publish|gh issue create"
+  check_content_cached "$content" "$label" "generate-visual-plan"
 }
 
 # ---------------------------------------------------------------------------
 # 6. Phase: implement
 # ---------------------------------------------------------------------------
 
-test_phase_implement_steps_1_to_6() {
+test_phase_implement_core() {
   local content="$1"
   local label="$2"
-  check_content_cached "$content" "$label" "Read the plan"
-  check_content_cached "$content" "$label" "tdd-guide"
-  check_content_cached "$content" "$label" "batch|3-5"
-  check_content_cached "$content" "$label" "Track progress|mark.*\[x\]"
-  check_content_cached "$content" "$label" "code quality|existing.*patterns"
-  check_content_cached "$content" "$label" "type check"
-  check_content_cached "$content" "$label" "lint"
+  check_content_cached "$content" "$label" "tasks\.md"
+  check_content_cached "$content" "$label" "tdd-guide|RED.*GREEN|red-green-refactor"
+  check_content_cached "$content" "$label" "vertical slice|vertical-slice|one slice at a time"
+  check_content_cached "$content" "$label" "[Tt]racer bullet"
+  check_content_cached "$content" "$label" "[Oo]ne test at a time|one test, one impl"
+  check_content_cached "$content" "$label" "public interface"
+  check_content_cached "$content" "$label" "[Tt]ype check"
+  check_content_cached "$content" "$label" "[Ll]int"
   check_content_cached "$content" "$label" "test suite|full test"
-  check_content_cached "$content" "$label" "build"
+  check_content_cached "$content" "$label" "[Bb]uild"
   check_content_cached "$content" "$label" "database-reviewer"
 }
 
-test_phase_implement_steps_7_to_13() {
+test_phase_implement_post() {
   local content="$1"
   local label="$2"
   check_content_cached "$content" "$label" "/simplify"
@@ -211,8 +233,8 @@ test_phase_implement_steps_7_to_13() {
   check_content_cached "$content" "$label" "OWASP"
   check_content_cached "$content" "$label" "doc-updater"
   check_content_cached "$content" "$label" "fact-check"
-  check_content_cached "$content" "$label" "plan\.html"
-  check_content_cached "$content" "$label" "generate-visual-plan"
+  check_content_cached "$content" "$label" "prd\.html|tasks\.html"
+  check_content_cached "$content" "$label" "diff-review"
   check_content_cached "$content" "$label" "never commit|NEVER commit|do not commit"
 }
 
@@ -223,8 +245,8 @@ test_phase_implement() {
   [[ -f "$file" ]] || { fail "$label" "file not found"; return; }
   local content
   content="$(<"$file")"
-  test_phase_implement_steps_1_to_6 "$content" "$label"
-  test_phase_implement_steps_7_to_13 "$content" "$label"
+  test_phase_implement_core "$content" "$label"
+  test_phase_implement_post "$content" "$label"
 }
 
 # ---------------------------------------------------------------------------
@@ -239,18 +261,19 @@ test_phase_implement_coach() {
   local content
   content="$(<"$file")"
 
-  # Coaching-phase checks (Steps 1-5)
+  # Coaching-phase checks (vertical-slice TDD, one test at a time)
   check_content_cached "$content" "$label" "Coach the user"
-  check_content_cached "$content" "$label" "tests first|Write ALL tests upfront"
-  check_content_cached "$content" "$label" "Expected API"
-  check_content_cached "$content" "$label" "Tests to satisfy"
+  check_content_cached "$content" "$label" "[Oo]ne test at a time|ONE test|one (failing )?test"
+  check_content_cached "$content" "$label" "vertical slice|vertical-slice"
+  check_content_cached "$content" "$label" "[Dd]o NOT write all tests upfront|never (write|queue)|do not (preview|write)"
+  check_content_cached "$content" "$label" "public interface"
   check_content_cached "$content" "$label" "check|verify"
-  check_content_cached "$content" "$label" "type check"
-  check_content_cached "$content" "$label" "lint"
+  check_content_cached "$content" "$label" "[Tt]ype check"
+  check_content_cached "$content" "$label" "[Ll]int"
   check_content_cached "$content" "$label" "test suite|full test"
-  check_content_cached "$content" "$label" "build"
+  check_content_cached "$content" "$label" "[Bb]uild"
 
-  # Post-completion checks (Steps 6-14, mirrors implement)
+  # Post-completion checks (mirrors implement)
   check_content_cached "$content" "$label" "database-reviewer"
   check_content_cached "$content" "$label" "/simplify"
   check_content_cached "$content" "$label" "refactor-cleaner"
@@ -258,8 +281,8 @@ test_phase_implement_coach() {
   check_content_cached "$content" "$label" "OWASP"
   check_content_cached "$content" "$label" "doc-updater"
   check_content_cached "$content" "$label" "fact-check"
-  check_content_cached "$content" "$label" "plan\.html"
-  check_content_cached "$content" "$label" "generate-visual-plan"
+  check_content_cached "$content" "$label" "prd\.html|tasks\.html"
+  check_content_cached "$content" "$label" "diff-review"
   check_content_cached "$content" "$label" "never commit|NEVER commit|do not commit"
 }
 
@@ -276,7 +299,7 @@ test_phase_orchestrator() {
   content="$(<"$file")"
 
   check_content_cached "$content" "$label" "docs/claude/"
-  for phase in research plan implement implement-coach; do
+  for phase in grill prd tasks implement implement-coach; do
     check_content_cached "$content" "$label" "$phase"
   done
 
@@ -290,7 +313,6 @@ test_phase_orchestrator() {
 
   check_content_cached "$content" "$label" "visual-explainer"
   check_content_cached "$content" "$label" "diff-review"
-  check_content_cached "$content" "$label" "fact-check"
 }
 
 # ---------------------------------------------------------------------------
@@ -298,7 +320,7 @@ test_phase_orchestrator() {
 # ---------------------------------------------------------------------------
 
 check_skill_references_phases() {
-  for phase in research plan implement implement-coach; do
+  for phase in grill prd tasks implement implement-coach; do
     local target="$REPO_DIR/skills/$phase/SKILL.md"
     if [[ -f "$target" ]]; then
       pass "skills/$phase/SKILL.md exists (referenced from build)"
@@ -530,9 +552,11 @@ main() {
   echo ""
   test_frontmatter_commands
   echo ""
-  test_phase_research
+  test_phase_grill
   echo ""
-  test_phase_plan
+  test_phase_prd
+  echo ""
+  test_phase_tasks
   echo ""
   test_phase_implement
   echo ""

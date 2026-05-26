@@ -1,8 +1,8 @@
 ---
-description: Coach-guided implementation — write tests first, walk through each module, the user writes the code
+description: Coach-guided implementation — AI writes ONE test at a time, the user writes the code, AI verifies
 ---
-Load the implement-coach skill, then coach the user through implementing the approved plan: $ARGUMENTS
+Load the implement-coach skill, then coach the user through implementing the approved tasks: $ARGUMENTS
 
-Follow the implement-coach skill workflow. Read the plan document thoroughly, write all tests upfront based on the plan's Testing Strategy, then walk the user through each module/class one at a time. Show the expected API, the tests they need to pass, and wait for them to implement. Verify by running tests when they say "check" or "verify". Do not write the implementation code yourself.
+Follow the implement-coach skill workflow. Read `tasks.md` and the linked `prd.md` thoroughly. Work one slice at a time in dependency order. For each slice: present the proposed public interface, then write ONE failing test that exercises that interface. Wait for the user to implement just enough code to make it pass. Verify by running the test when they say "check" or "verify". Then write the next test for the next acceptance criterion. Never queue up multiple tests in advance — batched tests describe imagined behavior, not actual behavior. Refactor together when all the slice's tests pass; never refactor while RED.
 
-If no argument is given, look in `docs/claude/` for the most recent `*/plan.md` and confirm with the user.
+If no argument is given, look in `docs/claude/` for the most recent `*/tasks.md` and confirm with the user.

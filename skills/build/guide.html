@@ -11,10 +11,8 @@
 :root {
   --font-body: 'IBM Plex Sans', system-ui, sans-serif;
   --font-mono: 'IBM Plex Mono', 'SF Mono', Consolas, monospace;
-
   --bg: #f0f2f5;
   --surface: #ffffff;
-  --surface-elevated: #ffffff;
   --surface-recessed: #e8ebf0;
   --border: rgba(30, 58, 95, 0.10);
   --border-bright: rgba(30, 58, 95, 0.20);
@@ -24,26 +22,22 @@
   --accent-dim: rgba(30, 58, 95, 0.08);
   --gold: #d4a73a;
   --gold-dim: rgba(212, 167, 58, 0.10);
-  --research: #0891b2;
-  --research-dim: rgba(8, 145, 178, 0.10);
-  --plan: #d97706;
-  --plan-dim: rgba(217, 119, 6, 0.10);
+  --grill: #8b5cf6;
+  --grill-dim: rgba(139, 92, 246, 0.10);
+  --prd: #0891b2;
+  --prd-dim: rgba(8, 145, 178, 0.10);
+  --tasks: #d97706;
+  --tasks-dim: rgba(217, 119, 6, 0.10);
   --implement: #059669;
   --implement-dim: rgba(5, 150, 105, 0.10);
   --must: #be123c;
   --must-dim: rgba(190, 18, 60, 0.10);
-  --cond: #d97706;
-  --cond-dim: rgba(217, 119, 6, 0.10);
-  --opt: #64748b;
-  --opt-dim: rgba(100, 116, 139, 0.08);
-  --grid-color: rgba(30, 58, 95, 0.04);
+  --grid: rgba(30, 58, 95, 0.04);
 }
-
 @media (prefers-color-scheme: dark) {
   :root {
     --bg: #0c1220;
     --surface: #131b2e;
-    --surface-elevated: #1a2540;
     --surface-recessed: #0a0f1a;
     --border: rgba(212, 167, 58, 0.08);
     --border-bright: rgba(212, 167, 58, 0.18);
@@ -53,1212 +47,256 @@
     --accent-dim: rgba(91, 140, 201, 0.12);
     --gold: #e8c56a;
     --gold-dim: rgba(232, 197, 106, 0.12);
-    --research: #22d3ee;
-    --research-dim: rgba(34, 211, 238, 0.12);
-    --plan: #fbbf24;
-    --plan-dim: rgba(251, 191, 36, 0.10);
+    --grill: #a78bfa;
+    --grill-dim: rgba(167, 139, 250, 0.12);
+    --prd: #22d3ee;
+    --prd-dim: rgba(34, 211, 238, 0.12);
+    --tasks: #fbbf24;
+    --tasks-dim: rgba(251, 191, 36, 0.10);
     --implement: #34d399;
     --implement-dim: rgba(52, 211, 153, 0.12);
     --must: #fb7185;
     --must-dim: rgba(251, 113, 133, 0.12);
-    --cond: #fbbf24;
-    --cond-dim: rgba(251, 191, 36, 0.10);
-    --opt: #8b9dc3;
-    --opt-dim: rgba(139, 157, 195, 0.08);
-    --grid-color: rgba(91, 140, 201, 0.04);
+    --grid: rgba(91, 140, 201, 0.04);
   }
 }
-
 * { margin: 0; padding: 0; box-sizing: border-box; }
-
 body {
   font-family: var(--font-body);
   background-color: var(--bg);
-  background-image:
-    linear-gradient(var(--grid-color) 1px, transparent 1px),
-    linear-gradient(90deg, var(--grid-color) 1px, transparent 1px);
+  background-image: linear-gradient(var(--grid) 1px, transparent 1px), linear-gradient(90deg, var(--grid) 1px, transparent 1px);
   background-size: 24px 24px;
   color: var(--text);
   line-height: 1.6;
-  min-height: 100vh;
 }
-
-.container {
-  max-width: 1280px;
-  margin: 0 auto;
-  padding: 40px 24px 80px;
-}
-
-/* --- HEADER --- */
-.header {
-  text-align: center;
-  padding: 48px 24px 40px;
-  margin-bottom: 48px;
-  background: var(--surface);
-  border: 1px solid var(--border-bright);
-  border-radius: 12px;
-  position: relative;
-  overflow: hidden;
-}
-
-.header::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 3px;
-  background: linear-gradient(90deg, var(--research), var(--plan), var(--implement));
-}
-
-.header h1 {
-  font-family: var(--font-mono);
-  font-size: clamp(1.6rem, 4vw, 2.4rem);
-  font-weight: 700;
-  color: var(--text);
-  letter-spacing: -0.02em;
-  margin-bottom: 8px;
-}
-
+.container { max-width: 1180px; margin: 0 auto; padding: 40px 24px 80px; }
+.header { text-align: center; padding: 48px 24px 40px; margin-bottom: 48px; background: var(--surface); border: 1px solid var(--border-bright); border-radius: 12px; position: relative; overflow: hidden; }
+.header::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; background: linear-gradient(90deg, var(--grill), var(--prd), var(--tasks), var(--implement)); }
+.header h1 { font-family: var(--font-mono); font-size: clamp(1.6rem, 4vw, 2.4rem); font-weight: 700; letter-spacing: -0.02em; margin-bottom: 8px; }
 .header h1 span { color: var(--gold); }
-
-.header .subtitle {
-  font-size: 1rem;
-  color: var(--text-dim);
-  max-width: 560px;
-  margin: 0 auto 32px;
-}
-
-.phase-flow {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0;
-  flex-wrap: wrap;
-}
-
-.phase-pill {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 8px 20px;
-  border-radius: 6px;
-  font-family: var(--font-mono);
-  font-size: 0.85rem;
-  font-weight: 600;
-  border: 1px solid;
-}
-
-.phase-pill.research { background: var(--research-dim); border-color: var(--research); color: var(--research); }
-.phase-pill.plan { background: var(--plan-dim); border-color: var(--plan); color: var(--plan); }
+.header .subtitle { font-size: 1rem; color: var(--text-dim); max-width: 620px; margin: 0 auto 32px; }
+.phase-flow { display: flex; align-items: center; justify-content: center; gap: 0; flex-wrap: wrap; }
+.phase-pill { display: inline-flex; align-items: center; gap: 6px; padding: 8px 16px; border-radius: 6px; font-family: var(--font-mono); font-size: 0.82rem; font-weight: 600; border: 1px solid; }
+.phase-pill.grill { background: var(--grill-dim); border-color: var(--grill); color: var(--grill); }
+.phase-pill.prd { background: var(--prd-dim); border-color: var(--prd); color: var(--prd); }
+.phase-pill.tasks { background: var(--tasks-dim); border-color: var(--tasks); color: var(--tasks); }
 .phase-pill.implement { background: var(--implement-dim); border-color: var(--implement); color: var(--implement); }
-
-.phase-arrow {
-  font-size: 1.2rem;
-  color: var(--text-dim);
-  padding: 0 8px;
-}
-
-.phase-num {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 22px;
-  height: 22px;
-  border-radius: 50%;
-  font-size: 0.7rem;
-  font-weight: 700;
-  background: currentColor;
-}
-
-.phase-num span {
-  color: var(--surface);
-}
-
-@media (prefers-color-scheme: dark) {
-  .phase-num span { color: var(--bg); }
-}
-
-/* --- SECTIONS --- */
-.section {
-  margin-bottom: 48px;
-}
-
-.section-title {
-  font-family: var(--font-mono);
-  font-size: 1.1rem;
-  font-weight: 700;
-  color: var(--gold);
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  margin-bottom: 20px;
-  padding-bottom: 8px;
-  border-bottom: 1px solid var(--border-bright);
-}
-
-.section-title .num {
-  color: var(--text-dim);
-  margin-right: 8px;
-}
-
-/* --- MASTER TABLE --- */
-.table-wrap {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  overflow-x: auto;
-  min-width: 0;
-}
-
-.checklist-table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 0.82rem;
-  min-width: 900px;
-}
-
-.checklist-table thead {
-  background: var(--surface-recessed);
-  position: sticky;
-  top: 0;
-  z-index: 2;
-}
-
-.checklist-table th {
-  font-family: var(--font-mono);
-  font-weight: 600;
-  text-align: left;
-  padding: 10px 12px;
-  border-bottom: 2px solid var(--border-bright);
-  color: var(--text-dim);
-  font-size: 0.72rem;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  white-space: nowrap;
-}
-
-.checklist-table td {
-  padding: 8px 12px;
-  border-bottom: 1px solid var(--border);
-  vertical-align: top;
-  overflow-wrap: break-word;
-}
-
-.checklist-table tr:last-child td { border-bottom: none; }
-
-.checklist-table .phase-label {
-  font-family: var(--font-mono);
-  font-weight: 600;
-  font-size: 0.72rem;
-  padding: 3px 8px;
-  border-radius: 4px;
-  white-space: nowrap;
-}
-
-.checklist-table .phase-label.research { background: var(--research-dim); color: var(--research); }
-.checklist-table .phase-label.plan { background: var(--plan-dim); color: var(--plan); }
-.checklist-table .phase-label.implement { background: var(--implement-dim); color: var(--implement); }
-.checklist-table .phase-label.post { background: var(--gold-dim); color: var(--gold); }
-
-.sev-must { background: var(--must-dim); color: var(--must); padding: 2px 6px; border-radius: 3px; font-family: var(--font-mono); font-size: 0.7rem; font-weight: 600; }
-.sev-cond { background: var(--cond-dim); color: var(--cond); padding: 2px 6px; border-radius: 3px; font-family: var(--font-mono); font-size: 0.7rem; font-weight: 600; }
-.sev-opt { background: var(--opt-dim); color: var(--opt); padding: 2px 6px; border-radius: 3px; font-family: var(--font-mono); font-size: 0.7rem; font-weight: 600; }
-
-.agent-tag {
-  font-family: var(--font-mono);
-  font-size: 0.72rem;
-  color: var(--accent);
-  background: var(--accent-dim);
-  padding: 2px 6px;
-  border-radius: 3px;
-}
-
-.cmd-tag {
-  font-family: var(--font-mono);
-  font-size: 0.72rem;
-  color: var(--gold);
-  background: var(--gold-dim);
-  padding: 2px 6px;
-  border-radius: 3px;
-}
-
-.stop-tag {
-  font-family: var(--font-mono);
-  font-size: 0.72rem;
-  font-weight: 700;
-  color: var(--must);
-  background: var(--must-dim);
-  padding: 2px 6px;
-  border-radius: 3px;
-  letter-spacing: 0.05em;
-}
-
-.checklist-table .step-num {
-  font-family: var(--font-mono);
-  font-weight: 600;
-  color: var(--text-dim);
-  font-size: 0.78rem;
-}
-
-.phase-sep td {
-  background: var(--surface-recessed);
-  padding: 6px 12px;
-  font-family: var(--font-mono);
-  font-weight: 700;
-  font-size: 0.78rem;
-  color: var(--text-dim);
-  letter-spacing: 0.04em;
-}
-
-/* --- AGENT CARDS --- */
-.agent-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-  gap: 16px;
-}
-
-.agent-card {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  padding: 20px;
-  min-width: 0;
-}
-
-.agent-card:hover {
-  border-color: var(--border-bright);
-  box-shadow: 0 2px 8px rgba(0,0,0,0.04);
-}
-
-.agent-card .agent-name {
-  font-family: var(--font-mono);
-  font-weight: 700;
-  font-size: 0.95rem;
-  color: var(--accent);
-  margin-bottom: 8px;
-}
-
-.agent-card .agent-purpose {
-  font-size: 0.82rem;
-  color: var(--text-dim);
-  margin-bottom: 12px;
-  line-height: 1.5;
-}
-
-.agent-meta {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-}
-
-.meta-tag {
-  font-family: var(--font-mono);
-  font-size: 0.68rem;
-  padding: 3px 8px;
-  border-radius: 4px;
-  border: 1px solid var(--border);
-  color: var(--text-dim);
-  white-space: nowrap;
-}
-
-.meta-tag.model-opus { border-color: var(--must); color: var(--must); background: var(--must-dim); }
-.meta-tag.model-sonnet { border-color: var(--implement); color: var(--implement); background: var(--implement-dim); }
-
-/* --- COMMAND TABLE --- */
-.cmd-table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 0.82rem;
-  min-width: 700px;
-}
-
-.cmd-table th {
-  font-family: var(--font-mono);
-  font-weight: 600;
-  text-align: left;
-  padding: 10px 12px;
-  border-bottom: 2px solid var(--border-bright);
-  color: var(--text-dim);
-  font-size: 0.72rem;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  white-space: nowrap;
-}
-
-.cmd-table td {
-  padding: 8px 12px;
-  border-bottom: 1px solid var(--border);
-  vertical-align: top;
-  overflow-wrap: break-word;
-}
-
-.cmd-table tr:last-child td { border-bottom: none; }
-
-/* --- FILE TREE --- */
-.file-tree {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  padding: 24px;
-  font-family: var(--font-mono);
-  font-size: 0.82rem;
-  line-height: 1.8;
-  overflow-wrap: break-word;
-}
-
-.file-tree .dir { color: var(--accent); font-weight: 600; }
-.file-tree .file { color: var(--text-dim); }
-.file-tree .file-desc { color: var(--text-dim); font-family: var(--font-body); font-size: 0.78rem; opacity: 0.7; }
-.file-tree .indent { padding-left: 20px; position: relative; }
-.file-tree .indent::before {
-  content: '';
-  position: absolute;
-  left: 6px;
-  top: 0;
-  bottom: 0;
-  width: 1px;
-  background: var(--border-bright);
-}
-.tree-branch {
-  position: relative;
-  padding-left: 20px;
-}
-.tree-branch::before {
-  content: '';
-  position: absolute;
-  left: 6px;
-  top: 0;
-  height: 12px;
-  width: 10px;
-  border-left: 1px solid var(--border-bright);
-  border-bottom: 1px solid var(--border-bright);
-  border-bottom-left-radius: 4px;
-}
-
-/* --- RULES TABLE --- */
-.rules-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
-  gap: 12px;
-}
-
-.rule-card {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  padding: 14px 16px;
-  display: flex;
-  gap: 12px;
-  align-items: flex-start;
-  min-width: 0;
-}
-
-.rule-card .rule-name {
-  font-family: var(--font-mono);
-  font-weight: 600;
-  font-size: 0.82rem;
-  color: var(--text);
-  white-space: nowrap;
-}
-
-.rule-card .rule-phases {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 4px;
-}
-
-.rule-card .rule-phases .phase-dot {
-  font-family: var(--font-mono);
-  font-size: 0.65rem;
-  padding: 2px 6px;
-  border-radius: 3px;
-  font-weight: 600;
-}
-
-.rule-card .rule-phases .phase-dot.r { background: var(--research-dim); color: var(--research); }
-.rule-card .rule-phases .phase-dot.p { background: var(--plan-dim); color: var(--plan); }
-.rule-card .rule-phases .phase-dot.i { background: var(--implement-dim); color: var(--implement); }
-
-/* --- MERMAID --- */
-.mermaid-wrap {
-  position: relative;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  padding: 24px;
-  overflow: hidden;
-}
-
-.mermaid-viewport {
-  overflow: auto;
-  cursor: grab;
-  min-height: 300px;
-}
-
-.mermaid-viewport:active { cursor: grabbing; }
-
-.mermaid-viewport svg {
-  display: block;
-  margin: 0 auto;
-  transform-origin: center center;
-}
-
-.zoom-controls {
-  position: absolute;
-  top: 12px;
-  right: 12px;
-  display: flex;
-  gap: 4px;
-  z-index: 10;
-}
-
-.zoom-btn {
-  width: 30px;
-  height: 30px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: var(--surface-elevated);
-  border: 1px solid var(--border-bright);
-  border-radius: 6px;
-  cursor: pointer;
-  font-family: var(--font-mono);
-  font-size: 14px;
-  font-weight: 700;
-  color: var(--text-dim);
-  transition: background 0.15s, color 0.15s;
-}
-
-.zoom-btn:hover { background: var(--accent-dim); color: var(--accent); }
-
-.mermaid .nodeLabel { color: var(--text) !important; }
-.mermaid .edgeLabel { color: var(--text-dim) !important; background-color: var(--bg) !important; }
-.mermaid .edgeLabel rect { fill: var(--bg) !important; }
-.mermaid .nodeLabel { font-family: var(--font-body) !important; font-size: 14px !important; }
-.mermaid .edgeLabel { font-family: var(--font-mono) !important; font-size: 12px !important; }
-
-/* --- ANIMATIONS --- */
-@keyframes fadeInUp {
-  from { opacity: 0; transform: translateY(12px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
-.section {
-  animation: fadeInUp 0.4s ease-out both;
-}
-
-.section:nth-child(2) { animation-delay: 0.05s; }
-.section:nth-child(3) { animation-delay: 0.1s; }
-.section:nth-child(4) { animation-delay: 0.15s; }
-.section:nth-child(5) { animation-delay: 0.2s; }
-.section:nth-child(6) { animation-delay: 0.25s; }
-.section:nth-child(7) { animation-delay: 0.3s; }
-.section:nth-child(8) { animation-delay: 0.35s; }
-
-@media (prefers-reduced-motion: reduce) {
-  .section { animation: none; opacity: 1; }
-}
-
-/* --- RESPONSIVE --- */
-@media (max-width: 768px) {
-  .container { padding: 20px 12px 60px; }
-  .header { padding: 32px 16px 28px; }
-  .checklist-table { font-size: 0.75rem; }
-  .agent-grid { grid-template-columns: 1fr; }
-  .rules-grid { grid-template-columns: 1fr; }
-}
+.phase-arrow { font-size: 1.1rem; color: var(--text-dim); padding: 0 8px; }
+.phase-num { display: inline-flex; align-items: center; justify-content: center; width: 20px; height: 20px; border-radius: 50%; font-size: 0.66rem; font-weight: 700; background: currentColor; }
+.phase-num span { color: var(--surface); }
+@media (prefers-color-scheme: dark) { .phase-num span { color: var(--bg); } }
+.section { margin-bottom: 48px; }
+.section-title { font-family: var(--font-mono); font-size: 1.1rem; font-weight: 700; color: var(--gold); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 20px; padding-bottom: 8px; border-bottom: 1px solid var(--border-bright); }
+.section-title .num { color: var(--text-dim); margin-right: 8px; }
+.card-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; }
+.card { background: var(--surface); border: 1px solid var(--border); border-left: 4px solid var(--accent); border-radius: 8px; padding: 20px; }
+.card.grill { border-left-color: var(--grill); }
+.card.prd { border-left-color: var(--prd); }
+.card.tasks { border-left-color: var(--tasks); }
+.card.implement { border-left-color: var(--implement); }
+.card h3 { font-family: var(--font-mono); font-size: 0.95rem; font-weight: 700; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
+.card h3 .badge { font-size: 0.7rem; padding: 2px 8px; border-radius: 4px; font-weight: 600; }
+.card.grill h3 .badge { background: var(--grill-dim); color: var(--grill); }
+.card.prd h3 .badge { background: var(--prd-dim); color: var(--prd); }
+.card.tasks h3 .badge { background: var(--tasks-dim); color: var(--tasks); }
+.card.implement h3 .badge { background: var(--implement-dim); color: var(--implement); }
+.card p { font-size: 0.9rem; color: var(--text); margin-bottom: 12px; }
+.card ul { list-style: none; padding: 0; font-size: 0.85rem; }
+.card li { padding: 4px 0; padding-left: 16px; position: relative; color: var(--text-dim); }
+.card li::before { content: '→'; position: absolute; left: 0; color: var(--gold); font-weight: 700; }
+.card .out { margin-top: 12px; padding: 10px 12px; background: var(--surface-recessed); border-radius: 4px; font-family: var(--font-mono); font-size: 0.78rem; color: var(--text-dim); }
+.card .out strong { color: var(--text); }
+.callout { background: var(--surface); border: 1px solid var(--gold); border-radius: 8px; padding: 16px 20px; margin: 20px 0; }
+.callout strong { color: var(--gold); font-family: var(--font-mono); }
+.cmd-tag { font-family: var(--font-mono); font-size: 0.78rem; color: var(--gold); background: var(--gold-dim); padding: 2px 6px; border-radius: 3px; }
+.agent-tag { font-family: var(--font-mono); font-size: 0.78rem; color: var(--accent); background: var(--accent-dim); padding: 2px 6px; border-radius: 3px; }
+.stop { font-family: var(--font-mono); font-size: 0.7rem; font-weight: 700; color: var(--must); background: var(--must-dim); padding: 2px 6px; border-radius: 3px; letter-spacing: 0.05em; }
+table { width: 100%; border-collapse: collapse; font-size: 0.85rem; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
+thead { background: var(--surface-recessed); }
+th, td { padding: 10px 14px; text-align: left; border-bottom: 1px solid var(--border); }
+th { font-family: var(--font-mono); font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-dim); }
+tr:last-child td { border-bottom: none; }
+code { font-family: var(--font-mono); font-size: 0.85em; background: var(--accent-dim); padding: 2px 6px; border-radius: 3px; }
+.pre { background: var(--surface-recessed); padding: 16px 20px; border-radius: 6px; font-family: var(--font-mono); font-size: 0.82rem; overflow-x: auto; white-space: pre; line-height: 1.6; }
 </style>
 </head>
 <body>
 <div class="container">
 
-<!-- ===== 1. HEADER ===== -->
-<header class="header">
-  <h1><span>/</span>build Pipeline Guide</h1>
-  <p class="subtitle">Complete checkpoint reference for testing the 3-phase workflow</p>
+<div class="header">
+  <h1><span>/</span>build pipeline</h1>
+  <p class="subtitle">Four-phase feature workflow combining grill (domain modeling), PRD synthesis, vertical-slice tasks, and TDD implementation. Based on Matt Pocock's skills-TDD pipeline.</p>
   <div class="phase-flow">
-    <span class="phase-pill research">
-      <span class="phase-num"><span>1</span></span>
-      Research
-    </span>
-    <span class="phase-arrow">&rarr;</span>
-    <span class="phase-pill plan">
-      <span class="phase-num"><span>2</span></span>
-      Plan
-    </span>
-    <span class="phase-arrow">&rarr;</span>
-    <span class="phase-pill implement">
-      <span class="phase-num"><span>3</span></span>
-      Implement
-    </span>
+    <span class="phase-pill grill"><span class="phase-num"><span>1</span></span> grill</span>
+    <span class="phase-arrow">→</span>
+    <span class="phase-pill prd"><span class="phase-num"><span>2</span></span> prd</span>
+    <span class="phase-arrow">→</span>
+    <span class="phase-pill tasks"><span class="phase-num"><span>3</span></span> tasks</span>
+    <span class="phase-arrow">→</span>
+    <span class="phase-pill implement"><span class="phase-num"><span>4</span></span> implement</span>
   </div>
-</header>
+</div>
 
-<!-- ===== 2. MASTER PIPELINE CHECKLIST ===== -->
-<section class="section">
-  <h2 class="section-title"><span class="num">02</span> Master Pipeline Checklist</h2>
-  <div class="table-wrap">
-    <table class="checklist-table">
-      <thead>
-        <tr>
-          <th>Phase</th>
-          <th>#</th>
-          <th>Task / Checkpoint</th>
-          <th>Agent / Command</th>
-          <th>Req?</th>
-          <th>Observable Output</th>
-        </tr>
-      </thead>
-      <tbody>
-        <!-- PHASE 1: RESEARCH -->
-        <tr class="phase-sep"><td colspan="6">PHASE 1 &mdash; RESEARCH</td></tr>
-        <tr>
-          <td><span class="phase-label research">Research</span></td>
-          <td class="step-num">1.1</td>
-          <td>Create feature directory <code>docs/claude/&lt;timestamp&gt;-&lt;slug&gt;/</code></td>
-          <td>&mdash;</td>
-          <td><span class="sev-must">MUST</span></td>
-          <td>Directory created on disk</td>
-        </tr>
-        <tr>
-          <td><span class="phase-label research">Research</span></td>
-          <td class="step-num">1.2</td>
-          <td>Identify scope from <code>$ARGUMENTS</code></td>
-          <td>&mdash;</td>
-          <td><span class="sev-must">MUST</span></td>
-          <td>Scope statement in research.md overview</td>
-        </tr>
-        <tr>
-          <td><span class="phase-label research">Research</span></td>
-          <td class="step-num">1.3</td>
-          <td>Deep-read code (every file in target area, trace data flows, examine tests, check configs)</td>
-          <td>&mdash;</td>
-          <td><span class="sev-must">MUST</span></td>
-          <td>Extensive Read/Grep tool calls visible in transcript</td>
-        </tr>
-        <tr>
-          <td><span class="phase-label research">Research</span></td>
-          <td class="step-num">1.4</td>
-          <td>Write <code>research.md</code> with 8 required sections: Overview, Architecture, Key Files, Data Flow, Patterns, Dependencies, Edge Cases, Current State</td>
-          <td>&mdash;</td>
-          <td><span class="sev-must">MUST</span></td>
-          <td>File written with all 8 sections populated</td>
-        </tr>
-        <tr>
-          <td><span class="phase-label research">Research</span></td>
-          <td class="step-num">1.5</td>
-          <td>Invoke <code>/generate-architecture-diagram</code> &rarr; <code>architecture.html</code></td>
-          <td><span class="cmd-tag">/generate-architecture-diagram</span></td>
-          <td><span class="sev-cond">COND</span></td>
-          <td>HTML file created, opened in browser (only if VE available)</td>
-        </tr>
-        <tr>
-          <td><span class="phase-label research">Research</span></td>
-          <td class="step-num">1.6</td>
-          <td><span class="stop-tag">STOP</span> &mdash; wait for user review ("move to planning")</td>
-          <td>&mdash;</td>
-          <td><span class="sev-must">MUST</span></td>
-          <td>Message: "Phase 1 complete. Please review..."</td>
-        </tr>
+<div class="section">
+  <div class="section-title"><span class="num">01</span>The Four Phases</div>
+  <div class="card-grid">
 
-        <!-- PHASE 2: PLAN -->
-        <tr class="phase-sep"><td colspan="6">PHASE 2 &mdash; PLAN</td></tr>
-        <tr>
-          <td><span class="phase-label plan">Plan</span></td>
-          <td class="step-num">2.1</td>
-          <td>Read context &mdash; check <code>docs/claude/</code> for research.md, read relevant source files</td>
-          <td>&mdash;</td>
-          <td><span class="sev-must">MUST</span></td>
-          <td>Read calls to research.md and source files</td>
-        </tr>
-        <tr>
-          <td><span class="phase-label plan">Plan</span></td>
-          <td class="step-num">2.2</td>
-          <td>Architecture review</td>
-          <td><span class="agent-tag">architect</span></td>
-          <td><span class="sev-must">MUST</span></td>
-          <td>Agent tool call to architect agent</td>
-        </tr>
-        <tr>
-          <td><span class="phase-label plan">Plan</span></td>
-          <td class="step-num">2.3</td>
-          <td>Detect domain context &mdash; invoke <code>frontend-design</code>, <code>frontend-patterns</code>, <code>api-design</code> skills if applicable</td>
-          <td><span class="cmd-tag">domain skills</span></td>
-          <td><span class="sev-cond">COND</span></td>
-          <td>Skill invocations for matching domains (if installed)</td>
-        </tr>
-        <tr>
-          <td><span class="phase-label plan">Plan</span></td>
-          <td class="step-num">2.4</td>
-          <td>Write <code>plan.md</code> with required sections: Goal, Research Ref, Approach, Detailed Changes, New Files, Dependencies, Considerations, Migration, Testing Strategy</td>
-          <td>&mdash;</td>
-          <td><span class="sev-must">MUST</span></td>
-          <td>File written with all sections; code snippets (not pseudocode)</td>
-        </tr>
-        <tr>
-          <td><span class="phase-label plan">Plan</span></td>
-          <td class="step-num">2.5</td>
-          <td><span class="stop-tag">STOP</span> &mdash; wait for user annotation (<code>//</code> comments)</td>
-          <td>&mdash;</td>
-          <td><span class="sev-must">MUST</span></td>
-          <td>Message: "The plan is ready for your review..."</td>
-        </tr>
-        <tr>
-          <td><span class="phase-label plan">Plan</span></td>
-          <td class="step-num">2.6</td>
-          <td>Address ALL <code>//</code> annotations, update plan, remove processed annotations</td>
-          <td>&mdash;</td>
-          <td><span class="sev-must">MUST</span></td>
-          <td>Plan.md updated, no remaining <code>//</code> lines</td>
-        </tr>
-        <tr>
-          <td><span class="phase-label plan">Plan</span></td>
-          <td class="step-num">2.7</td>
-          <td>Repeat annotation cycle until user approves (1-6 iterations typical)</td>
-          <td>&mdash;</td>
-          <td><span class="sev-must">MUST</span></td>
-          <td>Cycle continues until explicit approval</td>
-        </tr>
-        <tr>
-          <td><span class="phase-label plan">Plan</span></td>
-          <td class="step-num">2.8</td>
-          <td>Generate Todo List (test tasks mandatory, grouped by phase)</td>
-          <td>&mdash;</td>
-          <td><span class="sev-must">MUST</span></td>
-          <td>Todo List section appended to plan.md with <code>- [ ]</code> items</td>
-        </tr>
-        <tr>
-          <td><span class="phase-label plan">Plan</span></td>
-          <td class="step-num">2.9</td>
-          <td>Invoke <code>/generate-visual-plan</code> &rarr; <code>visual-plan.html</code></td>
-          <td><span class="cmd-tag">/generate-visual-plan</span></td>
-          <td><span class="sev-cond">COND</span></td>
-          <td>HTML file created, opened in browser (only if VE available)</td>
-        </tr>
-        <tr>
-          <td><span class="phase-label plan">Plan</span></td>
-          <td class="step-num">2.10</td>
-          <td><span class="stop-tag">STOP</span> &mdash; wait for user to say "implement"</td>
-          <td>&mdash;</td>
-          <td><span class="sev-must">MUST</span></td>
-          <td>Message: "Phase 2 complete. Say implement..."</td>
-        </tr>
+    <div class="card grill">
+      <h3>grill <span class="badge">opus · interactive</span></h3>
+      <p>Interview-driven domain modeling. Sharpens terminology, resolves cardinality, captures hard-to-reverse decisions.</p>
+      <ul>
+        <li>Reads <code>CONTEXT.md</code> + <code>docs/adr/</code></li>
+        <li>Asks one question at a time, recommends an answer</li>
+        <li>Challenges fuzzy language; cross-references with code</li>
+        <li>Updates <code>CONTEXT.md</code> inline as terms resolve</li>
+        <li>Offers ADRs sparingly (hard-to-reverse + surprising + real trade-off)</li>
+      </ul>
+      <div class="out"><strong>Output:</strong> <code>./CONTEXT.md</code> (glossary)<br><strong>Output:</strong> <code>./docs/adr/*.md</code> (decisions)</div>
+    </div>
 
-        <!-- PHASE 3: IMPLEMENT -->
-        <tr class="phase-sep"><td colspan="6">PHASE 3 &mdash; IMPLEMENT</td></tr>
-        <tr>
-          <td><span class="phase-label implement">Impl</span></td>
-          <td class="step-num">3.1</td>
-          <td>Read the plan document thoroughly</td>
-          <td>&mdash;</td>
-          <td><span class="sev-must">MUST</span></td>
-          <td>Read call to plan.md</td>
-        </tr>
-        <tr>
-          <td><span class="phase-label implement">Impl</span></td>
-          <td class="step-num">3.2</td>
-          <td>Implement ALL tasks via <code>tdd-guide</code> agent (red-green-refactor cycle)</td>
-          <td><span class="agent-tag">tdd-guide</span></td>
-          <td><span class="sev-must">MUST</span></td>
-          <td>Agent tool calls; test-first implementation visible</td>
-        </tr>
-        <tr>
-          <td><span class="phase-label implement">Impl</span></td>
-          <td class="step-num">3.3</td>
-          <td>Track progress &mdash; mark tasks <code>- [x]</code> in plan.md after each completion</td>
-          <td>&mdash;</td>
-          <td><span class="sev-must">MUST</span></td>
-          <td>Plan.md checkboxes updated incrementally</td>
-        </tr>
-        <tr>
-          <td><span class="phase-label implement">Impl</span></td>
-          <td class="step-num">3.4</td>
-          <td>Maintain code quality &mdash; follow existing patterns, no unnecessary comments</td>
-          <td>&mdash;</td>
-          <td><span class="sev-must">MUST</span></td>
-          <td>Code matches codebase conventions</td>
-        </tr>
-        <tr>
-          <td><span class="phase-label implement">Impl</span></td>
-          <td class="step-num">3.5</td>
-          <td>Verification loop: type check + lint + test + build (all 4 must pass)</td>
-          <td>&mdash;</td>
-          <td><span class="sev-must">MUST</span></td>
-          <td>All 4 commands run and pass; loop repeats on failure</td>
-        </tr>
-        <tr>
-          <td><span class="phase-label implement">Impl</span></td>
-          <td class="step-num">3.6</td>
-          <td>Database review (if feature touches DB code)</td>
-          <td><span class="agent-tag">database-reviewer</span></td>
-          <td><span class="sev-cond">COND</span></td>
-          <td>Agent call; CRITICAL/HIGH issues fixed</td>
-        </tr>
-        <tr>
-          <td><span class="phase-label implement">Impl</span></td>
-          <td class="step-num">3.7</td>
-          <td>Invoke <code>/simplify</code></td>
-          <td><span class="cmd-tag">/simplify</span></td>
-          <td><span class="sev-must">MUST</span></td>
-          <td>Simplify skill runs; re-run tests after</td>
-        </tr>
-        <tr>
-          <td><span class="phase-label implement">Impl</span></td>
-          <td class="step-num">3.8</td>
-          <td>Refactor cleanup on changed files</td>
-          <td><span class="agent-tag">refactor-cleaner</span></td>
-          <td><span class="sev-must">MUST</span></td>
-          <td>Agent call; SAFE items removed; re-run tests</td>
-        </tr>
-        <tr>
-          <td><span class="phase-label implement">Impl</span></td>
-          <td class="step-num">3.9</td>
-          <td>Code review on all changed files, including OWASP Top 10 security checks (&gt;80% confidence threshold)</td>
-          <td><span class="agent-tag">code-reviewer</span></td>
-          <td><span class="sev-must">MUST</span></td>
-          <td>Agent call; CRITICAL/HIGH fixed; re-run tests</td>
-        </tr>
-        <tr>
-          <td><span class="phase-label implement">Impl</span></td>
-          <td class="step-num">3.10</td>
-          <td>Documentation update (if feature warrants it)</td>
-          <td><span class="agent-tag">doc-updater</span></td>
-          <td><span class="sev-cond">COND</span></td>
-          <td>Agent call; READMEs/CHANGELOG updated</td>
-        </tr>
-        <tr>
-          <td><span class="phase-label implement">Impl</span></td>
-          <td class="step-num">3.11</td>
-          <td>Invoke <code>/fact-check</code> on plan.md</td>
-          <td><span class="cmd-tag">/fact-check</span></td>
-          <td><span class="sev-must">MUST</span></td>
-          <td>Fact-check skill runs on plan file</td>
-        </tr>
-        <tr>
-          <td><span class="phase-label implement">Impl</span></td>
-          <td class="step-num">3.12</td>
-          <td>Refresh <code>visual-plan.html</code> if plan changed (deviations, corrections, task changes)</td>
-          <td><span class="cmd-tag">/generate-visual-plan</span></td>
-          <td><span class="sev-cond">COND</span></td>
-          <td>Regenerated HTML if plan diverged</td>
-        </tr>
-        <tr>
-          <td><span class="phase-label implement">Impl</span></td>
-          <td class="step-num">3.13</td>
-          <td>Summary to user &mdash; NEVER commit</td>
-          <td>&mdash;</td>
-          <td><span class="sev-must">MUST</span></td>
-          <td>Message: "Implementation complete." No git commit.</td>
-        </tr>
+    <div class="card prd">
+      <h3>prd <span class="badge">opus · synthesis</span></h3>
+      <p>Synthesizes a Product Requirements Document from the grilling outcome. Does NOT re-interview.</p>
+      <ul>
+        <li>Reads <code>CONTEXT.md</code>, recent ADRs, conversation</li>
+        <li>Sketches major modules (deep-modules philosophy)</li>
+        <li>Confirms module list with user, asks which to test</li>
+        <li>Writes PRD: problem, solution, user stories, decisions, testing</li>
+        <li>NO code snippets, NO file paths (they go stale)</li>
+        <li>Annotation cycle via <code>//</code> comments until approved</li>
+      </ul>
+      <div class="out"><strong>Output:</strong> <code>docs/claude/&lt;slug&gt;/prd.md</code><br><strong>Output:</strong> <code>docs/claude/&lt;slug&gt;/prd.html</code></div>
+    </div>
 
-        <!-- POST-IMPLEMENTATION -->
-        <tr class="phase-sep"><td colspan="6">POST-IMPLEMENTATION &mdash; BUILD-FEATURE ORCHESTRATOR</td></tr>
-        <tr>
-          <td><span class="phase-label post">Post</span></td>
-          <td class="step-num">P.1</td>
-          <td>Invoke <code>/diff-review</code> &rarr; <code>diff-review.html</code></td>
-          <td><span class="cmd-tag">/diff-review</span></td>
-          <td><span class="sev-cond">COND</span></td>
-          <td>HTML diff review created, opened in browser (only if VE available)</td>
-        </tr>
-        <tr>
-          <td><span class="phase-label post">Post</span></td>
-          <td class="step-num">P.2</td>
-          <td>Invoke <code>/fact-check</code> on diff-review.html</td>
-          <td><span class="cmd-tag">/fact-check</span></td>
-          <td><span class="sev-cond">COND</span></td>
-          <td>Fact-check runs on generated HTML (only if VE available)</td>
-        </tr>
-      </tbody>
-    </table>
+    <div class="card tasks">
+      <h3>tasks <span class="badge">opus · vertical slices</span></h3>
+      <p>Breaks the approved PRD into vertical-slice tracer bullets. Each slice cuts through every layer end-to-end.</p>
+      <ul>
+        <li>Reads <code>prd.md</code>, <code>CONTEXT.md</code>, ADRs</li>
+        <li>Each slice = thin path through schema, API, UI, tests</li>
+        <li>Marked HITL (human-in-loop) or AFK (away-from-keyboard)</li>
+        <li>Dependency order: blockers first</li>
+        <li>Quiz cycle until user approves the breakdown</li>
+        <li><code>--publish</code>: creates real GitHub Issues</li>
+      </ul>
+      <div class="out"><strong>Output:</strong> <code>docs/claude/&lt;slug&gt;/tasks.md</code><br><strong>Output:</strong> <code>docs/claude/&lt;slug&gt;/tasks.html</code></div>
+    </div>
+
+    <div class="card implement">
+      <h3>implement <span class="badge">sonnet · TDD</span></h3>
+      <p>Executes the approved slices via vertical-slice TDD — one test, one implementation, repeat. No batching.</p>
+      <ul>
+        <li>For each slice: confirm interface → RED→GREEN per criterion → refactor</li>
+        <li>Tests describe behavior, not implementation</li>
+        <li>Verification loop: type check, lint, test, build</li>
+        <li>Agents: <span class="agent-tag">tdd-guide</span> <span class="agent-tag">database-reviewer</span> <span class="agent-tag">code-reviewer</span> <span class="agent-tag">refactor-cleaner</span> <span class="agent-tag">doc-updater</span></li>
+        <li>Runs <span class="cmd-tag">/simplify</span> + <span class="cmd-tag">/fact-check</span> + <span class="cmd-tag">/diff-review</span></li>
+        <li>Coach variant: AI writes ONE test, user implements, AI verifies</li>
+      </ul>
+      <div class="out"><strong>Output:</strong> code + <code>diff-review.html</code></div>
+    </div>
+
   </div>
-</section>
+</div>
 
-<!-- ===== 3. AGENT REGISTRY ===== -->
-<section class="section">
-  <h2 class="section-title"><span class="num">03</span> Agent Registry</h2>
-  <div class="agent-grid">
-    <div class="agent-card">
-      <div class="agent-name">tdd-guide</div>
-      <div class="agent-purpose">Test-Driven Development specialist enforcing write-tests-first methodology. Guides red-green-refactor cycle, ensures 80%+ coverage. Reads <code>testing.md</code> and <code>coding-style.md</code>.</div>
-      <div class="agent-meta">
-        <span class="meta-tag model-sonnet">sonnet</span>
-        <span class="meta-tag">Phase 3 &mdash; step 3.2</span>
-        <span class="meta-tag">implement skill</span>
-        <span class="meta-tag">MUST</span>
-      </div>
+<div class="section">
+  <div class="section-title"><span class="num">02</span>Where the Artifacts Live</div>
+  <div class="pre">/
+├── CONTEXT.md              project-wide glossary (built up by /grill)
+├── docs/
+│   ├── adr/                project-wide ADRs (added by /grill)
+│   │   ├── 0001-event-sourced-orders.md
+│   │   └── 0002-postgres-for-write-model.md
+│   └── claude/
+│       └── &lt;YYYYMMDD-HHMM&gt;-&lt;slug&gt;/
+│           ├── prd.md             Phase 2 — PRD
+│           ├── prd.html           Phase 2 — visual companion
+│           ├── tasks.md           Phase 3 — vertical slices
+│           ├── tasks.html         Phase 3 — visual companion
+│           └── diff-review.html   Phase 4 — diff review</div>
+  <div class="callout">
+    <strong>Lifespan:</strong> <code>CONTEXT.md</code> and <code>docs/adr/</code> live at the repo root and accrete across many <code>/build</code> runs. Per-feature artifacts are scoped to one slug-directory and can be kept, deleted, or <code>.gitignore</code>d.
+  </div>
+</div>
+
+<div class="section">
+  <div class="section-title"><span class="num">03</span>Phase Gates &amp; User Triggers</div>
+  <table>
+    <thead><tr><th>Transition</th><th>User says</th><th>Gate behavior</th></tr></thead>
+    <tbody>
+      <tr><td>after <code>/grill</code></td><td>"draft the PRD"</td><td><span class="stop">STOP</span> until user explicitly triggers</td></tr>
+      <tr><td>after <code>/prd</code></td><td>"break it into tasks"</td><td><span class="stop">STOP</span> until PRD is approved <em>and</em> user triggers</td></tr>
+      <tr><td>after <code>/tasks</code></td><td>"implement" or "coach me"</td><td><span class="stop">STOP</span> until tasks are approved <em>and</em> user picks a mode</td></tr>
+    </tbody>
+  </table>
+  <p style="margin-top:14px; font-size:0.9rem; color: var(--text-dim);">The orchestrator never advances autonomously. Each gate exists so the user injects judgment — domain corrections during grill, scope cuts during PRD, granularity during tasks.</p>
+</div>
+
+<div class="section">
+  <div class="section-title"><span class="num">04</span>Annotation Cycle</div>
+  <p style="margin-bottom: 16px; font-size: 0.95rem;">The PRD phase uses inline <code>//</code> comments for user feedback. Tasks uses a lighter quiz-the-user pattern.</p>
+  <div class="pre">## User Stories
+
+// also need: "as an admin, I want to revoke sessions"
+1. As a customer, I want to see my balance...
+
+// remove this — it's out of scope per the grill session
+7. As a customer, I want to export to CSV...
+
+// this should reference ADR-0003, not 0002</div>
+  <p style="margin-top:14px; font-size:0.9rem; color: var(--text-dim);">For each annotation, the agent addresses it, updates the document, removes the <code>//</code> comment, and regenerates <code>prd.html</code>. Cycles typically repeat 1–6 times.</p>
+</div>
+
+<div class="section">
+  <div class="section-title"><span class="num">05</span>Visual Sync Guarantee</div>
+  <p style="font-size: 0.95rem; margin-bottom: 14px;">Whenever a markdown file changes — annotations, corrections, completion status — its HTML companion is regenerated <strong>before</strong> proceeding to any next step. <code>prd.html</code> mirrors <code>prd.md</code>. <code>tasks.html</code> mirrors <code>tasks.md</code>. Non-negotiable.</p>
+  <p style="font-size: 0.9rem; color: var(--text-dim);">If <code>visual-explainer</code> is not installed, visual steps are silently skipped — the workflow still produces the markdown artifacts.</p>
+</div>
+
+<div class="section">
+  <div class="section-title"><span class="num">06</span>Standalone vs Orchestrated</div>
+  <table>
+    <thead><tr><th>Command</th><th>Standalone use</th><th>Inside /build</th></tr></thead>
+    <tbody>
+      <tr><td><span class="cmd-tag">/grill</span></td><td>Refine domain language without committing to a PRD</td><td>Phase 1</td></tr>
+      <tr><td><span class="cmd-tag">/prd</span></td><td>Turn an existing conversation into a PRD</td><td>Phase 2</td></tr>
+      <tr><td><span class="cmd-tag">/tasks</span></td><td>Break an existing PRD into vertical slices</td><td>Phase 3</td></tr>
+      <tr><td><span class="cmd-tag">/implement</span></td><td>Execute an existing tasks.md (AI)</td><td>Phase 4a</td></tr>
+      <tr><td><span class="cmd-tag">/implement-coach</span></td><td>Execute an existing tasks.md (you write code)</td><td>Phase 4b</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="section">
+  <div class="section-title"><span class="num">07</span>Key Principles</div>
+  <div class="card-grid">
+    <div class="card">
+      <h3>Vertical, never horizontal</h3>
+      <p>Each task slice cuts through every layer end-to-end (schema, API, UI, tests) and is demoable on its own. Horizontal slices ("set up the schema first") are explicitly rejected.</p>
     </div>
-    <div class="agent-card">
-      <div class="agent-name">architect</div>
-      <div class="agent-purpose">Software architecture specialist for system design, scalability, and technical decision-making. Evaluates trade-offs, proposes ADRs. Reads <code>coding-style.md</code>, <code>performance.md</code>, <code>security.md</code>.</div>
-      <div class="agent-meta">
-        <span class="meta-tag model-opus">opus</span>
-        <span class="meta-tag">Phase 2 &mdash; step 2.2</span>
-        <span class="meta-tag">plan skill</span>
-        <span class="meta-tag">MUST</span>
-      </div>
+    <div class="card">
+      <h3>One test, one impl, repeat</h3>
+      <p>TDD is strictly vertical: write one test, write minimal code to pass, refactor when GREEN, move on. Batched tests describe imagined behavior, not actual behavior.</p>
     </div>
-    <div class="agent-card">
-      <div class="agent-name">database-reviewer</div>
-      <div class="agent-purpose">Database specialist for query optimization, schema design, RLS, connection management. Runs EXPLAIN ANALYZE, checks indexes and N+1 patterns. Reads <code>security.md</code>, <code>performance.md</code>.</div>
-      <div class="agent-meta">
-        <span class="meta-tag model-sonnet">sonnet</span>
-        <span class="meta-tag">Phase 3 &mdash; step 3.6</span>
-        <span class="meta-tag">implement skill</span>
-        <span class="meta-tag">COND: DB code</span>
-      </div>
+    <div class="card">
+      <h3>CONTEXT.md vocabulary everywhere</h3>
+      <p>Terms resolved during grill appear unchanged in the PRD, tasks, test names, and code identifiers. Inconsistency triggers rework.</p>
     </div>
-    <div class="agent-card">
-      <div class="agent-name">refactor-cleaner</div>
-      <div class="agent-purpose">Code cleanup specialist for dead code detection, unused dependency removal. Categorizes findings: SAFE (remove), CAREFUL (verify), RISKY (confirm). Reads <code>coding-style.md</code>.</div>
-      <div class="agent-meta">
-        <span class="meta-tag model-sonnet">sonnet</span>
-        <span class="meta-tag">Phase 3 &mdash; step 3.8</span>
-        <span class="meta-tag">implement skill</span>
-        <span class="meta-tag">MUST</span>
-      </div>
+    <div class="card">
+      <h3>Markdown is the deliverable</h3>
+      <p>Files like <code>prd.md</code> and <code>tasks.md</code> are the durable spec — not chat summaries. Visual HTML companions are spatial aids; the markdown is the source.</p>
     </div>
-    <div class="agent-card">
-      <div class="agent-name">code-reviewer</div>
-      <div class="agent-purpose">Expert code review with integrated security analysis (OWASP Top 10, secrets detection, input validation, auth/authz) and confidence-based filtering (&gt;80% threshold). Reviews CRITICAL security, HIGH quality, MEDIUM performance, LOW practices. Auto-fixes CRITICAL security issues. Reads all 4 rule files.</div>
-      <div class="agent-meta">
-        <span class="meta-tag model-sonnet">sonnet</span>
-        <span class="meta-tag">Phase 3 &mdash; step 3.9</span>
-        <span class="meta-tag">implement skill</span>
-        <span class="meta-tag">MUST</span>
-      </div>
+    <div class="card">
+      <h3>User judgment via gates</h3>
+      <p>Annotation cycles and quiz cycles exist so the user injects domain knowledge, business constraints, and trade-offs. The orchestrator never barrels through.</p>
     </div>
-    <div class="agent-card">
-      <div class="agent-name">doc-updater</div>
-      <div class="agent-purpose">Documentation specialist ensuring docs match code reality. Updates READMEs, CHANGELOGs, architecture docs. Verifies paths and examples. Reads <code>git-workflow.md</code>.</div>
-      <div class="agent-meta">
-        <span class="meta-tag model-sonnet">sonnet</span>
-        <span class="meta-tag">Phase 3 &mdash; step 3.10</span>
-        <span class="meta-tag">implement skill</span>
-        <span class="meta-tag">COND: significant changes</span>
-      </div>
+    <div class="card">
+      <h3>Never commits</h3>
+      <p>Neither <code>/implement</code> nor <code>/implement-coach</code> runs <code>git commit</code>. The user reviews and commits when ready.</p>
     </div>
   </div>
-</section>
+</div>
 
-<!-- ===== 4. COMMAND REGISTRY ===== -->
-<section class="section">
-  <h2 class="section-title"><span class="num">04</span> Command Registry (Visual Explainer)</h2>
-  <div class="table-wrap">
-    <table class="cmd-table">
-      <thead>
-        <tr>
-          <th>Command</th>
-          <th>Produces</th>
-          <th>Phase</th>
-          <th>Reads / References</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr>
-          <td><code>/generate-architecture-diagram</code></td>
-          <td><code>architecture.html</code></td>
-          <td><span class="phase-label research">Research</span></td>
-          <td>research.md, source files discovered during research</td>
-        </tr>
-        <tr>
-          <td><code>/generate-visual-plan</code></td>
-          <td><code>visual-plan.html</code></td>
-          <td><span class="phase-label plan">Plan</span></td>
-          <td>plan.md (approved, with Todo List)</td>
-        </tr>
-        <tr>
-          <td><code>/diff-review</code></td>
-          <td><code>diff-review.html</code></td>
-          <td><span class="phase-label post">Post-Impl</span></td>
-          <td>git diff against branch point, plan.md, changed files</td>
-        </tr>
-        <tr>
-          <td><code>/fact-check</code></td>
-          <td>Corrections to target file</td>
-          <td><span class="phase-label implement">Impl</span> + <span class="phase-label post">Post</span></td>
-          <td>Target file (plan.md or diff-review.html) vs actual code/git</td>
-        </tr>
-        <tr>
-          <td><code>/plan-review</code></td>
-          <td>Risk assessment HTML</td>
-          <td>Standalone</td>
-          <td>plan.md vs codebase</td>
-        </tr>
-        <tr>
-          <td><code>/project-recap</code></td>
-          <td>Mental model HTML</td>
-          <td>Standalone</td>
-          <td>Codebase structure, recent changes</td>
-        </tr>
-        <tr>
-          <td><code>/generate-slides</code></td>
-          <td>Slide deck HTML</td>
-          <td>Standalone</td>
-          <td>Any topic; research.md or plan.md if relevant</td>
-        </tr>
-      </tbody>
-    </table>
-  </div>
-</section>
-
-<!-- ===== 5. ARTIFACTS PRODUCED ===== -->
-<section class="section">
-  <h2 class="section-title"><span class="num">05</span> Artifacts Produced</h2>
-  <div class="file-tree">
-    <div class="dir">docs/claude/&lt;YYYYMMDD-HHMM&gt;-&lt;slug&gt;/</div>
-    <div class="indent">
-      <div class="tree-branch"><span class="file">research.md</span> <span class="file-desc">&mdash; Phase 1: 8-section research document</span></div>
-      <div class="tree-branch"><span class="file">architecture.html</span> <span class="file-desc">&mdash; Phase 1: visual architecture diagram (VE conditional)</span></div>
-      <div class="tree-branch"><span class="file">plan.md</span> <span class="file-desc">&mdash; Phase 2: implementation plan + todo list</span></div>
-      <div class="tree-branch"><span class="file">visual-plan.html</span> <span class="file-desc">&mdash; Phase 2: visual implementation plan (VE conditional)</span></div>
-      <div class="tree-branch"><span class="file">diff-review.html</span> <span class="file-desc">&mdash; Post-impl: fact-checked visual diff review (VE conditional)</span></div>
-    </div>
-  </div>
-</section>
-
-<!-- ===== 6. RULES APPLIED ===== -->
-<section class="section">
-  <h2 class="section-title"><span class="num">06</span> Rules Applied</h2>
-  <div class="rules-grid">
-    <div class="rule-card">
-      <div>
-        <div class="rule-name">coding-style.md</div>
-        <div class="rule-phases">
-          <span class="phase-dot p">Plan</span>
-          <span class="phase-dot i">Impl</span>
-        </div>
-      </div>
-    </div>
-    <div class="rule-card">
-      <div>
-        <div class="rule-name">testing.md</div>
-        <div class="rule-phases">
-          <span class="phase-dot p">Plan</span>
-          <span class="phase-dot i">Impl</span>
-        </div>
-      </div>
-    </div>
-    <div class="rule-card">
-      <div>
-        <div class="rule-name">security.md</div>
-        <div class="rule-phases">
-          <span class="phase-dot p">Plan</span>
-          <span class="phase-dot i">Impl</span>
-        </div>
-      </div>
-    </div>
-    <div class="rule-card">
-      <div>
-        <div class="rule-name">performance.md</div>
-        <div class="rule-phases">
-          <span class="phase-dot p">Plan</span>
-          <span class="phase-dot i">Impl</span>
-        </div>
-      </div>
-    </div>
-    <div class="rule-card">
-      <div>
-        <div class="rule-name">git-workflow.md</div>
-        <div class="rule-phases">
-          <span class="phase-dot i">Impl</span>
-        </div>
-      </div>
-    </div>
-    <div class="rule-card">
-      <div>
-        <div class="rule-name">development-workflow.md</div>
-        <div class="rule-phases">
-          <span class="phase-dot r">Research</span>
-          <span class="phase-dot p">Plan</span>
-          <span class="phase-dot i">Impl</span>
-        </div>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- ===== 7. PIPELINE FLOW DIAGRAM ===== -->
-<section class="section">
-  <h2 class="section-title"><span class="num">07</span> Pipeline Flow Diagram</h2>
-  <div class="mermaid-wrap" id="pipeline-diagram">
-    <div class="zoom-controls">
-      <button class="zoom-btn" onclick="zoomIn('pipeline-diagram')">+</button>
-      <button class="zoom-btn" onclick="zoomOut('pipeline-diagram')">&#x2212;</button>
-      <button class="zoom-btn" onclick="zoomReset('pipeline-diagram')" style="font-size:11px">R</button>
-    </div>
-    <div class="mermaid-viewport">
-      <pre class="mermaid">
-flowchart TD
-  START(["/build args"]) --> R1["1. Create feature dir"]
-  R1 --> R2["2. Deep-read codebase"]
-  R2 --> R3["3. Write research.md"]
-  R3 --> RVE{"VE available?"}
-  RVE -->|Yes| R4["4. architecture.html"]
-  RVE -->|No| RSTOP
-  R4 --> RSTOP(["STOP: User reviews research"])
-
-  RSTOP -->|"move to planning"| P1["5. Read context + research.md"]
-  P1 --> P2["6. Architect agent"]
-  P2 --> P3{"Domain skills?"}
-  P3 -->|Yes| P3a["7. Load domain skills"]
-  P3 -->|No| P4
-  P3a --> P4["8. Write plan.md"]
-  P4 --> PSTOP(["STOP: User annotates"])
-
-  PSTOP -->|"// annotations"| P5["9. Address all annotations"]
-  P5 --> PAPPROVE{"Approved?"}
-  PAPPROVE -->|No| PSTOP
-  PAPPROVE -->|Yes| P6["10. Generate Todo List"]
-  P6 --> PVE{"VE available?"}
-  PVE -->|Yes| P7["11. visual-plan.html"]
-  PVE -->|No| ISTOP
-  P7 --> ISTOP(["STOP: User says implement"])
-
-  ISTOP -->|"implement"| I1["12. TDD implementation"]
-  I1 --> I2["13. Verify: type + lint + test + build"]
-  I2 --> I3["14. Security review"]
-  I3 --> IDB{"DB code?"}
-  IDB -->|Yes| I4["15. Database review"]
-  IDB -->|No| I5
-  I4 --> I5["16. /simplify"]
-  I5 --> I6["17. Refactor cleanup"]
-  I6 --> I7["18. Code review"]
-  I7 --> IDOC{"Docs needed?"}
-  IDOC -->|Yes| I8["19. Doc updater"]
-  IDOC -->|No| I9
-  I8 --> I9["20. /fact-check plan.md"]
-  I9 --> IVP{"Plan changed?"}
-  IVP -->|Yes| I10["21. Refresh visual-plan.html"]
-  IVP -->|No| IEND
-  I10 --> IEND["22. Summary to user"]
-
-  IEND --> POSTVE{"VE available?"}
-  POSTVE -->|Yes| POST1["23. /diff-review"]
-  POSTVE -->|No| DONE
-  POST1 --> POST2["24. /fact-check diff-review.html"]
-  POST2 --> DONE([Done])
-
-  classDef stopNode fill:#be123c22,stroke:#be123c,stroke-width:2px
-  classDef decisionNode fill:#d4a73a22,stroke:#d4a73a,stroke-width:2px
-  classDef researchNode fill:#0891b222,stroke:#0891b2,stroke-width:1.5px
-  classDef planNode fill:#d9770622,stroke:#d97706,stroke-width:1.5px
-  classDef implNode fill:#05966922,stroke:#059669,stroke-width:1.5px
-  classDef postNode fill:#d4a73a22,stroke:#d4a73a,stroke-width:1.5px
-  classDef termNode fill:#1e3a5f22,stroke:#1e3a5f,stroke-width:2px
-
-  class RSTOP,PSTOP,ISTOP stopNode
-  class RVE,P3,PAPPROVE,PVE,IDB,IDOC,IVP,POSTVE decisionNode
-  class R1,R2,R3,R4 researchNode
-  class P1,P2,P3a,P4,P5,P6,P7 planNode
-  class I1,I2,I3,I4,I5,I6,I7,I8,I9,I10,IEND implNode
-  class POST1,POST2 postNode
-  class START,DONE termNode
-      </pre>
-    </div>
-  </div>
-</section>
-
-</div><!-- .container -->
-
-<script type="module">
-  import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';
-
-  const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-  mermaid.initialize({
-    startOnLoad: true,
-    theme: 'base',
-    look: 'classic',
-    themeVariables: {
-      primaryColor: isDark ? '#1a2540' : '#e8f4f8',
-      primaryBorderColor: isDark ? '#5b8cc9' : '#1e3a5f',
-      primaryTextColor: isDark ? '#e2e8f0' : '#1e293b',
-      secondaryColor: isDark ? '#1e293b' : '#fef9e7',
-      secondaryBorderColor: isDark ? '#d97706' : '#d97706',
-      secondaryTextColor: isDark ? '#e2e8f0' : '#1e293b',
-      tertiaryColor: isDark ? '#1a2a20' : '#ecfdf5',
-      tertiaryBorderColor: isDark ? '#059669' : '#059669',
-      tertiaryTextColor: isDark ? '#e2e8f0' : '#1e293b',
-      lineColor: isDark ? '#475569' : '#94a3b8',
-      fontSize: '14px',
-      fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
-      noteBkgColor: isDark ? '#1e293b' : '#fefce8',
-      noteTextColor: isDark ? '#e2e8f0' : '#1e293b',
-      noteBorderColor: isDark ? '#fbbf24' : '#d97706',
-    }
-  });
-</script>
-
-<script>
-  // Zoom controls
-  const zoomState = {};
-
-  function getState(id) {
-    if (!zoomState[id]) zoomState[id] = { scale: 1, panX: 0, panY: 0 };
-    return zoomState[id];
-  }
-
-  function applyTransform(id) {
-    const wrap = document.getElementById(id);
-    const svg = wrap.querySelector('svg');
-    if (!svg) return;
-    const s = getState(id);
-    svg.style.transform = `scale(${s.scale}) translate(${s.panX}px, ${s.panY}px)`;
-  }
-
-  function zoomIn(id) {
-    const s = getState(id);
-    s.scale = Math.min(s.scale * 1.2, 4);
-    applyTransform(id);
-  }
-
-  function zoomOut(id) {
-    const s = getState(id);
-    s.scale = Math.max(s.scale / 1.2, 0.3);
-    applyTransform(id);
-  }
-
-  function zoomReset(id) {
-    const s = getState(id);
-    s.scale = 1; s.panX = 0; s.panY = 0;
-    applyTransform(id);
-  }
-
-  // Ctrl+scroll zoom
-  document.querySelectorAll('.mermaid-viewport').forEach(vp => {
-    const wrap = vp.closest('.mermaid-wrap');
-    if (!wrap?.id) return;
-    vp.addEventListener('wheel', e => {
-      if (!e.ctrlKey && !e.metaKey) return;
-      e.preventDefault();
-      const s = getState(wrap.id);
-      const delta = e.deltaY > 0 ? 0.9 : 1.1;
-      s.scale = Math.min(Math.max(s.scale * delta, 0.3), 4);
-      applyTransform(wrap.id);
-    }, { passive: false });
-
-    // Click-drag pan
-    let dragging = false, startX, startY;
-    vp.addEventListener('mousedown', e => {
-      dragging = true;
-      startX = e.clientX;
-      startY = e.clientY;
-      vp.style.cursor = 'grabbing';
-    });
-    window.addEventListener('mousemove', e => {
-      if (!dragging) return;
-      const s = getState(wrap.id);
-      s.panX += (e.clientX - startX) / s.scale;
-      s.panY += (e.clientY - startY) / s.scale;
-      startX = e.clientX;
-      startY = e.clientY;
-      applyTransform(wrap.id);
-    });
-    window.addEventListener('mouseup', () => {
-      dragging = false;
-      vp.style.cursor = 'grab';
-    });
-  });
-</script>
+</div>
 </body>
 </html>

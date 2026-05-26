@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tasks — Order Placement</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --font-body: 'IBM Plex Sans', system-ui, sans-serif;
+  --font-mono: 'IBM Plex Mono', 'SF Mono', Consolas, monospace;
+  --bg: #f0f2f5; --surface: #ffffff; --surface-recessed: #e8ebf0;
+  --border: rgba(30, 58, 95, 0.10); --border-bright: rgba(30, 58, 95, 0.20);
+  --text: #1e293b; --text-dim: #64748b;
+  --accent: #1e3a5f; --accent-dim: rgba(30, 58, 95, 0.08);
+  --gold: #d4a73a; --gold-dim: rgba(212, 167, 58, 0.10);
+  --tasks: #d97706; --tasks-dim: rgba(217, 119, 6, 0.10);
+  --afk: #059669; --afk-dim: rgba(5, 150, 105, 0.10);
+  --hitl: #be123c; --hitl-dim: rgba(190, 18, 60, 0.10);
+  --grid: rgba(30, 58, 95, 0.04);
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #0c1220; --surface: #131b2e; --surface-recessed: #0a0f1a;
+    --border: rgba(212, 167, 58, 0.08); --border-bright: rgba(212, 167, 58, 0.18);
+    --text: #e2e8f0; --text-dim: #8b9dc3;
+    --accent: #5b8cc9; --accent-dim: rgba(91, 140, 201, 0.12);
+    --gold: #e8c56a; --gold-dim: rgba(232, 197, 106, 0.12);
+    --tasks: #fbbf24; --tasks-dim: rgba(251, 191, 36, 0.10);
+    --afk: #34d399; --afk-dim: rgba(52, 211, 153, 0.12);
+    --hitl: #fb7185; --hitl-dim: rgba(251, 113, 133, 0.12);
+    --grid: rgba(91, 140, 201, 0.04);
+  }
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: var(--font-body); background-color: var(--bg); background-image: linear-gradient(var(--grid) 1px, transparent 1px), linear-gradient(90deg, var(--grid) 1px, transparent 1px); background-size: 24px 24px; color: var(--text); line-height: 1.6; }
+.container { max-width: 1180px; margin: 0 auto; padding: 40px 24px 80px; }
+.header { text-align: center; padding: 48px 24px 40px; margin-bottom: 48px; background: var(--surface); border: 1px solid var(--border-bright); border-radius: 12px; position: relative; overflow: hidden; }
+.header::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; background: var(--tasks); }
+.header h1 { font-family: var(--font-mono); font-size: clamp(1.6rem, 4vw, 2.4rem); font-weight: 700; letter-spacing: -0.02em; margin-bottom: 8px; }
+.header h1 span { color: var(--gold); }
+.header .subtitle { font-size: 1rem; color: var(--text-dim); max-width: 680px; margin: 0 auto 24px; }
+.summary-pills { display: flex; justify-content: center; gap: 12px; flex-wrap: wrap; }
+.summary-pill { display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px; border-radius: 6px; font-family: var(--font-mono); font-size: 0.78rem; font-weight: 600; }
+.summary-pill.afk { background: var(--afk-dim); color: var(--afk); }
+.summary-pill.hitl { background: var(--hitl-dim); color: var(--hitl); }
+.summary-pill.total { background: var(--accent-dim); color: var(--accent); }
+.section { margin-bottom: 48px; }
+.section-title { font-family: var(--font-mono); font-size: 1.1rem; font-weight: 700; color: var(--gold); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 20px; padding-bottom: 8px; border-bottom: 1px solid var(--border-bright); }
+.section-title .num { color: var(--text-dim); margin-right: 8px; }
+.dep-graph { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 28px 24px; overflow-x: auto; }
+.dep-graph svg { display: block; margin: 0 auto; }
+.dep-graph .node-rect { fill: var(--surface-recessed); stroke: var(--border-bright); stroke-width: 1; rx: 6; ry: 6; }
+.dep-graph .node-rect.afk { stroke: var(--afk); fill: var(--afk-dim); }
+.dep-graph .node-rect.hitl { stroke: var(--hitl); fill: var(--hitl-dim); }
+.dep-graph .node-num { font-family: var(--font-mono); font-weight: 700; font-size: 13px; fill: var(--text); text-anchor: middle; }
+.dep-graph .node-label { font-family: var(--font-mono); font-size: 11px; fill: var(--text-dim); text-anchor: middle; }
+.dep-graph .edge { stroke: var(--text-dim); stroke-width: 1.5; fill: none; marker-end: url(#arrowhead); }
+.slice-grid { display: grid; gap: 18px; }
+.slice { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 22px 24px; border-left: 4px solid var(--afk); }
+.slice.hitl { border-left-color: var(--hitl); }
+.slice-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; margin-bottom: 10px; flex-wrap: wrap; }
+.slice-title { font-family: var(--font-mono); font-size: 1rem; font-weight: 700; }
+.slice-title .num { color: var(--text-dim); margin-right: 8px; }
+.slice-meta { display: flex; gap: 8px; flex-wrap: wrap; }
+.slice-meta .tag { font-family: var(--font-mono); font-size: 0.7rem; font-weight: 700; padding: 3px 8px; border-radius: 4px; }
+.slice-meta .tag.afk { background: var(--afk-dim); color: var(--afk); }
+.slice-meta .tag.hitl { background: var(--hitl-dim); color: var(--hitl); }
+.slice-meta .tag.dep { background: var(--accent-dim); color: var(--accent); }
+.slice-meta .tag.stories { background: var(--gold-dim); color: var(--gold); }
+.slice .what { font-size: 0.92rem; color: var(--text); margin-bottom: 14px; }
+.slice .what code { font-family: var(--font-mono); font-size: 0.85em; background: var(--accent-dim); padding: 1px 5px; border-radius: 3px; }
+.slice .ac { font-family: var(--font-mono); font-size: 0.78rem; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 6px; }
+.slice ul { list-style: none; padding: 0; font-size: 0.88rem; }
+.slice li { padding: 4px 0 4px 22px; position: relative; }
+.slice li::before { content: '☐'; position: absolute; left: 0; color: var(--text-dim); font-weight: 700; }
+code { font-family: var(--font-mono); font-size: 0.85em; background: var(--accent-dim); padding: 2px 6px; border-radius: 3px; }
+</style>
+</head>
+<body>
+<div class="container">
+
+<div class="header">
+  <h1><span>Tasks</span> — Order Placement</h1>
+  <p class="subtitle">Six vertical-slice tracer bullets. Each cuts through every layer end-to-end and is demoable on its own. Ordered by dependency.</p>
+  <div class="summary-pills">
+    <span class="summary-pill total">6 slices</span>
+    <span class="summary-pill afk">5 AFK</span>
+    <span class="summary-pill hitl">1 HITL</span>
+  </div>
+</div>
+
+<div class="section">
+  <div class="section-title"><span class="num">01</span>Dependency Graph</div>
+  <div class="dep-graph">
+    <svg viewBox="0 0 720 260" width="100%" style="max-width: 720px;">
+      <defs>
+        <marker id="arrowhead" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto" markerUnits="strokeWidth">
+          <path d="M0,0 L0,6 L9,3 z" fill="var(--text-dim)"/>
+        </marker>
+      </defs>
+
+      <!-- Slice 1 -->
+      <rect class="node-rect afk" x="40" y="100" width="100" height="60"/>
+      <text class="node-num" x="90" y="125">1</text>
+      <text class="node-label" x="90" y="145">Place Order</text>
+
+      <!-- Slice 2 -->
+      <rect class="node-rect afk" x="200" y="20" width="100" height="60"/>
+      <text class="node-num" x="250" y="45">2</text>
+      <text class="node-label" x="250" y="65">Idempotency</text>
+
+      <!-- Slice 3 -->
+      <rect class="node-rect afk" x="200" y="100" width="100" height="60"/>
+      <text class="node-num" x="250" y="125">3</text>
+      <text class="node-label" x="250" y="145">Order History</text>
+
+      <!-- Slice 4 -->
+      <rect class="node-rect afk" x="200" y="180" width="100" height="60"/>
+      <text class="node-num" x="250" y="205">4</text>
+      <text class="node-label" x="250" y="225">Cancel</text>
+
+      <!-- Slice 5 (HITL) -->
+      <rect class="node-rect hitl" x="380" y="100" width="120" height="60"/>
+      <text class="node-num" x="440" y="125">5</text>
+      <text class="node-label" x="440" y="145">Consumer Contract</text>
+
+      <!-- Slice 6 -->
+      <rect class="node-rect afk" x="560" y="100" width="120" height="60"/>
+      <text class="node-num" x="620" y="125">6</text>
+      <text class="node-label" x="620" y="145">Telemetry</text>
+
+      <!-- Edges -->
+      <path class="edge" d="M 140 130 Q 170 50 200 50"/>
+      <path class="edge" d="M 140 130 L 200 130"/>
+      <path class="edge" d="M 140 130 Q 170 210 200 210"/>
+      <path class="edge" d="M 300 130 L 380 130"/>
+      <path class="edge" d="M 300 210 Q 340 210 380 145"/>
+      <path class="edge" d="M 300 50 Q 540 50 560 110"/>
+      <path class="edge" d="M 300 130 Q 540 130 560 130"/>
+      <path class="edge" d="M 300 210 Q 540 210 560 150"/>
+      <path class="edge" d="M 500 130 L 560 130"/>
+    </svg>
+    <p style="text-align: center; font-size: 0.8rem; color: var(--text-dim); margin-top: 14px; font-family: var(--font-mono);">
+      <span style="color: var(--afk);">■ AFK</span> &nbsp; <span style="color: var(--hitl);">■ HITL</span> &nbsp; Edges flow blocker → dependent
+    </p>
+  </div>
+</div>
+
+<div class="section">
+  <div class="section-title"><span class="num">02</span>Slices</div>
+  <div class="slice-grid">
+
+    <div class="slice">
+      <div class="slice-head">
+        <div class="slice-title"><span class="num">1</span>Customer can place an Order (happy path)</div>
+        <div class="slice-meta"><span class="tag afk">AFK</span><span class="tag dep">unblocked</span><span class="tag stories">stories 1, 8, 10, 12</span></div>
+      </div>
+      <div class="what">A Customer with a valid Cart and an <code>Idempotency-Key</code> header can POST to the order placement endpoint and receive a <code>201</code> with the new Order ID. The Order persists with <code>pending</code> status; <code>OrderPlaced</code> is emitted AFTER the row commits.</div>
+      <div class="ac">Acceptance criteria</div>
+      <ul>
+        <li>Returns <code>201</code> with <code>{ order_id, status: "pending" }</code> for a valid request</li>
+        <li>Persists Order row with <code>pending</code> status before the response returns</li>
+        <li>Persists OrderLine rows with frozen prices snapshotted from Catalog</li>
+        <li>Emits <code>OrderPlaced</code> AFTER the Order row commits — never before</li>
+        <li><code>OrderPlaced</code> payload: <code>event_id</code> (ULID), <code>order_id</code>, <code>customer_id</code>, <code>total</code>, <code>occurred_at</code></li>
+        <li>Returns <code>400</code> for an empty Cart</li>
+        <li>Returns <code>400</code> for a missing <code>Idempotency-Key</code> header</li>
+      </ul>
+    </div>
+
+    <div class="slice">
+      <div class="slice-head">
+        <div class="slice-title"><span class="num">2</span>Idempotency-Key dedupes retries</div>
+        <div class="slice-meta"><span class="tag afk">AFK</span><span class="tag dep">blocked by 1</span><span class="tag stories">stories 2, 3, 13</span></div>
+      </div>
+      <div class="what">A retry with the same <code>Idempotency-Key</code> returns the original Order ID — no duplicate row, no duplicate event. Redis-backed, 24h TTL, per-Customer scoping. Redis outage degrades to "duplicates possible" rather than blocking checkout.</div>
+      <div class="ac">Acceptance criteria</div>
+      <ul>
+        <li>Same <code>(customer_id, idempotency_key)</code> → same <code>order_id</code> as the first request</li>
+        <li>Second request does NOT persist a duplicate Order row</li>
+        <li>Second request does NOT emit a second <code>OrderPlaced</code></li>
+        <li>After 24 hours, same key creates a new Order (TTL works)</li>
+        <li>Different Customers using the same key get distinct Orders (per-Customer scoping)</li>
+        <li>Redis unreachable → endpoint still returns <code>201</code>; warning logged; metric incremented</li>
+        <li>Idempotency hit rate exposed as a Prometheus counter</li>
+      </ul>
+    </div>
+
+    <div class="slice">
+      <div class="slice-head">
+        <div class="slice-title"><span class="num">3</span>Customer can see their Order history</div>
+        <div class="slice-meta"><span class="tag afk">AFK</span><span class="tag dep">blocked by 1</span><span class="tag stories">stories 4, 7</span></div>
+      </div>
+      <div class="what">GET endpoint returns the requesting Customer's Orders sorted by <code>created_at</code> descending, cursor-paginated. A Customer cannot read another Customer's Orders.</div>
+      <div class="ac">Acceptance criteria</div>
+      <ul>
+        <li>Returns <code>200</code> with the Customer's Orders for an authenticated request</li>
+        <li>Orders sorted by <code>created_at</code> descending</li>
+        <li>Each entry includes <code>order_id</code>, <code>status</code>, <code>total</code>, <code>created_at</code>, <code>order_lines[]</code></li>
+        <li>Cursor pagination: <code>?cursor=&lt;opaque&gt;&amp;limit=&lt;n&gt;</code></li>
+        <li>Returns <code>200</code> with empty array for a Customer with no Orders (NOT <code>404</code>)</li>
+        <li>Returns <code>403</code> when a Customer tries to read another Customer's Orders by ID</li>
+        <li>N+1 queries on OrderLines avoided (single join or batched fetch)</li>
+      </ul>
+    </div>
+
+    <div class="slice">
+      <div class="slice-head">
+        <div class="slice-title"><span class="num">4</span>Customer can cancel a pending Order</div>
+        <div class="slice-meta"><span class="tag afk">AFK</span><span class="tag dep">blocked by 1</span><span class="tag stories">stories 5, 6, 9</span></div>
+      </div>
+      <div class="what">POST to cancel transitions <code>pending → canceled</code> and emits <code>OrderCanceled</code>. Cancel on <code>confirmed</code> returns <code>409</code> with code <code>ORDER_NOT_CANCELLABLE</code> (per ADR-0002, refunds live in Billing).</div>
+      <div class="ac">Acceptance criteria</div>
+      <ul>
+        <li>Returns <code>200</code> with <code>{ status: "canceled" }</code> from <code>pending</code></li>
+        <li>Persists status change before response</li>
+        <li>Emits <code>OrderCanceled</code> with same payload shape as <code>OrderPlaced</code></li>
+        <li>Returns <code>409</code> with code <code>ORDER_NOT_CANCELLABLE</code> on <code>confirmed</code> Order</li>
+        <li>Returns <code>409</code> on an already-<code>canceled</code> Order (idempotency on the resource)</li>
+        <li>Returns <code>403</code> when one Customer tries to cancel another's Order</li>
+        <li>No <code>confirmed → canceled</code> transition possible (linear state machine, ADR-0002)</li>
+      </ul>
+    </div>
+
+    <div class="slice hitl">
+      <div class="slice-head">
+        <div class="slice-title"><span class="num">5</span>Downstream consumer contract sign-off</div>
+        <div class="slice-meta"><span class="tag hitl">HITL</span><span class="tag dep">blocked by 1, 4</span><span class="tag stories">stories 8, 9, 10, 11</span></div>
+      </div>
+      <div class="what">Design-review session with Fulfillment and Billing teams to ratify event payload contracts, confirm at-least-once delivery expectations (ADR-0003), and align on <code>event_id</code> dedup in each consumer. Publish agreed contracts in <code>docs/events/commerce.md</code>.</div>
+      <div class="ac">Acceptance criteria</div>
+      <ul>
+        <li>Meeting held with Fulfillment lead and Billing lead</li>
+        <li>Event payload schemas published in <code>docs/events/commerce.md</code></li>
+        <li>Both consumers confirm they will dedupe on <code>event_id</code></li>
+        <li>Both consumers confirm retry-forever on transient processing failures (no DLQ for transient errors)</li>
+        <li>Edge case documented: what does Fulfillment do if <code>OrderCanceled</code> arrives before <code>OrderPlaced</code> was processed?</li>
+      </ul>
+    </div>
+
+    <div class="slice">
+      <div class="slice-head">
+        <div class="slice-title"><span class="num">6</span>Telemetry and observability</div>
+        <div class="slice-meta"><span class="tag afk">AFK</span><span class="tag dep">blocked by 1-4</span><span class="tag stories">story 13</span></div>
+      </div>
+      <div class="what">Structured logs and Prometheus metrics on every Commerce endpoint. Grafana dashboard updated. Runbook entry for the idempotency-hit-rate alarm (which catches a Redis outage).</div>
+      <div class="ac">Acceptance criteria</div>
+      <ul>
+        <li>Every Commerce endpoint emits a structured log on success and failure</li>
+        <li>PII (Customer email, address) redacted per the security rule</li>
+        <li>Idempotency hit rate counter increments on a hit, not on a miss</li>
+        <li>Event-publish failure metric increments on broker outage (verified via fault injection)</li>
+        <li>Grafana panel for idempotency hit rate, alarming below 50% for 10 minutes</li>
+        <li>Runbook entry: "Commerce idempotency hit rate dropped" → check Redis health</li>
+      </ul>
+    </div>
+
+  </div>
+</div>
+
+</div>
+</body>
+</html>

@@ -1,170 +1,204 @@
 ---
 name: build
-description: Full feature development workflow combining research, planning with annotation cycles, and implementation — with visual-explainer integration for rich HTML diagrams at each phase transition. Based on Boris Tane's disciplined AI coding workflow.
+description: Full feature development workflow — grill the idea, draft a PRD, break it into vertical-slice tasks, then implement via TDD (either AI or coached). Combines Matt Pocock's skills-TDD pipeline with annotation-cycle artifacts and visual HTML companions at each phase.
 argument-hint: [feature-description]
 disable-model-invocation: true
 ---
 
 # Build - Full Workflow
 
-A disciplined 3-phase workflow for building features with AI assistance. Each phase produces a persistent markdown artifact in `docs/claude/` that serves as shared state between you and the user.
+A disciplined 4-phase workflow for building features with AI assistance. Each phase produces persistent artifacts: project-wide docs (`CONTEXT.md`, `docs/adr/`) get refined during grilling, and feature-specific docs (PRD, tasks, diff-review) live in `docs/claude/<slug>/`.
 
-**Visual integration (optional)**: If the `visual-explainer` skill is available, it is used at each phase transition to produce rich HTML pages — architecture diagrams after research, visual plans after planning, and diff reviews after implementation. If `visual-explainer` is not installed, all visual steps are silently skipped — the workflow proceeds normally with just the markdown artifacts.
+**Pipeline**: `/grill` → `/prd` → `/tasks` → `/implement` *(or `/implement-coach`)*
 
-**Workflow**: Research deeply -> Write a plan -> Annotate the plan until it's right -> Execute the whole thing.
+This skill orchestrates four sub-skills. You can also use each phase independently:
 
-This skill orchestrates three sub-skills, optionally using visual-explainer at phase transitions. You can also use each phase independently:
-- `/research [folder-or-topic]` - Phase 1 only
-- `/plan [feature-description]` - Phase 2 only
-- `/implement [plan-filename]` - Phase 3 only (AI implements)
-- `/implement-coach [plan-filename]` - Phase 3 only (user implements with TDD coaching)
+- `/grill [topic]` — Phase 1: interview, refine `CONTEXT.md`, write ADRs
+- `/prd [topic]` — Phase 2: synthesize PRD from grilling, with annotation cycles
+- `/tasks [prd-dir]` — Phase 3: vertical-slice tracer-bullet breakdown
+- `/implement [tasks-dir]` — Phase 4a: AI implements via TDD, slice by slice
+- `/implement-coach [tasks-dir]` — Phase 4b: user implements, AI writes one test at a time
 
-If visual-explainer is installed, these commands are also available standalone:
-- `/generate-architecture-diagram` - Generate a visual HTML architecture diagram
-- `/generate-web-diagram` - Generate an HTML diagram for any topic
-- `/generate-visual-plan` - Generate a visual implementation plan
-- `/generate-slides` - Generate a magazine-quality slide deck
-- `/diff-review` - Visual diff review with architecture comparison
-- `/plan-review` - Compare a plan against the codebase with risk assessment
-- `/project-recap` - Mental model snapshot for context-switching
-- `/fact-check` - Verify accuracy of a document against actual code
+Visual-explainer companions are also available standalone (see "Visual-Explainer Integration Notes" below).
 
 ## File Naming Convention
 
-Each feature gets a single directory under `docs/claude/` in the project root:
+Project-wide artifacts live at the repo root and accrete across many `/build` runs:
+
+```
+/
+├── CONTEXT.md                      # shared glossary (refined by /grill)
+└── docs/
+    └── adr/                        # Architectural Decision Records (added by /grill)
+        ├── 0001-event-sourced-orders.md
+        └── 0002-postgres-for-write-model.md
+```
+
+Feature-specific artifacts go in a per-feature directory:
 
 ```
 docs/claude/<YYYYMMDD-HHMM>-<slug>/
+  prd.md             # Phase 2 output
+  prd.html           # Phase 2 visual companion
+  tasks.md           # Phase 3 output
+  tasks.html         # Phase 3 visual companion
+  diff-review.html   # Phase 4 visual companion
 ```
 
-All artifacts live together in that directory. Visual HTML files share the same base name as their markdown counterpart:
+Note: there is no `research.md` or `plan.md` in the new pipeline. Grilling does its own ad-hoc codebase exploration; the PRD replaces the old plan format.
 
-```
-docs/claude/20260304-1430-cursor-pagination/
-  research.md          # Phase 1 output
-  research.html        # Phase 1 visual companion (if visual-explainer available)
-  plan.md              # Phase 2 output
-  plan.html            # Phase 2 visual companion (if visual-explainer available)
-  diff-review.html     # Phase 3 visual companion (if visual-explainer available)
-```
+To generate the per-feature directory:
 
-To generate the directory:
 1. Derive a short slug from `$ARGUMENTS` (lowercase, hyphens, no special chars, max ~5 words)
 2. Get the current timestamp via `date +%Y%m%d-%H%M`
 3. Create the directory: `docs/claude/<timestamp>-<slug>/`
 
-This directory is created once at the start of the workflow and reused across all three phases. When sub-skills are invoked, pass the directory path so they write into it.
+This directory is created once at the start of Phase 2 (the first phase that writes feature-specific artifacts) and reused across Phases 2–4. When sub-skills are invoked, pass the directory path so they write into it.
 
 ---
 
-## Phase 1: Research
+## Phase 1: Grill
 
-Invoke the research skill to deeply understand the relevant area of the codebase.
+Invoke the `grill` skill to interview the user about the feature, sharpen domain terminology, and update `CONTEXT.md` / `docs/adr/` inline.
 
-Use the Skill tool to invoke `research` with the relevant scope derived from `$ARGUMENTS`.
+Use the Skill tool to invoke `grill` with the feature description from `$ARGUMENTS`.
 
-The research skill will automatically generate a visual architecture diagram (`research.html`) if `visual-explainer` is available.
+The grilling session updates project-wide files. It does NOT create the feature directory yet — that happens in Phase 2.
 
-After the research phase completes, STOP and tell the user:
+After the grill phase completes, STOP and tell the user:
 
-> **Phase 1 complete.** I've written the research document at `<file-path>`.
-> *(If diagram was generated: "I've also generated an architecture diagram at `<diagram-path>` (opened in your browser).")*
+> **Phase 1 complete.** I've updated:
+> - `CONTEXT.md` with <n> term(s): <list>
+> - `docs/adr/` with <n> new ADR(s): <list>
+>   *(or "no new ADRs — none of today's decisions met the bar")*
 >
-> Please review to make sure I understood the system correctly.
->
-> When you're satisfied with the research, say **"move to planning"** and I'll create the implementation plan.
+> Say **"draft the PRD"** when you're ready and I'll synthesize what we discussed.
 
 **Wait for the user to confirm before proceeding.**
 
 ---
 
-## Phase 2: Planning + Annotation Cycles
+## Phase 2: PRD + Annotation Cycles
 
-Once the user confirms the research is acceptable, invoke the plan skill.
+Once the user confirms, invoke the `prd` skill.
 
-Use the Skill tool to invoke `plan` with the feature description from `$ARGUMENTS`.
+Before invoking, create the per-feature directory `docs/claude/<timestamp>-<slug>/` and pass it to the sub-skill.
 
-The plan skill will handle:
-1. Writing a plan document with detailed implementation steps, code snippets, and a proposed task list
-2. Generating a visual implementation plan (`plan.html`) alongside the markdown — both presented together for easier review
-3. Waiting for the user to annotate the markdown
-4. Addressing all annotations, updating the plan and regenerating the visual to stay in sync
-5. Repeating the annotation cycle (typically 1-6 times)
-6. Finalizing the todo list and visual plan when the user approves
+Use the Skill tool to invoke `prd` with the feature description and the feature directory path.
 
-**The plan phase is complete when the user explicitly approves the plan.**
+The `prd` skill will handle:
+
+1. Reading `CONTEXT.md`, recent ADRs, and prior conversation
+2. Sketching the major modules (deep-modules philosophy) and confirming them with the user
+3. Writing `prd.md` with user stories, decisions, testing notes — no code snippets, no file paths
+4. Generating `prd.html` alongside the markdown
+5. Waiting for `//` annotations
+6. Addressing all annotations and regenerating the visual to stay in sync
+7. Repeating the annotation cycle (typically 1–6 times)
+8. Finalizing on user approval
+
+**The PRD phase is complete when the user explicitly approves the PRD.**
 
 Then tell the user:
 
-> **Phase 2 complete.** The plan is approved and the todo list is ready.
-> *(If visual was generated: "I've also updated the visual plan at `<diagram-path>` (opened in your browser) for a spatial overview.")*
+> **Phase 2 complete.** The PRD is approved at `<file-path>` and the visual is at `<diagram-path>` (opened in your browser).
 >
-> Say **"implement"** when you're ready for me to start building.
+> Say **"break it into tasks"** when you're ready and I'll run `/tasks`.
 
-**Wait for the user to trigger implementation.**
+**Wait for the user to trigger Phase 3.**
 
 ---
 
-## Phase 3: Implementation
+## Phase 3: Tasks (vertical-slice tracer bullets)
 
-Once the user triggers implementation, ask which mode they want:
+Once the user triggers it, invoke the `tasks` skill with the feature directory.
 
-> **Phase 3: Implementation**
-> Choose your implementation mode:
-> - **`/implement`** — AI implements the code for you (traditional mode)
-> - **`/implement-coach`** — You implement the code with AI coaching (TDD-guided, tests written first)
+Use the Skill tool to invoke `tasks` with the feature directory path. If the user said "publish" or passed `--publish`, include that flag.
+
+The `tasks` skill will handle:
+
+1. Reading `prd.md`, `CONTEXT.md`, and relevant ADRs
+2. Drafting a vertical-slice breakdown — each slice cuts through every layer end-to-end (HITL/AFK markers, dependency relationships)
+3. Writing `tasks.md` and generating `tasks.html`
+4. Quizzing the user on granularity, dependencies, HITL/AFK, coverage
+5. Iterating until approved
+6. **Optional**: publishing to GitHub Issues if `--publish` was set
+
+**The tasks phase is complete when the user approves the breakdown.**
+
+Then tell the user:
+
+> **Phase 3 complete.** Tasks approved at `<file-path>`. <n> slices: <m> AFK, <k> HITL.
+> *(if published: "Published as GitHub Issues #<first>–#<last>")*
 >
-> Say "implement" for traditional mode, or "coach me" for coached mode.
+> Say **"implement"** when you're ready.
 
-If the user says "implement" or doesn't specify, invoke `implement` with the plan filename.
-If the user says "coach me" or "guided", invoke `implement-coach` with the plan filename.
+**Wait for the user to trigger Phase 4.**
 
-Use the Skill tool to invoke the chosen skill with the plan document filename from Phase 2.
+---
 
-### Traditional Mode (`implement`)
+## Phase 4: Implementation (vertical-slice TDD)
 
-1. Execute all tasks from the plan
-2. Track progress by checking off items in the plan document
-3. Run type checks and linters continuously
-4. Handle feedback corrections from the user
-5. Regenerate `plan.html` to reflect the final implementation state
-6. Generate a visual diff review (`diff-review.html`) if `visual-explainer` is available
-7. Verify plan-to-implementation sync — ensuring the plan, visual, and code all agree
+Once the user triggers implementation, ask which mode:
+
+> **Phase 4: Implementation**
+>
+> Choose your mode:
+> - **`/implement`** — AI implements the code via vertical-slice TDD (one test → one impl → repeat)
+> - **`/implement-coach`** — You implement the code; I write ONE test at a time and verify
+>
+> Say "implement" for AI mode, or "coach me" for coached mode.
+
+If the user says "implement" or doesn't specify, invoke `implement` with the feature directory.
+If the user says "coach me" or "guided", invoke `implement-coach` with the feature directory.
+
+Both modes use the same TDD philosophy (Pocock's): **vertical, never horizontal. One test, one implementation, repeat.** No batched tests upfront.
+
+### AI Mode (`implement`)
+
+1. For each slice: write tracer-bullet test → minimal code → next acceptance criterion → repeat
+2. Refactor between slices, never while RED
+3. Mark slices complete in `tasks.md` as they finish
+4. Final verification loop (type check, lint, test, build)
+5. Database review (conditional), simplify, refactor-cleaner, code-reviewer, doc-updater
+6. Fact-check `prd.md` and `tasks.md`, refresh visuals
+7. Generate `diff-review.html` if `visual-explainer` is available
 
 ### Coach Mode (`implement-coach`)
 
-1. Write ALL tests upfront based on the plan's Testing Strategy
-2. Walk the user through each module/class one at a time
-3. Present the expected API, test cases, and test code for each component
-4. Wait for the user to implement, then verify tests pass
-5. Guide the user through fixes if tests fail
-6. Repeat until all modules are implemented
-7. Run final verification (full test suite, type check, lint, build)
-8. Offer optional code review via `code-reviewer` and `refactor-cleaner` agents
+1. For each slice: AI writes ONE failing test → user implements → AI verifies → next test
+2. AI never writes implementation code during Steps 1–3; the user does
+3. Refactor together when GREEN, never while RED
+4. Final verification loop (same as AI mode)
+5. Post-completion cleanup is AI-driven, with code-reviewer findings surfaced to the user to fix
 
-After completion, tell the user:
+After completion, both modes report:
 
-> **Implementation complete.** All tasks from the plan have been executed.
-> *(If diff review was generated: "I've generated a fact-checked visual diff review at `<diagram-path>` (opened in your browser) summarizing everything that changed.")*
+> **Implementation complete.** All slices executed, tests passing, verifications clean.
+> *(If `diff-review.html` was generated: "Fact-checked visual diff at `<diagram-path>` (opened in your browser).")*
 
 ---
 
 ## Session Management
 
-This entire workflow is designed to run in a **single long session**. By the time implementation starts, you've built deep understanding through research and planning. All artifacts — markdown and visual HTML — live together in the feature directory under `docs/claude/`, survive context compaction, and can be re-read at any point.
+This workflow is designed to run in a **single long session**. By the time implementation starts, you've built deep shared understanding through grilling and PRD refinement. All artifacts — markdown and visual HTML — survive context compaction and can be re-read at any point.
+
+`CONTEXT.md` and `docs/adr/` outlive any single session — they're the durable spine that successive `/build` runs sharpen.
 
 ## Key Principles
 
-1. **Never write code before the plan is approved** - the "don't implement yet" guard is essential
-2. **The markdown files are the deliverables** - not chat summaries
-3. **The visual HTML pages are companions** - they provide spatial understanding that markdown can't
-4. **The user injects judgment through annotations** - domain knowledge, business constraints, engineering trade-offs
-5. **Implementation should be boring** - all creative decisions happen during planning
-6. **Terse corrections are fine during implementation** - the context is already established
+1. **Grill before drafting.** Don't let the PRD invent terminology — pin it down in `CONTEXT.md` first.
+2. **Never write code before the tasks are approved.** Phases 1–3 are deliberately gated.
+3. **Markdown files are the deliverables**, not chat summaries.
+4. **Visual HTML pages are companions** — spatial understanding that markdown can't.
+5. **The user injects judgment through annotations and approval gates** — domain knowledge, business constraints, engineering trade-offs.
+6. **Vertical slices, never horizontal.** Each slice cuts through every layer end-to-end and is demoable on its own.
+7. **One test, one implementation, repeat.** No batched tests upfront — Pocock's TDD anti-pattern is rejected.
+8. **`CONTEXT.md` vocabulary everywhere** — PRD, tasks, test names, code identifiers.
 
 ## Visual-Explainer Integration Notes
 
-The visual-explainer skill is **optional**. All visual steps are skipped gracefully if it is not installed.
+The `visual-explainer` skill is **optional**. All visual steps are skipped gracefully if it is not installed.
 
 When available, it produces self-contained HTML files with:
 - Mermaid diagrams for flowcharts, sequence diagrams, state machines
@@ -173,12 +207,26 @@ When available, it produces self-contained HTML files with:
 - Dark/light theme support
 - Zoom controls on all diagrams
 
-When available, it also activates **proactively** during any phase: when about to render a complex table (4+ rows or 3+ columns) in the terminal, it generates an HTML table instead and opens it in the browser.
+If `visual-explainer` is installed, these commands are also available standalone:
+
+- `/generate-architecture-diagram`
+- `/generate-web-diagram`
+- `/generate-visual-plan`
+- `/generate-slides`
+- `/diff-review`
+- `/plan-review`
+- `/project-recap`
+- `/fact-check`
+
+When available, `visual-explainer` also activates **proactively**: when about to render a complex table (4+ rows or 3+ columns) in the terminal, it generates an HTML table instead and opens it in the browser.
 
 ## Cleanup
 
 After the feature is complete, the user can decide whether to:
+
 - Keep the feature directory in `docs/claude/` for future reference
 - Delete it
 - Add `docs/claude/` to `.gitignore` if desired
 - Commit the directory alongside the feature for posterity
+
+`CONTEXT.md` and `docs/adr/` should be committed — they're project-wide, durable artifacts.

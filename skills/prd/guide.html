@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>/prd Skill Guide</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --font-body: 'IBM Plex Sans', system-ui, sans-serif;
+  --font-mono: 'IBM Plex Mono', 'SF Mono', Consolas, monospace;
+  --bg: #f0f2f5; --surface: #ffffff; --surface-recessed: #e8ebf0;
+  --border: rgba(30, 58, 95, 0.10); --border-bright: rgba(30, 58, 95, 0.20);
+  --text: #1e293b; --text-dim: #64748b;
+  --accent: #1e3a5f; --accent-dim: rgba(30, 58, 95, 0.08);
+  --gold: #d4a73a; --gold-dim: rgba(212, 167, 58, 0.10);
+  --prd: #0891b2; --prd-dim: rgba(8, 145, 178, 0.10);
+  --must: #be123c; --must-dim: rgba(190, 18, 60, 0.10);
+  --grid: rgba(30, 58, 95, 0.04);
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #0c1220; --surface: #131b2e; --surface-recessed: #0a0f1a;
+    --border: rgba(212, 167, 58, 0.08); --border-bright: rgba(212, 167, 58, 0.18);
+    --text: #e2e8f0; --text-dim: #8b9dc3;
+    --accent: #5b8cc9; --accent-dim: rgba(91, 140, 201, 0.12);
+    --gold: #e8c56a; --gold-dim: rgba(232, 197, 106, 0.12);
+    --prd: #22d3ee; --prd-dim: rgba(34, 211, 238, 0.12);
+    --must: #fb7185; --must-dim: rgba(251, 113, 133, 0.12);
+    --grid: rgba(91, 140, 201, 0.04);
+  }
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: var(--font-body); background-color: var(--bg); background-image: linear-gradient(var(--grid) 1px, transparent 1px), linear-gradient(90deg, var(--grid) 1px, transparent 1px); background-size: 24px 24px; color: var(--text); line-height: 1.6; }
+.container { max-width: 1180px; margin: 0 auto; padding: 40px 24px 80px; }
+.header { text-align: center; padding: 48px 24px 40px; margin-bottom: 48px; background: var(--surface); border: 1px solid var(--border-bright); border-radius: 12px; position: relative; overflow: hidden; }
+.header::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; background: var(--prd); }
+.header h1 { font-family: var(--font-mono); font-size: clamp(1.6rem, 4vw, 2.4rem); font-weight: 700; letter-spacing: -0.02em; margin-bottom: 8px; }
+.header h1 span { color: var(--gold); }
+.header .subtitle { font-size: 1rem; color: var(--text-dim); max-width: 620px; margin: 0 auto; }
+.section { margin-bottom: 48px; }
+.section-title { font-family: var(--font-mono); font-size: 1.1rem; font-weight: 700; color: var(--gold); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 20px; padding-bottom: 8px; border-bottom: 1px solid var(--border-bright); }
+.section-title .num { color: var(--text-dim); margin-right: 8px; }
+.card-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; }
+.card { background: var(--surface); border: 1px solid var(--border); border-left: 4px solid var(--prd); border-radius: 8px; padding: 20px; }
+.card h3 { font-family: var(--font-mono); font-size: 0.95rem; font-weight: 700; color: var(--prd); margin-bottom: 10px; }
+.card p { font-size: 0.9rem; margin-bottom: 10px; }
+.card ul { list-style: none; padding: 0; font-size: 0.85rem; }
+.card li { padding: 4px 0; padding-left: 16px; position: relative; color: var(--text-dim); }
+.card li::before { content: '→'; position: absolute; left: 0; color: var(--gold); font-weight: 700; }
+.callout { background: var(--surface); border: 1px solid var(--gold); border-radius: 8px; padding: 16px 20px; margin: 20px 0; }
+.callout strong { color: var(--gold); font-family: var(--font-mono); }
+.callout.warn { border-color: var(--must); }
+.callout.warn strong { color: var(--must); }
+table { width: 100%; border-collapse: collapse; font-size: 0.85rem; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
+thead { background: var(--surface-recessed); }
+th, td { padding: 10px 14px; text-align: left; border-bottom: 1px solid var(--border); vertical-align: top; }
+th { font-family: var(--font-mono); font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-dim); }
+tr:last-child td { border-bottom: none; }
+code { font-family: var(--font-mono); font-size: 0.85em; background: var(--accent-dim); padding: 2px 6px; border-radius: 3px; }
+.pre { background: var(--surface-recessed); padding: 16px 20px; border-radius: 6px; font-family: var(--font-mono); font-size: 0.82rem; overflow-x: auto; white-space: pre; line-height: 1.6; }
+.cmd-tag { font-family: var(--font-mono); font-size: 0.78rem; color: var(--gold); background: var(--gold-dim); padding: 2px 6px; border-radius: 3px; }
+.must-tag { font-family: var(--font-mono); font-size: 0.7rem; font-weight: 700; color: var(--must); background: var(--must-dim); padding: 2px 6px; border-radius: 3px; }
+</style>
+</head>
+<body>
+<div class="container">
+
+<div class="header">
+  <h1><span>/</span>prd</h1>
+  <p class="subtitle">Synthesize a Product Requirements Document from the current conversation (typically a <span class="cmd-tag">/grill</span> session). User stories + decisions, no code snippets, no file paths — durable spec. Based on Matt Pocock's <code>to-prd</code>.</p>
+</div>
+
+<div class="section">
+  <div class="section-title"><span class="num">01</span>Place in the Pipeline</div>
+  <p style="font-size: 0.95rem; margin-bottom: 16px;">Phase 2 of <span class="cmd-tag">/build</span>. Inputs: <code>CONTEXT.md</code>, ADRs, prior conversation. Outputs: <code>prd.md</code> + <code>prd.html</code>.</p>
+  <div class="pre">/build "feature"
+  ├── Phase 1: /grill
+  ├── Phase 2: /prd          ← YOU ARE HERE
+  ├── Phase 3: /tasks
+  └── Phase 4: /implement (or /implement-coach)</div>
+</div>
+
+<div class="section">
+  <div class="section-title"><span class="num">02</span>Synthesize, Don't Re-Interview</div>
+  <div class="callout warn">
+    <strong>Critical:</strong> grilling was the design phase. <span class="cmd-tag">/prd</span> transcribes its outcome — it does <em>NOT</em> re-interview the user. If essential information is genuinely missing, ask one targeted question. But don't re-run the grill session.
+  </div>
+  <p style="font-size: 0.9rem; color: var(--text-dim); margin-top: 10px;">The one micro-checkpoint that <em>is</em> in this phase: after sketching the major modules, confirm them with the user and ask which to test. That informs the Testing Decisions section.</p>
+</div>
+
+<div class="section">
+  <div class="section-title"><span class="num">03</span>PRD Structure</div>
+  <table>
+    <thead><tr><th>Section</th><th>Content</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Problem Statement</strong></td><td>The problem from the user's perspective</td></tr>
+      <tr><td><strong>Solution</strong></td><td>The solution from the user's perspective</td></tr>
+      <tr><td><strong>User Stories</strong></td><td>Extensive numbered list of <code>As a &lt;actor&gt;, I want &lt;feature&gt;, so that &lt;benefit&gt;</code></td></tr>
+      <tr><td><strong>Implementation Decisions</strong></td><td>Modules built/modified, interfaces, schema, contracts, references to ADRs</td></tr>
+      <tr><td><strong>Testing Decisions</strong></td><td>What makes a good test here, which modules will be tested, prior art</td></tr>
+      <tr><td><strong>Out of Scope</strong></td><td>Things deliberately excluded</td></tr>
+      <tr><td><strong>Further Notes</strong></td><td>Anything else worth recording</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="section">
+  <div class="section-title"><span class="num">04</span>Forbidden in the PRD</div>
+  <div class="card-grid">
+    <div class="card" style="border-left-color: var(--must);">
+      <h3 style="color: var(--must);">No code snippets</h3>
+      <p>Code rots fast — what's correct today won't be by the time the task is picked up. Code lives in <code>tasks.md</code> (and even there, only sparingly).</p>
+    </div>
+    <div class="card" style="border-left-color: var(--must);">
+      <h3 style="color: var(--must);">No file paths</h3>
+      <p>Same reason. Files get renamed, moved, split. The PRD is durable; specific paths aren't. Reference modules by name (from <code>CONTEXT.md</code>), not by location.</p>
+    </div>
+  </div>
+  <div class="callout">
+    <strong>Narrow exception:</strong> if grilling produced a snippet that encodes a decision more precisely than prose can (state machine, reducer, schema, type shape), inline it within the relevant decision and note where it came from. Trim to the decision-rich parts — not a working demo, just the important bits.
+  </div>
+</div>
+
+<div class="section">
+  <div class="section-title"><span class="num">05</span>Deep Modules</div>
+  <p style="font-size: 0.95rem; margin-bottom: 14px;">When sketching modules, actively look for <strong>deep</strong> modules over <strong>shallow</strong> ones.</p>
+  <div class="card-grid">
+    <div class="card">
+      <h3 style="color: var(--prd);">Deep</h3>
+      <p>Small interface, deep implementation. Encapsulates significant functionality behind a simple, testable API that rarely changes.</p>
+    </div>
+    <div class="card" style="border-left-color: var(--text-dim);">
+      <h3 style="color: var(--text-dim);">Shallow</h3>
+      <p>Interface nearly as wide as the implementation. Provides little encapsulation. A pass-through. Refactor target.</p>
+    </div>
+  </div>
+  <p style="font-size: 0.9rem; color: var(--text-dim); margin-top: 14px;">Deep modules are testable in isolation, their tests survive refactors, and they hide complexity from callers. The PRD's module sketch should bias toward these.</p>
+</div>
+
+<div class="section">
+  <div class="section-title"><span class="num">06</span>Annotation Cycle</div>
+  <p style="font-size: 0.95rem; margin-bottom: 14px;">After writing <code>prd.md</code> and generating <code>prd.html</code>, STOP and wait. User adds <code>//</code> comments anywhere in the markdown:</p>
+  <div class="pre">## User Stories
+
+// also need: "as an admin, I want to revoke sessions"
+1. As a customer, I want to see my balance...
+
+// remove this — it's out of scope per the grill session
+7. As a customer, I want to export to CSV...
+
+// this should reference ADR-0003, not 0002</div>
+  <p style="font-size: 0.9rem; color: var(--text-dim); margin-top: 14px;">For each annotation, the agent addresses it, updates the document, removes the <code>//</code> comment, and regenerates <code>prd.html</code>. The cycle repeats 1–6 times typically, until the user explicitly approves.</p>
+</div>
+
+<div class="section">
+  <div class="section-title"><span class="num">07</span>Visual Sync Guarantee</div>
+  <div class="callout warn">
+    <strong>Non-negotiable:</strong> <code>prd.html</code> MUST mirror <code>prd.md</code> at all times. Whenever the markdown changes — from annotations, corrections, or any other update — regenerate the HTML <em>before</em> proceeding to ANY next step, including moving to <span class="cmd-tag">/tasks</span>.
+  </div>
+  <p style="font-size: 0.9rem; color: var(--text-dim); margin-top: 10px;">Visual generation uses <span class="cmd-tag">/generate-visual-plan</span>. The HTML's <code>&lt;title&gt;</code> and <code>&lt;h1&gt;</code> must say "PRD", not "Plan".</p>
+</div>
+
+<div class="section">
+  <div class="section-title"><span class="num">08</span>Completion</div>
+  <p style="font-size: 0.95rem;">On approval, regenerate <code>prd.html</code> one final time, tell the user the PRD is approved, and prompt: <em>"say 'break it into tasks' when ready"</em>. <span class="must-tag">STOP</span> until they trigger Phase 3.</p>
+</div>
+
+</div>
+</body>
+</html>
