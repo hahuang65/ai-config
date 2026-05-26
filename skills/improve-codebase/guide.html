@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>/improve-codebase Skill Guide</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --font-body: 'IBM Plex Sans', system-ui, sans-serif;
+  --font-mono: 'IBM Plex Mono', 'SF Mono', Consolas, monospace;
+  --bg: #f0f2f5; --surface: #ffffff; --surface-recessed: #e8ebf0;
+  --border: rgba(30, 58, 95, 0.10); --border-bright: rgba(30, 58, 95, 0.20);
+  --text: #1e293b; --text-dim: #64748b;
+  --accent: #1e3a5f; --accent-dim: rgba(30, 58, 95, 0.08);
+  --gold: #d4a73a; --gold-dim: rgba(212, 167, 58, 0.10);
+  --deep: #0f172a; --deep-bg: #1e293b;
+  --shallow: #94a3b8; --shallow-dim: rgba(148, 163, 184, 0.18);
+  --strong: #059669; --strong-dim: rgba(5, 150, 105, 0.10);
+  --worth: #d97706; --worth-dim: rgba(217, 119, 6, 0.10);
+  --spec: #64748b; --spec-dim: rgba(100, 116, 139, 0.12);
+  --leak: #be123c; --leak-dim: rgba(190, 18, 60, 0.10);
+  --grid: rgba(30, 58, 95, 0.04);
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #0c1220; --surface: #131b2e; --surface-recessed: #0a0f1a;
+    --border: rgba(212, 167, 58, 0.08); --border-bright: rgba(212, 167, 58, 0.18);
+    --text: #e2e8f0; --text-dim: #8b9dc3;
+    --accent: #5b8cc9; --accent-dim: rgba(91, 140, 201, 0.12);
+    --gold: #e8c56a; --gold-dim: rgba(232, 197, 106, 0.12);
+    --deep: #e2e8f0; --deep-bg: #475569;
+    --shallow: #64748b; --shallow-dim: rgba(100, 116, 139, 0.18);
+    --strong: #34d399; --strong-dim: rgba(52, 211, 153, 0.12);
+    --worth: #fbbf24; --worth-dim: rgba(251, 191, 36, 0.10);
+    --spec: #8b9dc3; --spec-dim: rgba(139, 157, 195, 0.12);
+    --leak: #fb7185; --leak-dim: rgba(251, 113, 133, 0.12);
+    --grid: rgba(91, 140, 201, 0.04);
+  }
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: var(--font-body); background-color: var(--bg); background-image: linear-gradient(var(--grid) 1px, transparent 1px), linear-gradient(90deg, var(--grid) 1px, transparent 1px); background-size: 24px 24px; color: var(--text); line-height: 1.6; }
+.container { max-width: 1180px; margin: 0 auto; padding: 40px 24px 80px; }
+.header { text-align: center; padding: 48px 24px 40px; margin-bottom: 48px; background: var(--surface); border: 1px solid var(--border-bright); border-radius: 12px; position: relative; overflow: hidden; }
+.header::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; background: linear-gradient(90deg, var(--shallow), var(--strong)); }
+.header h1 { font-family: var(--font-mono); font-size: clamp(1.6rem, 4vw, 2.4rem); font-weight: 700; letter-spacing: -0.02em; margin-bottom: 8px; }
+.header h1 span { color: var(--gold); }
+.header .subtitle { font-size: 1rem; color: var(--text-dim); max-width: 680px; margin: 0 auto; }
+.section { margin-bottom: 48px; }
+.section-title { font-family: var(--font-mono); font-size: 1.1rem; font-weight: 700; color: var(--gold); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 20px; padding-bottom: 8px; border-bottom: 1px solid var(--border-bright); }
+.section-title .num { color: var(--text-dim); margin-right: 8px; }
+.shape-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; align-items: stretch; }
+@media (max-width: 720px) { .shape-grid { grid-template-columns: 1fr; } }
+.shape { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 22px 24px; }
+.shape h3 { font-family: var(--font-mono); font-size: 1rem; margin-bottom: 14px; text-align: center; }
+.shape.shallow h3 { color: var(--shallow); }
+.shape.deep h3 { color: var(--strong); }
+.mass-diagram { display: flex; gap: 12px; align-items: flex-end; justify-content: center; height: 180px; margin: 16px 0; }
+.mass-bar { width: 60px; border-radius: 4px; display: flex; align-items: flex-start; justify-content: center; padding-top: 6px; font-family: var(--font-mono); font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.05em; }
+.mass-bar.interface { background: var(--shallow-dim); color: var(--shallow); border: 1px solid var(--shallow); }
+.mass-bar.impl { background: var(--accent-dim); color: var(--accent); border: 1px solid var(--accent); }
+.shape.shallow .mass-bar.interface { height: 80%; }
+.shape.shallow .mass-bar.impl { height: 90%; }
+.shape.deep .mass-bar.interface { height: 25%; background: var(--strong-dim); color: var(--strong); border-color: var(--strong); }
+.shape.deep .mass-bar.impl { height: 90%; background: var(--deep-bg); color: white; border-color: var(--deep-bg); }
+.shape .desc { font-size: 0.9rem; color: var(--text-dim); text-align: center; }
+.glossary-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px; }
+.term { background: var(--surface); border: 1px solid var(--border); border-left: 3px solid var(--accent); border-radius: 6px; padding: 14px 16px; }
+.term strong { font-family: var(--font-mono); color: var(--text); display: block; margin-bottom: 4px; font-size: 0.95rem; }
+.term p { font-size: 0.85rem; color: var(--text-dim); }
+.principle-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; }
+.principle { background: var(--surface); border: 1px solid var(--border); border-left: 4px solid var(--gold); border-radius: 8px; padding: 16px 18px; }
+.principle h4 { font-family: var(--font-mono); color: var(--gold); font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 8px; }
+.principle p { font-size: 0.88rem; }
+.callout { background: var(--surface); border: 1px solid var(--gold); border-radius: 8px; padding: 16px 20px; font-size: 0.92rem; margin: 12px 0; }
+.callout strong { color: var(--gold); font-family: var(--font-mono); }
+.callout.warn { border-color: var(--leak); }
+.callout.warn strong { color: var(--leak); }
+table { width: 100%; border-collapse: collapse; font-size: 0.85rem; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
+thead { background: var(--surface-recessed); }
+th, td { padding: 10px 14px; text-align: left; border-bottom: 1px solid var(--border); vertical-align: top; }
+th { font-family: var(--font-mono); font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-dim); }
+tr:last-child td { border-bottom: none; }
+code { font-family: var(--font-mono); font-size: 0.85em; background: var(--accent-dim); padding: 2px 6px; border-radius: 3px; }
+.badge { display: inline-block; font-family: var(--font-mono); font-size: 0.72rem; font-weight: 700; padding: 3px 10px; border-radius: 4px; margin-right: 6px; }
+.badge.strong { background: var(--strong-dim); color: var(--strong); }
+.badge.worth { background: var(--worth-dim); color: var(--worth); }
+.badge.spec { background: var(--spec-dim); color: var(--spec); }
+.cmd-tag { font-family: var(--font-mono); font-size: 0.78rem; color: var(--gold); background: var(--gold-dim); padding: 2px 6px; border-radius: 3px; }
+</style>
+</head>
+<body>
+<div class="container">
+
+<div class="header">
+  <h1><span>/</span>improve-codebase</h1>
+  <p class="subtitle">Surface architectural friction and propose <strong>deepening opportunities</strong> — refactors that turn shallow modules into deep ones. The aim is testability and AI-navigability.</p>
+</div>
+
+<div class="section">
+  <div class="section-title"><span class="num">01</span>Shallow vs Deep</div>
+  <div class="shape-grid">
+    <div class="shape shallow">
+      <h3>Shallow</h3>
+      <div class="mass-diagram">
+        <div class="mass-bar interface">Interface</div>
+        <div class="mass-bar impl">Impl</div>
+      </div>
+      <p class="desc">Interface nearly as complex as the implementation. Low leverage; the module isn't hiding anything from its callers. The deletion test: removing it doesn't concentrate complexity — it just moves it.</p>
+    </div>
+    <div class="shape deep">
+      <h3>Deep</h3>
+      <div class="mass-diagram">
+        <div class="mass-bar interface">Interface</div>
+        <div class="mass-bar impl">Impl</div>
+      </div>
+      <p class="desc">A lot of behaviour behind a small interface. High leverage; tests hit one surface to exercise many call paths. The deletion test: removing it scatters complexity across N callers.</p>
+    </div>
+  </div>
+  <div class="callout">
+    <strong>The interface is the test surface.</strong> Callers and tests cross the same seam. If you need to test <em>past</em> the interface to feel confident, the module is probably the wrong shape — and a candidate for this skill.
+  </div>
+</div>
+
+<div class="section">
+  <div class="section-title"><span class="num">02</span>Glossary (Use Exactly)</div>
+  <p style="font-size: 0.9rem; color: var(--text-dim); margin-bottom: 14px;">Don't substitute "component," "service," "API," or "boundary." Consistent language is the whole point. Full definitions in <code>LANGUAGE.md</code>.</p>
+  <div class="glossary-grid">
+    <div class="term"><strong>Module</strong><p>Anything with an interface and an implementation. Scale-agnostic: function, class, package, slice.</p></div>
+    <div class="term"><strong>Interface</strong><p>Everything a caller must know: types, invariants, error modes, ordering, config — not just the signature.</p></div>
+    <div class="term"><strong>Implementation</strong><p>The code inside the module. Distinct from <em>adapter</em>.</p></div>
+    <div class="term"><strong>Depth</strong><p>Leverage at the interface. Behaviour per unit of interface a caller has to learn.</p></div>
+    <div class="term"><strong>Seam</strong> <em>(Michael Feathers)</em><p>Where behaviour can be altered without editing in place. Where an interface lives. Use this, not "boundary."</p></div>
+    <div class="term"><strong>Adapter</strong><p>A concrete thing that satisfies an interface at a seam. Describes role, not substance.</p></div>
+    <div class="term"><strong>Leverage</strong><p>What callers get from depth: more capability per unit of interface learned.</p></div>
+    <div class="term"><strong>Locality</strong><p>What maintainers get from depth: change, bugs, knowledge concentrate in one place.</p></div>
+  </div>
+</div>
+
+<div class="section">
+  <div class="section-title"><span class="num">03</span>Key Principles</div>
+  <div class="principle-grid">
+    <div class="principle">
+      <h4>The deletion test</h4>
+      <p>Imagine deleting the module. If complexity vanishes, it was a pass-through. If complexity reappears across N callers, it was earning its keep.</p>
+    </div>
+    <div class="principle">
+      <h4>Depth is a property of the interface</h4>
+      <p>Not the implementation. A deep module can be internally composed of small, swappable parts — they just aren't part of its interface.</p>
+    </div>
+    <div class="principle">
+      <h4>One adapter = hypothetical seam</h4>
+      <p>Two adapters = real seam. Don't introduce a port unless something actually varies across it (typically production + test).</p>
+    </div>
+    <div class="principle">
+      <h4>Replace, don't layer</h4>
+      <p>Old unit tests on shallow modules become waste once tests at the deepened interface exist. Delete them.</p>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <div class="section-title"><span class="num">04</span>Workflow</div>
+  <table>
+    <thead><tr><th>Step</th><th>Action</th><th>Output</th></tr></thead>
+    <tbody>
+      <tr><td><strong>1. Explore</strong></td><td>Read <code>CONTEXT.md</code> and relevant ADRs first. Then walk the codebase via the <code>Explore</code> agent, noting friction (shallow modules, leaks across seams, tightly-coupled clusters).</td><td>Notes</td></tr>
+      <tr><td><strong>2. Report</strong></td><td>Self-contained HTML written to OS temp dir. Tailwind + Mermaid via CDN. Each candidate gets a before/after diagram and a recommendation badge.</td><td><code>architecture-review-&lt;ts&gt;.html</code></td></tr>
+      <tr><td><strong>3. Grilling loop</strong></td><td>User picks a candidate. Walk the design tree — constraints, dependencies, the shape of the deepened module. <code>CONTEXT.md</code> updates inline; ADR offered for load-bearing rejections.</td><td>Decisions + maybe an ADR</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="section">
+  <div class="section-title"><span class="num">05</span>Recommendation Strength</div>
+  <table>
+    <thead><tr><th>Badge</th><th>Meaning</th></tr></thead>
+    <tbody>
+      <tr><td><span class="badge strong">Strong</span></td><td>Clear deepening with high leverage gain. The deletion test passes (yes, concentrates) and the seam placement is obvious.</td></tr>
+      <tr><td><span class="badge worth">Worth exploring</span></td><td>Plausible deepening but trade-offs exist. The grilling loop will clarify whether to proceed.</td></tr>
+      <tr><td><span class="badge spec">Speculative</span></td><td>Worth surfacing for completeness, but the friction may not be real enough to act on. Often "interesting future state, not today."</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="section">
+  <div class="section-title"><span class="num">06</span>Place in the Pipeline</div>
+  <div class="callout">
+    <span class="cmd-tag">/improve-codebase</span> is <strong>not</strong> part of the <span class="cmd-tag">/build</span> loop. It's a standalone tool invoked when you feel architectural friction — a new module turned out shallower than expected, a sub-system grew hard to navigate, or a grilling session keeps tripping over the same friction. For surface-level cleanup right after implementation (dead code, unused imports, simple reuse), <span class="cmd-tag">refactor-cleaner</span> and <span class="cmd-tag">/simplify</span> already run inside <span class="cmd-tag">/implement</span>.
+  </div>
+</div>
+
+<div class="section">
+  <div class="section-title"><span class="num">07</span>Dependency Categories (for Deepening)</div>
+  <table>
+    <thead><tr><th>Category</th><th>What it is</th><th>How to test the deepened module</th></tr></thead>
+    <tbody>
+      <tr><td><strong>In-process</strong></td><td>Pure computation, in-memory state, no I/O</td><td>Always deepenable. Test through the new interface directly. No adapter needed.</td></tr>
+      <tr><td><strong>Local-substitutable</strong></td><td>Has local test stand-ins (PGLite, in-memory FS)</td><td>Deepenable. Stand-in runs in the test suite. Seam is internal.</td></tr>
+      <tr><td><strong>Ports &amp; Adapters</strong></td><td>Your own services across a network boundary</td><td>Port at the seam. HTTP adapter in prod, in-memory adapter in tests.</td></tr>
+      <tr><td><strong>Mock</strong></td><td>Third-party services you don't control (Stripe, Twilio)</td><td>External dependency injected as a port. Tests provide a mock adapter.</td></tr>
+    </tbody>
+  </table>
+</div>
+
+</div>
+</body>
+</html>

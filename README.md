@@ -215,6 +215,8 @@ Agents read a subset relevant to their role.
 
 ### Skills
 
+#### Core `/build` pipeline
+
 | Name | Model | Role |
 |------|-------|------|
 | `build` | — | Orchestrator: coordinates grill → prd → tasks → implement |
@@ -223,7 +225,20 @@ Agents read a subset relevant to their role.
 | `tasks` | opus | Break PRD into vertical-slice tracer bullets; optional GitHub publish |
 | `implement` | sonnet | Execute approved tasks via vertical-slice TDD + multi-agent verification |
 | `implement-coach` | sonnet | Coach user through implementation; AI writes ONE test at a time |
-| `refactor` | sonnet | User-directed restructuring with incremental test verification |
+
+#### Standalone tools that pair with `/build`
+
+| Name | Model | Role |
+|------|-------|------|
+| `refactor` | sonnet | User-directed restructuring (extract, inline, split, rename) with incremental test verification |
+| `improve-codebase` | opus | Survey an area for deepening opportunities (shallow → deep modules) and propose them as an HTML report |
+| `prototype` | sonnet | Throwaway prototype to flesh out a design — terminal TUI for logic, or N UI variants on one route |
+| `handoff` | sonnet | Compact the current conversation into a handoff doc in the OS temp dir for another session |
+
+#### Reference / utility
+
+| Name | Model | Role |
+|------|-------|------|
 | `visual-explainer` | — | Generate self-contained HTML pages for visual explanations |
 | `frontend-patterns` | — | Reference patterns for component composition, state, a11y |
 | `api-design` | — | Reference patterns for REST API design |
@@ -238,6 +253,9 @@ Agents read a subset relevant to their role.
 | `/tasks` | Break a PRD into vertical-slice tasks; `--publish` for GitHub Issues |
 | `/implement` | Execute approved tasks via vertical-slice TDD (AI implements) |
 | `/implement-coach` | Coach-guided implementation (AI writes one test, you write the code) |
+| `/improve-codebase` | Survey an area for deepening opportunities; HTML report + grilling loop |
+| `/prototype` | Throwaway prototype (logic TUI or UI variants) to flesh out a design |
+| `/handoff` | Write a handoff doc to OS temp dir for another agent session |
 | `/diff-review` | Visual HTML diff review — before/after architecture comparison |
 | `/fact-check` | Verify document accuracy against codebase, correct in place |
 | `/generate-architecture-diagram` | Visual HTML module topology and data flows |
@@ -342,7 +360,7 @@ Runs automatically on every commit via `.githooks/pre-commit` and during `instal
 This project stands on the shoulders of others:
 
 - **[Boris Tane's Claude Code workflow](https://boristane.com/blog/how-i-use-claude-code/)** — The annotation-cycle discipline, the "think before you code" guardrails, and the markdown-as-shared-state philosophy at the heart of `/build` originate from Boris's research → plan → implement method. This project's first pipeline was a direct port of his approach.
-- **[Matt Pocock's skills-TDD pipeline](https://www.aihero.dev/skills-tdd)** — The current pipeline (`grill-with-docs → to-prd → to-issues → tdd`) and Matt's stance on vertical-slice TDD ("write one test, one implementation, repeat — batched tests describe imagined behavior, not actual behavior") drive the design of `/grill`, `/prd`, `/tasks`, and the vertical-slice rewrites of `/implement` and `/implement-coach`. The format files (CONTEXT-FORMAT.md, ADR-FORMAT.md) are taken from his [skills repo](https://github.com/mattpocock/skills).
+- **[Matt Pocock's skills-TDD pipeline](https://www.aihero.dev/skills-tdd)** and the broader [skills repo](https://github.com/mattpocock/skills) — the core pipeline (`grill-with-docs → to-prd → to-issues → tdd`) and Matt's stance on vertical-slice TDD ("write one test, one implementation, repeat — batched tests describe imagined behavior, not actual behavior") drive the design of `/grill`, `/prd`, `/tasks`, and the vertical-slice rewrites of `/implement` and `/implement-coach`. The standalone tools `/handoff` ([article](https://www.aihero.dev/skills-handoff)), `/prototype`, and `/improve-codebase` (renamed from `improve-codebase-architecture`) are also ports of Matt's skills, with internal references rewritten to match this repo's naming. The format files (CONTEXT-FORMAT.md, ADR-FORMAT.md) and the LANGUAGE/DEEPENING/HTML-REPORT/INTERFACE-DESIGN supporting docs are taken directly from his repo.
 - **[nicobailon/visual-explainer](https://github.com/nicobailon/visual-explainer)** — The `visual-explainer` skill is taken wholesale from this repository, with only minor modifications. All the HTML visual generation (PRD, tasks, diff-review, architecture diagrams, slides, etc.) is powered by this work.
 - **[affaan-m/everything-claude-code](https://github.com/affaan-m/everything-claude-code)** — The rules and agent definitions in this repo are borrowed and adapted from this collection. The coding-style, testing, security, and performance rules, as well as the agent configurations (architect, tdd-guide, code-reviewer, etc.), draw heavily from this source.
 

@@ -182,9 +182,13 @@ Tell the user implementation is complete and summarize:
 - Code review findings addressed: <summary>
 - `prd.html`, `tasks.html`, `diff-review.html` (if generated): refreshed
 
-Then add this pointer:
+Then add these pointers:
 
-> If you notice structural issues now that the code is done — a file that got too big, a helper worth extracting, a rename worth doing — run `/refactor` separately. It's a user-directed restructuring skill and intentionally lives outside the implement phase.
+> If you notice structural issues now that the code is done:
+> - **Local restructuring** (file got too big, helper worth extracting, rename worth doing) → run `/refactor` — it's user-directed and works on what you point it at.
+> - **Architectural friction** (modules feel shallow, tests had to reach past interfaces, hard to navigate) → run `/improve-codebase` — it surfaces deepening opportunities across an area as an HTML report you can drive a separate session against.
+>
+> Both deliberately live outside the implement phase. Invoke them when you notice friction, not as a mandatory step.
 
 Do NOT commit to version control — leave that to the user.
 
