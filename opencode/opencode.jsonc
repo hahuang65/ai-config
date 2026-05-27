@@ -29,6 +29,10 @@
       "mkdir -p docs/claude/*": "allow",
       "mkdir -p */docs/claude": "allow",
       "mkdir -p */docs/claude/*": "allow",
+      "mkdir -p docs/adr": "allow",
+      "mkdir -p docs/adr/*": "allow",
+      "mkdir -p */docs/adr": "allow",
+      "mkdir -p */docs/adr/*": "allow",
       "echo *": "allow",
       "open */docs/claude/*.html": "allow",
       "open docs/claude/*.html": "allow",
@@ -134,6 +138,11 @@
     },
     "read": {
       "*": "allow",
+      "CONTEXT.md": "allow",
+      "docs/adr/**": "allow",
+      "*/docs/adr/**": "allow",
+      "docs/claude/**": "allow",
+      "*/docs/claude/**": "allow",
       "*/.claude/*": "allow",
       "*/.claude/skills/*": "allow",
       "*/.claude/skills/visual-explainer/*": "allow",
@@ -149,12 +158,22 @@
     "write": {
       "*": "ask",
       "docs/claude/*": "allow",
-      "*/docs/claude/*": "allow"
+      "*/docs/claude/*": "allow",
+      "CONTEXT.md": "allow",
+      "docs/adr/**": "allow",
+      "*/docs/adr/**": "allow",
+      "docs/claude/**": "allow",
+      "*/docs/claude/**": "allow"
     },
     "edit": {
       "*": "ask",
       "docs/claude/*": "allow",
-      "*/docs/claude/*": "allow"
+      "*/docs/claude/*": "allow",
+      "CONTEXT.md": "allow",
+      "docs/adr/**": "allow",
+      "*/docs/adr/**": "allow",
+      "docs/claude/**": "allow",
+      "*/docs/claude/**": "allow"
     },
     "task": {
       "*": "ask",
