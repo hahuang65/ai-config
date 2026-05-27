@@ -2,7 +2,6 @@
 name: implement-coach
 description: Coach the user through implementing approved vertical-slice tasks. The AI writes ONE test at a time and waits for the user to implement; never batches tests upfront. Use after /tasks has produced an approved tasks.md and the user wants to write the code themselves.
 argument-hint: [feature-dir-or-slug]
-model: sonnet
 ---
 
 # Implementation Coaching Phase

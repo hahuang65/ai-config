@@ -2,7 +2,6 @@
 name: refactor
 description: Perform user-directed code refactoring with incremental test verification. Use when restructuring code while preserving behavior — extract methods, split files, rename across codebase, simplify conditionals, decouple modules.
 argument-hint: [refactoring-goal]
-model: sonnet
 ---
 
 # Refactoring

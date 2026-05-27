@@ -2,7 +2,6 @@
 name: handoff
 description: Write a handoff document for another agent session, or resume work from the latest handoff when called without arguments. Use when an out-of-scope task surfaces, when a prototype needs its own focused context, when work needs to move between AI coding tools, or when starting a session that should continue prior handed-off work. Based on Matt Pocock's handoff skill.
 argument-hint: "What will the next session focus on? (leave empty to resume latest handoff)"
-model: sonnet
 ---
 
 # Handoff

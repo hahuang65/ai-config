@@ -2,7 +2,6 @@
 name: prd
 description: Synthesize a Product Requirements Document from the current conversation context (typically a /grill session) and the codebase. Produces docs/claude/<slug>/prd.md with user stories, decisions, and testing notes — no code snippets, no file paths. Supports annotation cycles. Based on Matt Pocock's to-prd skill.
 argument-hint: [feature-description]
-model: opus
 ---
 
 # PRD Phase

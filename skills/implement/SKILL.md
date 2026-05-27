@@ -2,7 +2,6 @@
 name: implement
 description: Execute approved vertical-slice tasks from docs/claude/<slug>/tasks.md, slice by slice, using red-green-refactor TDD. Use after /tasks has produced an approved tasks.md.
 argument-hint: [feature-dir-or-slug]
-model: sonnet
 ---
 
 # Implementation Phase

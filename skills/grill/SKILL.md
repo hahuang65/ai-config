@@ -2,7 +2,6 @@
 name: grill
 description: Interactive grilling session that interviews the user about a feature, sharpens domain terminology, and updates project documentation (CONTEXT.md, ADRs) inline as decisions crystallise. Use when the user wants to stress-test an idea against their project's language and documented decisions before drafting a PRD. Based on Matt Pocock's grill-with-docs skill.
 argument-hint: [feature-description]
-model: opus
 ---
 
 # Grill Phase

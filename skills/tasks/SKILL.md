@@ -2,7 +2,6 @@
 name: tasks
 description: Break a PRD into independently-grabbable tasks using tracer-bullet vertical slices. Produces docs/claude/<slug>/tasks.md and tasks.html locally; pass --publish to also publish to GitHub Issues. Use after a PRD has been approved. Based on Matt Pocock's to-issues skill.
 argument-hint: [prd-path-or-slug] [--publish]
-model: opus
 ---
 
 # Tasks Phase
