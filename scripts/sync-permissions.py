@@ -84,6 +84,16 @@ def read_claude_permissions():
     if task_perms:
         result["task"] = task_perms
 
+    # Claude's additionalDirectories ↔ OpenCode's external_directory.
+    # Both extend the read/write scope outside the project root. Claude takes
+    # a flat array of dirs (implicit allow); OpenCode takes a pattern → action
+    # map. Append /** so files inside the directory match, not just the dir.
+    extra_dirs = perms.get("additionalDirectories", [])
+    if extra_dirs:
+        result["external_directory"] = {
+            f"{d.rstrip('/')}/**": "allow" for d in extra_dirs
+        }
+
     return result
 
 
@@ -129,6 +139,12 @@ def merge_permissions(claude_perms, oc_only):
         task = {"*": "ask"}
         task.update(claude_perms["task"])
         permission["task"] = task
+
+    # --- external_directory section (Claude's additionalDirectories) ---
+    if isinstance(claude_perms.get("external_directory"), dict):
+        external_directory = {"*": "ask"}
+        external_directory.update(claude_perms["external_directory"])
+        permission["external_directory"] = external_directory
 
     # --- simple tool permissions from OpenCode-only ---
     oc_perms = oc_only.get("permissions", {})

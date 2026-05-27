@@ -128,9 +128,6 @@
       "*/docs/adr/**": "allow",
       "docs/claude/**": "allow",
       "*/docs/claude/**": "allow",
-      "*/.claude/*": "allow",
-      "*/.claude/skills/**": "allow",
-      "*/.config/opencode/*": "allow",
       "~/.claude/*": "allow",
       "~/.claude/skills/**": "allow",
       "**/.aws/credentials": "deny",
@@ -159,6 +156,11 @@
       "*": "ask",
       "explore": "allow",
       "plan": "allow"
+    },
+    "external_directory": {
+      "*": "ask",
+      "~/.claude/**": "allow",
+      "~/.config/opencode/**": "allow"
     },
     "glob": "allow",
     "glob *": "allow",

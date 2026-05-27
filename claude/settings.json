@@ -31,9 +31,6 @@
       "Bash(open docs/claude/*.html)",
       "Bash(xdg-open */docs/claude/*.html)",
       "Bash(xdg-open docs/claude/*.html)",
-      "Read(*/.claude/*)",
-      "Read(*/.claude/skills/**)",
-      "Read(*/.config/opencode/*)",
       "Bash(aws * describe-*)",
       "Bash(aws * get-*)",
       "Bash(aws * list-*)",
@@ -140,6 +137,10 @@
       "Bash(git commit *)",
       "Read(*.env)",
       "Read(*.env.*)"
+    ],
+    "additionalDirectories": [
+      "~/.claude",
+      "~/.config/opencode"
     ]
   },
   "statusLine": {
