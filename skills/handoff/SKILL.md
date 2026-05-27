@@ -28,8 +28,16 @@ Unlike `/compact` (which summarizes the entire conversation for a *new* session 
 
 When invoked with no arguments, treat this as "pick up where the previous session left off."
 
-1. **Locate the temp dir** the same way Write mode does: `$TMPDIR`, falling back to `/tmp` (Unix) or `%TEMP%` (Windows).
-2. **List handoff documents.** Find files matching `handoff-*.md` in that directory, sorted newest-first by modification time. Cap the list at the 5 most recent.
+1. **List handoff documents from `/tmp/` using this exact command — no shell variables, no other directories.** Write mode now hardcodes `/tmp/` as the handoff location, and `/tmp/` is in `additionalDirectories`, so this command is prompt-free:
+
+   ```bash
+   ls -t /tmp/handoff-*.md 2>/dev/null | head -5
+   ```
+
+   - `2>/dev/null` swallows "no matches" errors when no handoffs exist.
+   - Newest-first, capped at 5.
+   - Never use `$TMPDIR` or any other shell variable — Claude Code's "Contains expansion" safety gate forces a permission prompt for any command containing `$VAR` / `${VAR}` / `$(...)` / backticks, even when the surrounding pattern is on the allowlist.
+2. **Pull the purpose line** for each result via `grep -m1 '^# Handoff:' <absolute-path>` using the absolute path from the listing above — again, no shell variables.
 3. **If no handoff documents exist**, tell the user:
 
    > No handoff documents found in `<temp dir>`. Run `/handoff <brief>` to create one.
@@ -58,9 +66,11 @@ The rest of this document describes Write mode — how to compose the handoff do
 
 ### Where the Handoff Document Lives
 
-Write to the user's OS temporary directory — **not** the current workspace. Handoff docs are disposable; they should not pollute the repo.
+Write to **`/tmp/`** — a literal, OS-temp location that exists on Linux and macOS. Do not use `$TMPDIR` or any shell variable; commands that contain shell expansion (`$VAR`, `${VAR}`, `$(...)`, backticks) trip Claude Code's "Contains expansion" gate and force a permission prompt even when the surrounding pattern is on the allowlist. Hardcoding `/tmp/` keeps Resume mode's listing command simple and prompt-free.
 
-Resolve the temp dir from `$TMPDIR`, falling back to `/tmp` on Unix or `%TEMP%` on Windows. Pick a name like `handoff-<short-slug>-<YYYYMMDD-HHMM>.md`.
+Pick a name like `handoff-<short-slug>-<YYYYMMDD-HHMM>.md` — so the full path is e.g. `/tmp/handoff-curl-jq-perms-20260527-1335.md`.
+
+Handoff docs are disposable; they should not pollute the repo. The OS cleans `/tmp/` on its own schedule.
 
 Tell the user the absolute path so they can pass it to the next session.
 

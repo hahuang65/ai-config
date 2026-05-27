@@ -34,6 +34,12 @@
       "Bash(aws * describe-*)",
       "Bash(aws * get-*)",
       "Bash(aws * list-*)",
+      "Bash(curl -L *)",
+      "Bash(curl -O *)",
+      "Bash(curl -o *)",
+      "Bash(curl -s *)",
+      "Bash(curl -sL *)",
+      "Bash(curl -sS *)",
       "Bash(docker compose *)",
       "Bash(git checkout *)",
       "Bash(git fetch *)",
@@ -44,6 +50,9 @@
       "Bash(go get *)",
       "Bash(go mod tidy)",
       "Bash(go vet *)",
+      "Bash(grep *handoff-*)",
+      "Bash(jq *)",
+      "Bash(ls *handoff-*)",
       "Bash(rspec *)",
       "Bash(mise x -- rspec *)",
       "Bash(bundle exec rspec *)",
@@ -103,6 +112,7 @@
       "Read(~/.claude/skills/**)",
       "Glob(~/.claude/skills/**)",
       "Grep(~/.claude/skills/**)",
+      "Read(**/handoff-*.md)",
       "Search",
       "Task(Explore)",
       "Task(Plan)",
@@ -113,6 +123,14 @@
       "Bash(aws * delete-*)",
       "Bash(aws * terminate-*)",
       "Bash(aws ec2 terminate-instances *)",
+      "Bash(curl * | bash*)",
+      "Bash(curl * | node*)",
+      "Bash(curl * | perl*)",
+      "Bash(curl * | python*)",
+      "Bash(curl * | ruby*)",
+      "Bash(curl * | sh*)",
+      "Bash(curl * | sudo*)",
+      "Bash(curl * | zsh*)",
       "Bash(git clean -f *)",
       "Bash(git push --force *)",
       "Bash(git push -f *)",
@@ -140,7 +158,23 @@
     ],
     "additionalDirectories": [
       "~/.claude",
-      "~/.config/opencode"
+      "~/.config/opencode",
+      "/tmp"
+    ]
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "~/.dotfiles/ai/scripts/hooks/deny-curl-to-interpreter.sh",
+            "if": "Bash(curl *)",
+            "timeout": 5
+          }
+        ]
+      }
     ]
   },
   "statusLine": {

@@ -5,6 +5,18 @@ Claude Code is the source of truth. This script reads ~/.claude/settings.json,
 converts the permission format, merges with OpenCode-only entries from
 config/opencode-only.json, and writes ~/.config/opencode/opencode.jsonc.
 
+Scope: this script mirrors the `permissions.{allow,deny,ask}` lists and
+`permissions.additionalDirectories` only. It deliberately does NOT touch:
+
+  - `hooks` — OpenCode's config schema (https://opencode.ai/config.json)
+    has no equivalent to Claude Code's PreToolUse / PostToolUse / Stop hook
+    machinery. Only static allow/ask/deny rules exist on the OpenCode side.
+    Anything implemented as a hook on Claude (e.g. the curl-to-interpreter
+    guard at scripts/hooks/deny-curl-to-interpreter.sh) has NO OpenCode
+    equivalent — keep a static deny-list fallback in settings.json for any
+    safety-critical case so OpenCode still gets baseline coverage.
+  - `statusLine`, `env`, `enabledPlugins`, etc. — Claude-specific surface.
+
 Usage:
     python scripts/sync-permissions.py
     python scripts/sync-permissions.py --dry-run
