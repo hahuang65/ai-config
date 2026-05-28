@@ -606,6 +606,64 @@ test_omp_yaml_valid() {
 }
 
 # ---------------------------------------------------------------------------
+# 11b2. omp hook shape
+#
+# Each omp/hooks/{pre,post}/*.ts file must (a) export a default function so
+# omp's loader can invoke it, (b) import HookAPI so it's typed against the
+# actual event surface, and (c) follow the directory naming convention
+# (pre/guard-*.ts for blockers, post/redact-*.ts for output mutators).
+# ---------------------------------------------------------------------------
+
+test_omp_hook_shape() {
+  echo "omp hook shape"
+  local hook_file
+  for hook_file in "$REPO_DIR"/omp/hooks/pre/*.ts "$REPO_DIR"/omp/hooks/post/*.ts; do
+    [ -f "$hook_file" ] || continue
+    local dir
+    dir="$(basename "$(dirname "$hook_file")")"
+    local fname
+    fname="$(basename "$hook_file")"
+    local label="omp/hooks/$dir/$fname"
+    local content
+    content="$(<"$hook_file")"
+
+    # Require a real default-export function signature at start of line —
+    # not just the magic words appearing somewhere (e.g., in a comment).
+    # Pattern: optional leading whitespace, `export default function`, then
+    # an optional name, then `(` — the actual function signature shape.
+    if grep -qE '^[[:space:]]*export[[:space:]]+default[[:space:]]+function([[:space:]]+[a-zA-Z_][a-zA-Z0-9_]*)?[[:space:]]*\(' "$hook_file"; then
+      pass "$label has 'export default function (…)' signature"
+    else
+      fail "$label" "missing 'export default function (…)' signature at start of a line (omp loader requires a default-exported factory)"
+    fi
+
+    if grep -qE 'from[[:space:]]+["'\'']@oh-my-pi/pi-coding-agent/extensibility/hooks["'\'']' "$hook_file"; then
+      pass "$label imports HookAPI from omp hooks package"
+    else
+      fail "$label" "missing import from '@oh-my-pi/pi-coding-agent/extensibility/hooks'"
+    fi
+
+    local stem="${fname%.ts}"
+    case "$dir" in
+      pre)
+        if [[ "$stem" == guard-* ]]; then
+          pass "$label follows pre/guard-*.ts naming"
+        else
+          fail "$label" "pre/ hooks must be named guard-*.ts (got '$stem')"
+        fi
+        ;;
+      post)
+        if [[ "$stem" == redact-* ]]; then
+          pass "$label follows post/redact-*.ts naming"
+        else
+          fail "$label" "post/ hooks must be named redact-*.ts (got '$stem')"
+        fi
+        ;;
+    esac
+  done
+}
+
+# ---------------------------------------------------------------------------
 # 11c. Forbidden Claude-centric phrasing
 #
 # The phrase "already loaded in context" (and close variants) asserts that
@@ -708,6 +766,8 @@ main() {
   test_omp_install_targets_exist
   echo ""
   test_omp_yaml_valid
+  echo ""
+  test_omp_hook_shape
   echo ""
   test_no_forbidden_claude_centric_phrasing
   echo ""

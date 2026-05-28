@@ -188,7 +188,7 @@ The [`example/`](example/) directory contains sample artifacts from a previous v
     ├── Refactor together when GREEN
     └── visual-explainer → prd.html, tasks.html, diff-review.html
 
-Rules (15 files — 3 rulebook + 12 TTSR). In Claude Code rules auto-load as global instructions every turn; in omp the 3 rulebook rules load on demand via `rule://<name>`, the 12 TTSR rules fire mid-stream on regex match.
+Rules (11 files — 3 rulebook + 8 TTSR) + Hooks (5 omp-only TS modules — 4 pre + 1 post). In Claude Code rules auto-load as global instructions every turn; in omp the 3 rulebook rules load on demand via `rule://<name>`, the 8 TTSR rules fire mid-stream on regex match, and the 5 hooks (per ADR-0006) fire on the actual `tool_call` / `tool_result` events with structured input parsing for patterns where regex had known bypasses.
 Agents read a subset relevant to their role.
 ```
 
@@ -199,10 +199,11 @@ Agents read a subset relevant to their role.
 ├── skills/           13 workflow skills (build, grill, prd, tasks, implement, implement-coach, ...)
 ├── commands/         18 slash commands (/diff-review, /fact-check, /implement-coach, ...)
 ├── agents/           7 sub-agents (architect, tdd-guide, code-reviewer, ...)
-├── rules/            15 rules (3 advisory rulebook + 12 TTSR enforcement)
+├── rules/            11 rules (3 advisory rulebook + 8 TTSR enforcement)
 ├── claude/           Claude Code config (settings.json, hooks.json, statusline.sh)
 ├── opencode/         OpenCode config (opencode.jsonc auto-generated, tui.json)
-├── omp/              omp config (config.yml, hand-authored)
+├── omp/              omp config (config.yml hand-authored) + extensions/ + hooks/{pre,post}/
+├── omp/hooks/        5 omp hooks — 4 pre-tool blockers + 1 post-tool secret redactor (per ADR-0006)
 ├── config/           Shared config (opencode-only.json)
 ├── scripts/          Tooling (sync-permissions.py, test-pipeline.sh, hooks/)
 ├── docs/claude/      Per-feature artifacts (PRDs, tasks, visuals)
@@ -297,16 +298,24 @@ Rules split into two buckets per [ADR-0003](docs/adr/0003-ttsr-for-omp-runtime-e
 |------|-------------|
 | `security` | Hardcoded secrets, string-concat SQL, user-input → file APIs, `eval`, shell injection |
 | `git-workflow` | Force-push, `--no-verify`, `--no-gpg-sign`, `--amend --no-edit`, broad `reset --hard`, `clean -f` |
-| `no-curl-pipe-interpreter` | `curl` / `wget` piped to bash / sh / zsh / python / node / ruby / perl / sudo |
-| `no-rm-rf-root` | `rm -rf` of `/`, `~`, `$HOME`, `*`, `.`, `..` |
 | `no-cloud-destroy` | AWS `delete-*` / `terminate-*`, Terraform `apply` / `destroy`, gcloud delete, `kubectl delete` |
 | `no-shell-write` | File writes via shell redirection (`echo >`, `cat >`, `tee`) — forces use of Write/Edit tools |
-| `no-credentials-read` | Reading `.aws/credentials`, `.kube/config`, `.ssh/id_*`, `.netrc`, `.pgpass`, npm authToken, `.secrets.*`, anything named `credentials` |
 | `no-deploy` | `make deploy/apply/push`, `npm/yarn/pnpm run deploy`, `cap … deploy`, `fly deploy`, `vercel --prod`, `wrangler deploy`, `serverless deploy`, `kubectl apply`, `helm install/upgrade` |
-| `no-sudo` | any `sudo <cmd>` |
 | `no-db-mutation` | `psql/mysql/mariadb/sqlite3/mongosh/redis-cli` with DROP/TRUNCATE/ALTER TABLE/DELETE FROM/UPDATE SET, or `.sql` file fed into the CLI |
 | `no-dd-disk` | `dd` with `of=/dev/...` or `if=/dev/...` (raw disk overwrite/read) |
 | `no-broad-chmod` | `chmod -R` against `/`, `~`, `$HOME`, `/etc`, `/usr`, `/var`, `/opt`, `/Users`, `/home`, or `*` |
+
+#### Hooks (omp-only — `omp/hooks/{pre,post}/*.ts`, per [ADR-0006](docs/adr/0006-hooks-replace-ttsr-for-input-bound-patterns.md))
+
+Four pre-tool blockers + one post-tool secret redactor. Migrated from TTSR rules whose regex had known bypasses; structured `event.input` parsing catches what the regex couldn't (process substitution, find-exec, interpreter wrappers).
+
+| Hook | Replaces / role | What it does |
+|------|-----------------|--------------|
+| `pre/guard-rm.ts` | replaces `no-rm-rf-root.md` | Blocks broad `rm -rf` + `find / -delete` + process-substitution wrappers |
+| `pre/guard-curl-pipe.ts` | replaces `no-curl-pipe-interpreter.md` | Blocks `curl/wget` piped to interpreters, including tee-interposer and `bash <(curl URL)` |
+| `pre/guard-credentials.ts` | replaces `no-credentials-read.md` | Blocks credential file reads via `read`, `edit`, or `bash` tools (8 credential path patterns, 19 credential-reader commands) |
+| `pre/guard-sudo.ts` | replaces `no-sudo.md` | Blocks any `sudo` invocation in bash commands |
+| `post/redact-keys.ts` | net-new (TTSR can't mutate output) | Redacts secrets in `read` / `bash` output (API keys, tokens, AWS access keys, GitHub tokens, JWTs, HTTP Bearer) with placeholder skip |
 
 ## Triple-Harness Support
 
@@ -323,7 +332,7 @@ This repository serves three AI coding harnesses with different runtime models. 
 | Permissions format | `"Bash(echo *)"` in JSON arrays | `"echo *": "allow"` in JSONC objects | `tools.approvalMode: write` tiers + `tools.approval.<tool>` overrides in YAML |
 | Per-pattern bash allowlist | Yes (~80 entries) | Yes (auto-synced from Claude) | **No** — TTSR rules fill this gap |
 | Permission source of truth | `claude/settings.json` | Auto-generated via `sync-permissions.py` | Hand-authored `omp/config.yml` |
-| Hooks | `claude/hooks.json` + `deny-curl-to-interpreter.sh` shell hook | Not supported | TS/JS modules (not used — TTSR covers same surface) |
+| Hooks | `claude/hooks.json` + `deny-curl-to-interpreter.sh` shell hook | Not supported | 5 TS modules in `omp/hooks/` (4 pre-tool blockers + 1 post-tool secret redactor, see [ADR-0006](docs/adr/0006-hooks-replace-ttsr-for-input-bound-patterns.md)) |
 
 `claude/settings.json` is always edited directly; the sync script automatically generates `opencode/opencode.jsonc`. `omp/config.yml` is **decoupled** — Claude's per-pattern allowlist has no omp equivalent, so the sync script is deliberately a Claude ↔ OpenCode bridge only (per [ADR-0004](docs/adr/0004-omp-permissions-and-hooks-decoupled.md)). TTSR rules in `rules/` are omp's per-pattern enforcement layer.
 

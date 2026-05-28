@@ -18,6 +18,8 @@ cleanup() {
   rm -f "$REPO_DIR"/commands/test-self-test-*.md 2>/dev/null || true
   rm -f "$REPO_DIR"/rules/test-self-test-*.md 2>/dev/null || true
   rm -f "$REPO_DIR"/omp/test-self-test-*.{yml,yaml} 2>/dev/null || true
+  rm -f "$REPO_DIR"/omp/hooks/pre/guard-test-self-test-*.ts 2>/dev/null || true
+  rm -f "$REPO_DIR"/omp/hooks/post/redact-test-self-test-*.ts 2>/dev/null || true
   # Restore omp/config.yml if a self-test was interrupted mid-rename
   if [[ -f "$REPO_DIR/omp/test-self-test-config-bak.yml" && ! -f "$REPO_DIR/omp/config.yml" ]]; then
     mv "$REPO_DIR/omp/test-self-test-config-bak.yml" "$REPO_DIR/omp/config.yml"
@@ -299,7 +301,32 @@ EOF
 }
 
 # ---------------------------------------------------------------------------
-# Self-test 13: Skill directory with no SKILL.md
+# Self-test 13: omp hook missing default export
+# ---------------------------------------------------------------------------
+
+test_omp_hook_missing_default_export_fails() {
+  local f="$REPO_DIR/omp/hooks/pre/guard-test-self-test-bad.ts"
+  cat >"$f" <<'EOF'
+import type { HookAPI } from "@oh-my-pi/pi-coding-agent/extensibility/hooks";
+
+// Intentionally missing `export default function` — should fail the
+// test_omp_hook_shape pipeline check.
+function notAHook(pi: HookAPI): void {
+  pi.on("tool_call", () => undefined);
+}
+EOF
+
+  if run_pipeline; then
+    self_fail "hook missing default export: test-pipeline.sh should exit non-zero"
+  else
+    self_pass "hook missing default export: test-pipeline.sh correctly exits non-zero"
+  fi
+
+  rm -f "$f"
+}
+
+# ---------------------------------------------------------------------------
+# Self-test 14: Skill directory with no SKILL.md
 # ---------------------------------------------------------------------------
 
 test_skill_dir_missing_skill_md_fails() {
@@ -335,6 +362,7 @@ main() {
   test_rulebook_rule_missing_description_fails
   test_omp_install_target_missing_fails
   test_omp_yaml_invalid_fails
+  test_omp_hook_missing_default_export_fails
   test_skill_dir_missing_skill_md_fails
 
   echo ""

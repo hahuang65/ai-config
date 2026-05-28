@@ -132,10 +132,11 @@ ln -sf "$REPO_DIR/omp/config.yml" "$HOME/.omp/agent/config.yml"
 dim "  ~/.omp/agent/config.yml → $REPO_DIR/omp/config.yml"
 
 echo ""
-green "Installing skills, commands, agents, rules, extensions for omp..."
+green "Installing skills, commands, agents, rules, extensions, hooks for omp..."
 mkdir -p "$HOME/.omp/agent/skills" "$HOME/.omp/agent/commands" \
          "$HOME/.omp/agent/agents" "$HOME/.omp/agent/rules" \
-         "$HOME/.omp/agent/extensions"
+         "$HOME/.omp/agent/extensions" \
+         "$HOME/.omp/agent/hooks/pre" "$HOME/.omp/agent/hooks/post"
 for skill in "$REPO_DIR"/skills/*/; do
   name="$(basename "$skill")"
   ln -sfn "$skill" "$HOME/.omp/agent/skills/$name"
@@ -166,6 +167,20 @@ for ext in "$REPO_DIR"/omp/extensions/*.ts "$REPO_DIR"/omp/extensions/*.js; do
   name="$(basename "$ext")"
   ln -sf "$ext" "$HOME/.omp/agent/extensions/$name"
   dim "  ~/.omp/agent/extensions/$name → $ext"
+done
+# Hooks: pre/post TS/JS modules — README.md and other non-code files are
+# skipped so omp's native hook loader doesn't try to import them.
+for hook in "$REPO_DIR"/omp/hooks/pre/*.ts "$REPO_DIR"/omp/hooks/pre/*.js; do
+  [ -f "$hook" ] || continue
+  name="$(basename "$hook")"
+  ln -sf "$hook" "$HOME/.omp/agent/hooks/pre/$name"
+  dim "  ~/.omp/agent/hooks/pre/$name → $hook"
+done
+for hook in "$REPO_DIR"/omp/hooks/post/*.ts "$REPO_DIR"/omp/hooks/post/*.js; do
+  [ -f "$hook" ] || continue
+  name="$(basename "$hook")"
+  ln -sf "$hook" "$HOME/.omp/agent/hooks/post/$name"
+  dim "  ~/.omp/agent/hooks/post/$name → $hook"
 done
 
 # ── Summary ──────────────────────────────────────────────────────────────────

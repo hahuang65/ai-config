@@ -32,14 +32,22 @@ remains binary (`allow` / `deny` / `prompt`) at the config level.
 
 The directory is committed so future extensions have a home and
 `install.sh` has a fixed target to symlink. Reasonable candidates that
-WOULD work:
+WOULD work in this directory:
 
-- A denylist hook that blocks bash patterns TTSR rules don't catch
-  (largely redundant with TTSR; not currently needed)
 - A `context` hook that filters specific message types out of LLM context
   (the pattern of the prior `suppress-todo-reminders.ts`)
-- A `tool_result` hook that redacts secrets from tool output before they
-  reach the conversation transcript
+- An extension that registers a slash command (only extensions can do
+  this — hooks can't register commands)
+- An extension that registers a custom tool or message renderer
 
-See [ADR-0004](../../docs/adr/0004-omp-permissions-and-hooks-decoupled.md)
-for the safety-stack context this directory sits in.
+## Related work in the adjacent `omp/hooks/` directory
+
+The bash-input blocking and tool-result secret-redaction use cases are
+already implemented under [`omp/hooks/`](../hooks/), not here. Hooks are
+the narrower event-handler API surface (`HookAPI`); extensions are the
+superset that also covers command/tool/renderer registration. See
+[ADR-0006](../../docs/adr/0006-hooks-replace-ttsr-for-input-bound-patterns.md)
+for the hook-vs-TTSR decision tree, and
+[ADR-0004](../../docs/adr/0004-omp-permissions-and-hooks-decoupled.md)
+for the broader safety-stack context (its 3rd pillar superseded by
+ADR-0006).
