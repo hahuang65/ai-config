@@ -8,7 +8,7 @@ argument-hint: [feature-description]
 
 Interview the user relentlessly about every aspect of the feature idea until you reach a shared understanding. Walk down each branch of the design tree, resolving dependencies between decisions one-by-one. For each question, propose your recommended answer.
 
-**Ask the questions one at a time, waiting for feedback on each question before continuing.**
+**Ask the user questions one at a time, waiting for feedback before posing the next.** This applies to the user-facing questions you draft for the grilling interview — it does NOT apply to your own codebase exploration. Reads, searches, and other tool calls used to ground a question (or to avoid a question the code already answers) proceed without per-call confirmation.
 
 If a question can be answered by exploring the codebase, explore the codebase instead — do not bother the user with something the code already answers.
 

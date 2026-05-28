@@ -21,6 +21,27 @@ Execute approved vertical-slice tasks **one slice at a time** using strict red-g
 
 Comply with the project rules in `rules/` (coding-style, testing, security, performance, git-workflow). In Claude Code these are auto-loaded as global instructions; in omp, load via `rule://<name>` when entering the rule's domain. The skill itself — not just the agents it invokes — must follow them.
 
+## Standing Authorization
+
+When the user invokes `/implement` (or selects "AI implement" from `/build` Phase 4), that selection is **standing authorization** for the routine TDD loop and everything it requires. You do not re-request approval between cycles, between slices, or before each file write.
+
+What proceeds without further confirmation:
+
+- Writing the failing test, then the minimal implementation, then refactoring.
+- Reading any file in the working tree.
+- Running tests, type checks, linters, formatters, build commands.
+- Bringing up the project's documented dev services (per `AGENTS.md`, `README`, or `docker-compose.yml`) when they are required for tests to load — e.g. `docker-compose up -d` for Postgres / OpenSearch / Redis stacks the project's setup docs name. Tests cannot enter the RED state without a working test harness; bootstrapping the harness is part of the TDD loop, not a separate decision.
+- Activating the project's documented toolchain (`mise install`, `asdf install`, `bundle install`, `npm ci`, `uv sync`, etc.) when commands fail because the toolchain isn't ready.
+
+What still requires explicit user input:
+
+- A slice that cannot be implemented as written (surface the issue, then stop).
+- Destructive operations on artifacts the session did not author (force-push, schema drops, dataset deletions, `rm -rf` of user code).
+- A genuine architectural fork with no signal in `prd.md` / `tasks.md` / the codebase to disambiguate.
+
+Asking "OK to proceed?" before each batch of writes is **not** how this skill works. If you find yourself doing it, you have drifted — return to the loop.
+
+
 ## TDD Philosophy (non-negotiable)
 
 This skill uses **vertical-slice TDD** — one test, one implementation, repeat. Do NOT write all tests upfront, then all implementation.

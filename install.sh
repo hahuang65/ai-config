@@ -130,6 +130,8 @@ green "Installing omp config..."
 mkdir -p "$HOME/.omp/agent"
 ln -sf "$REPO_DIR/omp/config.yml" "$HOME/.omp/agent/config.yml"
 dim "  ~/.omp/agent/config.yml → $REPO_DIR/omp/config.yml"
+ln -sf "$REPO_DIR/omp/RULES.md" "$HOME/.omp/agent/RULES.md"
+dim "  ~/.omp/agent/RULES.md → $REPO_DIR/omp/RULES.md"
 
 echo ""
 green "Installing skills, commands, agents, rules, extensions, hooks for omp..."

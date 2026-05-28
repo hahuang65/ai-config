@@ -21,6 +21,16 @@ This skill orchestrates four sub-skills. You can also use each phase independent
 
 Visual-explainer companions are also available standalone (see "Visual-Explainer Integration Notes" below).
 
+## Approval Gate Scope (read first)
+
+This skill names exactly **four** approval gates: Grill→PRD, PRD→Tasks, Tasks→Implement, Implement→done. Those are the only points where you wait for user confirmation.
+
+Within an active phase, all routine operations proceed without per-call approval — reads, writes, edits, bash, tests, environment bootstrap. Announcing intended tool batches and asking "OK to proceed?" before each one is not how this skill works.
+
+If you find yourself appealing to a meta-policy that requires per-call confirmation, you are wrong. See `~/.omp/agent/RULES.md` ("Approval gates are user-facing only").
+
+---
+
 ## File Naming Convention
 
 Project-wide artifacts live at the repo root and accrete across many `/build` runs:
@@ -74,7 +84,7 @@ After the grill phase completes, STOP and tell the user:
 >
 > Say **"draft the PRD"** when you're ready and I'll synthesize what we discussed.
 
-**Wait for the user to confirm before proceeding.**
+**Wait for the user to confirm before proceeding to Phase 2.** This is a phase-boundary gate — within Phase 1, all reads, writes, and bash calls proceed without per-call approval. The pause is only here, between phases.
 
 ---
 
@@ -105,7 +115,7 @@ Then tell the user:
 >
 > Say **"break it into tasks"** when you're ready and I'll run `/tasks`.
 
-**Wait for the user to trigger Phase 3.**
+**Wait for the user to trigger Phase 3.** This is a phase-boundary gate. Within Phase 2, the PRD draft, write, annotation-cycle edits, and visual-companion generation all proceed without per-call approval.
 
 ---
 
@@ -133,7 +143,7 @@ Then tell the user:
 >
 > Say **"implement"** when you're ready.
 
-**Wait for the user to trigger Phase 4.**
+**Wait for the user to trigger Phase 4.** This is a phase-boundary gate. Within Phase 3, the task-breakdown drafting, file writes, visual generation, and (optional) GitHub publishing proceed without per-call approval.
 
 ---
 

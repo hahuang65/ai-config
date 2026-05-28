@@ -9,4 +9,4 @@ Follow the build skill workflow through all four phases:
 3. **Tasks** — break the PRD into vertical-slice tracer bullets (HITL/AFK), quiz the user until approved
 4. **Implement** — execute all slices via vertical-slice TDD (one test, one impl, repeat), then generate a fact-checked diff review
 
-Stop at each phase gate and wait for the user to confirm before proceeding.
+Stop **only at the four phase boundaries** — Grill→PRD, PRD→Tasks, Tasks→Implement, Implement→done — and wait for user confirmation at each transition. Inside a phase, proceed without per-tool-call approval. Tool calls are never gates.
