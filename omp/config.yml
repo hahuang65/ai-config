@@ -1,0 +1,13 @@
+tools: 
+  approvalMode: write
+  approval: 
+    bash: prompt
+    browser: prompt
+    ssh: prompt
+    eval: prompt
+modelRoles:
+  default: anthropic/claude-opus-4-7
+theme: 
+  dark: catppuccin-mocha
+startup: 
+  quiet: true

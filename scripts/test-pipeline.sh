@@ -508,6 +508,135 @@ test_guide_skill_sync() {
 }
 
 # ---------------------------------------------------------------------------
+# 11a. Rule frontmatter: TTSR (has condition:) and rulebook (no condition:)
+#
+# omp's rule loader splits rules into two buckets based on frontmatter shape:
+# rules with `condition:` go to TTSR; rules without go to the rulebook (when
+# `description:` is present). A rule missing the right fields is silently
+# dropped or wrongly bucketed. Validate the shape so drift is caught at the
+# pipeline layer, not at omp runtime.
+# ---------------------------------------------------------------------------
+
+_count_condition_entries() {
+  # Counts `- ` list entries directly under `condition:` in frontmatter.
+  awk '
+    /^condition:/ { in_cond = 1; next }
+    in_cond && /^[a-zA-Z_]/ { in_cond = 0 }
+    in_cond && /^[[:space:]]+-[[:space:]]/ { count++ }
+    END { print count + 0 }
+  '
+}
+
+test_ttsr_rule_frontmatter() {
+  echo "Rule frontmatter: TTSR"
+  local rule_file
+  for rule_file in "$REPO_DIR"/rules/*.md; do
+    local label="rules/$(basename "$rule_file")"
+    local fm
+    fm="$(extract_frontmatter "$rule_file")"
+    # Skip rules without `condition:` — those are rulebook (or always-apply)
+    grep -q "^condition:" <<<"$fm" || continue
+    if grep -q "^description:" <<<"$fm"; then
+      pass "$label (TTSR) has description:"
+    else
+      fail "$label" "TTSR rule (has condition:) is missing 'description:'"
+    fi
+    local cond_count
+    cond_count="$(_count_condition_entries <<<"$fm")"
+    if [[ "$cond_count" -gt 0 ]]; then
+      pass "$label has $cond_count condition entries"
+    else
+      fail "$label" "TTSR rule has empty or malformed 'condition:' list"
+    fi
+  done
+}
+
+test_rulebook_rule_frontmatter() {
+  echo "Rule frontmatter: rulebook"
+  local rule_file
+  for rule_file in "$REPO_DIR"/rules/*.md; do
+    local label="rules/$(basename "$rule_file")"
+    local fm
+    fm="$(extract_frontmatter "$rule_file")"
+    # Skip rules with `condition:` — those were validated by the TTSR check
+    grep -q "^condition:" <<<"$fm" && continue
+    if grep -q "^description:" <<<"$fm"; then
+      pass "$label (rulebook) has description:"
+    else
+      fail "$label" "rulebook rule (no condition:) is missing 'description:' — would be silently dropped by omp"
+    fi
+    if grep -q "^alwaysApply:" <<<"$fm"; then
+      fail "$label" "rulebook rule has 'alwaysApply:' — this repo deliberately uses rulebook-only (ADR-0002)"
+    else
+      pass "$label has no alwaysApply:"
+    fi
+  done
+}
+
+# ---------------------------------------------------------------------------
+# 11b. omp install targets exist + omp YAML validity
+# ---------------------------------------------------------------------------
+
+test_omp_install_targets_exist() {
+  echo "omp install targets exist"
+  if [[ -f "$REPO_DIR/omp/config.yml" ]]; then
+    pass "omp/config.yml exists"
+  else
+    fail "omp" "omp/config.yml not found — install.sh's omp block references it"
+  fi
+  if grep -q "^# ── omp (third harness" "$REPO_DIR/install.sh"; then
+    pass "install.sh has the omp install block"
+  else
+    fail "install.sh" "omp install block marker (# ── omp (third harness…) not found"
+  fi
+}
+
+test_omp_yaml_valid() {
+  echo "omp YAML validity"
+  local yml
+  for yml in "$REPO_DIR"/omp/*.yml "$REPO_DIR"/omp/*.yaml; do
+    [[ -f "$yml" ]] || continue
+    local label="omp/$(basename "$yml")"
+    if python3 -c "import yaml, sys; yaml.safe_load(open(sys.argv[1]))" "$yml" 2>/dev/null; then
+      pass "$label parses as valid YAML"
+    else
+      fail "$label" "YAML parse error"
+    fi
+  done
+}
+
+# ---------------------------------------------------------------------------
+# 11c. Forbidden Claude-centric phrasing
+#
+# The phrase "already loaded in context" (and close variants) asserts that
+# rule content is auto-injected into the conversation — true in Claude Code,
+# false in omp under rulebook semantics. Allowing it in any AI-readable file
+# (skills/commands/agents/rules) misinforms the model on omp. Enforce its
+# absence as a permanent guard.
+# ---------------------------------------------------------------------------
+
+test_no_forbidden_claude_centric_phrasing() {
+  echo "Forbidden Claude-centric phrasing"
+  local pattern='already loaded in context|already in your context|loaded automatically into context'
+  local matches
+  matches="$(grep -ilE "$pattern" \
+    "$REPO_DIR"/skills/*/SKILL.md \
+    "$REPO_DIR"/commands/*.md \
+    "$REPO_DIR"/agents/*.md \
+    "$REPO_DIR"/rules/*.md \
+    2>/dev/null || true)"
+  if [[ -z "$matches" ]]; then
+    pass "no AI-readable file contains the forbidden phrase"
+  else
+    while read -r match; do
+      [[ -z "$match" ]] && continue
+      local rel="${match#"$REPO_DIR"/}"
+      fail "$rel" "contains Claude-centric phrase (matches /$pattern/i) — use cross-harness-accurate phrasing instead"
+    done <<<"$matches"
+  fi
+}
+
+# ---------------------------------------------------------------------------
 # 12. Stale stubs
 # ---------------------------------------------------------------------------
 
@@ -571,6 +700,16 @@ main() {
   test_symlink_targets
   echo ""
   test_guide_skill_sync
+  echo ""
+  test_ttsr_rule_frontmatter
+  echo ""
+  test_rulebook_rule_frontmatter
+  echo ""
+  test_omp_install_targets_exist
+  echo ""
+  test_omp_yaml_valid
+  echo ""
+  test_no_forbidden_claude_centric_phrasing
   echo ""
   test_stale_stubs
 

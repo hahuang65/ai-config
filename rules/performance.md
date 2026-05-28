@@ -1,3 +1,7 @@
+---
+description: Performance guidance and Claude model routing. Read when choosing a model for a subagent task, before optimizing code, or when adding caching, pagination, or external-call timeouts.
+---
+
 # Performance & Model Selection
 
 ## Model routing guidance

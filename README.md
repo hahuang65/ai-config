@@ -1,6 +1,6 @@
 # ai-config
 
-Centralized configuration for AI coding assistants — Claude Code and OpenCode.
+Centralized configuration for AI coding harnesses — Claude Code, OpenCode, and omp. Skills, commands, agents, and rules authored once, installed into all three by `install.sh`.
 
 ## Quick Start
 
@@ -19,7 +19,7 @@ The centerpiece of this repository is `/build` — a disciplined 4-phase workflo
 3. **Break it into tasks** as vertical-slice tracer bullets (each slice cuts through every layer end-to-end)
 4. **Implement** via vertical-slice TDD — AI does it, or AI coaches you through it one test at a time
 
-The pipeline merges Boris Tane's research-first discipline with Matt Pocock's skills-TDD workflow (`grill-with-docs → to-prd → to-issues → tdd`), adapted to keep all artifacts local, annotatable, and paired with visual HTML companions.
+The pipeline merges Boris Tane's research-first discipline with Matt Pocock's skills-TDD workflow (`grill-with-docs → to-prd → to-issues → tdd`), adapted to keep all artifacts local, annotatable, and paired with visual HTML companions. All four phases work identically in Claude Code, OpenCode, and omp — the skills are harness-agnostic and discovered from the same source files in each harness's root.
 
 ### Pipeline Overview
 
@@ -188,7 +188,7 @@ The [`example/`](example/) directory contains sample artifacts from a previous v
     ├── Refactor together when GREEN
     └── visual-explainer → prd.html, tasks.html, diff-review.html
 
-Rules (6 files) loaded as always-on context in every session.
+Rules (11 files — 3 rulebook + 8 TTSR). In Claude Code rules auto-load as global instructions every turn; in omp the 3 rulebook rules load on demand via `rule://<name>`, the 8 TTSR rules fire mid-stream on regex match.
 Agents read a subset relevant to their role.
 ```
 
@@ -196,12 +196,13 @@ Agents read a subset relevant to their role.
 
 ```text
 .
-├── skills/           9 workflow skills (build, grill, prd, tasks, implement, implement-coach, ...)
-├── commands/         14 slash commands (/diff-review, /fact-check, /implement-coach, ...)
+├── skills/           13 workflow skills (build, grill, prd, tasks, implement, implement-coach, ...)
+├── commands/         18 slash commands (/diff-review, /fact-check, /implement-coach, ...)
 ├── agents/           7 sub-agents (architect, tdd-guide, code-reviewer, ...)
-├── rules/            6 always-on rules (coding-style, testing, security, ...)
+├── rules/            11 rules (3 advisory rulebook + 8 TTSR enforcement)
 ├── claude/           Claude Code config (settings.json, hooks.json, statusline.sh)
 ├── opencode/         OpenCode config (opencode.jsonc auto-generated, tui.json)
+├── omp/              omp config (config.yml, hand-authored)
 ├── config/           Shared config (opencode-only.json)
 ├── scripts/          Tooling (sync-permissions.py, test-pipeline.sh, hooks/)
 ├── docs/claude/      Per-feature artifacts (PRDs, tasks, visuals)
@@ -280,47 +281,64 @@ Agents read a subset relevant to their role.
 
 ### Rules
 
+Rules split into two buckets per [ADR-0003](docs/adr/0003-ttsr-for-omp-runtime-enforcement.md). In Claude Code all rules auto-load as global instructions; in omp the **rulebook** rules are listed for on-demand loading via `rule://<name>` and the **TTSR** rules fire mid-stream on regex match.
+
+#### Rulebook (advisory — loaded on demand in omp)
+
 | Rule | Scope |
 |------|-------|
-| `coding-style` | Immutability, file size limits, naming conventions |
-| `testing` | TDD, behavior testing, no shared state |
-| `security` | No secrets in code, input validation, parameterized queries |
-| `performance` | Model routing, profiling before optimizing, caching |
-| `git-workflow` | Commit format, branching, docs/claude/ artifact handling |
-| `development-workflow` | Plan first, TDD, review, then commit |
+| `coding-style` | Immutability, file size limits, naming conventions, nesting, magic numbers |
+| `testing` | TDD, behavior testing, no shared state, shared setup |
+| `performance` | Model routing, profiling before optimizing, caching, timeouts |
 
-## Dual-Tool Support
+#### TTSR (enforcement — regex-triggered mid-stream in omp)
 
-This repository serves two AI coding tools with different config formats:
+| Rule | Triggers on |
+|------|-------------|
+| `security` | Hardcoded secrets, string-concat SQL, user-input → file APIs, `eval`, shell injection |
+| `git-workflow` | Force-push, `--no-verify`, `--no-gpg-sign`, `--amend --no-edit`, broad `reset --hard`, `clean -f` |
+| `no-curl-pipe-interpreter` | `curl` / `wget` piped to bash / sh / zsh / python / node / ruby / perl / sudo |
+| `no-rm-rf-root` | `rm -rf` of `/`, `~`, `$HOME`, `*`, `.`, `..` |
+| `no-cloud-destroy` | AWS `delete-*` / `terminate-*`, Terraform `apply` / `destroy`, gcloud delete, `kubectl delete` |
+| `no-shell-write` | File writes via shell redirection (`echo >`, `cat >`, `tee`) — forces use of Write/Edit tools |
+| `no-credentials-read` | Reading `.aws/credentials`, `.kube/config`, `.ssh/id_*`, `.netrc`, `.pgpass`, npm authToken, `.secrets.*`, anything named `credentials` |
+| `no-deploy` | `make deploy/apply/push`, `npm/yarn/pnpm run deploy`, `cap … deploy`, `fly deploy`, `vercel --prod`, `wrangler deploy`, `serverless deploy`, `kubectl apply`, `helm install/upgrade` |
 
-| Aspect | Claude Code | OpenCode |
-|--------|-------------|----------|
-| Config location | `~/.claude/` | `~/.config/opencode/` |
-| Skills | `~/.claude/skills/` (symlinked) | Same location |
-| Commands | `~/.claude/commands/` (symlinked) | `~/.config/opencode/commands/` (symlinked) |
-| Agents | `~/.claude/agents/` (symlinked) | Not supported |
-| Rules | `~/.claude/rules/` (symlinked) | Not supported |
-| Permissions format | `"Bash(echo *)"` in JSON arrays | `"echo *": "allow"` in JSONC objects |
-| Permission source of truth | `claude/settings.json` | Auto-generated via `sync-permissions.py` |
-| Hooks | `claude/hooks.json` (cost tracker) | Not supported |
+## Triple-Harness Support
 
-`claude/settings.json` is always edited directly. The sync script automatically generates OpenCode's config — never edit `opencode/opencode.jsonc` by hand.
+This repository serves three AI coding harnesses with different runtime models. `install.sh` mirrors every shared primitive into every harness root (per [ADR-0001](docs/adr/0001-full-mirror-per-harness.md)) — same source files, three sets of symlinks:
+
+| Aspect | Claude Code | OpenCode | omp |
+|--------|-------------|----------|-----|
+| Config root | `~/.claude/` | `~/.config/opencode/` | `~/.omp/agent/` |
+| Skills | `~/.claude/skills/` (symlinked) | `~/.config/opencode/` discovers same | `~/.omp/agent/skills/` (symlinked) |
+| Commands | `~/.claude/commands/` (symlinked, dedup against skills) | `~/.config/opencode/commands/` (all symlinked) | `~/.omp/agent/commands/` (all symlinked) |
+| Agents | `~/.claude/agents/` (symlinked) | Not supported | `~/.omp/agent/agents/` (symlinked) |
+| Rules | `~/.claude/rules/` (symlinked) | Not supported | `~/.omp/agent/rules/` (symlinked) |
+| Rule semantics | Auto-loaded as global instructions every turn | n/a | **Rulebook** (loaded on demand via `rule://`) + **TTSR** (regex-triggered mid-stream) |
+| Permissions format | `"Bash(echo *)"` in JSON arrays | `"echo *": "allow"` in JSONC objects | `tools.approvalMode: write` tiers + `tools.approval.<tool>` overrides in YAML |
+| Per-pattern bash allowlist | Yes (~80 entries) | Yes (auto-synced from Claude) | **No** — TTSR rules fill this gap |
+| Permission source of truth | `claude/settings.json` | Auto-generated via `sync-permissions.py` | Hand-authored `omp/config.yml` |
+| Hooks | `claude/hooks.json` + `deny-curl-to-interpreter.sh` shell hook | Not supported | TS/JS modules (not used — TTSR covers same surface) |
+
+`claude/settings.json` is always edited directly; the sync script automatically generates `opencode/opencode.jsonc`. `omp/config.yml` is **decoupled** — Claude's per-pattern allowlist has no omp equivalent, so the sync script is deliberately a Claude ↔ OpenCode bridge only (per [ADR-0004](docs/adr/0004-omp-permissions-and-hooks-decoupled.md)). TTSR rules in `rules/` are omp's per-pattern enforcement layer.
 
 ## Installation Details
 
 `install.sh` symlinks everything into the right locations:
 
-1. **Skills** → `~/.claude/skills/` (shared by both tools)
+1. **Skills** → `~/.claude/skills/` (Claude + OpenCode share this dir)
 2. **Rules** → `~/.claude/rules/`
 3. **Commands for Claude Code** → `~/.claude/commands/`, skipping commands that have a matching skill directory (avoids duplicate slash commands)
 4. **Commands for OpenCode** → `~/.config/opencode/commands/` (all commands installed)
 5. **Agents** → `~/.claude/agents/`
 6. **Claude Code config** → `settings.json`, `statusline.sh`, `hooks.json` symlinked to `~/.claude/`
 7. **Git hooks** → `core.hooksPath` set to `.githooks`
-8. **Permission sync** → runs `sync-permissions.py`
+8. **Permission sync** → runs `sync-permissions.py` (Claude ↔ OpenCode only)
 9. **OpenCode config** → `opencode.jsonc`, `tui.json` symlinked to `~/.config/opencode/`
+10. **omp** → `omp/config.yml` symlinked to `~/.omp/agent/config.yml`, plus `skills/`, `commands/`, `agents/`, `rules/` symlinked into `~/.omp/agent/` (all commands installed — the Claude duality skip-rule does not apply)
 
-The command/skill duality means that commands sharing a name with a skill (`build`, `grill`, `prd`, `tasks`, `implement`, `implement-coach`, `refactor`) are skipped for Claude Code (where skills take precedence) but installed for OpenCode (which reads all commands).
+The command/skill duality means that commands sharing a name with a skill (`build`, `grill`, `prd`, `tasks`, `implement`, `implement-coach`, `refactor`) are skipped for Claude Code (where skills take precedence) but installed for OpenCode and omp (which read all commands).
 
 ## Infrastructure
 
@@ -363,6 +381,7 @@ This project stands on the shoulders of others:
 - **[Matt Pocock's skills-TDD pipeline](https://www.aihero.dev/skills-tdd)** and the broader [skills repo](https://github.com/mattpocock/skills) — the core pipeline (`grill-with-docs → to-prd → to-issues → tdd`) and Matt's stance on vertical-slice TDD ("write one test, one implementation, repeat — batched tests describe imagined behavior, not actual behavior") drive the design of `/grill`, `/prd`, `/tasks`, and the vertical-slice rewrites of `/implement` and `/implement-coach`. The standalone tools `/handoff` ([article](https://www.aihero.dev/skills-handoff)), `/prototype`, and `/improve-codebase` (renamed from `improve-codebase-architecture`) are also ports of Matt's skills, with internal references rewritten to match this repo's naming. The format files (CONTEXT-FORMAT.md, ADR-FORMAT.md) and the LANGUAGE/DEEPENING/HTML-REPORT/INTERFACE-DESIGN supporting docs are taken directly from his repo.
 - **[nicobailon/visual-explainer](https://github.com/nicobailon/visual-explainer)** — The `visual-explainer` skill is taken wholesale from this repository, with only minor modifications. All the HTML visual generation (PRD, tasks, diff-review, architecture diagrams, slides, etc.) is powered by this work.
 - **[affaan-m/everything-claude-code](https://github.com/affaan-m/everything-claude-code)** — The rules and agent definitions in this repo are borrowed and adapted from this collection. The coding-style, testing, security, and performance rules, as well as the agent configurations (architect, tdd-guide, code-reviewer, etc.), draw heavily from this source.
+- **[can1357/oh-my-pi (omp)](https://github.com/can1357/oh-my-pi)** ([docs](https://omp.sh/docs)) — The third harness this repo configures. The **TTSR** (time-traveling stream rules) concept — mid-stream regex-triggered rule injection with stream-abort + retry — is omp's contribution to the cross-harness rule shape and is what makes `rules/security.md` / `rules/git-workflow.md` / and the six narrow `no-*.md` rules into enforcement rather than advisory content. The YAML-based extension / hook / skill model omp uses informed how this repo's per-harness boundaries got drawn (see [ADR-0004](docs/adr/0004-omp-permissions-and-hooks-decoupled.md) and [ADR-0005](docs/adr/0005-flat-shared-config-no-per-harness-scoping.md)).
 
 ## License
 

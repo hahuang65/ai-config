@@ -1,3 +1,7 @@
+---
+description: Project-wide coding conventions. Read before writing or modifying source files — covers immutability, file size limits, function size limits, naming, nesting depth, magic-number avoidance, and where to put error handling.
+---
+
 # Coding Style
 
 - Prefer immutability. Return new objects instead of mutating. Use `const`, `final`, `frozen`, or the language equivalent by default.

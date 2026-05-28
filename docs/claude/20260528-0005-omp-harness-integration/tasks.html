@@ -1,0 +1,1067 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Tasks — omp Harness Integration</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=JetBrains+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --font-body: 'IBM Plex Sans', system-ui, sans-serif;
+    --font-display: 'Instrument Serif', serif;
+    --font-mono: 'JetBrains Mono', 'SF Mono', Consolas, monospace;
+
+    --bg: #faf7f1;
+    --surface: #ffffff;
+    --surface-elevated: #ffffff;
+    --border: rgba(30, 58, 95, 0.10);
+    --border-bright: rgba(30, 58, 95, 0.22);
+    --text: #1e3a5f;
+    --text-bright: #102541;
+    --text-dim: #6a7a8c;
+
+    --gold: #b8862a;
+    --gold-dim: rgba(212, 167, 58, 0.15);
+    --navy: #1e3a5f;
+    --navy-dim: rgba(30, 58, 95, 0.10);
+    --sage: #4d7a4a;
+    --sage-dim: rgba(77, 122, 74, 0.13);
+    --terracotta: #b8562c;
+    --terracotta-dim: rgba(184, 86, 44, 0.13);
+    --rose: #a8324e;
+    --rose-dim: rgba(168, 50, 78, 0.12);
+
+    --accent: var(--gold);
+    --accent-dim: var(--gold-dim);
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #0a1322;
+      --surface: #131e34;
+      --surface-elevated: #1a2740;
+      --border: rgba(240, 228, 204, 0.10);
+      --border-bright: rgba(240, 228, 204, 0.22);
+      --text: #f0e4cc;
+      --text-bright: #fefaef;
+      --text-dim: #9aa6b8;
+
+      --gold: #e0b54a;
+      --gold-dim: rgba(224, 181, 74, 0.15);
+      --navy: #4a78b5;
+      --navy-dim: rgba(74, 120, 181, 0.13);
+      --sage: #88c180;
+      --sage-dim: rgba(136, 193, 128, 0.14);
+      --terracotta: #e8794a;
+      --terracotta-dim: rgba(232, 121, 74, 0.14);
+      --rose: #e26b85;
+      --rose-dim: rgba(226, 107, 133, 0.13);
+    }
+  }
+
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+
+  body {
+    font-family: var(--font-body);
+    font-size: 17px;
+    line-height: 1.65;
+    color: var(--text);
+    background: var(--bg);
+    background-image:
+      radial-gradient(ellipse 80% 50% at 50% 0%, var(--gold-dim) 0%, transparent 60%),
+      radial-gradient(ellipse 60% 40% at 100% 100%, var(--navy-dim) 0%, transparent 50%);
+    background-attachment: fixed;
+    overflow-wrap: break-word;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  .grid > *, .flex > *,
+  [style*="display: grid"] > *,
+  [style*="display: flex"] > * { min-width: 0; }
+
+  .wrap {
+    max-width: 1240px;
+    margin: 0 auto;
+    padding: 56px 40px 96px;
+  }
+
+  /* ── Header ─────────────────────────────────────────────────────── */
+
+  .header {
+    margin-bottom: 56px;
+    padding-bottom: 36px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .header__category {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 2.2px;
+    text-transform: uppercase;
+    color: var(--gold);
+    margin-bottom: 20px;
+  }
+
+  .header__category::before {
+    content: '';
+    width: 32px;
+    height: 1px;
+    background: var(--gold);
+  }
+
+  .header h1 {
+    font-family: var(--font-display);
+    font-size: clamp(48px, 7vw, 84px);
+    font-weight: 400;
+    font-style: italic;
+    line-height: 1.0;
+    letter-spacing: -1.5px;
+    margin: 0 0 24px;
+    color: var(--text-bright);
+  }
+
+  .header__lede {
+    font-size: 21px;
+    line-height: 1.55;
+    color: var(--text-dim);
+    max-width: 740px;
+    margin: 0;
+  }
+
+  .header__lede em {
+    color: var(--gold);
+    font-style: italic;
+  }
+
+  /* ── KPI strip ──────────────────────────────────────────────────── */
+
+  .kpi-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+    gap: 16px;
+    margin-top: 36px;
+  }
+
+  .kpi-row > * { min-width: 0; }
+
+  .kpi-card {
+    background: var(--surface-elevated);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 22px 24px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  }
+
+  .kpi-card__value {
+    font-family: var(--font-display);
+    font-size: 56px;
+    font-style: italic;
+    line-height: 0.9;
+    color: var(--gold);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .kpi-card__value--small {
+    font-size: 36px;
+    line-height: 1;
+  }
+
+  .kpi-card__label {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    margin-top: 12px;
+  }
+
+  .kpi-card--afk { border-left: 3px solid var(--sage); }
+  .kpi-card--afk .kpi-card__value { color: var(--sage); }
+
+  .kpi-card--ind { border-left: 3px solid var(--terracotta); }
+  .kpi-card--ind .kpi-card__value { color: var(--terracotta); }
+
+  /* ── Section base ───────────────────────────────────────────────── */
+
+  .section { margin-bottom: 80px; }
+
+  .section__eyebrow {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .section__eyebrow::before {
+    content: '';
+    display: inline-block;
+    width: 14px;
+    height: 1px;
+    background: var(--gold);
+  }
+
+  .section h2 {
+    font-family: var(--font-display);
+    font-size: clamp(34px, 4vw, 48px);
+    font-weight: 400;
+    font-style: italic;
+    line-height: 1.1;
+    letter-spacing: -0.5px;
+    margin: 0 0 20px;
+    color: var(--text-bright);
+  }
+
+  .section__intro {
+    font-size: 18px;
+    line-height: 1.55;
+    color: var(--text-dim);
+    max-width: 780px;
+    margin: 0 0 36px;
+  }
+
+  /* ── Mermaid hero ───────────────────────────────────────────────── */
+
+  .mermaid-wrap {
+    position: relative;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 32px 24px;
+    overflow: auto;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 520px;
+    cursor: grab;
+    scrollbar-width: thin;
+    scrollbar-color: var(--border) transparent;
+  }
+
+  .mermaid-wrap.is-panning { cursor: grabbing; user-select: none; }
+  .mermaid-wrap::-webkit-scrollbar { width: 6px; height: 6px; }
+  .mermaid-wrap::-webkit-scrollbar-track { background: transparent; }
+  .mermaid-wrap::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+  .mermaid-wrap::-webkit-scrollbar-thumb:hover { background: var(--text-dim); }
+
+  .zoom-controls {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    display: flex;
+    gap: 2px;
+    z-index: 10;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 7px;
+    padding: 3px;
+  }
+
+  .zoom-controls button {
+    width: 30px;
+    height: 30px;
+    border: none;
+    background: transparent;
+    color: var(--text-dim);
+    font-family: var(--font-mono);
+    font-size: 15px;
+    cursor: pointer;
+    border-radius: 5px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.15s ease, color 0.15s ease;
+  }
+
+  .zoom-controls button:hover {
+    background: var(--border);
+    color: var(--text);
+  }
+
+  .mermaid-caption {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--text-dim);
+    text-align: center;
+    margin-top: 14px;
+    letter-spacing: 0.5px;
+  }
+
+  /* Mermaid color overrides */
+  .mermaid .nodeLabel { color: var(--text) !important; font-family: var(--font-body) !important; font-size: 16px !important; }
+  .mermaid .edgeLabel { color: var(--text-dim) !important; background-color: transparent !important; font-family: var(--font-mono) !important; font-size: 13px !important; }
+  .mermaid .edgeLabel rect { fill: var(--bg) !important; }
+  .mermaid .node rect, .mermaid .node circle, .mermaid .node polygon { stroke-width: 1.5px; }
+  .mermaid .edge-pattern-solid { stroke-width: 1.5px; }
+
+  /* Dependency legend ───────────────────────────────────────────── */
+
+  .legend-row {
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 24px;
+    margin-top: 18px;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--text-dim);
+  }
+
+  .legend-row span {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .legend-row span::before {
+    content: '';
+    display: inline-block;
+    width: 14px;
+    height: 14px;
+    border-radius: 4px;
+    border: 1.5px solid var(--swatch);
+    background: var(--swatch-bg);
+  }
+
+  .legend-row .leg-start { --swatch: var(--gold); --swatch-bg: var(--gold-dim); }
+  .legend-row .leg-main { --swatch: var(--navy); --swatch-bg: var(--navy-dim); }
+  .legend-row .leg-parallel { --swatch: var(--terracotta); --swatch-bg: var(--terracotta-dim); }
+  .legend-row .leg-final { --swatch: var(--sage); --swatch-bg: var(--sage-dim); }
+
+  /* ── Slice cards ────────────────────────────────────────────────── */
+
+  .slices-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(440px, 1fr));
+    gap: 28px;
+  }
+
+  .slices-grid > * { min-width: 0; }
+
+  .slice-card {
+    background: var(--surface-elevated);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 32px 34px;
+    box-shadow: 0 2px 14px rgba(0, 0, 0, 0.05);
+    display: flex;
+    flex-direction: column;
+    gap: 22px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .slice-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: var(--accent-bar, var(--gold));
+  }
+
+  .slice-card--start { --accent-bar: var(--gold); }
+  .slice-card--main { --accent-bar: var(--navy); }
+  .slice-card--parallel { --accent-bar: var(--terracotta); }
+  .slice-card--final { --accent-bar: var(--sage); }
+
+  .slice-card__head {
+    display: flex;
+    align-items: baseline;
+    gap: 22px;
+    padding-bottom: 18px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .slice-card__num {
+    font-family: var(--font-display);
+    font-style: italic;
+    font-size: 64px;
+    line-height: 0.8;
+    color: var(--accent-bar, var(--gold));
+    flex-shrink: 0;
+    letter-spacing: -2px;
+  }
+
+  .slice-card__title-block { flex: 1; min-width: 0; }
+
+  .slice-card__title {
+    font-family: var(--font-display);
+    font-style: italic;
+    font-size: 26px;
+    line-height: 1.15;
+    color: var(--text-bright);
+    margin: 0 0 6px;
+  }
+
+  .slice-card__type {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+
+  .badge {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.8px;
+    padding: 3px 11px;
+    border-radius: 12px;
+    white-space: nowrap;
+    text-transform: uppercase;
+  }
+
+  .badge--afk {
+    background: var(--sage-dim);
+    color: var(--sage);
+    border: 1px solid color-mix(in srgb, var(--sage) 30%, transparent);
+  }
+
+  .badge--parallel {
+    background: var(--terracotta-dim);
+    color: var(--terracotta);
+    border: 1px solid color-mix(in srgb, var(--terracotta) 30%, transparent);
+  }
+
+  .slice-card__blocked {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--text-dim);
+  }
+
+  .slice-card__blocked strong {
+    color: var(--text);
+    font-weight: 500;
+  }
+
+  .slice-card__meta {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin: -6px 0 0;
+  }
+
+  .slice-card__stories-row {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+
+  .slice-card__stories-label {
+    font-family: var(--font-mono);
+    font-size: 10.5px;
+    font-weight: 600;
+    letter-spacing: 1.4px;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    flex-shrink: 0;
+  }
+
+  .story-chip {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    font-weight: 500;
+    padding: 2px 8px;
+    border-radius: 4px;
+    background: var(--gold-dim);
+    color: var(--gold);
+  }
+
+  .slice-card__what {
+    font-size: 15.5px;
+    line-height: 1.6;
+    color: var(--text);
+    margin: 0;
+  }
+
+  .slice-card__what code {
+    font-family: var(--font-mono);
+    font-size: 12.5px;
+    background: var(--navy-dim);
+    color: var(--text-bright);
+    padding: 1px 5px;
+    border-radius: 3px;
+  }
+
+  .slice-card__criteria {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .slice-card__criteria-label {
+    font-family: var(--font-mono);
+    font-size: 10.5px;
+    font-weight: 600;
+    letter-spacing: 1.4px;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    margin: 4px 0 -4px;
+  }
+
+  .slice-card__criteria li {
+    padding-left: 30px;
+    position: relative;
+    font-size: 14.5px;
+    line-height: 1.55;
+    color: var(--text);
+  }
+
+  .slice-card__criteria li::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 4px;
+    width: 16px;
+    height: 16px;
+    border: 1.5px solid color-mix(in srgb, var(--accent-bar) 50%, var(--text-dim) 50%);
+    border-radius: 4px;
+    background: var(--surface);
+  }
+
+  .slice-card__criteria li code {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    background: var(--navy-dim);
+    color: var(--text);
+    padding: 1px 5px;
+    border-radius: 3px;
+  }
+
+  /* ── Footer ─────────────────────────────────────────────────────── */
+
+  .footer {
+    margin-top: 80px;
+    padding-top: 36px;
+    border-top: 1px solid var(--border);
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--text-dim);
+    text-align: center;
+    line-height: 1.8;
+  }
+
+  .footer span { display: inline-block; margin: 0 12px; }
+  .footer a { color: var(--gold); text-decoration: underline; }
+
+  /* ── Animations ─────────────────────────────────────────────────── */
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(12px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .section, .slice-card, .kpi-card, .mermaid-wrap {
+    animation: fadeUp 0.5s ease-out both;
+    animation-delay: calc(var(--i, 0) * 0.04s);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+
+  /* ── Responsive ─────────────────────────────────────────────────── */
+
+  @media (max-width: 768px) {
+    .wrap { padding: 32px 20px 64px; }
+    .header { margin-bottom: 40px; padding-bottom: 28px; }
+    .section { margin-bottom: 56px; }
+    .slices-grid { grid-template-columns: 1fr; }
+    .slice-card { padding: 24px 22px; }
+    .slice-card__head { gap: 14px; }
+    .slice-card__num { font-size: 48px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+
+  <!-- ═══════════════════════════════════════════════════════════════
+       HEADER
+       ═══════════════════════════════════════════════════════════════ -->
+  <header class="header" style="--i: 0">
+    <div class="header__category">Tasks — Vertical Slices</div>
+    <h1>omp Harness Integration <span style="color: var(--gold);">—</span> Tasks</h1>
+    <p class="header__lede">
+      Six <em>vertical slices</em> — each a thin tracer bullet that cuts through every layer end-to-end. All AFK.
+      Slices&nbsp;2 + 3 run in parallel after slice&nbsp;1; slice&nbsp;4 is independent and can be picked up any time;
+      slice&nbsp;5 waits on 1&nbsp;+&nbsp;2&nbsp;+&nbsp;3; slice&nbsp;6 closes the loop.
+    </p>
+
+    <div class="kpi-row">
+      <div class="kpi-card">
+        <div class="kpi-card__value">6</div>
+        <div class="kpi-card__label">Vertical Slices</div>
+      </div>
+      <div class="kpi-card kpi-card--afk">
+        <div class="kpi-card__value">6</div>
+        <div class="kpi-card__label">AFK · 0 HITL</div>
+      </div>
+      <div class="kpi-card kpi-card--ind">
+        <div class="kpi-card__value">2</div>
+        <div class="kpi-card__label">Start Immediately</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-card__value kpi-card__value--small">30</div>
+        <div class="kpi-card__label">User Stories Covered</div>
+      </div>
+    </div>
+  </header>
+
+  <!-- ═══════════════════════════════════════════════════════════════
+       HERO — dependency graph
+       ═══════════════════════════════════════════════════════════════ -->
+  <section class="section" style="--i: 1">
+    <div class="section__eyebrow">Dependency graph</div>
+    <h2>How the slices block each other</h2>
+    <p class="section__intro">
+      Slice 1 is the foundation — once it lands, slices 2 and 3 can run in parallel. Slice 4 has no dependencies and
+      can ship any time; doing it early puts the regression guard in place before later slices add files. Slice 5
+      validates the work from 1, 2, 3. Slice 6 — the README rewrite — is the closer.
+    </p>
+
+    <div class="mermaid-wrap">
+      <div class="zoom-controls">
+        <button onclick="zoomDiagram(this, 1.2)" title="Zoom in">+</button>
+        <button onclick="zoomDiagram(this, 0.8)" title="Zoom out">&minus;</button>
+        <button onclick="resetZoom(this)" title="Reset zoom">&#8634;</button>
+      </div>
+<pre class="mermaid">
+flowchart TD
+    START(("start")):::startnode
+
+    S1["Slice 1<br/>omp baseline install"]:::startslice
+    S2["Slice 2<br/>rulebook · 3 rules"]:::main
+    S3["Slice 3<br/>TTSR · 8 rules"]:::main
+    S4["Slice 4<br/>implement fix + guard<br/>parallel track"]:::parallel
+    S5["Slice 5<br/>omp surface validation"]:::main
+    S6["Slice 6<br/>README rewrite"]:::final
+
+    START ==> S1
+    START ==> S4
+
+    S1 --> S2
+    S1 --> S3
+
+    S2 --> S5
+    S3 --> S5
+
+    S5 --> S6
+    S4 --> S6
+
+    classDef startnode fill:#b8862a44,stroke:#b8862a,stroke-width:2px
+    classDef startslice fill:#b8862a22,stroke:#b8862a,stroke-width:2px
+    classDef main fill:#1e3a5f22,stroke:#1e3a5f,stroke-width:1.5px
+    classDef parallel fill:#b8562c22,stroke:#b8562c,stroke-width:2px
+    classDef final fill:#4d7a4a22,stroke:#4d7a4a,stroke-width:1.5px
+</pre>
+    </div>
+
+    <div class="legend-row">
+      <span class="leg-start">Foundation</span>
+      <span class="leg-main">Main path</span>
+      <span class="leg-parallel">Parallel track</span>
+      <span class="leg-final">Closer</span>
+    </div>
+    <p class="mermaid-caption">all edges are AFK · thick edges from "start" mark slices with no prerequisites</p>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════════════════════
+       THE SIX SLICES
+       ═══════════════════════════════════════════════════════════════ -->
+  <section class="section" style="--i: 2">
+    <div class="section__eyebrow">The six slices</div>
+    <h2>What each slice delivers</h2>
+    <p class="section__intro">
+      Each card is a complete vertical slice — demoable on its own. Acceptance criteria are written as a checklist a
+      reviewer can walk through. User-story numbers reference the PRD's canonical numbering.
+    </p>
+
+    <div class="slices-grid">
+
+      <!-- ───────── Slice 1 ───────── -->
+      <article class="slice-card slice-card--start">
+        <div class="slice-card__head">
+          <div class="slice-card__num">01</div>
+          <div class="slice-card__title-block">
+            <h3 class="slice-card__title">omp baseline install</h3>
+            <div class="slice-card__type">
+              <span class="badge badge--afk">AFK</span>
+              <span class="slice-card__blocked"><strong>Blocked by:</strong> none — start immediately</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="slice-card__meta">
+          <div class="slice-card__stories-row">
+            <span class="slice-card__stories-label">User stories</span>
+            <span class="story-chip">01</span><span class="story-chip">02</span><span class="story-chip">03</span>
+            <span class="story-chip">05</span><span class="story-chip">06</span><span class="story-chip">07</span>
+            <span class="story-chip">08</span><span class="story-chip">14</span><span class="story-chip">15</span>
+            <span class="story-chip">23</span><span class="story-chip">24</span><span class="story-chip">25</span>
+            <span class="story-chip">30</span>
+          </div>
+        </div>
+
+        <p class="slice-card__what">
+          The minimum that makes omp a first-class peer of Claude / OpenCode. After this slice, an omp user runs
+          <code>./install.sh</code> and immediately gets all this repo's skills, commands, agents discoverable in
+          omp at native priority, with sane approval defaults. Rules are symlinked but inert until slices 2 / 3.
+        </p>
+
+        <span class="slice-card__criteria-label">Acceptance criteria</span>
+        <ul class="slice-card__criteria">
+          <li>New file <code>omp/config.yml</code> with <code>tools.approvalMode: write</code> + per-tool prompts for bash, browser, ssh, eval. No MCP, theme, or provider entries.</li>
+          <li><code>install.sh</code> gains an omp section adjacent to the OpenCode block that symlinks <code>skills/</code>, <code>commands/</code>, <code>agents/</code>, <code>rules/</code>, and <code>omp/config.yml</code> into <code>~/.omp/agent/</code>.</li>
+          <li>Skill / command duality skip-rule is NOT applied for omp — all commands install.</li>
+          <li><code>rules/development-workflow.md</code> deleted from the repo.</li>
+          <li>Running <code>./install.sh</code> against a clean <code>$HOME</code> produces resolvable symlinks at all expected paths.</li>
+          <li>Running <code>omp</code> after install lists this repo's skills under the <code>native</code> source (priority 100), not the Claude fallback.</li>
+          <li>Claude Code regression check: rules still render in system prompt, permissions unchanged.</li>
+          <li>OpenCode regression check: <code>opencode/</code> unchanged byte-for-byte.</li>
+        </ul>
+      </article>
+
+      <!-- ───────── Slice 4 (placed early — parallel track) ───────── -->
+      <article class="slice-card slice-card--parallel">
+        <div class="slice-card__head">
+          <div class="slice-card__num">04</div>
+          <div class="slice-card__title-block">
+            <h3 class="slice-card__title">implement skill correction + regression guard</h3>
+            <div class="slice-card__type">
+              <span class="badge badge--afk">AFK</span>
+              <span class="badge badge--parallel">Parallel</span>
+              <span class="slice-card__blocked"><strong>Blocked by:</strong> none — independent</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="slice-card__meta">
+          <div class="slice-card__stories-row">
+            <span class="slice-card__stories-label">User stories</span>
+            <span class="story-chip">21</span><span class="story-chip">22</span>
+          </div>
+        </div>
+
+        <p class="slice-card__what">
+          Independent vertical slice: one permanent fix + one permanent guard. Picking this up first puts the
+          forbidden-phrasing check in place before later slices add new files that could regress the rule.
+        </p>
+
+        <span class="slice-card__criteria-label">Acceptance criteria</span>
+        <ul class="slice-card__criteria">
+          <li><code>skills/implement/SKILL.md</code> line 22 rewritten to be cross-harness-accurate (covers both Claude auto-load and omp <code>rule://</code> load-on-demand).</li>
+          <li><code>scripts/test-pipeline.sh</code> gains <code>test_no_already_loaded_in_context</code> — greps all AI-readable files for the forbidden phrase + close variants.</li>
+          <li><code>scripts/test-pipeline-self-test.sh</code> gains a negative case that plants the phrase, runs the pipeline, asserts non-zero exit.</li>
+          <li><code>scripts/test-pipeline.sh</code> passes cleanly after the wording fix.</li>
+          <li><code>scripts/test-pipeline-self-test.sh</code> exits zero — negative case fires correctly.</li>
+          <li>New check placed alongside existing <code>test_*</code> functions with consistent pass/fail accounting.</li>
+        </ul>
+      </article>
+
+      <!-- ───────── Slice 2 ───────── -->
+      <article class="slice-card slice-card--main">
+        <div class="slice-card__head">
+          <div class="slice-card__num">02</div>
+          <div class="slice-card__title-block">
+            <h3 class="slice-card__title">rulebook — 3 advisory rules with load-trigger descriptions</h3>
+            <div class="slice-card__type">
+              <span class="badge badge--afk">AFK</span>
+              <span class="slice-card__blocked"><strong>Blocked by:</strong> Slice 1</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="slice-card__meta">
+          <div class="slice-card__stories-row">
+            <span class="slice-card__stories-label">User stories</span>
+            <span class="story-chip">04</span><span class="story-chip">16</span><span class="story-chip">17</span>
+          </div>
+        </div>
+
+        <p class="slice-card__what">
+          The three rulebook rules become visible to the model in omp's system prompt rulebook listing.
+          Descriptions are load-triggers so the model loads them via <code>rule://&lt;name&gt;</code> on demand.
+          Claude continues to inject them as always-on global instructions (frontmatter is inert).
+        </p>
+
+        <span class="slice-card__criteria-label">Acceptance criteria</span>
+        <ul class="slice-card__criteria">
+          <li><code>coding-style.md</code>, <code>testing.md</code>, <code>performance.md</code> each gain a <code>description:</code> frontmatter field phrased as a load-trigger.</li>
+          <li>None of the three have <code>condition:</code>, <code>scope:</code>, or <code>alwaysApply:</code>.</li>
+          <li>omp's system prompt lists these three by name + description in the rulebook section.</li>
+          <li><code>rule://coding-style</code>, <code>rule://testing</code>, <code>rule://performance</code> resolve to the file bodies (frontmatter stripped).</li>
+          <li>Claude regression: all three rule bodies still appear in Claude's system prompt as global instructions.</li>
+          <li>Rule body content unchanged — only frontmatter additions.</li>
+        </ul>
+      </article>
+
+      <!-- ───────── Slice 3 ───────── -->
+      <article class="slice-card slice-card--main">
+        <div class="slice-card__head">
+          <div class="slice-card__num">03</div>
+          <div class="slice-card__title-block">
+            <h3 class="slice-card__title">TTSR — 8 enforcement rules with regex conditions</h3>
+            <div class="slice-card__type">
+              <span class="badge badge--afk">AFK</span>
+              <span class="slice-card__blocked"><strong>Blocked by:</strong> Slice 1</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="slice-card__meta">
+          <div class="slice-card__stories-row">
+            <span class="slice-card__stories-label">User stories</span>
+            <span class="story-chip">04</span><span class="story-chip">09</span><span class="story-chip">10</span>
+            <span class="story-chip">11</span><span class="story-chip">12</span><span class="story-chip">13</span>
+            <span class="story-chip">16</span><span class="story-chip">17</span><span class="story-chip">29</span>
+          </div>
+        </div>
+
+        <p class="slice-card__what">
+          omp's per-pattern enforcement comes online. Eight TTSR rules cover what Claude's denylist + curl hook
+          achieve on the Claude side. Each rule body follows omp's authoring guidance: what the model just tried,
+          why blocked, the right alternative, instruction to re-plan.
+        </p>
+
+        <span class="slice-card__criteria-label">Acceptance criteria</span>
+        <ul class="slice-card__criteria">
+          <li><code>security.md</code> gains TTSR frontmatter: condition array for secrets / SQL concat / user-input → file APIs / <code>eval</code> / shell injection + scope <code>tool:edit, tool:write, tool:bash</code>.</li>
+          <li><code>git-workflow.md</code> gains TTSR frontmatter: condition array for force-push, <code>--no-verify</code>, <code>--no-gpg-sign</code>, <code>git clean -f</code>, broad <code>git reset --hard</code>.</li>
+          <li>Six new TTSR files created: <code>no-curl-pipe-interpreter</code>, <code>no-rm-rf-root</code>, <code>no-cloud-destroy</code>, <code>no-shell-write</code>, <code>no-credentials-read</code>, <code>no-deploy</code>.</li>
+          <li>In omp, typing <code>git push --force origin main</code> in a bash call aborts with the <code>git-workflow</code> body injected.</li>
+          <li>Typing <code>curl … | bash</code> aborts with <code>no-curl-pipe-interpreter</code> body injected.</li>
+          <li>Reading a path matching <code>.aws/credentials</code> aborts with <code>no-credentials-read</code> body injected.</li>
+          <li>Spot-check at least 4 of 8 TTSR rules fire on a trigger pattern.</li>
+          <li>Claude regression: all 8 rule bodies still appear in Claude's system prompt; frontmatter inert.</li>
+        </ul>
+      </article>
+
+      <!-- ───────── Slice 5 ───────── -->
+      <article class="slice-card slice-card--main">
+        <div class="slice-card__head">
+          <div class="slice-card__num">05</div>
+          <div class="slice-card__title-block">
+            <h3 class="slice-card__title">omp surface validation in test pipeline</h3>
+            <div class="slice-card__type">
+              <span class="badge badge--afk">AFK</span>
+              <span class="slice-card__blocked"><strong>Blocked by:</strong> Slices 1, 2, 3</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="slice-card__meta">
+          <div class="slice-card__stories-row">
+            <span class="slice-card__stories-label">User stories</span>
+            <span class="story-chip">20</span><span class="story-chip">22</span>
+          </div>
+        </div>
+
+        <p class="slice-card__what">
+          Four new consistency checks future-proof the omp surface against drift. Follows the existing per-file
+          iteration + pass/fail counter pattern. Meta-test gets four matching negative cases that prove each check
+          catches its target failure.
+        </p>
+
+        <span class="slice-card__criteria-label">Acceptance criteria</span>
+        <ul class="slice-card__criteria">
+          <li><code>test_ttsr_rule_frontmatter</code>: for each rule with <code>condition:</code>, asserts <code>description:</code> present, <code>condition:</code> is non-empty list of strings, <code>scope:</code> if present is string or comma-list.</li>
+          <li><code>test_rulebook_rule_frontmatter</code>: for each rule without <code>condition:</code>, asserts <code>description:</code> present, <code>condition:</code>/<code>alwaysApply:</code> absent.</li>
+          <li><code>test_omp_install_targets_exist</code>: parses omp install block in <code>install.sh</code>; every symlink source must resolve to an existing file.</li>
+          <li><code>test_omp_config_yaml_valid</code>: <code>omp/config.yml</code> parses as valid YAML.</li>
+          <li>Four matching negative cases added to <code>test-pipeline-self-test.sh</code>, one per new check, with plant → run → assert-fail → restore pattern.</li>
+          <li><code>scripts/test-pipeline.sh</code> passes cleanly against the repo after slices 1–3 are in.</li>
+          <li><code>scripts/test-pipeline-self-test.sh</code> exits zero — all four new negative cases fire.</li>
+        </ul>
+      </article>
+
+      <!-- ───────── Slice 6 ───────── -->
+      <article class="slice-card slice-card--final">
+        <div class="slice-card__head">
+          <div class="slice-card__num">06</div>
+          <div class="slice-card__title-block">
+            <h3 class="slice-card__title">README rewrite — Dual-Tool → Triple-Harness narrative</h3>
+            <div class="slice-card__type">
+              <span class="badge badge--afk">AFK</span>
+              <span class="slice-card__blocked"><strong>Blocked by:</strong> Slices 1, 2, 3, 4, 5</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="slice-card__meta">
+          <div class="slice-card__stories-row">
+            <span class="slice-card__stories-label">User stories</span>
+            <span class="story-chip">26</span><span class="story-chip">27</span><span class="story-chip">28</span>
+          </div>
+        </div>
+
+        <p class="slice-card__what">
+          The README's narrative becomes three-harness throughout. Existing tone, voice, and structure preserved —
+          this is a narrative update, not a rewrite. Comes last so it accurately describes the final state.
+        </p>
+
+        <span class="slice-card__criteria-label">Acceptance criteria</span>
+        <ul class="slice-card__criteria">
+          <li>Top-of-README description: "Centralized configuration for AI coding assistants — Claude Code, OpenCode, and omp."</li>
+          <li>"Dual-Tool Support" → "Triple-Harness Support" with three-column table (config location, skills, commands, agents, rules, permissions format, source-of-truth, hooks).</li>
+          <li>Installation Details numbered list grows by exactly one step for omp install, adjacent to the OpenCode block.</li>
+          <li>Repository Structure tree gains <code>omp/</code> as a sibling of <code>claude/</code> and <code>opencode/</code>.</li>
+          <li>Rules table split into "Rulebook (advisory)" and "TTSR (enforced)" sub-tables; <code>development-workflow.md</code> removed.</li>
+          <li>Pipeline overview notes <code>/build</code> phases work in omp identically to Claude.</li>
+          <li>Acknowledgements adds an entry for omp by can1357 with both source repo and docs URLs; notes TTSR as omp's contribution.</li>
+          <li>No broken internal anchors. <code>git diff README.md</code> shows changes scoped to the sections listed.</li>
+        </ul>
+      </article>
+
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════════════════════
+       FOOTER
+       ═══════════════════════════════════════════════════════════════ -->
+  <footer class="footer">
+    <span>docs/claude/20260528-0005-omp-harness-integration/tasks.html</span>
+    <span>·</span>
+    <span>visual companion · do not edit by hand</span>
+    <span>·</span>
+    <span>see <a href="./prd.html">prd.html</a> and <a href="./tasks.md">tasks.md</a></span>
+    <span>·</span>
+    <span style="color: var(--sage);">all 6 slices ✅ complete · pipeline 388/0 · self-test 13/13</span>
+  </footer>
+
+</div>
+
+<script type="module">
+  import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';
+
+  const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+
+  mermaid.initialize({
+    startOnLoad: true,
+    theme: 'base',
+    look: 'classic',
+    themeVariables: {
+      primaryColor: isDark ? '#1a2740' : '#fef7e6',
+      primaryBorderColor: isDark ? '#e0b54a' : '#b8862a',
+      primaryTextColor: isDark ? '#f0e4cc' : '#1e3a5f',
+      secondaryColor: isDark ? '#132030' : '#f4ede0',
+      secondaryBorderColor: isDark ? '#88c180' : '#4d7a4a',
+      secondaryTextColor: isDark ? '#f0e4cc' : '#1e3a5f',
+      tertiaryColor: isDark ? '#231b2a' : '#fbe9dd',
+      tertiaryBorderColor: isDark ? '#e8794a' : '#b8562c',
+      tertiaryTextColor: isDark ? '#f0e4cc' : '#1e3a5f',
+      lineColor: isDark ? '#6a7a8c' : '#94a3b8',
+      fontSize: '18px',
+      fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
+      noteBkgColor: isDark ? '#1a2740' : '#fefce8',
+      noteTextColor: isDark ? '#f0e4cc' : '#1e3a5f',
+      noteBorderColor: isDark ? '#e0b54a' : '#b8862a',
+    }
+  });
+</script>
+
+<script>
+  function fitMermaidDiagrams() {
+    document.querySelectorAll('.mermaid-wrap').forEach(function(wrap) {
+      var mEl = wrap.querySelector('.mermaid');
+      var svg = mEl && mEl.querySelector('svg');
+      if (!svg) return;
+      mEl.style.zoom = 1;
+      var pad = 64;
+      var svgW = svg.getBoundingClientRect().width;
+      var svgH = svg.getBoundingClientRect().height;
+      var wrapW = wrap.clientWidth - pad;
+      var wrapH = wrap.clientHeight - pad;
+      var zoom = Math.min(wrapW / svgW, wrapH / svgH);
+      zoom = Math.max(zoom, 1.0);
+      mEl.style.zoom = zoom;
+      mEl.dataset.zoom = zoom;
+      mEl.dataset.fitZoom = zoom;
+    });
+  }
+
+  var observer = new MutationObserver(function(mutations, obs) {
+    var hasSvg = document.querySelector('.mermaid svg');
+    if (hasSvg) { obs.disconnect(); setTimeout(fitMermaidDiagrams, 150); }
+  });
+  observer.observe(document.body, { childList: true, subtree: true });
+
+  function zoomDiagram(btn, factor) {
+    var wrap = btn.closest('.mermaid-wrap');
+    var target = wrap.querySelector('.mermaid');
+    var current = parseFloat(target.dataset.zoom || 1);
+    var next = Math.min(Math.max(current * factor, 0.4), 6);
+    target.dataset.zoom = next;
+    target.style.zoom = next;
+  }
+
+  function resetZoom(btn) {
+    var wrap = btn.closest('.mermaid-wrap');
+    var target = wrap.querySelector('.mermaid');
+    var fitZoom = parseFloat(target.dataset.fitZoom || 1);
+    target.dataset.zoom = fitZoom;
+    target.style.zoom = fitZoom;
+  }
+
+  window.zoomDiagram = zoomDiagram;
+  window.resetZoom = resetZoom;
+
+  document.querySelectorAll('.mermaid-wrap').forEach(function(wrap) {
+    wrap.addEventListener('wheel', function(e) {
+      if (!e.ctrlKey && !e.metaKey) return;
+      e.preventDefault();
+      var target = wrap.querySelector('.mermaid');
+      var current = parseFloat(target.dataset.zoom || 1);
+      var factor = e.deltaY < 0 ? 1.1 : 0.9;
+      var next = Math.min(Math.max(current * factor, 0.4), 6);
+      target.dataset.zoom = next;
+      target.style.zoom = next;
+    }, { passive: false });
+
+    var startX, startY, scrollL, scrollT;
+    wrap.addEventListener('mousedown', function(e) {
+      if (e.target.closest('.zoom-controls')) return;
+      wrap.classList.add('is-panning');
+      startX = e.clientX;
+      startY = e.clientY;
+      scrollL = wrap.scrollLeft;
+      scrollT = wrap.scrollTop;
+    });
+    window.addEventListener('mousemove', function(e) {
+      if (!wrap.classList.contains('is-panning')) return;
+      wrap.scrollLeft = scrollL - (e.clientX - startX);
+      wrap.scrollTop = scrollT - (e.clientY - startY);
+    });
+    window.addEventListener('mouseup', function() {
+      wrap.classList.remove('is-panning');
+    });
+  });
+</script>
+
+</body>
+</html>

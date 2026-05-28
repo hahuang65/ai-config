@@ -31,7 +31,7 @@ Real GitHub Issues are only created if `--publish` is in `$ARGUMENTS` or the use
 
 ## Rules Adherence
 
-Comply with the project rules already loaded in context. Task titles and descriptions must use the project's domain vocabulary from `CONTEXT.md` and respect ADRs in the area being touched.
+Comply with the project rules in `rules/`. In Claude Code these are auto-loaded as global instructions; in omp, load via `rule://<name>` when entering the rule's domain. Task titles and descriptions must use the project's domain vocabulary from `CONTEXT.md` and respect ADRs in the area being touched.
 
 ## Process
 

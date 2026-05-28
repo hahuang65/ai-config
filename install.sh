@@ -43,6 +43,7 @@ echo ""
 green "Installing commands for Claude Code..."
 mkdir -p "$HOME/.claude/commands"
 for cmd in "$REPO_DIR"/commands/*.md; do
+  [ -f "$cmd" ] || continue
   name="$(basename "$cmd")"
   skill_name="${name%.md}"
   if [ -d "$REPO_DIR/skills/$skill_name" ]; then
@@ -62,6 +63,7 @@ echo ""
 green "Installing commands for OpenCode..."
 mkdir -p "$HOME/.config/opencode/commands"
 for cmd in "$REPO_DIR"/commands/*.md; do
+  [ -f "$cmd" ] || continue
   name="$(basename "$cmd")"
   ln -sf "$cmd" "$HOME/.config/opencode/commands/$name"
   dim "  ~/.config/opencode/commands/$name → $cmd"
@@ -112,6 +114,50 @@ ln -sf "$REPO_DIR/opencode/opencode.jsonc" "$HOME/.config/opencode/opencode.json
 dim "  ~/.config/opencode/opencode.jsonc → $REPO_DIR/opencode/opencode.jsonc"
 ln -sf "$REPO_DIR/opencode/tui.json" "$HOME/.config/opencode/tui.json"
 dim "  ~/.config/opencode/tui.json → $REPO_DIR/opencode/tui.json"
+
+# ── omp (third harness — config + all primitives at native priority) ─────────
+#
+# Self-contained block: mirrors skills, commands, agents, rules into omp's
+# user-level root (~/.omp/agent/ — the "agent" subfolder is omp convention)
+# and installs the hand-authored config.yml. Per docs/adr/0001 we mirror at
+# native priority instead of relying on omp's `.claude` fallback. The skill /
+# command duality skip-rule (skip commands with a matching skill dir) does NOT
+# apply here — omp doesn't have Claude's duplicate-slash-command registration
+# problem, so all commands install.
+
+echo ""
+green "Installing omp config..."
+mkdir -p "$HOME/.omp/agent"
+ln -sf "$REPO_DIR/omp/config.yml" "$HOME/.omp/agent/config.yml"
+dim "  ~/.omp/agent/config.yml → $REPO_DIR/omp/config.yml"
+
+echo ""
+green "Installing skills, commands, agents, rules for omp..."
+mkdir -p "$HOME/.omp/agent/skills" "$HOME/.omp/agent/commands" \
+         "$HOME/.omp/agent/agents" "$HOME/.omp/agent/rules"
+for skill in "$REPO_DIR"/skills/*/; do
+  name="$(basename "$skill")"
+  ln -sfn "$skill" "$HOME/.omp/agent/skills/$name"
+  dim "  ~/.omp/agent/skills/$name → $skill"
+done
+for cmd in "$REPO_DIR"/commands/*.md; do
+  [ -f "$cmd" ] || continue
+  name="$(basename "$cmd")"
+  ln -sf "$cmd" "$HOME/.omp/agent/commands/$name"
+  dim "  ~/.omp/agent/commands/$name → $cmd"
+done
+for agent in "$REPO_DIR"/agents/*.md; do
+  [ -f "$agent" ] || continue
+  name="$(basename "$agent")"
+  ln -sf "$agent" "$HOME/.omp/agent/agents/$name"
+  dim "  ~/.omp/agent/agents/$name → $agent"
+done
+for rule in "$REPO_DIR"/rules/*.md; do
+  [ -f "$rule" ] || continue
+  name="$(basename "$rule")"
+  ln -sf "$rule" "$HOME/.omp/agent/rules/$name"
+  dim "  ~/.omp/agent/rules/$name → $rule"
+done
 
 # ── Summary ──────────────────────────────────────────────────────────────────
 

@@ -17,6 +17,13 @@ cleanup() {
   rm -f "$REPO_DIR"/agents/test-self-test-*.md 2>/dev/null || true
   rm -f "$REPO_DIR"/commands/test-self-test-*.md 2>/dev/null || true
   rm -f "$REPO_DIR"/rules/test-self-test-*.md 2>/dev/null || true
+  rm -f "$REPO_DIR"/omp/test-self-test-*.{yml,yaml} 2>/dev/null || true
+  # Restore omp/config.yml if a self-test was interrupted mid-rename
+  if [[ -f "$REPO_DIR/omp/test-self-test-config-bak.yml" && ! -f "$REPO_DIR/omp/config.yml" ]]; then
+    mv "$REPO_DIR/omp/test-self-test-config-bak.yml" "$REPO_DIR/omp/config.yml"
+  else
+    rm -f "$REPO_DIR/omp/test-self-test-config-bak.yml" 2>/dev/null || true
+  fi
 }
 trap cleanup EXIT
 
@@ -179,7 +186,120 @@ EOF
 }
 
 # ---------------------------------------------------------------------------
-# Self-test 8: Skill directory with no SKILL.md
+# Self-test 8: AI-readable file contains Claude-Code-centric forbidden phrase
+# ---------------------------------------------------------------------------
+
+test_forbidden_already_loaded_in_context_fails() {
+  local skill_dir="$REPO_DIR/skills/test-self-test-forbidden-phrase"
+  mkdir -p "$skill_dir"
+  cat >"$skill_dir/SKILL.md" <<'EOF'
+---
+name: test-self-test-forbidden-phrase
+description: A fixture skill that smuggles in the Claude-centric phrase.
+---
+
+Comply with the project rules already loaded in context. This phrase is
+Claude-Code-centric and is wrong on omp under rulebook semantics.
+EOF
+
+  if run_pipeline; then
+    self_fail "forbidden phrase: test-pipeline.sh should exit non-zero"
+  else
+    self_pass "forbidden phrase: test-pipeline.sh correctly exits non-zero"
+  fi
+
+  rm -f "$skill_dir/SKILL.md"
+  rmdir "$skill_dir"
+}
+
+# ---------------------------------------------------------------------------
+# Self-test 9: TTSR rule (has condition:) missing description
+# ---------------------------------------------------------------------------
+
+test_ttsr_rule_missing_description_fails() {
+  local f="$REPO_DIR/rules/test-self-test-ttsr-no-desc.md"
+  cat >"$f" <<'EOF'
+---
+condition:
+  - 'foo'
+scope: tool:bash
+---
+
+Body of a TTSR rule that's missing the required description field.
+EOF
+
+  if run_pipeline; then
+    self_fail "TTSR rule missing description: test-pipeline.sh should exit non-zero"
+  else
+    self_pass "TTSR rule missing description: test-pipeline.sh correctly exits non-zero"
+  fi
+
+  rm -f "$f"
+}
+
+# ---------------------------------------------------------------------------
+# Self-test 10: Rulebook rule (no condition:) missing description
+# ---------------------------------------------------------------------------
+
+test_rulebook_rule_missing_description_fails() {
+  local f="$REPO_DIR/rules/test-self-test-rulebook-no-desc.md"
+  cat >"$f" <<'EOF'
+# Rule with no frontmatter
+
+This rule has neither description nor condition. omp would silently drop it
+from the rulebook bucket; our pipeline must flag it instead of letting it rot.
+EOF
+
+  if run_pipeline; then
+    self_fail "rulebook rule missing description: test-pipeline.sh should exit non-zero"
+  else
+    self_pass "rulebook rule missing description: test-pipeline.sh correctly exits non-zero"
+  fi
+
+  rm -f "$f"
+}
+
+# ---------------------------------------------------------------------------
+# Self-test 11: omp install target missing (rename omp/config.yml aside)
+# ---------------------------------------------------------------------------
+
+test_omp_install_target_missing_fails() {
+  local src="$REPO_DIR/omp/config.yml"
+  local bak="$REPO_DIR/omp/test-self-test-config-bak.yml"
+  mv "$src" "$bak"
+
+  if run_pipeline; then
+    self_fail "missing omp/config.yml: test-pipeline.sh should exit non-zero"
+  else
+    self_pass "missing omp/config.yml: test-pipeline.sh correctly exits non-zero"
+  fi
+
+  mv "$bak" "$src"
+}
+
+# ---------------------------------------------------------------------------
+# Self-test 12: invalid YAML in omp/
+# ---------------------------------------------------------------------------
+
+test_omp_yaml_invalid_fails() {
+  local f="$REPO_DIR/omp/test-self-test-broken.yml"
+  cat >"$f" <<'EOF'
+key: [unclosed list
+  - "and: { mixed: types"
+  more: { broken
+EOF
+
+  if run_pipeline; then
+    self_fail "broken omp YAML: test-pipeline.sh should exit non-zero"
+  else
+    self_pass "broken omp YAML: test-pipeline.sh correctly exits non-zero"
+  fi
+
+  rm -f "$f"
+}
+
+# ---------------------------------------------------------------------------
+# Self-test 13: Skill directory with no SKILL.md
 # ---------------------------------------------------------------------------
 
 test_skill_dir_missing_skill_md_fails() {
@@ -210,6 +330,11 @@ main() {
   test_broken_ve_reference_fails
   test_agent_missing_rule_fails
   test_stale_stub_fails
+  test_forbidden_already_loaded_in_context_fails
+  test_ttsr_rule_missing_description_fails
+  test_rulebook_rule_missing_description_fails
+  test_omp_install_target_missing_fails
+  test_omp_yaml_invalid_fails
   test_skill_dir_missing_skill_md_fails
 
   echo ""

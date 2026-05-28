@@ -19,7 +19,7 @@ Execute approved vertical-slice tasks **one slice at a time** using strict red-g
 
 ## Rules Adherence
 
-Comply with the project rules already loaded in context (coding-style, testing, security, performance, git-workflow). The skill itself — not just the agents it invokes — must follow these rules.
+Comply with the project rules in `rules/` (coding-style, testing, security, performance, git-workflow). In Claude Code these are auto-loaded as global instructions; in omp, load via `rule://<name>` when entering the rule's domain. The skill itself — not just the agents it invokes — must follow them.
 
 ## TDD Philosophy (non-negotiable)
 

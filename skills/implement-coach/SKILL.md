@@ -19,7 +19,7 @@ Coach the user through approved vertical-slice tasks **one slice at a time, one 
 
 ## Rules Adherence
 
-Comply with the project rules already loaded in context. Guide the user to follow them while implementing.
+Comply with the project rules in `rules/`. In Claude Code these are auto-loaded as global instructions; in omp, load via `rule://<name>` when entering the rule's domain. Guide the user to follow them while implementing.
 
 ## TDD Philosophy (non-negotiable)
 

@@ -1,3 +1,7 @@
+---
+description: Test-writing discipline. Read before writing tests, modifying test files, or deciding whether a behavioral change needs coverage — covers TDD, behavior-not-implementation testing, shared setup, and naming.
+---
+
 # Testing
 
 - TDD is the default. Write a failing test before writing implementation code. Red → Green → Refactor.
