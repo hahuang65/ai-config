@@ -1,10 +1,10 @@
 ---
 description: Block writing files via shell redirection — use Write/Edit tools instead so per-file approval applies.
 condition:
-  - '\becho\s+[^|]*\s*>>?\s*[^\s|&]'
-  - '\bprintf\s+[^|]*\s*>>?\s*[^\s|&]'
-  - '\bcat\s*>\s*\S'
-  - '\btee\s+[^-]\S+'
+  - '\becho\s+[^;&|<>\n]*>>?\s*(?!/dev/(?:null|stderr|stdout|fd)\b|&\d)[^\s|&>]'
+  - '\bprintf\s+[^;&|<>\n]*>>?\s*(?!/dev/(?:null|stderr|stdout|fd)\b|&\d)[^\s|&>]'
+  - '\bcat\b[^;&|\n]*>\s*(?!/dev/(?:null|stderr|stdout|fd)\b|&\d)[^\s|&>]'
+  - '\btee\s+(?:-\S+\s+)*(?!/dev/(?:null|stderr|stdout|fd)\b)\S'
 scope: tool:bash
 ---
 
