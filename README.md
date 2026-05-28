@@ -188,7 +188,7 @@ The [`example/`](example/) directory contains sample artifacts from a previous v
     ├── Refactor together when GREEN
     └── visual-explainer → prd.html, tasks.html, diff-review.html
 
-Rules (11 files — 3 rulebook + 8 TTSR). In Claude Code rules auto-load as global instructions every turn; in omp the 3 rulebook rules load on demand via `rule://<name>`, the 8 TTSR rules fire mid-stream on regex match.
+Rules (15 files — 3 rulebook + 12 TTSR). In Claude Code rules auto-load as global instructions every turn; in omp the 3 rulebook rules load on demand via `rule://<name>`, the 12 TTSR rules fire mid-stream on regex match.
 Agents read a subset relevant to their role.
 ```
 
@@ -199,7 +199,7 @@ Agents read a subset relevant to their role.
 ├── skills/           13 workflow skills (build, grill, prd, tasks, implement, implement-coach, ...)
 ├── commands/         18 slash commands (/diff-review, /fact-check, /implement-coach, ...)
 ├── agents/           7 sub-agents (architect, tdd-guide, code-reviewer, ...)
-├── rules/            11 rules (3 advisory rulebook + 8 TTSR enforcement)
+├── rules/            15 rules (3 advisory rulebook + 12 TTSR enforcement)
 ├── claude/           Claude Code config (settings.json, hooks.json, statusline.sh)
 ├── opencode/         OpenCode config (opencode.jsonc auto-generated, tui.json)
 ├── omp/              omp config (config.yml, hand-authored)
@@ -303,6 +303,10 @@ Rules split into two buckets per [ADR-0003](docs/adr/0003-ttsr-for-omp-runtime-e
 | `no-shell-write` | File writes via shell redirection (`echo >`, `cat >`, `tee`) — forces use of Write/Edit tools |
 | `no-credentials-read` | Reading `.aws/credentials`, `.kube/config`, `.ssh/id_*`, `.netrc`, `.pgpass`, npm authToken, `.secrets.*`, anything named `credentials` |
 | `no-deploy` | `make deploy/apply/push`, `npm/yarn/pnpm run deploy`, `cap … deploy`, `fly deploy`, `vercel --prod`, `wrangler deploy`, `serverless deploy`, `kubectl apply`, `helm install/upgrade` |
+| `no-sudo` | any `sudo <cmd>` |
+| `no-db-mutation` | `psql/mysql/mariadb/sqlite3/mongosh/redis-cli` with DROP/TRUNCATE/ALTER TABLE/DELETE FROM/UPDATE SET, or `.sql` file fed into the CLI |
+| `no-dd-disk` | `dd` with `of=/dev/...` or `if=/dev/...` (raw disk overwrite/read) |
+| `no-broad-chmod` | `chmod -R` against `/`, `~`, `$HOME`, `/etc`, `/usr`, `/var`, `/opt`, `/Users`, `/home`, or `*` |
 
 ## Triple-Harness Support
 

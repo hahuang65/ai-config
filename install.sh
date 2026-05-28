@@ -132,9 +132,10 @@ ln -sf "$REPO_DIR/omp/config.yml" "$HOME/.omp/agent/config.yml"
 dim "  ~/.omp/agent/config.yml → $REPO_DIR/omp/config.yml"
 
 echo ""
-green "Installing skills, commands, agents, rules for omp..."
+green "Installing skills, commands, agents, rules, extensions for omp..."
 mkdir -p "$HOME/.omp/agent/skills" "$HOME/.omp/agent/commands" \
-         "$HOME/.omp/agent/agents" "$HOME/.omp/agent/rules"
+         "$HOME/.omp/agent/agents" "$HOME/.omp/agent/rules" \
+         "$HOME/.omp/agent/extensions"
 for skill in "$REPO_DIR"/skills/*/; do
   name="$(basename "$skill")"
   ln -sfn "$skill" "$HOME/.omp/agent/skills/$name"
@@ -157,6 +158,14 @@ for rule in "$REPO_DIR"/rules/*.md; do
   name="$(basename "$rule")"
   ln -sf "$rule" "$HOME/.omp/agent/rules/$name"
   dim "  ~/.omp/agent/rules/$name → $rule"
+done
+# Extensions: TS/JS only — README.md and other non-code files are skipped so
+# omp's native extension loader doesn't try to import them.
+for ext in "$REPO_DIR"/omp/extensions/*.ts "$REPO_DIR"/omp/extensions/*.js; do
+  [ -f "$ext" ] || continue
+  name="$(basename "$ext")"
+  ln -sf "$ext" "$HOME/.omp/agent/extensions/$name"
+  dim "  ~/.omp/agent/extensions/$name → $ext"
 done
 
 # ── Summary ──────────────────────────────────────────────────────────────────

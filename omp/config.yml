@@ -1,11 +1,11 @@
 tools: 
   approvalMode: write
   approval: 
-    bash: prompt
+    bash: allow
     browser: prompt
     ssh: prompt
     eval: prompt
-modelRoles:
+modelRoles: 
   default: anthropic/claude-opus-4-7
 theme: 
   dark: catppuccin-mocha
