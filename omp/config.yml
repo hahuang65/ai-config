@@ -1,13 +1,15 @@
-tools: 
+---
+tools:
   approvalMode: write
-  approval: 
+  approval:
     bash: allow
     browser: prompt
     ssh: prompt
     eval: prompt
-modelRoles: 
+    web_search: allow
+modelRoles:
   default: anthropic/claude-opus-4-7
-theme: 
+theme:
   dark: catppuccin-mocha
-startup: 
+startup:
   quiet: true
