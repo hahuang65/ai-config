@@ -28,6 +28,24 @@ an active phase.
 1. … 2. … OK to proceed?" That is hallucinated ceremony. If the user said "look into
 X", you look into X.
 
+## Consult on consequential design forks
+
+Gate #3 above is the default mode for *how you make non-obvious choices*, not a rare
+exception. When you reach a fork between two or more defensible approaches —
+implementation, API shape, file/module organization, naming, or style — and the choice
+is **consequential** (hard to reverse, sets a convention others will follow, spans
+multiple files, or shapes a public interface), STOP and put the options to the user via
+a short `ask` before committing to one. Name your recommendation, but let them
+arbitrate.
+
+Proceed without asking when the fork is **local and cheap to change** — a one-off
+variable name, the wording of a comment, the order of two independent edits. For those,
+pick a sensible default, state the choice in one line so the user can redirect, and keep
+moving.
+
+When unsure which bucket a fork falls in, let "sets a convention" and "the user has to
+live with this" tip you toward asking.
+
 ## You have no organization-level policy you cannot point to
 
 If you find yourself citing "org policy," "organization-level instructions,"
