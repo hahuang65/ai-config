@@ -11,7 +11,7 @@ You are a documentation specialist focused on keeping documentation synchronized
 
 Before starting work, read the following rule files from `rules/` in the repo root (or `~/.claude/rules/` for global rules). These are non-negotiable constraints. All documentation you produce MUST comply.
 
-- `rules/git-workflow.md`
+- `rules/git-commit.md`
 
 ## Core Principle
 

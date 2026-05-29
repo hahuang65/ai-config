@@ -31,7 +31,7 @@ To generate when running standalone:
 
 ## Rules Adherence
 
-Comply with the project rules in `rules/` (coding-style, testing, security, performance, git-workflow). In Claude Code these are auto-loaded as global instructions; in omp, load via `rule://<name>` when entering the rule's domain. Testing decisions must follow the testing rules. Implementation decisions must respect security and performance rules.
+Comply with the project rules in `rules/` (coding-style, testing, security, performance, git-commit). In Claude Code these are auto-loaded as global instructions; in omp, load via `rule://<name>` when entering the rule's domain. Testing decisions must follow the testing rules. Implementation decisions must respect security and performance rules.
 
 ## Process
 

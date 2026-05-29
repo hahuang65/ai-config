@@ -151,7 +151,7 @@ Visual HTML companions must always mirror their markdown counterparts. Regenerat
 | `docs/adr/*.md` | repo root | Long-lived — historical record |
 | `docs/claude/<slug>/` | per-feature | Optional — keep, delete, or `.gitignore` |
 
-The git-workflow rule recommends committing `CONTEXT.md` and `docs/adr/` always, and committing per-feature directories alongside the feature they describe.
+The `git-commit` rule covers what to include: `CONTEXT.md` and `docs/adr/` ship with the commits they relate to, and per-feature `docs/claude/` directories ship alongside their feature. See the rule for the `~/Projects/a5/**` exception that keeps these artifacts local in repos teammates haven't opted into.
 
 ### Legacy Example
 
@@ -277,7 +277,7 @@ Agents read a subset relevant to their role.
 | `code-reviewer` | sonnet | OWASP Top 10 + quality review (>80% confidence) | coding-style, testing, security, performance |
 | `refactor-cleaner` | sonnet | Dead code detection and safe removal | coding-style |
 | `database-reviewer` | sonnet | Query optimization, schema, DB security | security, performance |
-| `doc-updater` | sonnet | Keep documentation in sync with code | git-workflow |
+| `doc-updater` | sonnet | Keep documentation in sync with code | git-commit |
 | `refactorer` | sonnet | Structural transforms preserving behavior | coding-style, performance, security, testing |
 
 ### Rules
@@ -291,13 +291,14 @@ Rules split into two buckets per [ADR-0003](docs/adr/0003-ttsr-for-omp-runtime-e
 | `coding-style` | Immutability, file size limits, naming conventions, nesting, magic numbers |
 | `testing` | TDD, behavior testing, no shared state, shared setup |
 | `performance` | Model routing, profiling before optimizing, caching, timeouts |
+| `git-commit` | Commit message format (`@~/.gitmessage`), branching, staging policy, `~/Projects/a5/**` staging exception |
 
 #### TTSR (enforcement — regex-triggered mid-stream in omp)
 
 | Rule | Triggers on |
 |------|-------------|
 | `security` | Hardcoded secrets, string-concat SQL, user-input → file APIs, `eval`, shell injection |
-| `git-workflow` | Force-push, `--no-verify`, `--no-gpg-sign`, `--amend --no-edit`, broad `reset --hard`, `clean -f` |
+| `no-git-destructive` | Force-push, `--no-verify`, `--no-gpg-sign`, `--amend --no-edit`, broad `reset --hard`, `clean -f` |
 | `no-cloud-destroy` | AWS `delete-*` / `terminate-*`, Terraform `apply` / `destroy`, gcloud delete, `kubectl delete` |
 | `no-shell-write` | File writes via shell redirection (`echo >`, `cat >`, `tee`) — forces use of Write/Edit tools |
 | `no-deploy` | `make deploy/apply/push`, `npm/yarn/pnpm run deploy`, `cap … deploy`, `fly deploy`, `vercel --prod`, `wrangler deploy`, `serverless deploy`, `kubectl apply`, `helm install/upgrade` |
@@ -394,7 +395,7 @@ This project stands on the shoulders of others:
 - **[Matt Pocock's skills-TDD pipeline](https://www.aihero.dev/skills-tdd)** and the broader [skills repo](https://github.com/mattpocock/skills) — the core pipeline (`grill-with-docs → to-prd → to-issues → tdd`) and Matt's stance on vertical-slice TDD ("write one test, one implementation, repeat — batched tests describe imagined behavior, not actual behavior") drive the design of `/grill`, `/prd`, `/tasks`, and the vertical-slice rewrites of `/implement` and `/implement-coach`. The standalone tools `/handoff` ([article](https://www.aihero.dev/skills-handoff)), `/prototype`, and `/improve-codebase` (renamed from `improve-codebase-architecture`) are also ports of Matt's skills, with internal references rewritten to match this repo's naming. The format files (CONTEXT-FORMAT.md, ADR-FORMAT.md) and the LANGUAGE/DEEPENING/HTML-REPORT/INTERFACE-DESIGN supporting docs are taken directly from his repo.
 - **[nicobailon/visual-explainer](https://github.com/nicobailon/visual-explainer)** — The `visual-explainer` skill is taken wholesale from this repository, with only minor modifications. All the HTML visual generation (PRD, tasks, diff-review, architecture diagrams, slides, etc.) is powered by this work.
 - **[affaan-m/everything-claude-code](https://github.com/affaan-m/everything-claude-code)** — The rules and agent definitions in this repo are borrowed and adapted from this collection. The coding-style, testing, security, and performance rules, as well as the agent configurations (architect, tdd-guide, code-reviewer, etc.), draw heavily from this source.
-- **[can1357/oh-my-pi (omp)](https://github.com/can1357/oh-my-pi)** ([docs](https://omp.sh/docs)) — The third harness this repo configures. The **TTSR** (time-traveling stream rules) concept — mid-stream regex-triggered rule injection with stream-abort + retry — is omp's contribution to the cross-harness rule shape and is what makes `rules/security.md` / `rules/git-workflow.md` / and the six narrow `no-*.md` rules into enforcement rather than advisory content. The YAML-based extension / hook / skill model omp uses informed how this repo's per-harness boundaries got drawn (see [ADR-0004](docs/adr/0004-omp-permissions-and-hooks-decoupled.md) and [ADR-0005](docs/adr/0005-flat-shared-config-no-per-harness-scoping.md)).
+- **[can1357/oh-my-pi (omp)](https://github.com/can1357/oh-my-pi)** ([docs](https://omp.sh/docs)) — The third harness this repo configures. The **TTSR** (time-traveling stream rules) concept — mid-stream regex-triggered rule injection with stream-abort + retry — is omp's contribution to the cross-harness rule shape and is what makes `rules/security.md` and the seven narrow `no-*.md` rules into enforcement rather than advisory content. The YAML-based extension / hook / skill model omp uses informed how this repo's per-harness boundaries got drawn (see [ADR-0004](docs/adr/0004-omp-permissions-and-hooks-decoupled.md) and [ADR-0005](docs/adr/0005-flat-shared-config-no-per-harness-scoping.md)).
 
 ## License
 
