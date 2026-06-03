@@ -2,6 +2,8 @@
 
 Centralized configuration for AI coding harnesses — Claude Code, OpenCode, and omp. Skills, commands, agents, and rules authored once, installed into all three by `install.sh`.
 
+> **Editing or adding skills / commands / agents / rules?** Read [`AGENTS.md`](AGENTS.md) — the authoring contract: progressive disclosure, the per-primitive harness matrix (what each is and which harnesses consume it), and the omp rule mechanisms (rulebook / TTSR / hooks). `bash scripts/test-pipeline.sh` is the pre-commit gate that enforces it.
+
 ## Quick Start
 
 ```sh
