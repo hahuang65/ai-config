@@ -14,7 +14,7 @@ This is the **write** side of the handoff split. To **resume** a handoff in a ne
 
 - An out-of-scope task surfaces during the current session and you don't want to derail
 - You want to prototype something without bloating the current context
-- Work needs to move between different AI coding tools (e.g. from Claude Code to OpenCode)
+- Work needs to move between different AI coding tools (e.g. from Claude Code to oh-my-pi)
 - You want to keep the current session pure and focused
 
 Unlike `/compact` (which summarizes the entire conversation for a *new* session of the same chat), `/handoff` selectively transfers context so two independent sessions can stay focused on their own concerns.

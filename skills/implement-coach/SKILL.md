@@ -18,7 +18,7 @@ See [../shared/references/build-pipeline.md](../shared/references/build-pipeline
 
 ## Rules Adherence
 
-Comply with the project rules in `rules/`. In Claude Code these are global instructions; in omp, load via `rule://<name>` when entering the rule's domain. Guide the user to follow them while implementing.
+Comply with the project rules in `rules/`. In Claude Code these are global instructions; in oh-my-pi, load via `rule://<name>` when entering the rule's domain. Guide the user to follow them while implementing.
 
 ## TDD Protocol
 

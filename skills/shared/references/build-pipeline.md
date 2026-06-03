@@ -11,7 +11,7 @@ The pipeline has exactly **four** approval gates. These are the only points wher
 3. **Tasks → Implement** — after the task breakdown is approved
 4. **Implement → Done** — after all slices are complete and verified
 
-Within an active phase, all routine operations proceed **without per-call approval** — reads, writes, edits, bash, tests, environment bootstrap. Announcing intended tool batches and asking "OK to proceed?" before each one is not how the pipeline works. If you find yourself appealing to a meta-policy that requires per-call confirmation, you have drifted — return to the phase. (In omp, see `~/.omp/agent/RULES.md`: "Approval gates are user-facing only.")
+Within an active phase, all routine operations proceed **without per-call approval** — reads, writes, edits, bash, tests, environment bootstrap. Announcing intended tool batches and asking "OK to proceed?" before each one is not how the pipeline works. If you find yourself appealing to a meta-policy that requires per-call confirmation, you have drifted — return to the phase. (In oh-my-pi, see `~/.omp/agent/RULES.md`: "Approval gates are user-facing only.")
 
 ## File Conventions
 

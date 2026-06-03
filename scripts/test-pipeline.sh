@@ -629,10 +629,10 @@ test_omp_install_targets_exist() {
   else
     fail "omp" "omp/config.yml not found — install.sh's omp block references it"
   fi
-  if grep -q "^# ── omp (third harness" "$REPO_DIR/install.sh"; then
+  if grep -q "^# ── oh-my-pi (" "$REPO_DIR/install.sh"; then
     pass "install.sh has the omp install block"
   else
-    fail "install.sh" "omp install block marker (# ── omp (third harness…) not found"
+    fail "install.sh" "oh-my-pi install block marker (# ── oh-my-pi (…) not found"
   fi
 }
 

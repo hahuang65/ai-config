@@ -1,9 +1,9 @@
 # Authoring contract for this repo
 
-*(This is `AGENTS.md` — read at the repo root by Claude Code, OpenCode, and omp. It is force-tracked past the global `AGENTS.md` gitignore because defining cross-harness agent config is this repo's whole purpose.)*
+*(This is `AGENTS.md` — read at the repo root by Claude Code and oh-my-pi. It is force-tracked past the global `AGENTS.md` gitignore because defining cross-harness agent config is this repo's whole purpose.)*
 
-This repo is one source of truth for multiple AI coding harnesses (Claude
-Code, OpenCode, omp). Primitives are authored **once** under `skills/`,
+This repo is one source of truth for two AI coding harnesses — Claude Code
+and oh-my-pi. Primitives are authored **once** under `skills/`,
 `commands/`, `agents/`, `rules/`, and `install.sh` fans them out to each
 harness. `CONTEXT.md` is the glossary; `docs/adr/` records *why* each
 decision was made; **this file is the prescriptive "how to add or edit
@@ -49,22 +49,22 @@ activates, so keep it thin and defer detail to references read on demand
 
 ## Which primitive, and which harnesses consume it
 
-| Primitive | Authored at | Claude Code | OpenCode | omp |
-|---|---|---|---|---|
-| **Skill** | `skills/<name>/SKILL.md` | yes — `~/.claude/skills` | yes — reads `~/.claude/skills` | yes — `~/.omp/agent/skills` |
-| **Command** | `commands/<name>.md` | yes — `~/.claude/commands` (skipped if a skill of the same name exists, to avoid a duplicate `/name`) | yes — `~/.config/opencode/commands` | yes — `~/.omp/agent/commands` |
-| **Agent** | `agents/<name>.md` | yes — `~/.claude/agents` | **no — not supported** | yes — `~/.omp/agent/agents` |
-| **Rule** | `rules/<name>.md` | yes — `~/.claude/rules` (auto-injected each turn) | **no — not loaded** | yes — `~/.omp/agent/rules` (rulebook / TTSR / hook) |
+| Primitive | Authored at | Claude Code | oh-my-pi |
+|---|---|---|---|
+| **Skill** | `skills/<name>/SKILL.md` | yes — `~/.claude/skills` | yes — `~/.omp/agent/skills` |
+| **Command** | `commands/<name>.md` | yes — `~/.claude/commands` (skipped if a skill of the same name exists, to avoid a duplicate `/name`) | yes — `~/.omp/agent/commands` |
+| **Agent** | `agents/<name>.md` | yes — `~/.claude/agents` | yes — `~/.omp/agent/agents` |
+| **Rule** | `rules/<name>.md` | yes — `~/.claude/rules` (auto-injected each turn) | yes — `~/.omp/agent/rules` (rulebook / TTSR / hook) |
 
 Implications:
 
-- A capability that must work on **all three** harnesses is a **skill** (plus,
-  optionally, a thin command wrapper) — never an agent, since **agents do not
-  run on OpenCode**. Reviews here are agents by design (`code-reviewer`,
-  `database-reviewer`, `refactor-cleaner`, `doc-updater`), so they are
-  Claude+omp only.
+- Both **skills** and **agents** reach both harnesses (Claude Code and oh-my-pi),
+  so choose by *nature*, not coverage: a **skill** is a workflow the main
+  session follows; an **agent** is a spawned sub-task invoked via the Task /
+  `task` tool. The review chain uses agents (`code-reviewer`,
+  `database-reviewer`, `refactor-cleaner`, `doc-updater`).
 - `commands/` is a Claude-Code-originated slash-command concept that we mirror
-  to all three. A thin command for an existing skill should just say
+  to both harnesses. A thin command for an existing skill should just say
   *"Load the `<skill>` skill, then …: `$ARGUMENTS`"*.
 - **Do not shadow a Claude built-in.** `/simplify` and `/fact-check` are
   Claude Code built-ins, so our own versions are the skills `code-cleaner`
@@ -72,18 +72,18 @@ Implications:
 - Reference another skill's assets by relative path
   (`../<skill>/references/<file>.md`); the gate resolves these links.
 
-## Rules — pick the right omp mechanism
+## Rules — pick the right oh-my-pi mechanism
 
-Claude Code injects every `rules/*.md` as always-on context; OpenCode ignores
-rules; omp has **three buckets — choose exactly one per rule**:
+Claude Code injects every `rules/*.md` as always-on context; oh-my-pi has **three
+buckets — choose exactly one per rule**:
 
 - **Rulebook** (advisory, lazy) — `description:` frontmatter, no `condition:`.
-  omp lists it by name+description and the model pulls it in on demand via
+  oh-my-pi lists it by name+description and the model pulls it in on demand via
   `rule://<name>`. Phrase the description as a load-trigger ("Read before
   writing tests…"). Used for `coding-style`, `testing`, `performance`.
   (ADR-0002)
 - **TTSR** (time-traveling stream rules) — `condition:` regex (optional
-  `scope:`). omp aborts the stream on a match, injects the rule, retries. Use
+  `scope:`). oh-my-pi aborts the stream on a match, injects the rule, retries. Use
   for content patterns and bash-command patterns regex can't be tricked on. A
   rule with `condition:` is TTSR-only, not also rulebook. (ADR-0003)
 - **Hook** (structured, input-bound) — TS modules at `omp/hooks/{pre,post}/*.ts`
@@ -95,10 +95,10 @@ rules; omp has **three buckets — choose exactly one per rule**:
 
 ## Permissions
 
-`claude/settings.json` is the source of truth. Edit it, then run
-`scripts/sync-permissions.py` (the pre-commit hook runs it too) to regenerate
-`opencode/opencode.jsonc`. omp maps coarsely to tier-based approval.
-(ADR-0004, ADR-0005)
+`claude/settings.json` is Claude Code's permission source of truth — edit it
+directly. `omp/config.yml` is hand-authored and decoupled: oh-my-pi uses
+tier-based approval (`approvalMode` + per-tool overrides), and Claude's
+per-pattern allowlist has no oh-my-pi equivalent. (ADR-0004, ADR-0005)
 
 ## Quick recipes
 

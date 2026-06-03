@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# install.sh — Install ai-config for Claude Code and OpenCode
+# install.sh — Install ai-config for Claude Code and oh-my-pi
 #
 # Symlinks skills, commands, and tool-specific config into the right places.
 # Run from the ai-config repo root: ./install.sh
@@ -12,7 +12,7 @@ REPO_DIR="$(cd "$(dirname "$0")" && pwd)"
 green() { printf '\033[32m%s\033[0m\n' "$1"; }
 dim()   { printf '\033[2m%s\033[0m\n' "$1"; }
 
-# ── Skills (shared: both tools read from ~/.claude/skills/) ──────────────────
+# ── Skills (Claude Code: ~/.claude/skills/; mirrored into oh-my-pi below) ─────────
 
 echo ""
 green "Installing skills..."
@@ -54,21 +54,6 @@ for cmd in "$REPO_DIR"/commands/*.md; do
   dim "  ~/.claude/commands/$name → $cmd"
 done
 
-# ── Commands for OpenCode (~/.config/opencode/commands/) ─────────────────────
-#
-# OpenCode natively reads markdown command files with frontmatter from its
-# commands/ directory — same format as Claude Code. No JSONC injection needed.
-
-echo ""
-green "Installing commands for OpenCode..."
-mkdir -p "$HOME/.config/opencode/commands"
-for cmd in "$REPO_DIR"/commands/*.md; do
-  [ -f "$cmd" ] || continue
-  name="$(basename "$cmd")"
-  ln -sf "$cmd" "$HOME/.config/opencode/commands/$name"
-  dim "  ~/.config/opencode/commands/$name → $cmd"
-done
-
 # ── Agents (Claude Code subagents: ~/.claude/agents/) ────────────────────────
 
 echo ""
@@ -99,34 +84,18 @@ green "Configuring git hooks..."
 git -C "$REPO_DIR" config core.hooksPath .githooks
 dim "  core.hooksPath → .githooks"
 
-# ── Sync permissions (Claude → OpenCode) ────────────────────────────────────
-
-echo ""
-green "Syncing permissions from Claude Code to OpenCode..."
-python3 "$REPO_DIR/scripts/sync-permissions.py"
-
-# ── OpenCode config ──────────────────────────────────────────────────────────
-
-echo ""
-green "Installing OpenCode config..."
-mkdir -p "$HOME/.config/opencode"
-ln -sf "$REPO_DIR/opencode/opencode.jsonc" "$HOME/.config/opencode/opencode.jsonc"
-dim "  ~/.config/opencode/opencode.jsonc → $REPO_DIR/opencode/opencode.jsonc"
-ln -sf "$REPO_DIR/opencode/tui.json" "$HOME/.config/opencode/tui.json"
-dim "  ~/.config/opencode/tui.json → $REPO_DIR/opencode/tui.json"
-
-# ── omp (third harness — config + all primitives at native priority) ─────────
+# ── oh-my-pi (second harness — config + all primitives at native priority) ────────
 #
-# Self-contained block: mirrors skills, commands, agents, rules into omp's
-# user-level root (~/.omp/agent/ — the "agent" subfolder is omp convention)
+# Self-contained block: mirrors skills, commands, agents, rules into oh-my-pi's
+# user-level root (~/.omp/agent/ — the "agent" subfolder is oh-my-pi convention)
 # and installs the hand-authored config.yml. Per docs/adr/0001 we mirror at
-# native priority instead of relying on omp's `.claude` fallback. The skill /
+# native priority instead of relying on oh-my-pi's `.claude` fallback. The skill /
 # command duality skip-rule (skip commands with a matching skill dir) does NOT
-# apply here — omp doesn't have Claude's duplicate-slash-command registration
+# apply here — oh-my-pi doesn't have Claude's duplicate-slash-command registration
 # problem, so all commands install.
 
 echo ""
-green "Installing omp config..."
+green "Installing oh-my-pi config..."
 mkdir -p "$HOME/.omp/agent"
 ln -sf "$REPO_DIR/omp/config.yml" "$HOME/.omp/agent/config.yml"
 dim "  ~/.omp/agent/config.yml → $REPO_DIR/omp/config.yml"
@@ -134,7 +103,7 @@ ln -sf "$REPO_DIR/omp/RULES.md" "$HOME/.omp/agent/RULES.md"
 dim "  ~/.omp/agent/RULES.md → $REPO_DIR/omp/RULES.md"
 
 echo ""
-green "Installing skills, commands, agents, rules, extensions, hooks for omp..."
+green "Installing skills, commands, agents, rules, extensions, hooks for oh-my-pi..."
 mkdir -p "$HOME/.omp/agent/skills" "$HOME/.omp/agent/commands" \
          "$HOME/.omp/agent/agents" "$HOME/.omp/agent/rules" \
          "$HOME/.omp/agent/extensions" \
@@ -163,7 +132,7 @@ for rule in "$REPO_DIR"/rules/*.md; do
   dim "  ~/.omp/agent/rules/$name → $rule"
 done
 # Extensions: TS/JS only — README.md and other non-code files are skipped so
-# omp's native extension loader doesn't try to import them.
+# oh-my-pi's native extension loader doesn't try to import them.
 for ext in "$REPO_DIR"/omp/extensions/*.ts "$REPO_DIR"/omp/extensions/*.js; do
   [ -f "$ext" ] || continue
   name="$(basename "$ext")"
@@ -171,7 +140,7 @@ for ext in "$REPO_DIR"/omp/extensions/*.ts "$REPO_DIR"/omp/extensions/*.js; do
   dim "  ~/.omp/agent/extensions/$name → $ext"
 done
 # Hooks: pre/post TS/JS modules — README.md and other non-code files are
-# skipped so omp's native hook loader doesn't try to import them.
+# skipped so oh-my-pi's native hook loader doesn't try to import them.
 for hook in "$REPO_DIR"/omp/hooks/pre/*.ts "$REPO_DIR"/omp/hooks/pre/*.js; do
   [ -f "$hook" ] || continue
   name="$(basename "$hook")"

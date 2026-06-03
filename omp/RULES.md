@@ -11,8 +11,8 @@ the deliverable to dodge it.
 
 ## Keep `ask` option labels short — detail goes in the message body
 
-omp's `ask` tool renders every option on a single line and hard-truncates
-anything past the terminal width ([omp issue #1243](https://github.com/can1357/oh-my-pi/issues/1243));
+oh-my-pi's `ask` tool renders every option on a single line and hard-truncates
+anything past the terminal width ([oh-my-pi issue #1243](https://github.com/can1357/oh-my-pi/issues/1243));
 there is no wrap mode and no
 `ask.wrapOptions` setting. So whenever you offer choices through `ask`, each
 option `label` MUST be a terse handle — a few words that name the choice

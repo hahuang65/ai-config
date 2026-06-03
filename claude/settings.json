@@ -158,7 +158,6 @@
     ],
     "additionalDirectories": [
       "~/.claude",
-      "~/.config/opencode",
       "/tmp"
     ]
   },

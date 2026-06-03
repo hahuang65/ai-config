@@ -14,7 +14,7 @@ This is **Phase 2** of the `/build` pipeline. It assumes `/grill` (Phase 1) alre
 
 ## Rules Adherence
 
-Comply with the project rules in `rules/` (coding-style, testing, security, performance, git-commit). In Claude Code these are global instructions; in omp, load via `rule://<name>` when entering the rule's domain. Testing Decisions must follow the testing rules; Implementation Decisions must respect security and performance rules.
+Comply with the project rules in `rules/` (coding-style, testing, security, performance, git-commit). In Claude Code these are global instructions; in oh-my-pi, load via `rule://<name>` when entering the rule's domain. Testing Decisions must follow the testing rules; Implementation Decisions must respect security and performance rules.
 
 ## Process
 

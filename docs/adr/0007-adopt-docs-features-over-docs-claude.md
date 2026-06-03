@@ -1,6 +1,6 @@
 # Adopt `docs/features/` for per-feature artifacts, replacing `docs/claude/`
 
-The `/build` pipeline writes each run's PRD, tasks, and diff-review artifacts into a per-feature directory. It was named `docs/claude/<YYYYMMDD-HHMM>-<slug>/`, a Claude-Code-specific name in a repo that is explicitly **multi-harness** (Claude Code, OpenCode, omp). We renamed the convention to the harness-neutral `docs/features/<YYYYMMDD-HHMM>-<slug>/`.
+The `/build` pipeline writes each run's PRD, tasks, and diff-review artifacts into a per-feature directory. It was named `docs/claude/<YYYYMMDD-HHMM>-<slug>/`, a Claude-Code-specific name in a repo that is explicitly **multi-harness** (Claude Code, OpenCode, oh-my-pi). We renamed the convention to the harness-neutral `docs/features/<YYYYMMDD-HHMM>-<slug>/`.
 
 ## Considered Options
 

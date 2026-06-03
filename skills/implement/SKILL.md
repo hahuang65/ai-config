@@ -18,7 +18,7 @@ See [../shared/references/build-pipeline.md](../shared/references/build-pipeline
 
 ## Rules Adherence
 
-Comply with the project rules in `rules/` (coding-style, testing, security, performance, git-commit). In Claude Code these are global instructions; in omp, load via `rule://<name>` when entering the rule's domain. The skill itself — not just the agents it invokes — must follow them.
+Comply with the project rules in `rules/` (coding-style, testing, security, performance, git-commit). In Claude Code these are global instructions; in oh-my-pi, load via `rule://<name>` when entering the rule's domain. The skill itself — not just the agents it invokes — must follow them.
 
 ## Standing Authorization
 

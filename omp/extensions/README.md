@@ -1,11 +1,11 @@
-# omp extensions
+# oh-my-pi extensions
 
-TS/JS modules that hook omp's runtime (per
+TS/JS modules that hook oh-my-pi's runtime (per
 <https://omp.sh/docs/extensions> and the `tool_call` / `context` event
 surface in `@oh-my-pi/pi-coding-agent/extensibility/hooks`).
 
 `install.sh` symlinks every file under this directory into
-`~/.omp/agent/extensions/`, where omp's native provider auto-discovers
+`~/.omp/agent/extensions/`, where oh-my-pi's native provider auto-discovers
 them at session start.
 
 ## Authoring
@@ -26,7 +26,7 @@ export default function (pi: HookAPI): void {
 ## Why this directory exists despite being empty
 
 Empty for now — the natural use case (a "smart prompt suppressor" that
-auto-approves safe bash commands) is not achievable with omp's current
+auto-approves safe bash commands) is not achievable with oh-my-pi's current
 hook API, which only supports `{ block, reason }`. Per-tool approval
 remains binary (`allow` / `deny` / `prompt`) at the config level.
 

@@ -1,8 +1,8 @@
 # ai-config
 
-Centralized configuration for AI coding harnesses — Claude Code, OpenCode, and omp. Skills, commands, agents, and rules authored once, installed into all three by `install.sh`.
+Centralized configuration for AI coding harnesses — Claude Code and oh-my-pi. Skills, commands, agents, and rules authored once, installed into both by `install.sh`.
 
-> **Editing or adding skills / commands / agents / rules?** Read [`AGENTS.md`](AGENTS.md) — the authoring contract: progressive disclosure, the per-primitive harness matrix (what each is and which harnesses consume it), and the omp rule mechanisms (rulebook / TTSR / hooks). `bash scripts/test-pipeline.sh` is the pre-commit gate that enforces it.
+> **Editing or adding skills / commands / agents / rules?** Read [`AGENTS.md`](AGENTS.md) — the authoring contract: progressive disclosure, the per-primitive harness matrix (what each is and which harnesses consume it), and the oh-my-pi rule mechanisms (rulebook / TTSR / hooks). `bash scripts/test-pipeline.sh` is the pre-commit gate that enforces it.
 
 ## Quick Start
 
@@ -21,7 +21,7 @@ The centerpiece of this repository is `/build` — a disciplined 4-phase workflo
 3. **Break it into tasks** as vertical-slice tracer bullets (each slice cuts through every layer end-to-end)
 4. **Implement** via vertical-slice TDD — AI does it, or AI coaches you through it one test at a time
 
-The pipeline merges Boris Tane's research-first discipline with Matt Pocock's skills-TDD workflow (`grill-with-docs → to-prd → to-issues → tdd`), adapted to keep all artifacts local, annotatable, and paired with visual HTML companions. All four phases work identically in Claude Code, OpenCode, and omp — the skills are harness-agnostic and discovered from the same source files in each harness's root.
+The pipeline merges Boris Tane's research-first discipline with Matt Pocock's skills-TDD workflow (`grill-with-docs → to-prd → to-issues → tdd`), adapted to keep all artifacts local, annotatable, and paired with visual HTML companions. Both implementation modes and all four phases work identically in Claude Code and oh-my-pi — the skills are harness-agnostic and discovered from the same source files in each harness's root.
 
 ### Pipeline Overview
 
@@ -188,7 +188,7 @@ The [`example/`](example/) directory contains sample artifacts from a previous v
     ├── Refactor together when GREEN
     └── visual-explainer → prd.html, tasks.html, diff-review.html
 
-Rules (11 files — 3 rulebook + 8 TTSR) + Hooks (5 omp-only TS modules — 4 pre + 1 post). In Claude Code rules auto-load as global instructions every turn; in omp the 3 rulebook rules load on demand via `rule://<name>`, the 8 TTSR rules fire mid-stream on regex match, and the 5 hooks (per ADR-0006) fire on the actual `tool_call` / `tool_result` events with structured input parsing for patterns where regex had known bypasses.
+Rules (11 files — 3 rulebook + 8 TTSR) + Hooks (5 oh-my-pi-only TS modules — 4 pre + 1 post). In Claude Code rules auto-load as global instructions every turn; in oh-my-pi the 3 rulebook rules load on demand via `rule://<name>`, the 8 TTSR rules fire mid-stream on regex match, and the 5 hooks (per ADR-0006) fire on the actual `tool_call` / `tool_result` events with structured input parsing for patterns where regex had known bypasses.
 Agents read a subset relevant to their role.
 ```
 
@@ -201,14 +201,12 @@ Agents read a subset relevant to their role.
 ├── agents/           7 sub-agents (architect, tdd-guide, code-reviewer, ...)
 ├── rules/            11 rules (3 advisory rulebook + 8 TTSR enforcement)
 ├── claude/           Claude Code config (settings.json, hooks.json, statusline.sh)
-├── opencode/         OpenCode config (opencode.jsonc auto-generated, tui.json)
-├── omp/              omp config (config.yml hand-authored) + extensions/ + hooks/{pre,post}/
-├── omp/hooks/        5 omp hooks — 4 pre-tool blockers + 1 post-tool secret redactor (per ADR-0006)
-├── config/           Shared config (opencode-only.json)
-├── scripts/          Tooling (sync-permissions.py, test-pipeline.sh, hooks/)
+├── omp/              oh-my-pi config (config.yml hand-authored) + extensions/ + hooks/{pre,post}/
+├── omp/hooks/        5 oh-my-pi hooks — 4 pre-tool blockers + 1 post-tool secret redactor (per ADR-0006)
+├── scripts/          Tooling (test-pipeline.sh, hooks/)
 ├── docs/features/      Per-feature artifacts (PRDs, tasks, visuals)
 ├── example/          Legacy example artifacts (old research/plan pipeline)
-├── .githooks/        Pre-commit hook (runs tests + sync)
+├── .githooks/        Pre-commit hook (runs the test pipeline)
 ├── .builds/          CI (sr.ht → GitHub mirror)
 └── install.sh        Symlink installer
 ```
@@ -217,7 +215,7 @@ Agents read a subset relevant to their role.
 
 ### Skills
 
-> Model tiers in the skill tables are **recommendations, not enforced per-phase routing.** A skill runs in whatever model the session is using — Claude Code uses your selected model; omp uses its configured default (`modelRoles.default`, currently Opus). Only **agents** pin a model via `model:` frontmatter, so the Agents table's tiers are enforced. Pick the suggested tier manually, or set your harness default accordingly.
+> Model tiers in the skill tables are **recommendations, not enforced per-phase routing.** A skill runs in whatever model the session is using — Claude Code uses your selected model; oh-my-pi uses its configured default (`modelRoles.default`, currently Opus). Only **agents** pin a model via `model:` frontmatter, so the Agents table's tiers are enforced. Pick the suggested tier manually, or set your harness default accordingly.
 
 #### Core `/build` pipeline
 
@@ -287,9 +285,9 @@ Agents read a subset relevant to their role.
 
 ### Rules
 
-Rules split into two buckets per [ADR-0003](docs/adr/0003-ttsr-for-omp-runtime-enforcement.md). In Claude Code all rules auto-load as global instructions; in omp the **rulebook** rules are listed for on-demand loading via `rule://<name>` and the **TTSR** rules fire mid-stream on regex match.
+Rules split into two buckets per [ADR-0003](docs/adr/0003-ttsr-for-omp-runtime-enforcement.md). In Claude Code all rules auto-load as global instructions; in oh-my-pi the **rulebook** rules are listed for on-demand loading via `rule://<name>` and the **TTSR** rules fire mid-stream on regex match.
 
-#### Rulebook (advisory — loaded on demand in omp)
+#### Rulebook (advisory — loaded on demand in oh-my-pi)
 
 | Rule | Scope |
 |------|-------|
@@ -298,7 +296,7 @@ Rules split into two buckets per [ADR-0003](docs/adr/0003-ttsr-for-omp-runtime-e
 | `performance` | Model routing, profiling before optimizing, caching, timeouts |
 | `git-commit` | Commit message format (`@~/.gitmessage`), branching, staging policy, `~/Projects/a5/**` staging exception |
 
-#### TTSR (enforcement — regex-triggered mid-stream in omp)
+#### TTSR (enforcement — regex-triggered mid-stream in oh-my-pi)
 
 | Rule | Triggers on |
 |------|-------------|
@@ -311,7 +309,7 @@ Rules split into two buckets per [ADR-0003](docs/adr/0003-ttsr-for-omp-runtime-e
 | `no-dd-disk` | `dd` with `of=/dev/...` or `if=/dev/...` (raw disk overwrite/read) |
 | `no-broad-chmod` | `chmod -R` against `/`, `~`, `$HOME`, `/etc`, `/usr`, `/var`, `/opt`, `/Users`, `/home`, or `*` |
 
-#### Hooks (omp-only — `omp/hooks/{pre,post}/*.ts`, per [ADR-0006](docs/adr/0006-hooks-replace-ttsr-for-input-bound-patterns.md))
+#### Hooks (oh-my-pi-only — `omp/hooks/{pre,post}/*.ts`, per [ADR-0006](docs/adr/0006-hooks-replace-ttsr-for-input-bound-patterns.md))
 
 Four pre-tool blockers + one post-tool secret redactor. Migrated from TTSR rules whose regex had known bypasses; structured `event.input` parsing catches what the regex couldn't (process substitution, find-exec, interpreter wrappers).
 
@@ -323,56 +321,40 @@ Four pre-tool blockers + one post-tool secret redactor. Migrated from TTSR rules
 | `pre/guard-sudo.ts` | replaces `no-sudo.md` | Blocks any `sudo` invocation in bash commands |
 | `post/redact-keys.ts` | net-new (TTSR can't mutate output) | Redacts secrets in `read` / `bash` output (API keys, tokens, AWS access keys, GitHub tokens, JWTs, HTTP Bearer) with placeholder skip |
 
-## Triple-Harness Support
+## Dual-Harness Support
 
-This repository serves three AI coding harnesses with different runtime models. `install.sh` mirrors every shared primitive into every harness root (per [ADR-0001](docs/adr/0001-full-mirror-per-harness.md)) — same source files, three sets of symlinks:
+This repository serves two AI coding harnesses with different runtime models. `install.sh` mirrors every shared primitive into both harness roots (per [ADR-0001](docs/adr/0001-full-mirror-per-harness.md)) — same source files, two sets of symlinks:
 
-| Aspect | Claude Code | OpenCode | omp |
-|--------|-------------|----------|-----|
-| Config root | `~/.claude/` | `~/.config/opencode/` | `~/.omp/agent/` |
-| Skills | `~/.claude/skills/` (symlinked) | `~/.config/opencode/` discovers same | `~/.omp/agent/skills/` (symlinked) |
-| Commands | `~/.claude/commands/` (symlinked, dedup against skills) | `~/.config/opencode/commands/` (all symlinked) | `~/.omp/agent/commands/` (all symlinked) |
-| Agents | `~/.claude/agents/` (symlinked) | Not supported | `~/.omp/agent/agents/` (symlinked) |
-| Rules | `~/.claude/rules/` (symlinked) | Not supported | `~/.omp/agent/rules/` (symlinked) |
-| Rule semantics | Auto-loaded as global instructions every turn | n/a | **Rulebook** (loaded on demand via `rule://`) + **TTSR** (regex-triggered mid-stream) |
-| Permissions format | `"Bash(echo *)"` in JSON arrays | `"echo *": "allow"` in JSONC objects | `tools.approvalMode: write` tiers + `tools.approval.<tool>` overrides in YAML |
-| Per-pattern bash allowlist | Yes (~80 entries) | Yes (auto-synced from Claude) | **No** — TTSR rules fill this gap |
-| Permission source of truth | `claude/settings.json` | Auto-generated via `sync-permissions.py` | Hand-authored `omp/config.yml` |
-| Hooks | `claude/hooks.json` + `deny-curl-to-interpreter.sh` shell hook | Not supported | 5 TS modules in `omp/hooks/` (4 pre-tool blockers + 1 post-tool secret redactor, see [ADR-0006](docs/adr/0006-hooks-replace-ttsr-for-input-bound-patterns.md)) |
+| Aspect | Claude Code | oh-my-pi |
+|--------|-------------|-----|
+| Config root | `~/.claude/` | `~/.omp/agent/` |
+| Skills | `~/.claude/skills/` (symlinked) | `~/.omp/agent/skills/` (symlinked) |
+| Commands | `~/.claude/commands/` (symlinked, dedup against skills) | `~/.omp/agent/commands/` (all symlinked) |
+| Agents | `~/.claude/agents/` (symlinked) | `~/.omp/agent/agents/` (symlinked) |
+| Rules | `~/.claude/rules/` (symlinked) | `~/.omp/agent/rules/` (symlinked) |
+| Rule semantics | Auto-loaded as global instructions every turn | **Rulebook** (loaded on demand via `rule://`) + **TTSR** (regex-triggered mid-stream) |
+| Permissions format | `"Bash(echo *)"` in JSON arrays | `tools.approvalMode: write` tiers + `tools.approval.<tool>` overrides in YAML |
+| Per-pattern bash allowlist | Yes (~80 entries) | **No** — TTSR rules fill this gap |
+| Permission source of truth | `claude/settings.json` | Hand-authored `omp/config.yml` |
+| Hooks | `claude/hooks.json` + `deny-curl-to-interpreter.sh` shell hook | 5 TS modules in `omp/hooks/` (4 pre-tool blockers + 1 post-tool secret redactor, see [ADR-0006](docs/adr/0006-hooks-replace-ttsr-for-input-bound-patterns.md)) |
 
-`claude/settings.json` is always edited directly; the sync script automatically generates `opencode/opencode.jsonc`. `omp/config.yml` is **decoupled** — Claude's per-pattern allowlist has no omp equivalent, so the sync script is deliberately a Claude ↔ OpenCode bridge only (per [ADR-0004](docs/adr/0004-omp-permissions-and-hooks-decoupled.md)). TTSR rules in `rules/` are omp's per-pattern enforcement layer.
+`claude/settings.json` is edited directly and is Claude Code's permission source of truth. `omp/config.yml` is **decoupled** and hand-authored — Claude's per-pattern allowlist has no oh-my-pi equivalent, so the two permission models are maintained independently (per [ADR-0004](docs/adr/0004-omp-permissions-and-hooks-decoupled.md)). TTSR rules in `rules/` are oh-my-pi's per-pattern enforcement layer.
 
 ## Installation Details
 
 `install.sh` symlinks everything into the right locations:
 
-1. **Skills** → `~/.claude/skills/` (Claude + OpenCode share this dir)
+1. **Skills** → `~/.claude/skills/` (Claude Code; also mirrored into oh-my-pi)
 2. **Rules** → `~/.claude/rules/`
 3. **Commands for Claude Code** → `~/.claude/commands/`, skipping commands that have a matching skill directory (avoids duplicate slash commands)
-4. **Commands for OpenCode** → `~/.config/opencode/commands/` (all commands installed)
-5. **Agents** → `~/.claude/agents/`
-6. **Claude Code config** → `settings.json`, `statusline.sh`, `hooks.json` symlinked to `~/.claude/`
-7. **Git hooks** → `core.hooksPath` set to `.githooks`
-8. **Permission sync** → runs `sync-permissions.py` (Claude ↔ OpenCode only)
-9. **OpenCode config** → `opencode.jsonc`, `tui.json` symlinked to `~/.config/opencode/`
-10. **omp** → `omp/config.yml` symlinked to `~/.omp/agent/config.yml`, plus `skills/`, `commands/`, `agents/`, `rules/` symlinked into `~/.omp/agent/` (all commands installed — the Claude duality skip-rule does not apply)
+4. **Agents** → `~/.claude/agents/`
+5. **Claude Code config** → `settings.json`, `statusline.sh`, `hooks.json` symlinked to `~/.claude/`
+6. **Git hooks** → `core.hooksPath` set to `.githooks`
+7. **oh-my-pi** → `omp/config.yml` symlinked to `~/.omp/agent/config.yml`, plus `skills/`, `commands/`, `agents/`, `rules/` symlinked into `~/.omp/agent/` (all commands installed — the Claude duality skip-rule does not apply)
 
-The command/skill duality means that commands sharing a name with a skill (`build`, `grill`, `prd`, `tasks`, `implement`, `implement-coach`, `refactor`) are skipped for Claude Code (where skills take precedence) but installed for OpenCode and omp (which read all commands).
+The command/skill duality means that commands sharing a name with a skill (`build`, `grill`, `prd`, `tasks`, `implement`, `implement-coach`, `refactor`) are skipped for Claude Code (where skills take precedence) but installed for oh-my-pi (which reads all commands).
 
 ## Infrastructure
-
-### Permission Sync
-
-`scripts/sync-permissions.py` bridges Claude Code and OpenCode permissions:
-
-1. Reads `claude/settings.json` (source of truth)
-2. Parses Claude's `Tool(pattern)` format (e.g., `Bash(echo *)`)
-3. Maps tools to OpenCode equivalents (Bash→bash, Read→read, Write→write, Edit→edit, WebFetch→webfetch, WebSearch→websearch)
-4. Skips Claude-specific tools with no OpenCode equivalent (Search, Glob, Grep, Task)
-5. Merges with `config/opencode-only.json` for OpenCode-specific entries
-6. Writes combined result to `opencode/opencode.jsonc`
-
-Runs automatically on every commit via `.githooks/pre-commit` and during `install.sh`.
 
 ### Test Pipeline
 
@@ -400,7 +382,7 @@ This project stands on the shoulders of others:
 - **[Matt Pocock's skills-TDD pipeline](https://www.aihero.dev/skills-tdd)** and the broader [skills repo](https://github.com/mattpocock/skills) — the core pipeline (`grill-with-docs → to-prd → to-issues → tdd`) and Matt's stance on vertical-slice TDD ("write one test, one implementation, repeat — batched tests describe imagined behavior, not actual behavior") drive the design of `/grill`, `/prd`, `/tasks`, and the vertical-slice rewrites of `/implement` and `/implement-coach`. The standalone tools `/handoff` ([article](https://www.aihero.dev/skills-handoff)), `/prototype`, and `/improve-codebase` (renamed from `improve-codebase-architecture`) are also ports of Matt's skills, with internal references rewritten to match this repo's naming. The format files (CONTEXT-FORMAT.md, ADR-FORMAT.md) and the LANGUAGE/DEEPENING/HTML-REPORT/INTERFACE-DESIGN supporting docs are taken directly from his repo.
 - **[nicobailon/visual-explainer](https://github.com/nicobailon/visual-explainer)** — The `visual-explainer` skill is taken wholesale from this repository, with only minor modifications. All the HTML visual generation (PRD, tasks, diff-review, architecture diagrams, slides, etc.) is powered by this work.
 - **[affaan-m/everything-claude-code](https://github.com/affaan-m/everything-claude-code)** — The rules and agent definitions in this repo are borrowed and adapted from this collection. The coding-style, testing, security, and performance rules, as well as the agent configurations (architect, tdd-guide, code-reviewer, etc.), draw heavily from this source.
-- **[can1357/oh-my-pi (omp)](https://github.com/can1357/oh-my-pi)** ([docs](https://omp.sh/docs)) — The third harness this repo configures. The **TTSR** (time-traveling stream rules) concept — mid-stream regex-triggered rule injection with stream-abort + retry — is omp's contribution to the cross-harness rule shape and is what makes `rules/security.md` and the seven narrow `no-*.md` rules into enforcement rather than advisory content. The YAML-based extension / hook / skill model omp uses informed how this repo's per-harness boundaries got drawn (see [ADR-0004](docs/adr/0004-omp-permissions-and-hooks-decoupled.md) and [ADR-0005](docs/adr/0005-flat-shared-config-no-per-harness-scoping.md)).
+- **[can1357/oh-my-pi](https://github.com/can1357/oh-my-pi)** ([docs](https://omp.sh/docs)) — The second harness this repo configures. The **TTSR** (time-traveling stream rules) concept — mid-stream regex-triggered rule injection with stream-abort + retry — is oh-my-pi's contribution to the cross-harness rule shape and is what makes `rules/security.md` and the seven narrow `no-*.md` rules into enforcement rather than advisory content. The YAML-based extension / hook / skill model oh-my-pi uses informed how this repo's per-harness boundaries got drawn (see [ADR-0004](docs/adr/0004-omp-permissions-and-hooks-decoupled.md) and [ADR-0005](docs/adr/0005-flat-shared-config-no-per-harness-scoping.md)).
 
 ## License
 

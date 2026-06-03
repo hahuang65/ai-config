@@ -23,7 +23,7 @@ Each phase also runs standalone:
 
 ## Approval Gate Scope (read first)
 
-This skill has exactly **four** approval gates — Grill→PRD, PRD→Tasks, Tasks→Implement, Implement→done — the only points where you wait for user confirmation. Within an active phase, all routine operations (reads, writes, edits, bash, tests, environment bootstrap) proceed without per-call approval. Asking "OK to proceed?" before each tool batch is not how this skill works. (omp: see `~/.omp/agent/RULES.md`, "Approval gates are user-facing only".)
+This skill has exactly **four** approval gates — Grill→PRD, PRD→Tasks, Tasks→Implement, Implement→done — the only points where you wait for user confirmation. Within an active phase, all routine operations (reads, writes, edits, bash, tests, environment bootstrap) proceed without per-call approval. Asking "OK to proceed?" before each tool batch is not how this skill works. (oh-my-pi: see `~/.omp/agent/RULES.md`, "Approval gates are user-facing only".)
 
 A gate clears on **any response that expresses confirmation or approval** — there is no required phrase or keyword. The prompts below say what comes next; the user may confirm however they like ("yes", "go", "sounds good", "ship it", a thumbs-up). If a response is ambiguous or raises a concern, resolve it instead of advancing.
 
