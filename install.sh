@@ -2,8 +2,10 @@
 #
 # install.sh — Install ai-config for Claude Code and oh-my-pi
 #
-# Symlinks skills, commands, and tool-specific config into the right places.
-# Run from the ai-config repo root: ./install.sh
+# Installs harness by harness: one self-contained block per harness symlinks
+# that harness's own config plus every shared primitive (skills, commands,
+# agents, rules) into the harness's config root. Run from the ai-config repo
+# root: ./install.sh
 #
 set -euo pipefail
 
@@ -12,64 +14,16 @@ REPO_DIR="$(cd "$(dirname "$0")" && pwd)"
 green() { printf '\033[32m%s\033[0m\n' "$1"; }
 dim()   { printf '\033[2m%s\033[0m\n' "$1"; }
 
-# ── Skills (Claude Code: ~/.claude/skills/; mirrored into oh-my-pi below) ─────────
-
-echo ""
-green "Installing skills..."
-mkdir -p "$HOME/.claude/skills"
-for skill in "$REPO_DIR"/skills/*/; do
-  name="$(basename "$skill")"
-  ln -sfn "$skill" "$HOME/.claude/skills/$name"
-  dim "  ~/.claude/skills/$name → $skill"
-done
-
-# ── Rules (always-on: loaded into every Claude Code conversation) ────────────
-
-echo ""
-green "Installing rules..."
-mkdir -p "$HOME/.claude/rules"
-for rule in "$REPO_DIR"/rules/*.md; do
-  name="$(basename "$rule")"
-  ln -sf "$rule" "$HOME/.claude/rules/$name"
-  dim "  ~/.claude/rules/$name → $rule"
-done
-
-# ── Commands for Claude Code (~/.claude/commands/) ───────────────────────────
+# ── Claude Code (first harness — config + all primitives) ────────────────────
 #
-# Skip commands that have a matching skill (skills/ dir with same basename),
-# since Claude Code registers both as slash commands, causing duplicates.
-
-echo ""
-green "Installing commands for Claude Code..."
-mkdir -p "$HOME/.claude/commands"
-for cmd in "$REPO_DIR"/commands/*.md; do
-  [ -f "$cmd" ] || continue
-  name="$(basename "$cmd")"
-  skill_name="${name%.md}"
-  if [ -d "$REPO_DIR/skills/$skill_name" ]; then
-    dim "  ~/.claude/commands/$name — skipped (registered as skill)"
-    continue
-  fi
-  ln -sf "$cmd" "$HOME/.claude/commands/$name"
-  dim "  ~/.claude/commands/$name → $cmd"
-done
-
-# ── Agents (Claude Code subagents: ~/.claude/agents/) ────────────────────────
-
-echo ""
-green "Installing agents..."
-mkdir -p "$HOME/.claude/agents"
-for agent in "$REPO_DIR"/agents/*.md; do
-  [ -f "$agent" ] || continue
-  name="$(basename "$agent")"
-  ln -sf "$agent" "$HOME/.claude/agents/$name"
-  dim "  ~/.claude/agents/$name → $agent"
-done
-
-# ── Claude Code config ───────────────────────────────────────────────────────
+# Self-contained block: the settings / statusline / hooks config plus skills,
+# rules, agents, and commands symlinked into ~/.claude/. Commands that share a
+# name with a skill are skipped — Claude Code registers both as slash commands,
+# which would duplicate /name.
 
 echo ""
 green "Installing Claude Code config..."
+mkdir -p "$HOME/.claude"
 ln -sf "$REPO_DIR/claude/settings.json" "$HOME/.claude/settings.json"
 dim "  ~/.claude/settings.json → $REPO_DIR/claude/settings.json"
 ln -sf "$REPO_DIR/claude/statusline.sh" "$HOME/.claude/statusline.sh"
@@ -77,12 +31,37 @@ dim "  ~/.claude/statusline.sh → $REPO_DIR/claude/statusline.sh"
 ln -sf "$REPO_DIR/claude/hooks.json" "$HOME/.claude/hooks.json"
 dim "  ~/.claude/hooks.json → $REPO_DIR/claude/hooks.json"
 
-# ── Git hooks ────────────────────────────────────────────────────────────────
-
 echo ""
-green "Configuring git hooks..."
-git -C "$REPO_DIR" config core.hooksPath .githooks
-dim "  core.hooksPath → .githooks"
+green "Installing skills, commands, agents, rules for Claude Code..."
+mkdir -p "$HOME/.claude/skills" "$HOME/.claude/commands" \
+         "$HOME/.claude/agents" "$HOME/.claude/rules"
+for skill in "$REPO_DIR"/skills/*/; do
+  name="$(basename "$skill")"
+  ln -sfn "$skill" "$HOME/.claude/skills/$name"
+  dim "  ~/.claude/skills/$name → $skill"
+done
+for rule in "$REPO_DIR"/rules/*.md; do
+  [ -f "$rule" ] || continue
+  name="$(basename "$rule")"
+  ln -sf "$rule" "$HOME/.claude/rules/$name"
+  dim "  ~/.claude/rules/$name → $rule"
+done
+for cmd in "$REPO_DIR"/commands/*.md; do
+  [ -f "$cmd" ] || continue
+  name="$(basename "$cmd")"
+  if [ -d "$REPO_DIR/skills/${name%.md}" ]; then
+    dim "  ~/.claude/commands/$name — skipped (registered as skill)"
+    continue
+  fi
+  ln -sf "$cmd" "$HOME/.claude/commands/$name"
+  dim "  ~/.claude/commands/$name → $cmd"
+done
+for agent in "$REPO_DIR"/agents/*.md; do
+  [ -f "$agent" ] || continue
+  name="$(basename "$agent")"
+  ln -sf "$agent" "$HOME/.claude/agents/$name"
+  dim "  ~/.claude/agents/$name → $agent"
+done
 
 # ── oh-my-pi (second harness — config + all primitives at native priority) ────────
 #
@@ -153,6 +132,13 @@ for hook in "$REPO_DIR"/omp/hooks/post/*.ts "$REPO_DIR"/omp/hooks/post/*.js; do
   ln -sf "$hook" "$HOME/.omp/agent/hooks/post/$name"
   dim "  ~/.omp/agent/hooks/post/$name → $hook"
 done
+
+# ── Repository git hook (shared dev tooling — not harness-specific) ──────────
+
+echo ""
+green "Configuring git hooks..."
+git -C "$REPO_DIR" config core.hooksPath .githooks
+dim "  core.hooksPath → .githooks"
 
 # ── Summary ──────────────────────────────────────────────────────────────────
 
