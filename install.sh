@@ -14,6 +14,20 @@ REPO_DIR="$(cd "$(dirname "$0")" && pwd)"
 green() { printf '\033[32m%s\033[0m\n' "$1"; }
 dim()   { printf '\033[2m%s\033[0m\n' "$1"; }
 
+# Remove dangling symlinks (target no longer exists) from a managed dir, so
+# re-running install.sh self-heals after a skill/command/rule is deleted or
+# renamed — `ln -sf` refreshes live links but never removes orphaned ones.
+prune_dangling() {
+  local d="$1" link
+  [ -d "$d" ] || return 0
+  for link in "$d"/*; do
+    if [ -L "$link" ] && [ ! -e "$link" ]; then
+      rm -f "$link"
+      dim "  pruned dangling → $link"
+    fi
+  done
+}
+
 # ── Claude Code (first harness — config + all primitives) ────────────────────
 #
 # Self-contained block: the settings / statusline / hooks config plus skills,
@@ -35,6 +49,10 @@ echo ""
 green "Installing skills, commands, agents, rules for Claude Code..."
 mkdir -p "$HOME/.claude/skills" "$HOME/.claude/commands" \
          "$HOME/.claude/agents" "$HOME/.claude/rules"
+prune_dangling "$HOME/.claude/skills"
+prune_dangling "$HOME/.claude/commands"
+prune_dangling "$HOME/.claude/agents"
+prune_dangling "$HOME/.claude/rules"
 for skill in "$REPO_DIR"/skills/*/; do
   name="$(basename "$skill")"
   ln -sfn "$skill" "$HOME/.claude/skills/$name"
@@ -50,6 +68,7 @@ for cmd in "$REPO_DIR"/commands/*.md; do
   [ -f "$cmd" ] || continue
   name="$(basename "$cmd")"
   if [ -d "$REPO_DIR/skills/${name%.md}" ]; then
+    rm -f "$HOME/.claude/commands/$name"
     dim "  ~/.claude/commands/$name — skipped (registered as skill)"
     continue
   fi
@@ -87,6 +106,13 @@ mkdir -p "$HOME/.omp/agent/skills" "$HOME/.omp/agent/commands" \
          "$HOME/.omp/agent/agents" "$HOME/.omp/agent/rules" \
          "$HOME/.omp/agent/extensions" \
          "$HOME/.omp/agent/hooks/pre" "$HOME/.omp/agent/hooks/post"
+prune_dangling "$HOME/.omp/agent/skills"
+prune_dangling "$HOME/.omp/agent/commands"
+prune_dangling "$HOME/.omp/agent/agents"
+prune_dangling "$HOME/.omp/agent/rules"
+prune_dangling "$HOME/.omp/agent/extensions"
+prune_dangling "$HOME/.omp/agent/hooks/pre"
+prune_dangling "$HOME/.omp/agent/hooks/post"
 for skill in "$REPO_DIR"/skills/*/; do
   name="$(basename "$skill")"
   ln -sfn "$skill" "$HOME/.omp/agent/skills/$name"
