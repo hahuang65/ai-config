@@ -71,7 +71,7 @@ If the user says "implement" or doesn't specify, invoke `implement` with the fea
 
 ## Visual-Explainer Integration
 
-The `visual-explainer` skill is **optional** — all visual steps are skipped gracefully if it is not installed. When available it produces self-contained HTML (Mermaid diagrams, CSS-Grid layouts, styled tables, dark/light themes, zoom controls), generates the per-phase companions (`prd.html`, `tasks.html`, `diff-review.html`), and exposes these standalone commands: `/generate-architecture-diagram`, `/generate-web-diagram`, `/generate-visual-plan`, `/generate-slides`, `/diff-review`, `/plan-review`, `/project-recap`. It also activates proactively for complex terminal tables (4+ rows or 3+ columns), rendering an HTML table instead.
+The `visual-explainer` skill is **optional** — all visual steps are skipped gracefully if it is not installed. When available it produces self-contained HTML (Mermaid diagrams, CSS-Grid layouts, styled tables, dark/light themes, zoom controls), generates the per-phase companions (`prd.html`, `tasks.html`, `diff-review.html`), and exposes these standalone commands: `/diff-review`, `/plan-review`, `/project-recap`. It also activates proactively for complex terminal tables (4+ rows or 3+ columns), rendering an HTML table instead.
 
 ## Cleanup
 

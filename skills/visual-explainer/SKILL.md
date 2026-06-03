@@ -75,7 +75,7 @@ See [references/diagram-types.md](references/diagram-types.md) for detailed rend
 
 ## Slide Deck Mode
 
-Opt-in only (`/generate-slides` or `--slides` flag). See [references/slide-patterns.md](references/slide-patterns.md) for full guidance. Slides are not pages reformatted — each slide is one viewport (100dvh), no scrolling. Cover all source content.
+Opt-in only — request slides explicitly (the `--slides` flag, or natural language like "as a slide deck"). See [references/slide-patterns.md](references/slide-patterns.md) for full guidance. Slides are not pages reformatted — each slide is one viewport (100dvh), no scrolling. Cover all source content.
 
 ## Quality Checks
 

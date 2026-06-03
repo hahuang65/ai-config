@@ -197,7 +197,7 @@ test_phase_prd() {
   check_content_cached "$content" "$label" "[Aa]nnotat"
   check_content_cached "$content" "$label" "[Aa]ddress"
   check_content_cached "$content" "$label" "//"
-  check_content_cached "$content" "$label" "generate-visual-plan"
+  check_content_cached "$content" "$label" "visual-explainer"
   check_content_cached "$content" "$label" "prd\.html"
 }
 
@@ -221,7 +221,7 @@ test_phase_tasks() {
   check_content_cached "$content" "$label" "[Bb]locked by"
   check_content_cached "$content" "$label" "tasks\.md"
   check_content_cached "$content" "$label" "tasks\.html"
-  check_content_cached "$content" "$label" "generate-visual-plan"
+  check_content_cached "$content" "$label" "visual-explainer"
 }
 
 # ---------------------------------------------------------------------------

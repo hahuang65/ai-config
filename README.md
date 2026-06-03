@@ -197,7 +197,7 @@ Agents read a subset relevant to their role.
 ```text
 .
 ├── skills/           17 workflow skills (build, grill, prd, tasks, implement, implement-coach, ...)
-├── commands/         17 slash commands (/diff-review, /implement-coach, /pickup, ...)
+├── commands/         13 slash commands (/diff-review, /implement-coach, /pickup, ...)
 ├── agents/           7 sub-agents (architect, tdd-guide, code-reviewer, ...)
 ├── rules/            11 rules (3 advisory rulebook + 8 TTSR enforcement)
 ├── claude/           Claude Code config (settings.json, hooks.json, statusline.sh)
@@ -264,10 +264,6 @@ Agents read a subset relevant to their role.
 | `/handoff` | Write a handoff doc to OS temp dir for another agent session |
 | `/pickup` | Resume from a handoff doc (most recent by default, or matched from an argument) |
 | `/diff-review` | Visual HTML diff review — before/after architecture comparison |
-| `/generate-architecture-diagram` | Visual HTML module topology and data flows |
-| `/generate-visual-plan` | Visual HTML companion for PRDs and task breakdowns |
-| `/generate-slides` | Magazine-quality slide deck as self-contained HTML |
-| `/generate-web-diagram` | Standalone HTML diagram, opened in browser |
 | `/plan-review` | Visual HTML: current state vs. proposed implementation |
 | `/project-recap` | Visual HTML: rebuild mental model of project state |
 

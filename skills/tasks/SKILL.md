@@ -47,7 +47,7 @@ Use the structure in [references/task-template.md](references/task-template.md).
 
 ### Step 4: Generate `tasks.html`
 
-Invoke `/generate-visual-plan` to produce `tasks.html` in the feature directory, and **open it in the browser**. The HTML must use "Tasks" in its `<title>` and `<h1>`, and emphasize the **dependency graph** between slices, the HITL/AFK split, and which user stories each slice covers.
+Invoke the `visual-explainer` skill to produce `tasks.html` in the feature directory, and **open it in the browser**. The HTML must use "Tasks" in its `<title>` and `<h1>`, and emphasize the **dependency graph** between slices, the HITL/AFK split, and which user stories each slice covers.
 
 ### Step 5: Review and finalize
 

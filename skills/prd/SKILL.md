@@ -43,7 +43,7 @@ Synthesize `prd.md` using the structure in [references/prd-template.md](referenc
 
 ### Step 4: Generate the visual PRD
 
-Invoke `/generate-visual-plan` to produce `prd.html` in the feature directory (not `~/.agent/diagrams/`), and **open it in the browser**. The HTML must use "PRD" (not "Plan") in its `<title>` and `<h1>` (e.g. `<h1>Cursor Pagination — PRD</h1>`) and emphasize user stories, decisions, and module sketches — not file maps or code.
+Invoke the `visual-explainer` skill to produce `prd.html` in the feature directory (not `~/.agent/diagrams/`), and **open it in the browser**. The HTML must use "PRD" (not "Plan") in its `<title>` and `<h1>` (e.g. `<h1>Cursor Pagination — PRD</h1>`) and emphasize user stories, decisions, and module sketches — not file maps or code.
 
 ### Step 5: Review and advance
 
