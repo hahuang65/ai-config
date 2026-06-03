@@ -28,19 +28,18 @@ The pipeline merges Boris Tane's research-first discipline with Matt Pocock's sk
   ├── Phase 1: /grill        → ./CONTEXT.md  (glossary)
   │                            ./docs/adr/    (ADRs — hard-to-reverse decisions)
   │
-  ├── Phase 2: /prd          → docs/claude/<slug>/prd.md + prd.html
+  ├── Phase 2: /prd          → docs/features/<slug>/prd.md + prd.html
   │                            (annotation cycles via // comments)
   │
-  ├── Phase 3: /tasks        → docs/claude/<slug>/tasks.md + tasks.html
+  ├── Phase 3: /tasks        → docs/features/<slug>/tasks.md + tasks.html
   │                            (vertical-slice tracer bullets, HITL/AFK)
-  │                            optional: --publish → real GitHub Issues
   │
   └── Phase 4: /implement         → AI writes test → AI writes impl → repeat
         or    /implement-coach    → AI writes test → YOU write impl → AI verifies → repeat
                                     (final: diff-review.html)
 ```
 
-`CONTEXT.md` and `docs/adr/` live at the repo root and accrete across many `/build` runs. Per-feature artifacts (PRD, tasks, diff review) live in `docs/claude/<YYYYMMDD-HHMM>-<slug>/`.
+`CONTEXT.md` and `docs/adr/` live at the repo root and accrete across many `/build` runs. Per-feature artifacts (PRD, tasks, diff review) live in `docs/features/<YYYYMMDD-HHMM>-<slug>/`.
 
 ### Phase 1: Grill
 
@@ -74,15 +73,15 @@ If a question can be answered by exploring the codebase, grill does so instead o
 
 ### Phase 3: Tasks
 
-**Entry**: User says "break it into tasks" or `/tasks [prd-dir] [--publish]`
+**Entry**: User says "break it into tasks" or `/tasks [prd-dir]`
 
 1. Reads the approved `prd.md`, `CONTEXT.md`, and relevant ADRs
 2. Drafts **vertical-slice tracer bullets** — each slice cuts through every layer end-to-end (schema, API, UI, tests) and is demoable on its own
 3. Marks each slice **HITL** (human-in-the-loop) or **AFK** (away-from-keyboard); prefers AFK
-4. Writes `tasks.md` with dependency order (blockers first) and generates `tasks.html`
-5. **Quizzes the user**: granularity? dependency relationships? HITL/AFK split? coverage of user stories?
-6. Iterates until approved
-7. **Optional `--publish`**: creates real GitHub Issues via `gh issue create`, in dependency order, and back-fills issue numbers into `tasks.md`
+4. Writes `tasks.md` (dependency order, blockers first), generates `tasks.html`, and opens it in the browser
+5. **Reviews with the user** (asks directly, or accepts `//` annotations on `tasks.md`): granularity? dependency relationships? HITL/AFK split? coverage of user stories?
+6. Iterates on feedback — the markdown is the source of truth; no per-pass visual regeneration
+7. On the user's confirmation, regenerates `tasks.html` once if it changed, then advances to implementation
 
 ### Phase 4: Implement (vertical-slice TDD)
 
@@ -100,13 +99,13 @@ Both modes follow the same TDD philosophy: **vertical, never horizontal. One tes
 4. Runs continuous type checks and linters
 5. **Verification loop**: type check → lint → test suite → build (repeat until all pass)
 6. Runs **`database-reviewer` agent** if DB code was touched
-7. Runs `/simplify` for reuse opportunities
+7. Runs the `code-cleaner` skill for reuse opportunities
 8. Runs **`refactor-cleaner` agent** for dead code removal
 9. Runs **`code-reviewer` agent** — OWASP Top 10, confidence >80% threshold
 10. Runs **`doc-updater` agent** if APIs/architecture changed
-11. Runs `/fact-check` on both `prd.md` and `tasks.md`
+11. Runs the `fact-checker` skill on both `prd.md` and `tasks.md`
 12. **Refreshes `prd.html` and `tasks.html`** — mandatory regeneration to mirror finals
-13. **Generates `diff-review.html`** via visual-explainer, then runs `/fact-check` on it
+13. **Generates `diff-review.html`** via visual-explainer, then runs the `fact-checker` skill on it
 14. **NEVER commits** — leaves that to the user
 
 #### Coach Mode (`/implement-coach`)
@@ -133,14 +132,14 @@ The PRD phase uses inline `//` annotations for user feedback:
 7. As a customer, I want to export to CSV...
 ```
 
-The agent addresses every annotation, updates the document, removes the `//` comments, and regenerates the visual companion. The tasks phase uses a lighter quiz-the-user pattern (present numbered list of slices, iterate).
+The agent addresses every annotation, updates the document, removes the `//` comments, and re-presents — working from the markdown during the review. The tasks phase defaults to direct questioning (present a numbered list of slices, ask, iterate); both phases also accept `//` annotations. The visual companion is generated and opened when the markdown is first written, left untouched during the review, then regenerated once at the end only if the markdown changed.
 
 ### Visual Sync Guarantee
 
-Visual HTML companions must always mirror their markdown counterparts. Regeneration is mandatory:
+Visual HTML companions are generated and opened when the markdown is first written, and regenerated:
 
-- **PRD phase**: after every annotation cycle — even if the user approves. One final regeneration on approval.
-- **Tasks phase**: after every iteration of the quiz cycle
+- **PRD phase**: once after the review, only if the markdown changed — never mid-review
+- **Tasks phase**: once after the review, only if the markdown changed — never mid-review
 - **Implement phase**: after implementation completes — mandatory regardless of whether the markdown changed
 
 ### Artifact Lifecycle
@@ -149,9 +148,9 @@ Visual HTML companions must always mirror their markdown counterparts. Regenerat
 |---|---|---|
 | `CONTEXT.md` | repo root | Long-lived — accretes across all features |
 | `docs/adr/*.md` | repo root | Long-lived — historical record |
-| `docs/claude/<slug>/` | per-feature | Optional — keep, delete, or `.gitignore` |
+| `docs/features/<slug>/` | per-feature | Optional — keep, delete, or `.gitignore` |
 
-The `git-commit` rule covers what to include: `CONTEXT.md` and `docs/adr/` ship with the commits they relate to, and per-feature `docs/claude/` directories ship alongside their feature. See the rule for the `~/Projects/a5/**` exception that keeps these artifacts local in repos teammates haven't opted into.
+The `git-commit` rule covers what to include: `CONTEXT.md` and `docs/adr/` ship with the commits they relate to, and per-feature `docs/features/` directories ship alongside their feature. See the rule for the `~/Projects/a5/**` exception that keeps these artifacts local in repos teammates haven't opted into.
 
 ### Legacy Example
 
@@ -171,8 +170,7 @@ The [`example/`](example/) directory contains sample artifacts from a previous v
 │   └── visual-explainer → prd.html
 │
 ├── tasks (opus)
-│   ├── visual-explainer → tasks.html
-│   └── gh issue create (optional, --publish)
+│   └── visual-explainer → tasks.html
 │
 ├── implement (sonnet)
 │   ├── tdd-guide (sonnet) → vertical-slice TDD
@@ -196,8 +194,8 @@ Agents read a subset relevant to their role.
 
 ```text
 .
-├── skills/           13 workflow skills (build, grill, prd, tasks, implement, implement-coach, ...)
-├── commands/         18 slash commands (/diff-review, /fact-check, /implement-coach, ...)
+├── skills/           17 workflow skills (build, grill, prd, tasks, implement, implement-coach, ...)
+├── commands/         17 slash commands (/diff-review, /implement-coach, /pickup, ...)
 ├── agents/           7 sub-agents (architect, tdd-guide, code-reviewer, ...)
 ├── rules/            11 rules (3 advisory rulebook + 8 TTSR enforcement)
 ├── claude/           Claude Code config (settings.json, hooks.json, statusline.sh)
@@ -206,7 +204,7 @@ Agents read a subset relevant to their role.
 ├── omp/hooks/        5 omp hooks — 4 pre-tool blockers + 1 post-tool secret redactor (per ADR-0006)
 ├── config/           Shared config (opencode-only.json)
 ├── scripts/          Tooling (sync-permissions.py, test-pipeline.sh, hooks/)
-├── docs/claude/      Per-feature artifacts (PRDs, tasks, visuals)
+├── docs/features/      Per-feature artifacts (PRDs, tasks, visuals)
 ├── example/          Legacy example artifacts (old research/plan pipeline)
 ├── .githooks/        Pre-commit hook (runs tests + sync)
 ├── .builds/          CI (sr.ht → GitHub mirror)
@@ -217,9 +215,11 @@ Agents read a subset relevant to their role.
 
 ### Skills
 
+> Model tiers in the skill tables are **recommendations, not enforced per-phase routing.** A skill runs in whatever model the session is using — Claude Code uses your selected model; omp uses its configured default (`modelRoles.default`, currently Opus). Only **agents** pin a model via `model:` frontmatter, so the Agents table's tiers are enforced. Pick the suggested tier manually, or set your harness default accordingly.
+
 #### Core `/build` pipeline
 
-| Name | Model | Role |
+| Name | Model (rec.) | Role |
 |------|-------|------|
 | `build` | — | Orchestrator: coordinates grill → prd → tasks → implement |
 | `grill` | opus | Interview-driven domain modeling; updates `CONTEXT.md` + ADRs inline |
@@ -230,18 +230,22 @@ Agents read a subset relevant to their role.
 
 #### Standalone tools that pair with `/build`
 
-| Name | Model | Role |
+| Name | Model (rec.) | Role |
 |------|-------|------|
 | `refactor` | sonnet | User-directed restructuring (extract, inline, split, rename) with incremental test verification |
 | `improve-codebase` | opus | Survey an area for deepening opportunities (shallow → deep modules) and propose them as an HTML report |
 | `prototype` | sonnet | Throwaway prototype to flesh out a design — terminal TUI for logic, or N UI variants on one route |
-| `handoff` | sonnet | Compact the current conversation into a handoff doc in the OS temp dir for another session |
+| `handoff` | sonnet | Summarise the current session into a disposable handoff doc in the OS temp dir for another session |
+| `pickup` | sonnet | Resume work from a handoff doc — most recent by default, or one matched from an argument |
+| `code-cleaner` | sonnet | Clean up implementation code after tests pass (reuse, readability, dead code) — runs in `/implement`'s review chain. Our own, not Claude's built-in `/simplify` |
+| `fact-checker` | sonnet | Verify a PRD/tasks/HTML doc against the codebase and correct it in place — runs in `/implement`'s review chain. Our own, not Claude's built-in `/fact-check` |
 
 #### Reference / utility
 
-| Name | Model | Role |
+| Name | Model (rec.) | Role |
 |------|-------|------|
 | `visual-explainer` | — | Generate self-contained HTML pages for visual explanations |
+| `diff-review` | — | Visual HTML diff review — before/after comparison + code-review analysis (also runs in `/implement`'s review chain) |
 | `frontend-patterns` | — | Reference patterns for component composition, state, a11y |
 | `api-design` | — | Reference patterns for REST API design |
 
@@ -252,21 +256,20 @@ Agents read a subset relevant to their role.
 | `/build` | Full feature workflow — grill, PRD, tasks, implement |
 | `/grill` | Interactive domain-modeling session (updates `CONTEXT.md` + ADRs) |
 | `/prd` | Synthesize a PRD from current conversation; annotation cycles |
-| `/tasks` | Break a PRD into vertical-slice tasks; `--publish` for GitHub Issues |
+| `/tasks` | Break a PRD into vertical-slice tasks (reviewed locally) |
 | `/implement` | Execute approved tasks via vertical-slice TDD (AI implements) |
 | `/implement-coach` | Coach-guided implementation (AI writes one test, you write the code) |
 | `/improve-codebase` | Survey an area for deepening opportunities; HTML report + grilling loop |
 | `/prototype` | Throwaway prototype (logic TUI or UI variants) to flesh out a design |
 | `/handoff` | Write a handoff doc to OS temp dir for another agent session |
+| `/pickup` | Resume from a handoff doc (most recent by default, or matched from an argument) |
 | `/diff-review` | Visual HTML diff review — before/after architecture comparison |
-| `/fact-check` | Verify document accuracy against codebase, correct in place |
 | `/generate-architecture-diagram` | Visual HTML module topology and data flows |
 | `/generate-visual-plan` | Visual HTML companion for PRDs and task breakdowns |
 | `/generate-slides` | Magazine-quality slide deck as self-contained HTML |
 | `/generate-web-diagram` | Standalone HTML diagram, opened in browser |
 | `/plan-review` | Visual HTML: current state vs. proposed implementation |
 | `/project-recap` | Visual HTML: rebuild mental model of project state |
-| `/model-route` | Recommend optimal Claude model for a task |
 
 ### Agents
 

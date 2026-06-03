@@ -1,0 +1,58 @@
+# TDD Protocol
+
+Shared reference for `implement` and `implement-coach`. Both run strict vertical-slice TDD — the only difference is who writes the implementation code (the AI in `/implement`; the user in `/implement-coach`).
+
+## Philosophy
+
+**Vertical-slice TDD** — one test, one implementation, repeat. Each test responds to what you learned from the previous cycle. Do NOT write all tests upfront, then all implementation.
+
+**Good tests** verify behavior through public interfaces. They read like specifications — *what* the system does, not *how*. They survive refactors because they don't care about internal structure.
+
+**Bad tests** couple to implementation: they mock internal collaborators, test private methods, or verify through side channels. Warning sign: a test that fails when you rename an internal function despite identical behavior.
+
+## The pattern
+
+```
+RIGHT (vertical):
+  RED→GREEN: test1 → impl1   (one test, minimal code to pass)
+  RED→GREEN: test2 → impl2   (next test, minimal code to pass)
+  (refactor between cycles, only while GREEN)
+```
+
+```
+WRONG (horizontal):
+  RED:   test1, test2, test3, test4, test5
+  GREEN: impl1, impl2, impl3, impl4, impl5
+```
+
+Tests written in bulk test *imagined* behavior, not *actual* behavior. They check the shape of things — data structures, signatures — rather than user-facing behavior. Reject this anti-pattern.
+
+## Per-cycle rules
+
+- **One test at a time.** Only enough code to pass the current test.
+- **Don't anticipate future tests.** Write code for what the current test needs, nothing more.
+- **Tests exercise the public interface**, never internal state.
+- **Tests use `CONTEXT.md` vocabulary** — `it("cancels an Order", ...)`, not `it("calls cancelOrder()", ...)`.
+- **Refactor only while GREEN.** Get to GREEN first, then extract duplication, deepen modules, apply SOLID where natural. Run tests after every refactor step.
+
+## Deep modules
+
+Before writing a slice's first test, confirm its public interface. Prefer [deep modules](https://github.com/mattpocock/skills/blob/main/skills/engineering/tdd/deep-modules.md) — a small interface over a deep implementation. The interface is what tests exercise; everything behind it is free to refactor.
+
+## Per-slice checklist
+
+Before marking a slice complete:
+
+- [ ] Every test describes behavior, not implementation
+- [ ] Every test uses the public interface only
+- [ ] Every test would survive an internal refactor
+- [ ] The code is minimal for the tests it satisfies
+- [ ] No speculative features added beyond the acceptance criteria
+
+Then mark the slice complete in `tasks.md`: check off its acceptance-criteria boxes (`- [ ]` → `- [x]`) and append a `**Status:** ✅ Complete` line under the slice title.
+
+## Handling issues
+
+- **Minor issues:** fix and continue. Note the deviation in the slice body.
+- **A slice can't be implemented as written:** STOP. Surface the issue and wait for guidance.
+- **Test failures during refactor:** revert the refactor step — refactoring must not change behavior.

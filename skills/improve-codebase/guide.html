@@ -126,7 +126,7 @@ code { font-family: var(--font-mono); font-size: 0.85em; background: var(--accen
 
 <div class="section">
   <div class="section-title"><span class="num">02</span>Glossary (Use Exactly)</div>
-  <p style="font-size: 0.9rem; color: var(--text-dim); margin-bottom: 14px;">Don't substitute "component," "service," "API," or "boundary." Consistent language is the whole point. Full definitions in <code>LANGUAGE.md</code>.</p>
+  <p style="font-size: 0.9rem; color: var(--text-dim); margin-bottom: 14px;">Don't substitute "component," "service," "API," or "boundary." Consistent language is the whole point. Full definitions in <code>language.md</code>.</p>
   <div class="glossary-grid">
     <div class="term"><strong>Module</strong><p>Anything with an interface and an implementation. Scale-agnostic: function, class, package, slice.</p></div>
     <div class="term"><strong>Interface</strong><p>Everything a caller must know: types, invariants, error modes, ordering, config — not just the signature.</p></div>
@@ -188,7 +188,7 @@ code { font-family: var(--font-mono); font-size: 0.85em; background: var(--accen
 <div class="section">
   <div class="section-title"><span class="num">06</span>Place in the Pipeline</div>
   <div class="callout">
-    <span class="cmd-tag">/improve-codebase</span> is <strong>not</strong> part of the <span class="cmd-tag">/build</span> loop. It's a standalone tool invoked when you feel architectural friction — a new module turned out shallower than expected, a sub-system grew hard to navigate, or a grilling session keeps tripping over the same friction. For surface-level cleanup right after implementation (dead code, unused imports, simple reuse), <span class="cmd-tag">refactor-cleaner</span> and <span class="cmd-tag">/simplify</span> already run inside <span class="cmd-tag">/implement</span>.
+    <span class="cmd-tag">/improve-codebase</span> is <strong>not</strong> part of the <span class="cmd-tag">/build</span> loop. It's a standalone tool invoked when you feel architectural friction — a new module turned out shallower than expected, a sub-system grew hard to navigate, or a grilling session keeps tripping over the same friction. For surface-level cleanup right after implementation (dead code, unused imports, simple reuse), <span class="cmd-tag">refactor-cleaner</span> and <span class="cmd-tag">code-cleaner</span> already run inside <span class="cmd-tag">/implement</span>.
   </div>
 </div>
 

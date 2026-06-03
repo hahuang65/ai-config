@@ -84,7 +84,7 @@ The reference CSS snippets below show *minimum* structural patterns. When using 
 
 ## Output
 
-Write to the current feature directory under `docs/claude/` if one exists. Otherwise create `docs/claude/<YYYYMMDD-HHMM>-<slug>/`. Do NOT write to `~/.agent/diagrams/`. Open in browser. Tell the user the file path.
+Write to the current feature directory under `docs/features/` if one exists. Otherwise create `docs/features/<YYYYMMDD-HHMM>-<slug>/`. Do NOT write to `~/.agent/diagrams/`. Open in browser. Tell the user the file path.
 
 ## AI Illustrations (Optional)
 

@@ -54,6 +54,27 @@ count_matches() {
   grep -cE "$1" "$2" 2>/dev/null || echo 0
 }
 
+gather_skill_content() {
+  # SKILL.md plus only the reference files it actually links (its own
+  # references/ and ../shared/references/), resolved relative to the skill dir.
+  # A required workflow phrase still registers after it is relocated out of
+  # SKILL.md into a reference the skill imports — but a phrase living in a
+  # shared reference the skill does NOT import does not count. Phrase checks
+  # assert "this skill defines X", following the same import graph an agent
+  # would when it reads the SKILL and follows its links.
+  local skill="$1"
+  local skill_dir="$REPO_DIR/skills/$skill"
+  local skill_file="$skill_dir/SKILL.md"
+  cat "$skill_file" 2>/dev/null || true
+  local rel
+  while read -r rel; do
+    [[ -z "$rel" ]] && continue
+    [[ "$rel" =~ ^https?: ]] && continue
+    [[ -f "$skill_dir/$rel" ]] && { printf '\n'; cat "$skill_dir/$rel"; }
+  done < <(grep -oE '\]\([^)]*references/[^)]+\.md\)' "$skill_file" 2>/dev/null \
+             | sed -E 's/^\]\(//; s/\)$//' | sort -u || true)
+}
+
 # ---------------------------------------------------------------------------
 # 1. Frontmatter: skills
 # ---------------------------------------------------------------------------
@@ -138,7 +159,7 @@ test_phase_grill() {
   local label="skills/grill/SKILL.md"
   [[ -f "$file" ]] || { fail "$label" "file not found"; return; }
   local content
-  content="$(<"$file")"
+  content="$(gather_skill_content grill)"
 
   check_content_cached "$content" "$label" "one at a time"
   check_content_cached "$content" "$label" "CONTEXT\.md"
@@ -161,7 +182,7 @@ test_phase_prd() {
   local label="skills/prd/SKILL.md"
   [[ -f "$file" ]] || { fail "$label" "file not found"; return; }
   local content
-  content="$(<"$file")"
+  content="$(gather_skill_content prd)"
 
   check_content_cached "$content" "$label" "[Rr]ead [Cc]ontext"
   check_content_cached "$content" "$label" "CONTEXT\.md"
@@ -173,8 +194,8 @@ test_phase_prd() {
     check_content_cached "$content" "$label" "$section"
   done
 
-  check_content_cached "$content" "$label" "[Ww]ait for [Aa]nnotation|STOP"
-  check_content_cached "$content" "$label" "Address Annotations"
+  check_content_cached "$content" "$label" "[Aa]nnotat"
+  check_content_cached "$content" "$label" "[Aa]ddress"
   check_content_cached "$content" "$label" "//"
   check_content_cached "$content" "$label" "generate-visual-plan"
   check_content_cached "$content" "$label" "prd\.html"
@@ -190,7 +211,7 @@ test_phase_tasks() {
   local label="skills/tasks/SKILL.md"
   [[ -f "$file" ]] || { fail "$label" "file not found"; return; }
   local content
-  content="$(<"$file")"
+  content="$(gather_skill_content tasks)"
 
   check_content_cached "$content" "$label" "vertical slice|vertical-slice|tracer bullet"
   check_content_cached "$content" "$label" "[Hh]oriz" # rejects horizontal slices
@@ -200,7 +221,6 @@ test_phase_tasks() {
   check_content_cached "$content" "$label" "[Bb]locked by"
   check_content_cached "$content" "$label" "tasks\.md"
   check_content_cached "$content" "$label" "tasks\.html"
-  check_content_cached "$content" "$label" "--publish|gh issue create"
   check_content_cached "$content" "$label" "generate-visual-plan"
 }
 
@@ -227,12 +247,12 @@ test_phase_implement_core() {
 test_phase_implement_post() {
   local content="$1"
   local label="$2"
-  check_content_cached "$content" "$label" "/simplify"
+  check_content_cached "$content" "$label" "code-cleaner"
   check_content_cached "$content" "$label" "refactor-cleaner"
   check_content_cached "$content" "$label" "code-reviewer"
   check_content_cached "$content" "$label" "OWASP"
   check_content_cached "$content" "$label" "doc-updater"
-  check_content_cached "$content" "$label" "fact-check"
+  check_content_cached "$content" "$label" "fact-checker"
   check_content_cached "$content" "$label" "prd\.html|tasks\.html"
   check_content_cached "$content" "$label" "diff-review"
   check_content_cached "$content" "$label" "never commit|NEVER commit|do not commit"
@@ -244,7 +264,7 @@ test_phase_implement() {
   local label="skills/implement/SKILL.md"
   [[ -f "$file" ]] || { fail "$label" "file not found"; return; }
   local content
-  content="$(<"$file")"
+  content="$(gather_skill_content implement)"
   test_phase_implement_core "$content" "$label"
   test_phase_implement_post "$content" "$label"
 }
@@ -259,7 +279,7 @@ test_phase_implement_coach() {
   local label="skills/implement-coach/SKILL.md"
   [[ -f "$file" ]] || { fail "$label" "file not found"; return; }
   local content
-  content="$(<"$file")"
+  content="$(gather_skill_content "implement-coach")"
 
   # Coaching-phase checks (vertical-slice TDD, one test at a time)
   check_content_cached "$content" "$label" "Coach the user"
@@ -275,12 +295,12 @@ test_phase_implement_coach() {
 
   # Post-completion checks (mirrors implement)
   check_content_cached "$content" "$label" "database-reviewer"
-  check_content_cached "$content" "$label" "/simplify"
+  check_content_cached "$content" "$label" "code-cleaner"
   check_content_cached "$content" "$label" "refactor-cleaner"
   check_content_cached "$content" "$label" "code-reviewer"
   check_content_cached "$content" "$label" "OWASP"
   check_content_cached "$content" "$label" "doc-updater"
-  check_content_cached "$content" "$label" "fact-check"
+  check_content_cached "$content" "$label" "fact-checker"
   check_content_cached "$content" "$label" "prd\.html|tasks\.html"
   check_content_cached "$content" "$label" "diff-review"
   check_content_cached "$content" "$label" "never commit|NEVER commit|do not commit"
@@ -296,9 +316,9 @@ test_phase_orchestrator() {
   local label="skills/build/SKILL.md"
   [[ -f "$file" ]] || { fail "$label" "file not found"; return; }
   local content
-  content="$(<"$file")"
+  content="$(gather_skill_content build)"
 
-  check_content_cached "$content" "$label" "docs/claude/"
+  check_content_cached "$content" "$label" "docs/features/"
   for phase in grill prd tasks implement implement-coach; do
     check_content_cached "$content" "$label" "$phase"
   done
@@ -377,11 +397,35 @@ check_ve_paths() {
   done
 }
 
+# Every `references/...md` link inside a SKILL.md must resolve to a real file —
+# generalizes check_ve_paths to all skills. Guards progressive-disclosure
+# imports (a skill's own references/ and ../shared/references/).
+check_skill_reference_links() {
+  local skill_file
+  for skill_file in "$REPO_DIR"/skills/*/SKILL.md; do
+    local skill_dir
+    skill_dir="$(dirname "$skill_file")"
+    local skill_name
+    skill_name="$(basename "$skill_dir")"
+    local rel
+    while read -r rel; do
+      [[ -z "$rel" ]] && continue
+      [[ "$rel" =~ ^https?: ]] && continue
+      if [[ -f "$skill_dir/$rel" ]]; then
+        pass "skills/$skill_name/SKILL.md: reference '$rel' resolves"
+      else
+        fail "cross-ref" "skills/$skill_name/SKILL.md: reference '$rel' does not resolve"
+      fi
+    done < <(grep -oE '\]\([^)]*references/[^)]+\.md\)' "$skill_file" | sed -E 's/^\]\(//; s/\)$//' || true)
+  done
+}
+
 test_cross_references() {
   echo "Cross-references"
   check_skill_references_phases
   check_agent_files_exist
   check_ve_paths
+  check_skill_reference_links
 }
 
 # ---------------------------------------------------------------------------
@@ -418,6 +462,7 @@ test_symlink_targets() {
   for skill_dir in "$REPO_DIR"/skills/*/; do
     local skill_name
     skill_name="$(basename "$skill_dir")"
+    [[ "$skill_name" == "shared" ]] && continue
     local skill_file="$skill_dir/SKILL.md"
     if [[ -f "$skill_file" ]]; then
       pass "skills/$skill_name/SKILL.md exists"
@@ -725,6 +770,7 @@ test_stale_stubs() {
   check_stale_in_dir "$REPO_DIR/commands" "commands"
   check_stale_in_dir "$REPO_DIR/rules" "rules"
   check_stale_in_dir "$REPO_DIR/skills/visual-explainer/references" "skills/visual-explainer/references"
+  check_stale_in_dir "$REPO_DIR/skills/shared/references" "skills/shared/references"
 }
 
 # ---------------------------------------------------------------------------

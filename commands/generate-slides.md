@@ -4,9 +4,9 @@ description: Generate a stunning magazine-quality slide deck as a self-contained
 Generate a slide deck for: $ARGUMENTS
 
 Before generating, read these reference files:
-- `~/.claude/skills/visual-explainer/core.md` (quality guide — aesthetic, typography, color, style, checks)
-- `~/.claude/skills/visual-explainer/references/slide-patterns.md` (slide engine, types, presets — also instructs reading css-core.md, css-mermaid.md, css-components.md, and libraries.md)
-- `~/.claude/skills/visual-explainer/templates/slide-deck.html` (reference template)
+- `../skills/visual-explainer/core.md` (quality guide — aesthetic, typography, color, style, checks)
+- `../skills/visual-explainer/references/slide-patterns.md` (slide engine, types, presets — also instructs reading css-core.md, css-mermaid.md, css-components.md, and libraries.md)
+- `../skills/visual-explainer/templates/slide-deck.html` (reference template)
 
 **Slide output is always opt-in.** Only generate slides when this command is invoked or the user explicitly asks for a slide deck.
 
@@ -18,4 +18,4 @@ Before generating, read these reference files:
 
 **Compositional variety:** Consecutive slides must vary their spatial approach. Alternate between centered, left-heavy, right-heavy, split, edge-aligned, and full-bleed. Three centered slides in a row means push one off-axis.
 
-Write to the current feature directory under `docs/claude/` if one exists for this session. Otherwise, create a new directory `docs/claude/<YYYYMMDD-HHMM>-<slug>/` based on the content. Do NOT write to `~/.agent/diagrams/`. Open the result in the browser.
+Write to the current feature directory under `docs/features/` if one exists for this session. Otherwise, create a new directory `docs/features/<YYYYMMDD-HHMM>-<slug>/` based on the content. Do NOT write to `~/.agent/diagrams/`. Open the result in the browser.

@@ -58,6 +58,20 @@ omp's mid-stream rule injection: a regex match against the model's output aborts
 **Hook** (omp — pre/post-tool TS modules):
 TS/JS modules at `omp/hooks/{pre,post}/*.ts` (symlinked to `~/.omp/agent/hooks/{pre,post}/`). Subscribe to omp runtime events via the `HookAPI` from `@oh-my-pi/pi-coding-agent/extensibility/hooks`. Pre-hooks fire on `tool_call` (before execution) and can return `{ block, reason }` to refuse the call. Post-hooks fire on `tool_result` (after execution) and can return `{ content, details, isError }` to mutate what the model sees. Unlike TTSR, hooks see **structured tool input** (`event.input.command`, `event.input.path`), so they catch what regex on stream text can't: process substitution (`bash <(…)`), find-exec, interpreter wrappers (`python -c "os.system(…)"`). Hooks can also **mutate output** (TTSR can only block). This repo uses hooks for input-bound patterns where TTSR's regex has known bypasses, and for output redaction (which TTSR fundamentally can't do). See [`hooks-replace-ttsr-for-input-bound-patterns`](docs/adr/0006-hooks-replace-ttsr-for-input-bound-patterns.md). Distinct from omp **extensions** (`omp/extensions/`), which use the same event API but can also register commands, tools, and renderers — extensions are the superset, hooks are the narrower event-handler surface.
 
+### Build-pipeline terms
+
+**Pipeline skill**:
+One of the seven skills the `/build` orchestrator drives through its four phases — `build`, `grill`, `prd`, `tasks`, `implement`, `implement-coach`, `visual-explainer`. Distinct from a **standalone skill** (`refactor`, `improve-codebase`, `handoff`, `pickup`, `prototype`) which is invoked on its own, never orchestrated by `/build`.
+_Avoid_: phase (a phase is a stage of the pipeline; a pipeline skill is the unit that runs it).
+
+**Progressive disclosure**:
+The skill-authoring convention where `SKILL.md` is a thin entry point that defers heavy detail to `references/*.md` files read on demand, instead of one monolithic file. Detail used by more than one skill lives in a global `skills/shared/references/` directory and is imported by relative path rather than duplicated (e.g. `prd`/`tasks`/`implement` read `../shared/references/build-pipeline.md`); detail used by a single skill lives in that skill's own `references/`.
+_Avoid_: lazy loading (overloaded with the omp rulebook's on-demand `rule://` mechanism).
+
+**Feature directory**:
+The per-build-run home for feature artifacts: `docs/features/<YYYYMMDD-HHMM>-<slug>/`, holding `prd.md`/`prd.html`, `tasks.md`/`tasks.html`, and `diff-review.html`. Project-wide artifacts (`CONTEXT.md`, `docs/adr/`) live at the repo root and accrete across runs.
+_Avoid_: `docs/claude/` (the former Claude-specific name, replaced by the harness-neutral `docs/features/` — see [`adopt-docs-features-over-docs-claude`](docs/adr/0007-adopt-docs-features-over-docs-claude.md)).
+
 ## Example dialogue
 
 > **Dev**: I want to add `/refactor` so it works in all three harnesses.

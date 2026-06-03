@@ -152,20 +152,20 @@ code { font-family: var(--font-mono); font-size: 0.85em; background: var(--accen
 7. As a customer, I want to export to CSV...
 
 // this should reference ADR-0003, not 0002</div>
-  <p style="font-size: 0.9rem; color: var(--text-dim); margin-top: 14px;">For each annotation, the agent addresses it, updates the document, removes the <code>//</code> comment, and regenerates <code>prd.html</code>. The cycle repeats 1–6 times typically, until the user explicitly approves.</p>
+  <p style="font-size: 0.9rem; color: var(--text-dim); margin-top: 14px;">For each annotation, the agent addresses it, updates <code>prd.md</code>, and removes the <code>//</code> comment — working from the markdown. The cycle repeats until the user is satisfied; <code>prd.html</code> is regenerated once at the end if the markdown changed, not per annotation.</p>
 </div>
 
 <div class="section">
   <div class="section-title"><span class="num">07</span>Visual Sync Guarantee</div>
   <div class="callout warn">
-    <strong>Non-negotiable:</strong> <code>prd.html</code> MUST mirror <code>prd.md</code> at all times. Whenever the markdown changes — from annotations, corrections, or any other update — regenerate the HTML <em>before</em> proceeding to ANY next step, including moving to <span class="cmd-tag">/tasks</span>.
+    <strong>Build once, then leave it:</strong> <code>prd.html</code> is generated and opened when <code>prd.md</code> is first written. It is NOT regenerated during the review — the markdown is the source of truth, so the open visual may lag — then regenerated once before moving to <span class="cmd-tag">/tasks</span> if the markdown changed.
   </div>
   <p style="font-size: 0.9rem; color: var(--text-dim); margin-top: 10px;">Visual generation uses <span class="cmd-tag">/generate-visual-plan</span>. The HTML's <code>&lt;title&gt;</code> and <code>&lt;h1&gt;</code> must say "PRD", not "Plan".</p>
 </div>
 
 <div class="section">
   <div class="section-title"><span class="num">08</span>Completion</div>
-  <p style="font-size: 0.95rem;">On approval, regenerate <code>prd.html</code> one final time, tell the user the PRD is approved, and prompt: <em>"say 'break it into tasks' when ready"</em>. <span class="must-tag">STOP</span> until they trigger Phase 3.</p>
+  <p style="font-size: 0.95rem;">On the user's confirmation, regenerate <code>prd.html</code> once if the markdown changed, tell the user, and advance to <span class="cmd-tag">/tasks</span> — any go-ahead works; no exact phrase needed.</p>
 </div>
 
 </div>

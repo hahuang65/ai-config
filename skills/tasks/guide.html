@@ -80,12 +80,12 @@ code { font-family: var(--font-mono); font-size: 0.85em; background: var(--accen
 
 <div class="header">
   <h1><span>/</span>tasks</h1>
-  <p class="subtitle">Break an approved PRD into <strong>vertical-slice tracer bullets</strong>. Each slice cuts through every layer end-to-end and is demoable on its own. Local by default; <code>--publish</code> creates real GitHub Issues. Based on Matt Pocock's <code>to-issues</code>.</p>
+  <p class="subtitle">Break an approved PRD into <strong>vertical-slice tracer bullets</strong>. Each slice cuts through every layer end-to-end and is demoable on its own. Reviewed and refined locally. Based on Matt Pocock's <code>to-issues</code>.</p>
 </div>
 
 <div class="section">
   <div class="section-title"><span class="num">01</span>Place in the Pipeline</div>
-  <p style="font-size: 0.95rem; margin-bottom: 16px;">Phase 3 of <span class="cmd-tag">/build</span>. Inputs: <code>prd.md</code>, <code>CONTEXT.md</code>, ADRs. Outputs: <code>tasks.md</code> + <code>tasks.html</code> (and optionally GitHub Issues).</p>
+  <p style="font-size: 0.95rem; margin-bottom: 16px;">Phase 3 of <span class="cmd-tag">/build</span>. Inputs: <code>prd.md</code>, <code>CONTEXT.md</code>, ADRs. Outputs: <code>tasks.md</code> + <code>tasks.html</code>.</p>
   <div class="pre">/build "feature"
   ├── Phase 1: /grill
   ├── Phase 2: /prd
@@ -163,30 +163,16 @@ includes the new Order ID.
       <tr><td>1. Gather context</td><td>Read <code>prd.md</code>, <code>CONTEXT.md</code>, relevant ADRs. Explore code if not yet done.</td></tr>
       <tr><td>2. Draft slices</td><td>Vertical only. Each slice cuts through every layer. Mark HITL/AFK. Order by dependency (blockers first).</td></tr>
       <tr><td>3. Write <code>tasks.md</code></td><td>One slice per section, with Type/Blocked-by/User-stories-covered headers and an acceptance-criteria checklist.</td></tr>
-      <tr><td>4. Generate <code>tasks.html</code></td><td>Via <span class="cmd-tag">/generate-visual-plan</span>. The visual emphasizes the dependency graph, HITL/AFK split, and user-story coverage.</td></tr>
-      <tr><td>5. Quiz the user</td><td>Present numbered list. Ask: granularity, dependencies, HITL/AFK marking, story coverage. Iterate.</td></tr>
-      <tr><td>6. Finalize</td><td>Final markdown + visual sync.</td></tr>
-      <tr><td>7. <strong>Optional publish</strong></td><td>If <code>--publish</code> or user says "publish them": <code>gh issue create</code> for each slice in dependency order. Back-fill issue numbers into <code>tasks.md</code>.</td></tr>
+      <tr><td>4. Generate <code>tasks.html</code></td><td>Via <span class="cmd-tag">/generate-visual-plan</span>; open it in the browser. Emphasizes the dependency graph, HITL/AFK split, and user-story coverage.</td></tr>
+      <tr><td>5. Review</td><td>Present the numbered list; ask granularity / dependencies / HITL-AFK / coverage (or accept <code>//</code> annotations in <code>tasks.md</code>). Address feedback, re-present. Work from <code>tasks.md</code> — the visual is not regenerated mid-review.</td></tr>
+      <tr><td>6. Finalize</td><td>On confirmation, regenerate <code>tasks.html</code> once if it changed, report counts, advance to implementation.</td></tr>
     </tbody>
   </table>
 </div>
 
 <div class="section">
-  <div class="section-title"><span class="num">06</span>Publish: Local-by-Default</div>
-  <div class="callout">
-    <strong>Default behavior:</strong> writes <code>tasks.md</code> and <code>tasks.html</code> locally. Does NOT touch the GitHub Issue tracker.
-  </div>
-  <div class="callout">
-    <strong>--publish flag:</strong> after the user approves the breakdown, create real Issues. Publish in dependency order so blocker Issue numbers exist before dependent slices reference them. Update <code>tasks.md</code> with the created issue numbers (e.g. <code>## Slice 1: Foo (#123)</code>) and regenerate <code>tasks.html</code>.
-  </div>
-  <div class="callout warn">
-    <strong>Never publish without user approval.</strong> Publishing is a side-effecting operation. Even with <code>--publish</code>, wait for the user to approve the breakdown <em>before</em> creating Issues.
-  </div>
-</div>
-
-<div class="section">
-  <div class="section-title"><span class="num">07</span>Completion</div>
-  <p style="font-size: 0.95rem;">On approval, sync the markdown and visual one final time, optionally publish, and tell the user: <em>"say 'implement' when ready"</em>. <span class="must-tag">STOP</span> until they trigger Phase 4 (<span class="cmd-tag">/implement</span> or <span class="cmd-tag">/implement-coach</span>).</p>
+  <div class="section-title"><span class="num">06</span>Completion</div>
+  <p style="font-size: 0.95rem;">On the user's confirmation, regenerate <code>tasks.html</code> once if it changed, report the counts, and advance to Phase 4 (<span class="cmd-tag">/implement</span> or <span class="cmd-tag">/implement-coach</span>) — any go-ahead works; no exact phrase needed.</p>
 </div>
 
 </div>

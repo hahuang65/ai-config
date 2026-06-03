@@ -1,0 +1,1702 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Diff Review — omp Hooks Migration</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=JetBrains+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --font-body: 'IBM Plex Sans', system-ui, sans-serif;
+    --font-display: 'Instrument Serif', serif;
+    --font-mono: 'JetBrains Mono', 'SF Mono', Consolas, monospace;
+
+    --bg: #faf7f1;
+    --surface: #ffffff;
+    --surface-elevated: #ffffff;
+    --border: rgba(30, 58, 95, 0.10);
+    --border-bright: rgba(30, 58, 95, 0.22);
+    --text: #1e3a5f;
+    --text-bright: #102541;
+    --text-dim: #6a7a8c;
+
+    --gold: #b8862a;
+    --gold-dim: rgba(212, 167, 58, 0.15);
+    --navy: #1e3a5f;
+    --navy-dim: rgba(30, 58, 95, 0.10);
+    --sage: #4d7a4a;
+    --sage-dim: rgba(77, 122, 74, 0.13);
+    --terracotta: #b8562c;
+    --terracotta-dim: rgba(184, 86, 44, 0.13);
+    --rose: #a8324e;
+    --rose-dim: rgba(168, 50, 78, 0.12);
+
+    --accent: var(--gold);
+    --accent-dim: var(--gold-dim);
+
+    /* diff semantic */
+    --diff-add: var(--sage);
+    --diff-add-dim: var(--sage-dim);
+    --diff-rm: var(--rose);
+    --diff-rm-dim: var(--rose-dim);
+    --diff-mod: var(--gold);
+    --diff-mod-dim: var(--gold-dim);
+    --diff-info: var(--navy);
+    --diff-info-dim: var(--navy-dim);
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #0a1322;
+      --surface: #131e34;
+      --surface-elevated: #1a2740;
+      --border: rgba(240, 228, 204, 0.10);
+      --border-bright: rgba(240, 228, 204, 0.22);
+      --text: #f0e4cc;
+      --text-bright: #fefaef;
+      --text-dim: #9aa6b8;
+
+      --gold: #e0b54a;
+      --gold-dim: rgba(224, 181, 74, 0.15);
+      --navy: #4a78b5;
+      --navy-dim: rgba(74, 120, 181, 0.13);
+      --sage: #88c180;
+      --sage-dim: rgba(136, 193, 128, 0.14);
+      --terracotta: #e8794a;
+      --terracotta-dim: rgba(232, 121, 74, 0.14);
+      --rose: #e26b85;
+      --rose-dim: rgba(226, 107, 133, 0.13);
+    }
+  }
+
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+
+  body {
+    font-family: var(--font-body);
+    font-size: 17px;
+    line-height: 1.65;
+    color: var(--text);
+    background: var(--bg);
+    background-image:
+      radial-gradient(ellipse 80% 50% at 50% 0%, var(--gold-dim) 0%, transparent 60%),
+      radial-gradient(ellipse 60% 40% at 100% 100%, var(--navy-dim) 0%, transparent 50%);
+    background-attachment: fixed;
+    overflow-wrap: break-word;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  .grid > *, .flex > *,
+  [style*="display: grid"] > *,
+  [style*="display: flex"] > * { min-width: 0; }
+
+  .wrap {
+    max-width: 1280px;
+    margin: 0 auto;
+    padding: 56px 40px 96px;
+  }
+
+  /* ── Header ─────────────────────────────────────────────────────── */
+
+  .header {
+    margin-bottom: 56px;
+    padding-bottom: 36px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .header__category {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 2.2px;
+    text-transform: uppercase;
+    color: var(--gold);
+    margin-bottom: 20px;
+  }
+
+  .header__category::before {
+    content: '';
+    width: 32px;
+    height: 1px;
+    background: var(--gold);
+  }
+
+  .header h1 {
+    font-family: var(--font-display);
+    font-size: clamp(48px, 7vw, 84px);
+    font-weight: 400;
+    font-style: italic;
+    line-height: 1.0;
+    letter-spacing: -1.5px;
+    margin: 0 0 24px;
+    color: var(--text-bright);
+  }
+
+  .header__lede {
+    font-size: 21px;
+    line-height: 1.55;
+    color: var(--text-dim);
+    max-width: 760px;
+    margin: 0;
+  }
+
+  .header__lede em { color: var(--gold); font-style: italic; }
+  .header__lede code {
+    font-family: var(--font-mono);
+    font-size: 16px;
+    background: var(--gold-dim);
+    color: var(--gold);
+    padding: 1px 6px;
+    border-radius: 3px;
+  }
+
+  /* ── Section base ───────────────────────────────────────────────── */
+
+  .section { margin-bottom: 80px; }
+
+  .section__eyebrow {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .section__eyebrow::before {
+    content: '';
+    display: inline-block;
+    width: 14px;
+    height: 1px;
+    background: var(--gold);
+  }
+
+  .section h2 {
+    font-family: var(--font-display);
+    font-size: clamp(34px, 4vw, 48px);
+    font-weight: 400;
+    font-style: italic;
+    line-height: 1.1;
+    letter-spacing: -0.5px;
+    margin: 0 0 20px;
+    color: var(--text-bright);
+  }
+
+  .section__intro {
+    font-size: 18px;
+    line-height: 1.55;
+    color: var(--text-dim);
+    max-width: 860px;
+    margin: 0 0 36px;
+  }
+
+  .section__intro code {
+    font-family: var(--font-mono);
+    font-size: 14px;
+    background: var(--gold-dim);
+    color: var(--gold);
+    padding: 1px 6px;
+    border-radius: 3px;
+  }
+
+  .section__intro a { color: var(--gold); text-decoration: underline; }
+
+  /* ── Executive summary (hero card) ──────────────────────────────── */
+
+  .hero-card {
+    background: color-mix(in srgb, var(--surface) 92%, var(--gold) 8%);
+    border: 1px solid color-mix(in srgb, var(--border) 50%, var(--gold) 50%);
+    border-radius: 16px;
+    padding: 44px 48px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.07), 0 1px 3px rgba(0, 0, 0, 0.04);
+    margin-bottom: 36px;
+  }
+
+  .hero-card h3 {
+    font-family: var(--font-display);
+    font-style: italic;
+    font-size: 32px;
+    line-height: 1.15;
+    color: var(--text-bright);
+    margin: 0 0 18px;
+  }
+
+  .hero-card p {
+    font-size: 19px;
+    line-height: 1.6;
+    margin: 0 0 16px;
+    color: var(--text);
+  }
+
+  .hero-card p:last-child { margin-bottom: 0; }
+
+  .hero-card strong { color: var(--gold); font-weight: 600; }
+
+  .hero-card code {
+    font-family: var(--font-mono);
+    font-size: 14px;
+    background: var(--gold-dim);
+    color: var(--gold);
+    padding: 1px 6px;
+    border-radius: 3px;
+  }
+
+  /* ── KPI dashboard ──────────────────────────────────────────────── */
+
+  .kpi-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 18px;
+  }
+
+  .kpi-row > * { min-width: 0; }
+
+  .kpi-card {
+    background: var(--surface-elevated);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 22px 24px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+    position: relative;
+    border-top: 3px solid var(--kpi-accent, var(--gold));
+  }
+
+  .kpi-card--add { --kpi-accent: var(--sage); }
+  .kpi-card--rm { --kpi-accent: var(--rose); }
+  .kpi-card--mod { --kpi-accent: var(--gold); }
+  .kpi-card--info { --kpi-accent: var(--navy); }
+  .kpi-card--ok { --kpi-accent: var(--sage); }
+
+  .kpi-card__value {
+    font-family: var(--font-display);
+    font-style: italic;
+    font-size: 48px;
+    line-height: 0.9;
+    color: var(--kpi-accent, var(--gold));
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -1px;
+  }
+
+  .kpi-card__label {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 1.4px;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    margin-top: 10px;
+  }
+
+  .kpi-card__sub {
+    font-size: 12px;
+    color: var(--text-dim);
+    margin-top: 4px;
+  }
+
+  .kpi-card__sub code {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--text);
+  }
+
+  /* ── Mermaid ───────────────────────────────────────────────────── */
+
+  .mermaid-wrap {
+    position: relative;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 32px 24px;
+    overflow: auto;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 500px;
+    cursor: grab;
+    scrollbar-width: thin;
+    scrollbar-color: var(--border) transparent;
+  }
+
+  .mermaid-wrap.is-panning { cursor: grabbing; user-select: none; }
+  .mermaid-wrap::-webkit-scrollbar { width: 6px; height: 6px; }
+  .mermaid-wrap::-webkit-scrollbar-track { background: transparent; }
+  .mermaid-wrap::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+  .zoom-controls {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    display: flex;
+    gap: 2px;
+    z-index: 10;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 7px;
+    padding: 3px;
+  }
+
+  .zoom-controls button {
+    width: 30px;
+    height: 30px;
+    border: none;
+    background: transparent;
+    color: var(--text-dim);
+    font-family: var(--font-mono);
+    font-size: 15px;
+    cursor: pointer;
+    border-radius: 5px;
+  }
+
+  .zoom-controls button:hover { background: var(--border); color: var(--text); }
+
+  .mermaid .nodeLabel { color: var(--text) !important; font-family: var(--font-body) !important; font-size: 16px !important; }
+  .mermaid .edgeLabel { color: var(--text-dim) !important; background-color: transparent !important; font-family: var(--font-mono) !important; font-size: 13px !important; }
+  .mermaid .edgeLabel rect { fill: var(--bg) !important; }
+  .mermaid .node rect, .mermaid .node circle, .mermaid .node polygon { stroke-width: 1.5px; }
+  .mermaid .edge-pattern-solid { stroke-width: 1.5px; }
+  .mermaid .cluster rect { stroke-width: 1.5px !important; }
+
+  .mermaid-caption {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--text-dim);
+    text-align: center;
+    margin-top: 14px;
+    letter-spacing: 0.5px;
+  }
+
+  /* ── Diff panels (before/after) ──────────────────────────────────── */
+
+  .diff-panels {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0;
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    overflow: hidden;
+    background: var(--surface);
+    margin-bottom: 22px;
+  }
+
+  .diff-panels > * { min-width: 0; overflow-wrap: break-word; }
+
+  .diff-panel__header {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    padding: 14px 24px;
+  }
+
+  .diff-panel__header--before {
+    background: var(--diff-rm-dim);
+    color: var(--diff-rm);
+    border-bottom: 2px solid var(--diff-rm);
+  }
+
+  .diff-panel__header--after {
+    background: var(--diff-add-dim);
+    color: var(--diff-add);
+    border-bottom: 2px solid var(--diff-add);
+  }
+
+  .diff-panel__body {
+    padding: 24px 26px;
+    font-size: 15.5px;
+    line-height: 1.6;
+  }
+
+  .diff-panel__body p { margin: 0 0 12px; }
+  .diff-panel__body p:last-child { margin-bottom: 0; }
+
+  .diff-panel__body ul {
+    margin: 8px 0 12px;
+    padding-left: 0;
+    list-style: none;
+  }
+
+  .diff-panel__body li {
+    padding-left: 20px;
+    position: relative;
+    margin-bottom: 6px;
+    font-size: 14.5px;
+  }
+
+  .diff-panel__body li::before {
+    content: '›';
+    color: var(--text-dim);
+    position: absolute;
+    left: 0;
+    font-weight: 600;
+  }
+
+  .diff-panel__body code {
+    font-family: var(--font-mono);
+    font-size: 12.5px;
+    background: var(--gold-dim);
+    color: var(--gold);
+    padding: 1px 6px;
+    border-radius: 3px;
+  }
+
+  @media (max-width: 900px) {
+    .diff-panels { grid-template-columns: 1fr; }
+  }
+
+  .diff-title {
+    font-family: var(--font-display);
+    font-style: italic;
+    font-size: 26px;
+    line-height: 1.15;
+    color: var(--text-bright);
+    margin: 0 0 14px;
+  }
+
+  /* ── Bypass coverage matrix table ───────────────────────────────── */
+
+  .matrix-wrap {
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    overflow: hidden;
+    background: var(--surface);
+    margin-bottom: 24px;
+  }
+
+  table.matrix {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14.5px;
+  }
+
+  table.matrix thead th {
+    text-align: left;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 1.4px;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    padding: 16px 18px;
+    background: var(--navy-dim);
+    border-bottom: 1px solid var(--border);
+  }
+
+  table.matrix tbody td {
+    padding: 16px 18px;
+    border-bottom: 1px solid var(--border);
+    vertical-align: top;
+    line-height: 1.5;
+  }
+
+  table.matrix tbody tr:last-child td { border-bottom: none; }
+
+  table.matrix td.hook-name {
+    font-family: var(--font-mono);
+    font-size: 13px;
+    color: var(--gold);
+    font-weight: 600;
+    white-space: nowrap;
+  }
+
+  table.matrix td.bypass {
+    font-family: var(--font-mono);
+    font-size: 12.5px;
+    color: var(--rose);
+  }
+
+  table.matrix td.caught {
+    color: var(--text);
+  }
+
+  table.matrix code {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    background: var(--navy-dim);
+    color: var(--text);
+    padding: 1px 5px;
+    border-radius: 3px;
+  }
+
+  /* ── File map / per-file change cards ───────────────────────────── */
+
+  .files-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(420px, 1fr));
+    gap: 20px;
+  }
+
+  .files-grid > * { min-width: 0; }
+
+  .file-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 22px 26px;
+    border-left: 3px solid var(--file-accent, var(--gold));
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .file-card--new { --file-accent: var(--sage); }
+  .file-card--mod { --file-accent: var(--gold); }
+  .file-card--del { --file-accent: var(--rose); }
+
+  .file-card__head {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 14px;
+    flex-wrap: wrap;
+  }
+
+  .file-card__path {
+    font-family: var(--font-mono);
+    font-size: 13.5px;
+    font-weight: 500;
+    color: var(--text-bright);
+    word-break: break-all;
+  }
+
+  .file-card__stat {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--text-dim);
+    white-space: nowrap;
+  }
+
+  .file-card__stat .add { color: var(--diff-add); font-weight: 600; }
+  .file-card__stat .rm { color: var(--diff-rm); font-weight: 600; }
+
+  .file-tag {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 1px;
+    padding: 2px 8px;
+    border-radius: 10px;
+    text-transform: uppercase;
+    white-space: nowrap;
+  }
+
+  .file-tag--new { background: var(--sage-dim); color: var(--sage); }
+  .file-tag--mod { background: var(--gold-dim); color: var(--gold); }
+  .file-tag--del { background: var(--rose-dim); color: var(--rose); }
+
+  .file-card__desc {
+    font-size: 14.5px;
+    line-height: 1.55;
+    color: var(--text);
+    margin: 0;
+  }
+
+  .file-card__desc code {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    background: var(--navy-dim);
+    color: var(--text);
+    padding: 1px 5px;
+    border-radius: 3px;
+  }
+
+  .file-card__desc a { color: var(--gold); text-decoration: underline; }
+
+  .file-group {
+    margin-bottom: 38px;
+  }
+
+  .file-group__head {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    margin-bottom: 14px;
+    display: flex;
+    align-items: baseline;
+    gap: 14px;
+    flex-wrap: wrap;
+  }
+
+  .file-group__head strong {
+    font-family: var(--font-display);
+    font-style: italic;
+    font-size: 22px;
+    color: var(--text-bright);
+    font-weight: 400;
+    letter-spacing: 0;
+    text-transform: none;
+  }
+
+  .file-group__head em {
+    font-family: var(--font-body);
+    font-style: normal;
+    font-size: 13.5px;
+    color: var(--text-dim);
+    letter-spacing: 0;
+    text-transform: none;
+    font-weight: 400;
+  }
+
+  /* ── Review (good/bad/ugly) ─────────────────────────────────────── */
+
+  .review-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(420px, 1fr));
+    gap: 22px;
+  }
+
+  .review-grid > * { min-width: 0; }
+
+  .review-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-left: 4px solid var(--review-accent, var(--gold));
+    border-radius: 12px;
+    padding: 24px 28px;
+  }
+
+  .review-card--good { --review-accent: var(--sage); }
+  .review-card--bad { --review-accent: var(--rose); }
+  .review-card--ugly { --review-accent: var(--gold); }
+  .review-card--questions { --review-accent: var(--navy); }
+
+  .review-card__title {
+    font-family: var(--font-display);
+    font-style: italic;
+    font-size: 24px;
+    color: var(--review-accent);
+    margin: 0 0 16px;
+  }
+
+  .review-card__list {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .review-card__list li {
+    padding-left: 18px;
+    position: relative;
+    font-size: 14.5px;
+    line-height: 1.55;
+  }
+
+  .review-card__list li::before {
+    content: '›';
+    position: absolute;
+    left: 0;
+    color: var(--review-accent);
+    font-weight: 600;
+  }
+
+  .review-card__list code {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    background: var(--navy-dim);
+    color: var(--text);
+    padding: 1px 5px;
+    border-radius: 3px;
+  }
+
+  /* ── ADR / Decision log ─────────────────────────────────────────── */
+
+  .adr-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+    gap: 18px;
+  }
+
+  .adr-grid > * { min-width: 0; }
+
+  .adr-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 22px 24px;
+    border-left: 3px solid var(--sage);
+    display: block;
+    text-decoration: none;
+    color: inherit;
+  }
+
+  .adr-card__id {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 1.5px;
+    color: var(--sage);
+    margin-bottom: 8px;
+  }
+
+  .adr-card__title {
+    font-family: var(--font-display);
+    font-style: italic;
+    font-size: 22px;
+    line-height: 1.2;
+    color: var(--text-bright);
+    margin: 0 0 10px;
+  }
+
+  .adr-card__summary {
+    font-size: 14.5px;
+    line-height: 1.55;
+    color: var(--text-dim);
+    margin: 0;
+  }
+
+  .adr-card__summary code {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    background: var(--navy-dim);
+    color: var(--text);
+    padding: 1px 5px;
+    border-radius: 3px;
+  }
+
+  .conf {
+    display: inline-block;
+    font-family: var(--font-mono);
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    padding: 2px 8px;
+    border-radius: 8px;
+    background: var(--sage-dim);
+    color: var(--sage);
+    margin-top: 10px;
+  }
+
+  /* ── Re-entry context ───────────────────────────────────────────── */
+
+  .reentry-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 32px 36px;
+  }
+
+  .reentry-card h3 {
+    font-family: var(--font-display);
+    font-style: italic;
+    font-size: 24px;
+    margin: 0 0 14px;
+    color: var(--text-bright);
+  }
+
+  .reentry-card h3:not(:first-child) { margin-top: 26px; }
+
+  .reentry-card ul {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .reentry-card li {
+    padding-left: 18px;
+    position: relative;
+    font-size: 15px;
+    line-height: 1.55;
+  }
+
+  .reentry-card li::before {
+    content: '⌘';
+    position: absolute;
+    left: 0;
+    color: var(--gold);
+    font-size: 12px;
+    top: 4px;
+  }
+
+  .reentry-card code {
+    font-family: var(--font-mono);
+    font-size: 13px;
+    background: var(--gold-dim);
+    color: var(--gold);
+    padding: 1px 6px;
+    border-radius: 3px;
+  }
+
+  /* ── Footer ─────────────────────────────────────────────────────── */
+
+  .footer {
+    margin-top: 80px;
+    padding-top: 36px;
+    border-top: 1px solid var(--border);
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--text-dim);
+    text-align: center;
+    line-height: 1.8;
+  }
+
+  .footer span { display: inline-block; margin: 0 12px; }
+  .footer a { color: var(--gold); text-decoration: underline; }
+
+  /* ── Animations ─────────────────────────────────────────────────── */
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .section, .hero-card, .file-card, .review-card, .adr-card, .kpi-card, .reentry-card {
+    animation: fadeUp 0.4s ease-out both;
+    animation-delay: calc(var(--i, 0) * 0.03s);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+
+  @media (max-width: 768px) {
+    .wrap { padding: 32px 20px 64px; }
+    .header { margin-bottom: 40px; padding-bottom: 28px; }
+    .section { margin-bottom: 56px; }
+    .hero-card { padding: 28px 26px; }
+    .files-grid, .review-grid, .adr-grid { grid-template-columns: 1fr; }
+    table.matrix thead { display: none; }
+    table.matrix tbody td { display: block; padding: 8px 18px; border-bottom: none; }
+    table.matrix tbody tr { display: block; padding: 14px 0; border-bottom: 1px solid var(--border); }
+  }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+
+  <!-- ═══════════════════════════════════════════════════════════════
+       HEADER
+       ═══════════════════════════════════════════════════════════════ -->
+  <header class="header" style="--i: 0">
+    <div class="header__category">Diff Review — omp Hooks Migration</div>
+    <h1>omp Hooks Migration <span style="color: var(--gold);">—</span> Diff Review</h1>
+    <p class="header__lede">
+      Working tree against <code>main</code> —
+      8 modified files (+153 / −131), 11 net-new files (5 hooks, 1 ADR, hooks README, 4 docs/features artifacts), and 4 deleted TTSR rules.
+      Architecture shift: <em>"8 TTSR rules + 0 hooks"</em> becomes <em>"8 TTSR + 5 hooks"</em>. Pipeline 403/0, self-test 14/14.
+    </p>
+  </header>
+
+  <!-- ═══════════════════════════════════════════════════════════════
+       EXECUTIVE SUMMARY
+       ═══════════════════════════════════════════════════════════════ -->
+  <section class="section" style="--i: 1">
+    <div class="section__eyebrow">Executive summary</div>
+    <h2>Structured input parsing replaces stream regex where regex was losing.</h2>
+
+    <div class="hero-card">
+      <h3>What changed and why</h3>
+      <p>
+        TTSR — omp's <em>time-traveling stream rule</em> mechanism — is a markdown-frontmatter regex matched against the model's outgoing token stream. Living with the TTSR-only safety stack from the prior integration cycle revealed <strong>documented bypasses no markdown regex can fix</strong>: <code>bash &lt;(curl URL)</code> slips past <code>no-curl-pipe-interpreter</code>, <code>find / -delete</code> slips past <code>no-rm-rf-root</code>, prose mentions of <code>~/.aws/credentials</code> over-fire <code>no-credentials-read</code>, and <code>bash &lt;(sudo …)</code> slips past any <code>\bsudo\b</code> regex.
+      </p>
+      <p>
+        This change migrates those 4 rules to <strong>omp pre-hooks</strong> — TS modules subscribed to <code>tool_call</code> events with structured input parsing — and adds <strong>1 net-new post-hook</strong> (<code>redact-keys</code>) that mutates <code>tool_result</code> content to strip secrets. Output mutation is hook-only territory; TTSR fundamentally cannot do it. <strong>ADR-0006</strong> codifies the new hook-vs-TTSR decision tree and supersedes the third pillar of ADR-0004.
+      </p>
+      <p>
+        Conservative scope: <strong>4 of 12 bash-bound TTSR rules migrate</strong>. The other 8 (<code>security</code>, <code>git-workflow</code>, <code>no-cloud-destroy</code>, <code>no-shell-write</code>, <code>no-deploy</code>, <code>no-db-mutation</code>, <code>no-dd-disk</code>, <code>no-broad-chmod</code>) stay as TTSR — their regex has no realistic bypass and the markdown-authoring UX is preferable. Zero changes to Claude Code's safety stack: per-pattern denylist and curl shell hook unchanged, no regression.
+      </p>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════════════════════
+       KPI DASHBOARD
+       ═══════════════════════════════════════════════════════════════ -->
+  <section class="section" style="--i: 2">
+    <div class="section__eyebrow">By the numbers</div>
+    <h2>What the diff looks like at a glance</h2>
+
+    <div class="kpi-row">
+      <div class="kpi-card kpi-card--add">
+        <div class="kpi-card__value">+153</div>
+        <div class="kpi-card__label">lines added</div>
+        <div class="kpi-card__sub">across 8 tracked-modified files</div>
+      </div>
+      <div class="kpi-card kpi-card--rm">
+        <div class="kpi-card__value">−131</div>
+        <div class="kpi-card__label">lines removed</div>
+        <div class="kpi-card__sub">includes 4 deleted TTSR rules</div>
+      </div>
+      <div class="kpi-card kpi-card--add">
+        <div class="kpi-card__value">+11</div>
+        <div class="kpi-card__label">new files</div>
+        <div class="kpi-card__sub">5 hooks + 1 ADR + 5 docs</div>
+      </div>
+      <div class="kpi-card kpi-card--rm">
+        <div class="kpi-card__value">−4</div>
+        <div class="kpi-card__label">deleted TTSR rules</div>
+        <div class="kpi-card__sub">replaced 1-to-1 by hooks</div>
+      </div>
+      <div class="kpi-card kpi-card--info">
+        <div class="kpi-card__value">5</div>
+        <div class="kpi-card__label">hook modules</div>
+        <div class="kpi-card__sub">4 pre / 1 post · 546 TS lines</div>
+      </div>
+      <div class="kpi-card kpi-card--ok">
+        <div class="kpi-card__value">7/7</div>
+        <div class="kpi-card__label">slices complete</div>
+        <div class="kpi-card__sub">all AFK · verification chain green</div>
+      </div>
+      <div class="kpi-card kpi-card--ok">
+        <div class="kpi-card__value">403/0</div>
+        <div class="kpi-card__label">pipeline pass</div>
+        <div class="kpi-card__sub">+15 from baseline (388)</div>
+      </div>
+      <div class="kpi-card kpi-card--ok">
+        <div class="kpi-card__value">14/14</div>
+        <div class="kpi-card__label">self-test pass</div>
+        <div class="kpi-card__sub">+1 negative case (hook shape)</div>
+      </div>
+      <div class="kpi-card kpi-card--info">
+        <div class="kpi-card__value">1</div>
+        <div class="kpi-card__label">ADR recorded</div>
+        <div class="kpi-card__sub">ADR-0006 supersedes ADR-0004 §3</div>
+      </div>
+      <div class="kpi-card kpi-card--info">
+        <div class="kpi-card__value">8 + 5</div>
+        <div class="kpi-card__label">safety surface</div>
+        <div class="kpi-card__sub">TTSR rules + omp hooks</div>
+      </div>
+      <div class="kpi-card kpi-card--ok">
+        <div class="kpi-card__value">0</div>
+        <div class="kpi-card__label">Claude regressions</div>
+        <div class="kpi-card__sub"><code>claude/</code> + shell hook untouched</div>
+      </div>
+      <div class="kpi-card kpi-card--ok">
+        <div class="kpi-card__value">1</div>
+        <div class="kpi-card__label">net-new capability</div>
+        <div class="kpi-card__sub"><code>redact-keys</code> post-hook</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════════════════════
+       ARCHITECTURE SHIFT — Mermaid flowchart
+       ═══════════════════════════════════════════════════════════════ -->
+  <section class="section" style="--i: 3">
+    <div class="section__eyebrow">Architecture shift</div>
+    <h2>One safety layer becomes two, with a decision tree</h2>
+    <p class="section__intro">
+      The hook layer doesn't replace TTSR — it sits alongside it, with a clean delineation of which mechanism handles which pattern class. <a href="../../adr/0006-hooks-replace-ttsr-for-input-bound-patterns.md">ADR-0006</a> documents the decision tree: input-bound patterns with bypass risk live as hooks; content-based patterns and simple bash regex without realistic bypass stay as TTSR; output mutation is hook-only.
+    </p>
+
+    <div class="mermaid-wrap">
+      <div class="zoom-controls">
+        <button onclick="zoomDiagram(this, 1.2)" title="Zoom in">+</button>
+        <button onclick="zoomDiagram(this, 0.8)" title="Zoom out">&minus;</button>
+        <button onclick="resetZoom(this)" title="Reset zoom">&#8634;</button>
+      </div>
+<pre class="mermaid">
+flowchart TD
+    NEW["New safety rule needed"]:::start
+
+    NEW --> Q1{"Pattern class?"}
+
+    Q1 -->|"Content the model<br/>is WRITING into files"| TTSR_CONTENT["TTSR · stream regex<br/>(security, git-workflow)"]:::ttsr
+    Q1 -->|"Tool INPUT pattern<br/>(bash cmd, read/edit path)"| Q2{"Realistic bypass?<br/>(proc subst, find-exec,<br/>interpreter wrapper)"}
+    Q1 -->|"Tool OUTPUT needs<br/>mutation/redaction"| HOOK_POST["Post-hook · tool_result<br/>(redact-keys)"]:::hookpost
+
+    Q2 -->|"Yes — regex<br/>can't catch it"| HOOK_PRE["Pre-hook · tool_call<br/>(guard-rm, guard-curl-pipe,<br/>guard-credentials, guard-sudo)"]:::hookpre
+    Q2 -->|"No — regex is fine"| TTSR_BASH["TTSR · simple bash regex<br/>(no-cloud-destroy, no-deploy,<br/>no-shell-write, no-db-mutation,<br/>no-dd-disk, no-broad-chmod)"]:::ttsr
+
+    TTSR_CONTENT --> STACK[("omp safety stack<br/>8 TTSR + 5 hooks")]:::stack
+    TTSR_BASH --> STACK
+    HOOK_PRE --> STACK
+    HOOK_POST --> STACK
+
+    classDef start fill:#1e3a5f22,stroke:#1e3a5f,stroke-width:2px
+    classDef ttsr fill:#b8862a22,stroke:#b8862a,stroke-width:1.5px
+    classDef hookpre fill:#b8562c33,stroke:#b8562c,stroke-width:2.5px
+    classDef hookpost fill:#4d7a4a33,stroke:#4d7a4a,stroke-width:2.5px
+    classDef stack fill:#1e3a5f33,stroke:#1e3a5f,stroke-width:2px
+</pre>
+    </div>
+    <p class="mermaid-caption">thick edges = new paths · gold = TTSR (existing) · terracotta = pre-hook · sage = post-hook</p>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════════════════════
+       BEFORE / AFTER — top-level reshapes
+       ═══════════════════════════════════════════════════════════════ -->
+  <section class="section" style="--i: 4">
+    <div class="section__eyebrow">Major comparisons</div>
+    <h2>Three areas reshape</h2>
+
+    <h3 class="diff-title">Safety stack — 12 TTSR + 0 hooks → 8 TTSR + 5 hooks</h3>
+    <div class="diff-panels">
+      <div class="diff-panel__header diff-panel__header--before">Before · TTSR-only</div>
+      <div class="diff-panel__header diff-panel__header--after">After · TTSR + hooks (per ADR-0006)</div>
+
+      <div class="diff-panel__body">
+        <p><strong>12 TTSR rules carrying the entire per-pattern enforcement load on omp.</strong> Markdown frontmatter <code>condition:</code> regex matched against stream text. Per ADR-0004 pillar 3, "no hook port — TTSR covers the same surface."</p>
+        <p>Bypasses surfaced in live use:</p>
+        <ul>
+          <li><code>bash &lt;(curl URL)</code> — process substitution wraps the curl, regex sees no pipe</li>
+          <li><code>find / -delete</code> — different command shape than <code>rm -rf /</code></li>
+          <li>Prose mention of <code>~/.aws/credentials</code> in a Write/Edit payload — over-fired the regex on commentary, not actual reads</li>
+          <li><code>bash &lt;(sudo …)</code> — same proc-subst bypass</li>
+        </ul>
+        <p>And one capability gap with no TTSR workaround: <strong>redacting secrets that leak in tool output</strong>. TTSR fundamentally cannot mutate <code>tool_result</code> content.</p>
+      </div>
+
+      <div class="diff-panel__body">
+        <p><strong>8 TTSR rules + 5 omp hooks.</strong> Hooks own input-bound patterns with known bypasses + all output mutation; TTSR owns content-based and simple-bash-regex patterns.</p>
+        <p><strong style="color: var(--terracotta);">Pre-hooks (4 · block tool_call before execution)</strong>:</p>
+        <ul>
+          <li><code>guard-rm.ts</code> — tokenize+recurse, blocks broad <code>rm -rf</code> and <code>find … -delete</code> / <code>-exec rm</code></li>
+          <li><code>guard-curl-pipe.ts</code> — splits on pipes, blocks <code>curl|*|bash</code> and <code>bash &lt;(curl)</code></li>
+          <li><code>guard-credentials.ts</code> — per-tool input check on <code>read</code>/<code>edit</code> paths + bash command parsing</li>
+          <li><code>guard-sudo.ts</code> — <code>\bsudo\s</code> on bash input (consistency with other guards; the TTSR rule already had <code>scope: tool:bash</code> so there was no prose-overfire bug)</li>
+        </ul>
+        <p><strong style="color: var(--sage);">Post-hook (1 · mutate tool_result)</strong>:</p>
+        <ul>
+          <li><code>redact-keys.ts</code> — multi-pattern redaction across <code>read</code>/<code>edit</code>/<code>bash</code> output with placeholder-skip allowlist</li>
+        </ul>
+        <p>8 TTSR rules retained verbatim; <code>development-workflow.md</code> stays deleted from the prior cycle.</p>
+      </div>
+    </div>
+
+    <h3 class="diff-title">Test pipeline — 1 new check + 1 negative case</h3>
+    <div class="diff-panels">
+      <div class="diff-panel__header diff-panel__header--before">Before</div>
+      <div class="diff-panel__header diff-panel__header--after">After</div>
+
+      <div class="diff-panel__body">
+        <p><strong>388 passing assertions</strong> across frontmatter, install targets, YAML validity, forbidden phrasing, and the rest. Self-test had 13 negative cases. Nothing protected the hooks' file shape — they're new territory.</p>
+      </div>
+
+      <div class="diff-panel__body">
+        <p><strong>403 passing assertions</strong> — +15 net. One new pipeline check, <code>test_omp_hook_shape</code> (test-pipeline.sh:617), validates each <code>omp/hooks/{pre,post}/*.ts</code>:</p>
+        <ul>
+          <li><code>export default function (…)</code> at start of a line (real signature, not just words in a comment)</li>
+          <li>Imports <code>HookAPI</code> from <code>@oh-my-pi/pi-coding-agent/extensibility/hooks</code></li>
+          <li><code>pre/guard-*.ts</code> + <code>post/redact-*.ts</code> naming convention enforced by directory</li>
+        </ul>
+        <p>Matching negative case (#13) plants a TS file missing the default export and asserts the pipeline rejects it. <strong>14/14 self-test pass.</strong></p>
+      </div>
+    </div>
+
+    <h3 class="diff-title">install.sh — extensions only → extensions + hooks/{pre,post}</h3>
+    <div class="diff-panels">
+      <div class="diff-panel__header diff-panel__header--before">Before</div>
+      <div class="diff-panel__header diff-panel__header--after">After</div>
+
+      <div class="diff-panel__body">
+        <p>One TS-symlink loop targeting <code>omp/extensions/*.ts</code>. Hooks/ directory didn't exist.</p>
+      </div>
+
+      <div class="diff-panel__body">
+        <p>Two new symlink loops added adjacent to the extensions loop, targeting <code>omp/hooks/pre/*.ts</code> → <code>~/.omp/agent/hooks/pre/</code> and <code>omp/hooks/post/*.ts</code> → <code>~/.omp/agent/hooks/post/</code>. Both guarded by <code>[ -f "$hook" ] || continue</code> so README.md and other non-code in the directories are skipped (omp's loader would otherwise try to import them).</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════════════════════
+       BYPASS COVERAGE MATRIX
+       ═══════════════════════════════════════════════════════════════ -->
+  <section class="section" style="--i: 5">
+    <div class="section__eyebrow">Bypass coverage matrix</div>
+    <h2>What each hook catches that the deleted rule couldn't</h2>
+    <p class="section__intro">
+      Each row pairs a deleted TTSR rule with its replacement hook, the specific bypass(es) the regex couldn't handle, and the structural mechanism the hook uses to catch it. The post-hook row is the net-new capability — no TTSR equivalent ever existed.
+    </p>
+
+    <div class="matrix-wrap">
+      <table class="matrix">
+        <thead>
+          <tr>
+            <th>Hook</th>
+            <th>Replaces</th>
+            <th>Bypass(es) the regex missed</th>
+            <th>How the hook catches it</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="hook-name">pre/guard-rm.ts</td>
+            <td><code>no-rm-rf-root.md</code></td>
+            <td class="bypass"><code>find / -delete</code><br/><code>find / -exec rm {} \;</code><br/><code>bash &lt;(rm -rf ~/)</code></td>
+            <td class="caught">Tokenizer + per-token broad-target check (<code>/</code>, <code>~</code>, <code>$HOME</code>, <code>${HOME}</code>, <code>~/</code>, <code>$HOME/</code>, <code>${HOME}/</code>, <code>*</code>). Separately walks <code>find</code> path arg + scans for <code>-delete</code> or <code>-exec rm</code>. Recurses into process / command substitution.</td>
+          </tr>
+          <tr>
+            <td class="hook-name">pre/guard-curl-pipe.ts</td>
+            <td><code>no-curl-pipe-interpreter.md</code></td>
+            <td class="bypass"><code>bash &lt;(curl URL)</code><br/><code>curl URL | tee /tmp/x | bash</code><br/><code>http_proxy=… curl URL | bash</code> (lowercase env-var)<br/><code>curl URL |&amp; bash</code> (stderr pipe)</td>
+            <td class="caught">Paren-aware pipe splitter walks segments; <code>leadingWord()</code> skips case-insensitive env-var prefixes before identifying curl/wget vs. interpreter. Process substitution detected separately when the outer command is an interpreter. Handles <code>|&amp;</code> by consuming both chars at the split.</td>
+          </tr>
+          <tr>
+            <td class="hook-name">pre/guard-credentials.ts</td>
+            <td><code>no-credentials-read.md</code></td>
+            <td class="bypass">Prose: <em>"see <code>~/.aws/credentials</code> for setup"</em> in a Write/Edit payload over-fired the broad TTSR regex.<br/>Also: <code>bash &lt;(cat ~/.aws/credentials)</code></td>
+            <td class="caught">Per-tool branch — on <code>read</code>/<code>edit</code> checks <code>event.input.path</code> directly (zero prose surface). On <code>bash</code> tokenizes, identifies credential-reader commands (cat/awk/grep/sed/cp/scp/…), and only fires when a non-flag argument matches a credential path. Prose mentions in commentary now pass through unmolested.</td>
+          </tr>
+          <tr>
+            <td class="hook-name">pre/guard-sudo.ts</td>
+            <td><code>no-sudo.md</code></td>
+            <td class="bypass">None specific — the prior rule's <code>scope: tool:bash</code> already prevented prose-overfire. Migration is for <strong>consistency with the other guards</strong>; slice 5's implementation note acknowledges this explicitly.</td>
+            <td class="caught">Single <code>\bsudo\s</code> regex on <code>event.input.command</code>. Catches all wrapper variants because the literal "sudo " substring appears in the bash input regardless of nesting (<code>bash &lt;(sudo …)</code>, <code>find … -exec sudo</code>, <code>python -c "os.system('sudo …')"</code>).</td>
+          </tr>
+          <tr>
+            <td class="hook-name">post/redact-keys.ts</td>
+            <td><strong style="color: var(--sage);">net-new — no TTSR equivalent</strong></td>
+            <td class="bypass">N/A · TTSR fundamentally cannot mutate <code>tool_result</code> content. Output redaction was previously impossible.</td>
+            <td class="caught">Subscribes to <code>tool_result</code> for <code>read</code>/<code>edit</code>/<code>bash</code>; iterates text content blocks; applies 5-pattern redaction (KEY=value, HTTP Bearer, AKIA…, ghp_/github_pat_, JWTs); skips placeholder-shaped values (xxx, your-, &lt;…&gt;, all-same-char) so docs/fixtures pass through. Returns mutated <code>content</code> array.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════════════════════
+       FILE MAP — grouped by category
+       ═══════════════════════════════════════════════════════════════ -->
+  <section class="section" style="--i: 6">
+    <div class="section__eyebrow">File map</div>
+    <h2>What changed, file by file</h2>
+
+    <!-- HOOKS -->
+    <div class="file-group">
+      <div class="file-group__head">
+        <strong>omp hooks — 5 new TS modules + README</strong>
+        <em>6 new files · 546 TS lines</em>
+      </div>
+      <div class="files-grid">
+        <div class="file-card file-card--new">
+          <div class="file-card__head">
+            <span class="file-card__path">omp/hooks/pre/guard-rm.ts</span>
+            <span class="file-tag file-tag--new">new</span>
+          </div>
+          <div class="file-card__stat">119 lines · TypeScript · pre-hook</div>
+          <p class="file-card__desc">Tokenizer with quote awareness; <code>BROAD_TARGETS</code> set covering <code>/</code>, <code>~</code>, <code>*</code>, <code>$HOME</code>/<code>${HOME}</code> and their trailing-slash variants. Separately walks <code>find</code> path arg + scans for <code>-delete</code> or <code>-exec rm</code>. Recurses into <code>&lt;(…)</code>/<code>$(…)</code>/backticks. <strong>HIGH fix applied post-review:</strong> trailing-slash variants added; <code>.</code> and <code>..</code> deliberately omitted from broad targets (over-fired on <code>find . -name "*.pyc" -delete</code>).</p>
+        </div>
+        <div class="file-card file-card--new">
+          <div class="file-card__head">
+            <span class="file-card__path">omp/hooks/pre/guard-curl-pipe.ts</span>
+            <span class="file-tag file-tag--new">new</span>
+          </div>
+          <div class="file-card__stat">138 lines · TypeScript · pre-hook</div>
+          <p class="file-card__desc">Paren-aware pipe splitter (treats <code>||</code> as logical OR, not pipe; consumes <code>|&amp;</code> stderr-pipe). <code>leadingWord()</code> skips env-var assignments — <strong>case-insensitive (HIGH fix)</strong> because <code>http_proxy=…</code> is valid bash and commonly used. Detects pipe-to-interpreter (including tee-interposers downstream) and process-substitution-wrapped curl when the outer command is an interpreter.</p>
+        </div>
+        <div class="file-card file-card--new">
+          <div class="file-card__head">
+            <span class="file-card__path">omp/hooks/pre/guard-credentials.ts</span>
+            <span class="file-tag file-tag--new">new</span>
+          </div>
+          <div class="file-card__stat">148 lines · TypeScript · pre-hook · multi-tool</div>
+          <p class="file-card__desc">Per-tool dispatch: <code>read</code>/<code>edit</code> check <code>event.input.path</code> against 8 credential-path regexes (AWS creds, kubeconfig, SSH keys case-insensitive, .netrc, .pgpass, .npmrc, .secrets, anything literally named "credentials"). <code>bash</code> tokenizes, identifies 19 credential-reader commands (cat/awk/grep/sed/cp/scp/vim/strings/xxd/…), only fires when a non-flag argument matches a credential path. Splits on <code>|</code>/<code>;</code>/<code>&amp;&amp;</code>/<code>||</code> and recurses into substitutions.</p>
+        </div>
+        <div class="file-card file-card--new">
+          <div class="file-card__head">
+            <span class="file-card__path">omp/hooks/pre/guard-sudo.ts</span>
+            <span class="file-tag file-tag--new">new</span>
+          </div>
+          <div class="file-card__stat">40 lines · TypeScript · pre-hook</div>
+          <p class="file-card__desc">Single <code>\bsudo\s</code> regex on <code>event.input.command</code>. Header comment acknowledges this is a consistency migration, not a bypass fix — the prior TTSR rule's <code>scope: tool:bash</code> already prevented prose overfire. The literal "sudo " substring appears in bash input for all wrapper variants (<code>bash &lt;(sudo)</code>, <code>find -exec sudo</code>, <code>python -c "os.system('sudo')"</code>).</p>
+        </div>
+        <div class="file-card file-card--new">
+          <div class="file-card__head">
+            <span class="file-card__path">omp/hooks/post/redact-keys.ts</span>
+            <span class="file-tag file-tag--new">new</span>
+          </div>
+          <div class="file-card__stat">101 lines · TypeScript · post-hook · net-new</div>
+          <p class="file-card__desc">Subscribes to <code>tool_result</code> for <code>REDACT_TOOLS</code> = <code>{read, edit, bash}</code> (<strong>edit added in HIGH fix</strong> — echoes file content same as read). Skips error results. 5 secret patterns: KEY=value, HTTP Bearer, AKIA…, ghp_/github_pat_ (<strong>fine-grained PAT pattern added in MEDIUM fix</strong>), JWTs. <code>isPlaceholder()</code> allowlist skips xxx-containing, your-/your_-prefixed, <code>&lt;…&gt;</code>, all-same-char so docs and fixtures pass through. Resets regex <code>lastIndex</code> per call (important for <code>/g</code> state).</p>
+        </div>
+        <div class="file-card file-card--new">
+          <div class="file-card__head">
+            <span class="file-card__path">omp/hooks/README.md</span>
+            <span class="file-tag file-tag--new">new</span>
+          </div>
+          <div class="file-card__stat">42 lines · directory documentation</div>
+          <p class="file-card__desc">Directory convention doc. Documents the discovery path (<code>~/.omp/agent/hooks/{pre,post}/*.ts</code>), the <code>guard-*</code>/<code>redact-*</code> naming convention, the API contract (pre returns <code>{block, reason}</code>; post returns <code>{content, details, isError}</code>), and the explicit note that the API does <strong>not</strong> support <code>{allow: true}</code> — verified against <code>shared-events.ts:265</code>. Points to ADR-0006 for the hook-vs-TTSR decision tree.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- DELETED RULES -->
+    <div class="file-group">
+      <div class="file-group__head">
+        <strong>Deleted TTSR rules — replaced 1-to-1 by hooks</strong>
+        <em>4 files · −104 lines</em>
+      </div>
+      <div class="files-grid">
+        <div class="file-card file-card--del">
+          <div class="file-card__head">
+            <span class="file-card__path">rules/no-rm-rf-root.md</span>
+            <span class="file-tag file-tag--del">deleted</span>
+          </div>
+          <div class="file-card__stat"><span class="rm">−25</span> · replaced by <code>guard-rm.ts</code></div>
+          <p class="file-card__desc">Body text guidance ("delete specific named files, never use <code>*</code>/<code>/</code>/<code>~</code>") now delivered to the model via the hook's <code>reason</code> string at block time.</p>
+        </div>
+        <div class="file-card file-card--del">
+          <div class="file-card__head">
+            <span class="file-card__path">rules/no-curl-pipe-interpreter.md</span>
+            <span class="file-tag file-tag--del">deleted</span>
+          </div>
+          <div class="file-card__stat"><span class="rm">−24</span> · replaced by <code>guard-curl-pipe.ts</code></div>
+          <p class="file-card__desc">"Download then verify then run" guidance now in the hook's <code>reason</code> string (shorter, but cites the actual blocked command snippet).</p>
+        </div>
+        <div class="file-card file-card--del">
+          <div class="file-card__head">
+            <span class="file-card__path">rules/no-credentials-read.md</span>
+            <span class="file-tag file-tag--del">deleted</span>
+          </div>
+          <div class="file-card__stat"><span class="rm">−35</span> · replaced by <code>guard-credentials.ts</code></div>
+          <p class="file-card__desc">Longest of the deleted rules — its multi-paragraph "ask the user" guidance trades for surgical input-bound enforcement. The over-firing-on-prose problem the body explicitly acknowledged is gone.</p>
+        </div>
+        <div class="file-card file-card--del">
+          <div class="file-card__head">
+            <span class="file-card__path">rules/no-sudo.md</span>
+            <span class="file-tag file-tag--del">deleted</span>
+          </div>
+          <div class="file-card__stat"><span class="rm">−20</span> · replaced by <code>guard-sudo.ts</code></div>
+          <p class="file-card__desc">"Hand the user the command and let them run it" guidance now in the hook's <code>reason</code>.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- INSTALL -->
+    <div class="file-group">
+      <div class="file-group__head">
+        <strong>Install pipeline</strong>
+        <em>1 file modified · +14 / −2</em>
+      </div>
+      <div class="files-grid">
+        <div class="file-card file-card--mod">
+          <div class="file-card__head">
+            <span class="file-card__path">install.sh</span>
+            <span class="file-tag file-tag--mod">modified</span>
+          </div>
+          <div class="file-card__stat"><span class="add">+14</span> / <span class="rm">−2</span></div>
+          <p class="file-card__desc">Adds <code>~/.omp/agent/hooks/pre</code> + <code>~/.omp/agent/hooks/post</code> to mkdir, plus two new symlink loops over <code>omp/hooks/pre/*.ts</code> and <code>omp/hooks/post/*.ts</code> immediately after the extensions loop. Both guarded by <code>[ -f "$hook" ]</code> so non-code (README.md) is skipped. Banner line updated: "skills, commands, agents, rules, extensions, hooks for omp".</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- TEST PIPELINE -->
+    <div class="file-group">
+      <div class="file-group__head">
+        <strong>Test pipeline + self-test</strong>
+        <em>2 files modified · +89 / −1</em>
+      </div>
+      <div class="files-grid">
+        <div class="file-card file-card--mod">
+          <div class="file-card__head">
+            <span class="file-card__path">scripts/test-pipeline.sh</span>
+            <span class="file-tag file-tag--mod">modified</span>
+          </div>
+          <div class="file-card__stat"><span class="add">+60</span> / <span class="rm">0</span></div>
+          <p class="file-card__desc">New <code>test_omp_hook_shape</code> function at line 617. Walks <code>omp/hooks/{pre,post}/*.ts</code> and asserts (a) <code>^[[:space:]]*export[[:space:]]+default[[:space:]]+function</code> at line start — not just words in a comment — (b) imports from <code>@oh-my-pi/pi-coding-agent/extensibility/hooks</code>, (c) <code>guard-*</code>/<code>redact-*</code> naming per directory. Wired into <code>main()</code> after <code>test_omp_yaml_valid</code>.</p>
+        </div>
+        <div class="file-card file-card--mod">
+          <div class="file-card__head">
+            <span class="file-card__path">scripts/test-pipeline-self-test.sh</span>
+            <span class="file-tag file-tag--mod">modified</span>
+          </div>
+          <div class="file-card__stat"><span class="add">+29</span> / <span class="rm">−1</span></div>
+          <p class="file-card__desc">New negative case <code>test_omp_hook_missing_default_export_fails</code> (slot #13) plants a TS file at <code>omp/hooks/pre/guard-test-self-test-bad.ts</code> with a named-but-not-default-exported function and asserts <code>run_pipeline</code> exits non-zero. Cleanup trap extended to remove the planted hook fixtures on exit (both pre/ and post/ slots covered).</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- ADR + EXISTING DOCS -->
+    <div class="file-group">
+      <div class="file-group__head">
+        <strong>ADRs &amp; documentation</strong>
+        <em>1 new ADR + 2 doc updates</em>
+      </div>
+      <div class="files-grid">
+        <div class="file-card file-card--new">
+          <div class="file-card__head">
+            <span class="file-card__path">docs/adr/0006-hooks-replace-ttsr-for-input-bound-patterns.md</span>
+            <span class="file-tag file-tag--new">new</span>
+          </div>
+          <div class="file-card__stat">42 lines · ADR</div>
+          <p class="file-card__desc">Codifies the hook-vs-TTSR decision tree. Lists the 4 deleted TTSR files, the 5 new hooks, the criteria for each mechanism (3 hook-yes triggers, 3 TTSR-yes triggers), the rejected alternatives (hook-first for all 12, TTSR-only with bypasses accepted, defense-in-depth dual-layer), and the consequences. <strong>Explicitly supersedes the third pillar of ADR-0004</strong>; pillars 1 + 2 of ADR-0004 remain in force.</p>
+        </div>
+        <div class="file-card file-card--mod">
+          <div class="file-card__head">
+            <span class="file-card__path">docs/adr/0004-omp-permissions-and-hooks-decoupled.md</span>
+            <span class="file-tag file-tag--mod">modified</span>
+          </div>
+          <div class="file-card__stat"><span class="add">+1</span> / <span class="rm">−1</span></div>
+          <p class="file-card__desc">Pillar 3 ("no hook port") gets an inline "Superseded by ADR-0006" annotation. The original sentence is preserved verbatim so the historical reasoning survives; the annotation clarifies that omp now does get its own native TS hooks (the Claude shell hook decision is unchanged).</p>
+        </div>
+        <div class="file-card file-card--mod">
+          <div class="file-card__head">
+            <span class="file-card__path">omp/extensions/README.md</span>
+            <span class="file-tag file-tag--mod">modified</span>
+          </div>
+          <div class="file-card__stat"><span class="add">+15</span> / <span class="rm">−7</span></div>
+          <p class="file-card__desc">Removes stale "denylist hook" + "<code>tool_result</code> redaction" reasonable-candidate bullets (those use cases moved to <code>omp/hooks/</code>). New "Related work in adjacent omp/hooks/" section disambiguates: hooks = narrower <code>HookAPI</code> event-handler surface; extensions = superset adding command/tool/renderer registration. Cross-references ADR-0006 + ADR-0004.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- README + CONTEXT -->
+    <div class="file-group">
+      <div class="file-group__head">
+        <strong>README &amp; CONTEXT updates</strong>
+        <em>2 files modified · +27 / −12</em>
+      </div>
+      <div class="files-grid">
+        <div class="file-card file-card--mod">
+          <div class="file-card__head">
+            <span class="file-card__path">README.md</span>
+            <span class="file-tag file-tag--mod">modified</span>
+          </div>
+          <div class="file-card__stat"><span class="add">+19</span> / <span class="rm">−9</span></div>
+          <p class="file-card__desc">Rule counts: "15 files — 3 rulebook + 12 TTSR" → "11 files — 3 rulebook + 8 TTSR" + new "Hooks (5 omp-only TS modules)" callout. TTSR table loses the 4 deleted-rule rows. New <strong>Hooks subsection</strong> with per-hook role + replaces + what-it-does table. Repository Structure tree gains <code>omp/extensions/ + hooks/{pre,post}/</code> line. Triple-Harness Support table's Hooks row updated from "Not used — TTSR covers same surface" to "5 TS modules in <code>omp/hooks/</code>".</p>
+        </div>
+        <div class="file-card file-card--mod">
+          <div class="file-card__head">
+            <span class="file-card__path">CONTEXT.md</span>
+            <span class="file-tag file-tag--mod">modified</span>
+          </div>
+          <div class="file-card__stat"><span class="add">+5</span> / <span class="rm">−2</span></div>
+          <p class="file-card__desc">Rulebook entry: "six rules" → "three rulebook rules (coding-style, testing, performance)". TTSR entry: framing updated from "omp's runtime enforcement layer mirroring Claude's denylist+curl hook" to "content-based patterns and simple bash-command patterns where regex has no realistic bypass". <strong>New "Hook" term</strong> added with explicit distinction from TTSR (structured input vs. stream regex; can mutate output vs. block-only) and from extensions (narrower API surface).</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- OMP CONFIG -->
+    <div class="file-group">
+      <div class="file-group__head">
+        <strong>omp config (incidental cleanup)</strong>
+        <em>1 file modified · +9 / −6</em>
+      </div>
+      <div class="files-grid">
+        <div class="file-card file-card--mod">
+          <div class="file-card__head">
+            <span class="file-card__path">omp/config.yml</span>
+            <span class="file-tag file-tag--mod">modified</span>
+          </div>
+          <div class="file-card__stat"><span class="add">+9</span> / <span class="rm">−6</span></div>
+          <p class="file-card__desc">Cosmetic + minor: trailing-space removal, added document marker <code>---</code> at top, added trailing newline, added <code>tools.approval.web_search: allow</code>, added <code>lastChangelogVersion: 15.5.7</code>. Not part of the hooks migration proper but rolled into the same commit — omp wrote these touchups during a routine session.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- DOCS/CLAUDE -->
+    <div class="file-group">
+      <div class="file-group__head">
+        <strong>Feature documentation</strong>
+        <em>4 new files · PRD + tasks (md+html each)</em>
+      </div>
+      <div class="files-grid">
+        <div class="file-card file-card--new">
+          <div class="file-card__head">
+            <span class="file-card__path">docs/features/20260528-1311-omp-hooks-migration/</span>
+            <span class="file-tag file-tag--new">new</span>
+          </div>
+          <div class="file-card__stat">prd.{md,html} + tasks.{md,html} + this diff-review.html</div>
+          <p class="file-card__desc">Per-feature artifact directory. Same editorial aesthetic as the prior <code>20260528-0005-omp-harness-integration/</code> family — deep navy + gold, Instrument Serif display, IBM Plex Sans body, JetBrains Mono code.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════════════════════
+       CODE REVIEW
+       ═══════════════════════════════════════════════════════════════ -->
+  <section class="section" style="--i: 7">
+    <div class="section__eyebrow">Code review · post-implementation triage</div>
+    <h2>Good · Bad · Ugly · Questions</h2>
+    <p class="section__intro">
+      Post-implementation review caught a clutch of HIGH and MEDIUM items in the structured parsers and the redactor — all fixed in the verification chain before this diff-review was generated. The thoroughness of that pass is itself a data point on the migration's quality.
+    </p>
+
+    <div class="review-grid">
+      <div class="review-card review-card--good">
+        <h3 class="review-card__title">Good</h3>
+        <ul class="review-card__list">
+          <li><strong>Structured argv parsing depth.</strong> <code>guard-rm</code>, <code>guard-curl-pipe</code>, <code>guard-credentials</code> all hand-roll quote-aware tokenizers, paren-aware pipe splitters, env-var-prefix skippers, and recursive substitution walkers — exactly the parsing TTSR's stream regex couldn't do. The implementations stay readable because each helper is single-purpose (<code>tokenize</code>, <code>splitOnPipe</code>, <code>splitOnSeparators</code>, <code>leadingWord</code>, <code>extractSubstitutions</code>).</li>
+          <li><strong>Per-tool dispatch in <code>guard-credentials</code>.</strong> <code>read</code>/<code>edit</code> check <code>event.input.path</code> directly with zero prose surface, completely eliminating the over-fire-on-commentary bug from the deleted TTSR rule. <code>bash</code> gets a separate, deeper code path.</li>
+          <li><strong><code>redact-keys</code> placeholder allowlist is well-targeted.</strong> Covers xxx-containing, your-/your_-prefixed, <code>&lt;…&gt;</code>, <code>...</code>, all-same-char, "redacted" (already-redacted), and the 8-char minimum length. Docs and test fixtures pass through unmolested — exactly the right calibration for an output mutator.</li>
+          <li><strong>Hook API contract verified against source.</strong> <code>omp/hooks/README.md</code> cites <code>shared-events.ts:265</code> for the "no <code>{allow: true}</code>" invariant — the doc didn't guess at the API surface. That's the same posture as the earlier "<code>{block, reason}</code> only" decision documented in the extensions README.</li>
+          <li><strong>Slice 5 implementation note is honest.</strong> <code>guard-sudo.ts</code> header comment explicitly states the migration is for consistency with the other guards, not to fix a specific bypass — the prior TTSR rule already had <code>scope: tool:bash</code>. Documenting the trade-off in-place keeps future readers from assuming there was a security reason.</li>
+          <li><strong>Pipeline check enforces start-of-line export.</strong> <code>test_omp_hook_shape</code> uses <code>^[[:space:]]*export[[:space:]]+default[[:space:]]+function</code> rather than just grepping for the words — a comment mentioning "export default function" doesn't satisfy omp's loader, and the check correctly insists on the signature shape, not the phrase.</li>
+        </ul>
+      </div>
+
+      <div class="review-card review-card--bad">
+        <h3 class="review-card__title">Bad · all addressed pre-review</h3>
+        <ul class="review-card__list">
+          <li><strong>HIGH — fixed.</strong> <code>guard-rm</code> originally listed <code>.</code> and <code>..</code> as broad targets — over-fired on the common, safe pattern <code>find . -name "*.pyc" -delete</code>. Both removed; comment in <code>BROAD_TARGETS</code> documents the omission.</li>
+          <li><strong>HIGH — fixed.</strong> <code>guard-rm</code> missed <code>${HOME}</code>, <code>~/</code>, <code>$HOME/</code>, <code>${HOME}/</code> (trailing-slash variants of broad targets). Added; <code>isBroadTarget()</code> also normalizes trailing slashes generally.</li>
+          <li><strong>HIGH — fixed.</strong> <code>guard-curl-pipe</code>'s env-var-prefix skip was case-sensitive — missed <code>http_proxy=…</code> and other lowercase HTTP-proxy vars (valid bash, commonly used). <code>leadingWord()</code> now uses <code>[A-Za-z_][A-Za-z0-9_]*</code>.</li>
+          <li><strong>HIGH — fixed.</strong> <code>guard-curl-pipe</code>'s pipe splitter didn't handle <code>|&amp;</code> (bash's stdout+stderr pipe) — would treat <code>curl URL |&amp; bash</code> as one segment. Now consumes the <code>&amp;</code> after the <code>|</code> at the split point.</li>
+          <li><strong>HIGH — fixed.</strong> <code>redact-keys</code> originally only handled <code>read</code> + <code>bash</code> — <code>edit</code> wasn't in <code>REDACT_TOOLS</code>. But <code>edit</code> echoes file content in its result the same way <code>read</code> does, so secrets would leak through edit's response. Added.</li>
+          <li><strong>MEDIUM — fixed.</strong> <code>redact-keys</code>'s GitHub token pattern only matched the classic <code>ghp_</code>/<code>gho_</code>/<code>ghu_</code>/<code>ghs_</code>/<code>ghr_</code> format. Added <code>github_pat_[A-Za-z0-9_]{82,}</code> for fine-grained PATs (introduced 2022).</li>
+          <li><strong>MEDIUM — fixed.</strong> <code>guard-credentials</code>'s <code>.secrets</code> regex was loose — over-broad. Tightened to <code>/\.secrets([./]|$)/</code> to match <code>.secrets.foo</code>, <code>.secrets/foo</code>, or end-of-string but not arbitrary substrings.</li>
+        </ul>
+      </div>
+
+      <div class="review-card review-card--ugly">
+        <h3 class="review-card__title">Ugly · accepted trade-offs</h3>
+        <ul class="review-card__list">
+          <li><strong>Hooks are omp-only.</strong> Per ADR-0006, hooks run only on omp's TS-module hook system — Claude users continue to rely on the per-pattern denylist + curl shell hook, OpenCode has no hook surface at all. The 5 new hooks don't reach Claude users. Accepted: the migrated TTSR rules were also omp-effective only (Claude's regex pre-existed in <code>claude/settings.json</code>; OpenCode doesn't load rules), so no net loss of Claude/OpenCode coverage.</li>
+          <li><strong>Hook reasons are shorter than the deleted rule bodies.</strong> The TTSR rules had multi-paragraph "right approach" guidance; the hook <code>reason</code> string is one line citing the blocked command snippet. More targeted but less educational. The model still has rule bodies for the 8 remaining TTSR rules, so the loss is bounded.</li>
+          <li><strong>Live hook firing not stress-tested in a real omp session.</strong> Each hook is verified by code review + the pipeline shape check; no live omp tool_call was reproduced through each guard. Recommend a 3-pattern spot-check (<code>find / -delete</code>, <code>bash &lt;(curl URL)</code>, <code>cat ~/.aws/credentials</code>) before treating the hook layer as a hardened safety mechanism.</li>
+          <li><strong>Hand-rolled bash tokenizers in three files.</strong> <code>guard-rm</code>, <code>guard-curl-pipe</code>, <code>guard-credentials</code> each carry their own quote-aware tokenizer / substitution-extractor with similar shapes. Pulling them into a shared <code>omp/hooks/_lib/</code> module would reduce duplication but creates a coupling that has to be installed (more symlinks, more pipeline checks). Accepted as DRY-vs-isolation: each hook is independently auditable today.</li>
+          <li><strong>guard-sudo migration is consistency-driven, not bypass-driven.</strong> Slice 5 explicitly acknowledges the prior TTSR rule wasn't actually broken (scope:tool:bash already prevented prose overfire). Migrating it anyway keeps the "all rm/curl/cred/sudo guards live in <code>omp/hooks/pre/</code>" mental model clean — but it's a UX choice, not a security fix. Documented in the header comment so future readers don't assume otherwise.</li>
+        </ul>
+      </div>
+
+      <div class="review-card review-card--questions">
+        <h3 class="review-card__title">Questions for review</h3>
+        <ul class="review-card__list">
+          <li>Should <code>redact-keys</code> also redact in the <code>fetch</code> tool's output? Currently <code>REDACT_TOOLS</code> deliberately omits fetch — fetch responses are typically API JSON the model needs to reason about, and redacting could break legitimate API key inspection workflows. But fetch can also return HTML pages that embed credentials. Worth a decision before the next hooks pass.</li>
+          <li>Live tuning will surface more bypass cases. The 4 hooks ship with the bypasses we currently know about — process substitution, find-exec, env-var prefixes, lowercase HTTP proxies. A week of live use will likely surface more (e.g., <code>$()</code>-eval, complex heredocs, base64-encoded commands fed to <code>eval</code>). Worth a follow-up backlog item?</li>
+          <li>Should the <code>reason</code> strings be longer? The deleted rule bodies had explicit "right approach" guidance — currently the hook just cites the blocked command. A medium-length reason ("blocked because X; do Y instead") would restore some of the educational UX.</li>
+          <li>Should the placeholder-skip allowlist in <code>redact-keys</code> be configurable? Project-specific fixture conventions (e.g., a project uses <code>test_</code> prefixes) might want to extend it. Today it's a hard-coded function — fine for v1, worth revisiting if false positives appear.</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════════════════════
+       DECISION LOG
+       ═══════════════════════════════════════════════════════════════ -->
+  <section class="section" style="--i: 8">
+    <div class="section__eyebrow">Decision log · 1 new ADR + 4 design calls</div>
+    <h2>Why we did what we did</h2>
+    <p class="section__intro">
+      ADR-0006 is the headline. The other four cards capture decisions discussed explicitly during slicing — they're not separate ADRs but they are load-bearing design choices that future readers will want to see captured.
+    </p>
+
+    <div class="adr-grid">
+
+      <a href="../../adr/0006-hooks-replace-ttsr-for-input-bound-patterns.md" class="adr-card">
+        <div class="adr-card__id">ADR-0006 · new</div>
+        <h3 class="adr-card__title">Hooks replace TTSR for input-bound patterns with known regex bypasses</h3>
+        <p class="adr-card__summary">Codifies the hook-vs-TTSR decision tree. Hooks own input-bound patterns where structured parsing catches what regex can't, plus all output mutation. TTSR keeps content-based patterns (Write/Edit payloads) and simple bash regex with no realistic bypass. Supersedes ADR-0004's third pillar; pillars 1 + 2 of ADR-0004 remain in force.</p>
+        <span class="conf">HIGH · discussed</span>
+      </a>
+
+      <div class="adr-card">
+        <div class="adr-card__id">DESIGN CALL · scope</div>
+        <h3 class="adr-card__title">Hook-only on omp (Claude unchanged)</h3>
+        <p class="adr-card__summary">The 5 hooks are omp-only — Claude's per-pattern denylist + <code>scripts/hooks/deny-curl-to-interpreter.sh</code> were not touched. Per ADR-0006: the dangerous patterns the deleted TTSR rules covered are still blocked on Claude by the existing denylist + curl hook, none of which regressed. OpenCode was never affected by rules. Net Claude/OpenCode regression: zero.</p>
+        <span class="conf">HIGH · ADR-0006</span>
+      </div>
+
+      <div class="adr-card">
+        <div class="adr-card__id">DESIGN CALL · scope</div>
+        <h3 class="adr-card__title">Conservative migration — 4 of 12, not all 12</h3>
+        <p class="adr-card__summary">Hook-first-for-all was explicitly rejected in ADR-0006. The 8 remaining TTSR rules (<code>security</code>, <code>git-workflow</code>, <code>no-cloud-destroy</code>, <code>no-shell-write</code>, <code>no-deploy</code>, <code>no-db-mutation</code>, <code>no-dd-disk</code>, <code>no-broad-chmod</code>) have working regex with no realistic bypass. Migrating them buys nothing and trades markdown-authoring UX for TypeScript. Scope discipline is the win.</p>
+        <span class="conf">HIGH · ADR-0006</span>
+      </div>
+
+      <div class="adr-card">
+        <div class="adr-card__id">DESIGN CALL · convention</div>
+        <h3 class="adr-card__title">guard-* / redact-* naming, enforced by pipeline</h3>
+        <p class="adr-card__summary"><code>pre/guard-*.ts</code> for blockers; <code>post/redact-*.ts</code> for mutators. Enforced by <code>test_omp_hook_shape</code> per directory. Naming maps to the API contract: guards return <code>{block, reason}</code>; redactors return <code>{content, details, isError}</code>. Future hooks must follow the convention or fail the pipeline.</p>
+        <span class="conf">HIGH · documented in <code>omp/hooks/README.md</code></span>
+      </div>
+
+      <div class="adr-card">
+        <div class="adr-card__id">DESIGN CALL · implementation</div>
+        <h3 class="adr-card__title">Structured argv parsing over regex</h3>
+        <p class="adr-card__summary">Every pre-hook (except the deliberately-simple <code>guard-sudo</code>) hand-rolls a quote-aware tokenizer + paren-aware splitter + substitution-recursor. Regex is a poor fit for tokenizing shell — it can't handle nesting. The 3 tokenizer copies are accepted DRY-vs-isolation trade-offs to keep each hook independently auditable.</p>
+        <span class="conf">HIGH · implementation pattern</span>
+      </div>
+
+      <div class="adr-card">
+        <div class="adr-card__id">DESIGN CALL · API surface</div>
+        <h3 class="adr-card__title">No {allow: true}, only {block: …}</h3>
+        <p class="adr-card__summary">omp's hook API supports <code>{block: true, reason}</code> but does not support <code>{allow: true}</code> to short-circuit approval prompts. Verified against <code>shared-events.ts:265</code> and documented in <code>omp/hooks/README.md</code>. This means hooks can refuse but can't pre-approve — so "smart prompt suppressor" extensions remain infeasible. Accepted constraint.</p>
+        <span class="conf">HIGH · verified against source</span>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════════════════════
+       RE-ENTRY CONTEXT
+       ═══════════════════════════════════════════════════════════════ -->
+  <section class="section" style="--i: 9">
+    <div class="section__eyebrow">Re-entry context · note from present-you to future-you</div>
+    <h2>What to remember in two weeks</h2>
+
+    <div class="reentry-card">
+      <h3>Key invariants</h3>
+      <ul>
+        <li><strong>Hook API is <code>{block, reason}</code> only.</strong> There is no <code>{allow: true}</code> escape hatch — verified against <code>shared-events.ts:265</code>. Hooks can refuse but can't pre-approve. Don't design a "smart prompt suppressor" hook; it can't exist on the current API.</li>
+        <li><strong><code>REDACT_TOOLS</code> deliberately omits <code>fetch</code>.</strong> Fetch responses are typically API JSON the model needs to reason about. Redacting could break legitimate API key inspection. Currently: <code>{read, edit, bash}</code> only. Revisit if a real leak through fetch is observed.</li>
+        <li><strong><code>.</code> and <code>..</code> are deliberately not in <code>BROAD_TARGETS</code>.</strong> <code>find . -name "*.pyc" -delete</code> is a common safe cleanup. The over-fire was loud enough during review to remove these from the broad-target set. If you add them back, expect to break Python projects' pre-commit hooks.</li>
+        <li><strong>The 4 migrated rules' regex-bypass test cases live in their hook header comments.</strong> <code>guard-curl-pipe.ts</code> lines 4–11 enumerate the 4 bypass shapes. Don't refactor the comments away; they're the historical record of why each hook is shaped the way it is.</li>
+        <li><strong><code>omp/hooks/</code> README.md is skipped by the install loop</strong> via <code>[ -f "$hook" ] || continue</code> + the glob being <code>*.ts</code>/<code>*.js</code> only. Don't add a <code>*.md</code> include or omp's loader will choke trying to import markdown.</li>
+      </ul>
+
+      <h3>Non-obvious coupling</h3>
+      <ul>
+        <li><strong>ADR-0004 + ADR-0006 must be read as a pair.</strong> ADR-0004 still owns the hand-authored-config-yml + no-sync-extension pillars; ADR-0006 owns the now-superseded hooks pillar. Reading ADR-0004 in isolation today gives the wrong impression of the safety stack.</li>
+        <li><strong><code>test_omp_hook_shape</code> only checks the shape — not the behavior.</strong> A hook with a valid default-export signature that does nothing will pass the pipeline. Behavior validation is a manual / future concern.</li>
+        <li><strong>The deleted TTSR rules' bodies were a model-facing UX surface, not just enforcement.</strong> Hook <code>reason</code> strings are shorter. If the model starts asking "what should I do instead?" more often after this change, lengthen the reasons before adding back rule bodies.</li>
+        <li><strong>OpenCode is still untouched.</strong> Hooks don't reach OpenCode (no hook surface). Rules never reached OpenCode (no rule loader). Sync-permissions.py stays Claude ↔ OpenCode only. Adding a 4th harness later should follow the same per-harness-safety-stack pattern, not assume hooks/rules port automatically.</li>
+      </ul>
+
+      <h3>Gotchas</h3>
+      <ul>
+        <li><strong>Regex <code>lastIndex</code> in <code>redact-keys</code>.</strong> Each <code>SECRET_PATTERNS</code> entry uses <code>/g</code> flag, which carries <code>lastIndex</code> across calls. <code>redactText()</code> resets it explicitly before each <code>replace()</code>. Don't refactor away the reset; tests across multiple tool_results would otherwise non-deterministically miss matches.</li>
+        <li><strong><code>guard-curl-pipe</code>'s segment splitter treats <code>||</code> as logical-OR (skipped), but the pipe-vs-OR check is positional</strong> — <code>cmd[i + 1] !== "|"</code>. If you ever extend it to other multi-char operators, mind the order.</li>
+        <li><strong><code>guard-credentials</code> tokenizer doesn't handle backslash escapes inside double-quoted strings.</strong> A path like <code>"~/.aws/credentials\\"</code> would tokenize oddly. Not a security hole (the regex still matches the credential substring), but worth knowing if you debug a weird tokenization case.</li>
+        <li><strong>The install loop guards (<code>[ -f "$hook" ] || continue</code>) protect against a glob that matches nothing.</strong> If <code>omp/hooks/pre/</code> contains no <code>.ts</code> files, the glob expands to itself literally — the guard skips it. Don't remove the guard "because it's redundant".</li>
+      </ul>
+
+      <h3>Don't forget</h3>
+      <ul>
+        <li><strong>This is uncommitted.</strong> 8 modified + 4 deleted + 11 untracked. Run <code>git status</code> before further edits. Per <code>rules/git-workflow.md</code>, plan a single logical commit (or 2 — one for the hooks migration proper, one for the incidental <code>omp/config.yml</code> cosmetic edits).</li>
+        <li><strong>Live spot-check at least 3 hook firings.</strong> Before treating the hook layer as a hardened safety mechanism: <code>find / -delete</code> through bash, <code>bash &lt;(curl URL)</code>, <code>read</code> on <code>~/.aws/credentials</code>. Each should return the <code>reason</code> string to the model.</li>
+        <li><strong>Spot-check <code>redact-keys</code> output.</strong> Plant a fake <code>AKIA</code>… key in a fixture file, <code>read</code> it through omp, confirm the response shows <code>[REDACTED-AWS-KEY-ID]</code>. Repeat for <code>ghp_…</code> and a fake JWT.</li>
+        <li><strong>Housekeeping check:</strong> README.md updated ✓, CONTEXT.md updated ✓, CHANGELOG.md not present in repo (n/a), CLAUDE.md not needed (this repo doesn't carry one). ADR-0006 cross-references added in ADR-0004 and <code>omp/extensions/README.md</code> ✓.</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════════════════════
+       FOOTER
+       ═══════════════════════════════════════════════════════════════ -->
+  <footer class="footer">
+    <span>docs/features/20260528-1311-omp-hooks-migration/diff-review.html</span>
+    <span>·</span>
+    <span>git diff main</span>
+    <span>·</span>
+    <span>see <a href="./prd.html">prd.html</a>, <a href="./tasks.html">tasks.html</a></span>
+    <span>·</span>
+    <span style="color: var(--sage);">all HIGH/MEDIUM review findings addressed pre-publication</span>
+  </footer>
+
+</div>
+
+<script type="module">
+  import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';
+
+  const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+
+  mermaid.initialize({
+    startOnLoad: true,
+    theme: 'base',
+    look: 'classic',
+    themeVariables: {
+      primaryColor: isDark ? '#1a2740' : '#fef7e6',
+      primaryBorderColor: isDark ? '#e0b54a' : '#b8862a',
+      primaryTextColor: isDark ? '#f0e4cc' : '#1e3a5f',
+      secondaryColor: isDark ? '#132030' : '#f4ede0',
+      secondaryBorderColor: isDark ? '#88c180' : '#4d7a4a',
+      secondaryTextColor: isDark ? '#f0e4cc' : '#1e3a5f',
+      tertiaryColor: isDark ? '#231b2a' : '#fbe9dd',
+      tertiaryBorderColor: isDark ? '#e8794a' : '#b8562c',
+      tertiaryTextColor: isDark ? '#f0e4cc' : '#1e3a5f',
+      lineColor: isDark ? '#6a7a8c' : '#94a3b8',
+      fontSize: '18px',
+      fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
+      noteBkgColor: isDark ? '#1a2740' : '#fefce8',
+      noteTextColor: isDark ? '#f0e4cc' : '#1e3a5f',
+      noteBorderColor: isDark ? '#e0b54a' : '#b8862a',
+    }
+  });
+</script>
+
+<script>
+  function fitMermaidDiagrams() {
+    document.querySelectorAll('.mermaid-wrap').forEach(function(wrap) {
+      var mEl = wrap.querySelector('.mermaid');
+      var svg = mEl && mEl.querySelector('svg');
+      if (!svg) return;
+      mEl.style.zoom = 1;
+      var pad = 64;
+      var svgW = svg.getBoundingClientRect().width;
+      var svgH = svg.getBoundingClientRect().height;
+      var wrapW = wrap.clientWidth - pad;
+      var wrapH = wrap.clientHeight - pad;
+      var zoom = Math.min(wrapW / svgW, wrapH / svgH);
+      zoom = Math.max(zoom, 1.0);
+      mEl.style.zoom = zoom;
+      mEl.dataset.zoom = zoom;
+      mEl.dataset.fitZoom = zoom;
+    });
+  }
+
+  var observer = new MutationObserver(function(mutations, obs) {
+    var hasSvg = document.querySelector('.mermaid svg');
+    if (hasSvg) { obs.disconnect(); setTimeout(fitMermaidDiagrams, 150); }
+  });
+  observer.observe(document.body, { childList: true, subtree: true });
+
+  function zoomDiagram(btn, factor) {
+    var wrap = btn.closest('.mermaid-wrap');
+    var target = wrap.querySelector('.mermaid');
+    var current = parseFloat(target.dataset.zoom || 1);
+    var next = Math.min(Math.max(current * factor, 0.4), 6);
+    target.dataset.zoom = next;
+    target.style.zoom = next;
+  }
+
+  function resetZoom(btn) {
+    var wrap = btn.closest('.mermaid-wrap');
+    var target = wrap.querySelector('.mermaid');
+    var fitZoom = parseFloat(target.dataset.fitZoom || 1);
+    target.dataset.zoom = fitZoom;
+    target.style.zoom = fitZoom;
+  }
+
+  window.zoomDiagram = zoomDiagram;
+  window.resetZoom = resetZoom;
+
+  document.querySelectorAll('.mermaid-wrap').forEach(function(wrap) {
+    wrap.addEventListener('wheel', function(e) {
+      if (!e.ctrlKey && !e.metaKey) return;
+      e.preventDefault();
+      var target = wrap.querySelector('.mermaid');
+      var current = parseFloat(target.dataset.zoom || 1);
+      var factor = e.deltaY < 0 ? 1.1 : 0.9;
+      var next = Math.min(Math.max(current * factor, 0.4), 6);
+      target.dataset.zoom = next;
+      target.style.zoom = next;
+    }, { passive: false });
+
+    var startX, startY, scrollL, scrollT;
+    wrap.addEventListener('mousedown', function(e) {
+      if (e.target.closest('.zoom-controls')) return;
+      wrap.classList.add('is-panning');
+      startX = e.clientX;
+      startY = e.clientY;
+      scrollL = wrap.scrollLeft;
+      scrollT = wrap.scrollTop;
+    });
+    window.addEventListener('mousemove', function(e) {
+      if (!wrap.classList.contains('is-panning')) return;
+      wrap.scrollLeft = scrollL - (e.clientX - startX);
+      wrap.scrollTop = scrollT - (e.clientY - startY);
+    });
+    window.addEventListener('mouseup', function() {
+      wrap.classList.remove('is-panning');
+    });
+  });
+</script>
+
+</body>
+</html>

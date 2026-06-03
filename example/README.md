@@ -55,8 +55,8 @@ The PRD transcribes the grilling outcome into a durable spec. No code snippets, 
 
 | File | Description |
 |------|-------------|
-| [prd.md](docs/claude/20260516-1430-order-placement/prd.md) | Problem statement, solution, 13 user stories (across Customer, Fulfillment, Billing, SRE actors), implementation decisions (module sketch + choices with ADR links), testing decisions, out-of-scope notes, further notes. |
-| [prd.html](https://hahuang65.github.io/ai-config/example/docs/claude/20260516-1430-order-placement/prd.html) | Visual companion — user stories as actor-color-coded cards, module sketch with deep-module tagging, decision list with ADR badges, out-of-scope panel. |
+| [prd.md](docs/features/20260516-1430-order-placement/prd.md) | Problem statement, solution, 13 user stories (across Customer, Fulfillment, Billing, SRE actors), implementation decisions (module sketch + choices with ADR links), testing decisions, out-of-scope notes, further notes. |
+| [prd.html](https://hahuang65.github.io/ai-config/example/docs/features/20260516-1430-order-placement/prd.html) | Visual companion — user stories as actor-color-coded cards, module sketch with deep-module tagging, decision list with ADR badges, out-of-scope panel. |
 
 The PRD goes through `//` annotation cycles until the user explicitly approves. Each cycle: user adds inline `//` comments → agent addresses every note → updates the markdown → removes the comments → regenerates the visual.
 
@@ -66,8 +66,8 @@ Tasks break the PRD into vertical-slice tracer bullets. Each slice cuts through 
 
 | File | Description |
 |------|-------------|
-| [tasks.md](docs/claude/20260516-1430-order-placement/tasks.md) | Six slices: place Order, idempotency, history, cancel, downstream contract sign-off (HITL), telemetry. Each marked HITL or AFK with dependency order and acceptance criteria. |
-| [tasks.html](https://hahuang65.github.io/ai-config/example/docs/claude/20260516-1430-order-placement/tasks.html) | Visual companion — SVG dependency graph, summary pills (6 slices, 5 AFK, 1 HITL), per-slice cards with HITL/AFK markers and acceptance-criteria checklists. |
+| [tasks.md](docs/features/20260516-1430-order-placement/tasks.md) | Six slices: place Order, idempotency, history, cancel, downstream contract sign-off (HITL), telemetry. Each marked HITL or AFK with dependency order and acceptance criteria. |
+| [tasks.html](https://hahuang65.github.io/ai-config/example/docs/features/20260516-1430-order-placement/tasks.html) | Visual companion — SVG dependency graph, summary pills (6 slices, 5 AFK, 1 HITL), per-slice cards with HITL/AFK markers and acceptance-criteria checklists. |
 
 The user approves the breakdown via a lighter quiz-the-user cycle (granularity? dependencies? HITL/AFK split? story coverage?) — no inline annotations needed at this stage.
 
@@ -77,13 +77,13 @@ Implementation walks through the slices one at a time using strict red-green-ref
 
 | File | Description |
 |------|-------------|
-| [diff-review.html](https://hahuang65.github.io/ai-config/example/docs/claude/20260516-1430-order-placement/diff-review.html) | Post-implementation visual: executive summary, KPI dashboard (6/6 slices complete, 47 tests added, 94% coverage), slice completion status, file-by-file changes, code review findings (Good / Fixed-before-merge / Tracked follow-ups), decision log, re-entry context. |
+| [diff-review.html](https://hahuang65.github.io/ai-config/example/docs/features/20260516-1430-order-placement/diff-review.html) | Post-implementation visual: executive summary, KPI dashboard (6/6 slices complete, 47 tests added, 94% coverage), slice completion status, file-by-file changes, code review findings (Good / Fixed-before-merge / Tracked follow-ups), decision log, re-entry context. |
 
 The implementation phase also re-runs `/fact-check` on `prd.md` and `tasks.md`, refreshes `prd.html` and `tasks.html`, and runs the multi-agent verification stack (`tdd-guide`, `database-reviewer`, `refactor-cleaner`, `code-reviewer`, `doc-updater`). The agent **never** runs `git commit` — the user reviews the final state and commits when ready.
 
 ## Key Conventions
 
-- **Repo-root vs per-feature**: `CONTEXT.md` and `docs/adr/` live at the repo root and accrete across many `/build` runs. Per-feature artifacts (PRD, tasks, diff review) live under `docs/claude/<YYYYMMDD-HHMM>-<slug>/`.
+- **Repo-root vs per-feature**: `CONTEXT.md` and `docs/adr/` live at the repo root and accrete across many `/build` runs. Per-feature artifacts (PRD, tasks, diff review) live under `docs/features/<YYYYMMDD-HHMM>-<slug>/`.
 - **Companion naming**: HTML files share the base name of their markdown counterpart (`prd.md` → `prd.html`, `tasks.md` → `tasks.html`).
 - **Visual sync guarantee**: whenever a markdown file changes — annotations, corrections, any update — the HTML companion is regenerated *before* proceeding to the next step.
 - **No code in the PRD**: code snippets and file paths go stale; the PRD is durable spec. Narrow exception: decision-rich snippets (state machines, schemas) may be inlined when prose can't carry the precision.
@@ -95,8 +95,8 @@ The implementation phase also re-runs `/fact-check` on `prd.md` and `tasks.md`, 
 Open any `.html` file directly in a browser:
 
 ```bash
-open example/docs/claude/20260516-1430-order-placement/prd.html       # macOS
-xdg-open example/docs/claude/20260516-1430-order-placement/prd.html  # Linux
+open example/docs/features/20260516-1430-order-placement/prd.html       # macOS
+xdg-open example/docs/features/20260516-1430-order-placement/prd.html  # Linux
 ```
 
 The HTML files support both light and dark mode via `prefers-color-scheme` and use IBM Plex Sans/Mono.

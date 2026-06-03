@@ -1,8 +1,8 @@
 ---
-description: Break an approved PRD into vertical-slice tracer bullets; --publish for GitHub Issues
+description: Break an approved PRD into vertical-slice tracer bullets, reviewed and refined locally
 ---
 Load the tasks skill, then break the PRD into tasks: $ARGUMENTS
 
-Follow the tasks skill workflow. Read `prd.md`, `CONTEXT.md`, and relevant ADRs. Draft vertical-slice tracer bullets — each slice cuts through every layer end-to-end (schema, API, UI, tests) and is demoable on its own. NOT horizontal slices of one layer. Mark each slice HITL (human-in-the-loop) or AFK (away-from-keyboard); prefer AFK. Write `tasks.md` in dependency order (blockers first) and generate `tasks.html`. Quiz the user on granularity, dependencies, HITL/AFK split, and user-story coverage. Iterate until approved. If `--publish` is in `$ARGUMENTS` or the user says "publish them", create real GitHub Issues via `gh issue create` in dependency order, and back-fill issue numbers into `tasks.md`. Otherwise, stay local.
+Follow the tasks skill workflow. Read `prd.md`, `CONTEXT.md`, and relevant ADRs. Draft vertical-slice tracer bullets — each slice cuts through every layer end-to-end (schema, API, UI, tests) and is demoable on its own. NOT horizontal slices of one layer. Mark each slice HITL (human-in-the-loop) or AFK (away-from-keyboard); prefer AFK. Write `tasks.md` in dependency order (blockers first), generate `tasks.html` via `/generate-visual-plan`, and open it. Review with the user — ask about granularity, dependencies, HITL/AFK split, and user-story coverage (they answer directly, or drop `//` annotations in `tasks.md`): if they give feedback, address it and re-present — work from the markdown, don't regenerate the visual during the loop; if instead they confirm, regenerate `tasks.html` once if it changed and move on to implementation. No separate review-done sign-off.
 
-If no argument is given, look in `docs/claude/` for the most recent `*/prd.md` and confirm with the user.
+If no argument is given, look in `docs/features/` for the most recent `*/prd.md` and confirm with the user.

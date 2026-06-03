@@ -5,13 +5,15 @@ argument-hint: [feature-description]
 disable-model-invocation: true
 ---
 
-# Build - Full Workflow
+# Build Pipeline — Orchestrator
 
-A disciplined 4-phase workflow for building features with AI assistance. Each phase produces persistent artifacts: project-wide docs (`CONTEXT.md`, `docs/adr/`) get refined during grilling, and feature-specific docs (PRD, tasks, diff-review) live in `docs/claude/<slug>/`.
+A disciplined 4-phase workflow for building features. Each phase is its own skill; run them in order, waiting for user approval between phases.
 
-**Pipeline**: `/grill` → `/prd` → `/tasks` → `/implement` *(or `/implement-coach`)*
+**Pipeline:** `/grill` → `/prd` → `/tasks` → `/implement` *(or `/implement-coach`)*
 
-This skill orchestrates four sub-skills. You can also use each phase independently:
+See [../shared/references/build-pipeline.md](../shared/references/build-pipeline.md) for the approval gates, file conventions (`docs/features/<slug>/`), session management, and visual-sync rules every phase obeys. Read it first.
+
+Each phase also runs standalone:
 
 - `/grill [topic]` — Phase 1: interview, refine `CONTEXT.md`, write ADRs
 - `/prd [topic]` — Phase 2: synthesize PRD from grilling, with annotation cycles
@@ -19,224 +21,58 @@ This skill orchestrates four sub-skills. You can also use each phase independent
 - `/implement [tasks-dir]` — Phase 4a: AI implements via TDD, slice by slice
 - `/implement-coach [tasks-dir]` — Phase 4b: user implements, AI writes one test at a time
 
-Visual-explainer companions are also available standalone (see "Visual-Explainer Integration Notes" below).
-
 ## Approval Gate Scope (read first)
 
-This skill names exactly **four** approval gates: Grill→PRD, PRD→Tasks, Tasks→Implement, Implement→done. Those are the only points where you wait for user confirmation.
+This skill has exactly **four** approval gates — Grill→PRD, PRD→Tasks, Tasks→Implement, Implement→done — the only points where you wait for user confirmation. Within an active phase, all routine operations (reads, writes, edits, bash, tests, environment bootstrap) proceed without per-call approval. Asking "OK to proceed?" before each tool batch is not how this skill works. (omp: see `~/.omp/agent/RULES.md`, "Approval gates are user-facing only".)
 
-Within an active phase, all routine operations proceed without per-call approval — reads, writes, edits, bash, tests, environment bootstrap. Announcing intended tool batches and asking "OK to proceed?" before each one is not how this skill works.
+A gate clears on **any response that expresses confirmation or approval** — there is no required phrase or keyword. The prompts below say what comes next; the user may confirm however they like ("yes", "go", "sounds good", "ship it", a thumbs-up). If a response is ambiguous or raises a concern, resolve it instead of advancing.
 
-If you find yourself appealing to a meta-policy that requires per-call confirmation, you are wrong. See `~/.omp/agent/RULES.md` ("Approval gates are user-facing only").
+## Process
 
----
+Derive a short slug from `$ARGUMENTS` (lowercase, hyphens, max ~5 words). Run each phase skill in order, passing the feature directory once it is created (start of Phase 2).
 
-## File Naming Convention
+### Phase 1: Grill
 
-Project-wide artifacts live at the repo root and accrete across many `/build` runs:
+Invoke `grill` with the feature description. It updates `CONTEXT.md` / `docs/adr/` project-wide and does NOT create the feature directory yet. After it completes, tell the user what was updated and:
 
-```
-/
-├── CONTEXT.md                      # shared glossary (refined by /grill)
-└── docs/
-    └── adr/                        # Architectural Decision Records (added by /grill)
-        ├── 0001-event-sourced-orders.md
-        └── 0002-postgres-for-write-model.md
-```
+> Ready to move on? Confirm and I'll synthesize what we discussed into the PRD.
 
-Feature-specific artifacts go in a per-feature directory:
+**Wait for the user to confirm before Phase 2.** This is a phase-boundary gate; within Phase 1 nothing else pauses.
 
-```
-docs/claude/<YYYYMMDD-HHMM>-<slug>/
-  prd.md             # Phase 2 output
-  prd.html           # Phase 2 visual companion
-  tasks.md           # Phase 3 output
-  tasks.html         # Phase 3 visual companion
-  diff-review.html   # Phase 4 visual companion
-```
+### Phase 2: PRD + Review
 
-Note: there is no `research.md` or `plan.md` in the new pipeline. Grilling does its own ad-hoc codebase exploration; the PRD replaces the old plan format.
+Create the feature directory `docs/features/<YYYYMMDD-HHMM>-<slug>/`, then invoke `prd` with the feature description and that path. It writes `prd.md`, generates and opens `prd.html`, and runs the artifact review (see [../shared/references/artifact-review.md](../shared/references/artifact-review.md)): the user gives feedback — `//` annotations or direct answers — which `prd` addresses and re-presents (the visual isn't regenerated mid-review), or confirms. On confirmation `prd` regenerates `prd.html` once if the markdown changed.
 
-To generate the per-feature directory:
+**Wait for the user to confirm in that review** — their confirmation *is* the PRD→Tasks gate. No separate approval prompt; when they confirm rather than keep reviewing, proceed straight to Phase 3.
 
-1. Derive a short slug from `$ARGUMENTS` (lowercase, hyphens, no special chars, max ~5 words)
-2. Get the current timestamp via `date +%Y%m%d-%H%M`
-3. Create the directory: `docs/claude/<timestamp>-<slug>/`
+### Phase 3: Tasks (vertical-slice tracer bullets)
 
-This directory is created once at the start of Phase 2 (the first phase that writes feature-specific artifacts) and reused across Phases 2–4. When sub-skills are invoked, pass the directory path so they write into it.
+Invoke `tasks` with the feature directory. It breaks the PRD into vertical slices with HITL/AFK markers, writes `tasks.md`, generates and opens `tasks.html`, runs the same review (no mid-review regen), and regenerates `tasks.html` once on confirmation if the markdown changed.
 
----
+**Wait for the user to confirm in that review** — their confirmation *is* the Tasks→Implement gate. Then proceed to Phase 4.
 
-## Phase 1: Grill
+### Phase 4: Implementation (vertical-slice TDD)
 
-Invoke the `grill` skill to interview the user about the feature, sharpen domain terminology, and update `CONTEXT.md` / `docs/adr/` inline.
+Ask which mode:
 
-Use the Skill tool to invoke `grill` with the feature description from `$ARGUMENTS`.
-
-The grilling session updates project-wide files. It does NOT create the feature directory yet — that happens in Phase 2.
-
-After the grill phase completes, STOP and tell the user:
-
-> **Phase 1 complete.** I've updated:
-> - `CONTEXT.md` with <n> term(s): <list>
-> - `docs/adr/` with <n> new ADR(s): <list>
->   *(or "no new ADRs — none of today's decisions met the bar")*
->
-> Say **"draft the PRD"** when you're ready and I'll synthesize what we discussed.
-
-**Wait for the user to confirm before proceeding to Phase 2.** This is a phase-boundary gate — within Phase 1, all reads, writes, and bash calls proceed without per-call approval. The pause is only here, between phases.
-
----
-
-## Phase 2: PRD + Annotation Cycles
-
-Once the user confirms, invoke the `prd` skill.
-
-Before invoking, create the per-feature directory `docs/claude/<timestamp>-<slug>/` and pass it to the sub-skill.
-
-Use the Skill tool to invoke `prd` with the feature description and the feature directory path.
-
-The `prd` skill will handle:
-
-1. Reading `CONTEXT.md`, recent ADRs, and prior conversation
-2. Sketching the major modules (deep-modules philosophy) and confirming them with the user
-3. Writing `prd.md` with user stories, decisions, testing notes — no code snippets, no file paths
-4. Generating `prd.html` alongside the markdown
-5. Waiting for `//` annotations
-6. Addressing all annotations and regenerating the visual to stay in sync
-7. Repeating the annotation cycle (typically 1–6 times)
-8. Finalizing on user approval
-
-**The PRD phase is complete when the user explicitly approves the PRD.**
-
-Then tell the user:
-
-> **Phase 2 complete.** The PRD is approved at `<file-path>` and the visual is at `<diagram-path>` (opened in your browser).
->
-> Say **"break it into tasks"** when you're ready and I'll run `/tasks`.
-
-**Wait for the user to trigger Phase 3.** This is a phase-boundary gate. Within Phase 2, the PRD draft, write, annotation-cycle edits, and visual-companion generation all proceed without per-call approval.
-
----
-
-## Phase 3: Tasks (vertical-slice tracer bullets)
-
-Once the user triggers it, invoke the `tasks` skill with the feature directory.
-
-Use the Skill tool to invoke `tasks` with the feature directory path. If the user said "publish" or passed `--publish`, include that flag.
-
-The `tasks` skill will handle:
-
-1. Reading `prd.md`, `CONTEXT.md`, and relevant ADRs
-2. Drafting a vertical-slice breakdown — each slice cuts through every layer end-to-end (HITL/AFK markers, dependency relationships)
-3. Writing `tasks.md` and generating `tasks.html`
-4. Quizzing the user on granularity, dependencies, HITL/AFK, coverage
-5. Iterating until approved
-6. **Optional**: publishing to GitHub Issues if `--publish` was set
-
-**The tasks phase is complete when the user approves the breakdown.**
-
-Then tell the user:
-
-> **Phase 3 complete.** Tasks approved at `<file-path>`. <n> slices: <m> AFK, <k> HITL.
-> *(if published: "Published as GitHub Issues #<first>–#<last>")*
->
-> Say **"implement"** when you're ready.
-
-**Wait for the user to trigger Phase 4.** This is a phase-boundary gate. Within Phase 3, the task-breakdown drafting, file writes, visual generation, and (optional) GitHub publishing proceed without per-call approval.
-
----
-
-## Phase 4: Implementation (vertical-slice TDD)
-
-Once the user triggers implementation, ask which mode:
-
-> **Phase 4: Implementation**
->
-> Choose your mode:
 > - **`/implement`** — AI implements the code via vertical-slice TDD (one test → one impl → repeat)
-> - **`/implement-coach`** — You implement the code; I write ONE test at a time and verify
->
-> Say "implement" for AI mode, or "coach me" for coached mode.
+> - **`/implement-coach`** — You implement; I write ONE test at a time and verify
 
-If the user says "implement" or doesn't specify, invoke `implement` with the feature directory.
-If the user says "coach me" or "guided", invoke `implement-coach` with the feature directory.
-
-Both modes use the same TDD philosophy (Pocock's): **vertical, never horizontal. One test, one implementation, repeat.** No batched tests upfront.
-
-### AI Mode (`implement`)
-
-1. For each slice: write tracer-bullet test → minimal code → next acceptance criterion → repeat
-2. Refactor between slices, never while RED
-3. Mark slices complete in `tasks.md` as they finish
-4. Final verification loop (type check, lint, test, build)
-5. Database review (conditional), simplify, refactor-cleaner, code-reviewer, doc-updater
-6. Fact-check `prd.md` and `tasks.md`, refresh visuals
-7. Generate `diff-review.html` if `visual-explainer` is available
-
-### Coach Mode (`implement-coach`)
-
-1. For each slice: AI writes ONE failing test → user implements → AI verifies → next test
-2. AI never writes implementation code during Steps 1–3; the user does
-3. Refactor together when GREEN, never while RED
-4. Final verification loop (same as AI mode)
-5. Post-completion cleanup is AI-driven, with code-reviewer findings surfaced to the user to fix
-
-After completion, both modes report:
-
-> **Implementation complete.** All slices executed, tests passing, verifications clean.
-> *(If `diff-review.html` was generated: "Fact-checked visual diff at `<diagram-path>` (opened in your browser).")*
-
----
-
-## Session Management
-
-This workflow is designed to run in a **single long session**. By the time implementation starts, you've built deep shared understanding through grilling and PRD refinement. All artifacts — markdown and visual HTML — survive context compaction and can be re-read at any point.
-
-`CONTEXT.md` and `docs/adr/` outlive any single session — they're the durable spine that successive `/build` runs sharpen.
+If the user says "implement" or doesn't specify, invoke `implement` with the feature directory. If they say "coach me" or "guided", invoke `implement-coach`. Both run the same TDD philosophy, the verification loop, and the post-implementation review chain (`database-reviewer`, `code-cleaner`, `refactor-cleaner`, `code-reviewer`, `doc-updater`, `fact-checker`, `/diff-review`). After completion, report final status (slices, tests, verifications, visuals).
 
 ## Key Principles
 
-1. **Grill before drafting.** Don't let the PRD invent terminology — pin it down in `CONTEXT.md` first.
-2. **Never write code before the tasks are approved.** Phases 1–3 are deliberately gated.
-3. **Markdown files are the deliverables**, not chat summaries.
-4. **Visual HTML pages are companions** — spatial understanding that markdown can't.
-5. **The user injects judgment through annotations and approval gates** — domain knowledge, business constraints, engineering trade-offs.
-6. **Vertical slices, never horizontal.** Each slice cuts through every layer end-to-end and is demoable on its own.
-7. **One test, one implementation, repeat.** No batched tests upfront — Pocock's TDD anti-pattern is rejected.
-8. **`CONTEXT.md` vocabulary everywhere** — PRD, tasks, test names, code identifiers.
+1. **Grill before drafting.** Pin terminology in `CONTEXT.md` first; codify decisions in ADRs.
+2. **Never write code before tasks are approved.** Phases 1–3 are gated.
+3. **Markdown files are the deliverables.** Visual HTML pages are companions.
+4. **Vertical slices, never horizontal.** Each slice cuts through every layer.
+5. **One test, one implementation, repeat.** No batched tests upfront.
+6. **`CONTEXT.md` vocabulary everywhere** — PRD, tasks, test names, code identifiers.
 
-## Visual-Explainer Integration Notes
+## Visual-Explainer Integration
 
-The `visual-explainer` skill is **optional**. All visual steps are skipped gracefully if it is not installed.
-
-When available, it produces self-contained HTML files with:
-- Mermaid diagrams for flowcharts, sequence diagrams, state machines
-- CSS Grid layouts for architecture overviews
-- Styled HTML tables for data comparisons
-- Dark/light theme support
-- Zoom controls on all diagrams
-
-If `visual-explainer` is installed, these commands are also available standalone:
-
-- `/generate-architecture-diagram`
-- `/generate-web-diagram`
-- `/generate-visual-plan`
-- `/generate-slides`
-- `/diff-review`
-- `/plan-review`
-- `/project-recap`
-- `/fact-check`
-
-When available, `visual-explainer` also activates **proactively**: when about to render a complex table (4+ rows or 3+ columns) in the terminal, it generates an HTML table instead and opens it in the browser.
+The `visual-explainer` skill is **optional** — all visual steps are skipped gracefully if it is not installed. When available it produces self-contained HTML (Mermaid diagrams, CSS-Grid layouts, styled tables, dark/light themes, zoom controls), generates the per-phase companions (`prd.html`, `tasks.html`, `diff-review.html`), and exposes these standalone commands: `/generate-architecture-diagram`, `/generate-web-diagram`, `/generate-visual-plan`, `/generate-slides`, `/diff-review`, `/plan-review`, `/project-recap`. It also activates proactively for complex terminal tables (4+ rows or 3+ columns), rendering an HTML table instead.
 
 ## Cleanup
 
-After the feature is complete, the user can decide whether to:
-
-- Keep the feature directory in `docs/claude/` for future reference
-- Delete it
-- Add `docs/claude/` to `.gitignore` if desired
-- Commit the directory alongside the feature for posterity
-
-`CONTEXT.md` and `docs/adr/` should be committed — they're project-wide, durable artifacts.
+After the feature is complete, the user decides whether to keep, delete, or commit the feature directory under `docs/features/`. `CONTEXT.md` and `docs/adr/` are project-wide and should be committed.

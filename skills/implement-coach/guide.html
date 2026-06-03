@@ -150,7 +150,7 @@ code { font-family: var(--font-mono); font-size: 0.85em; background: var(--accen
         <li>Write ONE failing test at a time</li>
         <li>Show the user the expected interface up front</li>
         <li>Run the test before claiming RED to confirm it fails for the right reason</li>
-        <li>When the user says "check", run only the relevant test</li>
+        <li>When the user signals they're ready (any wording, not a keyword), run only the relevant test</li>
         <li>Use <code>CONTEXT.md</code> vocabulary in test names</li>
         <li>Refactor together when GREEN; suggest, let the user execute</li>
       </ul>
@@ -205,11 +205,11 @@ code { font-family: var(--font-mono); font-size: 0.85em; background: var(--accen
     <tbody>
       <tr><td><strong>Type check / lint / test / build</strong></td><td>AI guides, user fixes</td><td><span class="must-tag">MUST</span></td></tr>
       <tr><td><span class="agent-tag">database-reviewer</span></td><td><strong>User fixes</strong> (they own the code)</td><td><span class="cond-tag">CONDITIONAL</span></td></tr>
-      <tr><td><span class="cmd-tag">/simplify</span></td><td>AI applies mechanical, user decides judgment calls</td><td><span class="must-tag">MUST</span></td></tr>
+      <tr><td><span class="cmd-tag">code-cleaner</span></td><td>AI applies mechanical, user decides judgment calls</td><td><span class="must-tag">MUST</span></td></tr>
       <tr><td><span class="agent-tag">refactor-cleaner</span></td><td>AI applies SAFE, user verifies CAREFUL</td><td><span class="must-tag">MUST</span></td></tr>
       <tr><td><span class="agent-tag">code-reviewer</span></td><td><strong>User fixes</strong> CRITICAL/HIGH findings</td><td><span class="must-tag">MUST</span></td></tr>
       <tr><td><span class="agent-tag">doc-updater</span></td><td>AI handles directly</td><td><span class="cond-tag">CONDITIONAL</span></td></tr>
-      <tr><td><span class="cmd-tag">/fact-check</span> on PRD &amp; tasks</td><td>AI handles directly</td><td><span class="must-tag">MUST</span></td></tr>
+      <tr><td><span class="cmd-tag">fact-checker</span> on PRD &amp; tasks</td><td>AI handles directly</td><td><span class="must-tag">MUST</span></td></tr>
       <tr><td>Refresh <code>prd.html</code> + <code>tasks.html</code></td><td>AI handles directly</td><td><span class="must-tag">MUST</span></td></tr>
       <tr><td><span class="cmd-tag">/diff-review</span> → <code>diff-review.html</code></td><td>AI handles directly</td><td><span class="cond-tag">CONDITIONAL</span></td></tr>
     </tbody>

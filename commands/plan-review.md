@@ -4,11 +4,11 @@ description: Generate a visual HTML plan review — current codebase state vs. p
 Generate a comprehensive visual plan review as a self-contained HTML page, comparing the current codebase against a proposed implementation plan.
 
 Before generating, read these reference files:
-- `~/.claude/skills/visual-explainer/core.md` (quality guide — aesthetic, typography, color, style, checks)
-- `~/.claude/skills/visual-explainer/references/css-core.md` (theme, cards, code blocks, overflow)
-- `~/.claude/skills/visual-explainer/references/css-mermaid.md` (Mermaid containers, zoom controls, connectors)
-- `~/.claude/skills/visual-explainer/references/css-components.md` (grids, KPI cards, before/after, collapsible, animations)
-- `~/.claude/skills/visual-explainer/references/libraries.md` (Mermaid theming, font imports)
+- `../skills/visual-explainer/core.md` (quality guide — aesthetic, typography, color, style, checks)
+- `../skills/visual-explainer/references/css-core.md` (theme, cards, code blocks, overflow)
+- `../skills/visual-explainer/references/css-mermaid.md` (Mermaid containers, zoom controls, connectors)
+- `../skills/visual-explainer/references/css-components.md` (grids, KPI cards, before/after, collapsible, animations)
+- `../skills/visual-explainer/references/libraries.md` (Mermaid theming, font imports)
 
 Use a blueprint/editorial aesthetic with current-state vs. planned-state panels, but vary fonts and palette from previous diagrams.
 

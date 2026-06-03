@@ -165,7 +165,7 @@ code { font-family: var(--font-mono); font-size: 0.85em; background: var(--accen
         <li>NO code snippets, NO file paths (they go stale)</li>
         <li>Annotation cycle via <code>//</code> comments until approved</li>
       </ul>
-      <div class="out"><strong>Output:</strong> <code>docs/claude/&lt;slug&gt;/prd.md</code><br><strong>Output:</strong> <code>docs/claude/&lt;slug&gt;/prd.html</code></div>
+      <div class="out"><strong>Output:</strong> <code>docs/features/&lt;slug&gt;/prd.md</code><br><strong>Output:</strong> <code>docs/features/&lt;slug&gt;/prd.html</code></div>
     </div>
 
     <div class="card tasks">
@@ -176,10 +176,9 @@ code { font-family: var(--font-mono); font-size: 0.85em; background: var(--accen
         <li>Each slice = thin path through schema, API, UI, tests</li>
         <li>Marked HITL (human-in-loop) or AFK (away-from-keyboard)</li>
         <li>Dependency order: blockers first</li>
-        <li>Quiz cycle until user approves the breakdown</li>
-        <li><code>--publish</code>: creates real GitHub Issues</li>
+        <li>Review (ask or annotate) until the user confirms</li>
       </ul>
-      <div class="out"><strong>Output:</strong> <code>docs/claude/&lt;slug&gt;/tasks.md</code><br><strong>Output:</strong> <code>docs/claude/&lt;slug&gt;/tasks.html</code></div>
+      <div class="out"><strong>Output:</strong> <code>docs/features/&lt;slug&gt;/tasks.md</code><br><strong>Output:</strong> <code>docs/features/&lt;slug&gt;/tasks.html</code></div>
     </div>
 
     <div class="card implement">
@@ -190,7 +189,7 @@ code { font-family: var(--font-mono); font-size: 0.85em; background: var(--accen
         <li>Tests describe behavior, not implementation</li>
         <li>Verification loop: type check, lint, test, build</li>
         <li>Agents: <span class="agent-tag">tdd-guide</span> <span class="agent-tag">database-reviewer</span> <span class="agent-tag">code-reviewer</span> <span class="agent-tag">refactor-cleaner</span> <span class="agent-tag">doc-updater</span></li>
-        <li>Runs <span class="cmd-tag">/simplify</span> + <span class="cmd-tag">/fact-check</span> + <span class="cmd-tag">/diff-review</span></li>
+        <li>Runs the <span class="cmd-tag">code-cleaner</span> + <span class="cmd-tag">fact-checker</span> skills + <span class="cmd-tag">/diff-review</span></li>
         <li>Coach variant: AI writes ONE test, user implements, AI verifies</li>
       </ul>
       <div class="out"><strong>Output:</strong> code + <code>diff-review.html</code></div>
@@ -222,11 +221,11 @@ code { font-family: var(--font-mono); font-size: 0.85em; background: var(--accen
 <div class="section">
   <div class="section-title"><span class="num">03</span>Phase Gates &amp; User Triggers</div>
   <table>
-    <thead><tr><th>Transition</th><th>User says</th><th>Gate behavior</th></tr></thead>
+    <thead><tr><th>Transition</th><th>User confirms (any wording)</th><th>Gate behavior</th></tr></thead>
     <tbody>
-      <tr><td>after <code>/grill</code></td><td>"draft the PRD"</td><td><span class="stop">STOP</span> until user explicitly triggers</td></tr>
-      <tr><td>after <code>/prd</code></td><td>"break it into tasks"</td><td><span class="stop">STOP</span> until PRD is approved <em>and</em> user triggers</td></tr>
-      <tr><td>after <code>/tasks</code></td><td>"implement" or "coach me"</td><td><span class="stop">STOP</span> until tasks are approved <em>and</em> user picks a mode</td></tr>
+      <tr><td>after <code>/grill</code></td><td>any go-ahead to draft the PRD</td><td><span class="stop">STOP</span> until the user confirms</td></tr>
+      <tr><td>after <code>/prd</code></td><td>any go-ahead to break it into tasks</td><td><span class="stop">STOP</span> until PRD is approved <em>and</em> the user confirms</td></tr>
+      <tr><td>after <code>/tasks</code></td><td>any go-ahead to implement (and which mode)</td><td><span class="stop">STOP</span> until tasks are approved <em>and</em> the user picks a mode</td></tr>
     </tbody>
   </table>
   <p style="margin-top:14px; font-size:0.9rem; color: var(--text-dim);">The orchestrator never advances autonomously. Each gate exists so the user injects judgment — domain corrections during grill, scope cuts during PRD, granularity during tasks.</p>
@@ -244,12 +243,12 @@ code { font-family: var(--font-mono); font-size: 0.85em; background: var(--accen
 7. As a customer, I want to export to CSV...
 
 // this should reference ADR-0003, not 0002</div>
-  <p style="margin-top:14px; font-size:0.9rem; color: var(--text-dim);">For each annotation, the agent addresses it, updates the document, removes the <code>//</code> comment, and regenerates <code>prd.html</code>. Cycles typically repeat 1–6 times.</p>
+  <p style="margin-top:14px; font-size:0.9rem; color: var(--text-dim);">For each annotation, the agent addresses it, updates <code>prd.md</code>, and removes the <code>//</code> comment — working from the markdown. Cycles repeat until the user is satisfied; the visual is regenerated once at the end if the markdown changed.</p>
 </div>
 
 <div class="section">
   <div class="section-title"><span class="num">05</span>Visual Sync Guarantee</div>
-  <p style="font-size: 0.95rem; margin-bottom: 14px;">Whenever a markdown file changes — annotations, corrections, completion status — its HTML companion is regenerated <strong>before</strong> proceeding to any next step. <code>prd.html</code> mirrors <code>prd.md</code>. <code>tasks.html</code> mirrors <code>tasks.md</code>. Non-negotiable.</p>
+  <p style="font-size: 0.95rem; margin-bottom: 14px;">Each HTML companion is generated and opened when its markdown is first written, left untouched during the review, and regenerated once afterward if the markdown changed (and again after implementation). <code>prd.html</code> mirrors <code>prd.md</code>; <code>tasks.html</code> mirrors <code>tasks.md</code>.</p>
   <p style="font-size: 0.9rem; color: var(--text-dim);">If <code>visual-explainer</code> is not installed, visual steps are silently skipped — the workflow still produces the markdown artifacts.</p>
 </div>
 

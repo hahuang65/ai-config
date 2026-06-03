@@ -33,16 +33,7 @@ Understand:
 
 ### Step 3: Detect Project Tooling
 
-Identify the project's language and tooling by checking for config files:
-
-| Config File | Language | Test Runner | Linter | Type Checker |
-|------------|----------|-------------|--------|-------------|
-| `package.json` | JS/TS | `npm test` / `npx jest` / `npx vitest` | `npx eslint .` | `npx tsc --noEmit` |
-| `pyproject.toml` / `setup.py` | Python | `pytest` | `ruff check .` | `mypy .` |
-| `Cargo.toml` | Rust | `cargo test` | `cargo clippy` | (built-in) |
-| `go.mod` | Go | `go test ./...` | `golangci-lint run` | `go vet ./...` |
-| `Gemfile` | Ruby | `bundle exec rspec` | `rubocop` | `bundle exec srb tc` |
-| `Makefile` | (varies) | Check for `test` target | Check for `lint` target | Check for `typecheck` target |
+Detect the project's language, test runner, linter, type checker, and build command from its config files (`package.json`, `pyproject.toml`, `Cargo.toml`, `go.mod`, `Gemfile`, `Makefile`, etc.). Use the detection table in [../shared/references/tooling.md](../shared/references/tooling.md), and use whatever toolchain the project already uses.
 
 Use the detected tooling for test runs and verification throughout the workflow.
 
@@ -104,7 +95,7 @@ After the agent completes, run the full verification loop:
 3. **Test**: Run the full test suite
 4. **Build**: Run the build command if one exists
 
-If any step fails, fix the issue and repeat the loop until all 4 pass cleanly.
+If any step fails, fix the issue and repeat the loop until all 4 pass cleanly. See [../shared/references/tooling.md](../shared/references/tooling.md) for the per-language command details.
 
 ### Step 8: Report
 
@@ -143,7 +134,7 @@ Act on corrections immediately. You have full context from the plan and executio
 
 ## Important Guidelines
 
-- This skill produces transformed code, not documents. No `docs/claude/` artifacts.
+- This skill produces transformed code, not documents. No `docs/features/` artifacts.
 - Refactoring is structure change, not behavior change. If you can't preserve behavior, stop.
 - The transformation plan is the contract. Don't add transformations the user didn't approve.
 - **NEVER commit to version control** — no `git add`, `git commit`, or `git push`.

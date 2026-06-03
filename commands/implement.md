@@ -1,8 +1,8 @@
 ---
-description: Execute approved vertical-slice tasks from docs/claude/<slug>/tasks.md via TDD, slice by slice
+description: Execute approved vertical-slice tasks from docs/features/<slug>/tasks.md via TDD, slice by slice
 ---
 Load the implement skill, then execute the approved tasks: $ARGUMENTS
 
 Follow the implement skill workflow. Read `tasks.md` and the linked `prd.md` thoroughly. Work one slice at a time in dependency order using vertical-slice TDD: confirm the public interface, write one failing test, write minimal code to pass, refactor when GREEN, mark the slice complete, then move to the next. Do not batch tests across slices. Run type checks and linters continuously. Do not stop between slices to ask for confirmation.
 
-If no argument is given, look in `docs/claude/` for the most recent `*/tasks.md` and confirm with the user.
+If no argument is given, look in `docs/features/` for the most recent `*/tasks.md` and confirm with the user.

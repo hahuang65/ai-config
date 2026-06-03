@@ -1,0 +1,1085 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Tasks — omp Hooks Migration</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=JetBrains+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --font-body: 'IBM Plex Sans', system-ui, sans-serif;
+    --font-display: 'Instrument Serif', serif;
+    --font-mono: 'JetBrains Mono', 'SF Mono', Consolas, monospace;
+
+    --bg: #faf7f1;
+    --surface: #ffffff;
+    --surface-elevated: #ffffff;
+    --border: rgba(30, 58, 95, 0.10);
+    --border-bright: rgba(30, 58, 95, 0.22);
+    --text: #1e3a5f;
+    --text-bright: #102541;
+    --text-dim: #6a7a8c;
+
+    --gold: #b8862a;
+    --gold-dim: rgba(212, 167, 58, 0.15);
+    --navy: #1e3a5f;
+    --navy-dim: rgba(30, 58, 95, 0.10);
+    --sage: #4d7a4a;
+    --sage-dim: rgba(77, 122, 74, 0.13);
+    --terracotta: #b8562c;
+    --terracotta-dim: rgba(184, 86, 44, 0.13);
+    --rose: #a8324e;
+    --rose-dim: rgba(168, 50, 78, 0.12);
+
+    --accent: var(--gold);
+    --accent-dim: var(--gold-dim);
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #0a1322;
+      --surface: #131e34;
+      --surface-elevated: #1a2740;
+      --border: rgba(240, 228, 204, 0.10);
+      --border-bright: rgba(240, 228, 204, 0.22);
+      --text: #f0e4cc;
+      --text-bright: #fefaef;
+      --text-dim: #9aa6b8;
+
+      --gold: #e0b54a;
+      --gold-dim: rgba(224, 181, 74, 0.15);
+      --navy: #4a78b5;
+      --navy-dim: rgba(74, 120, 181, 0.13);
+      --sage: #88c180;
+      --sage-dim: rgba(136, 193, 128, 0.14);
+      --terracotta: #e8794a;
+      --terracotta-dim: rgba(232, 121, 74, 0.14);
+      --rose: #e26b85;
+      --rose-dim: rgba(226, 107, 133, 0.13);
+    }
+  }
+
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+
+  body {
+    font-family: var(--font-body);
+    font-size: 17px;
+    line-height: 1.65;
+    color: var(--text);
+    background: var(--bg);
+    background-image:
+      radial-gradient(ellipse 80% 50% at 50% 0%, var(--gold-dim) 0%, transparent 60%),
+      radial-gradient(ellipse 60% 40% at 100% 100%, var(--navy-dim) 0%, transparent 50%);
+    background-attachment: fixed;
+    overflow-wrap: break-word;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  .grid > *, .flex > *,
+  [style*="display: grid"] > *,
+  [style*="display: flex"] > * { min-width: 0; }
+
+  .wrap {
+    max-width: 1240px;
+    margin: 0 auto;
+    padding: 56px 40px 96px;
+  }
+
+  /* ── Header ─────────────────────────────────────────────────────── */
+
+  .header { margin-bottom: 56px; padding-bottom: 36px; border-bottom: 1px solid var(--border); }
+  .header__category {
+    display: inline-flex; align-items: center; gap: 10px;
+    font-family: var(--font-mono); font-size: 12px; font-weight: 600; letter-spacing: 2.2px;
+    text-transform: uppercase; color: var(--gold); margin-bottom: 20px;
+  }
+  .header__category::before { content: ''; width: 32px; height: 1px; background: var(--gold); }
+  .header h1 {
+    font-family: var(--font-display); font-size: clamp(48px, 7vw, 84px);
+    font-weight: 400; font-style: italic; line-height: 1.0; letter-spacing: -1.5px;
+    margin: 0 0 24px; color: var(--text-bright);
+  }
+  .header__lede {
+    font-size: 21px; line-height: 1.55; color: var(--text-dim);
+    max-width: 740px; margin: 0;
+  }
+  .header__lede em { color: var(--gold); font-style: italic; }
+
+  /* ── KPI strip ──────────────────────────────────────────────────── */
+
+  .kpi-row {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 16px; margin-top: 36px;
+  }
+  .kpi-row > * { min-width: 0; }
+  .kpi-card {
+    background: var(--surface-elevated); border: 1px solid var(--border);
+    border-radius: 12px; padding: 22px 24px; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  }
+  .kpi-card__value {
+    font-family: var(--font-display); font-size: 48px; font-style: italic;
+    line-height: 0.9; color: var(--gold); font-variant-numeric: tabular-nums;
+  }
+  .kpi-card__value--small { font-size: 32px; line-height: 1; }
+  .kpi-card__label {
+    font-family: var(--font-mono); font-size: 11px; font-weight: 600;
+    letter-spacing: 1.4px; text-transform: uppercase; color: var(--text-dim); margin-top: 10px;
+  }
+  .kpi-card--afk { border-left: 3px solid var(--sage); }
+  .kpi-card--afk .kpi-card__value { color: var(--sage); }
+  .kpi-card--migrate { border-left: 3px solid var(--terracotta); }
+  .kpi-card--migrate .kpi-card__value { color: var(--terracotta); }
+  .kpi-card--add { border-left: 3px solid var(--gold); }
+  .kpi-card--done { border-left: 3px solid var(--sage); }
+  .kpi-card--done .kpi-card__value { color: var(--sage); }
+
+  /* ── Section base ───────────────────────────────────────────────── */
+
+  .section { margin-bottom: 80px; }
+  .section__eyebrow {
+    font-family: var(--font-mono); font-size: 12px; font-weight: 600;
+    letter-spacing: 2px; text-transform: uppercase; color: var(--text-dim);
+    margin-bottom: 12px; display: flex; align-items: center; gap: 12px;
+  }
+  .section__eyebrow::before { content: ''; display: inline-block; width: 14px; height: 1px; background: var(--gold); }
+  .section h2 {
+    font-family: var(--font-display); font-size: clamp(34px, 4vw, 48px);
+    font-weight: 400; font-style: italic; line-height: 1.1; letter-spacing: -0.5px;
+    margin: 0 0 20px; color: var(--text-bright);
+  }
+  .section__intro {
+    font-size: 18px; line-height: 1.55; color: var(--text-dim);
+    max-width: 780px; margin: 0 0 36px;
+  }
+
+  /* ── Mermaid ───────────────────────────────────────────────────── */
+
+  .mermaid-wrap {
+    position: relative; background: var(--surface); border: 1px solid var(--border);
+    border-radius: 14px; padding: 32px 24px; overflow: auto;
+    display: flex; justify-content: center; align-items: center;
+    min-height: 520px; cursor: grab;
+    scrollbar-width: thin; scrollbar-color: var(--border) transparent;
+  }
+  .mermaid-wrap.is-panning { cursor: grabbing; user-select: none; }
+  .mermaid-wrap::-webkit-scrollbar { width: 6px; height: 6px; }
+  .mermaid-wrap::-webkit-scrollbar-track { background: transparent; }
+  .mermaid-wrap::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+  .zoom-controls {
+    position: absolute; top: 10px; right: 10px; display: flex; gap: 2px;
+    z-index: 10; background: var(--surface); border: 1px solid var(--border);
+    border-radius: 7px; padding: 3px;
+  }
+  .zoom-controls button {
+    width: 30px; height: 30px; border: none; background: transparent;
+    color: var(--text-dim); font-family: var(--font-mono); font-size: 15px;
+    cursor: pointer; border-radius: 5px;
+  }
+  .zoom-controls button:hover { background: var(--border); color: var(--text); }
+
+  .mermaid .nodeLabel { color: var(--text) !important; font-family: var(--font-body) !important; font-size: 16px !important; }
+  .mermaid .edgeLabel { color: var(--text-dim) !important; background-color: transparent !important; font-family: var(--font-mono) !important; font-size: 13px !important; }
+  .mermaid .edgeLabel rect { fill: var(--bg) !important; }
+  .mermaid .node rect, .mermaid .node circle, .mermaid .node polygon { stroke-width: 1.5px; }
+  .mermaid .edge-pattern-solid { stroke-width: 1.5px; }
+
+  .legend-row {
+    display: flex; justify-content: center; flex-wrap: wrap; gap: 24px;
+    margin-top: 18px; font-family: var(--font-mono); font-size: 12px; color: var(--text-dim);
+  }
+  .legend-row span { display: inline-flex; align-items: center; gap: 8px; }
+  .legend-row span::before {
+    content: ''; display: inline-block; width: 14px; height: 14px;
+    border-radius: 4px; border: 1.5px solid var(--swatch); background: var(--swatch-bg);
+  }
+  .legend-row .leg-found { --swatch: var(--gold); --swatch-bg: var(--gold-dim); }
+  .legend-row .leg-guard { --swatch: var(--navy); --swatch-bg: var(--navy-dim); }
+  .legend-row .leg-prehook { --swatch: var(--terracotta); --swatch-bg: var(--terracotta-dim); }
+  .legend-row .leg-posthook { --swatch: var(--sage); --swatch-bg: var(--sage-dim); }
+
+  .mermaid-caption {
+    font-family: var(--font-mono); font-size: 12px; color: var(--text-dim);
+    text-align: center; margin-top: 14px; letter-spacing: 0.5px;
+  }
+
+  /* ── Slice cards ────────────────────────────────────────────────── */
+
+  .slices-grid {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(460px, 1fr));
+    gap: 26px;
+  }
+  .slices-grid > * { min-width: 0; }
+
+  .slice-card {
+    background: var(--surface-elevated); border: 1px solid var(--border);
+    border-radius: 16px; padding: 30px 32px;
+    box-shadow: 0 2px 14px rgba(0, 0, 0, 0.05);
+    display: flex; flex-direction: column; gap: 20px;
+    position: relative; overflow: hidden;
+  }
+  .slice-card::before {
+    content: ''; position: absolute; top: 0; left: 0; right: 0;
+    height: 3px; background: var(--accent-bar, var(--gold));
+  }
+  .slice-card--foundation { --accent-bar: var(--gold); }
+  .slice-card--guard { --accent-bar: var(--navy); }
+  .slice-card--prehook { --accent-bar: var(--terracotta); }
+  .slice-card--posthook { --accent-bar: var(--sage); }
+  .slice-card--closer { --accent-bar: var(--sage); opacity: 0.95; }
+
+  .slice-card__head {
+    display: flex; align-items: baseline; gap: 20px;
+    padding-bottom: 16px; border-bottom: 1px solid var(--border);
+  }
+  .slice-card__num {
+    font-family: var(--font-display); font-style: italic; font-size: 60px;
+    line-height: 0.8; color: var(--accent-bar, var(--gold));
+    flex-shrink: 0; letter-spacing: -2px;
+  }
+  .slice-card__title-block { flex: 1; min-width: 0; }
+  .slice-card__title {
+    font-family: var(--font-display); font-style: italic; font-size: 24px;
+    line-height: 1.15; color: var(--text-bright); margin: 0 0 6px;
+  }
+  .slice-card__type {
+    display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+  }
+
+  .badge {
+    font-family: var(--font-mono); font-size: 11px; font-weight: 600;
+    letter-spacing: 0.8px; padding: 3px 11px; border-radius: 12px;
+    white-space: nowrap; text-transform: uppercase;
+  }
+  .badge--afk {
+    background: var(--sage-dim); color: var(--sage);
+    border: 1px solid color-mix(in srgb, var(--sage) 30%, transparent);
+  }
+  .badge--role {
+    background: color-mix(in srgb, var(--accent-bar) 14%, transparent);
+    color: var(--accent-bar);
+    border: 1px solid color-mix(in srgb, var(--accent-bar) 30%, transparent);
+  }
+  .badge--done {
+    background: var(--sage-dim); color: var(--sage);
+    border: 1px solid color-mix(in srgb, var(--sage) 36%, transparent);
+    letter-spacing: 0.6px;
+  }
+  .badge--done::before {
+    content: '\2713'; margin-right: 6px; font-weight: 700;
+  }
+
+  .slice-card__blocked {
+    font-family: var(--font-mono); font-size: 12px; color: var(--text-dim);
+  }
+  .slice-card__blocked strong { color: var(--text); font-weight: 500; }
+
+  .slice-card__stories-row {
+    display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap;
+    margin: -6px 0 0;
+  }
+  .slice-card__stories-label {
+    font-family: var(--font-mono); font-size: 10.5px; font-weight: 600;
+    letter-spacing: 1.4px; text-transform: uppercase; color: var(--text-dim);
+    flex-shrink: 0;
+  }
+  .story-chip {
+    font-family: var(--font-mono); font-size: 11px; font-weight: 500;
+    padding: 2px 8px; border-radius: 4px;
+    background: var(--gold-dim); color: var(--gold);
+  }
+
+  .slice-card__what {
+    font-size: 15.5px; line-height: 1.6; color: var(--text); margin: 0;
+  }
+  .slice-card__what code {
+    font-family: var(--font-mono); font-size: 12.5px;
+    background: var(--navy-dim); color: var(--text-bright);
+    padding: 1px 5px; border-radius: 3px;
+  }
+
+  .slice-card__criteria-label {
+    font-family: var(--font-mono); font-size: 10.5px; font-weight: 600;
+    letter-spacing: 1.4px; text-transform: uppercase; color: var(--text-dim);
+    margin: 4px 0 -4px;
+  }
+  .slice-card__criteria {
+    margin: 0; padding: 0; list-style: none;
+    display: flex; flex-direction: column; gap: 10px;
+  }
+  .slice-card__criteria li {
+    padding-left: 30px; position: relative;
+    font-size: 14.5px; line-height: 1.55; color: var(--text);
+  }
+  .slice-card__criteria li::before {
+    content: '\2713'; position: absolute; left: 0; top: 1px;
+    width: 18px; height: 18px;
+    display: inline-flex; align-items: center; justify-content: center;
+    border: 1.5px solid color-mix(in srgb, var(--sage) 55%, transparent);
+    border-radius: 4px;
+    background: color-mix(in srgb, var(--sage) 14%, transparent);
+    color: var(--sage); font-family: var(--font-mono); font-size: 11px; font-weight: 700;
+    line-height: 1;
+  }
+  .slice-card__criteria li code {
+    font-family: var(--font-mono); font-size: 12px;
+    background: var(--navy-dim); color: var(--text);
+    padding: 1px 5px; border-radius: 3px;
+  }
+
+  .slice-card__impl-note {
+    margin: 4px 0 0; padding: 14px 18px;
+    background: color-mix(in srgb, var(--accent-bar) 5%, var(--surface));
+    border-left: 2px solid color-mix(in srgb, var(--accent-bar) 50%, transparent);
+    border-radius: 4px;
+    font-size: 13.5px; line-height: 1.55; color: var(--text-dim);
+    font-style: italic;
+  }
+  .slice-card__impl-note strong {
+    font-style: normal; font-weight: 600; color: var(--text);
+    font-family: var(--font-mono); font-size: 10.5px;
+    letter-spacing: 1.2px; text-transform: uppercase;
+    display: block; margin-bottom: 4px;
+  }
+  .slice-card__impl-note code {
+    font-family: var(--font-mono); font-size: 12px;
+    background: var(--navy-dim); color: var(--text);
+    padding: 1px 5px; border-radius: 3px; font-style: normal;
+  }
+
+  /* ── Verification Summary ───────────────────────────────────────── */
+
+  .verify-card {
+    background: color-mix(in srgb, var(--navy) 4%, var(--surface));
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--text-dim);
+    border-radius: 14px;
+    padding: 36px 40px;
+    box-shadow: 0 1px 6px rgba(0, 0, 0, 0.03);
+  }
+  .verify-card__head {
+    display: flex; align-items: baseline; justify-content: space-between;
+    gap: 24px; flex-wrap: wrap;
+    padding-bottom: 22px; margin-bottom: 26px;
+    border-bottom: 1px solid var(--border);
+  }
+  .verify-card__title {
+    font-family: var(--font-display); font-style: italic;
+    font-size: 32px; line-height: 1.15; color: var(--text-bright);
+    margin: 0;
+  }
+  .verify-card__meta {
+    font-family: var(--font-mono); font-size: 11.5px;
+    color: var(--text-dim); letter-spacing: 0.4px;
+  }
+  .verify-card__meta strong { color: var(--text); font-weight: 600; }
+
+  .verify-stats {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 14px; margin-bottom: 32px;
+  }
+  .verify-stat {
+    background: var(--surface);
+    border: 1px solid var(--border); border-radius: 10px;
+    padding: 16px 20px;
+    border-left: 3px solid var(--stat-color, var(--text-dim));
+  }
+  .verify-stat__value {
+    font-family: var(--font-display); font-style: italic;
+    font-size: 36px; line-height: 0.9;
+    color: var(--stat-color, var(--text-bright));
+    font-variant-numeric: tabular-nums;
+  }
+  .verify-stat__label {
+    font-family: var(--font-mono); font-size: 10.5px; font-weight: 600;
+    letter-spacing: 1.4px; text-transform: uppercase;
+    color: var(--text-dim); margin-top: 8px;
+  }
+  .verify-stat--checked { --stat-color: var(--navy); }
+  .verify-stat--confirmed { --stat-color: var(--sage); }
+  .verify-stat--corrected { --stat-color: var(--terracotta); }
+  .verify-stat--unverified { --stat-color: var(--text-dim); }
+
+  .verify-section { margin-bottom: 28px; }
+  .verify-section:last-child { margin-bottom: 0; }
+  .verify-section__title {
+    font-family: var(--font-mono); font-size: 11px; font-weight: 600;
+    letter-spacing: 1.6px; text-transform: uppercase;
+    color: var(--verify-color, var(--text-dim));
+    margin: 0 0 14px;
+    display: flex; align-items: center; gap: 10px;
+  }
+  .verify-section__title::before {
+    content: ''; width: 18px; height: 1px;
+    background: var(--verify-color, var(--text-dim));
+  }
+  .verify-section--confirmed { --verify-color: var(--sage); }
+  .verify-section--corrected { --verify-color: var(--terracotta); }
+  .verify-section--unverified { --verify-color: var(--text-dim); }
+
+  .verify-list {
+    margin: 0; padding: 0; list-style: none;
+    display: flex; flex-direction: column; gap: 10px;
+  }
+  .verify-list li {
+    padding-left: 28px; position: relative;
+    font-size: 14.5px; line-height: 1.6; color: var(--text);
+  }
+  .verify-list--confirmed li::before {
+    content: '\2713'; position: absolute; left: 0; top: 0;
+    color: var(--sage); font-weight: 700; font-family: var(--font-mono); font-size: 14px;
+  }
+  .verify-list--corrected li {
+    counter-increment: corrected;
+  }
+  .verify-list--corrected { counter-reset: corrected; }
+  .verify-list--corrected li::before {
+    content: counter(corrected); position: absolute; left: 0; top: 1px;
+    width: 18px; height: 18px;
+    display: inline-flex; align-items: center; justify-content: center;
+    background: var(--terracotta-dim); color: var(--terracotta);
+    border: 1px solid color-mix(in srgb, var(--terracotta) 40%, transparent);
+    border-radius: 50%;
+    font-family: var(--font-mono); font-size: 11px; font-weight: 700;
+    line-height: 1;
+  }
+  .verify-list li code {
+    font-family: var(--font-mono); font-size: 12px;
+    background: var(--navy-dim); color: var(--text);
+    padding: 1px 5px; border-radius: 3px;
+  }
+  .verify-list li strong { color: var(--text-bright); font-weight: 600; }
+
+  .verify-unverified-empty {
+    font-size: 14.5px; color: var(--text-dim); font-style: italic;
+    padding-left: 28px; position: relative;
+  }
+  .verify-unverified-empty::before {
+    content: '\2014'; position: absolute; left: 0;
+    color: var(--text-dim);
+  }
+
+  /* ── Footer ─────────────────────────────────────────────────────── */
+
+  .footer {
+    margin-top: 80px; padding-top: 36px; border-top: 1px solid var(--border);
+    font-family: var(--font-mono); font-size: 12px; color: var(--text-dim);
+    text-align: center; line-height: 1.8;
+  }
+  .footer span { display: inline-block; margin: 0 12px; }
+  .footer a { color: var(--gold); text-decoration: underline; }
+
+  /* ── Animations ─────────────────────────────────────────────────── */
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(12px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .section, .slice-card, .kpi-card, .mermaid-wrap, .verify-card {
+    animation: fadeUp 0.5s ease-out both;
+    animation-delay: calc(var(--i, 0) * 0.04s);
+  }
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+
+  @media (max-width: 768px) {
+    .wrap { padding: 32px 20px 64px; }
+    .header { margin-bottom: 40px; padding-bottom: 28px; }
+    .section { margin-bottom: 56px; }
+    .slices-grid { grid-template-columns: 1fr; }
+    .slice-card { padding: 24px 22px; }
+    .slice-card__head { gap: 14px; }
+    .slice-card__num { font-size: 48px; }
+    .verify-card { padding: 26px 22px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+
+  <!-- ═══════════════════════════════════════════════════════════════
+       HEADER
+       ═══════════════════════════════════════════════════════════════ -->
+  <header class="header" style="--i: 0">
+    <div class="header__category">Tasks — Vertical Slices · Complete</div>
+    <h1>omp Hooks Migration <span style="color: var(--gold);">—</span> Tasks</h1>
+    <p class="header__lede">
+      Seven <em>vertical slices</em> — each a thin tracer bullet through every layer. All AFK, all shipped.
+      Slice&nbsp;1 was the foundation; slice&nbsp;2 the regression guard; slices&nbsp;3–6 the hook additions; slice&nbsp;7 closed the loop with the README.
+    </p>
+
+    <div class="kpi-row">
+      <div class="kpi-card kpi-card--add">
+        <div class="kpi-card__value">7</div>
+        <div class="kpi-card__label">Vertical Slices</div>
+      </div>
+      <div class="kpi-card kpi-card--afk">
+        <div class="kpi-card__value">7</div>
+        <div class="kpi-card__label">AFK · 0 HITL</div>
+      </div>
+      <div class="kpi-card kpi-card--done">
+        <div class="kpi-card__value">7&thinsp;/&thinsp;7</div>
+        <div class="kpi-card__label">✓ Complete</div>
+      </div>
+      <div class="kpi-card kpi-card--migrate">
+        <div class="kpi-card__value">4 &rarr; 5</div>
+        <div class="kpi-card__label">TTSR deletions · Hook additions</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-card__value kpi-card__value--small">21</div>
+        <div class="kpi-card__label">User Stories Covered</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-card__value kpi-card__value--small">11+</div>
+        <div class="kpi-card__label">Secret shapes redacted</div>
+      </div>
+    </div>
+  </header>
+
+  <!-- ═══════════════════════════════════════════════════════════════
+       DEPENDENCY GRAPH
+       ═══════════════════════════════════════════════════════════════ -->
+  <section class="section" style="--i: 1">
+    <div class="section__eyebrow">Dependency graph</div>
+    <h2>How the slices blocked each other</h2>
+    <p class="section__intro">
+      Slice 1 was the foundation — install machinery, the first hook, and the first TTSR deletion in one tracer bullet. Once it landed, everything else could proceed: slice 2 established the regression guard for the four remaining hook additions; slices 3–6 were mutually independent; slice 7 waited on all of them before the README was rewritten to match.
+    </p>
+
+    <div class="mermaid-wrap">
+      <div class="zoom-controls">
+        <button onclick="zoomDiagram(this, 1.2)" title="Zoom in">+</button>
+        <button onclick="zoomDiagram(this, 0.8)" title="Zoom out">&minus;</button>
+        <button onclick="resetZoom(this)" title="Reset zoom">&#8634;</button>
+      </div>
+<pre class="mermaid">
+flowchart TD
+    START(("start")):::startnode
+
+    S1["Slice 1 ✅<br/>install + guard-rm<br/>foundation"]:::foundation
+    S2["Slice 2 ✅<br/>shape check<br/>regression guard"]:::guard
+    S3["Slice 3 ✅<br/>guard-curl-pipe<br/>pre-hook"]:::prehook
+    S4["Slice 4 ✅<br/>guard-credentials<br/>pre-hook"]:::prehook
+    S5["Slice 5 ✅<br/>guard-sudo<br/>pre-hook"]:::prehook
+    S6["Slice 6 ✅<br/>redact-keys<br/>post-hook · net-new"]:::posthook
+    S7["Slice 7 ✅<br/>README rewrite<br/>closer"]:::closer
+
+    START ==> S1
+
+    S1 --> S2
+    S1 --> S3
+    S1 --> S4
+    S1 --> S5
+    S1 --> S6
+
+    S2 --> S7
+    S3 --> S7
+    S4 --> S7
+    S5 --> S7
+    S6 --> S7
+
+    classDef startnode fill:#b8862a44,stroke:#b8862a,stroke-width:2px
+    classDef foundation fill:#b8862a22,stroke:#b8862a,stroke-width:2.5px
+    classDef guard fill:#1e3a5f22,stroke:#1e3a5f,stroke-width:1.5px
+    classDef prehook fill:#b8562c22,stroke:#b8562c,stroke-width:1.5px
+    classDef posthook fill:#4d7a4a22,stroke:#4d7a4a,stroke-width:1.5px
+    classDef closer fill:#4d7a4a14,stroke:#4d7a4a,stroke-width:1.5px
+</pre>
+    </div>
+
+    <div class="legend-row">
+      <span class="leg-found">Foundation</span>
+      <span class="leg-guard">Regression guard</span>
+      <span class="leg-prehook">Pre-hook migration</span>
+      <span class="leg-posthook">Post-hook / Closer</span>
+    </div>
+    <p class="mermaid-caption">all edges are AFK · thick edge from "start" marks the slice with no prerequisites · all 7 nodes shipped</p>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════════════════════
+       THE SEVEN SLICES
+       ═══════════════════════════════════════════════════════════════ -->
+  <section class="section" style="--i: 2">
+    <div class="section__eyebrow">The seven slices</div>
+    <h2>What each slice delivered</h2>
+    <p class="section__intro">
+      Each card is a complete vertical slice — demoable on its own. Acceptance criteria are reviewer-walkable checklists, all confirmed against the post-implementation state. User-story numbers reference the PRD's canonical numbering.
+    </p>
+
+    <div class="slices-grid">
+
+      <!-- ───── Slice 1: foundation ───── -->
+      <article class="slice-card slice-card--foundation">
+        <div class="slice-card__head">
+          <div class="slice-card__num">01</div>
+          <div class="slice-card__title-block">
+            <h3 class="slice-card__title">omp/hooks install + guard-rm + delete no-rm-rf-root</h3>
+            <div class="slice-card__type">
+              <span class="badge badge--afk">AFK</span>
+              <span class="badge badge--role">Foundation</span>
+              <span class="badge badge--done">Complete</span>
+              <span class="slice-card__blocked"><strong>Blocked by:</strong> none</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="slice-card__stories-row">
+          <span class="slice-card__stories-label">User stories</span>
+          <span class="story-chip">01</span><span class="story-chip">04</span><span class="story-chip">11</span>
+          <span class="story-chip">15</span><span class="story-chip">21</span>
+        </div>
+
+        <p class="slice-card__what">
+          The foundational tracer bullet: install pipeline knows how to symlink hooks; first hook is wired; first TTSR rule is deleted. Establishes the authoring pattern slices 3–6 follow. After this slice, <code>rm -rf ~</code> blocks via the hook with broader coverage (catches <code>find / -delete</code>, process substitution wrappers) than the deleted regex could.
+        </p>
+
+        <span class="slice-card__criteria-label">Acceptance criteria</span>
+        <ul class="slice-card__criteria">
+          <li>New repo dir <code>omp/hooks/pre/</code> exists with <code>guard-rm.ts</code>; <code>omp/hooks/post/</code> springs into being in slice 6. <code>omp/hooks/README.md</code> documents the structure.</li>
+          <li>New file <code>omp/hooks/pre/guard-rm.ts</code> exports <code>default function (pi: HookAPI)</code>, registers a <code>tool_call</code> handler that filters <code>bash</code>, parses argv structurally (process-substitution-aware via <code>extractSubstitutions</code>), and returns <code>{ block, reason }</code> for broad rm/find against <code>/</code>, <code>~</code>, <code>$HOME</code>, <code>${HOME}</code>, <code>*</code> and trailing-slash variants. <code>.</code> and <code>..</code> are deliberately NOT in <code>BROAD_TARGETS</code> (<code>find . -name "*.pyc" -delete</code> is common cleanup).</li>
+          <li><code>install.sh</code> gains a new section adjacent to <code>omp/extensions/</code>: mkdir extended for <code>hooks/{pre,post}/</code>, two symlink loops covering <code>*.ts</code> and <code>*.js</code> with <code>[ -f ]</code> guards. README.md skipped via glob filter.</li>
+          <li><code>rules/no-rm-rf-root.md</code> deleted via <code>git rm</code>; dangling symlinks unlinked.</li>
+          <li>Running <code>./install.sh</code> produces a resolvable symlink at <code>~/.omp/agent/hooks/pre/guard-rm.ts</code>.</li>
+          <li>In an omp session, <code>rm -rf ~</code> aborts with the hook's <code>reason</code>; <code>find / -delete</code> also aborts.</li>
+          <li>Claude regression: <code>claude/settings.json</code>'s <code>Bash(rm -rf *)</code> deny still applies.</li>
+          <li>OpenCode regression: deletion is invisible (OpenCode never loaded rules).</li>
+          <li><code>omp/config.yml</code> unchanged byte-for-byte.</li>
+        </ul>
+
+        <div class="slice-card__impl-note">
+          <strong>Implementation note</strong>
+          <code>guard-rm.ts</code> is ~120 lines with structured argv parsing, process- and command-substitution extraction, and broad-target detection for both <code>rm</code> and <code>find</code>. Targets recognized as broad: <code>/</code>, <code>~</code>, <code>*</code>, <code>$HOME</code>, <code>${HOME}</code>, and trailing-slash variants (<code>~/</code>, <code>$HOME/</code>, <code>${HOME}/</code>). <code>.</code> and <code>..</code> were removed during post-review hardening after <code>find . -name "*.pyc" -delete</code> was identified as a common false-positive. The recursion into substitutions handles <code>bash &lt;(rm -rf /)</code>, <code>$(rm -rf ~)</code>, and backtick variants.
+        </div>
+      </article>
+
+      <!-- ───── Slice 2: regression guard ───── -->
+      <article class="slice-card slice-card--guard">
+        <div class="slice-card__head">
+          <div class="slice-card__num">02</div>
+          <div class="slice-card__title-block">
+            <h3 class="slice-card__title">test_omp_hook_shape pipeline check + self-test</h3>
+            <div class="slice-card__type">
+              <span class="badge badge--afk">AFK</span>
+              <span class="badge badge--role">Regression guard</span>
+              <span class="badge badge--done">Complete</span>
+              <span class="slice-card__blocked"><strong>Blocked by:</strong> Slice 1</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="slice-card__stories-row">
+          <span class="slice-card__stories-label">User stories</span>
+          <span class="story-chip">13</span><span class="story-chip">14</span>
+        </div>
+
+        <p class="slice-card__what">
+          New <code>test_omp_hook_shape</code> validates that every hook file conforms to the contract: <code>export default function</code>, <code>HookAPI</code> import, naming convention (<code>pre/guard-*.ts</code>, <code>post/redact-*.ts</code>). Matching negative case in the self-test plants a malformed fixture. Distinct function — not bundled into <code>test_omp_install_targets_exist</code> — for per-bucket symmetry with the existing rule frontmatter checks.
+        </p>
+
+        <span class="slice-card__criteria-label">Acceptance criteria</span>
+        <ul class="slice-card__criteria">
+          <li><code>scripts/test-pipeline.sh</code> gains <code>test_omp_hook_shape</code>: per-file iteration over <code>omp/hooks/{pre,post}/*.ts</code>; tightened to require a start-of-line <code>export default function (…)</code> signature so comments don't false-positive, plus an import from <code>@oh-my-pi/pi-coding-agent/extensibility/hooks</code> and the directory naming convention.</li>
+          <li>Invoked from <code>main()</code> between <code>test_omp_yaml_valid</code> and <code>test_no_forbidden_claude_centric_phrasing</code> (per existing per-section style).</li>
+          <li><code>scripts/test-pipeline-self-test.sh</code> gains a negative case: plants <code>omp/hooks/pre/guard-test-self-test-bad.ts</code> with <code>function notAHook</code> instead of default export, runs pipeline, asserts non-zero exit.</li>
+          <li>Cleanup trap extended for <code>omp/hooks/{pre,post}/{guard,redact}-test-self-test-*.ts</code>.</li>
+          <li>Pipeline passes cleanly against post-slice-1 state (403/0 — +3 from guard-rm's three shape assertions).</li>
+          <li>Self-test exits zero — new negative case fires correctly (14 passed, 0 failed).</li>
+          <li>Check style matches existing conventions: per-section header, per-file iteration, <code>pass</code>/<code>fail</code> accounting, descriptive failure messages.</li>
+        </ul>
+
+        <div class="slice-card__impl-note">
+          <strong>Implementation note</strong>
+          First version used <code>[[ "$content" =~ export[[:space:]]+default[[:space:]]+function ]]</code> which false-positived on comments containing the literal phrase. Tightened to a <code>grep -qE '^[[:space:]]*…\('</code> pattern that requires the actual function signature shape at start of line. Verified by the self-test fixture (which deliberately mentions the magic words in a comment).
+        </div>
+      </article>
+
+      <!-- ───── Slice 3: guard-curl-pipe ───── -->
+      <article class="slice-card slice-card--prehook">
+        <div class="slice-card__head">
+          <div class="slice-card__num">03</div>
+          <div class="slice-card__title-block">
+            <h3 class="slice-card__title">guard-curl-pipe + delete no-curl-pipe-interpreter</h3>
+            <div class="slice-card__type">
+              <span class="badge badge--afk">AFK</span>
+              <span class="badge badge--role">Pre-hook</span>
+              <span class="badge badge--done">Complete</span>
+              <span class="slice-card__blocked"><strong>Blocked by:</strong> Slice 1</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="slice-card__stories-row">
+          <span class="slice-card__stories-label">User stories</span>
+          <span class="story-chip">01</span><span class="story-chip">09</span><span class="story-chip">10</span>
+          <span class="story-chip">21</span>
+        </div>
+
+        <p class="slice-card__what">
+          Second pre-hook migration. <code>guard-curl-pipe.ts</code> replaces <code>no-curl-pipe-interpreter.md</code>. Scans <code>event.input.command</code> for any download-to-interpreter shape: direct pipes (<code>curl URL | bash</code>), tee-interposer (<code>curl URL | tee /tmp/x | bash</code>), process substitution (<code>bash &lt;(curl URL)</code>), and the same family for <code>wget</code>.
+        </p>
+
+        <span class="slice-card__criteria-label">Acceptance criteria</span>
+        <ul class="slice-card__criteria">
+          <li>New <code>omp/hooks/pre/guard-curl-pipe.ts</code> (~115 lines) with quote-aware <code>splitOnPipe</code>, <code>leadingWord</code> helper that skips env-var assignments, separate <code>isPipeToInterpreter</code> + <code>isProcSubstInterpreter</code> checks, and recursion into substitutions.</li>
+          <li>Detects all four shapes via structured pipe-splitting and process-substitution scanning. Interpreter set: bash/sh/zsh/ksh/fish/dash/python/python3/node/deno/bun/ruby/perl/sudo.</li>
+          <li><code>rules/no-curl-pipe-interpreter.md</code> deleted via <code>git rm</code>; dangling Claude + omp symlinks unlinked.</li>
+          <li>Pipeline passes cleanly (402/0 — net −1 from removed rule's −4 checks plus new hook's +3 shape assertions).</li>
+          <li>In omp, <code>curl URL | bash</code>, <code>curl URL | tee … | bash</code>, <code>bash &lt;(curl URL)</code>, <code>wget URL | sh</code> all abort.</li>
+          <li>Claude regression: <code>claude/hooks.json</code>'s <code>deny-curl-to-interpreter.sh</code> still fires for Claude.</li>
+          <li>OpenCode regression: invisible.</li>
+        </ul>
+      </article>
+
+      <!-- ───── Slice 4: guard-credentials ───── -->
+      <article class="slice-card slice-card--prehook">
+        <div class="slice-card__head">
+          <div class="slice-card__num">04</div>
+          <div class="slice-card__title-block">
+            <h3 class="slice-card__title">guard-credentials + delete no-credentials-read</h3>
+            <div class="slice-card__type">
+              <span class="badge badge--afk">AFK</span>
+              <span class="badge badge--role">Pre-hook</span>
+              <span class="badge badge--done">Complete</span>
+              <span class="slice-card__blocked"><strong>Blocked by:</strong> Slice 1</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="slice-card__stories-row">
+          <span class="slice-card__stories-label">User stories</span>
+          <span class="story-chip">01</span><span class="story-chip">05</span><span class="story-chip">19</span>
+          <span class="story-chip">21</span>
+        </div>
+
+        <p class="slice-card__what">
+          Third pre-hook migration. Single hook covers <code>read</code>, <code>edit</code>, and <code>bash</code> with per-tool structured input checks: file tools check <code>event.input.path</code>; bash parses argv for credential-reading subcommands. Same 8 path patterns the deleted TTSR covered. Bypass-fix: structured <code>event.input.path</code> checking eliminates over-firing on prose mentions — only actual tool inputs trigger.
+        </p>
+
+        <span class="slice-card__criteria-label">Acceptance criteria</span>
+        <ul class="slice-card__criteria">
+          <li>New <code>omp/hooks/pre/guard-credentials.ts</code> (~135 lines): 8 credential-path regexes with case-insensitive SSH keys, 19 credential-reader commands (cat/awk/grep/sed/head/tail/less/more/tac/nl/od/strings/xxd/hexdump/vim/vi/nano/emacs/cp/mv/rsync/scp), per-tool dispatch.</li>
+          <li>Fires on <code>read</code>/<code>edit</code> when <code>input.path</code> matches a credential pattern; fires on <code>bash</code> when any segment (split on <code>|</code>/<code>;</code>/<code>&amp;&amp;</code>/<code>||</code>) is a credential-reader command with a credential-path arg. Recurses into process/command substitutions.</li>
+          <li>All 8 patterns covered: <code>.aws/credentials</code>, <code>.kube/config</code>, <code>.ssh/id_*</code> (case-insensitive), <code>.netrc</code>, <code>.pgpass</code>, <code>.npmrc</code>, <code>.secrets.*</code>, anything literally named <code>credentials</code>.</li>
+          <li><code>rules/no-credentials-read.md</code> deleted via <code>git rm</code>; dangling symlinks unlinked.</li>
+          <li>Pipeline passes cleanly (401/0 — net −1).</li>
+          <li>In omp: <code>awk '{}' ~/.aws/credentials</code> aborts (bash branch); <code>cat ~/.ssh/id_RSA</code> aborts; prose mentions of <code>.aws/credentials</code> do NOT fire.</li>
+          <li>Claude regression: <code>claude/settings.json</code>'s <code>Read(**/.aws/credentials)</code> deny still applies.</li>
+          <li>OpenCode regression: invisible.</li>
+        </ul>
+      </article>
+
+      <!-- ───── Slice 5: guard-sudo ───── -->
+      <article class="slice-card slice-card--prehook">
+        <div class="slice-card__head">
+          <div class="slice-card__num">05</div>
+          <div class="slice-card__title-block">
+            <h3 class="slice-card__title">guard-sudo + delete no-sudo</h3>
+            <div class="slice-card__type">
+              <span class="badge badge--afk">AFK</span>
+              <span class="badge badge--role">Pre-hook</span>
+              <span class="badge badge--done">Complete</span>
+              <span class="slice-card__blocked"><strong>Blocked by:</strong> Slice 1</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="slice-card__stories-row">
+          <span class="slice-card__stories-label">User stories</span>
+          <span class="story-chip">01</span><span class="story-chip">03</span><span class="story-chip">08</span>
+          <span class="story-chip">21</span>
+        </div>
+
+        <p class="slice-card__what">
+          Fourth pre-hook migration. <code>guard-sudo.ts</code> blocks any sudo invocation including wrapper bypasses: <code>bash &lt;(sudo …)</code>, <code>find … -exec sudo …</code>, <code>python -c "os.system('sudo …')"</code>.
+        </p>
+
+        <span class="slice-card__criteria-label">Acceptance criteria</span>
+        <ul class="slice-card__criteria">
+          <li>New <code>omp/hooks/pre/guard-sudo.ts</code> (~30 lines) — simple <code>\bsudo\s</code> regex on <code>event.input.command</code> (matches the literal substring inside any wrapper shape).</li>
+          <li>Catches: <code>sudo apt</code>, <code>bash &lt;(sudo apt)</code>, <code>find … -exec sudo …</code>, <code>python -c "os.system('sudo apt')"</code>. Avoids false positives: <code>pseudo-random</code>, <code>sudoers</code>, <code>cat sudo.txt</code>, <code>/usr/local/bin/sudo</code>.</li>
+          <li><code>rules/no-sudo.md</code> deleted via <code>git rm</code>; dangling symlinks unlinked.</li>
+          <li>Pipeline passes cleanly (400/0 — net −1).</li>
+          <li>In omp, all four wrapper shapes abort.</li>
+          <li>Claude regression: invisible (Claude already prompts on sudo via approval flow).</li>
+          <li>OpenCode regression: invisible.</li>
+        </ul>
+
+        <div class="slice-card__impl-note">
+          <strong>Implementation note</strong>
+          Original PRD framing claimed sudo was "bypass-prone" via <code>bash &lt;(sudo)</code> / find-exec / python -c. After deeper analysis, the deleted TTSR rule's <code>scope: tool:bash</code> configuration already prevented prose over-firing, and the <code>\bsudo\b</code> regex would catch the wrapper shapes. This migration is primarily for <strong>consistency</strong> with the other migrated guards. The hook does have a marginal precision win — <code>\bsudo\s</code> vs. <code>\bsudo\b</code> avoids false positives like <code>cat sudo.txt</code>.
+        </div>
+      </article>
+
+      <!-- ───── Slice 6: redact-keys ───── -->
+      <article class="slice-card slice-card--posthook">
+        <div class="slice-card__head">
+          <div class="slice-card__num">06</div>
+          <div class="slice-card__title-block">
+            <h3 class="slice-card__title">redact-keys post-hook (net-new)</h3>
+            <div class="slice-card__type">
+              <span class="badge badge--afk">AFK</span>
+              <span class="badge badge--role">Post-hook</span>
+              <span class="badge badge--done">Complete</span>
+              <span class="slice-card__blocked"><strong>Blocked by:</strong> Slice 1</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="slice-card__stories-row">
+          <span class="slice-card__stories-label">User stories</span>
+          <span class="story-chip">02</span><span class="story-chip">06</span><span class="story-chip">07</span>
+          <span class="story-chip">18</span><span class="story-chip">21</span>
+        </div>
+
+        <p class="slice-card__what">
+          The single post-hook this PRD adds. Net-new capability — TTSR can't mutate <code>tool_result</code> content. <code>redact-keys.ts</code> registers a <code>tool_result</code> handler that filters to <code>read</code>, <code>edit</code>, and <code>bash</code> (skipping <code>event.isError === true</code>), and runs multi-pattern redaction: <code>API_KEY=</code>, <code>SECRET=</code>, <code>TOKEN=</code>, <code>PASSWORD=</code>, <code>BEARER=</code>, <code>AUTH(_TOKEN)?=</code>, <code>ACCESS_KEY=</code>, <code>PRIVATE_KEY=</code>, HTTP <code>Bearer &lt;token&gt;</code>, <code>AKIA[A-Z0-9]{16}</code>, GitHub tokens (classic <code>gh[pousr]_</code> + fine-grained <code>github_pat_</code>), JWT three-segment. Placeholder allowlist skips <code>xxx</code>, <code>your-</code>, <code>your_</code>, <code>placeholder</code>, <code>example</code>, <code>redacted</code>, <code>&lt;…&gt;</code>, <code>…</code>, all-same-char strings.
+        </p>
+
+        <span class="slice-card__criteria-label">Acceptance criteria</span>
+        <ul class="slice-card__criteria">
+          <li>New <code>omp/hooks/post/redact-keys.ts</code> registers <code>tool_result</code>, returns <code>{ content }</code> with redacted text blocks. ~100 lines: REDACT_TOOLS set, isPlaceholder predicate, 5 secret-pattern entries (11+ shapes fold into 5 regex groups).</li>
+          <li>Tool filter is <code>Set(["read", "edit", "bash"])</code>. Dropped <code>fetch</code> from the original PRD list (omp's web fetching goes through <code>read</code>); <code>edit</code> was added during post-review hardening — it can echo file contents back to the model the same way <code>read</code> does.</li>
+          <li>11+ secret pattern variants covered: API_KEY/SECRET/TOKEN/PASSWORD/BEARER/AUTH/ACCESS_KEY/PRIVATE_KEY (8 inside one KEY=value alternation regex), HTTP Bearer header, AWS AKIA*, GitHub tokens (classic <code>gh[pousr]_</code> + fine-grained <code>github_pat_</code>), JWT three-segment shape.</li>
+          <li>Placeholder skip works on <code>xxx</code>, <code>your-</code>/<code>your_</code>, <code>placeholder</code>, <code>example</code>, <code>redacted</code>, <code>&lt;…&gt;</code>, <code>…</code>, and all-same-char-of-length-≥8 strings. <code>API_KEY=YOUR_KEY_HERE</code> matched by regex but skipped; <code>API_KEY=abc123def4567890</code> redacted.</li>
+          <li><code>event.isError === true</code> results pass through untouched (early return).</li>
+          <li>Pipeline passes cleanly (403/0 — +3 for the new hook's three shape assertions).</li>
+          <li>In omp: a <code>bash printenv</code> returning <code>API_KEY=abcdef1234567890</code> is redacted to <code>API_KEY=[REDACTED]</code>; a <code>read</code> of a fixture file with <code>API_KEY=YOUR_KEY_HERE</code> passes through unchanged.</li>
+          <li>Claude/OpenCode regression: net-new omp-only — neither affected.</li>
+        </ul>
+
+        <div class="slice-card__impl-note">
+          <strong>Implementation note</strong>
+          The 11-pattern count folds into 5 regex entries because the 8 KEY=value variants (API_KEY, SECRET, TOKEN, PASSWORD, BEARER, AUTH(_TOKEN)?, ACCESS_KEY, PRIVATE_KEY — last added during authoring as same-shape) share a single key-name alternation regex. The 4 distinct-shape patterns (http-bearer, aws-key-id, github-token, jwt) each get their own entry. Post-review hardening: <code>edit</code> added to REDACT_TOOLS (it echoes file contents); the <code>github_pat_</code> fine-grained PAT format was folded into the github-token regex's alternation. Net: 5 entries, 11+ secret shapes covered.
+        </div>
+      </article>
+
+      <!-- ───── Slice 7: README ───── -->
+      <article class="slice-card slice-card--closer">
+        <div class="slice-card__head">
+          <div class="slice-card__num">07</div>
+          <div class="slice-card__title-block">
+            <h3 class="slice-card__title">README rewrite — Hooks row, structure, rule counts</h3>
+            <div class="slice-card__type">
+              <span class="badge badge--afk">AFK</span>
+              <span class="badge badge--role">Closer</span>
+              <span class="badge badge--done">Complete</span>
+              <span class="slice-card__blocked"><strong>Blocked by:</strong> Slices 1–6</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="slice-card__stories-row">
+          <span class="slice-card__stories-label">User stories</span>
+          <span class="story-chip">17</span>
+        </div>
+
+        <p class="slice-card__what">
+          Targeted README updates so the documentation matches reality after the migration. Existing tone, voice, and structure preserved.
+        </p>
+
+        <span class="slice-card__criteria-label">Acceptance criteria</span>
+        <ul class="slice-card__criteria">
+          <li>Triple-Harness Support table — omp Hooks cell updated: <code>5 TS modules in omp/hooks/ (4 pre-tool blockers + 1 post-tool secret redactor, see ADR-0006)</code>.</li>
+          <li>Repository Structure tree: <code>rules/</code> count updated 15 → 11; <code>omp/</code> description expanded to mention <code>extensions/</code> and <code>hooks/{pre,post}/</code>; new <code>omp/hooks/</code> line.</li>
+          <li>Skill/Agent graph block: rule count updated 15 → 11; new sentence covers the 5 hooks layer and references ADR-0006.</li>
+          <li>Components &gt; Rules section: 4 migrated rules removed from the TTSR sub-table (leaving 8); new "Hooks" sub-section with a per-hook table mapping role / replacement / function.</li>
+          <li>Acknowledgements unchanged.</li>
+          <li><code>git diff --stat README.md</code> shows scoped changes: +17/−8 across the four sections listed.</li>
+          <li>Pipeline passes cleanly (403/0).</li>
+        </ul>
+      </article>
+
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════════════════════
+       VERIFICATION SUMMARY
+       ═══════════════════════════════════════════════════════════════ -->
+  <section class="section" style="--i: 3">
+    <div class="section__eyebrow">Verification summary</div>
+    <h2>Fact-checked against the post-implementation state</h2>
+    <p class="section__intro">
+      Document audit performed against the actual codebase on 2026-05-28 (all 7 slices ✅ Complete, post-review HIGH/MEDIUM fixes applied). Four claims were corrected in place; zero claims left unverifiable.
+    </p>
+
+    <div class="verify-card">
+      <div class="verify-card__head">
+        <h3 class="verify-card__title">Audit results</h3>
+        <div class="verify-card__meta">Run on <strong>2026-05-28</strong> · scope: every claim in tasks.md</div>
+      </div>
+
+      <div class="verify-stats">
+        <div class="verify-stat verify-stat--checked">
+          <div class="verify-stat__value">28</div>
+          <div class="verify-stat__label">Claims Checked</div>
+        </div>
+        <div class="verify-stat verify-stat--confirmed">
+          <div class="verify-stat__value">24</div>
+          <div class="verify-stat__label">Confirmed</div>
+        </div>
+        <div class="verify-stat verify-stat--corrected">
+          <div class="verify-stat__value">4</div>
+          <div class="verify-stat__label">Corrected</div>
+        </div>
+        <div class="verify-stat verify-stat--unverified">
+          <div class="verify-stat__value">0</div>
+          <div class="verify-stat__label">Unverifiable</div>
+        </div>
+      </div>
+
+      <div class="verify-section verify-section--confirmed">
+        <h4 class="verify-section__title">Confirmed</h4>
+        <ul class="verify-list verify-list--confirmed">
+          <li>All 7 slices marked <code>Status: ✅ Complete</code>; all acceptance-criteria checkboxes <code>[x]</code>.</li>
+          <li>5 hook files at the documented paths.</li>
+          <li>4 TTSR <code>.md</code> files deleted; rule count 15 → 11.</li>
+          <li><code>test_omp_hook_shape</code> exists in <code>scripts/test-pipeline.sh:617</code>, invoked from <code>main()</code> between the install-targets check and the forbidden-phrasing check.</li>
+          <li>Self-test negative case present (14 passed, 0 failed).</li>
+          <li><code>install.sh</code> symlinks <code>omp/hooks/{pre,post}/*.ts</code> into <code>~/.omp/agent/hooks/{pre,post}/</code>.</li>
+          <li><code>guard-curl-pipe</code> covers direct pipe, tee-interposer, <code>bash &lt;(curl URL)</code>, wget variant; interpreter set matches the slice 3 enumeration.</li>
+          <li><code>guard-credentials</code> handles <code>read</code>, <code>edit</code>, <code>bash</code> with 8 path patterns + 19 reader commands.</li>
+          <li><code>guard-sudo</code> uses <code>\bsudo\s</code> (trailing whitespace anchor — matches slice 5's note about avoiding <code>sudo.txt</code> false positives).</li>
+          <li><code>redact-keys</code> is 5 regex entries (KEY=value with 8-arm alternation, http-bearer, aws-key-id, github-token, jwt).</li>
+          <li>Pipeline final state 403/0.</li>
+        </ul>
+      </div>
+
+      <div class="verify-section verify-section--corrected">
+        <h4 class="verify-section__title">Corrected in place</h4>
+        <ul class="verify-list verify-list--corrected">
+          <li><strong>Slice 1 AC + implementation note</strong> — removed <code>.</code> and <code>..</code> from the documented <code>BROAD_TARGETS</code> set. The actual implementation deliberately omits them after a post-review fix (over-fired on <code>find . -name "*.pyc" -delete</code>). Added <code>${HOME}</code> and trailing-slash variants which the actual code does cover.</li>
+          <li><strong>Slice 6 description</strong> — corrected tool-filter list from <code>read, bash, fetch</code> to <code>read, edit, bash</code> (matches <code>REDACT_TOOLS</code> in <code>omp/hooks/post/redact-keys.ts:14</code>).</li>
+          <li><strong>Slice 6 patterns description</strong> — added <code>PRIVATE_KEY=</code> and the <code>github_pat_</code> fine-grained PAT format that were both present in the implementation but missing from the slice description.</li>
+          <li><strong>Slice 6 implementation note</strong> — corrected KEY=value variant count from 7 to 8 (<code>PRIVATE_KEY</code> is in the alternation); noted that <code>edit</code> and <code>github_pat_</code> were post-review hardening additions.</li>
+        </ul>
+      </div>
+
+      <div class="verify-section verify-section--unverified">
+        <h4 class="verify-section__title">Unverifiable</h4>
+        <p class="verify-unverified-empty">none</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════════════════════
+       FOOTER
+       ═══════════════════════════════════════════════════════════════ -->
+  <footer class="footer">
+    <span>docs/features/20260528-1311-omp-hooks-migration/tasks.html</span>
+    <span>·</span>
+    <span>visual companion · do not edit by hand</span>
+    <span>·</span>
+    <span>see <a href="./prd.html">prd.html</a> and <a href="./tasks.md">tasks.md</a></span>
+    <span>·</span>
+    <span style="color: var(--sage);">all 7 slices ✅ complete · pipeline 403/0 · self-test 14/14</span>
+  </footer>
+
+</div>
+
+<script type="module">
+  import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';
+  const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+  mermaid.initialize({
+    startOnLoad: true,
+    theme: 'base',
+    look: 'classic',
+    themeVariables: {
+      primaryColor: isDark ? '#1a2740' : '#fef7e6',
+      primaryBorderColor: isDark ? '#e0b54a' : '#b8862a',
+      primaryTextColor: isDark ? '#f0e4cc' : '#1e3a5f',
+      secondaryColor: isDark ? '#132030' : '#f4ede0',
+      secondaryBorderColor: isDark ? '#88c180' : '#4d7a4a',
+      secondaryTextColor: isDark ? '#f0e4cc' : '#1e3a5f',
+      tertiaryColor: isDark ? '#231b2a' : '#fbe9dd',
+      tertiaryBorderColor: isDark ? '#e8794a' : '#b8562c',
+      tertiaryTextColor: isDark ? '#f0e4cc' : '#1e3a5f',
+      lineColor: isDark ? '#6a7a8c' : '#94a3b8',
+      fontSize: '18px',
+      fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
+    }
+  });
+</script>
+
+<script>
+  function fitMermaidDiagrams() {
+    document.querySelectorAll('.mermaid-wrap').forEach(function(wrap) {
+      var mEl = wrap.querySelector('.mermaid');
+      var svg = mEl && mEl.querySelector('svg');
+      if (!svg) return;
+      mEl.style.zoom = 1;
+      var pad = 64;
+      var svgW = svg.getBoundingClientRect().width;
+      var svgH = svg.getBoundingClientRect().height;
+      var wrapW = wrap.clientWidth - pad;
+      var wrapH = wrap.clientHeight - pad;
+      var zoom = Math.min(wrapW / svgW, wrapH / svgH);
+      zoom = Math.max(zoom, 1.0);
+      mEl.style.zoom = zoom;
+      mEl.dataset.zoom = zoom;
+      mEl.dataset.fitZoom = zoom;
+    });
+  }
+  var observer = new MutationObserver(function(mutations, obs) {
+    var hasSvg = document.querySelector('.mermaid svg');
+    if (hasSvg) { obs.disconnect(); setTimeout(fitMermaidDiagrams, 150); }
+  });
+  observer.observe(document.body, { childList: true, subtree: true });
+
+  function zoomDiagram(btn, factor) {
+    var wrap = btn.closest('.mermaid-wrap');
+    var target = wrap.querySelector('.mermaid');
+    var current = parseFloat(target.dataset.zoom || 1);
+    var next = Math.min(Math.max(current * factor, 0.4), 6);
+    target.dataset.zoom = next;
+    target.style.zoom = next;
+  }
+  function resetZoom(btn) {
+    var wrap = btn.closest('.mermaid-wrap');
+    var target = wrap.querySelector('.mermaid');
+    var fitZoom = parseFloat(target.dataset.fitZoom || 1);
+    target.dataset.zoom = fitZoom;
+    target.style.zoom = fitZoom;
+  }
+  window.zoomDiagram = zoomDiagram;
+  window.resetZoom = resetZoom;
+
+  document.querySelectorAll('.mermaid-wrap').forEach(function(wrap) {
+    wrap.addEventListener('wheel', function(e) {
+      if (!e.ctrlKey && !e.metaKey) return;
+      e.preventDefault();
+      var target = wrap.querySelector('.mermaid');
+      var current = parseFloat(target.dataset.zoom || 1);
+      var factor = e.deltaY < 0 ? 1.1 : 0.9;
+      var next = Math.min(Math.max(current * factor, 0.4), 6);
+      target.dataset.zoom = next;
+      target.style.zoom = next;
+    }, { passive: false });
+
+    var startX, startY, scrollL, scrollT;
+    wrap.addEventListener('mousedown', function(e) {
+      if (e.target.closest('.zoom-controls')) return;
+      wrap.classList.add('is-panning');
+      startX = e.clientX; startY = e.clientY;
+      scrollL = wrap.scrollLeft; scrollT = wrap.scrollTop;
+    });
+    window.addEventListener('mousemove', function(e) {
+      if (!wrap.classList.contains('is-panning')) return;
+      wrap.scrollLeft = scrollL - (e.clientX - startX);
+      wrap.scrollTop = scrollT - (e.clientY - startY);
+    });
+    window.addEventListener('mouseup', function() { wrap.classList.remove('is-panning'); });
+  });
+</script>
+
+</body>
+</html>
