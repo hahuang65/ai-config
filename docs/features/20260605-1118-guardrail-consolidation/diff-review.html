@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Guardrail Consolidation — Diff Review</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --font-body:'Space Grotesk',system-ui,sans-serif;--font-mono:'Space Mono',monospace;
+  --bg:#eef2f6;--surface:#fff;--surface-el:#fff;--grid:rgba(13,80,120,0.06);
+  --border:rgba(13,40,60,0.12);--border-br:rgba(13,40,60,0.22);--text:#0f2233;--text-dim:#5a6b7a;
+  --accent:#0e7490;--accent-dim:rgba(14,116,144,0.10);--add:#047857;--add-dim:rgba(4,120,87,0.10);
+  --del:#b91c1c;--del-dim:rgba(185,28,28,0.09);--mod:#b45309;--mod-dim:rgba(180,83,9,0.10);
+  --info:#0e7490;--muted:#64748b;--muted-dim:rgba(100,116,139,0.10);
+}
+@media (prefers-color-scheme:dark){:root{
+  --bg:#0a1420;--surface:#101d2b;--surface-el:#15263a;--grid:rgba(120,180,220,0.05);
+  --border:rgba(150,190,220,0.10);--border-br:rgba(150,190,220,0.22);--text:#dce7f0;--text-dim:#8aa0b2;
+  --accent:#38bdf8;--accent-dim:rgba(56,189,248,0.12);--add:#34d399;--add-dim:rgba(52,211,153,0.12);
+  --del:#f87171;--del-dim:rgba(248,113,113,0.13);--mod:#fbbf24;--mod-dim:rgba(251,191,36,0.12);
+  --info:#38bdf8;--muted:#94a3b8;--muted-dim:rgba(148,163,184,0.12);
+}}
+*{box-sizing:border-box}
+body{margin:0;font-family:var(--font-body);color:var(--text);background-color:var(--bg);
+  background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);
+  background-size:28px 28px;line-height:1.6;overflow-wrap:break-word}
+.wrap{max-width:1060px;margin:0 auto;padding:44px 24px 96px}
+.kicker{font-family:var(--font-mono);font-size:11px;letter-spacing:3px;text-transform:uppercase;color:var(--accent);font-weight:700}
+h1{font-size:clamp(27px,5vw,40px);line-height:1.1;margin:10px 0 8px;letter-spacing:-0.5px}
+section{margin:38px 0}
+h2{font-size:22px;margin:0 0 6px;display:flex;align-items:baseline;gap:10px}
+h2 .n{font-family:var(--font-mono);font-size:13px;color:var(--accent);font-weight:700}
+.lead{color:var(--text-dim);max-width:78ch;margin:0 0 16px}
+.hero{background:color-mix(in srgb,var(--surface) 90%,var(--accent) 10%);border:1px solid color-mix(in srgb,var(--border) 50%,var(--accent) 50%);border-radius:14px;padding:22px 26px;box-shadow:0 4px 22px rgba(0,0,0,0.08)}
+.hero p{font-size:18px;margin:0 0 10px}.hero p:last-child{margin:0}.hero strong{color:var(--accent)}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:11px;margin:6px 0}
+.kpi{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:13px 15px}
+.kpi .v{font-family:var(--font-mono);font-size:23px;font-weight:700;line-height:1}
+.kpi .k{font-size:10.5px;color:var(--text-dim);font-family:var(--font-mono);text-transform:uppercase;letter-spacing:.8px;margin-top:5px}
+.kpi.add .v{color:var(--add)}.kpi.del .v{color:var(--del)}.kpi.acc .v{color:var(--accent)}
+.ba{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.panel{border-radius:12px;padding:15px 18px;border:1px solid var(--border)}
+.panel.before{background:var(--del-dim);border-color:color-mix(in srgb,var(--border) 55%,var(--del) 45%)}
+.panel.after{background:var(--add-dim);border-color:color-mix(in srgb,var(--border) 55%,var(--add) 45%)}
+.panel h4{margin:0 0 8px;font-family:var(--font-mono);font-size:12px;text-transform:uppercase}
+.panel.before h4{color:var(--del)}.panel.after h4{color:var(--add)}
+.panel ul{margin:0;padding-left:18px;font-size:13.5px}.panel li{margin:4px 0}
+.panel code{font-family:var(--font-mono);font-size:11.5px}
+table{width:100%;border-collapse:collapse;font-size:13px;background:var(--surface);border:1px solid var(--border);border-radius:10px;overflow:hidden}
+thead th{background:var(--surface-el);text-align:left;font-family:var(--font-mono);font-size:10px;text-transform:uppercase;letter-spacing:.8px;color:var(--text-dim);padding:9px 12px;border-bottom:1px solid var(--border-br)}
+tbody td{padding:8px 12px;border-bottom:1px solid var(--border);vertical-align:top}
+tbody tr:hover{background:var(--accent-dim)}
+.rcard{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:13px 15px;border-left:3px solid var(--muted);margin-bottom:10px}
+.rcard.good{border-left-color:var(--add)}.rcard.bad{border-left-color:var(--del)}.rcard.ugly{border-left-color:var(--mod)}
+.rcard h4{margin:0 0 4px;font-size:13.5px}.rcard p{margin:0;font-size:12.5px;color:var(--text-dim)}
+.rcard .fix{color:var(--add);font-weight:600}.rcard code{font-family:var(--font-mono);font-size:11px;color:var(--accent)}
+.dcard{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:12px 15px;border-left:3px solid var(--add);margin-bottom:9px}
+.dcard h4{margin:0 0 4px;font-size:13.5px}.dcard p{margin:3px 0;font-size:12.5px;color:var(--text-dim)}
+.dcard .conf{font-family:var(--font-mono);font-size:9.5px;padding:2px 6px;border-radius:4px;background:var(--add-dim);color:var(--add)}
+.callout{border-left:3px solid var(--mod);background:var(--mod-dim);padding:11px 15px;border-radius:0 10px 10px 0;font-size:13px;margin:12px 0}
+.re div{background:var(--surface);border:1px solid var(--border);border-radius:9px;padding:11px 14px;font-size:12.5px;margin-bottom:8px}
+.re b{color:var(--accent);font-family:var(--font-mono);font-size:10.5px;text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:3px}
+@media (max-width:800px){.ba{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <div class="kicker">Diff Review · hh/pi → main</div>
+  <h1>Guardrail Consolidation</h1>
+</header>
+
+<section>
+  <div class="hero">
+    <p>A second tier of guardrails — cloud-destroy, deploy, db-mutation, dd-to-disk, shell-write, broad-chmod, destructive git, and the hardcoded-secret check — was still <strong>oh-my-pi TTSR rules</strong>: enforced on omp, guidance-only on Claude, and <strong>nothing on a future harness</strong>.</p>
+    <p>This migrates <strong>all of it into the shared guard core</strong> (+ one new capability: write-<strong>content</strong> inspection). Every command/content guardrail now enforces uniformly across harnesses, conformance-checked. <strong>TTSR is retired</strong>; <code>rules/</code> is advisory-only. The change deletes 7 rule files and finishes ADR-0011's consolidation — which is what lets pi drop in next inheriting everything through one adapter.</p>
+  </div>
+</section>
+
+<section>
+  <h2><span class="n">01</span> By the numbers</h2>
+  <div class="kpis">
+    <div class="kpi add"><div class="v">+1043</div><div class="k">insertions</div></div>
+    <div class="kpi del"><div class="v">−321</div><div class="k">deletions</div></div>
+    <div class="kpi acc"><div class="v">+8</div><div class="k">new policies</div></div>
+    <div class="kpi del"><div class="v">7</div><div class="k">rule files deleted</div></div>
+    <div class="kpi acc"><div class="v">12</div><div class="k">policies total</div></div>
+    <div class="kpi add"><div class="v">52</div><div class="k">bun tests ✓</div></div>
+    <div class="kpi add"><div class="v">424</div><div class="k">pipeline ✓</div></div>
+    <div class="kpi add"><div class="v">17</div><div class="k">self-test ✓</div></div>
+  </div>
+  <p class="lead" style="font-size:12.5px">26 files. Net change is small because the migrated rules' regexes move into the core as detectors; the rule files leave. CHANGELOG: none in repo · docs synced: README · CONTEXT · AGENTS · ADR-0012/0003.</p>
+</section>
+
+<section>
+  <h2><span class="n">02</span> Before / after</h2>
+  <p class="lead" style="margin-bottom:8px"><strong>Enforcement layer</strong></p>
+  <div class="ba">
+    <div class="panel before"><h4>Before — uneven</h4><ul>
+      <li>7 command rules + security.md = oh-my-pi <strong>TTSR</strong> (<code>condition:</code>/<code>scope:</code>)</li>
+      <li>Claude: always-on guidance + a few static deny patterns</li>
+      <li>Future harness: <strong>not enforced</strong></li>
+      <li>Floor = 5 policies; <code>no-force-push</code> the lone non-floor</li>
+    </ul></div>
+    <div class="panel after"><h4>After — uniform</h4><ul>
+      <li>All in the <strong>guard core</strong> (command + write content)</li>
+      <li>Enforced identically on every harness via its adapter</li>
+      <li>Conformance matrix proves it — no silent gaps</li>
+      <li>Floor = 11 policies; <code>no-shell-write</code> the lone non-floor</li>
+    </ul></div>
+  </div>
+  <p class="lead" style="margin:16px 0 8px"><strong>security.md</strong></p>
+  <div class="ba">
+    <div class="panel after"><h4>→ core: no-hardcoded-secret</h4><ul><li>Secret literal in write content, known formats (<code>sk-…</code>, <code>AKIA…</code>, GitHub tokens, PEM)</li><li>Hard, uniform block; safe on placeholders</li></ul></div>
+    <div class="panel before" style="background:var(--mod-dim);border-color:color-mix(in srgb,var(--border) 55%,var(--mod) 45%)"><h4 style="color:var(--mod)">stays advisory</h4><ul><li>SQL-concat, eval, exec-concat, input→file API</li><li>+ always-on input/output/authz/logging principles</li></ul></div>
+  </div>
+</section>
+
+<section>
+  <h2><span class="n">03</span> Code review — found &amp; fixed</h2>
+  <p class="lead">A <code>code-reviewer</code> pass over the new detectors; no CRITICALs, two HIGH (one FP, one FN), all fixed TDD-style before this review.</p>
+  <div class="rcard bad"><h4>HIGH · broad-chmod false positive <span class="fix">✓ fixed</span></h4><p><code>chmod -R 755 /home/deploy/app</code> wrongly blocked — the <code>(\s|/|$)</code> suffix matched any subpath. Now requires the broad target itself. <span class="fix">+test</span></p></div>
+  <div class="rcard bad"><h4>HIGH · gcloud false negative <span class="fix">✓ fixed</span></h4><p><code>gcloud compute instances delete</code> (4-token path) slipped past a 3-token pattern. Now matches <code>delete</code> anywhere in the gcloud segment. <span class="fix">+test</span></p></div>
+  <div class="rcard bad"><h4>MEDIUM/LOW · git clean --force, GitHub token formats <span class="fix">✓ fixed</span></h4><p><code>git clean --force</code> long-form now blocks; <code>gha_</code> Actions tokens + <code>github_pat_</code> fine-grained PATs added; <code>new_string</code> (Edit) content path now tested. <span class="fix">+tests</span></p></div>
+  <div class="rcard good"><h4>Good</h4><p>Faithful migrations of reviewed rules; the 5 command detectors share one <code>commandMatches</code> helper; conformance auto-extends via the registry; net-small diff for a big coverage gain.</p></div>
+  <div class="rcard ugly"><h4>Ugly — accepted</h4><p>Regex command detectors run on the whole command (vs the token traversal) — fine here (catches substitutions too). The quoted-<code>&gt;</code> echo false-positive is pre-existing and rare; left as parity.</p></div>
+</section>
+
+<section>
+  <h2><span class="n">04</span> Decision log</h2>
+  <div class="dcard"><h4>Migrate command + content enforcement into the core; retire TTSR <span class="conf">high — ADR-0012</span></h4>
+    <p><b>Rationale:</b> TTSR is omp-only, so those guardrails weren't enforced on Claude or a future harness. One core = uniform, conformance-checked, and pi inherits it through one adapter.</p></div>
+  <div class="dcard"><h4>security.md split — only the hardcoded-secret pattern is hard-blockable <span class="conf">high — discussed</span></h4>
+    <p><b>Rationale:</b> format-matched key literals are high-confidence; SQL-concat/eval/exec/input-taint are too false-positive-prone to hard-block, so they stay advisory.</p></div>
+  <div class="dcard"><h4>Floor = everything except no-shell-write <span class="conf">high — you chose (promote both)</span></h4>
+    <p><b>Rationale:</b> irreversible/catastrophic/secret/privilege = floor; shell-redirect (a visibility guard) is the lone non-floor and the conformance discriminator <code>no-force-push</code> used to be.</p></div>
+</section>
+
+<section>
+  <h2><span class="n">05</span> Re-entry context</h2>
+  <div class="re">
+    <div><b>Invariants</b> Content blocking is format-based on purpose (<code>SECRET_LITERAL_PATTERNS</code>) — a placeholder must not fire. The 5 migrated detectors are regex over the whole command; the token detectors (secret/rm/sudo/git) use <code>anyPipeline</code>. No rule may carry <code>condition:</code>/<code>scope:</code> — the gate enforces it.</div>
+    <div><b>Coupling</b> Adapters forward write content as <code>content ?? new_string</code>; the conformance probe builder must include <code>content</code> or content policies show a false gap. Floor membership lives in the registry's <code>floor</code> flag, not in the test.</div>
+    <div><b>Don't forget</b> pi is the next feature — it inherits all 12 policies via one tier-A extension. The four fuzzy security anti-patterns remain advisory; promoting any to the core needs content-taint analysis, not a regex.</div>
+  </div>
+</section>
+
+</div>
+</body>
+</html>

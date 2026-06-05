@@ -57,7 +57,7 @@ activates, so keep it thin and defer detail to references read on demand
 | **Skill** | `skills/<name>/SKILL.md` | yes — `~/.claude/skills` | yes — `~/.omp/agent/skills` |
 | **Command** | `commands/<name>.md` | yes — `~/.claude/commands` (skipped if a skill of the same name exists, to avoid a duplicate `/name`) | yes — `~/.omp/agent/commands` |
 | **Agent** | `agents/<name>.md` | yes — `~/.claude/agents` | yes — `~/.omp/agent/agents` |
-| **Rule** | `rules/<name>.md` | yes — `~/.claude/rules` (auto-injected each turn) | yes — `~/.omp/agent/rules` (rulebook / TTSR / hook) |
+| **Rule** | `rules/<name>.md` | yes — `~/.claude/rules` (auto-injected each turn) | yes — `~/.omp/agent/rules` (rulebook, advisory-only) |
 
 Implications:
 
@@ -75,39 +75,35 @@ Implications:
 - Reference another skill's assets by relative path
   (`../<skill>/references/<file>.md`); the gate resolves these links.
 
-## Rules — pick the right oh-my-pi mechanism
+## Rules are advisory; guardrails are enforced
 
-Claude Code injects every `rules/*.md` as always-on context; oh-my-pi has **three
-buckets — choose exactly one per rule**:
+`rules/*.md` is **advisory only** (ADR-0012). Claude Code injects every rule as
+always-on context; oh-my-pi lists each by `description:` in the **rulebook** and
+the model pulls it in on demand via `rule://<name>` (ADR-0002 — phrase the
+description as a load-trigger, "Read before writing tests…"). **No rule carries
+`condition:`/`scope:`** — the retired TTSR (stream-rule) frontmatter; the gate
+fails any rule that re-introduces it.
 
-- **Rulebook** (advisory, lazy) — `description:` frontmatter, no `condition:`.
-  oh-my-pi lists it by name+description and the model pulls it in on demand via
-  `rule://<name>`. Phrase the description as a load-trigger ("Read before
-  writing tests…"). Used for `coding-style`, `testing`, `performance`.
-  (ADR-0002)
-- **TTSR** (time-traveling stream rules) — `condition:` regex (optional
-  `scope:`). oh-my-pi aborts the stream on a match, injects the rule, retries. Use
-  for content patterns and bash-command patterns regex can't be tricked on. A
-  rule with `condition:` is TTSR-only, not also rulebook. (ADR-0003)
-- **Hook** (structured, input-bound) — TS modules at `harnesses/omp/hooks/{pre,post}/*.ts`
-  (`pre/guard-*.ts`, `post/redact-*.ts`) importing `HookAPI` from
-  `@oh-my-pi/pi-coding-agent/extensibility/hooks`. Use when you need parsed
-  tool input (paths, command) — catches what stream regex can't (process
-  substitution, find-exec, interpreter wrappers) and can mutate output.
-  (ADR-0006)
+**Enforcement** (mechanically *blocking* a dangerous tool call) is **not** a
+rule. It lives once in the **guard core** as a guardrail policy (see Permissions)
+and projects into every harness through its adapter. So: to *advise*, write a
+rule; to *block*, add a policy + detector to `shared/` — never both.
 
 ## Permissions
 
 `harnesses/claude/settings.json` is Claude Code's permission source of truth —
 edit it directly. `harnesses/omp/config.yml` is hand-authored: oh-my-pi uses
 tier-based approval (`approvalMode` + per-tool overrides). Cross-harness
-**guardrail policies** (never read secrets, no force-push, no broad rm, no sudo,
-no curl-pipe-to-shell) are defined once in `policies/` + `shared/guard-core.ts`
-and projected into each harness via its adapter — the tier-A in-process hook
-(`harnesses/omp/hooks/pre/guard-policies.ts`) and the tier-B Claude shim
-(`harnesses/claude/hooks/guard.ts`). A conformance test enforces the mandatory
-floor on every harness; an isolation test forbids cross-harness pollution.
-(ADR-0004 superseded in part by ADR-0010, ADR-0011)
+**guardrail policies** — never read or write secrets, no curl-pipe-to-shell, no
+broad rm/chmod, no sudo, no cloud teardown / deploy / db-mutation / dd-to-disk,
+no destructive git, no shell-redirect writes — are defined once in
+`shared/policy-registry.ts` + `shared/guard-core.ts` (the core inspects
+`command`, `path`, and write `content`) and projected into each harness via its
+adapter: the tier-A in-process hook (`harnesses/omp/hooks/pre/guard-policies.ts`)
+and the tier-B Claude shim (`harnesses/claude/hooks/guard.ts`). A conformance
+test enforces the mandatory floor on every harness; an isolation test forbids
+cross-harness pollution. (ADR-0011; all enforcement consolidated here per
+ADR-0012, which retired TTSR; ADR-0004 superseded in part by ADR-0010/0011)
 
 ## Quick recipes
 
@@ -115,7 +111,8 @@ floor on every harness; an isolation test forbids cross-harness pollution.
   `references/` only for genuine bulk; shared detail goes in
   `skills/shared/references/`. Run the gate.
 - **New command for an existing skill** → thin wrapper (see above).
-- **New rule** → decide rulebook vs TTSR vs hook, then add the matching
-  frontmatter / file.
+- **New rule** → it's advisory (rulebook): add `description:` frontmatter, no
+  `condition:`. To *enforce* (block) something, add a guardrail policy +
+  detector to the guard core instead — not a rule.
 - **Rename or move a reference** → update every link; the gate fails if a
   `references/…md` link no longer resolves.

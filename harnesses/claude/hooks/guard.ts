@@ -23,11 +23,13 @@ try {
 
 const toolInput = input.tool_input ?? {};
 const rawPath = toolInput.file_path ?? toolInput.path;
+const rawContent = toolInput.content ?? toolInput.new_string;
 
 const verdict = evaluate({
   tool: String(input.tool_name ?? "").toLowerCase(),
   command: toolInput.command != null ? String(toolInput.command) : undefined,
   path: rawPath != null ? String(rawPath) : undefined,
+  content: rawContent != null ? String(rawContent) : undefined,
 });
 
 if (verdict) {

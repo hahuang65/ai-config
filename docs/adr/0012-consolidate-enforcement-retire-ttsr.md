@@ -1,0 +1,19 @@
+# Consolidate all enforcement into the guard core; retire TTSR; rules/ is advisory-only
+
+The ports-and-adapters work (ADR-0011) migrated the *floor* guardrails (secret read, curl-pipe-shell, broad rm, sudo) into the shared guard core, but left a second tier of enforcement behind as **oh-my-pi TTSR rules** (`condition:`/`scope:` frontmatter): `no-cloud-destroy`, `no-deploy`, `no-db-mutation`, `no-dd-disk`, `no-shell-write`, `no-broad-chmod`, `no-git-destructive`, plus the write-content checks in `security.md`. TTSR is oh-my-pi-only — those rules never reached Claude as enforcement (only as always-on guidance + a few static `settings.json` patterns) and would not reach **pi** at all (pi has no stream-rule mechanism). We **migrate every command-pattern enforcement rule into the guard core**, split `security.md`, **retire TTSR**, and leave `rules/` advisory-only.
+
+## What moves
+
+- **Seven command-pattern TTSR rules → guard-core policies.** `no-cloud-destroy`, `no-deploy`, `no-db-mutation`, `no-dd-disk`, `no-shell-write`, `no-broad-chmod`, `no-git-destructive` each become a detector over the normalized `command` (reusing the `anyPipeline` traversal). Enforced uniformly on every tier-A/B harness via the adapters, conformance-checked.
+- **`security.md` is split.** Its one hard-blockable, low-false-positive pattern — a **hardcoded secret literal** in write/edit content (matched by known credential *formats*: `sk-…`, `AKIA…`, `-----BEGIN … PRIVATE KEY-----`) — becomes the guard-core policy `no-hardcoded-secret`. The four fuzzy anti-patterns (string-concat SQL, `eval` on dynamic input, `exec` with concat, user-input→file-API) and the always-on principles (validate input, escape output, authz, strip PII) **stay in `rules/security.md`** as advisory — too false-positive-prone for a hard block.
+- **The guard core gains a `content` field.** The normalized tool call grows `content` (the write/edit payload, which the `tool_call` hook already sees); adapters pass it. This is the one new core capability — needed only by `no-hardcoded-secret`.
+
+## Consequences
+
+- **TTSR is retired.** No `rules/*.md` carries `condition:`/`scope:` any more. The mechanism (ADR-0003) is **superseded** — kept only as historical vocabulary. The omp rule loader now only sees rulebook entries.
+- **The seven migrated rule files are deleted.** Their "right approach" guidance moves into each policy's **refusal reason**, so a block stays instructive (e.g. *"Refused — terraform apply changes shared infra; produce the plan and hand it to the user"*). Matches the precedent set when the floor guards replaced `no-rm-rf-root.md` et al.
+- **`rules/` is advisory-only:** `coding-style`, `testing`, `performance`, `git-commit`, `mise`, `security`. This updates **ADR-0009**'s "rules reach every harness" — enforcement no longer travels as rules at all; advisory guidance reaches Claude (always-on) and oh-my-pi (rulebook), and is an explicit gap on a harness without a guidance mechanism.
+- **`no-force-push` is absorbed into `no-git-destructive`** (force-push + `--no-verify` + `reset --hard` + `clean -f` + amend-pushed); the standalone policy is removed.
+- **The floor expands.** Floor = every policy except `no-shell-write` (the lone non-floor — it guards approval *visibility*, not an irreversible/catastrophic action). `no-git-destructive` and `no-deploy` are floor by explicit decision (rewriting shared history and autonomous prod deploys are non-negotiable). `no-shell-write` becomes the conformance discriminator that `no-force-push` used to be.
+- **Claude's static `settings.json` deny patterns stay** as fast declarative defense-in-depth (unchanged) — they fire even before the shim.
+- **Completes ADR-0011.** All command/content enforcement now lives in one core; this is the consolidation ADR-0011 set up. It also unblocks pi: a future pi harness enforces the *entire* policy set through one tier-A extension, no rule mechanism required.

@@ -47,7 +47,7 @@ Content the harness injects into every conversation's system prompt without the 
 oh-my-pi's bucket of rules that are listed in the system prompt by `name + description` and read on demand via `rule://<name>`. Requires `description:` frontmatter. This repo's three rulebook rules (`coding-style`, `testing`, `performance`) live here — the descriptions are written as load-triggers ("Read before writing tests…", "Read when handling user input…") so the model knows when to pull them in. The eight remaining rules in `rules/` are TTSR (below), not rulebook.
 
 **TTSR** (oh-my-pi — time-traveling stream rules):
-oh-my-pi's mid-stream rule injection: a regex match against the model's output aborts the stream, injects the rule body as a `<system-reminder>`, and retries from the same token. Configured via `condition:` frontmatter (plus optional `scope:` to narrow to specific tool surfaces). A rule with `condition:` lives in the TTSR bucket only — it's not also listed in the rulebook. This repo uses TTSR for **content-based patterns** (e.g. hardcoded secrets in a Write payload) and simple bash-command patterns where regex has no realistic bypass. See [`ttsr-for-omp-runtime-enforcement`](docs/adr/0003-ttsr-for-omp-runtime-enforcement.md).
+oh-my-pi's mid-stream rule injection: a regex match against the model's output aborts the stream, injects the rule body as a `<system-reminder>`, and retries from the same token. Configured via `condition:` frontmatter (plus optional `scope:`). **Retired in this repo (ADR-0012):** every TTSR enforcement rule was migrated into the **guard core** (command and write-**content** detection), so no `rules/*.md` carries `condition:` frontmatter any more. Kept here as historical vocabulary for ADR-0003 (which ADR-0012 supersedes).
 
 **Hook** (oh-my-pi — pre/post-tool TS modules):
 TS/JS modules at `harnesses/omp/hooks/{pre,post}/*.ts` (symlinked to `~/.omp/agent/hooks/{pre,post}/`). Subscribe to oh-my-pi runtime events via the `HookAPI` from `@oh-my-pi/pi-coding-agent/extensibility/hooks`. Pre-hooks fire on `tool_call` (before execution) and can return `{ block, reason }` to refuse the call. Post-hooks fire on `tool_result` (after execution) and can return `{ content, details, isError }` to mutate what the model sees. Unlike TTSR, hooks see **structured tool input** (`event.input.command`, `event.input.path`), so they catch what regex on stream text can't: process substitution (`bash <(…)`), find-exec, interpreter wrappers (`python -c "os.system(…)"`). Hooks can also **mutate output** (TTSR can only block). This repo uses hooks for input-bound patterns where TTSR's regex has known bypasses, and for output redaction (which TTSR fundamentally can't do). See [`hooks-replace-ttsr-for-input-bound-patterns`](docs/adr/0006-hooks-replace-ttsr-for-input-bound-patterns.md). Distinct from oh-my-pi **extensions** (`harnesses/omp/extensions/`), which use the same event API but can also register commands, tools, and renderers — extensions are the superset, hooks are the narrower event-handler surface.
@@ -72,18 +72,18 @@ The guarantee that each harness sees only its own module's files plus the curate
 The check asserting each config root contains only `{its module's files} ∪ {the curated shared set}` — no symlink resolving into a sibling harness's directory, cross-discovery flags off. A leak fails CI.
 
 **Advisory rule**:
-A `rules/*.md` file that is pure guidance the model reads (`coding-style`, `testing`, `performance`) — shares verbatim across harnesses exactly like a skill, with no mechanical enforcement. Distinct from a **Guardrail policy**.
+A `rules/*.md` file that is pure guidance the model reads — shares verbatim across harnesses like a skill, with no mechanical enforcement. After the guardrail consolidation (ADR-0012), **`rules/` is advisory-only**: `coding-style`, `testing`, `performance`, `git-commit`, `mise`, and `security` (its non-blockable principles). All *enforcement* moved to the **guard core**. Distinct from a **Guardrail policy**.
 _Avoid_: rule (unqualified — the bare word hides the advisory-vs-guardrail split).
 
 **Guardrail policy**:
-A security/safety constraint with a *shared intent* but a *per-harness enforcement mechanism* (e.g. never read secrets, no force-push, no curl-pipe-to-shell). Recorded once in the **policy registry** and projected into each harness via its adapter.
+A security/safety constraint with a *shared intent* but a *per-harness enforcement mechanism* (e.g. never read secrets, never write a secret literal, no curl-pipe-to-shell, no cloud teardown). Recorded once in the **policy registry** and projected into each harness via its adapter.
 _Avoid_: rule, permission (a permission is the native allow/deny knob a policy may *project onto*, not the canonical constraint itself).
 
 **Policy registry**:
-The canonical, harness-neutral list of guardrail policies in `policies/` — one entry per policy with an **ID**, human-readable intent, and enforcement metadata (check kind, minimum strength). The single source of truth for *what* must be enforced.
+The canonical, harness-neutral list of guardrail policies in `shared/policy-registry.ts` — one entry per policy: an **ID**, intent, enforcement metadata (check kind: `command` / `path` / `content` / `secret`; `floor` flag), and boundary examples (a violating `example` + benign `counterExample`). The single source of truth for *what* must be enforced.
 
 **Guard core**:
-The shared TypeScript module implementing the *detection* logic for guardrail policies (`isSecretPath`, `isCurlPipeShell`, …), imported unchanged by every harness whose hook API can run it. The single source of truth for *how* a policy is detected.
+The shared TypeScript module implementing the *detection* logic for guardrail policies over a normalized tool call (`tool`, `command`, `path`, and write **`content`**) — `isSecretPath`, `isCurlPipeShell`, `isHardcodedSecret`, …, imported unchanged by every harness whose hook API can run it. The single source of truth for *how* a policy is detected.
 _Avoid_: hook (a harness's event surface), matcher.
 
 **Enforcement tier** (a.k.a. **adapter archetype**):

@@ -1,21 +1,13 @@
 ---
-description: Block hardcoded secrets, string-concat SQL, user input flowing into file/shell APIs, and eval-on-user-input.
-condition:
-  - '(api[_-]?key|secret|password|token|bearer)\s*[:=]\s*["''`][A-Za-z0-9+/=_-]{16,}'
-  - '(SELECT|INSERT|UPDATE|DELETE)\s+.*\+\s*\w+'
-  - '(readFile|readFileSync|open|fs\.read)\s*\([^)]*req\.'
-  - '\beval\s*\('
-  - 'child_process\.(exec|execSync)\s*\(.*\+'
-scope: tool:edit, tool:write, tool:bash
+description: Read before writing code that builds SQL, calls eval, shells out, or feeds user input into file APIs — security anti-patterns plus the always-on input/output/authz/logging rules.
 ---
 
 # Security
 
-You were about to write something that matches a known security anti-pattern. Stop and re-plan.
+Watch for these anti-patterns when writing or editing code, and re-plan with the safe alternative. (Hardcoded secret literals are blocked outright by the guard core — see `no-hardcoded-secret`; this rule covers the fuzzier patterns that are guidance, not hard blocks.)
 
 Common triggers and the fix:
 
-- **Hardcoded secret literal in source** → Use environment variables or a secrets manager. Never commit API keys, passwords, tokens, or connection strings to the repo. If a secret was accidentally staged, remove it from history, rotate the credential, and add the file to `.gitignore`.
 - **String-concatenated SQL** → Use parameterized queries or prepared statements. Never concatenate user input into SQL, ORM queries, or shell commands.
 - **User input passed directly to a file API** → Sanitize or reject paths from user input. Never feed `req.body`, `req.params`, or `req.query` into `fs.readFile`, `open()`, or similar without validation.
 - **`eval()` on dynamic input** → Use a proper parser, lookup table, or AST. `eval` on anything touched by user input is a code-injection vector.

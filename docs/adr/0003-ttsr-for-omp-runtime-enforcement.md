@@ -1,5 +1,7 @@
 # TTSR is the runtime enforcement layer for oh-my-pi; rulebook is advisory
 
+> **Superseded by [ADR-0012](0012-consolidate-enforcement-retire-ttsr.md):** every TTSR enforcement rule was migrated into the shared guard core (command + write-content detection), so TTSR is retired and no `rules/*.md` carries `condition:` any more. The advisory **rulebook** bucket (the second half of this ADR) survives unchanged. The reasoning below stands as the historical record of why TTSR was the right runtime layer before the guard core existed.
+
 Claude Code enforces dangerous-pattern bash safety via the `claude/settings.json` permission denylist (`Bash(git push --force *)`, `Bash(rm -rf *)`, `Bash(curl * | bash*)`) plus a `PreToolUse` hook (`scripts/hooks/deny-curl-to-interpreter.sh`). oh-my-pi has no equivalent per-pattern allowlist — its `tools.approvalMode` is tier-based (`read`/`write`/`exec`) with hardcoded critical-pattern detection on `bash`. **We chose TTSR (time-traveling stream rules) as the runtime enforcement layer for oh-my-pi**, with the rule set split into two buckets:
 
 - **Rulebook (3 files: `coding-style.md`, `testing.md`, `performance.md`)** — `description:` only. Listed in oh-my-pi's system prompt; loaded on demand via `rule://<name>`. Advisory, not enforced.

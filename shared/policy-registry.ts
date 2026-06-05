@@ -18,7 +18,7 @@
 
 import type { ToolCall } from "./guard-core";
 
-export type PolicyKind = "secret" | "command";
+export type PolicyKind = "secret" | "command" | "content";
 
 export interface Policy {
   /** Stable identifier, e.g. "no-secret-access". */
@@ -45,10 +45,26 @@ export const POLICIES: Policy[] = [
     counterExample: { tool: "bash", command: 'echo "see ~/.aws/credentials for setup"' },
   },
   {
-    id: "no-force-push",
-    intent: "No harness may force-push, which rewrites shared history.",
+    id: "no-hardcoded-secret",
+    intent: "No harness may write a hardcoded secret literal into a file.",
+    kind: "content",
+    floor: true,
+    example: { tool: "write", content: "const id = 'AKIAIOSFODNN7EXAMPLE';" },
+    counterExample: { tool: "write", content: "const key = process.env.OPENAI_API_KEY; // e.g. sk-xxx" },
+  },
+  {
+    id: "no-shell-write",
+    intent: "No harness may write a file via shell redirection, bypassing per-file approval.",
     kind: "command",
     floor: false,
+    example: { tool: "bash", command: 'echo "config" > settings.json' },
+    counterExample: { tool: "bash", command: "echo hi > /dev/null" },
+  },
+  {
+    id: "no-git-destructive",
+    intent: "No harness may run a destructive git command (force-push, hook/sign bypass, hard reset, force-clean, amend-in-place).",
+    kind: "command",
+    floor: true,
     example: { tool: "bash", command: "git push --force origin main" },
     counterExample: { tool: "bash", command: "git push origin main" },
   },
@@ -75,5 +91,45 @@ export const POLICIES: Policy[] = [
     floor: true,
     example: { tool: "bash", command: "sudo apt install foo" },
     counterExample: { tool: "bash", command: "ls /etc/sudoers.d" },
+  },
+  {
+    id: "no-cloud-destroy",
+    intent: "No harness may run a command that destroys shared cloud infrastructure.",
+    kind: "command",
+    floor: true,
+    example: { tool: "bash", command: "terraform destroy -auto-approve" },
+    counterExample: { tool: "bash", command: "terraform plan" },
+  },
+  {
+    id: "no-deploy",
+    intent: "No harness may autonomously deploy to a production or shared environment.",
+    kind: "command",
+    floor: true,
+    example: { tool: "bash", command: "fly deploy" },
+    counterExample: { tool: "bash", command: "npm run build" },
+  },
+  {
+    id: "no-db-mutation",
+    intent: "No harness may mutate shared database state through a CLI.",
+    kind: "command",
+    floor: true,
+    example: { tool: "bash", command: "psql -c 'DROP TABLE users'" },
+    counterExample: { tool: "bash", command: "psql -c 'SELECT * FROM users'" },
+  },
+  {
+    id: "no-dd-disk",
+    intent: "No harness may run dd against a raw /dev device.",
+    kind: "command",
+    floor: true,
+    example: { tool: "bash", command: "dd if=img.iso of=/dev/sda bs=4M" },
+    counterExample: { tool: "bash", command: "dd if=a.img of=b.img" },
+  },
+  {
+    id: "no-broad-chmod",
+    intent: "No harness may run a recursive chmod against a broad system or home target.",
+    kind: "command",
+    floor: true,
+    example: { tool: "bash", command: "chmod -R 777 /etc" },
+    counterExample: { tool: "bash", command: "chmod -R 755 ./build" },
   },
 ];

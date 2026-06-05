@@ -19,6 +19,8 @@ export interface ToolCall {
   command?: string;
   /** The target path, for file tools. */
   path?: string;
+  /** The payload being written, for write/edit tools. */
+  content?: string;
 }
 
 /** A refusal: which policy fired and why. */
@@ -32,6 +34,43 @@ type Detector = (call: ToolCall) => string | null;
 
 function truncate(s: string, max = 80): string {
   return s.length > max ? `${s.slice(0, max)}…` : s;
+}
+
+// ── no-shell-write ───────────────────────────────────────────────────────
+
+// Output redirected (>, >>) or tee'd into a REAL file — bypassing the per-file
+// approval the write/edit tools provide. Device targets (/dev/null, stderr,
+// stdout, fd) and FD merges (2>&1, >&N) are excluded.
+const SHELL_WRITE_PATTERNS: RegExp[] = [
+  /\b(?:echo|printf|cat)\b[^;&|<>\n]*>>?\s*(?!\/dev\/(?:null|stderr|stdout|fd)\b|&\d)[^\s|&>]/,
+  /\btee\s+(?:-\S+\s+)*(?!\/dev\/(?:null|stderr|stdout|fd)\b)[^\s|&>-]/,
+];
+
+function detectShellWrite(call: ToolCall): string | null {
+  if (call.command && SHELL_WRITE_PATTERNS.some((p) => p.test(call.command!))) {
+    return "Refused — writing a file via shell redirection bypasses per-file approval. Use the write/edit tool instead.";
+  }
+  return null;
+}
+
+// ── no-hardcoded-secret ──────────────────────────────────────────────────
+
+// Known credential FORMATS only — high-confidence, low false-positive. A short
+// placeholder (`sk-xxx`) or prose mentioning a key does not match; the fuzzier
+// "looks like a secret assignment" heuristics stay advisory in rules/security.md.
+const SECRET_LITERAL_PATTERNS: RegExp[] = [
+  /\bsk-[A-Za-z0-9_-]{20,}/,                  // OpenAI / Anthropic-style provider keys
+  /\b(?:AKIA|ASIA)[0-9A-Z]{16}\b/,            // AWS access key id
+  /\bgh[pousra]_[A-Za-z0-9]{30,}/,            // GitHub tokens (ghp_, gho_, …, gha_)
+  /\bgithub_pat_[A-Za-z0-9_]{20,}/,           // GitHub fine-grained PAT
+  /-----BEGIN (?:[A-Z0-9]+ )*PRIVATE KEY-----/, // PEM private-key block
+];
+
+function detectHardcodedSecret(call: ToolCall): string | null {
+  if (call.content && SECRET_LITERAL_PATTERNS.some((p) => p.test(call.content!))) {
+    return "Refused — hardcoded secret literal in written content. Use an environment variable or a secrets manager; never commit a key. If one was staged, rotate it.";
+  }
+  return null;
 }
 
 // ── no-secret-access ─────────────────────────────────────────────────────
@@ -82,7 +121,7 @@ function detectSecretAccess(call: ToolCall): string | null {
   return null;
 }
 
-// ── no-force-push ────────────────────────────────────────────────────────
+// ── no-git-destructive ───────────────────────────────────────────────────
 
 function isForceFlag(token: string): boolean {
   // --force, --force-with-lease[=ref], -f, and merged short clusters (-fv, -vf).
@@ -93,16 +132,26 @@ function isForceFlag(token: string): boolean {
   );
 }
 
-function isForcePush(tokens: string[]): boolean {
+function isGitDestructive(tokens: string[]): boolean {
   const gitIdx = tokens.findIndex((t) => t === "git" || t.endsWith("/git"));
   if (gitIdx === -1) return false;
-  if (!tokens.slice(gitIdx + 1).includes("push")) return false;
-  return tokens.some(isForceFlag);
+  const after = tokens.slice(gitIdx + 1);
+  // Hook / signature bypass on any git command.
+  if (after.some((t) => t === "--no-verify" || t === "--no-gpg-sign")) return true;
+  // Force-push (any flag form).
+  if (after.includes("push") && after.some(isForceFlag)) return true;
+  // Hard reset — destroys uncommitted work and rewinds the branch.
+  if (after.includes("reset") && after.includes("--hard")) return true;
+  // Force-clean — permanently deletes untracked files (-f, -fd, -xf, …).
+  if (after.includes("clean") && after.some((t) => /^-[a-z]*f/.test(t) || t === "--force")) return true;
+  // Amend-in-place of a (likely pushed) commit — rewrites shared history.
+  if (after.includes("commit") && after.includes("--amend") && after.includes("--no-edit")) return true;
+  return false;
 }
 
-function detectForcePush(call: ToolCall): string | null {
-  if (call.command && anyPipeline(call.command, (stages) => stages.some((s) => isForcePush(tokenize(s))))) {
-    return `Refused — force push rewrites shared history: ${truncate(call.command)}`;
+function detectGitDestructive(call: ToolCall): string | null {
+  if (call.command && anyPipeline(call.command, (stages) => stages.some((s) => isGitDestructive(tokenize(s))))) {
+    return `Refused — destructive git command rewrites history or destroys work; make a new commit / hand off to the user: ${truncate(call.command)}`;
   }
   return null;
 }
@@ -222,14 +271,93 @@ function detectSudo(call: ToolCall): string | null {
   return null;
 }
 
+// ── migrated destructive-command policies ────────────────────────────────
+
+// Each is a faithful migration of a former TTSR rule: a set of command
+// patterns and a refusal reason carrying the rule's "right approach". The
+// `[^|;&\n]*` segments keep a match inside one command.
+function commandMatches(call: ToolCall, patterns: RegExp[]): boolean {
+  return !!call.command && patterns.some((p) => p.test(call.command!));
+}
+
+const CLOUD_DESTROY_PATTERNS = [
+  /aws\s+\S+\s+(?:delete|terminate)-[a-z-]+/,
+  /terraform\s+(?:apply|destroy)\b/,
+  /gcloud\b[^|;&\n]*\bdelete\b/,
+  /kubectl\s+delete\b/,
+];
+function detectCloudDestroy(call: ToolCall): string | null {
+  return commandMatches(call, CLOUD_DESTROY_PATTERNS)
+    ? `Refused — destroys shared infrastructure; hand the command to the user (or produce a plan to review): ${truncate(call.command!)}`
+    : null;
+}
+
+const DEPLOY_PATTERNS = [
+  /make\s+(?:apply|deploy[a-z-]*|push-(?:to-prod|staging|live|release)[a-z-]*)\b/,
+  /npm\s+run\s+deploy\b/,
+  /(?:yarn|pnpm)\s+deploy\b/,
+  /cap\s+\S+\s+deploy\b/,
+  /fly\s+deploy\b/,
+  /vercel\s+(?:--prod\b|deploy\s+--prod\b)/,
+  /wrangler\s+deploy\b/,
+  /(?:sls|serverless)\s+deploy\b/,
+  /kubectl\s+apply\b/,
+  /helm\s+(?:install|upgrade)\b/,
+];
+function detectDeploy(call: ToolCall): string | null {
+  return commandMatches(call, DEPLOY_PATTERNS)
+    ? `Refused — changes a production/shared environment; the user should run the deploy: ${truncate(call.command!)}`
+    : null;
+}
+
+const DB_MUTATION_PATTERNS = [
+  /\b(?:psql|mysql|mariadb|sqlite3?|mongo(?:sh)?|redis-cli)\b[^|;&\n]*\b(?:DROP|TRUNCATE|ALTER\s+TABLE|DELETE\s+FROM)\b/i,
+  /\b(?:psql|mysql|mariadb|sqlite3?)\b[^|;&\n]*\bUPDATE\s+\w+\s+SET\b/i,
+  /\b(?:psql|mysql|mariadb)\b[^|;&\n]*\s<\s*\S+\.sql/,
+];
+function detectDbMutation(call: ToolCall): string | null {
+  return commandMatches(call, DB_MUTATION_PATTERNS)
+    ? `Refused — mutates shared database state via a CLI; use a migration tool or hand the statement to the user: ${truncate(call.command!)}`
+    : null;
+}
+
+const DD_DISK_PATTERNS = [
+  /\bdd\s[^|;&\n]*\bof=\/dev\//,
+  /\bdd\s[^|;&\n]*\bif=\/dev\//,
+];
+function detectDdDisk(call: ToolCall): string | null {
+  return commandMatches(call, DD_DISK_PATTERNS)
+    ? `Refused — dd against a raw device can overwrite a disk irreversibly; the user should run it after checking the device name: ${truncate(call.command!)}`
+    : null;
+}
+
+const BROAD_CHMOD_PATTERNS = [
+  // Broad target itself (optionally a single trailing slash) — NOT a subpath
+  // like /home/deploy/app, which is the safe "name the exact dir" case.
+  /\bchmod\s+-[a-zA-Z]*[Rr][a-zA-Z]*\s+\S+\s+(?:\/|~|\$HOME|\/etc|\/usr|\/var|\/opt|\/Users|\/home)\/?(?:\s|$)/,
+  /\bchmod\s+-[a-zA-Z]*[Rr][a-zA-Z]*\s+\S+\s+\*(?:\s|$)/,
+];
+function detectBroadChmod(call: ToolCall): string | null {
+  return commandMatches(call, BROAD_CHMOD_PATTERNS)
+    ? `Refused — recursive chmod against a broad target can brick the system; name the exact path(s) instead: ${truncate(call.command!)}`
+    : null;
+}
+
 // ── registry → detector wiring ───────────────────────────────────────────
 
 const DETECTORS: Record<string, Detector> = {
   "no-secret-access": detectSecretAccess,
-  "no-force-push": detectForcePush,
+  "no-hardcoded-secret": detectHardcodedSecret,
+  "no-shell-write": detectShellWrite,
+  "no-git-destructive": detectGitDestructive,
   "no-curl-pipe-shell": detectCurlPipeShell,
   "no-broad-rm": detectBroadRm,
   "no-sudo": detectSudo,
+  "no-cloud-destroy": detectCloudDestroy,
+  "no-deploy": detectDeploy,
+  "no-db-mutation": detectDbMutation,
+  "no-dd-disk": detectDdDisk,
+  "no-broad-chmod": detectBroadChmod,
 };
 
 export function evaluate(call: ToolCall): Verdict | null {

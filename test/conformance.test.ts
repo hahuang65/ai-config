@@ -13,13 +13,13 @@ const HARNESSES = ["oh-my-pi", "Claude Code"];
 function ompBlocks(call: ToolCall): boolean {
   let handler: ((e: unknown) => any) | undefined;
   ompGuard({ on: (n: string, f: any) => { if (n === "tool_call") handler = f; } } as any);
-  const verdict = handler!({ toolName: call.tool, input: { command: call.command, path: call.path } });
+  const verdict = handler!({ toolName: call.tool, input: { command: call.command, path: call.path, content: call.content } });
   return !!(verdict && verdict.block);
 }
 
 // Claude Code (tier B): drive the command-hook shim over stdin/stdout.
 async function claudeBlocks(call: ToolCall): Promise<boolean> {
-  const payload = { tool_name: call.tool, tool_input: { command: call.command, file_path: call.path } };
+  const payload = { tool_name: call.tool, tool_input: { command: call.command, file_path: call.path, content: call.content } };
   const proc = Bun.spawn(["bun", `${import.meta.dir}/../harnesses/claude/hooks/guard.ts`], {
     stdin: Buffer.from(JSON.stringify(payload)),
     stdout: "pipe",
@@ -82,6 +82,6 @@ test("does not report an uncovered non-floor policy as a gap", () => {
   for (const policy of floorPolicies()) {
     coverage[policy.id] = { "oh-my-pi": true, "Claude Code": true };
   }
-  coverage["no-force-push"] = { "oh-my-pi": false, "Claude Code": false };
+  coverage["no-shell-write"] = { "oh-my-pi": false, "Claude Code": false };
   expect(findFloorGaps(coverage, HARNESSES)).toEqual([]);
 });

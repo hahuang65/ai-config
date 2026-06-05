@@ -623,45 +623,26 @@ test_guide_skill_sync() {
 }
 
 # ---------------------------------------------------------------------------
-# 11a. Rule frontmatter: TTSR (has condition:) and rulebook (no condition:)
+# 11a. Rules are advisory-only — TTSR is retired (ADR-0012)
 #
-# omp's rule loader splits rules into two buckets based on frontmatter shape:
-# rules with `condition:` go to TTSR; rules without go to the rulebook (when
-# `description:` is present). A rule missing the right fields is silently
-# dropped or wrongly bucketed. Validate the shape so drift is caught at the
-# pipeline layer, not at omp runtime.
+# Every command/content guardrail enforcement now lives in the guard core, so
+# no rule should carry stream-rule frontmatter (`condition:`/`scope:`). This
+# check fails a re-introduced enforcement rule at the pipeline layer instead of
+# letting it become a silently omp-only guardrail again. The rulebook
+# `description:` shape is validated separately below.
 # ---------------------------------------------------------------------------
 
-_count_condition_entries() {
-  # Counts `- ` list entries directly under `condition:` in frontmatter.
-  awk '
-    /^condition:/ { in_cond = 1; next }
-    in_cond && /^[a-zA-Z_]/ { in_cond = 0 }
-    in_cond && /^[[:space:]]+-[[:space:]]/ { count++ }
-    END { print count + 0 }
-  '
-}
-
-test_ttsr_rule_frontmatter() {
-  section "Rule frontmatter: TTSR"
+test_no_ttsr_frontmatter() {
+  section "Rules are advisory-only (TTSR retired)"
   local rule_file
   for rule_file in "$REPO_DIR"/rules/*.md; do
     local label="rules/$(basename "$rule_file")"
     local fm
     fm="$(extract_frontmatter "$rule_file")"
-    # Skip rules without `condition:` — those are rulebook (or always-apply)
-    grep -q "^condition:" <<<"$fm" || continue
-    if grep -q "^description:" <<<"$fm"; then
-      pass "$label (TTSR) has description:"
+    if grep -qE "^(condition|scope):" <<<"$fm"; then
+      fail "$label" "carries retired stream-rule frontmatter (condition:/scope:) — enforcement belongs in the guard core (ADR-0012)"
     else
-      fail "$label" "TTSR rule (has condition:) is missing 'description:'"
-    fi
-    local cond_count
-    cond_count="$(_count_condition_entries <<<"$fm")"
-    if [[ "$cond_count" -gt 0 ]]; then
-      pass "$label has $cond_count condition entries"
-    else
-      fail "$label" "TTSR rule has empty or malformed 'condition:' list"
+      pass "$label is advisory (no condition:/scope:)"
     fi
   done
 }
@@ -1038,7 +1019,7 @@ run_content() {
   run test_agent_rule_deps
   run test_symlink_targets
   run test_guide_skill_sync
-  run test_ttsr_rule_frontmatter
+  run test_no_ttsr_frontmatter
   run test_rulebook_rule_frontmatter
   run test_no_forbidden_claude_centric_phrasing
   run test_stale_stubs

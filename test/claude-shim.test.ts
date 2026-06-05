@@ -22,6 +22,14 @@ test("Claude shim denies a bash credential read through the shared core", async 
   expect(out).toContain('"permissionDecision":"deny"');
 });
 
+test("Claude shim denies an Edit whose new_string adds a hardcoded secret", async () => {
+  // Edit carries content in `new_string`, not `content` — the shim must forward it.
+  // The key is concatenated so this test file is not itself a secret literal.
+  const key = "AKIA" + "IOSFODNN7EXAMPLE";
+  const out = await runShim({ tool_name: "Edit", tool_input: { file_path: "config.ts", new_string: `const id = '${key}';` } });
+  expect(out).toContain('"permissionDecision":"deny"');
+});
+
 test("Claude shim stays silent on an ordinary read", async () => {
   const out = await runShim({ tool_name: "Read", tool_input: { file_path: "/home/user/README.md" } });
   expect(out.trim()).toBe("");

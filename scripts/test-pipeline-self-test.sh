@@ -221,25 +221,26 @@ EOF
 }
 
 # ---------------------------------------------------------------------------
-# Self-test 9: TTSR rule (has condition:) missing description
+# Self-test 9: a re-introduced TTSR rule (has condition:/scope:) fails the gate
 # ---------------------------------------------------------------------------
 
-test_ttsr_rule_missing_description_fails() {
-  local f="$REPO_DIR/rules/test-self-test-ttsr-no-desc.md"
+test_reintroduced_ttsr_rule_fails() {
+  local f="$REPO_DIR/rules/test-self-test-ttsr.md"
   cat >"$f" <<'EOF'
 ---
+description: A re-introduced enforcement rule — should be rejected (TTSR retired, ADR-0012).
 condition:
   - 'foo'
 scope: tool:bash
 ---
 
-Body of a TTSR rule that's missing the required description field.
+Enforcement belongs in the guard core now, not in a stream rule.
 EOF
 
   if run_pipeline; then
-    self_fail "TTSR rule missing description: test-pipeline.sh should exit non-zero"
+    self_fail "re-introduced TTSR rule: test-pipeline.sh should exit non-zero"
   else
-    self_pass "TTSR rule missing description: test-pipeline.sh correctly exits non-zero"
+    self_pass "re-introduced TTSR rule: test-pipeline.sh correctly exits non-zero"
   fi
 
   rm -f "$f"
@@ -436,7 +437,7 @@ main() {
   test_agent_missing_rule_fails
   test_stale_stub_fails
   test_forbidden_already_loaded_in_context_fails
-  test_ttsr_rule_missing_description_fails
+  test_reintroduced_ttsr_rule_fails
   test_rulebook_rule_missing_description_fails
   test_omp_install_target_missing_fails
   test_cross_discovery_enabled_fails

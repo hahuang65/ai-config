@@ -2,7 +2,7 @@
 
 Centralized configuration for AI coding harnesses — Claude Code and oh-my-pi. Skills, commands, agents, and rules authored once, installed into both by `install.sh`.
 
-> **Editing or adding skills / commands / agents / rules?** Read [`AGENTS.md`](AGENTS.md) — the authoring contract: progressive disclosure, the per-primitive harness matrix (what each is and which harnesses consume it), and the oh-my-pi rule mechanisms (rulebook / TTSR / hooks). `make test` is the pre-commit gate that enforces it (run `make` to list targets).
+> **Editing or adding skills / commands / agents / rules?** Read [`AGENTS.md`](AGENTS.md) — the authoring contract: progressive disclosure, the per-primitive harness matrix (what each is and which harnesses consume it), and how rules (advisory, rulebook) differ from guardrails (enforced once in the shared guard core). `make test` is the pre-commit gate that enforces it (run `make` to list targets).
 
 ## Quick Start
 
@@ -188,7 +188,7 @@ The [`example/`](example/) directory contains sample artifacts from a previous v
     ├── Refactor together when GREEN
     └── visual-explainer → prd.html, tasks.html, diff-review.html
 
-Rules (11 files — 3 rulebook + 8 TTSR) + Hooks (5 oh-my-pi-only TS modules — 4 pre + 1 post). In Claude Code rules auto-load as global instructions every turn; in oh-my-pi the 3 rulebook rules load on demand via `rule://<name>`, the 8 TTSR rules fire mid-stream on regex match, and the 5 hooks (per ADR-0006) fire on the actual `tool_call` / `tool_result` events with structured input parsing for patterns where regex had known bypasses.
+Rules (6 advisory files). In Claude Code they auto-load as global instructions every turn; in oh-my-pi they load on demand from the rulebook via `rule://<name>`. All *enforcement* lives in the shared guard core (per ADR-0012), not in rules — see Guardrails below.
 Agents read a subset relevant to their role.
 ```
 
@@ -199,7 +199,7 @@ Agents read a subset relevant to their role.
 ├── skills/           17 workflow skills (build, grill, prd, tasks, implement, implement-coach, ...)
 ├── commands/         13 slash commands (/diff-review, /implement-coach, /pickup, ...)
 ├── agents/           7 sub-agents (architect, tdd-guide, code-reviewer, ...)
-├── rules/            11 rules (3 advisory rulebook + 8 TTSR enforcement)
+├── rules/            6 advisory rules (rulebook; all enforcement is in shared/)
 ├── harnesses/        Pluggable per-harness modules, each with a manifest.sh (ADR-0010)
 │   ├── claude/         Claude Code module (settings.json, hooks.json, statusline.sh, hooks/guard.ts)
 │   ├── omp/            oh-my-pi module (config.yml, RULES.md, extensions/, hooks/{pre,post}/)
@@ -285,41 +285,35 @@ Agents read a subset relevant to their role.
 
 ### Rules
 
-Rules split into two buckets per [ADR-0003](docs/adr/0003-ttsr-for-omp-runtime-enforcement.md). In Claude Code all rules auto-load as global instructions; in oh-my-pi the **rulebook** rules are listed for on-demand loading via `rule://<name>` and the **TTSR** rules fire mid-stream on regex match.
-
-#### Rulebook (advisory — loaded on demand in oh-my-pi)
+`rules/` is **advisory guidance only** (per [ADR-0012](docs/adr/0012-consolidate-enforcement-retire-ttsr.md)) — no rule blocks anything; all enforcement lives in the guard core (below). In Claude Code rules auto-load as global instructions; in oh-my-pi they're listed in the **rulebook** for on-demand loading via `rule://<name>` ([ADR-0002](docs/adr/0002-description-only-rules-in-rulebook.md)). No rule carries `condition:`/`scope:` — the retired TTSR frontmatter; the gate rejects any that does.
 
 | Rule | Scope |
 |------|-------|
-| `coding-style` | Immutability, file size limits, naming conventions, nesting, magic numbers |
+| `coding-style` | Immutability, file size limits, naming, nesting, magic numbers |
 | `testing` | TDD, behavior testing, no shared state, shared setup |
 | `performance` | Model routing, profiling before optimizing, caching, timeouts |
-| `git-commit` | Commit message format (`@~/.gitmessage`), branching, staging policy, `~/Projects/a5/**` staging exception |
+| `git-commit` | Commit message format (`@~/.gitmessage`), branching, staging policy |
+| `mise` | Toolchain managed by mise; ignore other version managers |
+| `security` | Security anti-patterns that are *guidance* (string-concat SQL, `eval`, `exec`-concat, input→file API) + always-on input/output/authz/logging rules. The hard-blockable part (hardcoded secret literals) is the `no-hardcoded-secret` guardrail. |
 
-#### TTSR (enforcement — regex-triggered mid-stream in oh-my-pi)
+#### Guardrails — shared policy core + per-harness adapters ([ADR-0011](docs/adr/0011-guardrail-policies-ports-and-adapters.md), [ADR-0012](docs/adr/0012-consolidate-enforcement-retire-ttsr.md))
 
-| Rule | Triggers on |
-|------|-------------|
-| `security` | Hardcoded secrets, string-concat SQL, user-input → file APIs, `eval`, shell injection |
-| `no-git-destructive` | Force-push, `--no-verify`, `--no-gpg-sign`, `--amend --no-edit`, broad `reset --hard`, `clean -f` |
-| `no-cloud-destroy` | AWS `delete-*` / `terminate-*`, Terraform `apply` / `destroy`, gcloud delete, `kubectl delete` |
-| `no-shell-write` | File writes via shell redirection (`echo >`, `cat >`, `tee`) — forces use of Write/Edit tools |
-| `no-deploy` | `make deploy/apply/push`, `npm/yarn/pnpm run deploy`, `cap … deploy`, `fly deploy`, `vercel --prod`, `wrangler deploy`, `serverless deploy`, `kubectl apply`, `helm install/upgrade` |
-| `no-db-mutation` | `psql/mysql/mariadb/sqlite3/mongosh/redis-cli` with DROP/TRUNCATE/ALTER TABLE/DELETE FROM/UPDATE SET, or `.sql` file fed into the CLI |
-| `no-dd-disk` | `dd` with `of=/dev/...` or `if=/dev/...` (raw disk overwrite/read) |
-| `no-broad-chmod` | `chmod -R` against `/`, `~`, `$HOME`, `/etc`, `/usr`, `/var`, `/opt`, `/Users`, `/home`, or `*` |
-
-#### Guardrails — shared policy core + per-harness adapters (per [ADR-0011](docs/adr/0011-guardrail-policies-ports-and-adapters.md))
-
-Security guardrails are defined **once** and projected into each harness (ports-and-adapters). A canonical registry (`shared/policy-registry.ts`) lists each guardrail by ID with a `floor` flag; the detection logic lives once in `shared/guard-core.ts`; each harness wires it in via a thin adapter sized to its enforcement tier. This consolidated four duplicated oh-my-pi hooks plus a separate Claude shell hook into one core.
+Security guardrails are defined **once** and projected into each harness (ports-and-adapters). A canonical registry (`shared/policy-registry.ts`) lists each guardrail by ID with a `floor` flag; the detection logic lives once in `shared/guard-core.ts` (inspecting `command`, `path`, and write `content`); each harness wires it in via a thin adapter sized to its enforcement tier. ADR-0012 finished the consolidation — every command/content enforcement that used to be an oh-my-pi TTSR rule now lives here, so it enforces uniformly across harnesses.
 
 | Policy | Floor | What it blocks |
 |--------|:-----:|----------------|
-| `no-secret-access` | ✓ | Credential file reads via path or bash readers (incl. process/command substitution) |
+| `no-secret-access` | ✓ | Credential file reads via path or bash readers (incl. substitution) |
+| `no-hardcoded-secret` | ✓ | Writing a secret literal (known key formats: `sk-…`, `AKIA…`, PEM, GitHub tokens) into a file |
 | `no-curl-pipe-shell` | ✓ | curl/wget piped or process-substituted into an interpreter |
 | `no-broad-rm` | ✓ | `rm -rf` / `find … -delete` against broad targets (`/`, `~`, `$HOME`, `*`) |
 | `no-sudo` | ✓ | Any `sudo` invocation |
-| `no-force-push` | — | Force-push (covered, non-floor) |
+| `no-cloud-destroy` | ✓ | aws `delete-*`/`terminate-*`, terraform `apply`/`destroy`, gcloud delete, kubectl delete |
+| `no-db-mutation` | ✓ | DROP/TRUNCATE/DELETE/UPDATE via a DB CLI, or a `.sql` piped in |
+| `no-dd-disk` | ✓ | `dd` with `of=/dev/…` or `if=/dev/…` |
+| `no-broad-chmod` | ✓ | `chmod -R` against a broad system/home target (`/`, `~`, `$HOME`, `/etc`, …, `*`) |
+| `no-git-destructive` | ✓ | force-push, `--no-verify`/`--no-gpg-sign`, `reset --hard`, `clean -f`, amend-in-place |
+| `no-deploy` | ✓ | make/npm/fly/vercel/wrangler/helm/`kubectl apply` deploys |
+| `no-shell-write` | — | File writes via shell redirection (`echo >`, `cat >`, `tee`) — the lone non-floor (conformance discriminator) |
 
 - **oh-my-pi (tier A)** runs the core in-process: `harnesses/omp/hooks/pre/guard-policies.ts`. The output redactor `post/redact-keys.ts` stays as a separate post-tool concern.
 - **Claude Code (tier B)** runs the same core through a stdin/stdout shim: `harnesses/claude/hooks/guard.ts` (registered in `settings.json`); its static `permissions.deny` denylist remains as defense-in-depth.
@@ -336,13 +330,13 @@ This repository serves two AI coding harnesses with different runtime models. `i
 | Commands | `~/.claude/commands/` (symlinked, dedup against skills) | `~/.omp/agent/commands/` (all symlinked) |
 | Agents | `~/.claude/agents/` (symlinked) | `~/.omp/agent/agents/` (symlinked) |
 | Rules | `~/.claude/rules/` (symlinked) | `~/.omp/agent/rules/` (symlinked) |
-| Rule semantics | Auto-loaded as global instructions every turn | **Rulebook** (loaded on demand via `rule://`) + **TTSR** (regex-triggered mid-stream) |
+| Rule semantics (advisory) | Auto-loaded as global instructions every turn | **Rulebook** — loaded on demand via `rule://` |
 | Permissions format | `"Bash(echo *)"` in JSON arrays | `tools.approvalMode: write` tiers + `tools.approval.<tool>` overrides in YAML |
-| Per-pattern bash allowlist | Yes (~80 entries) | **No** — TTSR rules fill this gap |
+| Per-pattern bash allowlist | Yes (~80 entries) | **No** — the shared guard core enforces the guardrails instead |
 | Permission source of truth | `harnesses/claude/settings.json` | Hand-authored `harnesses/omp/config.yml` |
 | Guardrail adapter | Tier B: `harnesses/claude/hooks/guard.ts` shim → shared core, + static `permissions.deny` | Tier A: `harnesses/omp/hooks/pre/guard-policies.ts` → shared core, + `post/redact-keys.ts` |
 
-`harnesses/claude/settings.json` is edited directly and is Claude Code's permission source of truth. `harnesses/omp/config.yml` is hand-authored — Claude's per-pattern allowlist has no oh-my-pi equivalent, so the two permission *models* are maintained independently. But cross-harness **guardrails** (never read secrets, no force-push, no broad rm, no sudo, no curl-pipe-to-shell) are no longer duplicated: they live once in `shared/` and project into each harness via its adapter, with a conformance test enforcing the floor everywhere (per [ADR-0011](docs/adr/0011-guardrail-policies-ports-and-adapters.md), superseding ADR-0004's decoupling stance). TTSR rules in `rules/` remain oh-my-pi's per-pattern enforcement layer.
+`harnesses/claude/settings.json` is edited directly and is Claude Code's permission source of truth. `harnesses/omp/config.yml` is hand-authored — Claude's per-pattern allowlist has no oh-my-pi equivalent, so the two permission *models* are maintained independently. But cross-harness **guardrails** (never read/write secrets, no curl-pipe-to-shell, no broad rm/chmod, no sudo, no cloud-destroy/deploy/db-mutation/dd-to-disk, no destructive git, no shell-redirect writes) are no longer duplicated: they live once in `shared/` and project into each harness via its adapter, with a conformance test enforcing the floor everywhere (per [ADR-0011](docs/adr/0011-guardrail-policies-ports-and-adapters.md), superseding ADR-0004's decoupling stance). ADR-0012 finished the job — the oh-my-pi TTSR rules were retired and folded into this core, so `rules/` is now advisory-only.
 
 ## Installation Details
 
@@ -390,7 +384,7 @@ This project stands on the shoulders of others:
 - **[Matt Pocock's skills-TDD pipeline](https://www.aihero.dev/skills-tdd)** and the broader [skills repo](https://github.com/mattpocock/skills) — the core pipeline (`grill-with-docs → to-prd → to-issues → tdd`) and Matt's stance on vertical-slice TDD ("write one test, one implementation, repeat — batched tests describe imagined behavior, not actual behavior") drive the design of `/grill`, `/prd`, `/tasks`, and the vertical-slice rewrites of `/implement` and `/implement-coach`. The standalone tools `/handoff` ([article](https://www.aihero.dev/skills-handoff)), `/prototype`, and `/improve-codebase` (renamed from `improve-codebase-architecture`) are also ports of Matt's skills, with internal references rewritten to match this repo's naming. The format files (CONTEXT-FORMAT.md, ADR-FORMAT.md) and the LANGUAGE/DEEPENING/HTML-REPORT/INTERFACE-DESIGN supporting docs are taken directly from his repo.
 - **[nicobailon/visual-explainer](https://github.com/nicobailon/visual-explainer)** — The `visual-explainer` skill is taken wholesale from this repository, with only minor modifications. All the HTML visual generation (PRD, tasks, diff-review, architecture diagrams, slides, etc.) is powered by this work.
 - **[affaan-m/everything-claude-code](https://github.com/affaan-m/everything-claude-code)** — The rules and agent definitions in this repo are borrowed and adapted from this collection. The coding-style, testing, security, and performance rules, as well as the agent configurations (architect, tdd-guide, code-reviewer, etc.), draw heavily from this source.
-- **[can1357/oh-my-pi](https://github.com/can1357/oh-my-pi)** ([docs](https://omp.sh/docs)) — The second harness this repo configures. The **TTSR** (time-traveling stream rules) concept — mid-stream regex-triggered rule injection with stream-abort + retry — is oh-my-pi's contribution to the cross-harness rule shape and is what makes `rules/security.md` and the seven narrow `no-*.md` rules into enforcement rather than advisory content. The YAML-based extension / hook / skill model oh-my-pi uses informed how this repo's per-harness boundaries got drawn (see [ADR-0004](docs/adr/0004-omp-permissions-and-hooks-decoupled.md) and [ADR-0005](docs/adr/0005-flat-shared-config-no-per-harness-scoping.md)).
+- **[can1357/oh-my-pi](https://github.com/can1357/oh-my-pi)** ([docs](https://omp.sh/docs)) — The second harness this repo configures. The **TTSR** (time-traveling stream rules) concept — mid-stream regex-triggered rule injection with stream-abort + retry — was oh-my-pi's contribution to the cross-harness rule shape; it carried the command/content enforcement rules until [ADR-0012](docs/adr/0012-consolidate-enforcement-retire-ttsr.md) consolidated them into the shared guard core and retired TTSR. The YAML-based extension / hook / skill model oh-my-pi uses informed how this repo's per-harness boundaries got drawn (see [ADR-0004](docs/adr/0004-omp-permissions-and-hooks-decoupled.md) and [ADR-0005](docs/adr/0005-flat-shared-config-no-per-harness-scoping.md)).
 
 ## License
 

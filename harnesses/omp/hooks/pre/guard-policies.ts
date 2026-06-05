@@ -17,10 +17,12 @@ export default function (pi: HookAPI): void {
   pi.on("tool_call", (event) => {
     const input = (event.input ?? {}) as Record<string, unknown>;
     const rawPath = input.path ?? input.file_path;
+    const rawContent = input.content ?? input.new_string;
     const verdict = evaluate({
       tool: String(event.toolName ?? ""),
       command: input.command != null ? String(input.command) : undefined,
       path: rawPath != null ? String(rawPath) : undefined,
+      content: rawContent != null ? String(rawContent) : undefined,
     });
     if (verdict) return { block: true, reason: verdict.reason };
   });
