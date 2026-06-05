@@ -6,7 +6,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "~/.dotfiles/ai/scripts/hooks/cost-tracker.sh",
+            "command": "~/.dotfiles/ai/harnesses/claude/hooks/cost-tracker.sh",
             "timeout": 10000
           }
         ],

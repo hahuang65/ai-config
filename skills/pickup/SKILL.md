@@ -18,7 +18,7 @@ ls -t /tmp/handoff-*.md 2>/dev/null
 
 - `2>/dev/null` swallows the "no matches" error when none exist.
 - Newest-first.
-- Never use `$TMPDIR` or any other shell variable — Claude Code's "Contains expansion" safety gate forces a permission prompt for any command containing `$VAR` / `${VAR}` / `$(...)` / backticks, even when the surrounding pattern is on the allowlist. `/handoff` hardcodes `/tmp/` for exactly this reason.
+- Never use `$TMPDIR` or any other shell variable — a harness safety gate may force a permission prompt for any command containing `$VAR` / `${VAR}` / `$(...)` / backticks, even when the surrounding pattern is on the allowlist. `/handoff` hardcodes `/tmp/` for exactly this reason.
 
 Pull the purpose line from any candidate with `grep -m1 '^# Handoff:' <absolute-path>` — again, no shell variables, using the absolute path from the listing.
 

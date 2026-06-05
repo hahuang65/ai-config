@@ -21,7 +21,7 @@ Unlike `/compact` (which summarizes the entire conversation for a *new* session 
 
 ## Where the Handoff Document Lives
 
-Write to **`/tmp/`** — a literal, OS-temp location that exists on Linux and macOS. Do not use `$TMPDIR` or any shell variable; commands that contain shell expansion (`$VAR`, `${VAR}`, `$(...)`, backticks) trip Claude Code's "Contains expansion" gate and force a permission prompt even when the surrounding pattern is on the allowlist. Hardcoding `/tmp/` keeps `/pickup`'s listing command simple and prompt-free.
+Write to **`/tmp/`** — a literal, OS-temp location that exists on Linux and macOS. Do not use `$TMPDIR` or any shell variable; a command containing shell expansion (`$VAR`, `${VAR}`, `$(...)`, backticks) can trip a harness's safety gate and force a permission prompt even when the surrounding pattern is allowlisted. Hardcoding `/tmp/` keeps `/pickup`'s listing command simple and prompt-free on any harness.
 
 Pick a name like `handoff-<short-slug>-<YYYYMMDD-HHMM>.md` — so the full path is e.g. `/tmp/handoff-curl-jq-perms-20260527-1335.md`.
 
