@@ -164,13 +164,12 @@
   "hooks": {
     "PreToolUse": [
       {
-        "matcher": "Bash",
+        "matcher": "Read|Edit|Write|Bash",
         "hooks": [
           {
             "type": "command",
-            "command": "~/.dotfiles/ai/scripts/hooks/deny-curl-to-interpreter.sh",
-            "if": "Bash(curl *)",
-            "timeout": 5
+            "command": "bun ~/.dotfiles/ai/harnesses/claude/hooks/guard.ts",
+            "timeout": 10
           }
         ]
       }

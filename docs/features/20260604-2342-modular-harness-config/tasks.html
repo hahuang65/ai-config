@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Modular Harness Config &amp; Shared Guardrails — Tasks</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --font-body:'Space Grotesk',system-ui,sans-serif;
+  --font-mono:'Space Mono','SF Mono',Consolas,monospace;
+  --bg:#eef2f6; --surface:#ffffff; --surface-elevated:#ffffff;
+  --grid:rgba(13,80,120,0.06);
+  --border:rgba(13,40,60,0.12); --border-bright:rgba(13,40,60,0.22);
+  --text:#0f2233; --text-dim:#5a6b7a;
+  --accent:#0e7490; --accent-dim:rgba(14,116,144,0.10);
+  --a:#0e7490; --a-dim:rgba(14,116,144,0.10);
+  --b:#047857; --b-dim:rgba(4,120,87,0.10);
+  --c:#b45309; --c-dim:rgba(180,83,9,0.10);
+  --hitl:#b91c1c; --hitl-dim:rgba(185,28,28,0.10);
+  --muted:#64748b; --muted-dim:rgba(100,116,139,0.10);
+}
+@media (prefers-color-scheme:dark){:root{
+  --bg:#0a1420; --surface:#101d2b; --surface-elevated:#15263a;
+  --grid:rgba(120,180,220,0.05);
+  --border:rgba(150,190,220,0.10); --border-bright:rgba(150,190,220,0.22);
+  --text:#dce7f0; --text-dim:#8aa0b2;
+  --accent:#38bdf8; --accent-dim:rgba(56,189,248,0.12);
+  --a:#38bdf8; --a-dim:rgba(56,189,248,0.12);
+  --b:#34d399; --b-dim:rgba(52,211,153,0.12);
+  --c:#fbbf24; --c-dim:rgba(251,191,36,0.12);
+  --hitl:#f87171; --hitl-dim:rgba(248,113,113,0.14);
+  --muted:#94a3b8; --muted-dim:rgba(148,163,184,0.12);
+}}
+*{box-sizing:border-box}
+body{margin:0;font-family:var(--font-body);color:var(--text);background-color:var(--bg);
+  background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);
+  background-size:28px 28px;line-height:1.6;overflow-wrap:break-word}
+.wrap{max-width:1080px;margin:0 auto;padding:48px 24px 96px}
+.kicker{font-family:var(--font-mono);font-size:11px;letter-spacing:3px;text-transform:uppercase;color:var(--accent);font-weight:700}
+h1{font-size:clamp(28px,5vw,42px);line-height:1.1;margin:10px 0 8px;letter-spacing:-0.5px}
+.sub{font-size:18px;color:var(--text-dim);max-width:72ch}
+.stats{display:flex;gap:12px;flex-wrap:wrap;margin:22px 0 8px}
+.stat{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:12px 18px;min-width:96px}
+.stat .v{font-family:var(--font-mono);font-size:26px;font-weight:700;color:var(--accent);line-height:1}
+.stat .k{font-size:11px;color:var(--text-dim);font-family:var(--font-mono);text-transform:uppercase;letter-spacing:1px;margin-top:4px}
+.stat.afk .v{color:var(--b)} .stat.hitl .v{color:var(--hitl)}
+section{margin:42px 0;scroll-margin-top:20px}
+h2{font-size:23px;letter-spacing:-0.3px;margin:0 0 6px;display:flex;align-items:baseline;gap:10px}
+h2 .n{font-family:var(--font-mono);font-size:13px;color:var(--accent);font-weight:700}
+.lead{color:var(--text-dim);max-width:75ch;margin:0 0 20px}
+.callout{border-left:3px solid var(--accent);background:var(--accent-dim);padding:12px 18px;border-radius:0 10px 10px 0;font-size:14px;margin:18px 0}
+.callout strong{color:var(--accent)}
+.mermaid-wrap{position:relative;background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:18px;overflow:auto}
+.mermaid{display:flex;justify-content:center}
+.mermaid .nodeLabel{color:var(--text)!important;font-family:var(--font-body)!important;font-size:14px!important}
+.mermaid .edgeLabel{color:var(--text-dim)!important;background-color:var(--bg)!important;font-family:var(--font-mono)!important;font-size:12px!important}
+.mermaid .edgeLabel rect{fill:var(--bg)!important}
+.zoom{position:absolute;top:10px;right:10px;display:flex;gap:4px}
+.zoom button{font-family:var(--font-mono);font-size:13px;width:28px;height:28px;border:1px solid var(--border);background:var(--surface);color:var(--text-dim);border-radius:6px;cursor:pointer}
+.zoom button:hover{color:var(--accent);border-color:var(--accent)}
+.legend{display:flex;gap:16px;flex-wrap:wrap;margin-top:12px;font-size:12px;font-family:var(--font-mono);color:var(--text-dim)}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.dot{width:11px;height:11px;border-radius:3px;display:inline-block}
+.dot.afk{background:var(--a)} .dot.root{background:var(--b)} .dot.hitl{background:var(--hitl)}
+table{width:100%;border-collapse:collapse;font-size:13.5px;background:var(--surface);border:1px solid var(--border);border-radius:12px;overflow:hidden}
+thead th{position:sticky;top:0;background:var(--surface-elevated);text-align:left;font-family:var(--font-mono);font-size:11px;text-transform:uppercase;letter-spacing:1px;color:var(--text-dim);padding:12px 14px;border-bottom:1px solid var(--border-bright)}
+tbody td{padding:12px 14px;border-bottom:1px solid var(--border);vertical-align:top}
+tbody tr:nth-child(even){background:color-mix(in srgb,var(--bg) 40%,var(--surface) 60%)}
+tbody tr:hover{background:var(--accent-dim)}
+.snum{font-family:var(--font-mono);font-weight:700;color:var(--accent)}
+.stitle{font-weight:600}
+.stitle small{display:block;font-weight:400;color:var(--text-dim);font-size:12px;margin-top:2px}
+.st{font-family:var(--font-mono);font-size:10.5px;padding:3px 8px;border-radius:5px;white-space:nowrap;display:inline-block}
+.st-afk{background:var(--b-dim);color:var(--b)} .st-hitl{background:var(--hitl-dim);color:var(--hitl)}
+.bl{font-family:var(--font-mono);font-size:12px;color:var(--text-dim)}
+.stories{font-family:var(--font-mono);font-size:11px;color:var(--muted)}
+.tracks{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:10px}
+.track{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:14px 16px;border-top:3px solid var(--a)}
+.track.iso{border-top-color:var(--b)}
+.track h3{margin:0 0 4px;font-size:14px;font-family:var(--font-mono)}
+.track p{margin:0;font-size:13px;color:var(--text-dim)}
+.track .chain{font-family:var(--font-mono);font-size:12px;color:var(--accent);margin-top:8px}
+@media (max-width:820px){.tracks{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <div class="kicker">Implementation Tasks · /build Phase 3</div>
+  <h1>Modular Harness Config &amp; Shared Guardrails — Tasks</h1>
+  <p class="sub">Six vertical slices. Two independent roots — the guardrail spine and the isolation track — converge on the module restructure. Each slice cuts end-to-end and is verifiable on its own.</p>
+  <div class="stats">
+    <div class="stat"><div class="v">6</div><div class="k">slices</div></div>
+    <div class="stat afk"><div class="v">5</div><div class="k">AFK</div></div>
+    <div class="stat hitl"><div class="v">1</div><div class="k">HITL</div></div>
+    <div class="stat"><div class="v">2</div><div class="k">parallel roots</div></div>
+  </div>
+</header>
+
+<section id="dag">
+  <h2><span class="n">01</span> Dependency graph</h2>
+  <p class="lead">Slices 1 and 2 start immediately and run in parallel. The guardrail spine widens (1 → 3 → 4, 5); the isolation track (2) stands alone. All converge on the restructure (6), the one gated slice.</p>
+  <div class="mermaid-wrap">
+    <div class="zoom"><button onclick="zm(0.9)">−</button><button onclick="zm(1.1)">+</button><button onclick="zr()">⟲</button></div>
+    <pre class="mermaid">
+flowchart TD
+  S1["Slice 1 · ROOT<br/>Tracer bullet — no-secret-access<br/>core + both adapters"]:::root
+  S2["Slice 2 · ROOT<br/>Disable cross-discovery<br/>+ isolation test"]:::root
+  S3["Slice 3<br/>Conformance test + matrix<br/>+ floor discriminator"]:::afk
+  S4["Slice 4<br/>Consolidate no-curl-pipe-shell<br/>(omp + Claude dupes removed)"]:::afk
+  S5["Slice 5<br/>Consolidate no-broad-rm + no-sudo<br/>floor complete"]:::afk
+  S6["Slice 6 · HITL<br/>Harness-module restructure<br/>+ generic install loop + pi slot"]:::hitl
+  S1 --> S3
+  S3 --> S4
+  S3 --> S5
+  S4 --> S6
+  S5 --> S6
+  S2 --> S6
+  classDef root fill:#04785722,stroke:#047857,stroke-width:2.5px
+  classDef afk fill:#0e749018,stroke:#0e7490,stroke-width:1.5px
+  classDef hitl fill:#b91c1c22,stroke:#b91c1c,stroke-width:2.5px,stroke-dasharray:6 4
+    </pre>
+  </div>
+  <div class="legend">
+    <span><span class="dot root"></span>Root — start now (AFK)</span>
+    <span><span class="dot afk"></span>AFK — no human needed</span>
+    <span><span class="dot hitl"></span>HITL — architectural review</span>
+  </div>
+</section>
+
+<section id="tracks">
+  <h2><span class="n">02</span> Two independent tracks</h2>
+  <div class="tracks">
+    <div class="track">
+      <h3>Guardrail spine</h3>
+      <p>One policy proves the whole path, then the floor widens and the duplicated guards collapse into the shared core.</p>
+      <div class="chain">1 → 3 → ( 4 · 5 )</div>
+    </div>
+    <div class="track iso">
+      <h3>Isolation track</h3>
+      <p>Independent of the guardrails — push-only sharing and the leak-proof invariant. Parallelizable from day one.</p>
+      <div class="chain">2 ⟂</div>
+    </div>
+  </div>
+  <div class="callout"><strong>Convergence:</strong> the restructure (Slice 6) waits on a green guardrail floor (4, 5) and a green isolation test (2), so it lands as a safe refactor under passing invariants.</div>
+</section>
+
+<section id="slices">
+  <h2><span class="n">03</span> Slice table</h2>
+  <p class="lead">Type, dependency, and the PRD user stories each slice covers.</p>
+  <table>
+    <thead><tr><th>#</th><th>Slice</th><th>Type</th><th>Blocked by</th><th>Stories</th></tr></thead>
+    <tbody>
+      <tr>
+        <td class="snum">1</td>
+        <td class="stitle">Tracer bullet — one floor policy through the guard core<small>no-secret-access: registry + core + oh-my-pi (A) + Claude shim (B), both block</small></td>
+        <td><span class="st st-afk">AFK</span></td>
+        <td class="bl">None · root</td>
+        <td class="stories">9–15</td>
+      </tr>
+      <tr>
+        <td class="snum">2</td>
+        <td class="stitle">Disable cross-discovery + isolation test<small>push-only sharing; planted-leak fixture must fail</small></td>
+        <td><span class="st st-afk">AFK</span></td>
+        <td class="bl">None · root</td>
+        <td class="stories">6, 7, 8</td>
+      </tr>
+      <tr>
+        <td class="snum">3</td>
+        <td class="stitle">Conformance test + coverage matrix + floor discriminator<small>adds no-force-push as a covered non-floor policy</small></td>
+        <td><span class="st st-afk">AFK</span></td>
+        <td class="bl">Slice 1</td>
+        <td class="stories">16–19, 23</td>
+      </tr>
+      <tr>
+        <td class="snum">4</td>
+        <td class="stitle">Consolidate no-curl-pipe-shell<small>removes the oh-my-pi hook AND the Claude shell hook — the drift poster child</small></td>
+        <td><span class="st st-afk">AFK</span></td>
+        <td class="bl">Slice 3</td>
+        <td class="stories">20</td>
+      </tr>
+      <tr>
+        <td class="snum">5</td>
+        <td class="stitle">Consolidate no-broad-rm + no-sudo<small>floor complete — four policies covered ×2</small></td>
+        <td><span class="st st-afk">AFK</span></td>
+        <td class="bl">Slice 3</td>
+        <td class="stories">20</td>
+      </tr>
+      <tr>
+        <td class="snum">6</td>
+        <td class="stitle">Harness-module restructure + generic install loop<small>module manifests, install loop, pi slot, idempotent/prune behavior test</small></td>
+        <td><span class="st st-hitl">HITL</span></td>
+        <td class="bl">Slices 2, 4, 5</td>
+        <td class="stories">1–5, 21, 22, 24</td>
+      </tr>
+    </tbody>
+  </table>
+  <div class="callout"><strong>Story coverage:</strong> all 24 PRD user stories are claimed across the six slices — guardrails (1, 3–5), isolation (2), structure &amp; install (6).</div>
+</section>
+
+</div>
+
+<script type="module">
+import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';
+const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+mermaid.initialize({
+  startOnLoad:true, theme:'base', look:'classic',
+  themeVariables:{
+    primaryColor:isDark?'#15263a':'#e2f1f6',
+    primaryBorderColor:isDark?'#38bdf8':'#0e7490',
+    primaryTextColor:isDark?'#dce7f0':'#0f2233',
+    lineColor:isDark?'#5a7a8c':'#94a3b8',
+    fontSize:'14px', fontFamily:'Space Grotesk, system-ui, sans-serif'
+  }
+});
+const wrap=document.querySelector('.mermaid');let scale=1;
+window.zm=f=>{scale*=f;wrap.style.transform=`scale(${scale})`;wrap.style.transformOrigin='top center';};
+window.zr=()=>{scale=1;wrap.style.transform='scale(1)';};
+</script>
+</body>
+</html>

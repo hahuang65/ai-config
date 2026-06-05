@@ -1,11 +1,14 @@
 #!/usr/bin/env bash
 #
-# install.sh — Install ai-config for Claude Code and oh-my-pi
+# install.sh — Install ai-config across pluggable harness modules
 #
-# Installs harness by harness: one self-contained block per harness symlinks
-# that harness's own config plus every shared primitive (skills, commands,
-# agents, rules) into the harness's config root. Run from the ai-config repo
-# root: ./install.sh
+# Each harness is a self-contained module under harnesses/<name>/ with a
+# manifest.sh declaring its config root, the shared categories it consumes, and
+# an install_module hook for its own runtime files. This script is a GENERIC
+# LOOP over those modules (ADR-0010): adding a harness is dropping in a module,
+# removing one is deleting its directory. Shared primitives (skills, commands,
+# agents, rules) stay flat at the repo root and are mirrored into each config
+# root. Run from the repo root: ./install.sh
 #
 set -euo pipefail
 
@@ -28,135 +31,105 @@ prune_dangling() {
   done
 }
 
-# ── Claude Code (first harness — config + all primitives) ────────────────────
-#
-# Self-contained block: the settings / statusline / hooks config plus skills,
-# rules, agents, and commands symlinked into ~/.claude/. Commands that share a
-# name with a skill are skipped — Claude Code registers both as slash commands,
-# which would duplicate /name.
+# Mirror one shared category from the repo root into a config root. Skills are
+# directories (symlinked with -n); commands/agents/rules are .md files. When
+# `dedupe` is true (Claude Code), a command sharing a name with a skill dir is
+# skipped — Claude registers both as /name, which would duplicate the command.
+mirror_category() {
+  local cat="$1" config_root="$2" dedupe="$3" entry name
+  case "$cat" in
+    skills)
+      for entry in "$REPO_DIR"/skills/*/; do
+        [ -d "$entry" ] || continue
+        name="$(basename "$entry")"
+        ln -sfn "$entry" "$config_root/skills/$name"
+        dim "  $config_root/skills/$name"
+      done
+      ;;
+    commands|agents|rules)
+      for entry in "$REPO_DIR/$cat"/*.md; do
+        [ -f "$entry" ] || continue
+        name="$(basename "$entry")"
+        if [ "$cat" = commands ] && [ "$dedupe" = true ] && [ -d "$REPO_DIR/skills/${name%.md}" ]; then
+          rm -f "$config_root/commands/$name"
+          dim "  $config_root/commands/$name — skipped (registered as skill)"
+          continue
+        fi
+        ln -sf "$entry" "$config_root/$cat/$name"
+        dim "  $config_root/$cat/$name"
+      done
+      ;;
+    *)
+      dim "  unknown shared category '$cat' — skipped"
+      ;;
+  esac
+}
 
-echo ""
-green "Installing Claude Code config..."
-mkdir -p "$HOME/.claude"
-ln -sf "$REPO_DIR/claude/settings.json" "$HOME/.claude/settings.json"
-dim "  ~/.claude/settings.json → $REPO_DIR/claude/settings.json"
-ln -sf "$REPO_DIR/claude/statusline.sh" "$HOME/.claude/statusline.sh"
-dim "  ~/.claude/statusline.sh → $REPO_DIR/claude/statusline.sh"
-ln -sf "$REPO_DIR/claude/hooks.json" "$HOME/.claude/hooks.json"
-dim "  ~/.claude/hooks.json → $REPO_DIR/claude/hooks.json"
+# Install a single harness module from its manifest. Run in a subshell so the
+# manifest's variables and install_module function never leak between modules.
+install_harness() {
+  local manifest="$1"
+  (
+    MOD="$(cd "$(dirname "$manifest")" && pwd)"
+    local harness_name
+    harness_name="$(basename "$MOD")"
 
-echo ""
-green "Installing skills, commands, agents, rules for Claude Code..."
-mkdir -p "$HOME/.claude/skills" "$HOME/.claude/commands" \
-         "$HOME/.claude/agents" "$HOME/.claude/rules"
-prune_dangling "$HOME/.claude/skills"
-prune_dangling "$HOME/.claude/commands"
-prune_dangling "$HOME/.claude/agents"
-prune_dangling "$HOME/.claude/rules"
-for skill in "$REPO_DIR"/skills/*/; do
-  name="$(basename "$skill")"
-  ln -sfn "$skill" "$HOME/.claude/skills/$name"
-  dim "  ~/.claude/skills/$name → $skill"
-done
-for rule in "$REPO_DIR"/rules/*.md; do
-  [ -f "$rule" ] || continue
-  name="$(basename "$rule")"
-  ln -sf "$rule" "$HOME/.claude/rules/$name"
-  dim "  ~/.claude/rules/$name → $rule"
-done
-for cmd in "$REPO_DIR"/commands/*.md; do
-  [ -f "$cmd" ] || continue
-  name="$(basename "$cmd")"
-  if [ -d "$REPO_DIR/skills/${name%.md}" ]; then
-    rm -f "$HOME/.claude/commands/$name"
-    dim "  ~/.claude/commands/$name — skipped (registered as skill)"
-    continue
-  fi
-  ln -sf "$cmd" "$HOME/.claude/commands/$name"
-  dim "  ~/.claude/commands/$name → $cmd"
-done
-for agent in "$REPO_DIR"/agents/*.md; do
-  [ -f "$agent" ] || continue
-  name="$(basename "$agent")"
-  ln -sf "$agent" "$HOME/.claude/agents/$name"
-  dim "  ~/.claude/agents/$name → $agent"
-done
+    # Manifest contract (defaults; the manifest overrides what it needs).
+    config_root=""
+    consumed_categories=()
+    dedupe_commands_with_skills=false
+    harness_pending=false
+    instruction_target=""
+    install_module() { :; }
 
-# ── oh-my-pi (second harness — config + all primitives at native priority) ────────
-#
-# Self-contained block: mirrors skills, commands, agents, rules into oh-my-pi's
-# user-level root (~/.omp/agent/ — the "agent" subfolder is oh-my-pi convention)
-# and installs the hand-authored config.yml. Per docs/adr/0001 we mirror at
-# native priority instead of relying on oh-my-pi's `.claude` fallback. The skill /
-# command duality skip-rule (skip commands with a matching skill dir) does NOT
-# apply here — oh-my-pi doesn't have Claude's duplicate-slash-command registration
-# problem, so all commands install.
+    # shellcheck disable=SC1090
+    . "$manifest"
 
-echo ""
-green "Installing oh-my-pi config..."
-mkdir -p "$HOME/.omp/agent"
-ln -sf "$REPO_DIR/omp/config.yml" "$HOME/.omp/agent/config.yml"
-dim "  ~/.omp/agent/config.yml → $REPO_DIR/omp/config.yml"
-ln -sf "$REPO_DIR/omp/RULES.md" "$HOME/.omp/agent/RULES.md"
-dim "  ~/.omp/agent/RULES.md → $REPO_DIR/omp/RULES.md"
+    if [ "${harness_pending}" = true ]; then
+      echo ""
+      dim "  $harness_name — pending slot, nothing installed (enforcement deferred)"
+      exit 0
+    fi
 
-echo ""
-green "Installing skills, commands, agents, rules, extensions, hooks for oh-my-pi..."
-mkdir -p "$HOME/.omp/agent/skills" "$HOME/.omp/agent/commands" \
-         "$HOME/.omp/agent/agents" "$HOME/.omp/agent/rules" \
-         "$HOME/.omp/agent/extensions" \
-         "$HOME/.omp/agent/hooks/pre" "$HOME/.omp/agent/hooks/post"
-prune_dangling "$HOME/.omp/agent/skills"
-prune_dangling "$HOME/.omp/agent/commands"
-prune_dangling "$HOME/.omp/agent/agents"
-prune_dangling "$HOME/.omp/agent/rules"
-prune_dangling "$HOME/.omp/agent/extensions"
-prune_dangling "$HOME/.omp/agent/hooks/pre"
-prune_dangling "$HOME/.omp/agent/hooks/post"
-for skill in "$REPO_DIR"/skills/*/; do
-  name="$(basename "$skill")"
-  ln -sfn "$skill" "$HOME/.omp/agent/skills/$name"
-  dim "  ~/.omp/agent/skills/$name → $skill"
-done
-for cmd in "$REPO_DIR"/commands/*.md; do
-  [ -f "$cmd" ] || continue
-  name="$(basename "$cmd")"
-  ln -sf "$cmd" "$HOME/.omp/agent/commands/$name"
-  dim "  ~/.omp/agent/commands/$name → $cmd"
-done
-for agent in "$REPO_DIR"/agents/*.md; do
-  [ -f "$agent" ] || continue
-  name="$(basename "$agent")"
-  ln -sf "$agent" "$HOME/.omp/agent/agents/$name"
-  dim "  ~/.omp/agent/agents/$name → $agent"
-done
-for rule in "$REPO_DIR"/rules/*.md; do
-  [ -f "$rule" ] || continue
-  name="$(basename "$rule")"
-  ln -sf "$rule" "$HOME/.omp/agent/rules/$name"
-  dim "  ~/.omp/agent/rules/$name → $rule"
-done
-# Extensions: TS/JS only — README.md and other non-code files are skipped so
-# oh-my-pi's native extension loader doesn't try to import them.
-for ext in "$REPO_DIR"/omp/extensions/*.ts "$REPO_DIR"/omp/extensions/*.js; do
-  [ -f "$ext" ] || continue
-  name="$(basename "$ext")"
-  ln -sf "$ext" "$HOME/.omp/agent/extensions/$name"
-  dim "  ~/.omp/agent/extensions/$name → $ext"
-done
-# Hooks: pre/post TS/JS modules — README.md and other non-code files are
-# skipped so oh-my-pi's native hook loader doesn't try to import them.
-for hook in "$REPO_DIR"/omp/hooks/pre/*.ts "$REPO_DIR"/omp/hooks/pre/*.js; do
-  [ -f "$hook" ] || continue
-  name="$(basename "$hook")"
-  ln -sf "$hook" "$HOME/.omp/agent/hooks/pre/$name"
-  dim "  ~/.omp/agent/hooks/pre/$name → $hook"
-done
-for hook in "$REPO_DIR"/omp/hooks/post/*.ts "$REPO_DIR"/omp/hooks/post/*.js; do
-  [ -f "$hook" ] || continue
-  name="$(basename "$hook")"
-  ln -sf "$hook" "$HOME/.omp/agent/hooks/post/$name"
-  dim "  ~/.omp/agent/hooks/post/$name → $hook"
+    echo ""
+    green "Installing $harness_name → $config_root"
+    mkdir -p "$config_root"
+
+    local cat
+    for cat in "${consumed_categories[@]}"; do
+      mkdir -p "$config_root/$cat"
+      prune_dangling "$config_root/$cat"
+      mirror_category "$cat" "$config_root" "$dedupe_commands_with_skills"
+    done
+
+    install_module
+
+    # Optional neutral cross-harness instruction file, installed into the
+    # config root under the harness's convention name. Left unset by default —
+    # the repo-root AGENTS.md is an in-repo authoring contract, not a global
+    # instruction (see docs/adr/0010), so wiring it here would pollute every
+    # project. A genuinely-neutral source can be pointed at later.
+    if [ -n "$instruction_target" ] && [ -n "$INSTRUCTION_SOURCE" ] && [ -f "$REPO_DIR/$INSTRUCTION_SOURCE" ]; then
+      ln -sf "$REPO_DIR/$INSTRUCTION_SOURCE" "$config_root/$instruction_target"
+      dim "  $config_root/$instruction_target → $INSTRUCTION_SOURCE"
+    fi
+  )
+}
+
+# Neutral instruction source filename (relative to repo root). Empty by
+# default — no module wires an instruction file yet.
+INSTRUCTION_SOURCE="${INSTRUCTION_SOURCE:-}"
+
+# Modules live under harnesses/ by default; HARNESSES_DIR can override the
+# root (used by the install behavior test to exercise add/remove in isolation).
+HARNESSES_DIR="${HARNESSES_DIR:-$REPO_DIR/harnesses}"
+
+green "Installing harness modules from $HARNESSES_DIR/*/manifest.sh"
+harness_count=0
+for manifest in "$HARNESSES_DIR"/*/manifest.sh; do
+  [ -f "$manifest" ] || continue
+  install_harness "$manifest"
+  harness_count=$((harness_count + 1))
 done
 
 # ── Repository git hook (shared dev tooling — not harness-specific) ──────────
@@ -173,5 +146,5 @@ green "Done!"
 skill_count=$(ls -1d "$REPO_DIR"/skills/*/ 2>/dev/null | wc -l | tr -d ' ')
 cmd_count=$(ls -1 "$REPO_DIR"/commands/*.md 2>/dev/null | wc -l | tr -d ' ')
 rule_count=$(ls -1 "$REPO_DIR"/rules/*.md 2>/dev/null | wc -l | tr -d ' ')
-echo "  $skill_count skills, $cmd_count commands, and $rule_count rules installed."
+echo "  $harness_count harness module(s); $skill_count skills, $cmd_count commands, $rule_count rules available to consume."
 echo ""

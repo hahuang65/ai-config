@@ -7,7 +7,7 @@ A single configuration source that powers multiple AI coding harnesses (Claude C
 ### Core concepts
 
 **Harness**:
-The runtime program that drives an LLM through tool calls, system prompts, and a session UI — Claude Code and oh-my-pi are the two this repo configures. Per-harness, project-local config dirs are named after the harness without prefixes: `claude/`, `omp/`.
+The runtime program that drives an LLM through tool calls, system prompts, and a session UI — Claude Code and oh-my-pi are the two this repo configures. Per-harness config lives in a self-contained **harness module** under `harnesses/` — `harnesses/claude/`, `harnesses/omp/`, with a pending `harnesses/pi/` slot (see [`modular-harness-modules-and-isolation`](docs/adr/0010-modular-harness-modules-and-isolation.md)).
 _Avoid_: Tool (overloaded with the Bash/Read/Edit primitives a harness gives the model), assistant, agent (overloaded with subagent), AI coding tool.
 
 **Tool**:
@@ -30,10 +30,10 @@ A `<root>/rules/<name>.md` file holding guidance the harness can pull into conte
 ### Harness-specific terms
 
 **`.claude` / `~/.claude/`**:
-Claude Code's config root. This repo's `claude/` directory contains `settings.json`, `statusline.sh`, `hooks.json`, all symlinked into `~/.claude/` by `install.sh`. Skills, commands, agents, rules live under `~/.claude/{skills,commands,agents,rules}/` as symlinks back to the repo.
+Claude Code's config root. This repo's `harnesses/claude/` module contains `settings.json`, `statusline.sh`, `hooks.json`, the tier-B guard shim `hooks/guard.ts`, and a `manifest.sh`, all symlinked into `~/.claude/` by `install.sh`. Skills, commands, agents, rules live under `~/.claude/{skills,commands,agents,rules}/` as symlinks back to the repo.
 
 **`.omp` / `~/.omp/agent/`**:
-oh-my-pi's config roots — project-level (`<cwd>/.omp/`) and user-level (`~/.omp/agent/`, with the extra `agent` subfolder). This repo's `omp/` directory holds oh-my-pi-specific config (`config.yml` and anything else oh-my-pi needs that doesn't fit the cross-harness skill/command/rule shape).
+oh-my-pi's config roots — project-level (`<cwd>/.omp/`) and user-level (`~/.omp/agent/`, with the extra `agent` subfolder). This repo's `harnesses/omp/` module holds oh-my-pi-specific config (`config.yml`, `RULES.md`, `extensions/`, `hooks/`, `manifest.sh`).
 
 **Source priority** (oh-my-pi):
 oh-my-pi's built-in ordering for cross-harness config discovery — higher number wins on name collisions: `.omp` (100) > `.claude` (80) > `.codex` (70) > `.gemini` (60) > `.opencode` (55). Means our `~/.claude/skills/` is discoverable by oh-my-pi without any new symlinks — but `~/.claude/rules/` is not, because oh-my-pi has no Claude rule provider.
@@ -50,7 +50,55 @@ oh-my-pi's bucket of rules that are listed in the system prompt by `name + descr
 oh-my-pi's mid-stream rule injection: a regex match against the model's output aborts the stream, injects the rule body as a `<system-reminder>`, and retries from the same token. Configured via `condition:` frontmatter (plus optional `scope:` to narrow to specific tool surfaces). A rule with `condition:` lives in the TTSR bucket only — it's not also listed in the rulebook. This repo uses TTSR for **content-based patterns** (e.g. hardcoded secrets in a Write payload) and simple bash-command patterns where regex has no realistic bypass. See [`ttsr-for-omp-runtime-enforcement`](docs/adr/0003-ttsr-for-omp-runtime-enforcement.md).
 
 **Hook** (oh-my-pi — pre/post-tool TS modules):
-TS/JS modules at `omp/hooks/{pre,post}/*.ts` (symlinked to `~/.omp/agent/hooks/{pre,post}/`). Subscribe to oh-my-pi runtime events via the `HookAPI` from `@oh-my-pi/pi-coding-agent/extensibility/hooks`. Pre-hooks fire on `tool_call` (before execution) and can return `{ block, reason }` to refuse the call. Post-hooks fire on `tool_result` (after execution) and can return `{ content, details, isError }` to mutate what the model sees. Unlike TTSR, hooks see **structured tool input** (`event.input.command`, `event.input.path`), so they catch what regex on stream text can't: process substitution (`bash <(…)`), find-exec, interpreter wrappers (`python -c "os.system(…)"`). Hooks can also **mutate output** (TTSR can only block). This repo uses hooks for input-bound patterns where TTSR's regex has known bypasses, and for output redaction (which TTSR fundamentally can't do). See [`hooks-replace-ttsr-for-input-bound-patterns`](docs/adr/0006-hooks-replace-ttsr-for-input-bound-patterns.md). Distinct from oh-my-pi **extensions** (`omp/extensions/`), which use the same event API but can also register commands, tools, and renderers — extensions are the superset, hooks are the narrower event-handler surface.
+TS/JS modules at `harnesses/omp/hooks/{pre,post}/*.ts` (symlinked to `~/.omp/agent/hooks/{pre,post}/`). Subscribe to oh-my-pi runtime events via the `HookAPI` from `@oh-my-pi/pi-coding-agent/extensibility/hooks`. Pre-hooks fire on `tool_call` (before execution) and can return `{ block, reason }` to refuse the call. Post-hooks fire on `tool_result` (after execution) and can return `{ content, details, isError }` to mutate what the model sees. Unlike TTSR, hooks see **structured tool input** (`event.input.command`, `event.input.path`), so they catch what regex on stream text can't: process substitution (`bash <(…)`), find-exec, interpreter wrappers (`python -c "os.system(…)"`). Hooks can also **mutate output** (TTSR can only block). This repo uses hooks for input-bound patterns where TTSR's regex has known bypasses, and for output redaction (which TTSR fundamentally can't do). See [`hooks-replace-ttsr-for-input-bound-patterns`](docs/adr/0006-hooks-replace-ttsr-for-input-bound-patterns.md). Distinct from oh-my-pi **extensions** (`harnesses/omp/extensions/`), which use the same event API but can also register commands, tools, and renderers — extensions are the superset, hooks are the narrower event-handler surface.
+
+### Harness-modularity & guardrail terms
+
+**Harness module**:
+A self-contained directory holding everything specific to one harness — its runtime config file(s), its guardrail adapter, and a declaration of which **config root** it installs into and which shared categories it consumes. Adding or removing a harness is adding or removing one module; `install.sh` is a generic loop over the modules that exist.
+_Avoid_: harness folder, plugin, per-harness block.
+
+**Config root**:
+The home-directory location a harness reads its config from — `~/.claude/`, `~/.omp/agent/`, `~/.pi/agent/`. Each config root is owned **exclusively** by one harness module.
+
+**Cross-discovery**:
+A harness's built-in scavenging of *another* harness's config root (e.g. oh-my-pi reading `~/.claude/skills/` via its Claude provider at priority 80). Deliberately **disabled** in this repo (`skills.enableClaudeUser: false`, etc.) so that sharing is push-only — every harness sees only what `install.sh` mirrored into its own root.
+_Avoid_: fallback, delegation, scavenge.
+
+**Isolation invariant**:
+The guarantee that each harness sees only its own module's files plus the curated shared set — never content leaked from a sibling harness. Upheld by disabling cross-discovery and verified by the **isolation test**. Distinct from **sandboxing** (runtime VM isolation of a harness process — a different, orthogonal concept).
+
+**Isolation test**:
+The check asserting each config root contains only `{its module's files} ∪ {the curated shared set}` — no symlink resolving into a sibling harness's directory, cross-discovery flags off. A leak fails CI.
+
+**Advisory rule**:
+A `rules/*.md` file that is pure guidance the model reads (`coding-style`, `testing`, `performance`) — shares verbatim across harnesses exactly like a skill, with no mechanical enforcement. Distinct from a **Guardrail policy**.
+_Avoid_: rule (unqualified — the bare word hides the advisory-vs-guardrail split).
+
+**Guardrail policy**:
+A security/safety constraint with a *shared intent* but a *per-harness enforcement mechanism* (e.g. never read secrets, no force-push, no curl-pipe-to-shell). Recorded once in the **policy registry** and projected into each harness via its adapter.
+_Avoid_: rule, permission (a permission is the native allow/deny knob a policy may *project onto*, not the canonical constraint itself).
+
+**Policy registry**:
+The canonical, harness-neutral list of guardrail policies in `policies/` — one entry per policy with an **ID**, human-readable intent, and enforcement metadata (check kind, minimum strength). The single source of truth for *what* must be enforced.
+
+**Guard core**:
+The shared TypeScript module implementing the *detection* logic for guardrail policies (`isSecretPath`, `isCurlPipeShell`, …), imported unchanged by every harness whose hook API can run it. The single source of truth for *how* a policy is detected.
+_Avoid_: hook (a harness's event surface), matcher.
+
+**Enforcement tier** (a.k.a. **adapter archetype**):
+The classification of a harness by *how* it can enforce policies — **A** programmable (runs the guard core in-process: pi, oh-my-pi), **B** command-hook (runs the guard core via an external command + shim: Claude Code), **C** declarative (static allow/deny patterns only), **D** sandbox (environment isolation, e.g. Gondolin), **E** guidance (prompt text only). A new harness maps to one or more tiers; each tier has a reusable adapter.
+_Avoid_: harness type.
+
+**Coverage matrix**:
+The policy × harness table produced by the **conformance test**, recording how each policy is enforced — or an explicitly acknowledged gap — for each harness.
+
+**Conformance test**:
+The check that every harness covers the **mandatory policy floor** and that every other policy is either enforced or has an *explicit* (never silent) gap in the coverage matrix.
+
+**Mandatory policy floor**:
+The subset of guardrail policies every harness must enforce (at tier A/B/C/D strength) to be admitted to the fleet — e.g. `no-secret-access`. A harness that cannot meet the floor must be **sandboxed or rejected**.
+_Avoid_: baseline.
 
 ### Build-pipeline terms
 
@@ -73,3 +121,9 @@ _Avoid_: `docs/claude/` (the former Claude-specific name, replaced by the harnes
 >
 > **Dev**: And if I want the testing rule to be picked up by oh-my-pi too?
 > **Expert**: Rules with no frontmatter are silently dropped by oh-my-pi's rulebook pipeline. Add a `description:` to `rules/testing.md` — phrased as a load-trigger like "Read before writing tests…" — and oh-my-pi lists it in the rulebook for the model to pull in on demand. We deliberately skip `alwaysApply: true` for context economy; oh-my-pi's context-tax-per-turn would be high if every rule injected wholesale. The frontmatter is harmless to Claude Code.
+>
+> **Dev**: And `security.md` — I never want any harness reading my `.env`. Same deal, just symlink it?
+> **Expert**: No — that's the split. `security.md` as *guidance* is an **advisory rule** and shares fine. But "never read secrets" as an *enforced* constraint is a **guardrail policy**: it gets an ID in the **policy registry**, the detection lives once in the **guard core** (`isSecretPath`), and each **harness module** wires that core in via its **enforcement tier** — pi and oh-my-pi run it in-process (tier A), Claude runs it through a stdin/stdout shim (tier B). The **conformance test** then proves every harness covers it, because `no-secret-access` is in the **mandatory policy floor**.
+>
+> **Dev**: But oh-my-pi already reads `~/.claude/skills/` for free. Doesn't it just pick up Claude's security setup too?
+> **Expert**: That "for free" is exactly the pollution we close. That's **cross-discovery**, and we disable it (`enableClaudeUser: false`) so sharing is push-only — every **config root** sees only what `install.sh` mirrored into it. The **isolation test** fails CI if anything under `~/.omp/agent/` resolves back into `claude/`. Sharing is a curated set we push, never something a harness scavenges.

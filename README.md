@@ -200,9 +200,12 @@ Agents read a subset relevant to their role.
 ├── commands/         13 slash commands (/diff-review, /implement-coach, /pickup, ...)
 ├── agents/           7 sub-agents (architect, tdd-guide, code-reviewer, ...)
 ├── rules/            11 rules (3 advisory rulebook + 8 TTSR enforcement)
-├── claude/           Claude Code config (settings.json, hooks.json, statusline.sh)
-├── omp/              oh-my-pi config (config.yml hand-authored) + extensions/ + hooks/{pre,post}/
-├── omp/hooks/        5 oh-my-pi hooks — 4 pre-tool blockers + 1 post-tool secret redactor (per ADR-0006)
+├── harnesses/        Pluggable per-harness modules, each with a manifest.sh (ADR-0010)
+│   ├── claude/         Claude Code module (settings.json, hooks.json, statusline.sh, hooks/guard.ts)
+│   ├── omp/            oh-my-pi module (config.yml, RULES.md, extensions/, hooks/{pre,post}/)
+│   └── pi/             pi slot — manifest only, enforcement deferred (ADR-0011)
+├── shared/           guard core — policy-registry.ts (IDs + floor flags), guard-core.ts (detection, written once), conformance.ts
+├── test/             bun tests — adapter + conformance behavior
 ├── scripts/          Tooling (test-pipeline.sh, hooks/)
 ├── docs/features/      Per-feature artifacts (PRDs, tasks, visuals)
 ├── example/          Legacy example artifacts (old research/plan pipeline)
@@ -305,17 +308,21 @@ Rules split into two buckets per [ADR-0003](docs/adr/0003-ttsr-for-omp-runtime-e
 | `no-dd-disk` | `dd` with `of=/dev/...` or `if=/dev/...` (raw disk overwrite/read) |
 | `no-broad-chmod` | `chmod -R` against `/`, `~`, `$HOME`, `/etc`, `/usr`, `/var`, `/opt`, `/Users`, `/home`, or `*` |
 
-#### Hooks (oh-my-pi-only — `omp/hooks/{pre,post}/*.ts`, per [ADR-0006](docs/adr/0006-hooks-replace-ttsr-for-input-bound-patterns.md))
+#### Guardrails — shared policy core + per-harness adapters (per [ADR-0011](docs/adr/0011-guardrail-policies-ports-and-adapters.md))
 
-Four pre-tool blockers + one post-tool secret redactor. Migrated from TTSR rules whose regex had known bypasses; structured `event.input` parsing catches what the regex couldn't (process substitution, find-exec, interpreter wrappers).
+Security guardrails are defined **once** and projected into each harness (ports-and-adapters). A canonical registry (`shared/policy-registry.ts`) lists each guardrail by ID with a `floor` flag; the detection logic lives once in `shared/guard-core.ts`; each harness wires it in via a thin adapter sized to its enforcement tier. This consolidated four duplicated oh-my-pi hooks plus a separate Claude shell hook into one core.
 
-| Hook | Replaces / role | What it does |
-|------|-----------------|--------------|
-| `pre/guard-rm.ts` | replaces `no-rm-rf-root.md` | Blocks broad `rm -rf` + `find / -delete` + process-substitution wrappers |
-| `pre/guard-curl-pipe.ts` | replaces `no-curl-pipe-interpreter.md` | Blocks `curl/wget` piped to interpreters, including tee-interposer and `bash <(curl URL)` |
-| `pre/guard-credentials.ts` | replaces `no-credentials-read.md` | Blocks credential file reads via `read`, `edit`, or `bash` tools (8 credential path patterns, 19 credential-reader commands) |
-| `pre/guard-sudo.ts` | replaces `no-sudo.md` | Blocks any `sudo` invocation in bash commands |
-| `post/redact-keys.ts` | net-new (TTSR can't mutate output) | Redacts secrets in `read` / `bash` output (API keys, tokens, AWS access keys, GitHub tokens, JWTs, HTTP Bearer) with placeholder skip |
+| Policy | Floor | What it blocks |
+|--------|:-----:|----------------|
+| `no-secret-access` | ✓ | Credential file reads via path or bash readers (incl. process/command substitution) |
+| `no-curl-pipe-shell` | ✓ | curl/wget piped or process-substituted into an interpreter |
+| `no-broad-rm` | ✓ | `rm -rf` / `find … -delete` against broad targets (`/`, `~`, `$HOME`, `*`) |
+| `no-sudo` | ✓ | Any `sudo` invocation |
+| `no-force-push` | — | Force-push (covered, non-floor) |
+
+- **oh-my-pi (tier A)** runs the core in-process: `harnesses/omp/hooks/pre/guard-policies.ts`. The output redactor `post/redact-keys.ts` stays as a separate post-tool concern.
+- **Claude Code (tier B)** runs the same core through a stdin/stdout shim: `harnesses/claude/hooks/guard.ts` (registered in `settings.json`); its static `permissions.deny` denylist remains as defense-in-depth.
+- A **conformance test** asserts every harness enforces every floor policy (emits a coverage matrix; no silent gaps); an **isolation test** forbids cross-harness pollution. Both run inside `scripts/test-pipeline.sh`, alongside the `bun` guard-core/adapter/conformance suite.
 
 ## Dual-Harness Support
 
@@ -331,21 +338,22 @@ This repository serves two AI coding harnesses with different runtime models. `i
 | Rule semantics | Auto-loaded as global instructions every turn | **Rulebook** (loaded on demand via `rule://`) + **TTSR** (regex-triggered mid-stream) |
 | Permissions format | `"Bash(echo *)"` in JSON arrays | `tools.approvalMode: write` tiers + `tools.approval.<tool>` overrides in YAML |
 | Per-pattern bash allowlist | Yes (~80 entries) | **No** — TTSR rules fill this gap |
-| Permission source of truth | `claude/settings.json` | Hand-authored `omp/config.yml` |
-| Hooks | `claude/hooks.json` + `deny-curl-to-interpreter.sh` shell hook | 5 TS modules in `omp/hooks/` (4 pre-tool blockers + 1 post-tool secret redactor, see [ADR-0006](docs/adr/0006-hooks-replace-ttsr-for-input-bound-patterns.md)) |
+| Permission source of truth | `harnesses/claude/settings.json` | Hand-authored `harnesses/omp/config.yml` |
+| Guardrail adapter | Tier B: `harnesses/claude/hooks/guard.ts` shim → shared core, + static `permissions.deny` | Tier A: `harnesses/omp/hooks/pre/guard-policies.ts` → shared core, + `post/redact-keys.ts` |
 
-`claude/settings.json` is edited directly and is Claude Code's permission source of truth. `omp/config.yml` is **decoupled** and hand-authored — Claude's per-pattern allowlist has no oh-my-pi equivalent, so the two permission models are maintained independently (per [ADR-0004](docs/adr/0004-omp-permissions-and-hooks-decoupled.md)). TTSR rules in `rules/` are oh-my-pi's per-pattern enforcement layer.
+`harnesses/claude/settings.json` is edited directly and is Claude Code's permission source of truth. `harnesses/omp/config.yml` is hand-authored — Claude's per-pattern allowlist has no oh-my-pi equivalent, so the two permission *models* are maintained independently. But cross-harness **guardrails** (never read secrets, no force-push, no broad rm, no sudo, no curl-pipe-to-shell) are no longer duplicated: they live once in `shared/` and project into each harness via its adapter, with a conformance test enforcing the floor everywhere (per [ADR-0011](docs/adr/0011-guardrail-policies-ports-and-adapters.md), superseding ADR-0004's decoupling stance). TTSR rules in `rules/` remain oh-my-pi's per-pattern enforcement layer.
 
 ## Installation Details
 
-`install.sh` symlinks everything into the right locations:
+`install.sh` is a **generic loop over harness modules** (`harnesses/*/manifest.sh`, per [ADR-0010](docs/adr/0010-modular-harness-modules-and-isolation.md)) — adding a harness is dropping in a module, removing one is deleting its directory. For each module it:
 
-1. **Skills** → `~/.claude/skills/` (Claude Code; also mirrored into oh-my-pi)
-2. **Rules** → `~/.claude/rules/`
-3. **Commands for Claude Code** → `~/.claude/commands/`, skipping commands that have a matching skill directory (avoids duplicate slash commands)
-4. **Agents** → `~/.claude/agents/`
-5. **Claude Code config** → `settings.json`, `statusline.sh`, `hooks.json` symlinked to `~/.claude/`
-6. **Git hooks** → `core.hooksPath` set to `.githooks`
+1. Reads the module's `manifest.sh` (its `config_root`, the shared categories it consumes, and an `install_module` hook).
+2. **Mirrors the shared set** (`skills/`, `commands/`, `agents/`, `rules/`) into the config root — skills as directory symlinks; commands deduped against skills for Claude (avoids duplicate slash commands).
+3. **Installs the module's own files** via `install_module` (Claude: `settings.json`, `statusline.sh`, `hooks.json`; oh-my-pi: `config.yml`, `RULES.md`, `extensions/`, `hooks/`).
+4. **Prunes dangling links** so the install self-heals after a rename/delete.
+5. Skips `harness_pending` modules (the `pi` slot installs nothing yet).
+
+Finally it sets `core.hooksPath` to `.githooks`. The guard core in `shared/` is resolved by the adapters via symlink realpath, so it is not separately mirrored.
 7. **oh-my-pi** → `omp/config.yml` symlinked to `~/.omp/agent/config.yml`, plus `skills/`, `commands/`, `agents/`, `rules/` symlinked into `~/.omp/agent/` (all commands installed — the Claude duality skip-rule does not apply)
 
 The command/skill duality means that commands sharing a name with a skill (`build`, `grill`, `prd`, `tasks`, `implement`, `implement-coach`, `refactor`) are skipped for Claude Code (where skills take precedence) but installed for oh-my-pi (which reads all commands).

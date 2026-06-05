@@ -664,27 +664,47 @@ test_rulebook_rule_frontmatter() {
 }
 
 # ---------------------------------------------------------------------------
-# 11b. omp install targets exist + omp YAML validity
+# 11b. Harness modules + generic install loop + omp YAML validity (ADR-0010)
 # ---------------------------------------------------------------------------
 
-test_omp_install_targets_exist() {
-  echo "omp install targets exist"
-  if [[ -f "$REPO_DIR/omp/config.yml" ]]; then
-    pass "omp/config.yml exists"
+test_harness_modules() {
+  echo "Harness modules + generic install loop"
+  # install.sh must be a generic loop over module manifests, not hand-written
+  # per-harness blocks.
+  if grep -qE '/\*/manifest\.sh' "$REPO_DIR/install.sh"; then
+    pass "install.sh loops over */manifest.sh module manifests"
   else
-    fail "omp" "omp/config.yml not found — install.sh's omp block references it"
+    fail "install.sh" "generic harness loop (*/manifest.sh) not found"
   fi
-  if grep -q "^# ── oh-my-pi (" "$REPO_DIR/install.sh"; then
-    pass "install.sh has the omp install block"
+  # Every harness module declares a manifest with a config_root.
+  local mod name
+  for mod in "$REPO_DIR"/harnesses/*/; do
+    [ -d "$mod" ] || continue
+    name="$(basename "$mod")"
+    if [[ -f "$mod/manifest.sh" ]]; then
+      pass "harnesses/$name has manifest.sh"
+    else
+      fail "harnesses/$name" "missing manifest.sh"
+      continue
+    fi
+    if grep -q "^config_root=" "$mod/manifest.sh"; then
+      pass "harnesses/$name manifest declares config_root"
+    else
+      fail "harnesses/$name/manifest.sh" "missing config_root declaration"
+    fi
+  done
+  # oh-my-pi's runtime config still resolves at its module path.
+  if [[ -f "$REPO_DIR/harnesses/omp/config.yml" ]]; then
+    pass "harnesses/omp/config.yml exists"
   else
-    fail "install.sh" "oh-my-pi install block marker (# ── oh-my-pi (…) not found"
+    fail "harnesses/omp" "config.yml not found"
   fi
 }
 
 test_omp_yaml_valid() {
   echo "omp YAML validity"
   local yml
-  for yml in "$REPO_DIR"/omp/*.yml "$REPO_DIR"/omp/*.yaml; do
+  for yml in "$REPO_DIR"/harnesses/omp/*.yml "$REPO_DIR"/harnesses/omp/*.yaml; do
     [[ -f "$yml" ]] || continue
     local label="omp/$(basename "$yml")"
     if python3 -c "import yaml, sys; yaml.safe_load(open(sys.argv[1]))" "$yml" 2>/dev/null; then
@@ -707,7 +727,7 @@ test_omp_yaml_valid() {
 test_omp_hook_shape() {
   echo "omp hook shape"
   local hook_file
-  for hook_file in "$REPO_DIR"/omp/hooks/pre/*.ts "$REPO_DIR"/omp/hooks/post/*.ts; do
+  for hook_file in "$REPO_DIR"/harnesses/omp/hooks/pre/*.ts "$REPO_DIR"/harnesses/omp/hooks/post/*.ts; do
     [ -f "$hook_file" ] || continue
     local dir
     dir="$(basename "$(dirname "$hook_file")")"
@@ -819,6 +839,169 @@ test_stale_stubs() {
 }
 
 # ---------------------------------------------------------------------------
+# 13. Isolation: no cross-harness pollution (ADR-0010)
+#
+# Sharing is push-only: each config root holds only its own module's files plus
+# the curated shared set, and oh-my-pi's discovery of sibling USER config roots
+# is disabled. Verified by installing into a throwaway HOME and asserting (a)
+# the omp config disables sibling-user discovery and (b) no symlink under one
+# harness's config root resolves into another harness's module directory. A
+# planted leak proves the structural check actually fires.
+# ---------------------------------------------------------------------------
+
+# True if any symlink under config root $1 resolves into repo module dir $2.
+root_leaks_into_module() {
+  local root="$1" module="$2" mod_real link tgt
+  mod_real="$(cd "$REPO_DIR/$module" 2>/dev/null && pwd)" || return 1
+  [[ -d "$root" ]] || return 1
+  while IFS= read -r -d '' link; do
+    tgt="$(readlink -f "$link" 2>/dev/null)" || continue
+    [[ "$tgt" == "$mod_real"/* ]] && return 0
+  done < <(find "$root" -type l -print0 2>/dev/null)
+  return 1
+}
+
+test_isolation() {
+  echo "Isolation: no cross-harness pollution"
+  local tmphome
+  tmphome="$(mktemp -d)"
+
+  if ! HOME="$tmphome" bash "$REPO_DIR/install.sh" >/dev/null 2>&1; then
+    fail "isolation" "install.sh failed under a throwaway HOME"
+    rm -rf "$tmphome"
+    return
+  fi
+
+  # (a) Cross-discovery of sibling USER sources is disabled in omp config.
+  local flag
+  for flag in enableClaudeUser enableCodexUser enablePiUser; do
+    if grep -qE "^[[:space:]]*${flag}:[[:space:]]*false" "$REPO_DIR/harnesses/omp/config.yml"; then
+      pass "omp config disables cross-discovery toggle '$flag'"
+    else
+      fail "omp/config.yml" "cross-discovery toggle '$flag' is not set to false"
+    fi
+  done
+
+  # (b) No config root holds a symlink resolving into a SIBLING harness module.
+  if root_leaks_into_module "$tmphome/.omp/agent" "harnesses/claude"; then
+    fail "isolation" "~/.omp/agent contains a symlink into the harnesses/claude module"
+  else
+    pass "isolation: oh-my-pi root has no symlink into the harnesses/claude module"
+  fi
+  if root_leaks_into_module "$tmphome/.claude" "harnesses/omp"; then
+    fail "isolation" "~/.claude contains a symlink into the harnesses/omp module"
+  else
+    pass "isolation: claude root has no symlink into the harnesses/omp module"
+  fi
+
+  # test-the-test: a planted sibling link MUST be detected, or the check is vacuous.
+  mkdir -p "$tmphome/.omp/agent/skills"
+  ln -sf "$REPO_DIR/harnesses/claude/settings.json" "$tmphome/.omp/agent/skills/_leak.json"
+  if root_leaks_into_module "$tmphome/.omp/agent" "harnesses/claude"; then
+    pass "isolation check catches a planted sibling leak"
+  else
+    fail "isolation" "planted sibling leak was NOT detected (test-the-test failed)"
+  fi
+
+  rm -rf "$tmphome"
+}
+
+# ---------------------------------------------------------------------------
+# 13b. Install loop behavior (ADR-0010)
+#
+# The generic install loop must be idempotent, prune dangling links, skip
+# pending modules, and treat each module directory as the unit of add/remove.
+# Module add/remove is exercised against a throwaway HARNESSES_DIR so the
+# repo's own harnesses/ is never touched.
+# ---------------------------------------------------------------------------
+
+test_install_behavior() {
+  echo "Install loop: idempotency, prune, module add/remove"
+  local tmphome tmpmods
+  tmphome="$(mktemp -d)"
+
+  if HOME="$tmphome" bash "$REPO_DIR/install.sh" >/dev/null 2>&1; then
+    pass "install.sh succeeds into a throwaway HOME"
+  else
+    fail "install-behavior" "install.sh failed"
+    rm -rf "$tmphome"
+    return
+  fi
+  [[ -e "$tmphome/.claude/settings.json" ]] && pass "claude module installed" \
+    || fail "install-behavior" "claude settings.json missing"
+  [[ -e "$tmphome/.omp/agent/config.yml" ]] && pass "oh-my-pi module installed" \
+    || fail "install-behavior" "omp config.yml missing"
+  [[ ! -e "$tmphome/.pi" ]] && pass "pending pi module installs nothing" \
+    || fail "install-behavior" "pending pi module created ~/.pi"
+
+  # Idempotency: a second run succeeds and a known link still resolves.
+  if HOME="$tmphome" bash "$REPO_DIR/install.sh" >/dev/null 2>&1 \
+     && [[ -e "$tmphome/.claude/settings.json" ]]; then
+    pass "re-running install is idempotent"
+  else
+    fail "install-behavior" "second install run was not idempotent"
+  fi
+
+  # Prune: a dangling link in a managed category dir is removed on re-install.
+  ln -s "/nonexistent-$(basename "$tmphome")" "$tmphome/.omp/agent/skills/_dangling"
+  HOME="$tmphome" bash "$REPO_DIR/install.sh" >/dev/null 2>&1
+  if [[ -L "$tmphome/.omp/agent/skills/_dangling" ]]; then
+    fail "install-behavior" "dangling symlink not pruned on re-install"
+  else
+    pass "re-install prunes dangling symlinks"
+  fi
+
+  # Add/remove: a throwaway module dir is picked up by the loop; deleting the
+  # directory removes that harness with nothing else disturbed.
+  tmpmods="$(mktemp -d)"
+  mkdir -p "$tmpmods/alpha"
+  cat >"$tmpmods/alpha/manifest.sh" <<'EOF'
+config_root="$HOME/.alpha-harness"
+consumed_categories=(skills)
+install_module() { :; }
+EOF
+  HARNESSES_DIR="$tmpmods" HOME="$tmphome" bash "$REPO_DIR/install.sh" >/dev/null 2>&1
+  if [[ -d "$tmphome/.alpha-harness/skills" ]]; then
+    pass "adding a module directory installs a new harness"
+  else
+    fail "install-behavior" "added module was not installed"
+  fi
+  rm -rf "$tmpmods/alpha"
+  if HARNESSES_DIR="$tmpmods" HOME="$tmphome" bash "$REPO_DIR/install.sh" >/dev/null 2>&1; then
+    pass "deleting a module directory removes it cleanly (install still succeeds)"
+  else
+    fail "install-behavior" "install failed after module removal"
+  fi
+
+  rm -rf "$tmphome" "$tmpmods"
+}
+
+# ---------------------------------------------------------------------------
+# 14. Guard core, adapters, and conformance (ADR-0011)
+#
+# Runs the TypeScript guard suite under bun: the guard-core unit tests, the
+# per-harness adapter tests, and the conformance test (every harness enforces
+# every floor policy; coverage matrix; no silent gaps). Brings the behavioral
+# guardrail tests under the same pipeline as the static config checks.
+# ---------------------------------------------------------------------------
+
+test_guard_suite() {
+  echo "Guard core, adapters, and conformance (bun)"
+  if ! command -v bun >/dev/null 2>&1; then
+    fail "guard-suite" "bun not found on PATH — the guard core and conformance tests require bun"
+    return
+  fi
+  local log
+  log="$(mktemp)"
+  if bun test "$REPO_DIR/shared" "$REPO_DIR/test" >"$log" 2>&1; then
+    pass "bun guard + conformance suite ($(grep -oE '[0-9]+ pass' "$log" | head -1))"
+  else
+    fail "guard-suite" "bun suite failed ($(grep -oE '[0-9]+ fail' "$log" | head -1)) — run: bun test shared/ test/"
+  fi
+  rm -f "$log"
+}
+
+# ---------------------------------------------------------------------------
 # Main
 # ---------------------------------------------------------------------------
 
@@ -856,7 +1039,7 @@ main() {
   echo ""
   test_rulebook_rule_frontmatter
   echo ""
-  test_omp_install_targets_exist
+  test_harness_modules
   echo ""
   test_omp_yaml_valid
   echo ""
@@ -865,6 +1048,12 @@ main() {
   test_no_forbidden_claude_centric_phrasing
   echo ""
   test_stale_stubs
+  echo ""
+  test_isolation
+  echo ""
+  test_install_behavior
+  echo ""
+  test_guard_suite
 
   echo ""
   echo "Results: $PASS passed, $FAIL failed"

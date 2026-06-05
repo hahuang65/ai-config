@@ -1,5 +1,7 @@
 # oh-my-pi safety: hand-authored config + TTSR. No permission sync, no hook port.
 
+> **Pillars 1–2 superseded by [ADR-0011](0011-guardrail-policies-ports-and-adapters.md):** the decoupling stance (hand-authored per-harness config, no shared enforcement) is replaced by a ports-and-adapters model — a canonical policy registry + a shared TS guard core + thin per-harness adapters + a conformance test. The reasoning below stands as the historical record of why decoupling looked right when the only alternative was the brittle `sync-permissions.py` compiler.
+
 Claude and OpenCode share a sympathetic per-pattern permission format, so `scripts/sync-permissions.py` reliably bridges them — `Bash(rm *)` becomes `"rm *": "deny"`. oh-my-pi's permission model is structurally different: `tools.approvalMode` is a tier (read/write/exec) and `tools.approval.<tool>` is a binary allow/deny/prompt per tool, with **no per-pattern allowlist**. The ~115 per-pattern entries in `claude/settings.json` (allow + deny + ask, ~90 of them on `Bash`) have no place in oh-my-pi's schema. We made three connected decisions for oh-my-pi's safety story:
 
 1. **Hand-author `omp/config.yml`.** Symlinked to `~/.omp/agent/config.yml` by `install.sh`. ~15 lines: `tools.approvalMode: write`, `tools.approval.bash: prompt` (also `browser/ssh/eval: prompt`), nothing else for v1. `sync-permissions.py` is not extended to write to oh-my-pi; it stays a Claude↔OpenCode bridge.

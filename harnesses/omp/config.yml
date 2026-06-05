@@ -1,0 +1,29 @@
+tools: 
+  approvalMode: write
+  approval: 
+    bash: allow
+    browser: prompt
+    ssh: prompt
+    eval: prompt
+    web_search: allow
+# Push-only sharing (ADR-0010): disable discovery of sibling harnesses' USER
+# config roots (~/.claude, ~/.codex, ~/.pi) so oh-my-pi sees only what
+# install.sh mirrors into ~/.omp/agent at native priority. Project-level
+# discovery is left enabled — it is per-repo, not cross-harness pollution.
+skills:
+  enableClaudeUser: false
+  enableCodexUser: false
+  enablePiUser: false
+commands:
+  enableClaudeUser: false
+  enableCodexUser: false
+  enablePiUser: false
+modelRoles:
+  default: anthropic/claude-opus-4-7
+theme: 
+  dark: dark-catppuccin
+startup: 
+  quiet: true
+lastChangelogVersion: 15.5.7
+symbolPreset: nerd
+setupVersion: 1

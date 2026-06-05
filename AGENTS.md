@@ -86,7 +86,7 @@ buckets — choose exactly one per rule**:
   `scope:`). oh-my-pi aborts the stream on a match, injects the rule, retries. Use
   for content patterns and bash-command patterns regex can't be tricked on. A
   rule with `condition:` is TTSR-only, not also rulebook. (ADR-0003)
-- **Hook** (structured, input-bound) — TS modules at `omp/hooks/{pre,post}/*.ts`
+- **Hook** (structured, input-bound) — TS modules at `harnesses/omp/hooks/{pre,post}/*.ts`
   (`pre/guard-*.ts`, `post/redact-*.ts`) importing `HookAPI` from
   `@oh-my-pi/pi-coding-agent/extensibility/hooks`. Use when you need parsed
   tool input (paths, command) — catches what stream regex can't (process
@@ -95,10 +95,16 @@ buckets — choose exactly one per rule**:
 
 ## Permissions
 
-`claude/settings.json` is Claude Code's permission source of truth — edit it
-directly. `omp/config.yml` is hand-authored and decoupled: oh-my-pi uses
-tier-based approval (`approvalMode` + per-tool overrides), and Claude's
-per-pattern allowlist has no oh-my-pi equivalent. (ADR-0004, ADR-0005)
+`harnesses/claude/settings.json` is Claude Code's permission source of truth —
+edit it directly. `harnesses/omp/config.yml` is hand-authored: oh-my-pi uses
+tier-based approval (`approvalMode` + per-tool overrides). Cross-harness
+**guardrail policies** (never read secrets, no force-push, no broad rm, no sudo,
+no curl-pipe-to-shell) are defined once in `policies/` + `shared/guard-core.ts`
+and projected into each harness via its adapter — the tier-A in-process hook
+(`harnesses/omp/hooks/pre/guard-policies.ts`) and the tier-B Claude shim
+(`harnesses/claude/hooks/guard.ts`). A conformance test enforces the mandatory
+floor on every harness; an isolation test forbids cross-harness pollution.
+(ADR-0004 superseded in part by ADR-0010, ADR-0011)
 
 ## Quick recipes
 

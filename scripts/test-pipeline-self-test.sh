@@ -17,14 +17,14 @@ cleanup() {
   rm -f "$REPO_DIR"/agents/test-self-test-*.md 2>/dev/null || true
   rm -f "$REPO_DIR"/commands/test-self-test-*.md 2>/dev/null || true
   rm -f "$REPO_DIR"/rules/test-self-test-*.md 2>/dev/null || true
-  rm -f "$REPO_DIR"/omp/test-self-test-*.{yml,yaml} 2>/dev/null || true
-  rm -f "$REPO_DIR"/omp/hooks/pre/guard-test-self-test-*.ts 2>/dev/null || true
-  rm -f "$REPO_DIR"/omp/hooks/post/redact-test-self-test-*.ts 2>/dev/null || true
+  rm -f "$REPO_DIR"/harnesses/omp/test-self-test-*.{yml,yaml} 2>/dev/null || true
+  rm -f "$REPO_DIR"/harnesses/omp/hooks/pre/guard-test-self-test-*.ts 2>/dev/null || true
+  rm -f "$REPO_DIR"/harnesses/omp/hooks/post/redact-test-self-test-*.ts 2>/dev/null || true
   # Restore omp/config.yml if a self-test was interrupted mid-rename
-  if [[ -f "$REPO_DIR/omp/test-self-test-config-bak.yml" && ! -f "$REPO_DIR/omp/config.yml" ]]; then
-    mv "$REPO_DIR/omp/test-self-test-config-bak.yml" "$REPO_DIR/omp/config.yml"
+  if [[ -f "$REPO_DIR/harnesses/omp/test-self-test-config-bak.yml" && ! -f "$REPO_DIR/harnesses/omp/config.yml" ]]; then
+    mv "$REPO_DIR/harnesses/omp/test-self-test-config-bak.yml" "$REPO_DIR/harnesses/omp/config.yml"
   else
-    rm -f "$REPO_DIR/omp/test-self-test-config-bak.yml" 2>/dev/null || true
+    rm -f "$REPO_DIR/harnesses/omp/test-self-test-config-bak.yml" 2>/dev/null || true
   fi
   # Restore implement-coach SKILL.md if a self-test was interrupted mid-strip
   if [[ -f "$REPO_DIR/skills/implement-coach/SKILL.md.test-self-test-bak" ]]; then
@@ -271,8 +271,8 @@ EOF
 # ---------------------------------------------------------------------------
 
 test_omp_install_target_missing_fails() {
-  local src="$REPO_DIR/omp/config.yml"
-  local bak="$REPO_DIR/omp/test-self-test-config-bak.yml"
+  local src="$REPO_DIR/harnesses/omp/config.yml"
+  local bak="$REPO_DIR/harnesses/omp/test-self-test-config-bak.yml"
   mv "$src" "$bak"
 
   if run_pipeline; then
@@ -285,11 +285,32 @@ test_omp_install_target_missing_fails() {
 }
 
 # ---------------------------------------------------------------------------
+# Self-test 11b: re-enabling oh-my-pi cross-discovery fails isolation (ADR-0010)
+# ---------------------------------------------------------------------------
+
+test_cross_discovery_enabled_fails() {
+  local src="$REPO_DIR/harnesses/omp/config.yml"
+  local bak
+  bak="$(mktemp)"  # outside the repo so the pipeline scan / cleanup ignore it
+  cp "$src" "$bak"
+  sed -i 's/enableClaudeUser:[[:space:]]*false/enableClaudeUser: true/' "$src"
+
+  if run_pipeline; then
+    self_fail "cross-discovery re-enabled: test-pipeline.sh should exit non-zero"
+  else
+    self_pass "cross-discovery re-enabled: test-pipeline.sh correctly exits non-zero"
+  fi
+
+  cp "$bak" "$src"
+  rm -f "$bak"
+}
+
+# ---------------------------------------------------------------------------
 # Self-test 12: invalid YAML in omp/
 # ---------------------------------------------------------------------------
 
 test_omp_yaml_invalid_fails() {
-  local f="$REPO_DIR/omp/test-self-test-broken.yml"
+  local f="$REPO_DIR/harnesses/omp/test-self-test-broken.yml"
   cat >"$f" <<'EOF'
 key: [unclosed list
   - "and: { mixed: types"
@@ -310,7 +331,7 @@ EOF
 # ---------------------------------------------------------------------------
 
 test_omp_hook_missing_default_export_fails() {
-  local f="$REPO_DIR/omp/hooks/pre/guard-test-self-test-bad.ts"
+  local f="$REPO_DIR/harnesses/omp/hooks/pre/guard-test-self-test-bad.ts"
   cat >"$f" <<'EOF'
 import type { HookAPI } from "@oh-my-pi/pi-coding-agent/extensibility/hooks";
 
@@ -395,6 +416,7 @@ main() {
   test_ttsr_rule_missing_description_fails
   test_rulebook_rule_missing_description_fails
   test_omp_install_target_missing_fails
+  test_cross_discovery_enabled_fails
   test_omp_yaml_invalid_fails
   test_omp_hook_missing_default_export_fails
   test_skill_dir_missing_skill_md_fails
