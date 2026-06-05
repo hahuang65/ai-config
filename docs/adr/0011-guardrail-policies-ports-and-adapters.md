@@ -8,7 +8,7 @@ ADR-0004 decoupled permissions ("oh-my-pi is decoupled by design; no permission 
 
 ## The model
 
-- **`policies/` — the policy registry.** One entry per guardrail: an **ID**, human-readable intent, and enforcement metadata (check kind: `path`/`command`/`network`/`secret`; minimum strength). The canonical source of truth for *what*, harness-neutral and stable across harness churn.
+- **The policy registry.** One entry per guardrail: an **ID**, human-readable intent, enforcement metadata (check kind: `path`/`command`/`network`/`secret`; minimum strength), and two boundary cases (`example` violation + benign `counterExample`). The canonical source of truth for *what*, harness-neutral and stable across harness churn. *Implemented as the single file `shared/policy-registry.ts` — small enough not to warrant the `policies/` directory this ADR originally imagined; revisit if it grows or wants per-policy intent docs.*
 - **`shared/guard-core.ts` — the guard core.** Pure detection functions (`isSecretPath`, `isCurlPipeShell`, …) keyed by policy ID. The single source of truth for *how to detect*, written once.
 - **Per-harness adapter, classified by enforcement tier:**
   - **A — programmable** (pi, oh-my-pi): wire the guard core into the harness's in-process `tool_call` hook.

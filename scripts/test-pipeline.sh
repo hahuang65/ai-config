@@ -676,21 +676,32 @@ test_harness_modules() {
   else
     fail "install.sh" "generic harness loop (*/manifest.sh) not found"
   fi
-  # Every harness module declares a manifest with a config_root.
-  local mod name
+  # Every harness module must satisfy the manifest contract. Validate it the
+  # way install.sh consumes it — by sourcing the manifest in isolation and
+  # checking the declarations: a non-empty config_root always, and (for an
+  # active, non-pending module) a non-empty consumed_categories.
+  local mod name report
   for mod in "$REPO_DIR"/harnesses/*/; do
     [ -d "$mod" ] || continue
     name="$(basename "$mod")"
-    if [[ -f "$mod/manifest.sh" ]]; then
-      pass "harnesses/$name has manifest.sh"
-    else
+    if [[ ! -f "$mod/manifest.sh" ]]; then
       fail "harnesses/$name" "missing manifest.sh"
       continue
     fi
-    if grep -q "^config_root=" "$mod/manifest.sh"; then
-      pass "harnesses/$name manifest declares config_root"
+    report="$(HOME=/tmp/ai-harness-validate bash -c '
+      config_root=""; consumed_categories=(); harness_pending=false
+      install_module() { :; }
+      # shellcheck disable=SC1090
+      . "$1" 2>/dev/null || { echo SOURCE_FAIL; exit 0; }
+      [ -n "$config_root" ] || echo NO_CONFIG_ROOT
+      if [ "$harness_pending" != true ]; then
+        [ "${#consumed_categories[@]}" -gt 0 ] || echo NO_CATEGORIES
+      fi
+    ' _ "$mod/manifest.sh")"
+    if [[ -z "$report" ]]; then
+      pass "harnesses/$name manifest satisfies the contract"
     else
-      fail "harnesses/$name/manifest.sh" "missing config_root declaration"
+      fail "harnesses/$name/manifest.sh" "contract violation: $(echo "$report" | tr '\n' ' ')"
     fi
   done
   # oh-my-pi's runtime config still resolves at its module path.

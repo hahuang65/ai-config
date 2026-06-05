@@ -17,6 +17,7 @@ cleanup() {
   rm -f "$REPO_DIR"/agents/test-self-test-*.md 2>/dev/null || true
   rm -f "$REPO_DIR"/commands/test-self-test-*.md 2>/dev/null || true
   rm -f "$REPO_DIR"/rules/test-self-test-*.md 2>/dev/null || true
+  rm -rf "$REPO_DIR"/harnesses/test-self-test-* 2>/dev/null || true
   rm -f "$REPO_DIR"/harnesses/omp/test-self-test-*.{yml,yaml} 2>/dev/null || true
   rm -f "$REPO_DIR"/harnesses/omp/hooks/pre/guard-test-self-test-*.ts 2>/dev/null || true
   rm -f "$REPO_DIR"/harnesses/omp/hooks/post/redact-test-self-test-*.ts 2>/dev/null || true
@@ -306,6 +307,28 @@ test_cross_discovery_enabled_fails() {
 }
 
 # ---------------------------------------------------------------------------
+# Self-test 11c: a harness manifest missing config_root fails the contract
+# ---------------------------------------------------------------------------
+
+test_bad_manifest_fails() {
+  local dir="$REPO_DIR/harnesses/test-self-test-mod"
+  mkdir -p "$dir"
+  cat >"$dir/manifest.sh" <<'EOF'
+# Intentionally omits config_root — must fail the manifest contract check.
+consumed_categories=(skills)
+install_module() { :; }
+EOF
+
+  if run_pipeline; then
+    self_fail "bad manifest (no config_root): test-pipeline.sh should exit non-zero"
+  else
+    self_pass "bad manifest (no config_root): test-pipeline.sh correctly exits non-zero"
+  fi
+
+  rm -rf "$dir"
+}
+
+# ---------------------------------------------------------------------------
 # Self-test 12: invalid YAML in omp/
 # ---------------------------------------------------------------------------
 
@@ -417,6 +440,7 @@ main() {
   test_rulebook_rule_missing_description_fails
   test_omp_install_target_missing_fails
   test_cross_discovery_enabled_fails
+  test_bad_manifest_fails
   test_omp_yaml_invalid_fails
   test_omp_hook_missing_default_export_fails
   test_skill_dir_missing_skill_md_fails
