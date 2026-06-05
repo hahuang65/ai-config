@@ -307,6 +307,51 @@ test_phase_implement_coach() {
 }
 
 # ---------------------------------------------------------------------------
+# 6c. Phase: implement-coach holding-line discipline
+#
+# Coach mode's load-bearing rule is "yielding to the user IS the deliverable".
+# A prior session rationalized its way out of waiting after the harness's
+# `N incomplete todos - reminder K/M` injection fired: it polled the user's
+# files for silent progress, then silently switched to /implement and took
+# over both tests and code. The skill grew a Holding-the-line / Todo-hygiene
+# section to forbid each of those moves. These assertions are the gate that
+# stops a future edit from softening or deleting that section.
+# ---------------------------------------------------------------------------
+
+test_phase_implement_coach_holding_line() {
+  echo "Phase: implement-coach holding-line discipline"
+  local skill_file="$REPO_DIR/skills/implement-coach/SKILL.md"
+  local skill_label="skills/implement-coach/SKILL.md"
+  local cmd_file="$REPO_DIR/commands/implement-coach.md"
+  local cmd_label="commands/implement-coach.md"
+  [[ -f "$skill_file" ]] || { fail "$skill_label" "file not found"; return; }
+  [[ -f "$cmd_file" ]] || { fail "$cmd_label" "file not found"; return; }
+
+  local skill_content
+  skill_content="$(gather_skill_content "implement-coach")"
+
+  # One assertion per named rationalization. Phrasing is tight because the
+  # failure mode is precise: drift here is almost always softening, not
+  # legitimate rewording.
+  check_content_cached "$skill_content" "$skill_label" "Holding the line"
+  check_content_cached "$skill_content" "$skill_label" "[Ii]ncomplete-criteria reminders are not advance signals"
+  check_content_cached "$skill_content" "$skill_label" "[Nn]ever poll"
+  check_content_cached "$skill_content" "$skill_label" "[Nn]ever switch modes unilaterally"
+  check_content_cached "$skill_content" "$skill_label" "[Ss]ilence is not consent"
+  check_content_cached "$skill_content" "$skill_label" "switch to .?/implement"
+  check_content_cached "$skill_content" "$skill_label" "Todo hygiene"
+  check_content_cached "$skill_content" "$skill_label" "coach actions"
+
+  # The command file carries a one-paragraph copy so the rule lands before
+  # the skill body unrolls. Drift either way (skill vs command) is a gap.
+  local cmd_content
+  cmd_content="$(cat "$cmd_file")"
+  check_content_cached "$cmd_content" "$cmd_label" "[Ww]aiting is the deliverable"
+  check_content_cached "$cmd_content" "$cmd_label" "switch to .?/implement"
+  check_content_cached "$cmd_content" "$cmd_label" "[Ss]ilence is not consent"
+}
+
+# ---------------------------------------------------------------------------
 # 7. Phase: orchestrator (build)
 # ---------------------------------------------------------------------------
 
@@ -794,6 +839,8 @@ main() {
   test_phase_implement
   echo ""
   test_phase_implement_coach
+  echo ""
+  test_phase_implement_coach_holding_line
   echo ""
   test_phase_orchestrator
   echo ""

@@ -26,6 +26,11 @@ cleanup() {
   else
     rm -f "$REPO_DIR/omp/test-self-test-config-bak.yml" 2>/dev/null || true
   fi
+  # Restore implement-coach SKILL.md if a self-test was interrupted mid-strip
+  if [[ -f "$REPO_DIR/skills/implement-coach/SKILL.md.test-self-test-bak" ]]; then
+    mv "$REPO_DIR/skills/implement-coach/SKILL.md.test-self-test-bak" \
+       "$REPO_DIR/skills/implement-coach/SKILL.md"
+  fi
 }
 trap cleanup EXIT
 
@@ -343,6 +348,35 @@ test_skill_dir_missing_skill_md_fails() {
 }
 
 # ---------------------------------------------------------------------------
+# Self-test 15: implement-coach SKILL.md missing the Holding-the-line and
+# Todo-hygiene sections — proves the gate would catch a regression that
+# softens or deletes coach mode's load-bearing waiting discipline.
+# ---------------------------------------------------------------------------
+
+test_implement_coach_missing_holding_line_fails() {
+  local src="$REPO_DIR/skills/implement-coach/SKILL.md"
+  local bak="$REPO_DIR/skills/implement-coach/SKILL.md.test-self-test-bak"
+  cp "$src" "$bak"
+
+  # Strip every line from `## Holding the line` up to (not including) the
+  # next H2 (`## Rules Adherence`). This wipes Holding-the-line AND
+  # Todo-hygiene in one pass since they are contiguous.
+  awk '
+    /^## Holding the line/ { skip = 1 }
+    /^## Rules Adherence/  { skip = 0 }
+    !skip
+  ' "$bak" > "$src"
+
+  if run_pipeline; then
+    self_fail "stripped implement-coach holding-line section: test-pipeline.sh should exit non-zero"
+  else
+    self_pass "stripped implement-coach holding-line section: test-pipeline.sh correctly exits non-zero"
+  fi
+
+  mv "$bak" "$src"
+}
+
+# ---------------------------------------------------------------------------
 # Main
 # ---------------------------------------------------------------------------
 
@@ -364,6 +398,7 @@ main() {
   test_omp_yaml_invalid_fails
   test_omp_hook_missing_default_export_fails
   test_skill_dir_missing_skill_md_fails
+  test_implement_coach_missing_holding_line_fails
 
   echo ""
   echo "Results: $SELF_PASS passed, $SELF_FAIL failed"

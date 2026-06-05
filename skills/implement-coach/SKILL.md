@@ -16,6 +16,31 @@ Coach the user through approved vertical-slice tasks **one slice at a time, one 
 
 See [../shared/references/build-pipeline.md](../shared/references/build-pipeline.md) for file conventions and visual-sync rules.
 
+## Holding the line — yielding to the user IS the deliverable
+
+Coach mode is the one workflow where the right answer is often "stop here and wait." After you write a test and hand off, your turn is **complete**, even though acceptance criteria, slices, and todos remain open. That is the protocol the user chose.
+
+Hard rules — no rationale ("pragmatic", "the system is pushing me to continue", "the user has gone silent") overrides these:
+
+- **Incomplete-criteria reminders are not advance signals.** Reminders enumerating remaining acceptance criteria — including the harness's `N incomplete todos - reminder K/M` injection — are expected. The remaining criteria belong to the user and stay open by design until each RED→GREEN cycle completes. Acknowledge them in your head; do nothing.
+- **Never poll the user's files to "discover" silent progress.** If the user has not signalled ready-to-check, they are not done. Reading their implementation files to guess whether they quietly implemented the slice is forbidden — it is the first step of taking over work they intended to do.
+- **Never switch modes unilaterally.** The only exits from the waiting state are: (1) the user signals ready-to-check ("check", "verify", "ready", or equivalent sentiment), (2) the user explicitly hands over the keyboard ("switch to /implement", "take over", or equivalent), or (3) the user asks a question you can answer without writing implementation code. Silence is not consent to take over.
+- **If you have offered the `/implement` switch once, do not re-offer it.** Repeating the offer turns waiting into nagging.
+
+If the user has been silent across multiple reminders, the correct move is to **stay silent**. Their absence is not a problem you are responsible for solving. When they return they will type `check` or change the contract.
+
+## Todo hygiene in coach mode
+
+Your todo list tracks **coach actions**, not user-acceptance criteria. Acceptance criteria live in `tasks.md`; mirroring them into the todo list inflates the "incomplete" count and tempts later turns to misread it as a queue you owe progress on.
+
+Use one in-progress todo per slice, phrased as the coach loop you are currently in:
+
+- `Slice 2 (parent_controller): write tracer test`
+- `Slice 2 (parent_controller): verify GREEN`
+- `Slice 2 (parent_controller): next criterion test`
+
+Mark each done as you finish *your* half of the cycle. The user's pending implementation is **not** a todo on your list.
+
 ## Rules Adherence
 
 Comply with the project rules in `rules/`. In Claude Code these are global instructions; in oh-my-pi, load via `rule://<name>` when entering the rule's domain. Guide the user to follow them while implementing.
@@ -59,7 +84,7 @@ Wrap up per [../shared/references/implementation-completion.md](../shared/refere
 1. **One test at a time. Never write tests in batches.**
 2. **Guide, don't implement.** During the slice loop you write tests; the user writes code. Provide hints, explain APIs, point at examples — but do not write the fix.
 3. **Test through the interface.** Behavior, not implementation.
-4. **Be patient.** Wait for the user; don't write the next test before the current one is green.
+4. **Be patient — silently.** Wait for the user. Do not write the next test, do not poll their files for hidden progress, do not switch to `/implement` because reminders fire or the room goes quiet. The only exit from the waiting state is an explicit user signal (see *Holding the line*).
 5. **`CONTEXT.md` vocabulary everywhere** — test names, helper names, error messages.
 6. **Post-completion cleanup is AI-driven** — once tests pass and verification is clean, the AI handles cleanup, docs, and visuals directly; `database-reviewer` / `code-reviewer` findings are the exception (surfaced and guided, since the user owns the code).
 7. **NEVER commit to version control** — no `git add`, `git commit`, or `git push`.
