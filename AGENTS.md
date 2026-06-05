@@ -15,14 +15,17 @@ things" contract.** Follow it for every edit or addition.
 
 ## Enforcement — run before every commit
 
-`bash scripts/test-pipeline.sh` is the gate. It runs automatically in the
-pre-commit hook (`.githooks/pre-commit`) and **must stay green**. It enforces:
-frontmatter (`name`/`description`/agent tools), that **every `references/…md`
-link in a SKILL.md resolves**, no Claude-centric phrasing, no stale stubs,
-the harness install targets, and the required workflow phrases for each
-`/build` phase. `scripts/test-pipeline-self-test.sh` guards the gate itself.
-If you relocate content, update the gate in the same change — never weaken it
-to pass.
+`make test` is the gate (run `make` to list targets). It runs four categories —
+`test/content` (the authoring contract), `test/install` (install + harness
+modules), `test/guard` (the guard-core/conformance bun suite), and `test/meta`
+(the self-test that proves the checks catch planted errors). It runs
+automatically in the pre-commit hook (`.githooks/pre-commit`) and **must stay
+green**. `test/content` enforces: frontmatter (`name`/`description`/agent
+tools), that **every `references/…md` link in a SKILL.md resolves**, no
+Claude-centric phrasing, no stale stubs, and the required workflow phrases for
+each `/build` phase; `test/install` enforces the harness manifest contract and
+isolation. If you relocate content, update the gate in the same change — never
+weaken it to pass.
 
 ## Progressive disclosure — required for every skill
 

@@ -2,7 +2,7 @@
 
 Centralized configuration for AI coding harnesses — Claude Code and oh-my-pi. Skills, commands, agents, and rules authored once, installed into both by `install.sh`.
 
-> **Editing or adding skills / commands / agents / rules?** Read [`AGENTS.md`](AGENTS.md) — the authoring contract: progressive disclosure, the per-primitive harness matrix (what each is and which harnesses consume it), and the oh-my-pi rule mechanisms (rulebook / TTSR / hooks). `bash scripts/test-pipeline.sh` is the pre-commit gate that enforces it.
+> **Editing or adding skills / commands / agents / rules?** Read [`AGENTS.md`](AGENTS.md) — the authoring contract: progressive disclosure, the per-primitive harness matrix (what each is and which harnesses consume it), and the oh-my-pi rule mechanisms (rulebook / TTSR / hooks). `make test` is the pre-commit gate that enforces it (run `make` to list targets).
 
 ## Quick Start
 
@@ -206,10 +206,11 @@ Agents read a subset relevant to their role.
 │   └── pi/             pi slot — manifest only, enforcement deferred (ADR-0011)
 ├── shared/           guard core — policy-registry.ts (IDs + floor flags), guard-core.ts (detection, written once), conformance.ts
 ├── test/             bun tests — adapter + conformance behavior
-├── scripts/          Tooling (test-pipeline.sh, hooks/)
+├── Makefile          Developer tasks — run `make` for the menu
+├── scripts/          Validation pipeline + self-test (test-pipeline*.sh)
 ├── docs/features/      Per-feature artifacts (PRDs, tasks, visuals)
 ├── example/          Legacy example artifacts (old research/plan pipeline)
-├── .githooks/        Pre-commit hook (runs the test pipeline)
+├── .githooks/        Pre-commit hook (runs `make test`)
 ├── .builds/          CI (sr.ht → GitHub mirror)
 └── install.sh        Symlink installer
 ```
@@ -322,7 +323,7 @@ Security guardrails are defined **once** and projected into each harness (ports-
 
 - **oh-my-pi (tier A)** runs the core in-process: `harnesses/omp/hooks/pre/guard-policies.ts`. The output redactor `post/redact-keys.ts` stays as a separate post-tool concern.
 - **Claude Code (tier B)** runs the same core through a stdin/stdout shim: `harnesses/claude/hooks/guard.ts` (registered in `settings.json`); its static `permissions.deny` denylist remains as defense-in-depth.
-- A **conformance test** asserts every harness enforces every floor policy (emits a coverage matrix; no silent gaps); an **isolation test** forbids cross-harness pollution. Both run inside `scripts/test-pipeline.sh`, alongside the `bun` guard-core/adapter/conformance suite.
+- A **conformance test** asserts every harness enforces every floor policy (emits a coverage matrix; no silent gaps) — run via `make test/guard`. An **isolation test** forbids cross-harness pollution — run via `make test/install`. `make test` runs both (plus the guard-core/adapter unit tests).
 
 ## Dual-Harness Support
 
@@ -362,7 +363,10 @@ The command/skill duality means that commands sharing a name with a skill (`buil
 
 ### Test Pipeline
 
-`scripts/test-pipeline.sh` validates the repository's internal consistency:
+`make test` runs every check across four categories — `test/content`,
+`test/install`, `test/guard`, `test/meta` (run `make` to list them; `VERBOSE=1`
+shows every individual check). The `test/content` + `test/install` categories
+(`scripts/test-pipeline.sh`) validate the repository's internal consistency:
 
 - **Frontmatter**: Skills need name/description, agents need name/description/tools, commands need description
 - **Phase content**: Grill skill must mention `CONTEXT.md`, PRD must mention "User Stories", tasks must mention "vertical slice", implement must mention vertical-slice TDD, etc.

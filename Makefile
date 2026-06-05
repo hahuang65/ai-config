@@ -1,0 +1,27 @@
+# ai-config — developer tasks. Run `make` (or `make help`) to list targets.
+.DEFAULT_GOAL := help
+SHELL := bash
+
+.PHONY: help install test test/content test/install test/guard test/meta
+
+help: ## Show this help
+	@printf '\n  \033[1mai-config\033[0m \033[2m— make targets\033[0m\n\n'
+	@awk 'BEGIN{FS=":.*## "} /^[a-zA-Z0-9_\/-]+:.*## /{printf "  \033[36m%-15s\033[0m %s\n",$$1,$$2}' $(MAKEFILE_LIST)
+	@printf '\n  \033[2mtip: VERBOSE=1 make test/content  shows every check\033[0m\n\n'
+
+install: ## Symlink config into each harness root (~/.claude, ~/.omp/agent)
+	@bash install.sh
+
+test: test/content test/install test/guard test/meta ## Run every check (all test/* targets)
+
+test/content: ## Validate the shared authoring contract (skills, commands, agents, rules)
+	@bash scripts/test-pipeline.sh content
+
+test/install: ## Validate the install system + harness modules (manifests, isolation)
+	@bash scripts/test-pipeline.sh install
+
+test/guard: ## Run the guard-core + adapter + conformance suite (bun)
+	@bun test shared/ test/
+
+test/meta: ## Verify the validation pipeline catches planted errors
+	@bash scripts/test-pipeline-self-test.sh

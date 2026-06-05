@@ -13,8 +13,33 @@ KNOWN_TOOLS_PATTERN="$(IFS='|'; echo "${KNOWN_TOOLS[*]}")"
 REDIRECT_PATTERN="moved to|merged into|has been|see "
 MIN_NON_EMPTY_LINES=5  # Files with fewer non-empty lines are candidates for stale stub detection
 
-pass() { PASS=$((PASS + 1)); printf '  \033[32m✓\033[0m %s\n' "$1"; }
-fail() { FAIL=$((FAIL + 1)); ERRORS+=("$1: $2"); printf '  \033[31m✗\033[0m %s: %s\n' "$1" "$2"; }
+# Colour only when writing to a terminal; piped output (pre-commit, self-test)
+# stays clean.
+if [ -t 1 ]; then
+  G=$'\033[32m'; R=$'\033[31m'; D=$'\033[2m'; B=$'\033[1m'; C=$'\033[36m'; N=$'\033[0m'
+else
+  G=""; R=""; D=""; B=""; C=""; N=""
+fi
+
+CURRENT=""
+# A check passes/fails silently by default — the per-section summary line and
+# the final failures block carry the signal. VERBOSE=1 prints every check.
+pass() { PASS=$((PASS + 1)); [ -n "${VERBOSE:-}" ] && printf '    %s✓%s %s\n' "$G" "$N" "$1"; return 0; }
+fail() { FAIL=$((FAIL + 1)); ERRORS+=("$1: $2"); [ -n "${VERBOSE:-}" ] && printf '    %s✗%s %s: %s\n' "$R" "$N" "$1" "$2"; return 0; }
+
+# section() names the current group; run() executes a group and prints one
+# ✓/✗ summary line with the number of checks it ran.
+section() { CURRENT="$1"; }
+run() {
+  local p0=$PASS f0=$FAIL
+  "$1"
+  local dp=$((PASS - p0)) df=$((FAIL - f0))
+  if [ "$df" -eq 0 ]; then
+    printf '  %s✓%s %-52s %s%2d ok%s\n' "$G" "$N" "$CURRENT" "$D" "$dp" "$N"
+  else
+    printf '  %s✗%s %-52s %s%d/%d failed%s\n' "$R" "$N" "$CURRENT" "$R" "$df" "$((dp + df))" "$N"
+  fi
+}
 
 # Cached list of agent basenames (without .md)
 AGENT_NAMES=()
@@ -80,7 +105,7 @@ gather_skill_content() {
 # ---------------------------------------------------------------------------
 
 test_frontmatter_skills() {
-  echo "Frontmatter: skills"
+  section "Frontmatter: skills"
   local skill_dir
   for skill_dir in "$REPO_DIR"/skills/*/; do
     local skill_file="$skill_dir/SKILL.md"
@@ -104,7 +129,7 @@ test_frontmatter_skills() {
 # ---------------------------------------------------------------------------
 
 test_frontmatter_agents() {
-  echo "Frontmatter: agents"
+  section "Frontmatter: agents"
   local agent_file
   for agent_file in "$REPO_DIR"/agents/*.md; do
     local label="agents/$(basename "$agent_file")"
@@ -135,7 +160,7 @@ test_frontmatter_agents() {
 # ---------------------------------------------------------------------------
 
 test_frontmatter_commands() {
-  echo "Frontmatter: commands"
+  section "Frontmatter: commands"
   local cmd_file
   for cmd_file in "$REPO_DIR"/commands/*.md; do
     local label="commands/$(basename "$cmd_file")"
@@ -154,7 +179,7 @@ test_frontmatter_commands() {
 # ---------------------------------------------------------------------------
 
 test_phase_grill() {
-  echo "Phase: grill"
+  section "Phase: grill"
   local file="$REPO_DIR/skills/grill/SKILL.md"
   local label="skills/grill/SKILL.md"
   [[ -f "$file" ]] || { fail "$label" "file not found"; return; }
@@ -177,7 +202,7 @@ test_phase_grill() {
 # ---------------------------------------------------------------------------
 
 test_phase_prd() {
-  echo "Phase: prd"
+  section "Phase: prd"
   local file="$REPO_DIR/skills/prd/SKILL.md"
   local label="skills/prd/SKILL.md"
   [[ -f "$file" ]] || { fail "$label" "file not found"; return; }
@@ -206,7 +231,7 @@ test_phase_prd() {
 # ---------------------------------------------------------------------------
 
 test_phase_tasks() {
-  echo "Phase: tasks"
+  section "Phase: tasks"
   local file="$REPO_DIR/skills/tasks/SKILL.md"
   local label="skills/tasks/SKILL.md"
   [[ -f "$file" ]] || { fail "$label" "file not found"; return; }
@@ -259,7 +284,7 @@ test_phase_implement_post() {
 }
 
 test_phase_implement() {
-  echo "Phase: implement"
+  section "Phase: implement"
   local file="$REPO_DIR/skills/implement/SKILL.md"
   local label="skills/implement/SKILL.md"
   [[ -f "$file" ]] || { fail "$label" "file not found"; return; }
@@ -274,7 +299,7 @@ test_phase_implement() {
 # ---------------------------------------------------------------------------
 
 test_phase_implement_coach() {
-  echo "Phase: implement-coach"
+  section "Phase: implement-coach"
   local file="$REPO_DIR/skills/implement-coach/SKILL.md"
   local label="skills/implement-coach/SKILL.md"
   [[ -f "$file" ]] || { fail "$label" "file not found"; return; }
@@ -319,7 +344,7 @@ test_phase_implement_coach() {
 # ---------------------------------------------------------------------------
 
 test_phase_implement_coach_holding_line() {
-  echo "Phase: implement-coach holding-line discipline"
+  section "Phase: implement-coach holding-line discipline"
   local skill_file="$REPO_DIR/skills/implement-coach/SKILL.md"
   local skill_label="skills/implement-coach/SKILL.md"
   local cmd_file="$REPO_DIR/commands/implement-coach.md"
@@ -356,7 +381,7 @@ test_phase_implement_coach_holding_line() {
 # ---------------------------------------------------------------------------
 
 test_phase_orchestrator() {
-  echo "Phase: orchestrator (build)"
+  section "Phase: orchestrator (build)"
   local file="$REPO_DIR/skills/build/SKILL.md"
   local label="skills/build/SKILL.md"
   [[ -f "$file" ]] || { fail "$label" "file not found"; return; }
@@ -466,7 +491,7 @@ check_skill_reference_links() {
 }
 
 test_cross_references() {
-  echo "Cross-references"
+  section "Cross-references"
   check_skill_references_phases
   check_agent_files_exist
   check_ve_paths
@@ -478,7 +503,7 @@ test_cross_references() {
 # ---------------------------------------------------------------------------
 
 test_agent_rule_deps() {
-  echo "Agent rule dependencies"
+  section "Agent rule dependencies"
   local agent_file
   for agent_file in "$REPO_DIR"/agents/*.md; do
     local label="agents/$(basename "$agent_file")"
@@ -502,7 +527,7 @@ test_agent_rule_deps() {
 # ---------------------------------------------------------------------------
 
 test_symlink_targets() {
-  echo "Symlink targets"
+  section "Symlink targets"
   local skill_dir
   for skill_dir in "$REPO_DIR"/skills/*/; do
     local skill_name
@@ -583,7 +608,7 @@ check_guide_contains_skill_commands() {
 }
 
 test_guide_skill_sync() {
-  echo "Guide/skill sync"
+  section "Guide/skill sync"
   local skill_dir
   for skill_dir in "$REPO_DIR"/skills/*/; do
     local skill_name
@@ -618,7 +643,7 @@ _count_condition_entries() {
 }
 
 test_ttsr_rule_frontmatter() {
-  echo "Rule frontmatter: TTSR"
+  section "Rule frontmatter: TTSR"
   local rule_file
   for rule_file in "$REPO_DIR"/rules/*.md; do
     local label="rules/$(basename "$rule_file")"
@@ -642,7 +667,7 @@ test_ttsr_rule_frontmatter() {
 }
 
 test_rulebook_rule_frontmatter() {
-  echo "Rule frontmatter: rulebook"
+  section "Rule frontmatter: rulebook"
   local rule_file
   for rule_file in "$REPO_DIR"/rules/*.md; do
     local label="rules/$(basename "$rule_file")"
@@ -668,7 +693,7 @@ test_rulebook_rule_frontmatter() {
 # ---------------------------------------------------------------------------
 
 test_harness_modules() {
-  echo "Harness modules + generic install loop"
+  section "Harness modules + generic install loop"
   # install.sh must be a generic loop over module manifests, not hand-written
   # per-harness blocks.
   if grep -qE '/\*/manifest\.sh' "$REPO_DIR/install.sh"; then
@@ -713,7 +738,7 @@ test_harness_modules() {
 }
 
 test_omp_yaml_valid() {
-  echo "omp YAML validity"
+  section "omp YAML validity"
   local yml
   for yml in "$REPO_DIR"/harnesses/omp/*.yml "$REPO_DIR"/harnesses/omp/*.yaml; do
     [[ -f "$yml" ]] || continue
@@ -736,7 +761,7 @@ test_omp_yaml_valid() {
 # ---------------------------------------------------------------------------
 
 test_omp_hook_shape() {
-  echo "omp hook shape"
+  section "omp hook shape"
   local hook_file
   for hook_file in "$REPO_DIR"/harnesses/omp/hooks/pre/*.ts "$REPO_DIR"/harnesses/omp/hooks/post/*.ts; do
     [ -f "$hook_file" ] || continue
@@ -795,7 +820,7 @@ test_omp_hook_shape() {
 # ---------------------------------------------------------------------------
 
 test_no_forbidden_claude_centric_phrasing() {
-  echo "Forbidden Claude-centric phrasing"
+  section "Forbidden Claude-centric phrasing"
   local pattern='already loaded in context|already in your context|loaded automatically into context'
   local matches
   matches="$(grep -ilE "$pattern" \
@@ -841,7 +866,7 @@ check_stale_in_dir() {
 }
 
 test_stale_stubs() {
-  echo "Stale stubs"
+  section "Stale stubs"
   check_stale_in_dir "$REPO_DIR/agents" "agents"
   check_stale_in_dir "$REPO_DIR/commands" "commands"
   check_stale_in_dir "$REPO_DIR/rules" "rules"
@@ -873,7 +898,7 @@ root_leaks_into_module() {
 }
 
 test_isolation() {
-  echo "Isolation: no cross-harness pollution"
+  section "Isolation: no cross-harness pollution"
   local tmphome
   tmphome="$(mktemp -d)"
 
@@ -927,7 +952,7 @@ test_isolation() {
 # ---------------------------------------------------------------------------
 
 test_install_behavior() {
-  echo "Install loop: idempotency, prune, module add/remove"
+  section "Install loop: idempotency, prune, module add/remove"
   local tmphome tmpmods
   tmphome="$(mktemp -d)"
 
@@ -987,96 +1012,76 @@ EOF
   rm -rf "$tmphome" "$tmpmods"
 }
 
-# ---------------------------------------------------------------------------
-# 14. Guard core, adapters, and conformance (ADR-0011)
-#
-# Runs the TypeScript guard suite under bun: the guard-core unit tests, the
-# per-harness adapter tests, and the conformance test (every harness enforces
-# every floor policy; coverage matrix; no silent gaps). Brings the behavioral
-# guardrail tests under the same pipeline as the static config checks.
-# ---------------------------------------------------------------------------
-
-test_guard_suite() {
-  echo "Guard core, adapters, and conformance (bun)"
-  if ! command -v bun >/dev/null 2>&1; then
-    fail "guard-suite" "bun not found on PATH — the guard core and conformance tests require bun"
-    return
-  fi
-  local log
-  log="$(mktemp)"
-  if bun test "$REPO_DIR/shared" "$REPO_DIR/test" >"$log" 2>&1; then
-    pass "bun guard + conformance suite ($(grep -oE '[0-9]+ pass' "$log" | head -1))"
-  else
-    fail "guard-suite" "bun suite failed ($(grep -oE '[0-9]+ fail' "$log" | head -1)) — run: bun test shared/ test/"
-  fi
-  rm -f "$log"
-}
+# The TypeScript guard suite (guard core + adapters + conformance) runs under
+# bun via the `test/guard` Make target, not here — this script stays pure
+# static / structural validation so the self-test can re-run it cheaply.
+# `make test` runs content, install, guard, and meta together.
 
 # ---------------------------------------------------------------------------
 # Main
 # ---------------------------------------------------------------------------
 
+# content: the shared authoring contract — skills/commands/agents/rules markdown
+# is well-formed and internally consistent.
+run_content() {
+  run test_frontmatter_skills
+  run test_frontmatter_agents
+  run test_frontmatter_commands
+  run test_phase_grill
+  run test_phase_prd
+  run test_phase_tasks
+  run test_phase_implement
+  run test_phase_implement_coach
+  run test_phase_implement_coach_holding_line
+  run test_phase_orchestrator
+  run test_cross_references
+  run test_agent_rule_deps
+  run test_symlink_targets
+  run test_guide_skill_sync
+  run test_ttsr_rule_frontmatter
+  run test_rulebook_rule_frontmatter
+  run test_no_forbidden_claude_centric_phrasing
+  run test_stale_stubs
+}
+
+# install: the install system and harness modules — manifests, omp config/hooks,
+# cross-harness isolation, and idempotent/prune install behavior.
+run_install() {
+  run test_harness_modules
+  run test_omp_yaml_valid
+  run test_omp_hook_shape
+  run test_isolation
+  run test_install_behavior
+}
+
+# Usage: test-pipeline.sh [content|install]   (no arg runs both)
 main() {
   _cache_agent_names
-  test_frontmatter_skills
-  echo ""
-  test_frontmatter_agents
-  echo ""
-  test_frontmatter_commands
-  echo ""
-  test_phase_grill
-  echo ""
-  test_phase_prd
-  echo ""
-  test_phase_tasks
-  echo ""
-  test_phase_implement
-  echo ""
-  test_phase_implement_coach
-  echo ""
-  test_phase_implement_coach_holding_line
-  echo ""
-  test_phase_orchestrator
-  echo ""
-  test_cross_references
-  echo ""
-  test_agent_rule_deps
-  echo ""
-  test_symlink_targets
-  echo ""
-  test_guide_skill_sync
-  echo ""
-  test_ttsr_rule_frontmatter
-  echo ""
-  test_rulebook_rule_frontmatter
-  echo ""
-  test_harness_modules
-  echo ""
-  test_omp_yaml_valid
-  echo ""
-  test_omp_hook_shape
-  echo ""
-  test_no_forbidden_claude_centric_phrasing
-  echo ""
-  test_stale_stubs
-  echo ""
-  test_isolation
-  echo ""
-  test_install_behavior
-  echo ""
-  test_guard_suite
+  local category="${1:-all}" label
+  case "$category" in
+    content) label="authoring contract" ;;
+    install) label="install + harness modules" ;;
+    all)     label="content + install" ;;
+    *) printf 'unknown category %q — use: content | install (or none for all)\n' "$category" >&2; exit 2 ;;
+  esac
+  printf '\n  %s▌%s %sai-config%s %s— %s%s\n\n' "$C" "$N" "$B" "$N" "$D" "$label" "$N"
 
-  echo ""
-  echo "Results: $PASS passed, $FAIL failed"
+  case "$category" in
+    content) run_content ;;
+    install) run_install ;;
+    all)     run_content; run_install ;;
+  esac
 
-  if [[ "${#ERRORS[@]}" -gt 0 ]]; then
-    echo ""
-    echo "Failures:"
+  if [[ "${#ERRORS[@]}" -eq 0 ]]; then
+    printf '\n  %s✓ %d checks passed%s\n\n' "$G$B" "$PASS" "$N"
+  else
+    printf '\n  %s✗ %d passed · %d failed%s\n\n  Failures:\n' "$R$B" "$PASS" "$FAIL" "$N"
     for err in "${ERRORS[@]}"; do
-      printf '  \033[31m✗\033[0m %s\n' "$err"
+      printf '    %s✗%s %s\n' "$R" "$N" "$err"
     done
+    printf '\n'
     exit 1
   fi
 }
 
-main
+main "$@"

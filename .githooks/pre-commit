@@ -3,7 +3,11 @@ set -euo pipefail
 
 REPO_DIR="$(git rev-parse --show-toplevel)"
 
-# Validate pipeline integrity
-if [[ -f "$REPO_DIR/scripts/test-pipeline.sh" ]]; then
+# Run every check before each commit: content, install, guard, and meta
+# (same as `make test`).
+if [[ -f "$REPO_DIR/Makefile" ]]; then
+  make -s -C "$REPO_DIR" test
+elif [[ -f "$REPO_DIR/scripts/test-pipeline.sh" ]]; then
   bash "$REPO_DIR/scripts/test-pipeline.sh"
+  bash "$REPO_DIR/scripts/test-pipeline-self-test.sh"
 fi
