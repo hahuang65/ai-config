@@ -1,0 +1,6 @@
+# Ephemeral fixtures created by the self-test (scripts/test-pipeline-self-test.sh).
+# Each is written and deleted within a single run to prove the validation
+# pipeline rejects bad input; ignoring them means a hard-killed run can never
+# leak one into a commit.
+test-self-test-*
+*.test-self-test-bak
