@@ -9,7 +9,9 @@ tools:
 modelRoles: 
   default: anthropic/claude-opus-4-7
 theme: 
-  dark: catppuccin-mocha
+  dark: dark-catppuccin
 startup: 
   quiet: true
 lastChangelogVersion: 15.5.7
+symbolPreset: nerd
+setupVersion: 1
