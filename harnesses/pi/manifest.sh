@@ -48,19 +48,51 @@ install_module() {
   dim "  $config_root/extensions/guard-policies.ts (bundled guard)"
 
   # Subagent extension — ships as an example with pi. Symlinked if present;
-  # skipped gracefully on a system where pi is not installed.
-  local pi_subagent_src="/opt/pi-coding-agent/examples/extensions/subagent"
-  if [ -d "$pi_subagent_src" ]; then
+  # skipped gracefully on a system where pi is not installed. Resolves the
+  # subagent path dynamically from the pi binary's real location rather than
+  # hardcoding a filesystem path that varies by install method (Homebrew,
+  # npm -g, etc.).
+  local pi_subagent_src=""
+  local pi_bin; pi_bin="$(command -v pi 2>/dev/null)" || true
+  if [ -n "$pi_bin" ] && [ -x "$pi_bin" ]; then
+    local pi_real; pi_real="$(readlink -f "$pi_bin" 2>/dev/null)" || pi_real="$pi_bin"
+    local pi_pkg_root; pi_pkg_root="$(dirname "$(dirname "$pi_real")")"
+    if [ -d "$pi_pkg_root/examples/extensions/subagent" ]; then
+      pi_subagent_src="$pi_pkg_root/examples/extensions/subagent"
+    fi
+  fi
+  if [ -n "$pi_subagent_src" ] && [ -d "$pi_subagent_src" ]; then
     mkdir -p "$config_root/extensions/subagent"
     ln -sf "$pi_subagent_src/index.ts" "$config_root/extensions/subagent/index.ts"
     ln -sf "$pi_subagent_src/agents.ts" "$config_root/extensions/subagent/agents.ts"
     dim "  $config_root/extensions/subagent/ (subagent extension)"
+
+    # Workflow prompt templates (e.g. /implement, /scout-and-plan)
+    if [ -d "$pi_subagent_src/prompts" ]; then
+      mkdir -p "$config_root/prompts"
+      for f in "$pi_subagent_src"/prompts/*.md; do
+        name="$(basename "$f")"
+        ln -sf "$f" "$config_root/prompts/$name"
+      done
+      dim "    $config_root/prompts/ — subagent workflow prompts"
+    fi
+
+    # Agent definitions (scout, planner, reviewer, worker)
+    if [ -d "$pi_subagent_src/agents" ]; then
+      mkdir -p "$config_root/agents"
+      for f in "$pi_subagent_src"/agents/*.md; do
+        name="$(basename "$f")"
+        ln -sf "$f" "$config_root/agents/$name"
+      done
+      dim "    $config_root/agents/ — subagent agent definitions"
+    fi
   fi
 
   # Clean up directories no longer consumed or managed by pi.
-  # commands/ was previously mirrored but pi doesn't use it;
-  # prompts/ was a user-side arrangement that duplicates the skill entries.
-  for stale in commands prompts; do
+  # commands/ was previously mirrored but pi doesn't use it.
+  # prompts/ is consumed by pi for prompt templates (e.g. /implement, /scout-and-plan)
+  # so we keep it.
+  for stale in commands; do
     if [ -d "$config_root/$stale" ]; then
       # Remove all symlinked .md files placed by this repo or the user
       find "$config_root/$stale" -maxdepth 1 -type l -name "*.md" -delete 2>/dev/null || true

@@ -317,7 +317,8 @@ test_cross_discovery_enabled_fails() {
   local bak
   bak="$(mktemp)"  # outside the repo so the pipeline scan / cleanup ignore it
   cp "$src" "$bak"
-  sed -i 's/enableClaudeUser:[[:space:]]*false/enableClaudeUser: true/' "$src"
+  sed -i.bak 's/enableClaudeUser:[[:space:]]*false/enableClaudeUser: true/' "$src"
+  rm -f "$src.bak"
 
   if run_pipeline; then
     self_fail "cross-discovery re-enabled: test-pipeline.sh should exit non-zero"
