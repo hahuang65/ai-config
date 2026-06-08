@@ -647,23 +647,6 @@ test_no_ttsr_frontmatter() {
   done
 }
 
-test_pi_agents_current() {
-  section "pi advisory-rules concatenation is current (ADR-0013)"
-  local committed="$REPO_DIR/harnesses/pi/advisory-rules.md"
-  if [[ ! -f "$committed" ]]; then
-    fail "harnesses/pi/advisory-rules.md" "missing — run 'make rules' to generate pi's advisory-rules context"
-    return
-  fi
-  local tmp
-  tmp="$(mktemp)"
-  if bash "$REPO_DIR/scripts/gen-pi-agents.sh" >"$tmp" 2>/dev/null && diff -q "$tmp" "$committed" >/dev/null 2>&1; then
-    pass "harnesses/pi/advisory-rules.md matches rules/*.md"
-  else
-    fail "harnesses/pi/advisory-rules.md" "stale — rules/*.md changed without regeneration; run 'make rules'"
-  fi
-  rm -f "$tmp"
-}
-
 test_pi_bundle_current() {
   section "pi guard extension bundle is current"
   local committed="$REPO_DIR/harnesses/pi/guard-policies.bundle.ts"
@@ -1022,10 +1005,16 @@ test_install_behavior() {
   else
     fail "install-behavior" "pi guard extension has relative imports pi can't resolve (must be bundled)"
   fi
-  [[ -e "$tmphome/.pi/agent/AGENTS.md" ]] && pass "pi advisory-rules AGENTS.md installed" \
-    || fail "install-behavior" "pi AGENTS.md missing"
-  [[ ! -e "$tmphome/.pi/agent/rules" ]] && pass "pi has no rules/ dir (rules arrive via AGENTS.md)" \
-    || fail "install-behavior" "pi unexpectedly has a rules/ directory"
+  [[ -d "$tmphome/.pi/agent/rules" ]] && pass "pi has rules/ dir with on-demand rule files" \
+    || fail "install-behavior" "pi rules/ directory missing — expected after switching to on-demand rules"
+  for rule_file in coding-style testing security performance git-commit mise; do
+    [[ -f "$tmphome/.pi/agent/rules/$rule_file.md" ]] && pass "pi rules/$rule_file.md present" \
+      || fail "install-behavior" "pi rules/$rule_file.md missing"
+  done
+  [[ -f "$tmphome/.pi/agent/extensions/subagent/index.ts" ]] && pass "pi subagent extension index.ts installed" \
+    || fail "install-behavior" "pi subagent extension index.ts missing"
+  [[ -f "$tmphome/.pi/agent/extensions/subagent/agents.ts" ]] && pass "pi subagent extension agents.ts installed" \
+    || fail "install-behavior" "pi subagent extension agents.ts missing"
 
   # Idempotency: a second run succeeds and a known link still resolves.
   if HOME="$tmphome" bash "$REPO_DIR/install.sh" >/dev/null 2>&1 \
@@ -1097,7 +1086,6 @@ run_content() {
   run test_guide_skill_sync
   run test_no_ttsr_frontmatter
   run test_rulebook_rule_frontmatter
-  run test_pi_agents_current
   run test_pi_bundle_current
   run test_no_forbidden_claude_centric_phrasing
   run test_stale_stubs

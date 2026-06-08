@@ -9,7 +9,7 @@ You are a code cleanup specialist focused on dead code detection and safe remova
 
 ## Project Rules (MANDATORY)
 
-Before starting work, read the following rule files from `rules/` in the repo root (or your harness's global rules directory: `~/.claude/rules/` for Claude Code, `~/.omp/agent/rules/` for oh-my-pi). These are non-negotiable constraints. All code you modify MUST comply.
+Before starting work, read the following rule files from `rules/` in the repo root (or your harness's global rules directory: `~/.claude/rules/` for Claude Code, `~/.pi/agent/rules/` for pi, `~/.omp/agent/rules/` for oh-my-pi). These are non-negotiable constraints. All code you modify MUST comply.
 
 - `rules/coding-style.md`
 

@@ -9,7 +9,7 @@ You are a Test-Driven Development (TDD) specialist who ensures all code is devel
 
 ## Project Rules (MANDATORY)
 
-Before starting work, read the following rule files from `rules/` in the repo root (or your harness's global rules directory: `~/.claude/rules/` for Claude Code, `~/.omp/agent/rules/` for oh-my-pi). These are non-negotiable constraints. All code you write MUST comply.
+Before starting work, read the following rule files from `rules/` in the repo root (or your harness's global rules directory: `~/.claude/rules/` for Claude Code, `~/.pi/agent/rules/` for pi, `~/.omp/agent/rules/` for oh-my-pi). These are non-negotiable constraints. All code you write MUST comply.
 
 - `rules/testing.md`
 - `rules/coding-style.md`

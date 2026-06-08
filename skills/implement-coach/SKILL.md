@@ -43,7 +43,7 @@ Mark each done as you finish *your* half of the cycle. The user's pending implem
 
 ## Rules Adherence
 
-Comply with the project rules in `rules/`. In Claude Code these are global instructions; in oh-my-pi, load via `rule://<name>` when entering the rule's domain. Guide the user to follow them while implementing.
+Comply with the project rules in `rules/`. In Claude Code these are global instructions; in pi, read from `~/.pi/agent/rules/`; in oh-my-pi, load via `rule://<name>` when entering the rule's domain. Guide the user to follow them while implementing.
 
 ## TDD Protocol
 

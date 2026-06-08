@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pi On-Demand Rules &amp; Subagent Extension — PRD</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --font-body: 'IBM Plex Sans', system-ui, sans-serif;
+    --font-mono: 'IBM Plex Mono', 'SF Mono', Consolas, monospace;
+    --bg: #f8f6f3;
+    --surface: #ffffff;
+    --surface2: #f0ece7;
+    --border: rgba(0,0,0,0.06);
+    --border-bright: rgba(0,0,0,0.12);
+    --text: #1a1614;
+    --text-dim: #7a726a;
+    --accent: #2563eb;
+    --accent-dim: rgba(37,99,235,0.08);
+    --green: #16a34a;
+    --green-dim: rgba(22,163,74,0.08);
+    --amber: #d97706;
+    --amber-dim: rgba(217,119,6,0.08);
+    --red: #dc2626;
+    --red-dim: rgba(220,38,38,0.08);
+    --violet: #7c3aed;
+    --violet-dim: rgba(124,58,237,0.08);
+  }
+  @media(prefers-color-scheme:dark) {
+    :root {
+      --bg: #121212;
+      --surface: #1e1e1e;
+      --surface2: #2a2a2a;
+      --border: rgba(255,255,255,0.06);
+      --border-bright: rgba(255,255,255,0.12);
+      --text: #e8e4e0;
+      --text-dim: #8a827a;
+      --accent: #60a5fa;
+      --accent-dim: rgba(96,165,250,0.12);
+      --green: #4ade80;
+      --green-dim: rgba(74,222,128,0.12);
+      --amber: #fbbf24;
+      --amber-dim: rgba(251,191,36,0.12);
+      --red: #f87171;
+      --red-dim: rgba(248,113,113,0.12);
+      --violet: #a78bfa;
+      --violet-dim: rgba(167,139,250,0.12);
+    }
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    font-family: var(--font-body);
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.65;
+    padding: 0;
+  }
+  .container { max-width: 880px; margin: 0 auto; padding: 48px 24px 96px; }
+  h1 {
+    font-size: 2.25rem;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    line-height: 1.2;
+    margin-bottom: 8px;
+  }
+  .subtitle {
+    font-size: 1.05rem;
+    color: var(--text-dim);
+    margin-bottom: 40px;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 24px;
+  }
+  h2 {
+    font-size: 1.35rem;
+    font-weight: 600;
+    margin-top: 40px;
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  h2 .num {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    border-radius: 6px;
+    background: var(--accent-dim);
+    color: var(--accent);
+    font-size: 0.85rem;
+    font-weight: 600;
+    flex-shrink: 0;
+  }
+  h3 {
+    font-size: 1rem;
+    font-weight: 600;
+    margin-top: 24px;
+    margin-bottom: 8px;
+  }
+  p, li { margin-bottom: 8px; }
+  ul, ol { padding-left: 20px; margin-bottom: 12px; }
+  li { margin-bottom: 4px; }
+  strong { font-weight: 600; }
+
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 20px 24px;
+    margin-bottom: 16px;
+  }
+  .card-label {
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--accent);
+    margin-bottom: 4px;
+  }
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 10px;
+    border-radius: 20px;
+    font-size: 0.78rem;
+    font-weight: 500;
+  }
+  .badge-green { background: var(--green-dim); color: var(--green); }
+  .badge-amber { background: var(--amber-dim); color: var(--amber); }
+  .badge-red { background: var(--red-dim); color: var(--red); }
+  .badge-violet { background: var(--violet-dim); color: var(--violet); }
+  .badge-accent { background: var(--accent-dim); color: var(--accent); }
+
+  .grid-2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+  @media(max-width:600px){ .grid-2 { grid-template-columns: 1fr; } }
+
+  .comparison {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+  @media(max-width:700px){ .comparison { grid-template-columns: 1fr; } }
+  .comparison .col {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 16px;
+  }
+  .comparison .col h4 {
+    font-size: 0.82rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    margin-bottom: 8px;
+    padding-bottom: 6px;
+    border-bottom: 2px solid var(--border);
+  }
+
+  .file-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 16px;
+    font-size: 0.9rem;
+  }
+  .file-table th {
+    text-align: left;
+    padding: 8px 12px;
+    font-weight: 600;
+    font-size: 0.78rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--text-dim);
+    border-bottom: 1px solid var(--border-bright);
+  }
+  .file-table td {
+    padding: 8px 12px;
+    border-bottom: 1px solid var(--border);
+    font-family: var(--font-mono);
+    font-size: 0.85rem;
+  }
+  .file-table tr:last-child td { border-bottom: none; }
+  .file-table .action {
+    display: inline-block;
+    padding: 1px 8px;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    font-family: var(--font-body);
+  }
+  .action-add { background: var(--green-dim); color: var(--green); }
+  .action-remove { background: var(--red-dim); color: var(--red); }
+  .action-modify { background: var(--amber-dim); color: var(--amber); }
+
+  .flow {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-bottom: 24px;
+  }
+  .flow-step {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 14px;
+    border-radius: 8px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    font-size: 0.85rem;
+  }
+  .flow-step .icon { font-size: 1.1rem; }
+  .flow-arrow { color: var(--text-dim); font-size: 1.1rem; }
+
+  .story-list { counter-reset: story; }
+  .story-list li {
+    list-style: none;
+    counter-increment: story;
+    padding: 8px 12px 8px 36px;
+    position: relative;
+    border-bottom: 1px solid var(--border);
+  }
+  .story-list li:last-child { border-bottom: none; }
+  .story-list li::before {
+    content: counter(story);
+    position: absolute;
+    left: 8px;
+    top: 8px;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: var(--accent-dim);
+    color: var(--accent);
+    font-size: 0.75rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+<h1>Pi On-Demand Rules &amp; Subagent Extension</h1>
+<p class="subtitle">PRD — 2026-06-08 &middot; Switching pi's advisory rules from always-on to on-demand, installing the subagent extension for isolated review agents</p>
+
+<!-- Harness comparison -->
+<h2><span class="num">Σ</span> Current state</h2>
+<div class="comparison">
+  <div class="col">
+    <h4 style="border-color:var(--accent);color:var(--accent);">Claude Code</h4>
+    <p style="font-size:0.85rem;color:var(--text-dim);">Rules at <code>~/.claude/rules/</code></p>
+    <p><span class="badge badge-green">✔ Always-on</span></p>
+    <p style="font-size:0.85rem;">Auto-injected every turn. Native harness behavior. <strong>No change.</strong></p>
+  </div>
+  <div class="col">
+    <h4 style="border-color:var(--amber);color:var(--amber);">oh-my-pi</h4>
+    <p style="font-size:0.85rem;color:var(--text-dim);">Rules at <code>~/.omp/agent/rules/</code></p>
+    <p><span class="badge badge-amber">⟐ On-demand</span></p>
+    <p style="font-size:0.85rem;">Loaded via <code>rule://&lt;name&gt;</code> during build phases. <strong>No change.</strong></p>
+  </div>
+  <div class="col">
+    <h4 style="border-color:var(--violet);color:var(--violet);">pi</h4>
+    <p style="font-size:0.85rem;color:var(--text-dim);">Rules in concatenated <code>AGENTS.md</code></p>
+    <p><span class="badge badge-red">✖ Always-on →</span> <span class="badge badge-amber">⟐ On-demand</span></p>
+    <p style="font-size:0.85rem;">Switch from concatenated AGENTS.md to individual <code>~/.pi/agent/rules/</code> files. <strong>Changes.</strong></p>
+  </div>
+</div>
+
+<!-- Problem -->
+<h2><span class="num">1</span> Problem statement</h2>
+<p>Pi currently loads all six advisory rules as a concatenated always-on instruction file (<code>AGENTS.md</code>), burning ~2,700 tokens every turn — including during grilling and task breakdown phases where no rule is relevant. And pi has no sub-agent capability, so the build pipeline's post-implementation review chain — which invokes specialized agents like <code>code-reviewer</code>, <code>database-reviewer</code>, and <code>refactor-cleaner</code> — cannot run in pi as it does in Claude Code and oh-my-pi. Without a fix, pi users either skip the review chain or run inline without isolation.</p>
+
+<!-- Solution -->
+<h2><span class="num">2</span> Solution</h2>
+<div class="flow">
+  <span class="flow-step"><span class="icon">📄</span> Rule files at <code>~/.pi/agent/rules/</code></span>
+  <span class="flow-arrow">→</span>
+  <span class="flow-step"><span class="icon">🔧</span> Subagent extension installed</span>
+  <span class="flow-arrow">→</span>
+  <span class="flow-step"><span class="icon">🔁</span> Review chain runs in pi</span>
+</div>
+<p><strong>Change 1 — On-demand rules.</strong> Remove the generated AGENTS.md concatenation. Add <code>rules</code> to pi's consumed categories so individual files are symlinked. Skills tell the AI to <code>read ~/.pi/agent/rules/</code> when entering a rules-relevant phase.</p>
+<p><strong>Change 2 — Subagent extension.</strong> Symlink pi's official subagent extension from <code>/opt/pi-coding-agent/examples/extensions/subagent/</code>. It registers a <code>subagent</code> tool callable with <code>{ agent, task }</code> that spawns isolated pi sub-processes. Existing agent definitions at <code>~/.pi/agent/agents/</code> are auto-discovered.</p>
+
+<!-- User Stories -->
+<h2><span class="num">3</span> User stories</h2>
+<ol class="story-list">
+  <li>As a pi user, I want the six advisory rules to not consume context tokens when I'm not implementing code, so that I don't pay unnecessary per-turn API costs.</li>
+  <li>As a pi user running the <code>/build</code> pipeline, I want the AI to explicitly load the advisory rules when entering the implement phase, so that my code still follows the project conventions.</li>
+  <li>As a pi user running the <code>/build</code> pipeline, I want the review chain (code-reviewer, refactor-cleaner, database-reviewer, doc-updater) to work in pi the same way it works in Claude Code and oh-my-pi, so that I get the same quality gates.</li>
+  <li>As an ai-config maintainer, I want the rules to still be authored once in <code>rules/*.md</code> and reach all three harnesses, so that there is one source of truth.</li>
+  <li>As an ai-config maintainer, I want the test gate to validate the new pi layout, so that drift is caught in CI.</li>
+</ol>
+
+<!-- Files changed -->
+<h2><span class="num">4</span> Files changed</h2>
+<table class="file-table">
+  <tr><th>Action</th><th>File</th><th>Change</th></tr>
+  <tr><td><span class="action action-modify">modify</span></td><td>harnesses/pi/manifest.sh</td><td>Add <code>rules</code> to consumed_categories; remove AGENTS.md symlink; add subagent extension symlink</td></tr>
+  <tr><td><span class="action action-remove">remove</span></td><td>scripts/gen-pi-agents.sh</td><td>No longer needed — concatenation removed</td></tr>
+  <tr><td><span class="action action-remove">remove</span></td><td>harnesses/pi/advisory-rules.md</td><td>Committed concatenation removed</td></tr>
+  <tr><td><span class="action action-modify">modify</span></td><td>Makefile</td><td>Remove <code>rules</code> target</td></tr>
+  <tr><td><span class="action action-modify">modify</span></td><td>scripts/test-pipeline.sh</td><td>Remove <code>test_pi_agents_current</code>; update <code>test_install_behavior</code> pi checks</td></tr>
+  <tr><td><span class="action action-modify">modify</span></td><td>skills/prd/SKILL.md</td><td>Add pi on-demand rule-loading instruction</td></tr>
+  <tr><td><span class="action action-modify">modify</span></td><td>skills/tasks/SKILL.md</td><td>Same</td></tr>
+  <tr><td><span class="action action-modify">modify</span></td><td>skills/implement/SKILL.md</td><td>Same</td></tr>
+  <tr><td><span class="action action-modify">modify</span></td><td>skills/implement-coach/SKILL.md</td><td>Same</td></tr>
+  <tr><td><span class="action action-modify">modify</span></td><td>7 agent files</td><td>Add <code>~/.pi/agent/rules/</code> to rule-path lists</td></tr>
+  <tr><td><span class="action action-add">add</span></td><td>docs/adr/0014-pi-rule-delivery-switch-on-demand.md</td><td>New ADR documenting the reversal of ADR-0013</td></tr>
+</table>
+
+<!-- Implementation decisions -->
+<h2><span class="num">5</span> Implementation decisions</h2>
+
+<div class="card">
+  <div class="card-label">Decision 1 &mdash; Pi manifest</div>
+  <p><code>consumed_categories</code> changes from <code>(skills commands agents)</code> to <code>(skills commands agents rules)</code>. The generic install loop handles symlinking. The AGENTS.md symlink <code>ln -sf "$MOD/advisory-rules.md" "$config_root/AGENTS.md"</code> is removed from <code>install_module</code>.</p>
+  <p>The subagent extension is added: if <code>/opt/pi-coding-agent/examples/extensions/subagent/</code> exists, symlink <code>index.ts</code> and <code>agents.ts</code> into <code>$config_root/extensions/subagent/</code>. Gracefully skips if pi isn't installed.</p>
+</div>
+
+<div class="card">
+  <div class="card-label">Decision 2 &mdash; Removed artifacts</div>
+  <p><code>scripts/gen-pi-agents.sh</code> is deleted — the concatenation script has no other consumers. <code>harnesses/pi/advisory-rules.md</code> is deleted — it was the committed output of that script. The <code>Makefile</code>'s <code>rules</code> target (which ran the script) is removed.</p>
+</div>
+
+<div class="card">
+  <div class="card-label">Decision 3 &mdash; Skill instructions</div>
+  <p>The 4 build-pipeline skills currently say: <em>"In Claude Code these are global instructions; in oh-my-pi, load via <code>rule://&lt;name&gt;</code>."</em> They gain: <em>"in pi, read from <code>~/.pi/agent/rules/</code>"</em>. The full line becomes:</p>
+  <p style="font-size:0.88rem;background:var(--surface2);padding:10px 14px;border-radius:6px;margin-top:8px;">"In Claude Code these are global instructions; in pi, read from <code>~/.pi/agent/rules/</code>; in oh-my-pi, load via <code>rule://&lt;name&gt;</code> when entering the rule's domain."</p>
+</div>
+
+<div class="card">
+  <div class="card-label">Decision 4 &mdash; Agent instructions</div>
+  <p>7 agent files currently list <code>~/.claude/rules/</code> for Claude Code and <code>~/.omp/agent/rules/</code> for oh-my-pi. Each gains <code>~/.pi/agent/rules/</code> for pi. The line becomes:</p>
+  <p style="font-size:0.88rem;background:var(--surface2);padding:10px 14px;border-radius:6px;margin-top:8px;">"Read from <code>rules/</code> in the repo root (or <code>~/.claude/rules/</code> for Claude Code, <code>~/.pi/agent/rules/</code> for pi, <code>~/.omp/agent/rules/</code> for oh-my-pi)."</p>
+</div>
+
+<div class="card">
+  <div class="card-label">Decision 5 &mdash; ADR 0014</div>
+  <p>A new ADR records the reversal: pi's advisory rules switch from always-on concatenation (ADR-0013) to on-demand via individual files. Documents the rationale (per-turn token cost, consistency with omp pattern) and the new subagent extension.</p>
+</div>
+
+<!-- Testing -->
+<h2><span class="num">6</span> Testing decisions</h2>
+<div class="grid-2">
+  <div class="card">
+    <div class="card-label">What's tested</div>
+    <ul style="margin:0;padding-left:16px;">
+      <li><strong><code>make test</code></strong> — primary gate, all existing checks updated</li>
+      <li><strong><code>test_install_behavior</code></strong> — pi has <code>rules/</code> dir with 6 files, no <code>AGENTS.md</code>, subagent extension present</li>
+      <li><strong><code>test_isolation</code></strong> — unchanged, no cross-harness pollution</li>
+      <li><strong><code>test_agent_rule_deps</code></strong> — unchanged, agents still reference real <code>rules/*.md</code></li>
+    </ul>
+  </div>
+  <div class="card">
+    <div class="card-label">What's removed</div>
+    <ul style="margin:0;padding-left:16px;">
+      <li><strong><code>test_pi_agents_current</code></strong> — drift check for the deleted concatenation</li>
+    </ul>
+  </div>
+</div>
+<p style="font-size:0.88rem;color:var(--text-dim);">Prior art: <code>test_install_behavior</code> already validates file layout after a throwaway install. The drift-check pattern (<code>diff -q</code> against regenerated output) is used by <code>test_pi_bundle_current</code> and remains unchanged.</p>
+
+<!-- Out of scope -->
+<h2><span class="num">7</span> Out of scope</h2>
+<ul>
+  <li>Sub-agent support for oh-my-pi or Claude Code (they already have it via <code>task</code> and <code>Task()</code>)</li>
+  <li>Sandboxing for pi sub-agents (the subagent extension uses the same filesystem)</li>
+  <li>A dedicated "build mode" that auto-loads rules only during build phases</li>
+  <li>Changes to the advisory rule content itself</li>
+  <li>New agent definitions beyond what already exists at <code>agents/*.md</code></li>
+  <li>Sample agents or workflow prompts from the subagent extension's <code>examples/agents/</code> and <code>prompts/</code></li>
+</ul>
+
+</div>
+</body>
+</html>

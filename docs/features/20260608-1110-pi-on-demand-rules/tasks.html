@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pi On-Demand Rules &amp; Subagent Extension — Tasks</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --font-body: 'IBM Plex Sans', system-ui, sans-serif;
+    --font-mono: 'IBM Plex Mono', 'SF Mono', Consolas, monospace;
+    --bg: #f4f3f0;
+    --surface: #ffffff;
+    --surface2: #eeebe7;
+    --border: rgba(0,0,0,0.06);
+    --border-bright: rgba(0,0,0,0.12);
+    --text: #1c1816;
+    --text-dim: #7a726a;
+    --accent: #2563eb;
+    --accent-dim: rgba(37,99,235,0.08);
+    --green: #16a34a;
+    --green-dim: rgba(22,163,74,0.12);
+    --amber: #d97706;
+    --amber-dim: rgba(217,119,6,0.12);
+    --violet: #7c3aed;
+    --violet-dim: rgba(124,58,237,0.08);
+  }
+  @media(prefers-color-scheme:dark) {
+    :root {
+      --bg: #121212;
+      --surface: #1e1e1e;
+      --surface2: #2a2a2a;
+      --border: rgba(255,255,255,0.06);
+      --border-bright: rgba(255,255,255,0.12);
+      --text: #e8e4e0;
+      --text-dim: #8a827a;
+      --accent: #60a5fa;
+      --accent-dim: rgba(96,165,250,0.12);
+      --green: #4ade80;
+      --green-dim: rgba(74,222,128,0.15);
+      --amber: #fbbf24;
+      --amber-dim: rgba(251,191,36,0.15);
+      --violet: #a78bfa;
+      --violet-dim: rgba(167,139,250,0.12);
+    }
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    font-family: var(--font-body);
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.6;
+    padding: 0;
+  }
+  .container { max-width: 880px; margin: 0 auto; padding: 48px 24px 96px; }
+  h1 {
+    font-size: 2.1rem;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    line-height: 1.2;
+    margin-bottom: 4px;
+  }
+  .subtitle {
+    font-size: 1rem;
+    color: var(--text-dim);
+    margin-bottom: 32px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid var(--border);
+  }
+  .source { font-size: 0.85rem; color: var(--text-dim); margin-bottom: 32px; }
+
+  .slice {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    margin-bottom: 20px;
+    overflow: hidden;
+  }
+  .slice-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--border);
+  }
+  .slice-num {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    background: var(--accent-dim);
+    color: var(--accent);
+    font-size: 0.9rem;
+    font-weight: 600;
+    flex-shrink: 0;
+  }
+  .slice-title {
+    font-size: 1.05rem;
+    font-weight: 600;
+    flex: 1;
+  }
+  .slice-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 10px;
+    border-radius: 20px;
+    font-size: 0.78rem;
+    font-weight: 500;
+    flex-shrink: 0;
+  }
+  .badge-afk { background: var(--green-dim); color: var(--green); }
+  .badge-hitl { background: var(--amber-dim); color: var(--amber); }
+  .badge-stories { background: var(--violet-dim); color: var(--violet); }
+
+  .slice-body { padding: 16px 20px; }
+  .slice-body p { margin-bottom: 10px; font-size: 0.92rem; }
+  .slice-body .blocked-by {
+    font-size: 0.85rem;
+    color: var(--text-dim);
+    margin-bottom: 12px;
+  }
+  .ac-list { list-style: none; padding: 0; }
+  .ac-list li {
+    padding: 6px 8px 6px 28px;
+    position: relative;
+    font-size: 0.9rem;
+    border-bottom: 1px solid var(--border);
+  }
+  .ac-list li:last-child { border-bottom: none; }
+  .ac-list li::before {
+    content: "☐";
+    position: absolute;
+    left: 4px;
+    top: 6px;
+    color: var(--text-dim);
+  }
+  .ac-label {
+    font-size: 0.72rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-dim);
+    margin-bottom: 8px;
+  }
+
+  .dep-graph {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+    padding: 14px 20px;
+    background: var(--surface2);
+    border-top: 1px solid var(--border);
+    font-size: 0.85rem;
+  }
+  .dep-node {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 10px;
+    border-radius: 6px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    font-weight: 500;
+  }
+  .dep-node .num-s { color: var(--accent); }
+  .dep-arrow { color: var(--text-dim); }
+  .dep-lock { color: var(--amber); font-size: 0.75rem; }
+
+  .legend {
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+    margin-bottom: 28px;
+    font-size: 0.85rem;
+    color: var(--text-dim);
+  }
+  .legend span { display: flex; align-items: center; gap: 4px; }
+</style>
+</head>
+<body>
+<div class="container">
+
+<h1>Pi On-Demand Rules &amp; Subagent Extension</h1>
+<p class="subtitle">6 vertical slices &middot; 5 AFK &middot; 0 HITL &middot; 1 order dependency</p>
+<p class="source">Source: <a href="prd.md" style="color:var(--accent);">prd.md</a></p>
+
+<div class="legend">
+  <span><span class="slice-badge badge-afk">AFK</span> Away-from-keyboard</span>
+  <span><span class="slice-badge badge-hitl">HITL</span> Human-in-the-loop</span>
+  <span><span class="slice-badge badge-stories">US</span> User stories covered</span>
+</div>
+
+<!-- Slice 1 -->
+<div class="slice" id="s1">
+  <div class="slice-header">
+    <span class="slice-num">1</span>
+    <span class="slice-title">Pi manifest — add rules dir, remove AGENTS.md</span>
+    <span class="slice-badge badge-afk">AFK</span>
+    <span class="slice-badge badge-stories">US 1, 4, 5</span>
+  </div>
+  <div class="slice-body">
+    <p class="blocked-by">Blocked by: None — can start immediately</p>
+    <p>Update the pi harness manifest so the generic install loop symlinks individual rule files into <code>~/.pi/agent/rules/</code> (matching Claude and omp) and stops symlinking the always-on AGENTS.md concatenation. Update the test gate to validate the new layout.</p>
+    <div class="ac-label">Acceptance criteria</div>
+    <ul class="ac-list">
+      <li><code>harnesses/pi/manifest.sh</code>: <code>consumed_categories</code> includes <code>rules</code></li>
+      <li>install_module no longer symlinks advisory-rules.md → AGENTS.md</li>
+      <li><code>test_install_behavior</code> checks pi has a <code>rules/</code> dir with 6 files and no AGENTS.md</li>
+      <li><code>make test</code> passes</li>
+    </ul>
+  </div>
+</div>
+
+<!-- Slice 2 -->
+<div class="slice" id="s2">
+  <div class="slice-header">
+    <span class="slice-num">2</span>
+    <span class="slice-title">Remove concatenation artifacts</span>
+    <span class="slice-badge badge-afk">AFK</span>
+    <span class="slice-badge badge-stories">US 1, 5</span>
+  </div>
+  <div class="slice-body">
+    <p class="blocked-by"><span class="dep-lock">⬆</span> Blocked by: Slice 1</p>
+    <p>Delete the concatenation script and its committed output. Remove the Makefile target that generated them. Remove the drift-check test that validated them.</p>
+    <div class="ac-label">Acceptance criteria</div>
+    <ul class="ac-list">
+      <li><code>scripts/gen-pi-agents.sh</code> is deleted</li>
+      <li><code>harnesses/pi/advisory-rules.md</code> is deleted</li>
+      <li><code>Makefile</code> no longer has a <code>rules</code> target</li>
+      <li><code>test_pi_agents_current</code> is removed from <code>test-pipeline.sh</code></li>
+      <li><code>make test</code> passes</li>
+    </ul>
+  </div>
+</div>
+
+<!-- Slice 3 -->
+<div class="slice" id="s3">
+  <div class="slice-header">
+    <span class="slice-num">3</span>
+    <span class="slice-title">Subagent extension install</span>
+    <span class="slice-badge badge-afk">AFK</span>
+    <span class="slice-badge badge-stories">US 3, 5</span>
+  </div>
+  <div class="slice-body">
+    <p class="blocked-by"><span class="dep-lock">⬆</span> Blocked by: Slice 1</p>
+    <p>Add a step to pi's install_module that symlinks the subagent extension from pi's examples directory. Update the test gate to verify the extension files are present after install. Skip gracefully if the pi examples directory doesn't exist.</p>
+    <div class="ac-label">Acceptance criteria</div>
+    <ul class="ac-list">
+      <li>install_module symlinks <code>index.ts</code> and <code>agents.ts</code> from pi's examples into extensions/subagent/</li>
+      <li>Skips gracefully if pi examples directory doesn't exist</li>
+      <li><code>test_install_behavior</code> checks for subagent extension files</li>
+      <li><code>make test</code> passes</li>
+    </ul>
+  </div>
+</div>
+
+<!-- Slice 4 -->
+<div class="slice" id="s4">
+  <div class="slice-header">
+    <span class="slice-num">4</span>
+    <span class="slice-title">Update skill file rules-adherence instructions</span>
+    <span class="slice-badge badge-afk">AFK</span>
+    <span class="slice-badge badge-stories">US 2, 4</span>
+  </div>
+  <div class="slice-body">
+    <p class="blocked-by">Blocked by: None — independent</p>
+    <p>Add pi's on-demand rule-loading instruction to the Rules Adherence section of every build-pipeline skill that tells the AI where to load advisory rules from.</p>
+    <div class="ac-label">Acceptance criteria</div>
+    <ul class="ac-list">
+      <li><code>skills/prd/SKILL.md</code> mentions pi's <code>~/.pi/agent/rules/</code> path</li>
+      <li><code>skills/tasks/SKILL.md</code> — same</li>
+      <li><code>skills/implement/SKILL.md</code> — same</li>
+      <li><code>skills/implement-coach/SKILL.md</code> — same</li>
+      <li><code>make test</code> passes</li>
+    </ul>
+  </div>
+</div>
+
+<!-- Slice 5 -->
+<div class="slice" id="s5">
+  <div class="slice-header">
+    <span class="slice-num">5</span>
+    <span class="slice-title">Update agent file rule-path lists</span>
+    <span class="slice-badge badge-afk">AFK</span>
+    <span class="slice-badge badge-stories">US 3, 4</span>
+  </div>
+  <div class="slice-body">
+    <p class="blocked-by">Blocked by: None — independent</p>
+    <p>Add <code>~/.pi/agent/rules/</code> to the Project Rules section of every agent file, alongside the existing Claude and omp paths, so spawned sub-agents know where to find rule files in pi.</p>
+    <div class="ac-label">Acceptance criteria</div>
+    <ul class="ac-list">
+      <li>7 agent files updated: architect, code-reviewer, database-reviewer, doc-updater, refactor-cleaner, refactorer, tdd-guide</li>
+      <li><code>make test</code> passes</li>
+    </ul>
+  </div>
+</div>
+
+<!-- Slice 6 -->
+<div class="slice" id="s6">
+  <div class="slice-header">
+    <span class="slice-num">6</span>
+    <span class="slice-title">ADR-0014</span>
+    <span class="slice-badge badge-afk">AFK</span>
+    <span class="slice-badge badge-stories">US 4</span>
+  </div>
+  <div class="slice-body">
+    <p class="blocked-by">Blocked by: None — can be written at any point</p>
+    <p>Write a new ADR documenting the reversal of ADR-0013: the rationale (per-turn token cost, consistency with oh-my-pi's on-demand pattern), the new delivery mechanism (individual files at <code>~/.pi/agent/rules/</code>), and the addition of the subagent extension.</p>
+    <div class="ac-label">Acceptance criteria</div>
+    <ul class="ac-list">
+      <li><code>docs/adr/0014-pi-rule-delivery-switch-on-demand.md</code> exists</li>
+      <li>References ADR-0013 as superseded</li>
+    </ul>
+  </div>
+</div>
+
+<!-- Dependency graph -->
+<div class="dep-graph">
+  <span class="dep-node"><span class="num-s">#1</span> Manifest</span>
+  <span class="dep-arrow">→</span>
+  <span class="dep-node"><span class="num-s">#2</span> Remove artifacts</span>
+  <span class="dep-node" style="margin-left:12px;"><span class="num-s">#3</span> Subagent</span>
+  <span class="dep-arrow" style="margin-left:12px;">→</span>
+  <span class="dep-node"><span class="num-s">#4</span> Skills</span>
+  <span class="dep-node"><span class="num-s">#5</span> Agents</span>
+  <span class="dep-node"><span class="num-s">#6</span> ADR</span>
+  <span class="dep-arrow" style="margin-left:12px;">→</span>
+  <span class="dep-node" style="background:var(--green-dim);border-color:var(--green);"><span class="badge-afk">AFK</span> All done</span>
+</div>
+
+</div>
+</body>
+</html>
