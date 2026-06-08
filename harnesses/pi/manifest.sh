@@ -12,11 +12,12 @@
 # sub-agents to read on demand) — not as a generated AGENTS.md concatenation.
 
 config_root="$HOME/.pi/agent"
-consumed_categories=(skills commands agents rules)
+consumed_categories=(skills agents rules)
 
-# pi surfaces skills as /skill:name and commands as clean /name, so every
-# command installs (no Claude-style duplicate-slash-command problem).
-dedupe_commands_with_skills=false
+# pi does not have a native commands/ resource type — its only /-triggered
+# resources are prompt templates (prompts/), skills (/skill:name), built-in
+# commands, and extension-registered commands. Commands are a Claude Code
+# concept not used here.
 
 instruction_target=""
 
@@ -46,4 +47,18 @@ install_module() {
     ln -sf "$pi_subagent_src/agents.ts" "$config_root/extensions/subagent/agents.ts"
     dim "  $config_root/extensions/subagent/ (subagent extension)"
   fi
+
+  # Clean up directories no longer consumed or managed by pi.
+  # commands/ was previously mirrored but pi doesn't use it;
+  # prompts/ was a user-side arrangement that duplicates the skill entries.
+  for stale in commands prompts; do
+    if [ -d "$config_root/$stale" ]; then
+      # Remove all symlinked .md files placed by this repo or the user
+      find "$config_root/$stale" -maxdepth 1 -type l -name "*.md" -delete 2>/dev/null || true
+      # Remove the directory itself if now empty
+      rmdir "$config_root/$stale" 2>/dev/null && \
+        dim "  $config_root/$stale — removed (not used by pi)" || \
+        dim "  $config_root/$stale — cleaned symlinks (dir kept, has non-repo content)"
+    fi
+  done
 }
