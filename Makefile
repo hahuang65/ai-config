@@ -2,15 +2,23 @@
 .DEFAULT_GOAL := help
 SHELL := bash
 
-.PHONY: help install test test/content test/install test/guard test/meta
+.PHONY: help install rules bundle test test/content test/install test/guard test/meta
 
 help: ## Show this help
 	@printf '\n  \033[1mai-config\033[0m \033[2m— make targets\033[0m\n\n'
 	@awk 'BEGIN{FS=":.*## "} /^[a-zA-Z0-9_\/-]+:.*## /{printf "  \033[36m%-15s\033[0m %s\n",$$1,$$2}' $(MAKEFILE_LIST)
 	@printf '\n  \033[2mtip: VERBOSE=1 make test/content  shows every check\033[0m\n\n'
 
-install: ## Symlink config into each harness root (~/.claude, ~/.omp/agent)
+install: ## Symlink config into each harness root (~/.claude, ~/.omp/agent, ~/.pi/agent)
 	@bash install.sh
+
+rules: ## Regenerate pi's advisory-rules context from rules/ (ADR-0013)
+	@bash scripts/gen-pi-agents.sh > harnesses/pi/advisory-rules.md
+	@printf '  regenerated harnesses/pi/advisory-rules.md\n'
+
+bundle: ## Rebuild pi's self-contained guard extension bundle (pi can't resolve symlinked imports)
+	@bun build harnesses/pi/extensions/guard-policies.ts --target=bun --outfile harnesses/pi/guard-policies.bundle.ts >/dev/null
+	@printf '  rebuilt harnesses/pi/guard-policies.bundle.ts\n'
 
 test: test/content test/install test/guard test/meta ## Run every check (all test/* targets)
 

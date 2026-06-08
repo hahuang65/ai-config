@@ -3,16 +3,19 @@ import { findFloorGaps, formatMatrix, floorPolicies, type Coverage } from "../sh
 import { POLICIES } from "../shared/policy-registry";
 import { evaluate, type ToolCall } from "../shared/guard-core";
 import ompGuard from "../harnesses/omp/hooks/pre/guard-policies";
+import piGuard from "../harnesses/pi/extensions/guard-policies";
 
 const HARNESSES = ["oh-my-pi", "Claude Code"];
 
 // The conformance probe for each policy is its registry `example` — no
 // separate map to drift from the registry.
 
-// oh-my-pi (tier A): drive the in-process adapter directly.
-function ompBlocks(call: ToolCall): boolean {
+// Tier-A harnesses (oh-my-pi, pi) are different engines that share the same
+// tool_call adapter shape, so drive either's in-process default export the way
+// its engine would.
+function inProcessBlocks(guard: (pi: unknown) => void, call: ToolCall): boolean {
   let handler: ((e: unknown) => any) | undefined;
-  ompGuard({ on: (n: string, f: any) => { if (n === "tool_call") handler = f; } } as any);
+  guard({ on: (n: string, f: any) => { if (n === "tool_call") handler = f; } });
   const verdict = handler!({ toolName: call.tool, input: { command: call.command, path: call.path, content: call.content } });
   return !!(verdict && verdict.block);
 }
@@ -30,7 +33,8 @@ async function claudeBlocks(call: ToolCall): Promise<boolean> {
 }
 
 const ADAPTERS = [
-  { name: "oh-my-pi", blocks: async (c: ToolCall) => ompBlocks(c) },
+  { name: "oh-my-pi", blocks: async (c: ToolCall) => inProcessBlocks(ompGuard, c) },
+  { name: "pi", blocks: async (c: ToolCall) => inProcessBlocks(piGuard, c) },
   { name: "Claude Code", blocks: claudeBlocks },
 ];
 

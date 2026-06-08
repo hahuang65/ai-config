@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>pi Harness — Tasks</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --font-body:'Space Grotesk',system-ui,sans-serif;--font-mono:'Space Mono',monospace;
+  --bg:#eef2f6;--surface:#fff;--surface-el:#fff;--grid:rgba(13,80,120,0.06);
+  --border:rgba(13,40,60,0.12);--border-br:rgba(13,40,60,0.22);--text:#0f2233;--text-dim:#5a6b7a;
+  --accent:#0e7490;--accent-dim:rgba(14,116,144,0.10);--a:#0e7490;--a-dim:rgba(14,116,144,0.10);
+  --b:#047857;--b-dim:rgba(4,120,87,0.10);--c:#b45309;--c-dim:rgba(180,83,9,0.10);
+  --pi:#7c3aed;--pi-dim:rgba(124,58,237,0.10);--muted:#64748b;--muted-dim:rgba(100,116,139,0.10);
+}
+@media (prefers-color-scheme:dark){:root{
+  --bg:#0a1420;--surface:#101d2b;--surface-el:#15263a;--grid:rgba(120,180,220,0.05);
+  --border:rgba(150,190,220,0.10);--border-br:rgba(150,190,220,0.22);--text:#dce7f0;--text-dim:#8aa0b2;
+  --accent:#38bdf8;--accent-dim:rgba(56,189,248,0.12);--a:#38bdf8;--a-dim:rgba(56,189,248,0.12);
+  --b:#34d399;--b-dim:rgba(52,211,153,0.12);--c:#fbbf24;--c-dim:rgba(251,191,36,0.12);
+  --pi:#c4b5fd;--pi-dim:rgba(196,181,253,0.14);--muted:#94a3b8;--muted-dim:rgba(148,163,184,0.12);
+}}
+*{box-sizing:border-box}
+body{margin:0;font-family:var(--font-body);color:var(--text);background-color:var(--bg);
+  background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);
+  background-size:28px 28px;line-height:1.6;overflow-wrap:break-word}
+.wrap{max-width:1040px;margin:0 auto;padding:46px 24px 96px}
+.kicker{font-family:var(--font-mono);font-size:11px;letter-spacing:3px;text-transform:uppercase;color:var(--pi);font-weight:700}
+h1{font-size:clamp(28px,5vw,42px);line-height:1.1;margin:10px 0 8px;letter-spacing:-0.5px}
+.sub{font-size:18px;color:var(--text-dim);max-width:72ch}
+.stats{display:flex;gap:12px;flex-wrap:wrap;margin:22px 0 8px}
+.stat{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:12px 18px;min-width:96px}
+.stat .v{font-family:var(--font-mono);font-size:24px;font-weight:700;color:var(--accent);line-height:1}
+.stat .k{font-size:11px;color:var(--text-dim);font-family:var(--font-mono);text-transform:uppercase;letter-spacing:1px;margin-top:4px}
+.stat.afk .v{color:var(--b)}.stat.hitl .v{color:var(--muted)}.stat.pi .v{color:var(--pi)}
+section{margin:42px 0}
+h2{font-size:23px;letter-spacing:-0.3px;margin:0 0 6px;display:flex;align-items:baseline;gap:10px}
+h2 .n{font-family:var(--font-mono);font-size:13px;color:var(--pi);font-weight:700}
+.lead{color:var(--text-dim);max-width:78ch;margin:0 0 18px}
+.callout{border-left:3px solid var(--pi);background:var(--pi-dim);padding:12px 16px;border-radius:0 10px 10px 0;font-size:14px;margin:16px 0}
+.callout strong{color:var(--pi)}
+.mermaid-wrap{position:relative;background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:18px;overflow:auto}
+.mermaid{display:flex;justify-content:center}
+.mermaid .nodeLabel{color:var(--text)!important;font-family:var(--font-body)!important;font-size:13px!important}
+.mermaid .edgeLabel{color:var(--text-dim)!important;background-color:var(--bg)!important;font-family:var(--font-mono)!important;font-size:10.5px!important}
+.mermaid .edgeLabel rect{fill:var(--bg)!important}
+.zoom{position:absolute;top:10px;right:10px;display:flex;gap:4px}
+.zoom button{font-family:var(--font-mono);font-size:13px;width:28px;height:28px;border:1px solid var(--border);background:var(--surface);color:var(--text-dim);border-radius:6px;cursor:pointer}
+.zoom button:hover{color:var(--accent);border-color:var(--accent)}
+.legend{display:flex;gap:16px;flex-wrap:wrap;margin-top:12px;font-size:12px;font-family:var(--font-mono);color:var(--text-dim)}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.dot{width:11px;height:11px;border-radius:3px;display:inline-block}
+.dot.root{background:var(--b)}.dot.conv{background:var(--pi)}.dot.proof{background:var(--c)}
+table{width:100%;border-collapse:collapse;font-size:13.5px;background:var(--surface);border:1px solid var(--border);border-radius:12px;overflow:hidden}
+thead th{background:var(--surface-el);text-align:left;font-family:var(--font-mono);font-size:10.5px;text-transform:uppercase;letter-spacing:1px;color:var(--text-dim);padding:11px 13px;border-bottom:1px solid var(--border-br)}
+tbody td{padding:12px 13px;border-bottom:1px solid var(--border);vertical-align:top}
+tbody tr:last-child td{border-bottom:none}
+tbody tr:hover{background:var(--accent-dim)}
+.sid{font-family:var(--font-mono);font-weight:700;color:var(--pi)}
+.stitle{font-weight:600}.stitle small{display:block;font-weight:400;color:var(--text-dim);font-size:12px;margin-top:2px}
+.st{font-family:var(--font-mono);font-size:10px;padding:3px 8px;border-radius:5px;display:inline-block;background:var(--b-dim);color:var(--b)}
+.bl{font-family:var(--font-mono);font-size:12px;color:var(--text-dim)}
+.stories{font-family:var(--font-mono);font-size:11px;color:var(--muted)}
+.tracks{display:grid;grid-template-columns:repeat(2,1fr);gap:13px;margin-top:8px}
+.track{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:13px 15px;border-top:3px solid var(--b)}
+.track.novel{border-top-color:var(--pi)}
+.track h3{margin:0 0 4px;font-size:13px;font-family:var(--font-mono)}.track p{margin:0;font-size:12.5px;color:var(--text-dim)}
+.track .chain{font-family:var(--font-mono);font-size:12px;color:var(--accent);margin-top:7px}
+@media (max-width:820px){.tracks{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <div class="kicker">Implementation Tasks · /build Phase 3</div>
+  <h1>pi Harness — Tasks</h1>
+  <p class="sub">Four vertical slices fill the pending slot: two parallel roots (the guard adapter, the rule concatenation) converge on the install wiring, which the isolation proof then validates.</p>
+  <div class="stats">
+    <div class="stat pi"><div class="v">4</div><div class="k">slices</div></div>
+    <div class="stat afk"><div class="v">4</div><div class="k">AFK</div></div>
+    <div class="stat hitl"><div class="v">0</div><div class="k">HITL</div></div>
+    <div class="stat"><div class="v">2</div><div class="k">parallel roots</div></div>
+  </div>
+</header>
+
+<section id="dag">
+  <h2><span class="n">01</span> Dependency graph</h2>
+  <p class="lead">Slice A (adapter + conformance) and Slice B (concatenation + gate) are independent — start in parallel. Slice C joins them: `install_module` can only symlink the adapter and the concatenation once both exist. Slice D proves the third config root once it's installed.</p>
+  <div class="mermaid-wrap">
+    <div class="zoom"><button onclick="zm(0.9)">−</button><button onclick="zm(1.1)">+</button><button onclick="zr()">⟲</button></div>
+    <pre class="mermaid">
+flowchart TD
+  A["Slice A · ROOT<br/>guard adapter enforces<br/>+ conformance 3rd column"]:::root
+  B["Slice B · ROOT<br/>rule concatenation<br/>+ drift gate (ADR-0013)"]:::root
+  C["Slice C · converge<br/>fill install_module<br/>flip slot live"]:::conv
+  D["Slice D<br/>isolation + install proof<br/>(3rd config root)"]:::proof
+  A --> C
+  B --> C
+  C --> D
+  classDef root fill:#04785722,stroke:#047857,stroke-width:2.5px
+  classDef conv fill:#7c3aed33,stroke:#7c3aed,stroke-width:2.5px
+  classDef proof fill:#b4530922,stroke:#b45309,stroke-width:2px
+    </pre>
+  </div>
+  <div class="legend">
+    <span><span class="dot root"></span>Root — start now (AFK)</span>
+    <span><span class="dot conv"></span>Convergence — install wiring</span>
+    <span><span class="dot proof"></span>Proof — isolation / install</span>
+  </div>
+</section>
+
+<section id="tracks">
+  <h2><span class="n">02</span> Two parallel roots</h2>
+  <div class="tracks">
+    <div class="track"><h3>Security-critical proof</h3><p>The guard adapter is a thin twin; the conformance 3rd column proves pi enforces every floor guardrail. Inherits the 12 policies — zero new detection.</p><div class="chain">A → C → D</div></div>
+    <div class="track novel"><h3>The novel work (ADR-0013)</h3><p>The rule concatenation + drift gate — the one mechanism this feature invents: advisory rules → committed file → pi's always-on context, kept honest by the gate.</p><div class="chain">B → C → D</div></div>
+  </div>
+  <div class="callout"><strong>4 AFK / 0 HITL.</strong> The design was settled in grill. pi's exact event field names / discovery dir / content field are verify-during-implement — caught by the self-checking conformance test in Slice A, so a mismatch fails loudly rather than silently weakening enforcement.</div>
+</section>
+
+<section id="slices">
+  <h2><span class="n">03</span> Slice table</h2>
+  <table>
+    <thead><tr><th>#</th><th>Slice</th><th>Type</th><th>Blocked by</th><th>Stories</th></tr></thead>
+    <tbody>
+      <tr><td class="sid">A</td><td class="stitle">pi enforces the guardrail floor, proven by conformance<small>tier-A adapter (twin) → guard core · pi-adapter test · matrix 3rd column</small></td><td><span class="st">AFK</span></td><td class="bl">None · root</td><td class="stories">1, 2, 3, 4</td></tr>
+      <tr><td class="sid">B</td><td class="stitle">rule concatenation + drift gate<small>regen target → committed concat · gate drift-check · stale self-test (ADR-0013)</small></td><td><span class="st">AFK</span></td><td class="bl">None · root</td><td class="stories">5, 6, 11</td></tr>
+      <tr><td class="sid">C</td><td class="stitle">fill install_module and flip the slot live<small>consume skills/commands/agents · symlink adapter + concat · repo settings.json · pending=false</small></td><td><span class="st">AFK</span></td><td class="bl">Slices A, B</td><td class="stories">5, 7, 9, 10, 12</td></tr>
+      <tr><td class="sid">D</td><td class="stitle">isolation + install proof for the third config root<small>~/.pi/agent as a 3rd owned root, no leak · install checks cover the wiring</small></td><td><span class="st">AFK</span></td><td class="bl">Slice C</td><td class="stories">8, 12</td></tr>
+    </tbody>
+  </table>
+  <div class="callout"><strong>Coverage:</strong> all 12 PRD stories claimed. The <strong>security-critical proof is Slice A</strong> (the conformance 3rd column); the <strong>novel work is Slice B</strong> (ADR-0013). Everything else is the established harness-module pattern applied to a third harness.</div>
+</section>
+
+</div>
+<script type="module">
+import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';
+const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+mermaid.initialize({startOnLoad:true,theme:'base',look:'classic',themeVariables:{
+  primaryColor:isDark?'#15263a':'#e2f1f6',primaryBorderColor:isDark?'#38bdf8':'#0e7490',
+  primaryTextColor:isDark?'#dce7f0':'#0f2233',lineColor:isDark?'#5a7a8c':'#94a3b8',
+  fontSize:'13px',fontFamily:'Space Grotesk, system-ui, sans-serif'}});
+let scale=1;const wraps=document.querySelectorAll('.mermaid');
+window.zm=f=>{scale*=f;wraps.forEach(w=>{w.style.transform=`scale(${scale})`;w.style.transformOrigin='top center';});};
+window.zr=()=>{scale=1;wraps.forEach(w=>w.style.transform='scale(1)');};
+</script>
+</body>
+</html>

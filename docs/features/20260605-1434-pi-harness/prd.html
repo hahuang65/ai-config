@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>pi Harness — PRD</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --font-body:'Space Grotesk',system-ui,sans-serif;--font-mono:'Space Mono','SF Mono',Consolas,monospace;
+  --bg:#eef2f6;--surface:#fff;--surface-el:#fff;--grid:rgba(13,80,120,0.06);
+  --border:rgba(13,40,60,0.12);--border-br:rgba(13,40,60,0.22);--text:#0f2233;--text-dim:#5a6b7a;
+  --accent:#0e7490;--accent-dim:rgba(14,116,144,0.10);
+  --a:#0e7490;--a-dim:rgba(14,116,144,0.10);--b:#047857;--b-dim:rgba(4,120,87,0.10);
+  --c:#b45309;--c-dim:rgba(180,83,9,0.10);--pi:#7c3aed;--pi-dim:rgba(124,58,237,0.10);
+  --muted:#64748b;--muted-dim:rgba(100,116,139,0.10);
+}
+@media (prefers-color-scheme:dark){:root{
+  --bg:#0a1420;--surface:#101d2b;--surface-el:#15263a;--grid:rgba(120,180,220,0.05);
+  --border:rgba(150,190,220,0.10);--border-br:rgba(150,190,220,0.22);--text:#dce7f0;--text-dim:#8aa0b2;
+  --accent:#38bdf8;--accent-dim:rgba(56,189,248,0.12);
+  --a:#38bdf8;--a-dim:rgba(56,189,248,0.12);--b:#34d399;--b-dim:rgba(52,211,153,0.12);
+  --c:#fbbf24;--c-dim:rgba(251,191,36,0.12);--pi:#c4b5fd;--pi-dim:rgba(196,181,253,0.14);
+  --muted:#94a3b8;--muted-dim:rgba(148,163,184,0.12);
+}}
+*{box-sizing:border-box}
+body{margin:0;font-family:var(--font-body);color:var(--text);background-color:var(--bg);
+  background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);
+  background-size:28px 28px;line-height:1.6;overflow-wrap:break-word}
+.wrap{max-width:1080px;margin:0 auto;padding:46px 24px 96px}
+.kicker{font-family:var(--font-mono);font-size:11px;letter-spacing:3px;text-transform:uppercase;color:var(--accent);font-weight:700}
+h1{font-size:clamp(28px,5vw,44px);line-height:1.1;margin:10px 0 8px;letter-spacing:-0.5px}
+.sub{font-size:18px;color:var(--text-dim);max-width:74ch}
+nav.toc{position:sticky;top:0;z-index:20;display:flex;flex-wrap:wrap;gap:4px;padding:9px 0;margin:24px 0;border-top:1px solid var(--border);border-bottom:1px solid var(--border);background:color-mix(in srgb,var(--bg) 88%,transparent);backdrop-filter:blur(8px)}
+nav.toc a{font-family:var(--font-mono);font-size:11px;text-decoration:none;color:var(--text-dim);padding:5px 9px;border-radius:5px}
+nav.toc a:hover{color:var(--accent);background:var(--accent-dim)}
+section{margin:42px 0;scroll-margin-top:56px}
+h2{font-size:23px;letter-spacing:-0.3px;margin:0 0 6px;display:flex;align-items:baseline;gap:10px}
+h2 .n{font-family:var(--font-mono);font-size:13px;color:var(--accent);font-weight:700}
+.lead{color:var(--text-dim);max-width:80ch;margin:0 0 18px}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:18px 20px}
+.hero{background:color-mix(in srgb,var(--surface) 88%,var(--pi) 12%);border:1px solid color-mix(in srgb,var(--border) 45%,var(--pi) 55%);border-radius:14px;padding:22px 26px;box-shadow:0 4px 22px rgba(0,0,0,0.08)}
+.hero p{font-size:18px;margin:0 0 10px}.hero p:last-child{margin:0}.hero strong{color:var(--pi)}
+table{width:100%;border-collapse:collapse;font-size:13px;background:var(--surface);border:1px solid var(--border);border-radius:12px;overflow:hidden}
+thead th{background:var(--surface-el);text-align:left;font-family:var(--font-mono);font-size:10.5px;text-transform:uppercase;letter-spacing:1px;color:var(--text-dim);padding:11px 13px;border-bottom:1px solid var(--border-br)}
+tbody td{padding:11px 13px;border-bottom:1px solid var(--border);vertical-align:top}
+tbody tr:last-child td{border-bottom:none}
+tbody tr:hover{background:var(--accent-dim)}
+.h-claude{color:var(--a);font-weight:700}.h-omp{color:var(--b);font-weight:700}.h-pi{color:var(--pi);font-weight:700}
+.pirow td{background:var(--pi-dim)}
+.tag{font-family:var(--font-mono);font-size:10px;padding:2px 7px;border-radius:5px;white-space:nowrap;display:inline-block}
+.tag-core{background:var(--b-dim);color:var(--b)}.tag-new{background:var(--pi-dim);color:var(--pi)}.tag-on{background:var(--c-dim);color:var(--c)}.tag-lazy{background:var(--muted-dim);color:var(--muted)}
+.mermaid-wrap{position:relative;background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:18px;overflow:auto}
+.mermaid{display:flex;justify-content:center}
+.mermaid .nodeLabel{color:var(--text)!important;font-family:var(--font-body)!important;font-size:13px!important}
+.mermaid .edgeLabel{color:var(--text-dim)!important;background-color:var(--bg)!important;font-family:var(--font-mono)!important;font-size:10.5px!important}
+.mermaid .edgeLabel rect{fill:var(--bg)!important}
+.zoom{position:absolute;top:10px;right:10px;display:flex;gap:4px}
+.zoom button{font-family:var(--font-mono);font-size:13px;width:28px;height:28px;border:1px solid var(--border);background:var(--surface);color:var(--text-dim);border-radius:6px;cursor:pointer}
+.zoom button:hover{color:var(--accent);border-color:var(--accent)}
+.why{display:grid;grid-template-columns:1fr 1fr;gap:13px;margin-top:14px}
+.why .panel{border-radius:11px;padding:13px 16px;border:1px solid var(--border);font-size:13px}
+.why .pick{background:var(--b-dim);border-color:color-mix(in srgb,var(--border) 55%,var(--b) 45%)}
+.why .nope{background:var(--muted-dim)}
+.why h4{margin:0 0 6px;font-family:var(--font-mono);font-size:11px;text-transform:uppercase;letter-spacing:.5px}
+.why .pick h4{color:var(--b)}.why .nope h4{color:var(--muted)}
+.modgrid{display:grid;grid-template-columns:repeat(2,1fr);gap:13px}
+.mod{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:13px 15px}
+.mod.novel{border-left:3px solid var(--pi);background:var(--surface-el)}
+.mod.thin{border-left:3px solid var(--b)}
+.mod h4{margin:0 0 4px;font-size:13px;font-family:var(--font-mono)}
+.mod p{margin:0;font-size:12.5px;color:var(--text-dim)}
+.mod .t{font-family:var(--font-mono);font-size:9px;text-transform:uppercase;padding:2px 6px;border-radius:4px;margin-left:6px}
+.mod .t.tn{background:var(--pi-dim);color:var(--pi)}.mod .t.tt{background:var(--b-dim);color:var(--b)}.mod .t.td{background:var(--muted-dim);color:var(--muted)}
+ol.stories{list-style:none;counter-reset:s;padding:0;margin:0;display:grid;grid-template-columns:1fr 1fr;gap:7px}
+ol.stories li{counter-increment:s;position:relative;padding:9px 11px 9px 38px;background:var(--surface);border:1px solid var(--border);border-radius:8px;font-size:12.5px}
+ol.stories li::before{content:counter(s,decimal-leading-zero);position:absolute;left:11px;top:9px;font-family:var(--font-mono);font-size:10.5px;font-weight:700;color:var(--pi)}
+.callout{border-left:3px solid var(--pi);background:var(--pi-dim);padding:12px 16px;border-radius:0 10px 10px 0;font-size:14px;margin:14px 0}
+.callout strong{color:var(--pi)}
+.cols-2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.label{font-family:var(--font-mono);font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;margin-bottom:8px;display:flex;align-items:center;gap:8px}
+.label::before{content:'';width:8px;height:8px;border-radius:50%;background:currentColor}
+.adrs{display:flex;gap:12px;flex-wrap:wrap}
+.adr{flex:1;min-width:150px;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:12px 14px;border-top:3px solid var(--accent)}
+.adr.hot{border-top-color:var(--pi)}
+.adr code{font-family:var(--font-mono);font-size:11px;color:var(--accent)}.adr.hot code{color:var(--pi)}.adr p{margin:6px 0 0;font-size:12px;color:var(--text-dim)}
+@media (max-width:820px){.why,.modgrid,.cols-2,ol.stories{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <div class="kicker">Product Requirements · /build Phase 2</div>
+  <h1>pi Harness — PRD</h1>
+  <p class="sub">Bring the third harness from a pending slot to live: a thin tier-A guard adapter routing the shared core, and one new mechanism — advisory rules projected into pi as a gate-checked concatenation (ADR-0013).</p>
+</header>
+
+<nav class="toc">
+  <a href="#problem">Problem</a><a href="#solution">Solution</a><a href="#matrix">Three harnesses</a>
+  <a href="#adr13">Rule concatenation</a><a href="#modules">Modules</a><a href="#stories">Stories</a><a href="#scope">Scope</a>
+</nav>
+
+<section id="problem">
+  <h2><span class="n">01</span> Problem</h2>
+  <div class="hero">
+    <p>The repo configures three harnesses, but only two are live. <strong>pi</strong> (<code>@oh-my-pi/pi-coding-agent</code>, config root <code>~/.pi/agent</code>) sits as a <strong>pending harness module</strong> — a slot with <code>harness_pending=true</code> and a no-op install. It was parked until the guardrails it must enforce lived somewhere a thin adapter could reach — which the consolidation (ADR-0012) just delivered.</p>
+    <p>Admitting pi means three invariants must hold: every <strong>floor guardrail enforced on pi</strong>, the <strong>isolation invariant</strong> across three roots, and the <strong>advisory rules reach pi</strong>. Only the third is new — pi has neither Claude's rules-dir injection nor oh-my-pi's native rulebook.</p>
+  </div>
+</section>
+
+<section id="solution">
+  <h2><span class="n">02</span> Solution</h2>
+  <p class="lead">Fill the slot with the established harness-module (ADR-0010) and ports-and-adapters guardrail (ADR-0011/0012) patterns, plus the one new rule-projection mechanism (ADR-0013). pi inherits all twelve guardrails through a thin adapter — <em>zero</em> detection logic written — and a conformance column proves it.</p>
+  <div class="cols-2">
+    <div class="card"><div class="label" style="color:var(--b)">Already solved (inherit)</div>
+      <p style="margin:0;color:var(--text-dim);font-size:13.5px">Tier-A adapter shape (twin of omp) · the 12-policy guard core · conformance + isolation test harness · the generic install loop. pi has <strong>no built-in permission system</strong>, so the extension is its entire policy layer.</p></div>
+    <div class="card" style="border-color:color-mix(in srgb,var(--border) 50%,var(--pi) 50%)"><div class="label" style="color:var(--pi)">New (build)</div>
+      <p style="margin:0;color:var(--text-dim);font-size:13.5px">The <strong>rule concatenation</strong>: advisory rules → a committed file → symlinked as pi's always-on <code>APPEND_SYSTEM.md</code>, kept honest by a gate drift-check. The third rule-projection mechanism.</p></div>
+  </div>
+</section>
+
+<section id="matrix">
+  <h2><span class="n">03</span> Three harnesses, two axes</h2>
+  <p class="lead">How <em>enforcement</em> and <em>advisory rules</em> reach each harness. Enforcement is one shared path (the guard core); rule projection is three different mechanisms sized to each harness's context model.</p>
+  <table>
+    <thead><tr><th>Harness</th><th>Enforcement (guardrails)</th><th>Rule projection (advisory)</th></tr></thead>
+    <tbody>
+      <tr><td><span class="h-claude">Claude</span></td><td><span class="tag tag-core">tier-B shim → guard core</span></td><td><span class="tag tag-on">harness auto-injects rules dir · always-on</span></td></tr>
+      <tr><td><span class="h-omp">oh-my-pi</span></td><td><span class="tag tag-core">tier-A hook → guard core</span></td><td><span class="tag tag-lazy">native rulebook · lazy (rule://)</span></td></tr>
+      <tr class="pirow"><td><span class="h-pi">pi ★ new</span></td><td><span class="tag tag-core">tier-A extension → guard core</span></td><td><span class="tag tag-new">generated concatenation in APPEND_SYSTEM.md · always-on, gate-checked</span></td></tr>
+    </tbody>
+  </table>
+  <div class="callout"><strong>The thesis, demonstrated:</strong> pi's enforcement is the <em>same shared matchers</em> as the other two — no second copy to drift. The adapter is a twin of the omp one; the only real new work is the rule projection.</div>
+</section>
+
+<section id="adr13">
+  <h2><span class="n">04</span> The new part — rule concatenation (ADR-0013)</h2>
+  <p class="lead">pi reads single always-on context files (<code>SYSTEM.md</code> / <code>APPEND_SYSTEM.md</code>, per-project <code>AGENTS.md</code>) — <strong>not a rules directory</strong>, and with <strong>no <code>@import</code> expansion</strong>. That's <em>why</em> the rules must be concatenated into one file.</p>
+  <div class="mermaid-wrap">
+    <div class="zoom"><button onclick="zm(0.9)">−</button><button onclick="zm(1.1)">+</button><button onclick="zr()">⟲</button></div>
+    <pre class="mermaid">
+flowchart LR
+  R["rules/*.md<br/>(6 advisory)"]:::src -->|make regen| C["committed<br/>harnesses/pi/APPEND_SYSTEM.md"]:::repo
+  C -->|install symlink · once| H["~/.pi/agent/APPEND_SYSTEM.md"]:::home
+  H -->|always-on| PI["pi system prompt"]:::pi
+  R -.->|make test drift-check| G{"matches<br/>committed?"}:::gate
+  C -.-> G
+  G -->|no| F["FAIL the gate<br/>(stale → un-committable)"]:::fail
+  G -->|yes| OK["green"]:::ok
+  classDef src fill:#0e749018,stroke:#0e7490,stroke-width:1.5px
+  classDef repo fill:#b4530922,stroke:#b45309,stroke-width:2px
+  classDef home fill:#7c3aed18,stroke:#7c3aed,stroke-width:1.5px
+  classDef pi fill:#7c3aed33,stroke:#7c3aed,stroke-width:2.5px
+  classDef gate fill:#64748b18,stroke:#64748b,stroke-width:1.5px
+  classDef fail fill:#b91c1c18,stroke:#b91c1c,stroke-width:1.5px
+  classDef ok fill:#04785722,stroke:#047857,stroke-width:1.5px
+    </pre>
+  </div>
+  <p class="lead" style="margin-top:12px;font-size:12.5px"><strong>Edit-regenerate-commit; install once.</strong> The symlink makes a regenerated file live without re-installing; the drift-check makes a <em>forgotten</em> regeneration fail the pre-commit gate. (omp's committed <code>RULES.md</code> is precedent for the committed-and-symlinked shape.)</p>
+  <div class="why">
+    <div class="panel pick"><h4>✓ always-on concatenation</h4>Reliable for 6 small, always-relevant rules — advisory guidance only helps if the model sees it. Matches Claude's treatment. <em>Rejected: a lazy progressive-disclosure index (the model often won't pull it).</em></div>
+    <div class="panel pick"><h4>✓ committed + symlinked + gated</h4>Live after one install; drift is catchable from the repo. <em>Rejected: generating into <code>$HOME</code> at install — drifts on a forgotten re-install and can't be gate-checked.</em></div>
+  </div>
+</section>
+
+<section id="modules">
+  <h2><span class="n">05</span> Module sketch</h2>
+  <div class="modgrid">
+    <div class="mod thin"><h4>pi guard adapter <span class="t tt">thin twin</span></h4><p>Tier-A extension: normalizes pi's <code>tool_call</code> event → the shared guard core → <code>{block,reason}</code>. Zero detection. Installs into <code>~/.pi/agent/extensions/</code>.</p></div>
+    <div class="mod"><h4>pi manifest / install_module <span class="t td">wiring</span></h4><p>Fills the slot: consumes skills/commands/agents, symlinks the extension + <code>APPEND_SYSTEM.md</code>, installs settings, flips <code>harness_pending=false</code>.</p></div>
+    <div class="mod"><h4>pi settings.json <span class="t td">config</span></h4><p>Repo-managed provider/model/thinking, mirroring oh-my-pi's Opus default. User-editable.</p></div>
+    <div class="mod novel"><h4>Rule concatenation + drift gate <span class="t tn">novel · ADR-0013</span></h4><p>A <code>make</code> target generates the concatenation from <code>rules/*.md</code>; a <code>test/content</code> drift-check + a self-test fixture prove a stale copy fails the gate.</p></div>
+    <div class="mod"><h4>Cross-harness test extension <span class="t td">proof</span></h4><p>Conformance matrix → 3rd column (pi); a pi-adapter unit test (twin of omp's); isolation + install tests gain <code>~/.pi/agent</code>.</p></div>
+  </div>
+</section>
+
+<section id="stories">
+  <h2><span class="n">06</span> User stories (12)</h2>
+  <ol class="stories">
+    <li>Every floor guardrail enforced when running pi.</li>
+    <li>pi's guardrails are the <em>same</em> shared matchers — no second copy.</li>
+    <li>Conformance matrix shows a 3rd column for pi, no floor gaps.</li>
+    <li>pi enforces through a thin adapter (filling a slot, not re-implementing).</li>
+    <li>Shared advisory rules reach pi.</li>
+    <li>Can't ship advisory rules stale — a forgotten regen fails the gate.</li>
+    <li>A rule edit reaches pi without re-running the installer.</li>
+    <li>Isolation invariant holds for three config roots.</li>
+    <li>pi's runtime config is version-controlled, mirrors the omp default, stays editable.</li>
+    <li>Skills as <code>/skill:name</code>, commands as clean <code>/name</code>.</li>
+    <li>Whole gate green, incl. a self-test that a stale concatenation is rejected.</li>
+    <li>pi added as one module, no restructuring of the others.</li>
+  </ol>
+</section>
+
+<section id="scope">
+  <h2><span class="n">07</span> Scope &amp; decisions of record</h2>
+  <div class="cols-2">
+    <div class="card"><div class="label" style="color:var(--b)">In scope</div>
+      <p style="margin:0;color:var(--text-dim);font-size:13.5px">Tier-A guard adapter (twin) · fill <code>install_module</code> + flip pending · repo-managed <code>settings.json</code> · rule concatenation + drift gate · conformance 3rd column + pi-adapter test · isolation/install cover <code>~/.pi/agent</code>. <code>consumed_categories</code> = skills/commands/agents (<em>not</em> rules-as-dir).</p></div>
+    <div class="card"><div class="label" style="color:var(--muted)">Out of scope</div>
+      <p style="margin:0;color:var(--text-dim);font-size:13.5px">Gondolin / VM sandbox (deferred tier-D) · any new guardrail detection (12 done) · the four fuzzy security anti-patterns (advisory) · a general neutral-instruction-file beyond the concatenation.</p></div>
+  </div>
+  <div class="adrs" style="margin-top:16px">
+    <div class="adr hot"><code>ADR-0013</code><p>Advisory rules → pi as a gate-checked generated concatenation. The new decision.</p></div>
+    <div class="adr"><code>ADR-0010</code><p>Modular harness modules + isolation — the slot being filled.</p></div>
+    <div class="adr"><code>ADR-0011/0012</code><p>Guard core + ports-and-adapters; all enforcement consolidated — what pi inherits.</p></div>
+  </div>
+</section>
+
+</div>
+<script type="module">
+import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';
+const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+mermaid.initialize({startOnLoad:true,theme:'base',look:'classic',themeVariables:{
+  primaryColor:isDark?'#15263a':'#e2f1f6',primaryBorderColor:isDark?'#38bdf8':'#0e7490',
+  primaryTextColor:isDark?'#dce7f0':'#0f2233',lineColor:isDark?'#5a7a8c':'#94a3b8',
+  fontSize:'13px',fontFamily:'Space Grotesk, system-ui, sans-serif'}});
+let scale=1;const wraps=document.querySelectorAll('.mermaid');
+window.zm=f=>{scale*=f;wraps.forEach(w=>{w.style.transform=`scale(${scale})`;w.style.transformOrigin='top center';});};
+window.zr=()=>{scale=1;wraps.forEach(w=>w.style.transform='scale(1)');};
+</script>
+</body>
+</html>

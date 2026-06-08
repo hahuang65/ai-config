@@ -247,6 +247,50 @@ EOF
 }
 
 # ---------------------------------------------------------------------------
+# Self-test 9b: a stale pi advisory-rules concatenation fails the gate (ADR-0013)
+# ---------------------------------------------------------------------------
+
+test_stale_pi_concat_fails() {
+  local f="$REPO_DIR/harnesses/pi/advisory-rules.md"
+  local backup
+  backup="$(mktemp)"
+  cp "$f" "$backup"
+  # Simulate "edited a rule, forgot to regenerate" — committed copy now differs.
+  printf '\n<!-- stale drift injected by self-test -->\n' >>"$f"
+
+  if run_pipeline; then
+    self_fail "stale pi concatenation: test-pipeline.sh should exit non-zero"
+  else
+    self_pass "stale pi concatenation: test-pipeline.sh correctly exits non-zero"
+  fi
+
+  cp "$backup" "$f"
+  rm -f "$backup"
+}
+
+# ---------------------------------------------------------------------------
+# Self-test 9c: a stale pi guard bundle fails the gate
+# ---------------------------------------------------------------------------
+
+test_stale_pi_bundle_fails() {
+  local f="$REPO_DIR/harnesses/pi/guard-policies.bundle.ts"
+  local backup
+  backup="$(mktemp)"
+  cp "$f" "$backup"
+  # Simulate "edited the adapter/guard-core, forgot to `make bundle`".
+  printf '\nconst __stale_drift__ = true;\n' >>"$f"
+
+  if run_pipeline; then
+    self_fail "stale pi guard bundle: test-pipeline.sh should exit non-zero"
+  else
+    self_pass "stale pi guard bundle: test-pipeline.sh correctly exits non-zero"
+  fi
+
+  cp "$backup" "$f"
+  rm -f "$backup"
+}
+
+# ---------------------------------------------------------------------------
 # Self-test 10: Rulebook rule (no condition:) missing description
 # ---------------------------------------------------------------------------
 
@@ -438,6 +482,8 @@ main() {
   test_stale_stub_fails
   test_forbidden_already_loaded_in_context_fails
   test_reintroduced_ttsr_rule_fails
+  test_stale_pi_concat_fails
+  test_stale_pi_bundle_fails
   test_rulebook_rule_missing_description_fails
   test_omp_install_target_missing_fails
   test_cross_discovery_enabled_fails

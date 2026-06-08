@@ -647,6 +647,48 @@ test_no_ttsr_frontmatter() {
   done
 }
 
+test_pi_agents_current() {
+  section "pi advisory-rules concatenation is current (ADR-0013)"
+  local committed="$REPO_DIR/harnesses/pi/advisory-rules.md"
+  if [[ ! -f "$committed" ]]; then
+    fail "harnesses/pi/advisory-rules.md" "missing — run 'make rules' to generate pi's advisory-rules context"
+    return
+  fi
+  local tmp
+  tmp="$(mktemp)"
+  if bash "$REPO_DIR/scripts/gen-pi-agents.sh" >"$tmp" 2>/dev/null && diff -q "$tmp" "$committed" >/dev/null 2>&1; then
+    pass "harnesses/pi/advisory-rules.md matches rules/*.md"
+  else
+    fail "harnesses/pi/advisory-rules.md" "stale — rules/*.md changed without regeneration; run 'make rules'"
+  fi
+  rm -f "$tmp"
+}
+
+test_pi_bundle_current() {
+  section "pi guard extension bundle is current"
+  local committed="$REPO_DIR/harnesses/pi/guard-policies.bundle.ts"
+  if [[ ! -f "$committed" ]]; then
+    fail "harnesses/pi/guard-policies.bundle.ts" "missing — run 'make bundle'"
+    return
+  fi
+  # The bundle is what pi actually loads (it can't resolve a symlinked
+  # adapter's relative imports), so it must stay in sync with the adapter +
+  # guard core. bun pins deterministically via mise, so a byte-diff is stable.
+  if ! command -v bun >/dev/null 2>&1; then
+    pass "guard bundle present (bun unavailable here; rebuild comparison skipped)"
+    return
+  fi
+  local tmp
+  tmp="$(mktemp --suffix=.ts)"
+  if bun build "$REPO_DIR/harnesses/pi/extensions/guard-policies.ts" --target=bun --outfile "$tmp" >/dev/null 2>&1 \
+     && diff -q "$tmp" "$committed" >/dev/null 2>&1; then
+    pass "harnesses/pi/guard-policies.bundle.ts matches the adapter + guard core"
+  else
+    fail "harnesses/pi/guard-policies.bundle.ts" "stale — adapter/guard-core changed without rebuild; run 'make bundle'"
+  fi
+  rm -f "$tmp"
+}
+
 test_rulebook_rule_frontmatter() {
   section "Rule frontmatter: rulebook"
   local rule_file
@@ -910,6 +952,26 @@ test_isolation() {
   else
     pass "isolation: claude root has no symlink into the harnesses/omp module"
   fi
+  # pi is the third owned config root: it must not link into a sibling module,
+  # and no sibling root may link into the pi module.
+  local sibling
+  for sibling in harnesses/omp harnesses/claude; do
+    if root_leaks_into_module "$tmphome/.pi/agent" "$sibling"; then
+      fail "isolation" "~/.pi/agent contains a symlink into the $sibling module"
+    else
+      pass "isolation: pi root has no symlink into the $sibling module"
+    fi
+  done
+  if root_leaks_into_module "$tmphome/.omp/agent" "harnesses/pi"; then
+    fail "isolation" "~/.omp/agent contains a symlink into the harnesses/pi module"
+  else
+    pass "isolation: oh-my-pi root has no symlink into the harnesses/pi module"
+  fi
+  if root_leaks_into_module "$tmphome/.claude" "harnesses/pi"; then
+    fail "isolation" "~/.claude contains a symlink into the harnesses/pi module"
+  else
+    pass "isolation: claude root has no symlink into the harnesses/pi module"
+  fi
 
   # test-the-test: a planted sibling link MUST be detected, or the check is vacuous.
   mkdir -p "$tmphome/.omp/agent/skills"
@@ -948,8 +1010,22 @@ test_install_behavior() {
     || fail "install-behavior" "claude settings.json missing"
   [[ -e "$tmphome/.omp/agent/config.yml" ]] && pass "oh-my-pi module installed" \
     || fail "install-behavior" "omp config.yml missing"
-  [[ ! -e "$tmphome/.pi" ]] && pass "pending pi module installs nothing" \
-    || fail "install-behavior" "pending pi module created ~/.pi"
+  [[ -e "$tmphome/.pi/agent/settings.json" ]] && pass "pi module installed (settings.json)" \
+    || fail "install-behavior" "pi settings.json missing"
+  [[ -e "$tmphome/.pi/agent/extensions/guard-policies.ts" ]] && pass "pi guard extension installed" \
+    || fail "install-behavior" "pi guard extension missing"
+  # pi does not realpath-resolve symlinked extensions, so the installed adapter
+  # must be a self-contained bundle — no leftover relative imports it can't find.
+  if [[ -f "$tmphome/.pi/agent/extensions/guard-policies.ts" ]] \
+     && ! grep -qE 'from[[:space:]]*["'\''][.][.]?/' "$tmphome/.pi/agent/extensions/guard-policies.ts"; then
+    pass "pi guard extension is self-contained (bundled, no relative imports)"
+  else
+    fail "install-behavior" "pi guard extension has relative imports pi can't resolve (must be bundled)"
+  fi
+  [[ -e "$tmphome/.pi/agent/AGENTS.md" ]] && pass "pi advisory-rules AGENTS.md installed" \
+    || fail "install-behavior" "pi AGENTS.md missing"
+  [[ ! -e "$tmphome/.pi/agent/rules" ]] && pass "pi has no rules/ dir (rules arrive via AGENTS.md)" \
+    || fail "install-behavior" "pi unexpectedly has a rules/ directory"
 
   # Idempotency: a second run succeeds and a known link still resolves.
   if HOME="$tmphome" bash "$REPO_DIR/install.sh" >/dev/null 2>&1 \
@@ -1021,6 +1097,8 @@ run_content() {
   run test_guide_skill_sync
   run test_no_ttsr_frontmatter
   run test_rulebook_rule_frontmatter
+  run test_pi_agents_current
+  run test_pi_bundle_current
   run test_no_forbidden_claude_centric_phrasing
   run test_stale_stubs
 }

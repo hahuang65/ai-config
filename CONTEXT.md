@@ -75,6 +75,15 @@ The check asserting each config root contains only `{its module's files} ∪ {th
 A `rules/*.md` file that is pure guidance the model reads — shares verbatim across harnesses like a skill, with no mechanical enforcement. After the guardrail consolidation (ADR-0012), **`rules/` is advisory-only**: `coding-style`, `testing`, `performance`, `git-commit`, `mise`, and `security` (its non-blockable principles). All *enforcement* moved to the **guard core**. Distinct from a **Guardrail policy**.
 _Avoid_: rule (unqualified — the bare word hides the advisory-vs-guardrail split).
 
+**Rule projection**:
+How the advisory rules reach a given harness — there is **no single shared path** (ADR-0013); each harness gets the rules through the mechanism that fits its context model. Three exist: **Claude** auto-injects the rules dir always-on; **oh-my-pi** lists them in its native **rulebook** and loads them lazily via `rule://<name>` (ADR-0002); **pi** reads a **generated concatenation** (see **Rule concatenation**). Enforcement, by contrast, travels one shared path (the **guard core**), not by projection.
+
+**Rule concatenation** (pi):
+pi has no native rulebook and reads only a single always-on instruction file, so the advisory rules are joined into one committed file (`harnesses/pi/advisory-rules.md`), symlinked as pi's global `~/.pi/agent/AGENTS.md` (install-once, live through the symlink; the source carries a distinct name so it isn't confused with — or gitignored as — a stray `AGENTS.md`). A **drift-check** in the gate regenerates it from `rules/*.md` and fails if the committed copy is stale, so a forgotten regeneration can't be committed. (ADR-0013)
+
+**Context file** (pi):
+A file pi loads at startup: global `~/.pi/agent/AGENTS.md` (always-on instructions) and `SYSTEM.md` (replaces the system prompt), plus project `AGENTS.md`/`CLAUDE.md` discovered walking up from cwd. pi reads single files, not a directory, and does not expand `@import` references — which is why **Rule concatenation** is necessary. The module's generated `harnesses/pi/advisory-rules.md` (installed as pi's `AGENTS.md`) is distinct from the repo-root `AGENTS.md` (this repo's authoring contract), which is never installed into a config root.
+
 **Guardrail policy**:
 A security/safety constraint with a *shared intent* but a *per-harness enforcement mechanism* (e.g. never read secrets, never write a secret literal, no curl-pipe-to-shell, no cloud teardown). Recorded once in the **policy registry** and projected into each harness via its adapter.
 _Avoid_: rule, permission (a permission is the native allow/deny knob a policy may *project onto*, not the canonical constraint itself).

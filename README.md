@@ -1,6 +1,6 @@
 # ai-config
 
-Centralized configuration for AI coding harnesses — Claude Code and oh-my-pi. Skills, commands, agents, and rules authored once, installed into both by `install.sh`.
+Centralized configuration for AI coding harnesses — Claude Code, oh-my-pi, and pi. Skills, commands, agents, and rules authored once, installed into each by `install.sh`.
 
 > **Editing or adding skills / commands / agents / rules?** Read [`AGENTS.md`](AGENTS.md) — the authoring contract: progressive disclosure, the per-primitive harness matrix (what each is and which harnesses consume it), and how rules (advisory, rulebook) differ from guardrails (enforced once in the shared guard core). `make test` is the pre-commit gate that enforces it (run `make` to list targets).
 
@@ -203,7 +203,7 @@ Agents read a subset relevant to their role.
 ├── harnesses/        Pluggable per-harness modules, each with a manifest.sh (ADR-0010)
 │   ├── claude/         Claude Code module (settings.json, hooks.json, statusline.sh, hooks/guard.ts)
 │   ├── omp/            oh-my-pi module (config.yml, RULES.md, extensions/, hooks/{pre,post}/)
-│   └── pi/             pi slot — manifest only, enforcement deferred (ADR-0011)
+│   └── pi/             pi module (settings.json, extensions/, advisory-rules.md→AGENTS.md) — @earendil-works/pi-coding-agent
 ├── shared/           guard core — policy-registry.ts (IDs + floor flags), guard-core.ts (detection, written once), conformance.ts
 ├── test/             bun tests — adapter + conformance behavior
 ├── Makefile          Developer tasks — run `make` for the menu
@@ -316,12 +316,13 @@ Security guardrails are defined **once** and projected into each harness (ports-
 | `no-shell-write` | — | File writes via shell redirection (`echo >`, `cat >`, `tee`) — the lone non-floor (conformance discriminator) |
 
 - **oh-my-pi (tier A)** runs the core in-process: `harnesses/omp/hooks/pre/guard-policies.ts`. The output redactor `post/redact-keys.ts` stays as a separate post-tool concern.
+- **pi (tier A)** runs the same core through an auto-discovered extension: `harnesses/pi/extensions/guard-policies.ts` — a twin of the oh-my-pi adapter (different engine, same `tool_call` shape). pi has no built-in permission system, so this extension is its entire policy layer.
 - **Claude Code (tier B)** runs the same core through a stdin/stdout shim: `harnesses/claude/hooks/guard.ts` (registered in `settings.json`); its static `permissions.deny` denylist remains as defense-in-depth.
 - A **conformance test** asserts every harness enforces every floor policy (emits a coverage matrix; no silent gaps) — run via `make test/guard`. An **isolation test** forbids cross-harness pollution — run via `make test/install`. `make test` runs both (plus the guard-core/adapter unit tests).
 
-## Dual-Harness Support
+## Multi-Harness Support
 
-This repository serves two AI coding harnesses with different runtime models. `install.sh` mirrors every shared primitive into both harness roots (per [ADR-0001](docs/adr/0001-full-mirror-per-harness.md)) — same source files, two sets of symlinks:
+This repository serves three AI coding harnesses with different runtime models. `install.sh` mirrors every shared primitive into each harness root (per [ADR-0001](docs/adr/0001-full-mirror-per-harness.md)) — same source files, three sets of symlinks. The table below contrasts the two most different runtime models; **pi** (`@earendil-works/pi-coding-agent`, config root `~/.pi/agent`) tracks oh-my-pi's tier-A model — an auto-discovered extension routing the shared guard core, with advisory rules delivered as a generated `AGENTS.md` (ADR-0013).
 
 | Aspect | Claude Code | oh-my-pi |
 |--------|-------------|-----|
@@ -346,7 +347,7 @@ This repository serves two AI coding harnesses with different runtime models. `i
 2. **Mirrors the shared set** (`skills/`, `commands/`, `agents/`, `rules/`) into the config root — skills as directory symlinks; commands deduped against skills for Claude (avoids duplicate slash commands).
 3. **Installs the module's own files** via `install_module` (Claude: `settings.json`, `statusline.sh`, `hooks.json`; oh-my-pi: `config.yml`, `RULES.md`, `extensions/`, `hooks/`).
 4. **Prunes dangling links** so the install self-heals after a rename/delete.
-5. Skips `harness_pending` modules (the `pi` slot installs nothing yet).
+5. Skips any `harness_pending` modules (none currently — Claude, oh-my-pi, and pi all install).
 
 Finally it sets `core.hooksPath` to `.githooks`. The guard core in `shared/` is resolved by the adapters via symlink realpath, so it is not separately mirrored.
 7. **oh-my-pi** → `omp/config.yml` symlinked to `~/.omp/agent/config.yml`, plus `skills/`, `commands/`, `agents/`, `rules/` symlinked into `~/.omp/agent/` (all commands installed — the Claude duality skip-rule does not apply)
@@ -385,6 +386,7 @@ This project stands on the shoulders of others:
 - **[nicobailon/visual-explainer](https://github.com/nicobailon/visual-explainer)** — The `visual-explainer` skill is taken wholesale from this repository, with only minor modifications. All the HTML visual generation (PRD, tasks, diff-review, architecture diagrams, slides, etc.) is powered by this work.
 - **[affaan-m/everything-claude-code](https://github.com/affaan-m/everything-claude-code)** — The rules and agent definitions in this repo are borrowed and adapted from this collection. The coding-style, testing, security, and performance rules, as well as the agent configurations (architect, tdd-guide, code-reviewer, etc.), draw heavily from this source.
 - **[can1357/oh-my-pi](https://github.com/can1357/oh-my-pi)** ([docs](https://omp.sh/docs)) — The second harness this repo configures. The **TTSR** (time-traveling stream rules) concept — mid-stream regex-triggered rule injection with stream-abort + retry — was oh-my-pi's contribution to the cross-harness rule shape; it carried the command/content enforcement rules until [ADR-0012](docs/adr/0012-consolidate-enforcement-retire-ttsr.md) consolidated them into the shared guard core and retired TTSR. The YAML-based extension / hook / skill model oh-my-pi uses informed how this repo's per-harness boundaries got drawn (see [ADR-0004](docs/adr/0004-omp-permissions-and-hooks-decoupled.md) and [ADR-0005](docs/adr/0005-flat-shared-config-no-per-harness-scoping.md)).
+- **[pi (badlogic/earendil-works)](https://pi.dev)** — The third harness this repo configures (`@earendil-works/pi-coding-agent`, config root `~/.pi/agent`). pi's `tool_call` extension API is near-identical to oh-my-pi's hook API, so its guardrail adapter is a thin twin routing the shared guard core; its single-file `AGENTS.md` context model is why advisory rules reach it as a generated concatenation ([ADR-0013](docs/adr/0013-advisory-rules-project-into-pi-as-gated-concatenation.md)).
 
 ## License
 
