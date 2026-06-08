@@ -1,6 +1,12 @@
 #!/usr/bin/env bash
 # Validates that test-pipeline.sh correctly catches errors by creating
 # temporary broken files and verifying the test script fails on them.
+#
+# All temporary fixture files and directories are created outside the
+# repository (under a mktemp -d directory) and symlinked in, so nothing
+# is ever written to the working tree. In-place modification tests
+# replace real files with symlinks to copies in the temp dir, then
+# restore the originals on cleanup.
 set -euo pipefail
 
 REPO_DIR="$(cd "$(dirname "$0")/.." && pwd)"
@@ -8,30 +14,102 @@ PIPELINE="$REPO_DIR/scripts/test-pipeline.sh"
 SELF_PASS=0
 SELF_FAIL=0
 
-self_pass() { SELF_PASS=$((SELF_PASS + 1)); printf '  \033[32m✓\033[0m %s\n' "$1"; }
-self_fail() { SELF_FAIL=$((SELF_FAIL + 1)); printf '  \033[31m✗\033[0m %s\n' "$1"; }
+# All fixture files live under this temp dir, never inside the repo.
+TMPDIR="$(mktemp -d)"
 
-cleanup() {
-  rm -f "$REPO_DIR"/skills/test-self-test-*/SKILL.md 2>/dev/null || true
-  rmdir "$REPO_DIR"/skills/test-self-test-* 2>/dev/null || true
+# Sweep any leftover test-self-test symlinks from previous interrupted runs.
+# This runs at the start of every self-test invocation.
+remove_fixtures() {
   rm -f "$REPO_DIR"/agents/test-self-test-*.md 2>/dev/null || true
+  rm -rf "$REPO_DIR"/skills/test-self-test-* 2>/dev/null || true
   rm -f "$REPO_DIR"/commands/test-self-test-*.md 2>/dev/null || true
   rm -f "$REPO_DIR"/rules/test-self-test-*.md 2>/dev/null || true
   rm -rf "$REPO_DIR"/harnesses/test-self-test-* 2>/dev/null || true
-  rm -f "$REPO_DIR"/harnesses/omp/test-self-test-*.{yml,yaml} 2>/dev/null || true
+  rm -f "$REPO_DIR"/harnesses/omp/test-self-test-* 2>/dev/null || true
   rm -f "$REPO_DIR"/harnesses/omp/hooks/pre/guard-test-self-test-*.ts 2>/dev/null || true
   rm -f "$REPO_DIR"/harnesses/omp/hooks/post/redact-test-self-test-*.ts 2>/dev/null || true
-  # Restore omp/config.yml if a self-test was interrupted mid-rename
-  if [[ -f "$REPO_DIR/harnesses/omp/test-self-test-config-bak.yml" && ! -f "$REPO_DIR/harnesses/omp/config.yml" ]]; then
-    mv "$REPO_DIR/harnesses/omp/test-self-test-config-bak.yml" "$REPO_DIR/harnesses/omp/config.yml"
-  else
-    rm -f "$REPO_DIR/harnesses/omp/test-self-test-config-bak.yml" 2>/dev/null || true
-  fi
-  # Restore implement-coach SKILL.md if a self-test was interrupted mid-strip
-  if [[ -f "$REPO_DIR/skills/implement-coach/SKILL.md.test-self-test-bak" ]]; then
-    mv "$REPO_DIR/skills/implement-coach/SKILL.md.test-self-test-bak" \
-       "$REPO_DIR/skills/implement-coach/SKILL.md"
-  fi
+  # Restore any __real__ files left behind by an interrupted fixture_replace.
+  # First remove the symlink that replaced the original (if still present),
+  # then move the backup back.
+  while IFS= read -r -d '' bak; do
+    orig="${bak%.__real__}"
+    if [[ -L "$orig" ]]; then
+      rm -f "$orig"
+    fi
+    mv "$bak" "$orig" 2>/dev/null || true
+  done < <(find "$REPO_DIR" \( -name '*.md.__real__' -o -name '*.ts.__real__' -o -name '*.yml.__real__' \) -print0 2>/dev/null)
+}
+remove_fixtures
+
+self_pass() { SELF_PASS=$((SELF_PASS + 1)); printf '  \033[32m✓\033[0m %s\n' "$1"; }
+self_fail() { SELF_FAIL=$((SELF_FAIL + 1)); printf '  \033[31m✗\033[0m %s\n' "$1"; }
+
+# ---------------------------------------------------------------------------
+# Helpers for creating fixtures outside the repo
+# ---------------------------------------------------------------------------
+
+# Create a single-file fixture at the given repo-relative path.
+# The file is physically in $TMPDIR/<rel>; a symlink is placed at
+# $REPO_DIR/<rel> so the pipeline can find it. Returns the temp path
+# for writing content.
+fixture_file() {
+  local rel="$1"
+  local tmp="$TMPDIR/$rel"
+  local repo="$REPO_DIR/$rel"
+  mkdir -p "$(dirname "$tmp")"
+  mkdir -p "$(dirname "$repo")"
+  rm -f "$repo" 2>/dev/null || true
+  ln -sf "$tmp" "$repo"
+  echo "$tmp"
+}
+
+# Create a skill directory fixture at skills/<name>/.
+# The directory is physically in $TMPDIR/skills/<name>; a symlink is
+# placed at $REPO_DIR/skills/<name>. Returns the temp directory path.
+fixture_skill_dir() {
+  local name="$1"
+  local tmp="$TMPDIR/skills/$name"
+  local repo="$REPO_DIR/skills/$name"
+  mkdir -p "$tmp"
+  rm -rf "$repo" 2>/dev/null || true
+  ln -sfn "$tmp" "$repo"
+  echo "$tmp"
+}
+
+# Create a harness module directory fixture at harnesses/<name>/.
+# The directory is physically in $TMPDIR/harnesses/<name>; a symlink
+# is placed at $REPO_DIR/harnesses/<name>. Returns the temp path.
+fixture_harness_dir() {
+  local name="$1"
+  local tmp="$TMPDIR/harnesses/$name"
+  local repo="$REPO_DIR/harnesses/$name"
+  mkdir -p "$tmp"
+  rm -rf "$repo" 2>/dev/null || true
+  ln -sfn "$tmp" "$repo"
+  echo "$tmp"
+}
+
+# Replace a tracked repo file with a symlink to a copy in the temp dir.
+# Used by tests that modify an existing file in-place: the original is
+# never touched; the modification goes to the temp copy. On cleanup the
+# symlink is removed and the original is restored.
+fixture_replace() {
+  local rel="$1"
+  local repo="$REPO_DIR/$rel"
+  local tmp="$TMPDIR/$rel"
+  mkdir -p "$(dirname "$tmp")"
+  cp "$repo" "$tmp"
+  mv "$repo" "$repo.__real__"
+  ln -sf "$tmp" "$repo"
+}
+
+# ---------------------------------------------------------------------------
+# Cleanup (trap + explicit call from main)
+# ---------------------------------------------------------------------------
+
+cleanup() {
+  remove_fixtures
+  rm -rf "$TMPDIR" 2>/dev/null || true
 }
 trap cleanup EXIT
 
@@ -56,8 +134,8 @@ test_valid_repo_passes() {
 # ---------------------------------------------------------------------------
 
 test_skill_missing_name_fails() {
-  local skill_dir="$REPO_DIR/skills/test-self-test-skill"
-  mkdir -p "$skill_dir"
+  local skill_dir
+  skill_dir="$(fixture_skill_dir "test-self-test-skill")"
   cat >"$skill_dir/SKILL.md" <<'EOF'
 ---
 description: A skill missing the name field
@@ -71,9 +149,6 @@ EOF
   else
     self_pass "skill missing name: test-pipeline.sh correctly exits non-zero"
   fi
-
-  rm -f "$skill_dir/SKILL.md"
-  rmdir "$skill_dir"
 }
 
 # ---------------------------------------------------------------------------
@@ -81,8 +156,9 @@ EOF
 # ---------------------------------------------------------------------------
 
 test_agent_missing_tools_fails() {
-  local agent_file="$REPO_DIR/agents/test-self-test-agent.md"
-  cat >"$agent_file" <<'EOF'
+  local f
+  f="$(fixture_file "agents/test-self-test-agent.md")"
+  cat >"$f" <<'EOF'
 ---
 name: test-self-test-agent
 description: An agent missing the tools field
@@ -96,8 +172,6 @@ EOF
   else
     self_pass "agent missing tools: test-pipeline.sh correctly exits non-zero"
   fi
-
-  rm -f "$agent_file"
 }
 
 # ---------------------------------------------------------------------------
@@ -105,8 +179,9 @@ EOF
 # ---------------------------------------------------------------------------
 
 test_agent_unknown_tool_fails() {
-  local agent_file="$REPO_DIR/agents/test-self-test-agent.md"
-  cat >"$agent_file" <<'EOF'
+  local f
+  f="$(fixture_file "agents/test-self-test-agent.md")"
+  cat >"$f" <<'EOF'
 ---
 name: test-self-test-agent
 description: An agent with an unknown tool
@@ -121,8 +196,6 @@ EOF
   else
     self_pass "agent unknown tool: test-pipeline.sh correctly exits non-zero"
   fi
-
-  rm -f "$agent_file"
 }
 
 # ---------------------------------------------------------------------------
@@ -130,8 +203,9 @@ EOF
 # ---------------------------------------------------------------------------
 
 test_broken_ve_reference_fails() {
-  local cmd_file="$REPO_DIR/commands/test-self-test-cmd.md"
-  cat >"$cmd_file" <<'EOF'
+  local f
+  f="$(fixture_file "commands/test-self-test-cmd.md")"
+  cat >"$f" <<'EOF'
 ---
 description: test command with broken reference
 ---
@@ -144,8 +218,6 @@ EOF
   else
     self_pass "broken VE reference: test-pipeline.sh correctly exits non-zero"
   fi
-
-  rm -f "$cmd_file"
 }
 
 # ---------------------------------------------------------------------------
@@ -153,8 +225,9 @@ EOF
 # ---------------------------------------------------------------------------
 
 test_agent_missing_rule_fails() {
-  local agent_file="$REPO_DIR/agents/test-self-test-agent.md"
-  cat >"$agent_file" <<'EOF'
+  local f
+  f="$(fixture_file "agents/test-self-test-agent.md")"
+  cat >"$f" <<'EOF'
 ---
 name: test-self-test-agent
 description: An agent referencing a nonexistent rule
@@ -169,8 +242,6 @@ EOF
   else
     self_pass "agent missing rule: test-pipeline.sh correctly exits non-zero"
   fi
-
-  rm -f "$agent_file"
 }
 
 # ---------------------------------------------------------------------------
@@ -178,8 +249,9 @@ EOF
 # ---------------------------------------------------------------------------
 
 test_stale_stub_fails() {
-  local agent_file="$REPO_DIR/agents/test-self-test-stub.md"
-  cat >"$agent_file" <<'EOF'
+  local f
+  f="$(fixture_file "agents/test-self-test-stub.md")"
+  cat >"$f" <<'EOF'
 This agent has been moved to code-reviewer.md
 See agents/code-reviewer.md instead
 EOF
@@ -189,8 +261,6 @@ EOF
   else
     self_pass "stale stub: test-pipeline.sh correctly exits non-zero"
   fi
-
-  rm -f "$agent_file"
 }
 
 # ---------------------------------------------------------------------------
@@ -198,8 +268,8 @@ EOF
 # ---------------------------------------------------------------------------
 
 test_forbidden_already_loaded_in_context_fails() {
-  local skill_dir="$REPO_DIR/skills/test-self-test-forbidden-phrase"
-  mkdir -p "$skill_dir"
+  local skill_dir
+  skill_dir="$(fixture_skill_dir "test-self-test-forbidden-phrase")"
   cat >"$skill_dir/SKILL.md" <<'EOF'
 ---
 name: test-self-test-forbidden-phrase
@@ -215,9 +285,6 @@ EOF
   else
     self_pass "forbidden phrase: test-pipeline.sh correctly exits non-zero"
   fi
-
-  rm -f "$skill_dir/SKILL.md"
-  rmdir "$skill_dir"
 }
 
 # ---------------------------------------------------------------------------
@@ -225,7 +292,8 @@ EOF
 # ---------------------------------------------------------------------------
 
 test_reintroduced_ttsr_rule_fails() {
-  local f="$REPO_DIR/rules/test-self-test-ttsr.md"
+  local f
+  f="$(fixture_file "rules/test-self-test-ttsr.md")"
   cat >"$f" <<'EOF'
 ---
 description: A re-introduced enforcement rule — should be rejected (TTSR retired, ADR-0012).
@@ -242,8 +310,6 @@ EOF
   else
     self_pass "re-introduced TTSR rule: test-pipeline.sh correctly exits non-zero"
   fi
-
-  rm -f "$f"
 }
 
 # ---------------------------------------------------------------------------
@@ -251,21 +317,17 @@ EOF
 # ---------------------------------------------------------------------------
 
 test_stale_pi_bundle_fails() {
-  local f="$REPO_DIR/harnesses/pi/guard-policies.bundle.ts"
-  local backup
-  backup="$(mktemp)"
-  cp "$f" "$backup"
+  local rel="harnesses/pi/guard-policies.bundle.ts"
+  # Replace with a symlink to a temp copy so modifications never touch the repo
+  fixture_replace "$rel"
   # Simulate "edited the adapter/guard-core, forgot to `make bundle`".
-  printf '\nconst __stale_drift__ = true;\n' >>"$f"
+  printf '\nconst __stale_drift__ = true;\n' >>"$TMPDIR/$rel"
 
   if run_pipeline; then
     self_fail "stale pi guard bundle: test-pipeline.sh should exit non-zero"
   else
     self_pass "stale pi guard bundle: test-pipeline.sh correctly exits non-zero"
   fi
-
-  cp "$backup" "$f"
-  rm -f "$backup"
 }
 
 # ---------------------------------------------------------------------------
@@ -273,7 +335,8 @@ test_stale_pi_bundle_fails() {
 # ---------------------------------------------------------------------------
 
 test_rulebook_rule_missing_description_fails() {
-  local f="$REPO_DIR/rules/test-self-test-rulebook-no-desc.md"
+  local f
+  f="$(fixture_file "rules/test-self-test-rulebook-no-desc.md")"
   cat >"$f" <<'EOF'
 # Rule with no frontmatter
 
@@ -286,8 +349,6 @@ EOF
   else
     self_pass "rulebook rule missing description: test-pipeline.sh correctly exits non-zero"
   fi
-
-  rm -f "$f"
 }
 
 # ---------------------------------------------------------------------------
@@ -295,9 +356,10 @@ EOF
 # ---------------------------------------------------------------------------
 
 test_omp_install_target_missing_fails() {
-  local src="$REPO_DIR/harnesses/omp/config.yml"
-  local bak="$REPO_DIR/harnesses/omp/test-self-test-config-bak.yml"
-  mv "$src" "$bak"
+  local rel="harnesses/omp/config.yml"
+  local tmp="$TMPDIR/$rel"
+  mkdir -p "$(dirname "$tmp")"
+  mv "$REPO_DIR/$rel" "$tmp"
 
   if run_pipeline; then
     self_fail "missing omp/config.yml: test-pipeline.sh should exit non-zero"
@@ -305,7 +367,8 @@ test_omp_install_target_missing_fails() {
     self_pass "missing omp/config.yml: test-pipeline.sh correctly exits non-zero"
   fi
 
-  mv "$bak" "$src"
+  # Restore immediately so subsequent tests can find the file.
+  mv "$tmp" "$REPO_DIR/$rel"
 }
 
 # ---------------------------------------------------------------------------
@@ -313,21 +376,18 @@ test_omp_install_target_missing_fails() {
 # ---------------------------------------------------------------------------
 
 test_cross_discovery_enabled_fails() {
-  local src="$REPO_DIR/harnesses/omp/config.yml"
-  local bak
-  bak="$(mktemp)"  # outside the repo so the pipeline scan / cleanup ignore it
-  cp "$src" "$bak"
-  sed -i.bak 's/enableClaudeUser:[[:space:]]*false/enableClaudeUser: true/' "$src"
-  rm -f "$src.bak"
+  local rel="harnesses/omp/config.yml"
+  # Replace with a symlink to a temp copy so the sed modification never
+  # touches the repo file.
+  fixture_replace "$rel"
+  sed -i.bak 's/enableClaudeUser:[[:space:]]*false/enableClaudeUser: true/' "$TMPDIR/$rel"
+  rm -f "$TMPDIR/$rel.bak"
 
   if run_pipeline; then
     self_fail "cross-discovery re-enabled: test-pipeline.sh should exit non-zero"
   else
     self_pass "cross-discovery re-enabled: test-pipeline.sh correctly exits non-zero"
   fi
-
-  cp "$bak" "$src"
-  rm -f "$bak"
 }
 
 # ---------------------------------------------------------------------------
@@ -335,8 +395,8 @@ test_cross_discovery_enabled_fails() {
 # ---------------------------------------------------------------------------
 
 test_bad_manifest_fails() {
-  local dir="$REPO_DIR/harnesses/test-self-test-mod"
-  mkdir -p "$dir"
+  local dir
+  dir="$(fixture_harness_dir "test-self-test-mod")"
   cat >"$dir/manifest.sh" <<'EOF'
 # Intentionally omits config_root — must fail the manifest contract check.
 consumed_categories=(skills)
@@ -348,8 +408,6 @@ EOF
   else
     self_pass "bad manifest (no config_root): test-pipeline.sh correctly exits non-zero"
   fi
-
-  rm -rf "$dir"
 }
 
 # ---------------------------------------------------------------------------
@@ -357,7 +415,8 @@ EOF
 # ---------------------------------------------------------------------------
 
 test_omp_yaml_invalid_fails() {
-  local f="$REPO_DIR/harnesses/omp/test-self-test-broken.yml"
+  local f
+  f="$(fixture_file "harnesses/omp/test-self-test-broken.yml")"
   cat >"$f" <<'EOF'
 key: [unclosed list
   - "and: { mixed: types"
@@ -369,8 +428,6 @@ EOF
   else
     self_pass "broken omp YAML: test-pipeline.sh correctly exits non-zero"
   fi
-
-  rm -f "$f"
 }
 
 # ---------------------------------------------------------------------------
@@ -378,7 +435,8 @@ EOF
 # ---------------------------------------------------------------------------
 
 test_omp_hook_missing_default_export_fails() {
-  local f="$REPO_DIR/harnesses/omp/hooks/pre/guard-test-self-test-bad.ts"
+  local f
+  f="$(fixture_file "harnesses/omp/hooks/pre/guard-test-self-test-bad.ts")"
   cat >"$f" <<'EOF'
 import type { HookAPI } from "@oh-my-pi/pi-coding-agent/extensibility/hooks";
 
@@ -394,8 +452,6 @@ EOF
   else
     self_pass "hook missing default export: test-pipeline.sh correctly exits non-zero"
   fi
-
-  rm -f "$f"
 }
 
 # ---------------------------------------------------------------------------
@@ -403,16 +459,13 @@ EOF
 # ---------------------------------------------------------------------------
 
 test_skill_dir_missing_skill_md_fails() {
-  local skill_dir="$REPO_DIR/skills/test-self-test-empty"
-  mkdir -p "$skill_dir"
+  fixture_skill_dir "test-self-test-empty"
 
   if run_pipeline; then
     self_fail "missing SKILL.md: test-pipeline.sh should exit non-zero"
   else
     self_pass "missing SKILL.md: test-pipeline.sh correctly exits non-zero"
   fi
-
-  rmdir "$skill_dir"
 }
 
 # ---------------------------------------------------------------------------
@@ -422,9 +475,10 @@ test_skill_dir_missing_skill_md_fails() {
 # ---------------------------------------------------------------------------
 
 test_implement_coach_missing_holding_line_fails() {
-  local src="$REPO_DIR/skills/implement-coach/SKILL.md"
-  local bak="$REPO_DIR/skills/implement-coach/SKILL.md.test-self-test-bak"
-  cp "$src" "$bak"
+  local rel="skills/implement-coach/SKILL.md"
+  # Replace with a symlink to a temp copy so the awk modification never
+  # touches the repo file.
+  fixture_replace "$rel"
 
   # Strip every line from `## Holding the line` up to (not including) the
   # next H2 (`## Rules Adherence`). This wipes Holding-the-line AND
@@ -433,15 +487,14 @@ test_implement_coach_missing_holding_line_fails() {
     /^## Holding the line/ { skip = 1 }
     /^## Rules Adherence/  { skip = 0 }
     !skip
-  ' "$bak" > "$src"
+  ' "$TMPDIR/$rel" > "$TMPDIR/$rel.tmp"
+  mv "$TMPDIR/$rel.tmp" "$TMPDIR/$rel"
 
   if run_pipeline; then
     self_fail "stripped implement-coach holding-line section: test-pipeline.sh should exit non-zero"
   else
     self_pass "stripped implement-coach holding-line section: test-pipeline.sh correctly exits non-zero"
   fi
-
-  mv "$bak" "$src"
 }
 
 # ---------------------------------------------------------------------------
@@ -473,6 +526,10 @@ main() {
 
   echo ""
   echo "Results: $SELF_PASS passed, $SELF_FAIL failed"
+
+  # Remove all fixture symlinks and temp dir (belt-and-suspenders with the EXIT trap).
+  remove_fixtures
+  rm -rf "$TMPDIR" 2>/dev/null || true
 
   if [[ "$SELF_FAIL" -gt 0 ]]; then
     exit 1
