@@ -17,6 +17,11 @@ REPO_DIR="$(cd "$(dirname "$0")" && pwd)"
 green() { printf '\033[32m%s\033[0m\n' "$1"; }
 dim()   { printf '\033[2m%s\033[0m\n' "$1"; }
 
+INSTALL_FORCE=false
+if [ "${1:-}" = "--force" ] || [ "${1:-}" = "-f" ]; then
+  INSTALL_FORCE=true
+fi
+
 # Remove dangling symlinks (target no longer exists) from a managed dir, so
 # re-running install.sh self-heals after a skill/command/rule is deleted or
 # renamed — `ln -sf` refreshes live links but never removes orphaned ones.
@@ -123,6 +128,8 @@ INSTRUCTION_SOURCE="${INSTRUCTION_SOURCE:-}"
 # Modules live under harnesses/ by default; HARNESSES_DIR can override the
 # root (used by the install behavior test to exercise add/remove in isolation).
 HARNESSES_DIR="${HARNESSES_DIR:-$REPO_DIR/harnesses}"
+
+[ "$INSTALL_FORCE" = true ] && dim "  --force: config files will be overwritten"
 
 green "Installing harness modules from $HARNESSES_DIR/*/manifest.sh"
 harness_count=0

@@ -22,8 +22,17 @@ consumed_categories=(skills agents rules)
 instruction_target=""
 
 install_module() {
-  ln -sf "$MOD/settings.json" "$config_root/settings.json"
-  dim "  $config_root/settings.json"
+  # Copy base settings once (regular file, not symlink) so pi can write
+  # runtime fields (lastChangelogVersion, etc.) without dirtying git.
+  # Machine-specific edits (model, etc.) go directly into the installed copy.
+  # Use install.sh --force to overwrite an existing copy with the repo base.
+  [ -L "$config_root/settings.json" ] && rm "$config_root/settings.json"
+  if [ ! -f "$config_root/settings.json" ] || [ "${INSTALL_FORCE:-false}" = true ]; then
+    cp "$MOD/settings.json" "$config_root/settings.json"
+    dim "  $config_root/settings.json"
+  else
+    dim "  $config_root/settings.json — exists, skipping (--force to overwrite)"
+  fi
 
   mkdir -p "$config_root/extensions"
   prune_dangling "$config_root/extensions"

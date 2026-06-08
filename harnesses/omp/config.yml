@@ -18,12 +18,11 @@ commands:
   enableClaudeUser: false
   enableCodexUser: false
   enablePiUser: false
-modelRoles:
-  default: anthropic/claude-opus-4-7
+# Machine-specific settings (model, etc.) go directly into the installed copy at
+# ~/.omp/agent/config.yml — edit it freely, install.sh won't overwrite it.
+# Use ./install.sh --force to pull in the repo base again.
 theme: 
   dark: dark-catppuccin
 startup: 
   quiet: true
-lastChangelogVersion: 15.5.7
 symbolPreset: nerd
-setupVersion: 1

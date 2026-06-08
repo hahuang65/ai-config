@@ -1,6 +1,4 @@
 {
   "defaultProvider": "opencode",
-  "defaultModel": "big-pickle",
-  "defaultThinkingLevel": "medium",
-  "lastChangelogVersion": "0.78.1"
+  "defaultThinkingLevel": "high"
 }

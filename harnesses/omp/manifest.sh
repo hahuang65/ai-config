@@ -14,8 +14,17 @@ dedupe_commands_with_skills=false
 instruction_target=""
 
 install_module() {
-  ln -sf "$MOD/config.yml" "$config_root/config.yml"
-  dim "  $config_root/config.yml"
+  # Copy base config once (regular file, not symlink) so oh-my-pi can write
+  # runtime fields (lastChangelogVersion, etc.) without dirtying git.
+  # Machine-specific edits (model, etc.) go directly into the installed copy.
+  # Use install.sh --force to overwrite an existing copy with the repo base.
+  [ -L "$config_root/config.yml" ] && rm "$config_root/config.yml"
+  if [ ! -f "$config_root/config.yml" ] || [ "${INSTALL_FORCE:-false}" = true ]; then
+    cp "$MOD/config.yml" "$config_root/config.yml"
+    dim "  $config_root/config.yml"
+  else
+    dim "  $config_root/config.yml — exists, skipping (--force to overwrite)"
+  fi
   ln -sf "$MOD/RULES.md" "$config_root/RULES.md"
   dim "  $config_root/RULES.md"
 
