@@ -13,6 +13,18 @@ A disciplined 4-phase workflow for building features. Each phase is its own skil
 
 See [../shared/references/build-pipeline.md](../shared/references/build-pipeline.md) for the approval gates, file conventions (`docs/features/<slug>/`), session management, and visual-sync rules every phase obeys. Read it first.
 
+## Mandatory Phase Loading
+
+`/build` is an orchestrator, not a replacement for the phase skills. At the start of each phase, **read that phase's `SKILL.md` by relative path and follow it**:
+
+- Phase 1: [../grill/SKILL.md](../grill/SKILL.md)
+- Phase 2: [../prd/SKILL.md](../prd/SKILL.md)
+- Phase 3: [../tasks/SKILL.md](../tasks/SKILL.md)
+- Phase 4a: [../implement/SKILL.md](../implement/SKILL.md)
+- Phase 4b: [../implement-coach/SKILL.md](../implement-coach/SKILL.md)
+
+Do **not** decide whether a phase exists from the `available_skills` list or by interpreting names like "grill" as ordinary English. If this `/build` skill loaded, these phase files are part of the same installed skill bundle; load them directly by path. In harnesses without a skill-invocation tool, "invoke `<phase>`" means: read the phase `SKILL.md`, follow its linked references as needed, and execute its workflow.
+
 Each phase also runs standalone:
 
 - `/grill [topic]` — Phase 1: interview, refine `CONTEXT.md`, write ADRs
@@ -33,7 +45,7 @@ Derive a short slug from `$ARGUMENTS` (lowercase, hyphens, max ~5 words). Run ea
 
 ### Phase 1: Grill
 
-Invoke `grill` with the feature description. It updates `CONTEXT.md` / `docs/adr/` project-wide and does NOT create the feature directory yet. After it completes, tell the user what was updated and:
+Load [../grill/SKILL.md](../grill/SKILL.md), then run `grill` with the feature description. It updates `CONTEXT.md` / `docs/adr/` project-wide and does NOT create the feature directory yet. After it completes, tell the user what was updated and:
 
 > Ready to move on? Confirm and I'll synthesize what we discussed into the PRD.
 
@@ -41,13 +53,13 @@ Invoke `grill` with the feature description. It updates `CONTEXT.md` / `docs/adr
 
 ### Phase 2: PRD + Review
 
-Create the feature directory `docs/features/<YYYYMMDD-HHMM>-<slug>/`, then invoke `prd` with the feature description and that path. It writes `prd.md`, generates and opens `prd.html`, and runs the artifact review (see [../shared/references/artifact-review.md](../shared/references/artifact-review.md)): the user gives feedback — `//` annotations or direct answers — which `prd` addresses and re-presents (the visual isn't regenerated mid-review), or confirms. On confirmation `prd` regenerates `prd.html` once if the markdown changed.
+Create the feature directory `docs/features/<YYYYMMDD-HHMM>-<slug>/`, then load [../prd/SKILL.md](../prd/SKILL.md) and run `prd` with the feature description and that path. It writes `prd.md`, generates and opens `prd.html`, and runs the artifact review (see [../shared/references/artifact-review.md](../shared/references/artifact-review.md)): the user gives feedback — `//` annotations or direct answers — which `prd` addresses and re-presents (the visual isn't regenerated mid-review), or confirms. On confirmation `prd` regenerates `prd.html` once if the markdown changed.
 
 **Wait for the user to confirm in that review** — their confirmation *is* the PRD→Tasks gate. No separate approval prompt; when they confirm rather than keep reviewing, proceed straight to Phase 3.
 
 ### Phase 3: Tasks (vertical-slice tracer bullets)
 
-Invoke `tasks` with the feature directory. It breaks the PRD into vertical slices with HITL/AFK markers, writes `tasks.md`, generates and opens `tasks.html`, runs the same review (no mid-review regen), and regenerates `tasks.html` once on confirmation if the markdown changed.
+Load [../tasks/SKILL.md](../tasks/SKILL.md), then run `tasks` with the feature directory. It breaks the PRD into vertical slices with HITL/AFK markers, writes `tasks.md`, generates and opens `tasks.html`, runs the same review (no mid-review regen), and regenerates `tasks.html` once on confirmation if the markdown changed.
 
 **Wait for the user to confirm in that review** — their confirmation *is* the Tasks→Implement gate. Then proceed to Phase 4.
 
@@ -58,7 +70,7 @@ Ask which mode:
 > - **`/implement`** — AI implements the code via vertical-slice TDD (one test → one impl → repeat)
 > - **`/implement-coach`** — You implement; I write ONE test at a time and verify
 
-If the user says "implement" or doesn't specify, invoke `implement` with the feature directory. If they say "coach me" or "guided", invoke `implement-coach`. Both run the same TDD philosophy, the verification loop, and the post-implementation review chain (`database-reviewer`, `code-cleaner`, `refactor-cleaner`, `code-reviewer`, `doc-updater`, `fact-checker`, `/diff-review`). After completion, report final status (slices, tests, verifications, visuals).
+If the user says "implement" or doesn't specify, load [../implement/SKILL.md](../implement/SKILL.md) and run `implement` with the feature directory. If they say "coach me" or "guided", load [../implement-coach/SKILL.md](../implement-coach/SKILL.md) and run `implement-coach`. Both run the same TDD philosophy, the verification loop, and the post-implementation review chain (`database-reviewer`, `code-cleaner`, `refactor-cleaner`, `code-reviewer`, `doc-updater`, `fact-checker`, `/diff-review`). After completion, report final status (slices, tests, verifications, visuals).
 
 ## Key Principles
 

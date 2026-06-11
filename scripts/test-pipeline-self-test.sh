@@ -498,6 +498,30 @@ test_implement_coach_missing_holding_line_fails() {
 }
 
 # ---------------------------------------------------------------------------
+# Self-test 16: build SKILL.md missing the mandatory phase-loading section —
+# proves the gate catches regressions that let /build reason about sub-skills
+# from availability lists instead of loading each phase by path.
+# ---------------------------------------------------------------------------
+
+test_build_missing_phase_loading_fails() {
+  local rel="skills/build/SKILL.md"
+  fixture_replace "$rel"
+
+  awk '
+    /^## Mandatory Phase Loading/ { skip = 1 }
+    /^Each phase also runs standalone:/ { skip = 0 }
+    !skip
+  ' "$TMPDIR/$rel" > "$TMPDIR/$rel.tmp"
+  mv "$TMPDIR/$rel.tmp" "$TMPDIR/$rel"
+
+  if run_pipeline; then
+    self_fail "stripped build phase-loading section: test-pipeline.sh should exit non-zero"
+  else
+    self_pass "stripped build phase-loading section: test-pipeline.sh correctly exits non-zero"
+  fi
+}
+
+# ---------------------------------------------------------------------------
 # Main
 # ---------------------------------------------------------------------------
 
@@ -523,6 +547,7 @@ main() {
   test_omp_hook_missing_default_export_fails
   test_skill_dir_missing_skill_md_fails
   test_implement_coach_missing_holding_line_fails
+  test_build_missing_phase_loading_fails
 
   echo ""
   echo "Results: $SELF_PASS passed, $SELF_FAIL failed"

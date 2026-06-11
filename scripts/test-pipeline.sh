@@ -403,6 +403,13 @@ test_phase_orchestrator() {
 
   check_content_cached "$content" "$label" "visual-explainer"
   check_content_cached "$content" "$label" "diff-review"
+
+  check_content_cached "$content" "$label" "Mandatory Phase Loading"
+  check_content_cached "$content" "$label" "At the start of each phase"
+  check_content_cached "$content" "$label" "available_skills"
+  for phase in grill prd tasks implement implement-coach; do
+    check_content_cached "$content" "$label" "../$phase/SKILL\.md"
+  done
 }
 
 # ---------------------------------------------------------------------------
