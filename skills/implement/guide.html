@@ -185,8 +185,8 @@ RED→GREEN: test3 → impl3
   <table>
     <thead><tr><th>Step</th><th>Action</th><th>Coach difference</th></tr></thead>
     <tbody>
-      <tr><td>1. Confirm interface</td><td>Identify the public interface this slice will expose. Look for deep modules — small interface, deep implementation.</td><td>same</td></tr>
-      <tr><td>2. Tracer bullet</td><td>Write ONE test for the end-to-end happy path. It must fail for the right reason (no impl yet, not a syntax error).</td><td>AI writes test</td></tr>
+      <tr><td>1. Confirm interface</td><td>Use the PRD Testing Decisions and the slice's Test surface to identify the public interface. Look for deep modules — small interface, deep implementation.</td><td>same</td></tr>
+      <tr><td>2. Tracer bullet</td><td>Write ONE test through that interface for the end-to-end happy path. It must fail for the right reason (no impl yet, not a syntax error).</td><td>AI writes test</td></tr>
       <tr><td>3. GREEN</td><td>Write minimal code to make the test pass.</td><td><strong>User writes code</strong>, AI verifies on "check"</td></tr>
       <tr><td>4. Next criterion</td><td>For each remaining acceptance criterion, write the next test, then write code.</td><td>AI writes test; user writes code</td></tr>
       <tr><td>5. Refactor</td><td>After all tests for the slice pass — only while GREEN — extract, deepen, simplify. Run tests after each step.</td><td>Done together; AI suggests, user executes</td></tr>

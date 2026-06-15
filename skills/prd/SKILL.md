@@ -10,7 +10,7 @@ Synthesize a Product Requirements Document from the grill session and codebase. 
 
 ## Place in the /build Pipeline
 
-This is **Phase 2** of the `/build` pipeline. It assumes `/grill` (Phase 1) already happened — either in this conversation or recorded in `CONTEXT.md` / `docs/adr/`. If invoked standalone and the context feels thin, point the user at `/grill` instead. See [../shared/references/build-pipeline.md](../shared/references/build-pipeline.md) for the file conventions; write `prd.md` and `prd.html` into the feature directory (`docs/features/<YYYYMMDD-HHMM>-<slug>/`, created standalone if needed).
+This is **Phase 2** of the `/build` pipeline. It assumes `/grill` (Phase 1) already happened — either in this conversation or recorded in `CONTEXT.md` / `docs/adr/`. If invoked standalone and the context feels thin, point the user at `/grill` instead. See [../shared/references/build-pipeline.md](../shared/references/build-pipeline.md) for the file conventions; write `prd.md` and `prd.html` into the feature directory (`docs/features/<YYYYMMDD-HHMM>-<slug>/`, created standalone if needed). Read [../shared/references/testable-interfaces.md](../shared/references/testable-interfaces.md) before sketching modules so the testing plan is derived from public interfaces, not delegated back to the user.
 
 ## Rules Adherence
 
@@ -26,16 +26,18 @@ Comply with the project rules in `rules/` (coding-style, testing, security, perf
 
 ### Step 2: Sketch the modules
 
-Identify the major modules to build or modify. **Actively look for deep modules** — a lot of functionality behind a simple, testable interface that rarely changes. Prefer deep over shallow (a shallow module's interface is nearly as wide as its implementation).
+Identify the major production modules to build or modify. **Actively look for deep modules** — a lot of functionality behind a simple, testable interface that rarely changes. Prefer deep over shallow (a shallow module's interface is nearly as wide as its implementation). Do not list spec files, fixtures, mocks, or follow-up docs as product modules.
+
+For each module, derive the test surface yourself using [../shared/references/testable-interfaces.md](../shared/references/testable-interfaces.md): test user-visible behavior through the highest stable public interface; direct-test lower-level modules only when they are deep in their own right. The user should not have to answer "which modules get tests?" — the deep-module/testable-interface rule answers that.
 
 This is the one micro-checkpoint in this phase. Briefly confirm with the user:
 
-> Here are the modules I think this feature needs:
-> - **<ModuleName>** — <one-line purpose>
+> Here are the modules I think this feature needs, with the test surface I will use:
+> - **<ModuleName>** — <one-line purpose>. **Test surface:** <direct public interface / covered through higher-level interface / no product test + reason>.
 >
-> Do these match your mental model? Which should have tests written for them?
+> Do these module boundaries and test seams match your mental model? If any boundary or public interface is wrong, tell me; otherwise I'll carry this into the PRD's Testing Decisions.
 
-Wait for the answer before continuing — it informs the Testing Decisions section.
+Wait for the answer before continuing. If they simply confirm, use the proposed testing plan; do not ask a separate testing-ownership question.
 
 ### Step 3: Write the PRD
 

@@ -88,7 +88,7 @@ code { font-family: var(--font-mono); font-size: 0.85em; background: var(--accen
   <div class="callout warn">
     <strong>Critical:</strong> grilling was the design phase. <span class="cmd-tag">/prd</span> transcribes its outcome — it does <em>NOT</em> re-interview the user. If essential information is genuinely missing, ask one targeted question. But don't re-run the grill session.
   </div>
-  <p style="font-size: 0.9rem; color: var(--text-dim); margin-top: 10px;">The one micro-checkpoint that <em>is</em> in this phase: after sketching the major modules, confirm them with the user and ask which to test. That informs the Testing Decisions section.</p>
+  <p style="font-size: 0.9rem; color: var(--text-dim); margin-top: 10px;">The one micro-checkpoint that <em>is</em> in this phase: after sketching the major modules, propose their test surfaces yourself and ask the user only to correct module boundaries or public-interface seams. Don't ask which modules need tests — deep modules answer that.</p>
 </div>
 
 <div class="section">
@@ -100,7 +100,7 @@ code { font-family: var(--font-mono); font-size: 0.85em; background: var(--accen
       <tr><td><strong>Solution</strong></td><td>The solution from the user's perspective</td></tr>
       <tr><td><strong>User Stories</strong></td><td>Extensive numbered list of <code>As a &lt;actor&gt;, I want &lt;feature&gt;, so that &lt;benefit&gt;</code></td></tr>
       <tr><td><strong>Implementation Decisions</strong></td><td>Modules built/modified, interfaces, schema, contracts, references to ADRs</td></tr>
-      <tr><td><strong>Testing Decisions</strong></td><td>What makes a good test here, which modules will be tested, prior art</td></tr>
+      <tr><td><strong>Testing Decisions</strong></td><td>What makes a good test here, public-interface test surface per module, prior art</td></tr>
       <tr><td><strong>Out of Scope</strong></td><td>Things deliberately excluded</td></tr>
       <tr><td><strong>Further Notes</strong></td><td>Anything else worth recording</td></tr>
     </tbody>
@@ -137,7 +137,7 @@ code { font-family: var(--font-mono); font-size: 0.85em; background: var(--accen
       <p>Interface nearly as wide as the implementation. Provides little encapsulation. A pass-through. Refactor target.</p>
     </div>
   </div>
-  <p style="font-size: 0.9rem; color: var(--text-dim); margin-top: 14px;">Deep modules are testable in isolation, their tests survive refactors, and they hide complexity from callers. The PRD's module sketch should bias toward these.</p>
+  <p style="font-size: 0.9rem; color: var(--text-dim); margin-top: 14px;">Deep modules are testable through their stable public interface, their tests survive refactors, and they hide complexity from callers. The PRD's module sketch should bias toward these and record the test seam for each module.</p>
 </div>
 
 <div class="section">

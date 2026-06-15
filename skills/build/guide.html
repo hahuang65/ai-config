@@ -160,7 +160,7 @@ code { font-family: var(--font-mono); font-size: 0.85em; background: var(--accen
       <ul>
         <li>Reads <code>CONTEXT.md</code>, recent ADRs, conversation</li>
         <li>Sketches major modules (deep-modules philosophy)</li>
-        <li>Confirms module list with user, asks which to test</li>
+        <li>Proposes module test surfaces; user corrects boundaries/seams only</li>
         <li>Writes PRD: problem, solution, user stories, decisions, testing</li>
         <li>NO code snippets, NO file paths (they go stale)</li>
         <li>Annotation cycle via <code>//</code> comments until approved</li>
@@ -186,7 +186,7 @@ code { font-family: var(--font-mono); font-size: 0.85em; background: var(--accen
       <p>Executes the approved slices via vertical-slice TDD — one test, one implementation, repeat. No batching.</p>
       <ul>
         <li>For each slice: confirm interface → RED→GREEN per criterion → refactor</li>
-        <li>Tests describe behavior, not implementation</li>
+        <li>Tests describe behavior through the PRD/task public interface, not implementation</li>
         <li>Verification loop: type check, lint, test, build</li>
         <li>Agents: <span class="agent-tag">tdd-guide</span> <span class="agent-tag">database-reviewer</span> <span class="agent-tag">code-reviewer</span> <span class="agent-tag">refactor-cleaner</span> <span class="agent-tag">doc-updater</span></li>
         <li>Runs the <span class="cmd-tag">code-cleaner</span> + <span class="cmd-tag">fact-checker</span> skills + <span class="cmd-tag">/diff-review</span></li>

@@ -78,8 +78,9 @@ If the user says "implement" or doesn't specify, load [../implement/SKILL.md](..
 2. **Never write code before tasks are approved.** Phases 1–3 are gated.
 3. **Markdown files are the deliverables.** Visual HTML pages are companions.
 4. **Vertical slices, never horizontal.** Each slice cuts through every layer.
-5. **One test, one implementation, repeat.** No batched tests upfront.
-6. **`CONTEXT.md` vocabulary everywhere** — PRD, tasks, test names, code identifiers.
+5. **Test stable public interfaces.** Use [../shared/references/testable-interfaces.md](../shared/references/testable-interfaces.md): PRD proposes module test surfaces, tasks carry them forward, implementation writes one behavior test at a time through the seam.
+6. **One test, one implementation, repeat.** No batched tests upfront.
+7. **`CONTEXT.md` vocabulary everywhere** — PRD, tasks, test names, code identifiers.
 
 ## Visual-Explainer Integration
 

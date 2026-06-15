@@ -14,7 +14,7 @@ Execute approved vertical-slice tasks **one slice at a time** using strict red-g
 - The user has explicitly approved the tasks (do not assume approval).
 - `CONTEXT.md` and any relevant ADRs have been read so test and module names match the project's vocabulary.
 
-See [../shared/references/build-pipeline.md](../shared/references/build-pipeline.md) for file conventions and visual-sync rules.
+See [../shared/references/build-pipeline.md](../shared/references/build-pipeline.md) for file conventions and visual-sync rules. See [../shared/references/testable-interfaces.md](../shared/references/testable-interfaces.md) for how PRD Testing Decisions and task Test surfaces determine where tests attach.
 
 ## Rules Adherence
 
@@ -33,7 +33,7 @@ What still requires explicit user input: a slice that cannot be implemented as w
 
 ## TDD Protocol
 
-Run strict vertical-slice TDD — see [../shared/references/tdd-protocol.md](../shared/references/tdd-protocol.md) for the philosophy, per-cycle rules, per-slice checklist, and deep-modules guidance.
+Run strict vertical-slice TDD — see [../shared/references/tdd-protocol.md](../shared/references/tdd-protocol.md) for the philosophy and per-cycle rules, and [../shared/references/testable-interfaces.md](../shared/references/testable-interfaces.md) for deep-module test-surface decisions.
 
 ```
 RED→GREEN: test1 → impl1   (one test, minimal code to pass)
@@ -47,8 +47,8 @@ Use the `tdd-guide` agent (via the Agent tool) to guide each slice's cycle.
 
 1. **Read context** — `tasks.md`, the linked `prd.md`, `CONTEXT.md`, and relevant ADRs.
 2. **For each slice (dependency order)** — work one slice at a time; do NOT batch slices:
-   - **Confirm the public interface** (deep module: small interface, deep implementation).
-   - **Tracer bullet** — write ONE end-to-end test → it fails (RED) → minimal code → it passes (GREEN).
+   - **Confirm the public interface** from the slice's Test surface and the PRD's Testing Decisions (deep module: small interface, deep implementation). Do not ask whether tests are needed; derive the test seam from the shared testable-interface protocol.
+   - **Tracer bullet** — write ONE end-to-end test through that interface → it fails (RED) → minimal code → it passes (GREEN).
    - **Incremental loop** — for each remaining acceptance criterion: one test → minimal code → GREEN.
    - **Refactor** (only while GREEN) — extract duplication, deepen modules; run tests after each step.
    - **Mark the slice complete** in `tasks.md` (check off criteria, append `**Status:** ✅ Complete`), then move on. Stop only if a slice can't be implemented as written.

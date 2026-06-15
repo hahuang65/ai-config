@@ -13,6 +13,7 @@ Skills import these by relative path, e.g. from `skills/prd/SKILL.md`:
 | `references/build-pipeline.md` | build, grill, prd, tasks, implement, implement-coach |
 | `references/artifact-review.md` | prd, tasks |
 | `references/tdd-protocol.md` | implement, implement-coach |
+| `references/testable-interfaces.md` | prd, tasks, implement, implement-coach |
 | `references/tooling.md` | implement, implement-coach, refactor |
 | `references/review-chain.md` | implement, implement-coach |
 | `references/implementation-completion.md` | implement, implement-coach |

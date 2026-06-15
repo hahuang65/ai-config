@@ -49,6 +49,10 @@ To create the feature directory:
 
 The directory is created once at the start of Phase 2 (the first phase that writes feature-specific artifacts) and reused across Phases 2–4. When sub-skills are invoked, pass the directory path so they write into it.
 
+## Testable Interface Thread
+
+The PRD, tasks, and implementation phases share the same testing contract in [testable-interfaces.md](testable-interfaces.md): tests attach to stable public interfaces of deep modules. `/prd` proposes the test surface with the module sketch, `/tasks` carries it into each vertical slice, and `/implement` / `/implement-coach` write one behavior test at a time through that seam. Do not ask the user to decide from scratch which modules need tests; ask only to correct module boundaries or public-interface choices.
+
 ## Session Management
 
 The workflow is designed to run in a **single long session**. By the time implementation starts, you've built deep shared understanding through grilling and PRD refinement. All artifacts — markdown and visual HTML — survive context compaction and can be re-read at any point.

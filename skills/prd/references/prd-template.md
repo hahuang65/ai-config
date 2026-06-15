@@ -41,11 +41,13 @@ A list of implementation decisions that were made. This can include:
 
 ## Testing Decisions
 
-A list of testing decisions that were made. Include:
+A list of testing decisions that were derived from the module sketch and [../../shared/references/testable-interfaces.md](../../shared/references/testable-interfaces.md). Include:
 
-- A description of what makes a good test in this codebase (test external behavior, not implementation details — see the testing rules)
-- Which modules will be tested (from the module sketch's confirmation)
+- A description of what makes a good test in this codebase (test external behavior through stable public interfaces, not implementation details — see the testing rules)
+- The test surface for each module: direct public-interface test, covered through a higher-level interface, or no product test with rationale
 - Prior art for the tests (i.e. similar types of tests already in the codebase)
+
+Do **not** write that the user still needs to decide which modules get tests. The PRD proposes that decision; the user only corrects module boundaries or public-interface choices.
 
 ## Out of Scope
 

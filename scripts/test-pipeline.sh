@@ -213,6 +213,14 @@ test_phase_prd() {
   check_content_cached "$content" "$label" "CONTEXT\.md"
   check_content_cached "$content" "$label" "[Ss]ynthesize"
   check_content_cached "$content" "$label" "[Dd]eep module"
+  check_content_cached "$content" "$label" "testable-interfaces\.md"
+  check_content_cached "$content" "$label" "[Tt]est surface"
+  check_content_cached "$content" "$label" "[Dd]o not ask.*which modules (need|get) tests|should not have to answer.*which modules get tests"
+  if [[ "$content" =~ Which[[:space:]]+should[[:space:]]+have[[:space:]]+tests[[:space:]]+written[[:space:]]+for[[:space:]]+them ]]; then
+    fail "$label" "must not ask the user 'Which should have tests written for them?'"
+  else
+    pass "$label does not ask the user to choose tested modules"
+  fi
   check_content_cached "$content" "$label" "Write the PRD"
 
   for section in "Problem Statement" Solution "User Stories" "Implementation Decisions" "Testing Decisions" "Out of Scope"; do
@@ -244,6 +252,7 @@ test_phase_tasks() {
   check_content_cached "$content" "$label" "AFK"
   check_content_cached "$content" "$label" "[Aa]cceptance criteria"
   check_content_cached "$content" "$label" "[Bb]locked by"
+  check_content_cached "$content" "$label" "[Tt]est surface"
   check_content_cached "$content" "$label" "tasks\.md"
   check_content_cached "$content" "$label" "tasks\.html"
   check_content_cached "$content" "$label" "visual-explainer"
@@ -262,6 +271,7 @@ test_phase_implement_core() {
   check_content_cached "$content" "$label" "[Tt]racer bullet"
   check_content_cached "$content" "$label" "[Oo]ne test at a time|one test, one impl"
   check_content_cached "$content" "$label" "public interface"
+  check_content_cached "$content" "$label" "[Tt]est surface|testable-interfaces\.md"
   check_content_cached "$content" "$label" "[Tt]ype check"
   check_content_cached "$content" "$label" "[Ll]int"
   check_content_cached "$content" "$label" "test suite|full test"
