@@ -56,10 +56,18 @@ install_module() {
   local pi_bin; pi_bin="$(command -v pi 2>/dev/null)" || true
   if [ -n "$pi_bin" ] && [ -x "$pi_bin" ]; then
     local pi_real; pi_real="$(readlink -f "$pi_bin" 2>/dev/null)" || pi_real="$pi_bin"
-    local pi_pkg_root; pi_pkg_root="$(dirname "$(dirname "$pi_real")")"
-    if [ -d "$pi_pkg_root/examples/extensions/subagent" ]; then
-      pi_subagent_src="$pi_pkg_root/examples/extensions/subagent"
-    fi
+    # The binary's depth within the package root varies by install method: under
+    # bin/ (Homebrew/npm: .../bin/pi) or directly in the root (Linux tarball:
+    # /opt/pi-coding-agent/pi). Walk up from the binary until the bundled
+    # subagent example turns up, instead of hardcoding a dirname count.
+    local dir; dir="$(dirname "$pi_real")"
+    while [ "$dir" != "/" ] && [ -n "$dir" ]; do
+      if [ -d "$dir/examples/extensions/subagent" ]; then
+        pi_subagent_src="$dir/examples/extensions/subagent"
+        break
+      fi
+      dir="$(dirname "$dir")"
+    done
   fi
   if [ -n "$pi_subagent_src" ] && [ -d "$pi_subagent_src" ]; then
     mkdir -p "$config_root/extensions/subagent"
