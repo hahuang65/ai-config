@@ -38,6 +38,7 @@ Do not rely on memory for the commit format. Do not invent a different format.
    - Build the commit message in a temporary file.
    - Follow the template's section order, allowed `TYPE` set, and formatting rules exactly.
    - The body should explain what changed and why, not narrate implementation steps.
+   - For links, put each URL on its own line with no section header. If there are no links, omit the links section entirely.
 
 5. **Commit**
    - Show a concise summary of staged files and the commit message.

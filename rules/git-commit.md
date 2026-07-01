@@ -14,7 +14,7 @@ Fallback summary (used only when `~/.gitmessage` is absent):
 
 - Subject line: `TYPE: imperative-mood description`, capitalized, no trailing period, ≤ 72 chars.
 - Blank line, then a body that answers *what* this change is and *why* it is being made.
-- Blank line, then an annotations block with links to issue-tracker tickets and any helpful articles.
+- Blank line, then links to issue-tracker tickets or helpful articles, one URL per line, with no section header. If there are no links, omit this section entirely.
 - Allowed types: `FEATURE`, `FIX`, `REFACTOR`, `STYLE`, `DOCS`, `TEST`, `CHORE`.
 - Use the body to explain what and why, not how. Bullets with `-` are fine.
 
