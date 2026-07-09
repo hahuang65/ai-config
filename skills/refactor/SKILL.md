@@ -1,16 +1,19 @@
 ---
 name: refactor
-description: Perform user-directed code refactoring with incremental test verification. Use when restructuring code while preserving behavior — extract methods, split files, rename across codebase, simplify conditionals, decouple modules.
+description: Front-end for behavior-preserving code change via the refactorer agent. A specific structural goal (extract, split, rename, decouple) runs as a directed refactor — plan, approval, incremental execution. A vague goal ("clean up X") runs as a hygiene sweep on the named area.
 argument-hint: [refactoring-goal]
 ---
 
 # Refactoring
 
-Perform a user-directed code refactoring that preserves behavior while improving structure. The workflow: analyze the target code, present a transformation plan, get user approval, then execute incrementally with test verification at each step.
+The user-facing front-end of the `refactorer` engine. Route by **goal specificity**:
+
+- A **specific structural goal** runs as a **directed refactor**: analyze the target code, present a transformation plan, get user approval, then execute incrementally in plan mode with test verification at each step.
+- A **vague goal** ("clean up X", "tidy the auth module") runs as a **hygiene sweep**: dispatch the engine in hygiene mode on the named area — no plan interview, no approval gate. See the Hygiene Route below.
 
 ## Process
 
-### Step 1: Parse Goal
+### Step 1: Parse Goal and Route
 
 Read `$ARGUMENTS` to understand what the user wants refactored. Identify:
 
@@ -18,7 +21,7 @@ Read `$ARGUMENTS` to understand what the user wants refactored. Identify:
 - The target files, functions, classes, or modules
 - Any constraints the user mentioned
 
-If the goal is vague (e.g., "clean up the auth module"), ask the user to clarify what specific structural change they want. Do not guess.
+**Route on specificity.** If the goal names a structural change, continue with the directed refactor (Steps 2–8). If the goal is vague (e.g., "clean up the auth module"), take the Hygiene Route instead — do not reject the goal and do not guess at a structural plan the user didn't ask for.
 
 ### Step 2: Read Target Code
 
@@ -78,7 +81,7 @@ Do NOT proceed without explicit user approval.
 
 ### Step 6: Execute via Agent
 
-Invoke the `refactorer` agent (via the Agent tool) with:
+Invoke the `refactorer` agent (via the Agent tool) in **plan mode** with:
 
 - The confirmed transformation plan (numbered list)
 - The detected project tooling (test command, linter, type checker)
@@ -108,10 +111,21 @@ Summarize the refactoring results:
 
 Do NOT commit to version control — leave that to the user.
 
+## Hygiene Route (vague goals)
+
+For a vague goal, detect the project tooling (Step 3) and then dispatch the `refactorer` agent (via the Agent tool) in **hygiene mode** with:
+
+- The target area's files (resolve a named directory or module via Glob/Grep)
+- The detected project tooling (test command, linter, type checker)
+
+The engine sweeps for dead code, unused imports and dependencies, duplicate consolidation, and simplification. It applies SAFE items directly (grep-verified, tests re-run per batch) and reports CAREFUL/RISKY findings without applying them. Present the reported findings to the user — each one is their call. No transformation plan and no approval gate: the SAFE-only contract is what makes the sweep safe to run unattended.
+
+Then run Final Verification (Step 7) and Report (Step 8) as usual.
+
 ## Scope Control Rules
 
 - **Maximum scope**: Warn if a refactoring would touch more than 15 files. Suggest breaking into phases.
-- **Vague goals**: Ask for clarification rather than guessing. "Clean up" is not a refactoring goal.
+- **Vague goals route to hygiene**: "Clean up" is not a directed-refactor goal — it is a hygiene sweep. Route it; don't reject it, don't inflate it into a structural plan.
 - **No feature creep**: Never add features during a refactor. Never change public API signatures unless the user explicitly asked.
 - **Behavior preservation**: The refactored code must do exactly what the original code did.
 
@@ -136,5 +150,5 @@ Act on corrections immediately. You have full context from the plan and executio
 
 - This skill produces transformed code, not documents. No `docs/features/` artifacts.
 - Refactoring is structure change, not behavior change. If you can't preserve behavior, stop.
-- The transformation plan is the contract. Don't add transformations the user didn't approve.
+- On the directed route, the transformation plan is the contract. Don't add transformations the user didn't approve. On the hygiene route, the SAFE-only contract replaces the plan.
 - **NEVER commit to version control** — no `git add`, `git commit`, or `git push`.

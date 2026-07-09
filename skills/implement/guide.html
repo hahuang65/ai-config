@@ -209,8 +209,7 @@ RED→GREEN: test3 → impl3
       <tr><td><strong>Type check / lint / test / build</strong></td><td>Always — verification loop</td><td><span class="must-tag">MUST</span></td></tr>
       <tr><td><span class="agent-tag">tdd-guide</span></td><td>Always — guides the RED→GREEN→REFACTOR cycle for each slice</td><td><span class="must-tag">MUST</span></td></tr>
       <tr><td><span class="agent-tag">database-reviewer</span></td><td>If SQL / migrations / ORM was touched</td><td><span class="cond-tag">CONDITIONAL</span></td></tr>
-      <tr><td><span class="cmd-tag">code-cleaner</span></td><td>Always — looks for reuse, quality, efficiency</td><td><span class="must-tag">MUST</span></td></tr>
-      <tr><td><span class="agent-tag">refactor-cleaner</span></td><td>Always — dead code, unused imports</td><td><span class="must-tag">MUST</span></td></tr>
+      <tr><td><span class="agent-tag">refactorer</span> (hygiene mode)</td><td>Always — dead code, unused imports &amp; dependencies, duplication, simplification; SAFE applied, CAREFUL/RISKY reported</td><td><span class="must-tag">MUST</span></td></tr>
       <tr><td><span class="agent-tag">code-reviewer</span></td><td>Always — OWASP Top 10, &gt;80% confidence</td><td><span class="must-tag">MUST</span></td></tr>
       <tr><td><span class="agent-tag">doc-updater</span></td><td>If features / APIs / architecture changed</td><td><span class="cond-tag">CONDITIONAL</span></td></tr>
       <tr><td><span class="cmd-tag">fact-checker</span> on <code>prd.md</code> &amp; <code>tasks.md</code></td><td>Always — catch drift between docs and code</td><td><span class="must-tag">MUST</span></td></tr>

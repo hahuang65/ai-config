@@ -1,0 +1,518 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Consolidate Refactor &amp; Cleanup — Diff Review</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@400;500;600;700;800&family=Fragment+Mono&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --font-body: 'Bricolage Grotesque', system-ui, sans-serif;
+    --font-mono: 'Fragment Mono', 'SF Mono', Consolas, monospace;
+
+    /* Editorial — warm cream, deep navy, diff color language */
+    --bg: #faf7f2;
+    --surface: #ffffff;
+    --surface2: #f2ede4;
+    --surface-elevated: #fffdf9;
+    --border: rgba(42, 36, 24, 0.10);
+    --border-bright: rgba(42, 36, 24, 0.22);
+    --text: #26221a;
+    --text-dim: #7a7263;
+    --accent: #1e3a5f;
+    --accent-dim: rgba(30, 58, 95, 0.08);
+    --add: #1a7f37;
+    --add-dim: rgba(26, 127, 55, 0.09);
+    --del: #cf222e;
+    --del-dim: rgba(207, 34, 46, 0.08);
+    --mod: #9a6700;
+    --mod-dim: rgba(154, 103, 0, 0.10);
+    --info: #0969da;
+    --info-dim: rgba(9, 105, 218, 0.08);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #16130e;
+      --surface: #201c14;
+      --surface2: #1a1610;
+      --surface-elevated: #262117;
+      --border: rgba(240, 225, 195, 0.10);
+      --border-bright: rgba(240, 225, 195, 0.22);
+      --text: #ede5d5;
+      --text-dim: #a2977f;
+      --accent: #8fb4e3;
+      --accent-dim: rgba(143, 180, 227, 0.10);
+      --add: #3fb950;
+      --add-dim: rgba(63, 185, 80, 0.12);
+      --del: #f85149;
+      --del-dim: rgba(248, 81, 73, 0.10);
+      --mod: #d29922;
+      --mod-dim: rgba(210, 153, 34, 0.12);
+      --info: #58a6ff;
+      --info-dim: rgba(88, 166, 255, 0.10);
+    }
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: var(--bg);
+    background-image: radial-gradient(ellipse at 15% 0%, var(--accent-dim) 0%, transparent 55%);
+    color: var(--text);
+    font-family: var(--font-body);
+    font-size: 16px;
+    padding: 56px 48px 100px;
+    min-height: 100vh;
+    overflow-wrap: break-word;
+  }
+
+  @keyframes fadeUp { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: translateY(0); } }
+  section, header { animation: fadeUp 0.45s ease-out both; animation-delay: calc(var(--i, 0) * 0.06s); }
+  @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: 0.01ms !important; animation-delay: 0ms !important; } }
+
+  .wrap { max-width: 1140px; margin: 0 auto; display: grid; gap: 30px; }
+
+  h1 { font-size: 2.6rem; font-weight: 800; letter-spacing: -1.2px; line-height: 1.1; text-wrap: balance; }
+  .subtitle { color: var(--text-dim); font-size: 14px; font-family: var(--font-mono); margin-top: 10px; }
+  h2 { font-size: 1.15rem; font-weight: 700; }
+
+  code { font-family: var(--font-mono); font-size: 0.85em; background: var(--accent-dim); color: var(--accent); padding: 1px 7px; border-radius: 4px; }
+
+  nav.toc {
+    position: sticky; top: 0; z-index: 20;
+    background: color-mix(in srgb, var(--bg) 88%, transparent);
+    backdrop-filter: blur(8px);
+    border-bottom: 1px solid var(--border);
+    margin: -56px -48px 0; padding: 14px 48px;
+    display: flex; gap: 18px; flex-wrap: wrap;
+    font-family: var(--font-mono); font-size: 12.5px;
+    animation: none;
+  }
+  nav.toc a { color: var(--text-dim); text-decoration: none; }
+  nav.toc a:hover { color: var(--accent); text-decoration: underline; }
+
+  section {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 30px 36px;
+  }
+  .sec-label {
+    font-family: var(--font-mono); font-size: 12.5px; font-weight: 400;
+    text-transform: uppercase; letter-spacing: 2px;
+    color: var(--accent); margin-bottom: 20px;
+    display: flex; align-items: center; gap: 10px;
+  }
+  .sec-label::before { content: ''; width: 9px; height: 9px; border-radius: 50%; background: currentColor; }
+
+  /* Hero */
+  header.hero {
+    background: color-mix(in srgb, var(--surface-elevated) 94%, var(--accent) 6%);
+    border: 1px solid color-mix(in srgb, var(--border) 45%, var(--accent) 55%);
+    border-radius: 16px;
+    box-shadow: 0 8px 32px rgba(40, 30, 10, 0.10);
+    padding: 40px 44px;
+  }
+  .hero .essence { font-size: 1.28rem; line-height: 1.6; margin-top: 22px; max-width: 66ch; }
+  .hero .essence strong { color: var(--add); }
+  .hero .detail { font-size: 15px; line-height: 1.65; color: var(--text-dim); margin-top: 14px; max-width: 72ch; }
+
+  /* KPI dashboard */
+  .kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 18px; }
+  .kpi { background: var(--surface2); border: 1px solid var(--border); border-radius: 12px; padding: 18px 22px; min-width: 0; }
+  .kpi .num { font-size: 2rem; font-weight: 800; font-family: var(--font-mono); letter-spacing: -1px; }
+  .kpi .num.add { color: var(--add); }
+  .kpi .num.del { color: var(--del); }
+  .kpi .num.mod { color: var(--mod); }
+  .kpi .cap { font-size: 12px; color: var(--text-dim); font-family: var(--font-mono); text-transform: uppercase; letter-spacing: 1px; margin-top: 6px; line-height: 1.4; }
+  .badge { display: inline-block; font-family: var(--font-mono); font-size: 12px; padding: 3px 10px; border-radius: 5px; }
+  .badge--ok { background: var(--add-dim); color: var(--add); }
+  .badge--na { background: var(--info-dim); color: var(--info); }
+  .badge--warn { background: var(--mod-dim); color: var(--mod); }
+
+  /* Mermaid */
+  .mermaid-wrap {
+    position: relative; background: var(--surface2);
+    border: 1px solid var(--border); border-radius: 12px;
+    padding: 32px 24px; overflow: auto;
+    display: flex; justify-content: center; align-items: center;
+    min-height: 380px; cursor: grab;
+    scrollbar-width: thin; scrollbar-color: var(--border) transparent;
+  }
+  .mermaid-wrap.is-panning { cursor: grabbing; user-select: none; }
+  .mermaid .nodeLabel { color: var(--text) !important; font-family: var(--font-body) !important; font-size: 15px !important; }
+  .mermaid .edgeLabel { color: var(--text-dim) !important; background-color: var(--bg) !important; font-family: var(--font-mono) !important; font-size: 12px !important; }
+  .mermaid .edgeLabel rect { fill: var(--bg) !important; }
+  .zoom-controls {
+    position: absolute; top: 10px; right: 10px; display: flex; gap: 2px; z-index: 10;
+    background: var(--surface); border: 1px solid var(--border); border-radius: 6px; padding: 2px;
+  }
+  .zoom-controls button {
+    width: 30px; height: 30px; border: none; background: transparent; color: var(--text-dim);
+    font-family: var(--font-mono); font-size: 15px; cursor: pointer; border-radius: 4px;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .zoom-controls button:hover { background: var(--border); color: var(--text); }
+
+  /* Before / after */
+  .ba-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  .ba-grid > * { min-width: 0; }
+  .ba-panel { border-radius: 12px; border: 1px solid var(--border); overflow: hidden; }
+  .ba-panel .ba-head {
+    font-family: var(--font-mono); font-size: 12.5px; text-transform: uppercase; letter-spacing: 1.5px;
+    padding: 10px 18px; border-bottom: 1px solid var(--border);
+  }
+  .ba-panel--before .ba-head { background: var(--del-dim); color: var(--del); }
+  .ba-panel--after .ba-head { background: var(--add-dim); color: var(--add); }
+  .ba-panel .ba-body { padding: 18px 20px; font-size: 14.5px; line-height: 1.65; background: var(--surface2); height: calc(100% - 41px); }
+  .ba-body ul { list-style: none; display: grid; gap: 8px; }
+  .ba-body li { padding-left: 18px; position: relative; }
+  .ba-panel--before .ba-body li::before { content: '−'; color: var(--del); position: absolute; left: 0; font-family: var(--font-mono); }
+  .ba-panel--after .ba-body li::before { content: '+'; color: var(--add); position: absolute; left: 0; font-family: var(--font-mono); }
+  .ba-title { font-weight: 700; font-size: 1.05rem; margin: 26px 0 14px; }
+  .ba-title:first-of-type { margin-top: 0; }
+
+  /* File map */
+  .filemap { font-family: var(--font-mono); font-size: 13.5px; line-height: 2; }
+  .filemap .st { display: inline-block; width: 22px; font-weight: 700; }
+  .st--a { color: var(--add); }
+  .st--d { color: var(--del); }
+  .st--m { color: var(--mod); }
+  details { border: 1px solid var(--border); border-radius: 10px; padding: 14px 20px; background: var(--surface2); }
+  details summary { cursor: pointer; font-weight: 600; font-size: 15px; }
+  details[open] summary { margin-bottom: 14px; }
+
+  /* Review cards */
+  .review-grid { display: grid; gap: 14px; }
+  .rev-card { border-left: 4px solid var(--border); background: var(--surface2); border-radius: 0 10px 10px 0; padding: 16px 22px; font-size: 14.5px; line-height: 1.65; }
+  .rev-card--good { border-left-color: var(--add); }
+  .rev-card--bad { border-left-color: var(--del); }
+  .rev-card--ugly { border-left-color: var(--mod); }
+  .rev-card--q { border-left-color: var(--info); }
+  .rev-card .tag { font-family: var(--font-mono); font-size: 11.5px; text-transform: uppercase; letter-spacing: 1.4px; display: block; margin-bottom: 6px; }
+  .rev-card--good .tag { color: var(--add); }
+  .rev-card--bad .tag { color: var(--del); }
+  .rev-card--ugly .tag { color: var(--mod); }
+  .rev-card--q .tag { color: var(--info); }
+  .rev-card .loc { font-family: var(--font-mono); font-size: 12.5px; color: var(--text-dim); }
+
+  /* Decision log */
+  .dec-card { border-left: 4px solid var(--add); background: var(--surface2); border-radius: 0 10px 10px 0; padding: 18px 24px; font-size: 14.5px; line-height: 1.65; }
+  .dec-card + .dec-card { margin-top: 14px; }
+  .dec-card .conf { float: right; font-family: var(--font-mono); font-size: 11px; text-transform: uppercase; letter-spacing: 1px; padding: 2px 9px; border-radius: 4px; background: var(--add-dim); color: var(--add); }
+  .dec-card h3 { font-size: 1rem; margin-bottom: 8px; }
+  .dec-card p { margin-top: 6px; color: var(--text-dim); font-size: 14px; }
+  .dec-card p strong { color: var(--text); }
+
+  table { border-collapse: collapse; width: 100%; font-size: 14px; }
+  th, td { text-align: left; padding: 11px 15px; border-bottom: 1px solid var(--border); vertical-align: top; line-height: 1.55; }
+  th { font-family: var(--font-mono); font-size: 11px; text-transform: uppercase; letter-spacing: 1.3px; color: var(--text-dim); }
+  tbody tr:last-child td { border-bottom: none; }
+  .table-wrap { overflow-x: auto; }
+
+  ul.reentry { list-style: none; display: grid; gap: 10px; font-size: 14.5px; line-height: 1.65; }
+  ul.reentry li { padding-left: 20px; position: relative; }
+  ul.reentry li::before { content: '›'; position: absolute; left: 2px; color: var(--accent); font-weight: 700; }
+
+  @media (max-width: 840px) {
+    body { padding: 24px 18px 60px; }
+    nav.toc { margin: -24px -18px 0; padding: 12px 18px; }
+    .ba-grid { grid-template-columns: 1fr; }
+    section, header.hero { padding: 22px 20px; }
+  }
+</style>
+</head>
+<body>
+<nav class="toc">
+  <a href="#summary">Summary</a>
+  <a href="#kpis">KPIs</a>
+  <a href="#arch">Architecture</a>
+  <a href="#compare">Before / After</a>
+  <a href="#files">Files</a>
+  <a href="#tests">Tests</a>
+  <a href="#review">Code Review</a>
+  <a href="#decisions">Decisions</a>
+  <a href="#reentry">Re-entry</a>
+</nav>
+<div class="wrap">
+
+  <header class="hero" id="summary" style="--i:0">
+    <h1>Consolidate Refactor &amp; Cleanup — Diff Review</h1>
+    <p class="subtitle">working tree vs main · branch refactor/consolidate-refactor-cleanup · 2026-07-09 · ADR-0015</p>
+    <p class="essence">The catalog had three components claiming behavior-preserving code improvement, and the review chain ran two of them back-to-back doing ~80% the same job. This diff collapses them onto <strong>one engine with two modes</strong>: the <code>refactorer</code> agent keeps its plan-execution behavior and gains a hygiene mode that absorbs everything the two retired cleaners did.</p>
+    <p class="detail">The insight that unlocked it: the axis separating the components was never "does it restructure code" — it's <em>automatic hygiene</em> (plan-less, SAFE-only, runs unattended) versus <em>directed transformation</em> (user goal, plan-approval gate). Those are two entry modes of one engine, not three components. A side-effect win: the retired <code>refactor-cleaner</code> carried a "commit with descriptive messages" instruction that contradicted the repo-wide never-commit convention — it died in the merge, and a new never-commit rule in the engine plus rejection assertions in the test pipeline make both regressions unrepresentable.</p>
+  </header>
+
+  <section id="kpis" style="--i:1">
+    <div class="sec-label">KPI Dashboard</div>
+    <div class="kpis">
+      <div class="kpi"><div class="num add">+245</div><div class="cap">lines added</div></div>
+      <div class="kpi"><div class="num del">−200</div><div class="cap">lines removed</div></div>
+      <div class="kpi"><div class="num mod">19</div><div class="cap">tracked files changed</div></div>
+      <div class="kpi"><div class="num del">2</div><div class="cap">components deleted</div></div>
+      <div class="kpi"><div class="num add">3</div><div class="cap">new test sections<br>(~26 assertions)</div></div>
+      <div class="kpi"><div class="num add">466</div><div class="cap">content checks green</div></div>
+    </div>
+    <div style="margin-top:20px; display:flex; gap:12px; flex-wrap:wrap; font-size:14px;">
+      <span class="badge badge--na">CHANGELOG — n/a (repo has none)</span>
+      <span class="badge badge--ok">README / AGENTS.md / example — updated in this diff</span>
+      <span class="badge badge--ok">ADR-0015 + 2 glossary terms added</span>
+      <span class="badge badge--warn">2 pre-existing gate failures (pi subagent install) — not from this diff</span>
+    </div>
+  </section>
+
+  <section id="arch" style="--i:2">
+    <div class="sec-label">Module Architecture — Current State</div>
+    <div class="mermaid-wrap">
+      <div class="zoom-controls">
+        <button onclick="zoomDiagram(this, 1.2)" title="Zoom in">+</button>
+        <button onclick="zoomDiagram(this, 0.8)" title="Zoom out">&minus;</button>
+        <button onclick="resetZoom(this)" title="Reset zoom">&#8634;</button>
+      </div>
+      <pre class="mermaid">
+flowchart TD
+  BUILD["/build orchestrator"] --> IMPL["/implement · /implement-coach"]
+  IMPL --> CHAIN["review-chain.md<br>8 steps (was 9)"]
+  CHAIN -->|"step 2: Refactor<br>changed files, no plan"| HYG["refactorer — hygiene mode<br>dead code · unused deps · duplication<br>SAFE applied, CAREFUL/RISKY reported"]
+  RSKILL["/refactor skill"] -->|"specific goal:<br>plan → approve"| PLAN["refactorer — plan mode<br>execute · test · revert on failure"]
+  RSKILL -->|"vague goal:<br>clean up X"| HYG
+  GATE["scripts/test-pipeline.sh<br>test_agent_refactorer · test_retired_cleaners · test_skill_refactor"] -.->|"pins the contract"| HYG
+  GATE -.-> PLAN
+  classDef engine fill:#1a7f3733,stroke:#1a7f37,stroke-width:2px
+  classDef gate fill:#9a670022,stroke:#9a6700,stroke-width:1.5px
+  class HYG,PLAN engine
+  class GATE gate
+      </pre>
+    </div>
+  </section>
+
+  <section id="compare" style="--i:3">
+    <div class="sec-label">Major Changes — Before / After</div>
+
+    <div class="ba-title">Component map</div>
+    <div class="ba-grid">
+      <div class="ba-panel ba-panel--before">
+        <div class="ba-head">Before — 3 components</div>
+        <div class="ba-body"><ul>
+          <li><code>code-cleaner</code> skill — chain step 2 "Clean up": reuse, simplify, remove cruft</li>
+          <li><code>refactor-cleaner</code> agent — chain step 3 "Refactor cleanup": dead code, unused deps, dedupe — plus a rogue "commit with descriptive messages" instruction</li>
+          <li><code>refactorer</code> agent — plan execution only, fronted by <code>/refactor</code></li>
+        </ul></div>
+      </div>
+      <div class="ba-panel ba-panel--after">
+        <div class="ba-head">After — 1 engine, 1 front-end</div>
+        <div class="ba-body"><ul>
+          <li><code>refactorer</code> — plan mode (unchanged contract) + hygiene mode (union of both cleaners' duties)</li>
+          <li>Never commits, either mode — stated once in the engine's safety rules</li>
+          <li>SAFE/CAREFUL/RISKY retained with mode-dependent meaning: deletion risk (hygiene) vs transformation risk (plan)</li>
+        </ul></div>
+      </div>
+    </div>
+
+    <div class="ba-title">Review chain</div>
+    <div class="ba-grid">
+      <div class="ba-panel ba-panel--before">
+        <div class="ba-head">Before — 9 steps</div>
+        <div class="ba-body"><ul>
+          <li>Step 2 "Clean up" (code-cleaner) and step 3 "Refactor cleanup" (refactor-cleaner) swept the same changed files twice, back-to-back</li>
+          <li>Two test re-run cycles for one janitorial concern</li>
+        </ul></div>
+      </div>
+      <div class="ba-panel ba-panel--after">
+        <div class="ba-head">After — 8 steps</div>
+        <div class="ba-body"><ul>
+          <li>One step 2 "Refactor": dispatch <code>refactorer</code> in hygiene mode — no approval gate, SAFE-only application is the safety contract</li>
+          <li>Coach-mode split preserved: mechanical fixes applied, CAREFUL/RISKY surfaced to the user</li>
+        </ul></div>
+      </div>
+    </div>
+
+    <div class="ba-title">/refactor skill routing</div>
+    <div class="ba-grid">
+      <div class="ba-panel ba-panel--before">
+        <div class="ba-head">Before — vague goals rejected</div>
+        <div class="ba-body"><ul>
+          <li>"Clean up the auth module" → "clarify what specific structural change you want. Do not guess."</li>
+          <li>No standalone entry point for a cleanup pass</li>
+        </ul></div>
+      </div>
+      <div class="ba-panel ba-panel--after">
+        <div class="ba-head">After — routed by goal specificity</div>
+        <div class="ba-body"><ul>
+          <li>Specific goal → directed refactor: plan → explicit approval → plan mode (gate unchanged, pinned by new checks)</li>
+          <li>Vague goal → hygiene sweep on the named area: no plan interview, SAFE-apply/report contract</li>
+        </ul></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="files" style="--i:4">
+    <div class="sec-label">File Map</div>
+    <details>
+      <summary>19 tracked changes + 2 untracked additions</summary>
+      <div class="filemap">
+        <div><span class="st st--d">D</span> agents/refactor-cleaner.md <span style="color:var(--text-dim)">(−76 — absorbed into hygiene mode)</span></div>
+        <div><span class="st st--d">D</span> skills/code-cleaner/SKILL.md <span style="color:var(--text-dim)">(−31 — absorbed into hygiene mode)</span></div>
+        <div><span class="st st--m">M</span> agents/refactorer.md <span style="color:var(--text-dim)">(rewritten: two-mode engine, 118 lines)</span></div>
+        <div><span class="st st--m">M</span> scripts/test-pipeline.sh <span style="color:var(--text-dim)">(+127: 3 new sections, 2 flipped phase checks)</span></div>
+        <div><span class="st st--m">M</span> skills/refactor/SKILL.md <span style="color:var(--text-dim)">(goal-specificity routing + Hygiene Route)</span></div>
+        <div><span class="st st--m">M</span> skills/shared/references/review-chain.md <span style="color:var(--text-dim)">(9 → 8 steps)</span></div>
+        <div><span class="st st--m">M</span> skills/implement/SKILL.md · skills/implement-coach/SKILL.md · skills/build/SKILL.md <span style="color:var(--text-dim)">(chain listing)</span></div>
+        <div><span class="st st--m">M</span> skills/implement/guide.html · skills/implement-coach/guide.html · skills/build/guide.html <span style="color:var(--text-dim)">(chain rows — pulled into Slice 2 for the sync check)</span></div>
+        <div><span class="st st--m">M</span> skills/improve-codebase/SKILL.md · guide.html <span style="color:var(--text-dim)">(boundary note → hygiene sweep)</span></div>
+        <div><span class="st st--m">M</span> AGENTS.md · README.md · example/README.md <span style="color:var(--text-dim)">(catalog descriptions)</span></div>
+        <div><span class="st st--m">M</span> CONTEXT.md <span style="color:var(--text-dim)">(+ Hygiene sweep, Directed refactor glossary entries)</span></div>
+        <div><span class="st st--m">M</span> harnesses/claude/settings.json <span style="color:var(--del)">(⚠ user's pre-existing change — NOT part of this feature)</span></div>
+        <div><span class="st st--a">A</span> docs/adr/0015-one-refactorer-engine-two-modes.md</div>
+        <div><span class="st st--a">A</span> docs/features/20260709-1007-consolidate-refactor-cleanup/ <span style="color:var(--text-dim)">(prd, tasks, visuals, this review)</span></div>
+      </div>
+    </details>
+  </section>
+
+  <section id="tests" style="--i:5">
+    <div class="sec-label">Test Coverage</div>
+    <div class="table-wrap"><table>
+      <thead><tr><th>Surface</th><th>Before</th><th>After</th></tr></thead>
+      <tbody>
+        <tr><td><code>refactorer</code> engine contract</td><td>No content checks — agents got frontmatter + rule-dep checks only</td><td><code>test_agent_refactorer</code>: 15 assertions (both modes, hygiene duties, SAFE/CAREFUL/RISKY policy, never-commit, grep verification)</td></tr>
+        <tr><td>Retired components</td><td>Chain checks <em>required</em> the two cleaner names</td><td><code>test_retired_cleaners</code>: absence assertions for both files + rejection scan over skills, agents, commands, rules, harnesses, READMEs — the split cannot silently return</td></tr>
+        <tr><td><code>/refactor</code> routing</td><td>No skill-specific checks</td><td><code>test_skill_refactor</code>: 8 assertions (both routes in glossary vocabulary, plan-path approval gate pinned)</td></tr>
+        <tr><td>Chain shape (implement / implement-coach)</td><td>Required <code>code-cleaner</code> + <code>refactor-cleaner</code></td><td>Requires <code>refactorer</code> + hygiene-mode wording</td></tr>
+        <tr><td>Whole gate</td><td colspan="2">content 466 ✓ · guard 55 ✓ · meta 18/19 (1 pre-existing) · install 17/19 (2 pre-existing, pi subagent — verified on pristine main via stash)</td></tr>
+      </tbody>
+    </table></div>
+  </section>
+
+  <section id="review" style="--i:6">
+    <div class="sec-label">Code Review — Good / Bad / Ugly</div>
+    <div class="review-grid">
+      <div class="rev-card rev-card--good"><span class="tag">Good</span>
+        Every slice ran RED-first: check changes were observed failing (5 / 4 / 10 / 4 failures respectively) before any markdown edit. The rejection + absence assertions turn the consolidation from a one-time cleanup into an enforced invariant.
+        <div class="loc">scripts/test-pipeline.sh — test_agent_refactorer, test_retired_cleaners, test_skill_refactor</div></div>
+      <div class="rev-card rev-card--good"><span class="tag">Good</span>
+        The engine's safety core (never change behavior, never touch tests, grep-verify, test per batch, revert on failure) was already identical between <code>refactorer</code> and <code>refactor-cleaner</code> — the merge added a mode, not risk. The contradictory commit instruction is structurally gone.
+        <div class="loc">agents/refactorer.md:88–100</div></div>
+      <div class="rev-card rev-card--bad"><span class="tag">Bad</span>
+        The branch diff includes <code>harnesses/claude/settings.json</code> (a model-selection line) that predates this session and has nothing to do with the consolidation. Reviewer flagged HIGH; verified it as the user's own pre-existing working-tree change — <strong>do not stage it into this feature's commit</strong>.
+        <div class="loc">harnesses/claude/settings.json:210</div></div>
+      <div class="rev-card rev-card--ugly"><span class="tag">Ugly</span>
+        SAFE/CAREFUL/RISKY now means deletion risk in hygiene mode and transformation risk in plan mode — same words, two rubrics. Documented in the agent, ADR-0015, and the glossary, but it remains a vocabulary trap for future edits that try to "unify" the tables.
+        <div class="loc">agents/refactorer.md:33 · docs/adr/0015</div></div>
+      <div class="rev-card rev-card--ugly"><span class="tag">Ugly</span>
+        Pre-existing duplication: <code>check_agent_files_exist</code> and <code>check_guide_contains_skill_agents</code> share a near-identical backtick-grep pipeline. Hygiene sweep reported it CAREFUL; deliberately not fixed here (predates the feature; separate-commit territory).
+        <div class="loc">scripts/test-pipeline.sh:554, 705</div></div>
+      <div class="rev-card rev-card--q"><span class="tag">Questions</span>
+        None outstanding — the reviewer's MEDIUM (rejection-scan gaps) was fixed in-session: <code>harnesses/</code> added to the scan, CONTEXT.md's exemption made explicit; the LOW (redundant assertion) was replaced with two precise checks.</div>
+    </div>
+  </section>
+
+  <section id="decisions" style="--i:7">
+    <div class="sec-label">Decision Log</div>
+    <div class="dec-card"><span class="conf">High — ADR-0015</span>
+      <h3>One engine with two modes, not a merged cleaner or a three-way merge</h3>
+      <p><strong>Rationale:</strong> the user wanted the chain step named "refactor", which collides with the <code>/refactor</code> skill unless the merged component is an agent — and the safety cores of the two agents were already identical. <strong>Alternatives considered:</strong> merge only the two cleaners into an inline skill (rejected: naming collision, and the engine shape unifies the safety core); keep all three and sharpen chain-step boundaries (rejected: the naming confusion and double sweep survive).</p></div>
+    <div class="dec-card"><span class="conf">High — grill session</span>
+      <h3>Vague goals route to hygiene mode instead of being rejected</h3>
+      <p><strong>Rationale:</strong> deleting <code>code-cleaner</code> would otherwise leave no standalone cleanup entry point. The SAFE-only contract replaces the plan gate — that's what makes a gate-less route safe. User picked this explicitly over keeping the rejection.</p></div>
+    <div class="dec-card"><span class="conf">High — review fix</span>
+      <h3>CONTEXT.md exempt from the rejection scan; harnesses/ included</h3>
+      <p><strong>Rationale:</strong> the glossary's <em>_Avoid_</em> lists must name the retired vocabulary to steer writers away from it — scanning CONTEXT.md would fail on legitimate content. <code>harnesses/</code> had no principled reason to be exempt, so the reviewer's gap finding was applied there. The exemptions are now spelled out in the check's comment block.</p></div>
+    <div class="dec-card"><span class="conf">High — documented deviation</span>
+      <h3>Guides updated in Slice 2, not Slice 3 as planned</h3>
+      <p><strong>Rationale:</strong> the guide/skill sync check requires any backticked agent in a SKILL.md to appear in its guide.html — deferring guide edits would have broken the gate at the slice boundary. Recorded in tasks.md.</p></div>
+  </section>
+
+  <section id="reentry" style="--i:8">
+    <div class="sec-label">Re-entry Context</div>
+    <details open>
+      <summary>Note from present-you to future-you</summary>
+      <ul class="reentry" style="margin-top:14px">
+        <li><strong>Key invariant:</strong> the content checks are the contract. Never edit <code>test_retired_cleaners</code> / <code>test_agent_refactorer</code> assertions to make a doc edit pass — change the doc.</li>
+        <li><strong>Key invariant:</strong> hygiene mode applies SAFE only. If a future edit lets it auto-apply CAREFUL/RISKY, the gate-less chain step and the gate-less vague-goal route both become unsafe — the no-gate design depends on it.</li>
+        <li><strong>Non-obvious coupling:</strong> <code>gather_skill_content</code> follows a SKILL.md's <em>own</em> reference links — a phrase moved from review-chain.md into a file the skill doesn't link stops counting. And any backticked agent name in a SKILL.md must appear as text in that skill's guide.html.</li>
+        <li><strong>Gotcha:</strong> the meta-suite (<code>make test/meta</code>) plants fixture files inside the repo while running — don't run the content gate (or a hygiene sweep) concurrently, or you'll chase phantom failures.</li>
+        <li><strong>Don't forget:</strong> run <code>make install</code> after committing — <code>~/.claude/skills/code-cleaner</code> and <code>~/.claude/agents/refactor-cleaner.md</code> are dangling symlinks until the prune runs.</li>
+        <li><strong>Don't forget:</strong> commit <code>CONTEXT.md</code>, <code>docs/adr/0015</code>, and the feature directory with the code changes; leave <code>harnesses/claude/settings.json</code> unstaged (pre-existing, unrelated).</li>
+        <li><strong>Pre-existing failures</strong> (not this diff): install-behavior expects <code>harnesses/pi/extensions/subagent/{index,agents}.ts</code> which don't exist in the repo; the meta valid-repo check cascades from it.</li>
+      </ul>
+    </details>
+  </section>
+
+</div>
+
+<script type="module">
+  import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';
+  const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+  mermaid.initialize({
+    startOnLoad: true,
+    theme: 'base',
+    themeVariables: {
+      primaryColor: isDark ? '#2a2416' : '#f2ede4',
+      primaryBorderColor: isDark ? '#8fb4e3' : '#1e3a5f',
+      primaryTextColor: isDark ? '#ede5d5' : '#26221a',
+      lineColor: isDark ? '#a2977f' : '#7a7263',
+      fontSize: '18px',
+      fontFamily: 'Bricolage Grotesque, system-ui, sans-serif',
+    }
+  });
+  const observer = new MutationObserver((m, obs) => {
+    if (document.querySelector('.mermaid svg')) { obs.disconnect(); setTimeout(fitMermaidDiagrams, 100); }
+  });
+  observer.observe(document.body, { childList: true, subtree: true });
+</script>
+<script>
+  function fitMermaidDiagrams() {
+    document.querySelectorAll('.mermaid-wrap').forEach(function(wrap) {
+      var mEl = wrap.querySelector('.mermaid');
+      var svg = mEl && mEl.querySelector('svg');
+      if (!svg) return;
+      mEl.style.zoom = 1;
+      var pad = 64;
+      var svgW = svg.getBoundingClientRect().width;
+      var svgH = svg.getBoundingClientRect().height;
+      var zoom = Math.min((wrap.clientWidth - pad) / svgW, (wrap.clientHeight - pad) / svgH);
+      zoom = Math.max(Math.min(zoom, 2.5), 1);
+      mEl.style.zoom = zoom;
+      mEl.dataset.zoom = zoom;
+      mEl.dataset.fitZoom = zoom;
+    });
+  }
+  function zoomDiagram(btn, factor) {
+    var target = btn.closest('.mermaid-wrap').querySelector('.mermaid');
+    var next = Math.min(Math.max(parseFloat(target.dataset.zoom || 1) * factor, 0.5), 8);
+    target.dataset.zoom = next;
+    target.style.zoom = next;
+  }
+  function resetZoom(btn) {
+    var target = btn.closest('.mermaid-wrap').querySelector('.mermaid');
+    var fitZoom = parseFloat(target.dataset.fitZoom || 1);
+    target.dataset.zoom = fitZoom;
+    target.style.zoom = fitZoom;
+  }
+  document.querySelectorAll('.mermaid-wrap').forEach(function(wrap) {
+    wrap.addEventListener('wheel', function(e) {
+      if (!e.ctrlKey && !e.metaKey) return;
+      e.preventDefault();
+      var target = wrap.querySelector('.mermaid');
+      var next = Math.min(Math.max(parseFloat(target.dataset.zoom || 1) * (e.deltaY < 0 ? 1.1 : 0.9), 0.5), 8);
+      target.dataset.zoom = next;
+      target.style.zoom = next;
+    }, { passive: false });
+    var startX, startY, scrollL, scrollT;
+    wrap.addEventListener('mousedown', function(e) {
+      if (e.target.closest('.zoom-controls')) return;
+      wrap.classList.add('is-panning');
+      startX = e.clientX; startY = e.clientY;
+      scrollL = wrap.scrollLeft; scrollT = wrap.scrollTop;
+    });
+    window.addEventListener('mousemove', function(e) {
+      if (!wrap.classList.contains('is-panning')) return;
+      wrap.scrollLeft = scrollL - (e.clientX - startX);
+      wrap.scrollTop = scrollT - (e.clientY - startY);
+    });
+    window.addEventListener('mouseup', function() { wrap.classList.remove('is-panning'); });
+  });
+</script>
+</body>
+</html>

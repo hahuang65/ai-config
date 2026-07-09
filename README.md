@@ -101,14 +101,13 @@ Both modes follow the same TDD philosophy: **vertical, never horizontal. One tes
 4. Runs continuous type checks and linters
 5. **Verification loop**: type check → lint → test suite → build (repeat until all pass)
 6. Runs **`database-reviewer` agent** if DB code was touched
-7. Runs the `code-cleaner` skill for reuse opportunities
-8. Runs **`refactor-cleaner` agent** for dead code removal
-9. Runs **`code-reviewer` agent** — OWASP Top 10, confidence >80% threshold
-10. Runs **`doc-updater` agent** if APIs/architecture changed
-11. Runs the `fact-checker` skill on both `prd.md` and `tasks.md`
-12. **Refreshes `prd.html` and `tasks.html`** — mandatory regeneration to mirror finals
-13. **Generates `diff-review.html`** via visual-explainer, then runs the `fact-checker` skill on it
-14. **NEVER commits** — leaves that to the user
+7. Runs the **`refactorer` agent in hygiene mode** — dead code, unused imports & dependencies, duplication, simplification (SAFE applied, CAREFUL/RISKY reported)
+8. Runs **`code-reviewer` agent** — OWASP Top 10, confidence >80% threshold
+9. Runs **`doc-updater` agent** if APIs/architecture changed
+10. Runs the `fact-checker` skill on both `prd.md` and `tasks.md`
+11. **Refreshes `prd.html` and `tasks.html`** — mandatory regeneration to mirror finals
+12. **Generates `diff-review.html`** via visual-explainer, then runs the `fact-checker` skill on it
+13. **NEVER commits** — leaves that to the user
 
 #### Coach Mode (`/implement-coach`)
 
@@ -177,7 +176,7 @@ The [`example/`](example/) directory contains sample artifacts from a previous v
 ├── implement (sonnet)
 │   ├── tdd-guide (sonnet) → vertical-slice TDD
 │   ├── code-reviewer (sonnet) → OWASP + quality review
-│   ├── refactor-cleaner (sonnet) → dead code removal
+│   ├── refactorer (sonnet) → hygiene sweep: dead code, duplication
 │   ├── database-reviewer (sonnet) → conditional DB review
 │   ├── doc-updater (sonnet) → conditional doc updates
 │   └── visual-explainer → prd.html, tasks.html, diff-review.html
@@ -241,7 +240,6 @@ Agents read a subset relevant to their role.
 | `prototype` | sonnet | Throwaway prototype to flesh out a design — terminal TUI for logic, or N UI variants on one route |
 | `handoff` | sonnet | Summarise the current session into a disposable handoff doc in the OS temp dir for another session |
 | `pickup` | sonnet | Resume work from a handoff doc — most recent by default, or one matched from an argument |
-| `code-cleaner` | sonnet | Clean up implementation code after tests pass (reuse, readability, dead code) — runs in `/implement`'s review chain. Our own, not Claude's built-in `/simplify` |
 | `fact-checker` | sonnet | Verify a PRD/tasks/HTML doc against the codebase and correct it in place — runs in `/implement`'s review chain. Our own, not Claude's built-in `/fact-check` |
 
 #### Reference / utility
@@ -278,10 +276,9 @@ Agents read a subset relevant to their role.
 | `architect` | opus | System design, trade-offs, architecture review | coding-style, performance, security |
 | `tdd-guide` | sonnet | Red-green-refactor TDD execution | testing, coding-style |
 | `code-reviewer` | sonnet | OWASP Top 10 + quality review (>80% confidence) | coding-style, testing, security, performance |
-| `refactor-cleaner` | sonnet | Dead code detection and safe removal | coding-style |
 | `database-reviewer` | sonnet | Query optimization, schema, DB security | security, performance |
 | `doc-updater` | sonnet | Keep documentation in sync with code | git-commit |
-| `refactorer` | sonnet | Structural transforms preserving behavior | coding-style, performance, security, testing |
+| `refactorer` | sonnet | The engine for behavior-preserving change: plan mode (approved transformation plans) + hygiene mode (dead code, unused deps, duplication — the review chain's Refactor step) | coding-style, performance, security, testing |
 
 ### Rules
 

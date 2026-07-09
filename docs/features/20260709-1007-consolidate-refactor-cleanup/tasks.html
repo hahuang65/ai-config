@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Consolidate Refactor &amp; Cleanup — Tasks</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --font-body: 'Space Grotesk', system-ui, sans-serif;
+    --font-mono: 'JetBrains Mono', 'SF Mono', Consolas, monospace;
+    --bg: #f2f5f9;
+    --surface: #ffffff;
+    --surface2: #e9eef5;
+    --surface-elevated: #fbfcfe;
+    --border: rgba(15, 40, 80, 0.10);
+    --border-bright: rgba(15, 40, 80, 0.22);
+    --text: #16233a;
+    --text-dim: #5d6b82;
+    --accent: #1d4ed8;
+    --accent-dim: rgba(29, 78, 216, 0.08);
+    --green: #047857;
+    --green-dim: rgba(4, 120, 87, 0.08);
+    --amber: #b45309;
+    --amber-dim: rgba(180, 83, 9, 0.09);
+    --rose: #be123c;
+    --rose-dim: rgba(190, 18, 60, 0.07);
+    --teal: #0e7490;
+    --teal-dim: rgba(14, 116, 144, 0.08);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #0c1220;
+      --surface: #131b2e;
+      --surface2: #0f1626;
+      --surface-elevated: #182238;
+      --border: rgba(148, 180, 255, 0.10);
+      --border-bright: rgba(148, 180, 255, 0.22);
+      --text: #dde6f5;
+      --text-dim: #8b9bb8;
+      --accent: #7aa2ff;
+      --accent-dim: rgba(122, 162, 255, 0.12);
+      --green: #4ade80;
+      --green-dim: rgba(74, 222, 128, 0.10);
+      --amber: #fbbf24;
+      --amber-dim: rgba(251, 191, 36, 0.10);
+      --rose: #fb7185;
+      --rose-dim: rgba(251, 113, 133, 0.10);
+      --teal: #38bdf8;
+      --teal-dim: rgba(56, 189, 248, 0.10);
+    }
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: var(--bg);
+    background-image:
+      linear-gradient(var(--border) 1px, transparent 1px),
+      linear-gradient(90deg, var(--border) 1px, transparent 1px);
+    background-size: 48px 48px;
+    color: var(--text);
+    font-family: var(--font-body);
+    padding: 48px 40px 80px;
+    min-height: 100vh;
+    overflow-wrap: break-word;
+  }
+
+  @keyframes fadeUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+  .section { animation: fadeUp 0.4s ease-out both; animation-delay: calc(var(--i, 0) * 0.05s); }
+  @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: 0.01ms !important; animation-delay: 0ms !important; } }
+
+  .wrap { max-width: 1080px; margin: 0 auto; display: grid; gap: 22px; }
+  h1 { font-size: 40px; font-weight: 700; letter-spacing: -1.2px; text-wrap: balance; }
+  .subtitle { color: var(--text-dim); font-size: 13px; font-family: var(--font-mono); }
+  .lead { font-size: 14.5px; line-height: 1.65; max-width: 74ch; margin-top: 14px; }
+
+  code { font-family: var(--font-mono); font-size: 0.86em; background: var(--accent-dim); color: var(--accent); padding: 1px 6px; border-radius: 4px; }
+
+  .section { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 22px 26px; }
+  .section--hero { background: var(--surface-elevated); border-color: color-mix(in srgb, var(--border) 40%, var(--accent) 60%); box-shadow: 0 6px 24px rgba(10, 30, 70, 0.10); padding: 28px 32px; }
+  .section-label { font-family: var(--font-mono); font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 1.6px; margin-bottom: 16px; display: flex; align-items: center; gap: 8px; color: var(--accent); }
+  .section-label .dot { width: 8px; height: 8px; border-radius: 50%; background: currentColor; display: inline-block; }
+
+  /* Dependency graph */
+  .depgraph { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .depgraph > * { min-width: 0; }
+  .dep-lane { display: grid; gap: 12px; align-content: start; }
+  .lane-label { font-family: var(--font-mono); font-size: 10px; text-transform: uppercase; letter-spacing: 1.4px; color: var(--text-dim); text-align: center; }
+  .dep-arrow { display: flex; justify-content: center; color: var(--border-bright); padding: 0; }
+  .dep-arrow svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+
+  .slice-node {
+    background: var(--surface2); border: 1px solid var(--border); border-radius: 10px;
+    padding: 13px 16px; position: relative;
+  }
+  .slice-node .num {
+    position: absolute; top: -9px; left: 14px;
+    font-family: var(--font-mono); font-size: 10px; font-weight: 600;
+    background: var(--accent); color: var(--surface); border-radius: 4px; padding: 1px 7px;
+  }
+  .slice-node .name { font-weight: 600; font-size: 13.5px; margin: 4px 0 5px; }
+  .slice-node .meta { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 6px; }
+  .slice-node .desc { font-size: 12px; color: var(--text-dim); line-height: 1.55; }
+  .slice-node--s1 { border-color: color-mix(in srgb, var(--border) 30%, var(--green) 70%); }
+  .slice-node--s1 .num { background: var(--green); }
+  .slice-node--s2 { border-color: color-mix(in srgb, var(--border) 30%, var(--accent) 70%); }
+  .slice-node--s3 { border-color: color-mix(in srgb, var(--border) 30%, var(--rose) 70%); }
+  .slice-node--s3 .num { background: var(--rose); }
+  .slice-node--s4 { border-color: color-mix(in srgb, var(--border) 30%, var(--teal) 70%); }
+  .slice-node--s4 .num { background: var(--teal); }
+
+  .badge { font-family: var(--font-mono); font-size: 9px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; padding: 2px 7px; border-radius: 4px; }
+  .badge--afk { background: var(--green-dim); color: var(--green); }
+  .badge--stories { background: var(--accent-dim); color: var(--accent); }
+  .badge--red { background: var(--rose-dim); color: var(--rose); }
+
+  /* RED-first strip */
+  .redgreen { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; font-family: var(--font-mono); font-size: 11.5px; }
+  .rg-step { border: 1px solid var(--border); border-radius: 7px; padding: 7px 12px; background: var(--surface2); }
+  .rg-step--red { border-color: color-mix(in srgb, var(--border) 30%, var(--rose) 70%); color: var(--rose); }
+  .rg-step--green { border-color: color-mix(in srgb, var(--border) 30%, var(--green) 70%); color: var(--green); }
+  .rg-arrow { color: var(--border-bright); }
+
+  /* Coverage table */
+  .table-wrap { overflow-x: auto; }
+  table { border-collapse: collapse; width: 100%; font-size: 12.5px; }
+  th, td { text-align: left; padding: 9px 12px; border-bottom: 1px solid var(--border); vertical-align: top; line-height: 1.5; }
+  th { font-family: var(--font-mono); font-size: 10px; text-transform: uppercase; letter-spacing: 1.2px; color: var(--text-dim); font-weight: 600; }
+  tbody tr:last-child td { border-bottom: none; }
+  tbody tr:nth-child(even) { background: color-mix(in srgb, var(--surface2) 55%, transparent); }
+  td.c { text-align: center; font-family: var(--font-mono); }
+  .cov { display: inline-block; width: 10px; height: 10px; border-radius: 3px; background: var(--green); }
+  .cov--pre { background: var(--amber); }
+  td.story-cell { color: var(--text-dim); }
+  td.story-cell strong { color: var(--text); font-weight: 600; }
+
+  .callout { background: var(--surface2); border: 1px solid var(--border); border-left: 3px solid var(--amber); border-radius: 0 8px 8px 0; padding: 12px 16px; font-size: 12.5px; line-height: 1.6; color: var(--text-dim); }
+  .callout strong { color: var(--text); }
+
+  .kpis { display: flex; gap: 14px; flex-wrap: wrap; margin-top: 16px; }
+  .kpi { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 12px 18px; min-width: 140px; }
+  .kpi .num { font-size: 26px; font-weight: 700; font-family: var(--font-mono); letter-spacing: -1px; }
+  .kpi .num.green { color: var(--green); }
+  .kpi .cap { font-size: 10.5px; color: var(--text-dim); font-family: var(--font-mono); text-transform: uppercase; letter-spacing: 1px; margin-top: 3px; }
+
+  @media (max-width: 820px) {
+    body { padding: 24px 16px 60px; }
+    .depgraph { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="section section--hero" style="--i:0">
+    <h1>Consolidate Refactor &amp; Cleanup — Tasks</h1>
+    <p class="subtitle">docs/features/20260709-1007-consolidate-refactor-cleanup · source: prd.md · ADR-0015</p>
+    <p class="lead">Four vertical slices, all AFK — <strong>all complete as of 2026-07-09</strong> on <code>refactor/consolidate-refactor-cleanup</code>. Each slice ran RED-first against the content-check pipeline: checks updated, observed failing, component markdown edited until the gate passed. Two pre-existing gate failures (pi-subagent install checks, unrelated to this feature) are documented in tasks.md. Glossary entries and ADR-0015 landed during grilling.</p>
+    <div class="kpis">
+      <div class="kpi"><div class="num green">4/4</div><div class="cap">slices complete</div></div>
+      <div class="kpi"><div class="num green">466</div><div class="cap">content checks green</div></div>
+      <div class="kpi"><div class="num">12/12</div><div class="cap">user stories covered</div></div>
+      <div class="kpi"><div class="num green">12/12</div><div class="cap">claims fact-checked ✓</div></div>
+    </div>
+  </header>
+
+  <section class="section" style="--i:1">
+    <div class="section-label"><span class="dot"></span> Dependency Graph</div>
+    <div class="depgraph">
+      <div class="dep-lane">
+        <div class="lane-label">Main chain — sequential</div>
+        <div class="slice-node slice-node--s1">
+          <div class="num">Slice 1</div>
+          <div class="name">Hygiene mode in the refactorer engine</div>
+          <div class="meta"><span class="badge badge--afk">AFK ✓ COMPLETE</span><span class="badge badge--stories">stories 5 · 6 · 7 · 12</span></div>
+          <div class="desc">Input-driven mode switch: plan → plan mode (untouched); changed files, no plan → hygiene mode (union of both cleaners' duties). SAFE applied, CAREFUL/RISKY reported. Never commits, either mode.</div>
+        </div>
+        <div class="dep-arrow"><svg viewBox="0 0 20 20"><path d="M10 3 L10 17 M6 13 L10 17 L14 13"/></svg></div>
+        <div class="slice-node slice-node--s2">
+          <div class="num">Slice 2</div>
+          <div class="name">Review chain collapses to one Refactor step</div>
+          <div class="meta"><span class="badge badge--afk">AFK ✓ COMPLETE</span><span class="badge badge--stories">stories 1 · 2 · 5 · 6</span></div>
+          <div class="desc">Steps 2+3 → one "Refactor" step dispatching hygiene mode, no gate. Implement, implement-coach, and build describe the 8-step chain. Retired components still on disk, but nothing invokes them.</div>
+        </div>
+        <div class="dep-arrow"><svg viewBox="0 0 20 20"><path d="M10 3 L10 17 M6 13 L10 17 L14 13"/></svg></div>
+        <div class="slice-node slice-node--s3">
+          <div class="num">Slice 3</div>
+          <div class="name">Retire the cleaners, purge every reference</div>
+          <div class="meta"><span class="badge badge--afk">AFK ✓ COMPLETE</span><span class="badge badge--stories">stories 7 · 8 · 9 · 11</span></div>
+          <div class="desc">Delete <code>code-cleaner</code> + <code>refactor-cleaner</code>. Rejection + absence assertions keep them gone. improve-codebase, READMEs, authoring contract, guides rewritten. Meta-suite proves the checks still bite.</div>
+        </div>
+      </div>
+      <div class="dep-lane">
+        <div class="lane-label">Parallel after Slice 1</div>
+        <div class="slice-node slice-node--s4">
+          <div class="num">Slice 4</div>
+          <div class="name">Goal-specificity routing in the refactor skill</div>
+          <div class="meta"><span class="badge badge--afk">AFK ✓ COMPLETE</span><span class="badge badge--stories">stories 3 · 4 · 10</span></div>
+          <div class="desc">Specific goal → plan → approve → execute, unchanged. Vague goal ("clean up X") → hygiene dispatch, no plan interview. Reject-vague-goals rule retired; glossary terms used.</div>
+        </div>
+        <div class="callout" style="margin-top:14px"><strong>Only hard dependency: Slice 1.</strong> Slice 4 can run any time after the engine has hygiene mode — it does not wait for the chain collapse or the deletions.</div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" style="--i:2">
+    <div class="section-label"><span class="dot"></span> Per-Slice Discipline</div>
+    <div class="redgreen">
+      <span class="rg-step rg-step--red">1 · update content checks</span>
+      <span class="rg-arrow">→</span>
+      <span class="rg-step rg-step--red">2 · run gate — observe RED</span>
+      <span class="rg-arrow">→</span>
+      <span class="rg-step rg-step--green">3 · edit component markdown</span>
+      <span class="rg-arrow">→</span>
+      <span class="rg-step rg-step--green">4 · full gate green</span>
+    </div>
+  </section>
+
+  <section class="section" style="--i:3">
+    <div class="section-label"><span class="dot"></span> User-Story Coverage</div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th style="width:55%">Story (from PRD)</th><th class="c">S1</th><th class="c">S2</th><th class="c">S3</th><th class="c">S4</th></tr>
+        </thead>
+        <tbody>
+          <tr><td class="story-cell"><strong>1</strong> One component owns cleanup</td><td class="c"></td><td class="c"><span class="cov"></span></td><td class="c"></td><td class="c"></td></tr>
+          <tr><td class="story-cell"><strong>2</strong> Chain sweeps once, not twice</td><td class="c"></td><td class="c"><span class="cov"></span></td><td class="c"></td><td class="c"></td></tr>
+          <tr><td class="story-cell"><strong>3</strong> Plan path unchanged for specific goals</td><td class="c"></td><td class="c"></td><td class="c"></td><td class="c"><span class="cov"></span></td></tr>
+          <tr><td class="story-cell"><strong>4</strong> Vague goals get a hygiene sweep</td><td class="c"></td><td class="c"></td><td class="c"></td><td class="c"><span class="cov"></span></td></tr>
+          <tr><td class="story-cell"><strong>5</strong> SAFE auto-applied, CAREFUL/RISKY reported</td><td class="c"><span class="cov"></span></td><td class="c"><span class="cov"></span></td><td class="c"></td><td class="c"></td></tr>
+          <tr><td class="story-cell"><strong>6</strong> Coach-mode ownership split survives</td><td class="c"><span class="cov"></span></td><td class="c"><span class="cov"></span></td><td class="c"></td><td class="c"></td></tr>
+          <tr><td class="story-cell"><strong>7</strong> Never commits, either mode</td><td class="c"><span class="cov"></span></td><td class="c"></td><td class="c"><span class="cov"></span></td><td class="c"></td></tr>
+          <tr><td class="story-cell"><strong>8</strong> Retired names purged everywhere</td><td class="c"></td><td class="c"></td><td class="c"><span class="cov"></span></td><td class="c"></td></tr>
+          <tr><td class="story-cell"><strong>9</strong> Pipeline enforces the new shape</td><td class="c"></td><td class="c"></td><td class="c"><span class="cov"></span></td><td class="c"></td></tr>
+          <tr><td class="story-cell"><strong>10</strong> Glossary terms pinned <span style="font-size:10px">(landed at grill; S4 wires them into the skill)</span></td><td class="c"></td><td class="c"></td><td class="c"></td><td class="c"><span class="cov cov--pre"></span></td></tr>
+          <tr><td class="story-cell"><strong>11</strong> improve-codebase boundary note updated</td><td class="c"></td><td class="c"></td><td class="c"><span class="cov"></span></td><td class="c"></td></tr>
+          <tr><td class="story-cell"><strong>12</strong> Multi-harness contract intact</td><td class="c"><span class="cov"></span></td><td class="c"></td><td class="c"></td><td class="c"></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+</div>
+</body>
+</html>

@@ -70,7 +70,7 @@ Ask which mode:
 > - **`/implement`** — AI implements the code via vertical-slice TDD (one test → one impl → repeat)
 > - **`/implement-coach`** — You implement; I write ONE test at a time and verify
 
-If the user says "implement" or doesn't specify, load [../implement/SKILL.md](../implement/SKILL.md) and run `implement` with the feature directory. If they say "coach me" or "guided", load [../implement-coach/SKILL.md](../implement-coach/SKILL.md) and run `implement-coach`. Both run the same TDD philosophy, the verification loop, and the post-implementation review chain (`database-reviewer`, `code-cleaner`, `refactor-cleaner`, `code-reviewer`, `doc-updater`, `fact-checker`, `/diff-review`). After completion, report final status (slices, tests, verifications, visuals).
+If the user says "implement" or doesn't specify, load [../implement/SKILL.md](../implement/SKILL.md) and run `implement` with the feature directory. If they say "coach me" or "guided", load [../implement-coach/SKILL.md](../implement-coach/SKILL.md) and run `implement-coach`. Both run the same TDD philosophy, the verification loop, and the post-implementation review chain (`database-reviewer`, `refactorer` in hygiene mode, `code-reviewer`, `doc-updater`, `fact-checker`, `/diff-review`). After completion, report final status (slices, tests, verifications, visuals).
 
 ## Key Principles
 

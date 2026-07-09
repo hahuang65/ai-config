@@ -282,8 +282,8 @@ test_phase_implement_core() {
 test_phase_implement_post() {
   local content="$1"
   local label="$2"
-  check_content_cached "$content" "$label" "code-cleaner"
-  check_content_cached "$content" "$label" "refactor-cleaner"
+  check_content_cached "$content" "$label" "refactorer"
+  check_content_cached "$content" "$label" "[Hh]ygiene [Mm]ode"
   check_content_cached "$content" "$label" "code-reviewer"
   check_content_cached "$content" "$label" "OWASP"
   check_content_cached "$content" "$label" "doc-updater"
@@ -330,8 +330,8 @@ test_phase_implement_coach() {
 
   # Post-completion checks (mirrors implement)
   check_content_cached "$content" "$label" "database-reviewer"
-  check_content_cached "$content" "$label" "code-cleaner"
-  check_content_cached "$content" "$label" "refactor-cleaner"
+  check_content_cached "$content" "$label" "refactorer"
+  check_content_cached "$content" "$label" "[Hh]ygiene [Mm]ode"
   check_content_cached "$content" "$label" "code-reviewer"
   check_content_cached "$content" "$label" "OWASP"
   check_content_cached "$content" "$label" "doc-updater"
@@ -384,6 +384,122 @@ test_phase_implement_coach_holding_line() {
   check_content_cached "$cmd_content" "$cmd_label" "[Ww]aiting is the deliverable"
   check_content_cached "$cmd_content" "$cmd_label" "switch to .?/implement"
   check_content_cached "$cmd_content" "$cmd_label" "[Ss]ilence is not consent"
+}
+
+# ---------------------------------------------------------------------------
+# 6d. Agent: refactorer engine (one engine, two modes — ADR-0015)
+#
+# The refactorer agent is the single engine for behavior-preserving change:
+# plan mode executes an approved transformation plan; hygiene mode sweeps
+# changed files with no plan (it absorbed code-cleaner + refactor-cleaner).
+# These assertions pin the two-mode contract so a future edit can't quietly
+# drop a mode, a hygiene duty, or the never-commit rule.
+# ---------------------------------------------------------------------------
+
+test_agent_refactorer() {
+  section "Agent: refactorer engine"
+  local file="$REPO_DIR/agents/refactorer.md"
+  local label="agents/refactorer.md"
+  [[ -f "$file" ]] || { fail "$label" "file not found"; return; }
+  local content
+  content="$(extract_body "$file")"
+
+  # The two entry modes, switched by input shape
+  check_content_cached "$content" "$label" "[Pp]lan [Mm]ode"
+  check_content_cached "$content" "$label" "[Hh]ygiene [Mm]ode"
+  check_content_cached "$content" "$label" "changed files"
+
+  # Hygiene duties — the union of the two retired cleaners
+  check_content_cached "$content" "$label" "[Dd]ead code"
+  check_content_cached "$content" "$label" "[Uu]nused import"
+  check_content_cached "$content" "$label" "[Uu]nused dependenc"
+  check_content_cached "$content" "$label" "[Dd]uplicat"
+  check_content_cached "$content" "$label" "[Ss]implif"
+
+  # Risk policy: SAFE applied, CAREFUL/RISKY reported — grep-verified
+  check_content_cached "$content" "$label" "SAFE"
+  check_content_cached "$content" "$label" "CAREFUL"
+  check_content_cached "$content" "$label" "RISKY"
+  check_content_cached "$content" "$label" "grep"
+  check_content_cached "$content" "$label" "[Rr]eport.*(CAREFUL|RISKY)|(CAREFUL|RISKY).*report"
+
+  # Safety rules shared by both modes
+  check_content_cached "$content" "$label" "never commit|NEVER commit|do not commit"
+  check_content_cached "$content" "$label" "[Nn]ever change behavior"
+}
+
+# ---------------------------------------------------------------------------
+# 6e. Retired cleaners stay retired (ADR-0015)
+#
+# The code-cleaner skill and refactor-cleaner agent were absorbed into the
+# refactorer engine's hygiene mode. The component files must not return, and
+# no live authoring surface (skills, agents, commands, rules, harness modules,
+# README/AGENTS/example) may instruct the model to invoke either retired name.
+# Deliberately exempt: docs/features/ and docs/adr/ (historical records),
+# CONTEXT.md (its glossary _Avoid_ lists must name the retired vocabulary),
+# and this script (the names below are the detector).
+# ---------------------------------------------------------------------------
+
+test_retired_cleaners() {
+  section "Retired cleaners stay retired"
+
+  if [[ -e "$REPO_DIR/skills/code-cleaner" ]]; then
+    fail "retired" "skills/code-cleaner/ still exists (absorbed into refactorer hygiene mode)"
+  else
+    pass "skills/code-cleaner/ absent"
+  fi
+
+  if [[ -e "$REPO_DIR/agents/refactor-cleaner.md" ]]; then
+    fail "retired" "agents/refactor-cleaner.md still exists (absorbed into refactorer hygiene mode)"
+  else
+    pass "agents/refactor-cleaner.md absent"
+  fi
+
+  local hits
+  hits="$(grep -rlE 'code-cleaner|refactor-cleaner' \
+    "$REPO_DIR/skills" "$REPO_DIR/agents" "$REPO_DIR/commands" "$REPO_DIR/rules" \
+    "$REPO_DIR/harnesses" \
+    "$REPO_DIR/AGENTS.md" "$REPO_DIR/README.md" "$REPO_DIR/example" 2>/dev/null || true)"
+  if [[ -n "$hits" ]]; then
+    local f
+    while read -r f; do
+      [[ -z "$f" ]] && continue
+      fail "retired" "${f#"$REPO_DIR"/} mentions a retired cleaner name"
+    done <<< "$hits"
+  else
+    pass "no live authoring surface mentions code-cleaner or refactor-cleaner"
+  fi
+}
+
+# ---------------------------------------------------------------------------
+# 6f. Skill: refactor (goal-specificity routing — ADR-0015)
+#
+# /refactor is the user-facing front-end of the refactorer engine. A specific
+# structural goal takes the gated path: plan → explicit approval → plan mode.
+# A vague goal ("clean up X") dispatches a hygiene sweep directly — the old
+# reject-vague-goals rule is retired. These assertions pin both routes and
+# the approval gate on the plan path.
+# ---------------------------------------------------------------------------
+
+test_skill_refactor() {
+  section "Skill: refactor routing"
+  local file="$REPO_DIR/skills/refactor/SKILL.md"
+  local label="skills/refactor/SKILL.md"
+  [[ -f "$file" ]] || { fail "$label" "file not found"; return; }
+  local content
+  content="$(gather_skill_content refactor)"
+
+  # Both routes, in glossary vocabulary
+  check_content_cached "$content" "$label" "[Dd]irected refactor"
+  check_content_cached "$content" "$label" "[Hh]ygiene sweep"
+  check_content_cached "$content" "$label" "vague"
+  check_content_cached "$content" "$label" "refactorer"
+  check_content_cached "$content" "$label" "[Hh]ygiene [Mm]ode"
+  check_content_cached "$content" "$label" "[Pp]lan [Mm]ode"
+
+  # The plan path keeps its hard approval gate
+  check_content_cached "$content" "$label" "Do NOT proceed without explicit user approval"
+  check_content_cached "$content" "$label" "[Tt]ransformation [Pp]lan"
 }
 
 # ---------------------------------------------------------------------------
@@ -1096,6 +1212,9 @@ run_content() {
   run test_phase_implement
   run test_phase_implement_coach
   run test_phase_implement_coach_holding_line
+  run test_agent_refactorer
+  run test_retired_cleaners
+  run test_skill_refactor
   run test_phase_orchestrator
   run test_cross_references
   run test_agent_rule_deps

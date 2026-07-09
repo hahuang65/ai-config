@@ -188,8 +188,8 @@ code { font-family: var(--font-mono); font-size: 0.85em; background: var(--accen
         <li>For each slice: confirm interface → RED→GREEN per criterion → refactor</li>
         <li>Tests describe behavior through the PRD/task public interface, not implementation</li>
         <li>Verification loop: type check, lint, test, build</li>
-        <li>Agents: <span class="agent-tag">tdd-guide</span> <span class="agent-tag">database-reviewer</span> <span class="agent-tag">code-reviewer</span> <span class="agent-tag">refactor-cleaner</span> <span class="agent-tag">doc-updater</span></li>
-        <li>Runs the <span class="cmd-tag">code-cleaner</span> + <span class="cmd-tag">fact-checker</span> skills + <span class="cmd-tag">/diff-review</span></li>
+        <li>Agents: <span class="agent-tag">tdd-guide</span> <span class="agent-tag">database-reviewer</span> <span class="agent-tag">refactorer</span> (hygiene mode) <span class="agent-tag">code-reviewer</span> <span class="agent-tag">doc-updater</span></li>
+        <li>Runs the <span class="cmd-tag">fact-checker</span> skill + <span class="cmd-tag">/diff-review</span></li>
         <li>Coach variant: AI writes ONE test, user implements, AI verifies</li>
       </ul>
       <div class="out"><strong>Output:</strong> code + <code>diff-review.html</code></div>

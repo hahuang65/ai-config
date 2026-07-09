@@ -123,6 +123,14 @@ _Avoid_: lazy loading (overloaded with the oh-my-pi rulebook's on-demand `rule:/
 The per-build-run home for feature artifacts: `docs/features/<YYYYMMDD-HHMM>-<slug>/`, holding `prd.md`/`prd.html`, `tasks.md`/`tasks.html`, and `diff-review.html`. Project-wide artifacts (`CONTEXT.md`, `docs/adr/`) live at the repo root and accrete across runs.
 _Avoid_: `docs/claude/` (the former Claude-specific name, replaced by the harness-neutral `docs/features/` — see [`adopt-docs-features-over-docs-claude`](docs/adr/0007-adopt-docs-features-over-docs-claude.md)).
 
+**Hygiene sweep**:
+The automatic, plan-less cleanup of just-changed files — dead code, unused imports and dependencies, duplicate consolidation, simplification, idiom fixes — executed by the `refactorer` agent in hygiene mode. Runs unattended as the single "Refactor" step of the post-implementation review chain, and standalone when `/refactor` is given a vague goal ("clean up X"). SAFE changes are applied directly; CAREFUL/RISKY findings are reported, never auto-applied. Never commits.
+_Avoid_: clean up / refactor cleanup (the two former review-chain step names whose overlap this term resolves), `code-cleaner`, `refactor-cleaner` (the retired components it replaces).
+
+**Directed refactor**:
+A user-named structural transformation — extract, inline, move, rename, restructure, decouple — run through the `/refactor` skill: goal → numbered transformation plan → explicit user approval → the `refactorer` agent executes incrementally in plan mode, testing between steps and reverting on failure. Distinct from a **hygiene sweep** by trigger (user goal vs automatic), scope (whatever the goal touches vs changed files), and gate (plan approval vs none).
+_Avoid_: refactoring (unqualified — hides the directed-vs-hygiene split).
+
 ## Example dialogue
 
 > **Dev**: I want to add `/refactor` so it works in both harnesses.

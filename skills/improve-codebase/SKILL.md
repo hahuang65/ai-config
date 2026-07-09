@@ -38,7 +38,7 @@ This skill is _informed_ by the project's domain model. The domain language give
 - A periodic "architectural health check" outside the feature pipeline
 - A grilling session keeps tripping over the same friction
 
-For surface-level cleanup right after implementation (dead code, unused imports, quick reuse opportunities) the `refactor-cleaner` agent and `code-cleaner` skill already run inside `/implement`. `/improve-codebase` is for deeper structural questions that benefit from a focused session.
+For surface-level cleanup right after implementation (dead code, unused imports, quick reuse opportunities) the `refactorer` agent's hygiene sweep already runs inside `/implement`. `/improve-codebase` is for deeper structural questions that benefit from a focused session.
 
 ## Process
 

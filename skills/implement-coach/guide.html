@@ -205,8 +205,7 @@ code { font-family: var(--font-mono); font-size: 0.85em; background: var(--accen
     <tbody>
       <tr><td><strong>Type check / lint / test / build</strong></td><td>AI guides, user fixes</td><td><span class="must-tag">MUST</span></td></tr>
       <tr><td><span class="agent-tag">database-reviewer</span></td><td><strong>User fixes</strong> (they own the code)</td><td><span class="cond-tag">CONDITIONAL</span></td></tr>
-      <tr><td><span class="cmd-tag">code-cleaner</span></td><td>AI applies mechanical, user decides judgment calls</td><td><span class="must-tag">MUST</span></td></tr>
-      <tr><td><span class="agent-tag">refactor-cleaner</span></td><td>AI applies SAFE, user verifies CAREFUL</td><td><span class="must-tag">MUST</span></td></tr>
+      <tr><td><span class="agent-tag">refactorer</span> (hygiene mode)</td><td>Engine applies SAFE, user decides CAREFUL/RISKY</td><td><span class="must-tag">MUST</span></td></tr>
       <tr><td><span class="agent-tag">code-reviewer</span></td><td><strong>User fixes</strong> CRITICAL/HIGH findings</td><td><span class="must-tag">MUST</span></td></tr>
       <tr><td><span class="agent-tag">doc-updater</span></td><td>AI handles directly</td><td><span class="cond-tag">CONDITIONAL</span></td></tr>
       <tr><td><span class="cmd-tag">fact-checker</span> on PRD &amp; tasks</td><td>AI handles directly</td><td><span class="must-tag">MUST</span></td></tr>
