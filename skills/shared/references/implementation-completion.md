@@ -12,15 +12,16 @@ Report what was accomplished this session:
 - Review findings addressed
 - Which visuals were refreshed (`spec.html`, `tasks.html`, `diff-review.html`)
 
-## Completion pointers
+## What happens next
 
-After reporting, add these pointers:
+- **Inside `/build`:** proceed straight to Phase 5 — `review-code` scoped to ONLY the feature's changes. No gate between implementation and the review; the review report carries the pipeline's final commit-or-iterate decision.
+- **Standalone `/implement`:** after reporting, add these pointers:
 
 > If you notice structural issues now that the code is done:
 > - **Local restructuring** (a file got too big, a helper is worth extracting, a rename is worth doing) → run `/refactor` — it's user-directed and works on what you point it at.
-> - **Architectural friction** (modules feel shallow, tests had to reach past interfaces, the area is hard to navigate) → run `/improve-codebase` — it surfaces deepening opportunities across an area as an HTML report you can drive a separate session against.
+> - **Architectural friction** (modules feel shallow, tests had to reach past interfaces, the area is hard to navigate) → run `/review-code` — the `architecture-reviewer` agent surfaces deepening opportunities as an HTML report (no arguments = entire codebase, arguments = that area).
 >
-> Both deliberately live outside the implement phase. Invoke them when you notice friction, not as a mandatory step.
+> Invoke them when you notice friction, not as a mandatory step.
 
 ## Never commit
 

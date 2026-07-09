@@ -14,14 +14,15 @@ cd ~/.dotfiles/ai
 
 ## The /build Workflow
 
-The centerpiece of this repository is `/build` — a disciplined 4-phase workflow for building software features with AI assistance. It enforces a "think before you code" discipline:
+The centerpiece of this repository is `/build` — a disciplined 5-phase workflow for building software features with AI assistance. It enforces a "think before you code" discipline:
 
 1. **Grill** the idea against the project's domain language (interactive Q&A; updates `CONTEXT.md` and ADRs inline)
 2. **Draft a spec** synthesizing the grilling outcome (user stories + decisions, no code snippets)
 3. **Break it into tasks** as vertical-slice tracer bullets (each slice cuts through every layer end-to-end)
 4. **Implement** via vertical-slice TDD — AI does it, or AI coaches you through it one test at a time
+5. **Review the changes** architecturally — deepening opportunities in what was just built; the report is where you decide to commit or iterate
 
-The pipeline merges Boris Tane's research-first discipline with Matt Pocock's skills-TDD workflow (`grill-with-docs → to-prd → to-issues → tdd`), adapted to keep all artifacts local, annotatable, and paired with visual HTML companions. Both implementation modes and all four phases work identically in Claude Code and oh-my-pi — the skills are harness-agnostic and discovered from the same source files in each harness's root.
+The pipeline merges Boris Tane's research-first discipline with Matt Pocock's skills-TDD workflow (`grill-with-docs → to-prd → to-issues → tdd`), adapted to keep all artifacts local, annotatable, and paired with visual HTML companions. Both implementation modes and all five phases work identically in Claude Code and oh-my-pi — the skills are harness-agnostic and discovered from the same source files in each harness's root.
 
 ### Pipeline Overview
 
@@ -36,9 +37,12 @@ The pipeline merges Boris Tane's research-first discipline with Matt Pocock's sk
   ├── Phase 3: /tasks        → docs/features/<slug>/tasks.md + tasks.html
   │                            (vertical-slice tracer bullets, HITL/AFK)
   │
-  └── Phase 4: /implement         → AI writes test → AI writes impl → repeat
-        or    /implement-coach    → AI writes test → YOU write impl → AI verifies → repeat
-                                    (final: diff-review.html)
+  ├── Phase 4: /implement         → AI writes test → AI writes impl → repeat
+  │     or    /implement-coach    → AI writes test → YOU write impl → AI verifies → repeat
+  │                                 (diff-review.html)
+  │
+  └── Phase 5: /review-code       → architecture-reviewer agent on ONLY the changes
+                                    → HTML report → user commits or iterates
 ```
 
 `CONTEXT.md` and `docs/adr/` live at the repo root and accrete across many `/build` runs. Per-feature artifacts (spec, tasks, diff review) live in `docs/features/<YYYYMMDD-HHMM>-<slug>/`.
@@ -104,9 +108,9 @@ Both modes follow the same TDD philosophy: **vertical, never horizontal. One tes
 7. Runs the **`refactorer` agent in hygiene mode** — dead code, unused imports & dependencies, duplication, simplification (SAFE applied, CAREFUL/RISKY reported)
 8. Runs **`code-reviewer` agent** — OWASP Top 10, confidence >80% threshold
 9. Runs **`doc-updater` agent** if APIs/architecture changed
-10. Runs the `fact-checker` skill on both `spec.md` and `tasks.md`
+10. Runs the **`fact-checker` agent** on both `spec.md` and `tasks.md` — independent, cold-context verification
 11. **Refreshes `spec.html` and `tasks.html`** — mandatory regeneration to mirror finals
-12. **Generates `diff-review.html`** via visual-explainer, then runs the `fact-checker` skill on it
+12. **Generates `diff-review.html`** via visual-explainer, then runs the `fact-checker` agent on it
 13. **NEVER commits** — leaves that to the user
 
 #### Coach Mode (`/implement-coach`)
@@ -236,7 +240,7 @@ Agents read a subset relevant to their role.
 | Name | Model (rec.) | Role |
 |------|-------|------|
 | `refactor` | sonnet | User-directed restructuring (extract, inline, split, rename) with incremental test verification |
-| `improve-codebase` | opus | Survey an area for deepening opportunities (shallow → deep modules) and propose them as an HTML report |
+| `review-code` | opus | Architectural review via the `architecture-reviewer` agent — /build Phase 5 (ONLY the changes) or standalone (entire codebase, or the area in arguments) |
 | `prototype` | sonnet | Throwaway prototype to flesh out a design — terminal TUI for logic, or N UI variants on one route |
 | `handoff` | sonnet | Summarise the current session into a disposable handoff doc in the OS temp dir for another session |
 | `pickup` | sonnet | Resume work from a handoff doc — most recent by default, or one matched from an argument |
@@ -259,7 +263,7 @@ Agents read a subset relevant to their role.
 | `/tasks` | Break a spec into vertical-slice tasks (reviewed locally) |
 | `/implement` | Execute approved tasks via vertical-slice TDD (AI implements) |
 | `/implement-coach` | Coach-guided implementation (AI writes one test, you write the code) |
-| `/improve-codebase` | Survey an area for deepening opportunities; HTML report + grilling loop |
+| `/review-code` | Architectural review — no args: entire codebase; args: that area; HTML report + grilling loop |
 | `/prototype` | Throwaway prototype (logic TUI or UI variants) to flesh out a design |
 | `/handoff` | Write a handoff doc to OS temp dir for another agent session |
 | `/pickup` | Resume from a handoff doc (most recent by default, or matched from an argument) |
@@ -272,12 +276,14 @@ Agents read a subset relevant to their role.
 | Name | Model | Role | Rules Read |
 |------|-------|------|------------|
 | `architect` | opus | System design, trade-offs, architecture review | coding-style, performance, security |
+| `architecture-reviewer` | opus | Discovery engine for `/review-code` — walks a scope, returns deepening candidates (deletion test, depth/seams/locality) | coding-style, performance |
 | `api-designer` | sonnet | REST endpoint contracts: resources, status codes, pagination, versioning — consulted by `/specs` when a feature touches the API | coding-style, security, performance |
 | `frontend-architect` | sonnet | Component boundaries, state ownership, data fetching, a11y baseline — consulted by `/specs` when a feature touches UI | coding-style, performance, security |
 | `tdd-guide` | sonnet | Red-green-refactor TDD execution | testing, coding-style |
 | `code-reviewer` | sonnet | OWASP Top 10 + quality review (>80% confidence) | coding-style, testing, security, performance |
 | `database-reviewer` | sonnet | Query optimization, schema, DB security | security, performance |
 | `doc-updater` | sonnet | Keep documentation in sync with code | git-commit |
+| `fact-checker` | sonnet | Independent verification of spec/tasks/HTML docs against code and git history — corrects drift in place (review-chain step; our own, not Claude's built-in `/fact-check`) | git-commit |
 | `refactorer` | sonnet | The engine for behavior-preserving change: plan mode (approved transformation plans) + hygiene mode (dead code, unused deps, duplication — the review chain's Refactor step) | coding-style, performance, security, testing |
 
 ### Rules
@@ -379,7 +385,7 @@ shows every individual check). The `test/content` + `test/install` categories
 This project stands on the shoulders of others:
 
 - **[Boris Tane's Claude Code workflow](https://boristane.com/blog/how-i-use-claude-code/)** — The annotation-cycle discipline, the "think before you code" guardrails, and the markdown-as-shared-state philosophy at the heart of `/build` originate from Boris's research → plan → implement method. This project's first pipeline was a direct port of his approach.
-- **[Matt Pocock's skills-TDD pipeline](https://www.aihero.dev/skills-tdd)** and the broader [skills repo](https://github.com/mattpocock/skills) — the core pipeline (`grill-with-docs → to-prd → to-issues → tdd`) and Matt's stance on vertical-slice TDD ("write one test, one implementation, repeat — batched tests describe imagined behavior, not actual behavior") drive the design of `/grill`, `/specs`, `/tasks`, and the vertical-slice rewrites of `/implement` and `/implement-coach`. The standalone tools `/handoff` ([article](https://www.aihero.dev/skills-handoff)), `/prototype`, and `/improve-codebase` (renamed from `improve-codebase-architecture`) are also ports of Matt's skills, with internal references rewritten to match this repo's naming. The format files (CONTEXT-FORMAT.md, ADR-FORMAT.md) and the LANGUAGE/DEEPENING/HTML-REPORT/INTERFACE-DESIGN supporting docs are taken directly from his repo.
+- **[Matt Pocock's skills-TDD pipeline](https://www.aihero.dev/skills-tdd)** and the broader [skills repo](https://github.com/mattpocock/skills) — the core pipeline (`grill-with-docs → to-prd → to-issues → tdd`) and Matt's stance on vertical-slice TDD ("write one test, one implementation, repeat — batched tests describe imagined behavior, not actual behavior") drive the design of `/grill`, `/specs`, `/tasks`, and the vertical-slice rewrites of `/implement` and `/implement-coach`. The standalone tools `/handoff` ([article](https://www.aihero.dev/skills-handoff)), `/prototype`, and `/review-code` (renamed from `improve-codebase-architecture`) are also ports of Matt's skills, with internal references rewritten to match this repo's naming. The format files (CONTEXT-FORMAT.md, ADR-FORMAT.md) and the LANGUAGE/DEEPENING/HTML-REPORT/INTERFACE-DESIGN supporting docs are taken directly from his repo.
 - **[nicobailon/visual-explainer](https://github.com/nicobailon/visual-explainer)** — The `visual-explainer` skill is taken wholesale from this repository, with only minor modifications. All the HTML visual generation (spec, tasks, diff-review, architecture diagrams, slides, etc.) is powered by this work.
 - **[affaan-m/everything-claude-code](https://github.com/affaan-m/everything-claude-code)** — The rules and agent definitions in this repo are borrowed and adapted from this collection. The coding-style, testing, security, and performance rules, as well as the agent configurations (architect, tdd-guide, code-reviewer, etc.), draw heavily from this source.
 - **[can1357/oh-my-pi](https://github.com/can1357/oh-my-pi)** ([docs](https://omp.sh/docs)) — The second harness this repo configures. The **TTSR** (time-traveling stream rules) concept — mid-stream regex-triggered rule injection with stream-abort + retry — was oh-my-pi's contribution to the cross-harness rule shape; it carried the command/content enforcement rules until [ADR-0012](docs/adr/0012-consolidate-enforcement-retire-ttsr.md) consolidated them into the shared guard core and retired TTSR. The YAML-based extension / hook / skill model oh-my-pi uses informed how this repo's per-harness boundaries got drawn (see [ADR-0004](docs/adr/0004-omp-permissions-and-hooks-decoupled.md) and [ADR-0005](docs/adr/0005-flat-shared-config-no-per-harness-scoping.md)).

@@ -82,7 +82,7 @@ Implementation walks through the slices one at a time using strict red-green-ref
 |------|-------------|
 | [diff-review.html](https://hahuang65.github.io/ai-config/example/docs/features/20260516-1430-order-placement/diff-review.html) | Post-implementation visual: executive summary, KPI dashboard (6/6 slices complete, 47 tests added, 94% coverage), slice completion status, file-by-file changes, code review findings (Good / Fixed-before-merge / Tracked follow-ups), decision log, re-entry context. |
 
-The implementation phase also re-runs `/fact-check` on `prd.md` and `tasks.md`, refreshes `prd.html` and `tasks.html`, and runs the multi-agent verification stack (`tdd-guide`, `database-reviewer`, `refactorer` in hygiene mode, `code-reviewer`, `doc-updater`). The agent **never** runs `git commit` — the user reviews the final state and commits when ready.
+The implementation phase also runs the `fact-checker` agent on `prd.md` and `tasks.md`, refreshes `prd.html` and `tasks.html`, and runs the multi-agent verification stack (`tdd-guide`, `database-reviewer`, `refactorer` in hygiene mode, `code-reviewer`, `doc-updater`). The agent **never** runs `git commit` — the user reviews the final state and commits when ready.
 
 ## Key Conventions
 

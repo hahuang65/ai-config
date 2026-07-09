@@ -392,6 +392,47 @@ test_phase_implement_coach_holding_line() {
 }
 
 # ---------------------------------------------------------------------------
+# 6c2. Phase: review-code (architectural review — final /build step)
+#
+# review-code (renamed from improve-codebase) closes the /build pipeline:
+# diff-scoped there (only the feature's changes), whole-codebase standalone
+# with no arguments, area-scoped when arguments name one. These assertions
+# pin the three scoping modes and the discovery core.
+# ---------------------------------------------------------------------------
+
+test_phase_review_code() {
+  section "Phase: review-code"
+  local file="$REPO_DIR/skills/review-code/SKILL.md"
+  local label="skills/review-code/SKILL.md"
+  [[ -f "$file" ]] || { fail "$label" "file not found"; return; }
+  local content
+  content="$(gather_skill_content review-code)"
+
+  # Three scoping modes
+  check_content_cached "$content" "$label" "ONLY the changes|only the changes"
+  check_content_cached "$content" "$label" "entire codebase"
+  check_content_cached "$content" "$label" "\\\$ARGUMENTS"
+  check_content_cached "$content" "$label" "branch point|git diff"
+
+  # Discovery core carried over from improve-codebase
+  check_content_cached "$content" "$label" "[Dd]eletion test"
+  check_content_cached "$content" "$label" "HTML"
+  check_content_cached "$content" "$label" "CONTEXT\.md"
+
+  # The skill is a wrapper: discovery runs in the architecture-reviewer agent
+  check_content_cached "$content" "$label" "architecture-reviewer"
+
+  # The pipeline-terminal decision: the user chooses commit vs act on findings
+  check_content_cached "$content" "$label" "commit"
+
+  if [[ -f "$REPO_DIR/agents/architecture-reviewer.md" ]]; then
+    pass "agents/architecture-reviewer.md exists"
+  else
+    fail "$label" "agents/architecture-reviewer.md missing (the discovery engine review-code wraps)"
+  fi
+}
+
+# ---------------------------------------------------------------------------
 # 6d. Agent: refactorer engine (one engine, two modes — ADR-0015)
 #
 # The refactorer agent is the single engine for behavior-preserving change:
@@ -465,6 +506,34 @@ test_retired_cleaners() {
     fail "retired" "skills/prd or commands/prd.md still exists (renamed to specs)"
   else
     pass "skills/prd and commands/prd.md absent (renamed to specs)"
+  fi
+
+  # The improve-codebase skill was renamed to review-code and became the
+  # final step of the /build pipeline (diff-scoped there; whole-codebase or
+  # area-scoped standalone).
+  if [[ -e "$REPO_DIR/skills/improve-codebase" || -e "$REPO_DIR/commands/improve-codebase.md" ]]; then
+    fail "retired" "skills/improve-codebase or commands/improve-codebase.md still exists (renamed to review-code)"
+  else
+    pass "skills/improve-codebase and commands/improve-codebase.md absent (renamed to review-code)"
+  fi
+  if [[ -f "$REPO_DIR/skills/review-code/SKILL.md" && -f "$REPO_DIR/commands/review-code.md" ]]; then
+    pass "skills/review-code and commands/review-code.md exist"
+  else
+    fail "retired" "skills/review-code/SKILL.md or commands/review-code.md missing (replacement for improve-codebase)"
+  fi
+
+  # The fact-checker skill became an agent: verification needs no session
+  # context, and independence from the session that authored the documents
+  # is a feature — the author shouldn't grade its own homework.
+  if [[ -e "$REPO_DIR/skills/fact-checker" ]]; then
+    fail "retired" "skills/fact-checker still exists (converted to the fact-checker agent)"
+  else
+    pass "skills/fact-checker absent (converted to agent)"
+  fi
+  if [[ -f "$REPO_DIR/agents/fact-checker.md" ]]; then
+    pass "agents/fact-checker.md exists"
+  else
+    fail "retired" "agents/fact-checker.md missing (replacement for the fact-checker skill)"
   fi
 
   # The api-design and frontend-patterns reference skills were converted into
@@ -544,7 +613,7 @@ test_phase_orchestrator() {
   content="$(gather_skill_content build)"
 
   check_content_cached "$content" "$label" "docs/features/"
-  for phase in grill specs tasks implement implement-coach; do
+  for phase in grill specs tasks implement implement-coach review-code; do
     check_content_cached "$content" "$label" "$phase"
   done
 
@@ -562,7 +631,7 @@ test_phase_orchestrator() {
   check_content_cached "$content" "$label" "Mandatory Phase Loading"
   check_content_cached "$content" "$label" "At the start of each phase"
   check_content_cached "$content" "$label" "available_skills"
-  for phase in grill specs tasks implement implement-coach; do
+  for phase in grill specs tasks implement implement-coach review-code; do
     check_content_cached "$content" "$label" "../$phase/SKILL\.md"
   done
 }
@@ -572,7 +641,7 @@ test_phase_orchestrator() {
 # ---------------------------------------------------------------------------
 
 check_skill_references_phases() {
-  for phase in grill specs tasks implement implement-coach; do
+  for phase in grill specs tasks implement implement-coach review-code; do
     local target="$REPO_DIR/skills/$phase/SKILL.md"
     if [[ -f "$target" ]]; then
       pass "skills/$phase/SKILL.md exists (referenced from build)"
@@ -1241,6 +1310,7 @@ run_content() {
   run test_phase_implement
   run test_phase_implement_coach
   run test_phase_implement_coach_holding_line
+  run test_phase_review_code
   run test_agent_refactorer
   run test_retired_cleaners
   run test_skill_refactor

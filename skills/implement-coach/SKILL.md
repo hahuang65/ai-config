@@ -77,7 +77,7 @@ For each acceptance criterion:
 
 ## Completion
 
-Wrap up per [../shared/references/implementation-completion.md](../shared/references/implementation-completion.md) — report what was accomplished, surface the `/refactor` and `/improve-codebase` pointers, and never commit.
+Wrap up per [../shared/references/implementation-completion.md](../shared/references/implementation-completion.md) — report what was accomplished, surface the `/refactor` and `/review-code` pointers, and never commit.
 
 ## Key Principles
 

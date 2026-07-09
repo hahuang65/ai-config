@@ -116,7 +116,7 @@ The Phase-2 artifact of the `/build` pipeline — `spec.md` (user stories, imple
 _Avoid_: PRD / prd.md / prd.html (the artifact's former name, renamed 2026-07-09), plan (the pre-pipeline document format the spec replaced).
 
 **Pipeline skill**:
-One of the seven skills the `/build` orchestrator drives through its four phases — `build`, `grill`, `specs`, `tasks`, `implement`, `implement-coach`, `visual-explainer`. Distinct from a **standalone skill** (`refactor`, `improve-codebase`, `handoff`, `pickup`, `prototype`) which is invoked on its own, never orchestrated by `/build`.
+One of the eight skills the `/build` orchestrator drives through its five phases — `build`, `grill`, `specs`, `tasks`, `implement`, `implement-coach`, `review-code`, `visual-explainer`. Distinct from a **standalone skill** (`refactor`, `handoff`, `pickup`, `prototype`) which is invoked on its own, never orchestrated by `/build`. (`review-code` also runs standalone — diff-scoped inside the pipeline, whole-codebase or area-scoped on its own — like `grill`/`specs`/`tasks` do.)
 _Avoid_: phase (a phase is a stage of the pipeline; a pipeline skill is the unit that runs it).
 
 **Progressive disclosure**:

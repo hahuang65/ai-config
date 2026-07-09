@@ -1,6 +1,6 @@
 # CONTEXT.md Format
 
-Shared reference. Used by `grill` (Phase 1 of `/build`) and `improve-codebase`.
+Shared reference. Used by `grill` (Phase 1 of `/build`) and `review-code`.
 
 ## Structure
 

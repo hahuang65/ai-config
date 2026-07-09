@@ -1,12 +1,18 @@
 ---
-name: improve-codebase
-description: Find deepening opportunities in a codebase, informed by the domain language in CONTEXT.md and the decisions in docs/adr/. Use when the user wants to improve architecture, find refactoring opportunities, consolidate tightly-coupled modules, or make a codebase more testable and AI-navigable. Based on Matt Pocock's improve-codebase-architecture skill.
-argument-hint: [area or module to survey]
+name: review-code
+description: Architectural code review — find deepening opportunities via the architecture-reviewer agent and present them as an HTML report with a grilling loop. Runs as the final step of /build (scoped to ONLY the feature's changes), or standalone — no arguments reviews the entire codebase, arguments name the area to review. Based on Matt Pocock's improve-codebase-architecture skill.
+argument-hint: [area or module to review — empty for the entire codebase]
 ---
 
-# Improve Codebase
+# Review Code
 
-Surface architectural friction and propose **deepening opportunities** — refactors that turn shallow modules into deep ones. The aim is testability and AI-navigability.
+Surface architectural friction and propose **deepening opportunities** — refactors that turn shallow modules into deep ones. The aim is testability and AI-navigability. This skill is a wrapper: the codebase walking happens in the `architecture-reviewer` agent; the report rendering and the grilling conversation stay here in the main session.
+
+## Scope — determined by how you were invoked
+
+- **From `/build` (the pipeline's final step):** review **ONLY the changes** — the feature's diff against the branch point (`git diff --name-only <branch-point>`), never pre-existing code the feature didn't touch. Pass the changed-file list to the agent.
+- **Standalone, no arguments:** review the **entire codebase**.
+- **Standalone, with arguments:** `$ARGUMENTS` names the area or module to review; resolve it to files/directories and pass that scope to the agent.
 
 ## Glossary
 
@@ -31,38 +37,31 @@ This skill is _informed_ by the project's domain model. The domain language give
 
 ## Place in the Pipeline
 
-`/improve-codebase` is **not** part of the `/build` loop — it's a separate standalone tool invoked when the user feels architectural friction. Typical triggers:
+`/review-code` is the **final step of the `/build` pipeline**: after implementation and its review chain complete, `/build` runs this skill scoped to the feature's changes, and the resulting report is where the user decides whether to **commit** the work as-is or act on the review's findings first (via `/refactor` for scoped deepenings, or another `/build` round for interface-changing ones).
 
-- A new module turned out shallower than expected after a `/build` run
-- The user feels a sub-system has grown hard to navigate
-- A periodic "architectural health check" outside the feature pipeline
-- A grilling session keeps tripping over the same friction
+It also runs standalone, invoked whenever the user feels architectural friction:
 
-For surface-level cleanup right after implementation (dead code, unused imports, quick reuse opportunities) the `refactorer` agent's hygiene sweep already runs inside `/implement`. `/improve-codebase` is for deeper structural questions that benefit from a focused session.
+- A sub-system has grown hard to navigate
+- A periodic "architectural health check" (no arguments — entire codebase)
+- A grilling session keeps tripping over the same friction (arguments — that area)
+
+For surface-level cleanup right after implementation (dead code, unused imports, quick reuse opportunities) the `refactorer` agent's hygiene sweep already runs inside `/implement`. `/review-code` is for deeper structural questions.
 
 ## Process
 
-### 1. Explore
+### 1. Discover via the agent
 
-Read the project's domain glossary (`CONTEXT.md`) and any ADRs in the area you're touching first.
+Read the project's domain glossary (`CONTEXT.md`) and any ADRs in the area first — their vocabulary and recorded decisions frame the review.
 
-Then use the Agent tool with `subagent_type=Explore` to walk the codebase. Don't follow rigid heuristics — explore organically and note where you experience friction:
-
-- Where does understanding one concept require bouncing between many small modules?
-- Where are modules **shallow** — interface nearly as complex as the implementation?
-- Where have pure functions been extracted just for testability, but the real bugs hide in how they're called (no **locality**)?
-- Where do tightly-coupled modules leak across their seams?
-- Which parts of the codebase are untested, or hard to test through their current interface?
-
-Apply the **deletion test** to anything you suspect is shallow: would deleting it concentrate complexity, or just move it? A "yes, concentrates" is the signal you want.
+Resolve the scope per the rules above, then run the `architecture-reviewer` agent (via the Agent tool) with: the scope (changed-file list, area files, or "entire codebase"), the relevant `CONTEXT.md` terms, and any ADR numbers in the area. The agent walks the code, applies the **deletion test**, and returns structured candidates (files, problem, solution, benefits, before/after sketch, strength, ADR conflicts). It never edits and never proposes final interfaces — that's the grilling loop's job.
 
 ### 2. Present Candidates as an HTML Report
 
-Write a self-contained HTML file to the OS temp directory so nothing lands in the repo. Resolve the temp dir from `$TMPDIR`, falling back to `/tmp` (or `%TEMP%` on Windows), and write to `<tmpdir>/architecture-review-<timestamp>.html` so each run gets a fresh file. Open it for the user — `xdg-open <path>` on Linux, `open <path>` on macOS, `start <path>` on Windows — and tell them the absolute path.
+Render the agent's findings as a self-contained HTML file written to the OS temp directory so nothing lands in the repo. Resolve the temp dir from `$TMPDIR`, falling back to `/tmp` (or `%TEMP%` on Windows), and write to `<tmpdir>/architecture-review-<timestamp>.html` so each run gets a fresh file. Open it for the user — `xdg-open <path>` on Linux, `open <path>` on macOS, `start <path>` on Windows — and tell them the absolute path.
 
 The report uses **Tailwind via CDN** for layout and styling, and **Mermaid via CDN** for diagrams where a graph/flow/sequence reliably communicates the structure. Mix Mermaid with hand-crafted CSS/SVG visuals — use Mermaid when relationships are graph-shaped (call graphs, dependencies, sequences), and hand-built divs/SVG when you want something more editorial (mass diagrams, cross-sections, collapse animations). Each candidate gets a **before/after visualisation**. Be visual.
 
-For each candidate, the same template as before, but rendered as a card:
+Each of the agent's candidates renders as a card:
 
 - **Files** — which files/modules are involved
 - **Problem** — why the current architecture is causing friction
@@ -79,7 +78,10 @@ End the report with a **Top recommendation** section: which candidate you'd tack
 
 See [html-report.md](references/html-report.md) for the full HTML scaffold, diagram patterns, and styling guidance.
 
-Do NOT propose interfaces yet. After the file is written, ask the user: "Which of these would you like to explore?"
+Do NOT propose interfaces yet. After the file is written, the ask depends on the mode:
+
+- **From `/build`:** this is the pipeline's terminal decision. Ask: "Review's done — commit the feature as-is, or explore one of these findings first?" Any affirmative-to-commit answer ends the pipeline (the user commits; you never do). Picking a candidate enters the grilling loop below.
+- **Standalone:** ask "Which of these would you like to explore?"
 
 ### 3. Grilling Loop
 
@@ -91,3 +93,11 @@ Side effects happen inline as decisions crystallize:
 - **Sharpening a fuzzy term during the conversation?** Update `CONTEXT.md` right there.
 - **User rejects the candidate with a load-bearing reason?** Offer an ADR, framed as: _"Want me to record this as an ADR so future architecture reviews don't re-suggest it?"_ Only offer when the reason would actually be needed by a future explorer to avoid re-suggesting the same thing — skip ephemeral reasons ("not worth it right now") and self-evident ones. See [adr-format.md](../shared/references/adr-format.md).
 - **Want to explore alternative interfaces for the deepened module?** See [interface-design.md](references/interface-design.md).
+
+### 4. Execute (handoff)
+
+When a grilled candidate is ready to happen, hand it off — this skill never edits code:
+
+- A **scoped deepening** (boundaries agreed, behavior preserved) → run `/refactor` with the agreed transformation as the goal.
+- An **interface-changing deepening** (new seams, callers migrate) → take it through `/build`; the grilling you just did is a head start on Phase 1.
+- **Not now** → the report file is disposable; anything worth keeping went into `CONTEXT.md` or an ADR during the loop.

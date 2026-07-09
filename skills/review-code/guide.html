@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>/improve-codebase Skill Guide</title>
+<title>/review-code Skill Guide</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -95,7 +95,7 @@ code { font-family: var(--font-mono); font-size: 0.85em; background: var(--accen
 <div class="container">
 
 <div class="header">
-  <h1><span>/</span>improve-codebase</h1>
+  <h1><span>/</span>review-code</h1>
   <p class="subtitle">Surface architectural friction and propose <strong>deepening opportunities</strong> — refactors that turn shallow modules into deep ones. The aim is testability and AI-navigability.</p>
 </div>
 
@@ -188,7 +188,7 @@ code { font-family: var(--font-mono); font-size: 0.85em; background: var(--accen
 <div class="section">
   <div class="section-title"><span class="num">06</span>Place in the Pipeline</div>
   <div class="callout">
-    <span class="cmd-tag">/improve-codebase</span> is <strong>not</strong> part of the <span class="cmd-tag">/build</span> loop. It's a standalone tool invoked when you feel architectural friction — a new module turned out shallower than expected, a sub-system grew hard to navigate, or a grilling session keeps tripping over the same friction. For surface-level cleanup right after implementation (dead code, unused imports, simple reuse), the <span class="cmd-tag">refactorer</span> hygiene sweep already runs inside <span class="cmd-tag">/implement</span>.
+    <span class="cmd-tag">/review-code</span> is the <strong>final phase</strong> of the <span class="cmd-tag">/build</span> pipeline (diff-scoped, where the user decides commit-or-iterate) and a standalone tool invoked when you feel architectural friction — a new module turned out shallower than expected, a sub-system grew hard to navigate, or a grilling session keeps tripping over the same friction. For surface-level cleanup right after implementation (dead code, unused imports, simple reuse), the <span class="cmd-tag">refactorer</span> hygiene sweep already runs inside <span class="cmd-tag">/implement</span>. Discovery runs in the <span class="cmd-tag">architecture-reviewer</span> agent; this skill wraps it — scope detection (pipeline: ONLY the feature's changes · standalone: entire codebase, or the area named by arguments), HTML rendering, and the grilling loop.
   </div>
 </div>
 

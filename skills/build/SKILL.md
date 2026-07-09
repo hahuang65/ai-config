@@ -7,9 +7,9 @@ disable-model-invocation: true
 
 # Build Pipeline — Orchestrator
 
-A disciplined 4-phase workflow for building features. Each phase is its own skill; run them in order, waiting for user approval between phases.
+A disciplined 5-phase workflow for building features. Each phase is its own skill; run them in order, waiting for user approval between phases.
 
-**Pipeline:** `/grill` → `/specs` → `/tasks` → `/implement` *(or `/implement-coach`)*
+**Pipeline:** `/grill` → `/specs` → `/tasks` → `/implement` *(or `/implement-coach`)* → `/review-code`
 
 See [../shared/references/build-pipeline.md](../shared/references/build-pipeline.md) for the approval gates, file conventions (`docs/features/<slug>/`), session management, and visual-sync rules every phase obeys. Read it first.
 
@@ -22,6 +22,7 @@ See [../shared/references/build-pipeline.md](../shared/references/build-pipeline
 - Phase 3: [../tasks/SKILL.md](../tasks/SKILL.md)
 - Phase 4a: [../implement/SKILL.md](../implement/SKILL.md)
 - Phase 4b: [../implement-coach/SKILL.md](../implement-coach/SKILL.md)
+- Phase 5: [../review-code/SKILL.md](../review-code/SKILL.md)
 
 Do **not** decide whether a phase exists from the `available_skills` list or by interpreting names like "grill" as ordinary English. If this `/build` skill loaded, these phase files are part of the same installed skill bundle; load them directly by path. In harnesses without a skill-invocation tool, "invoke `<phase>`" means: read the phase `SKILL.md`, follow its linked references as needed, and execute its workflow.
 
@@ -32,10 +33,11 @@ Each phase also runs standalone:
 - `/tasks [specs-dir]` — Phase 3: vertical-slice tracer-bullet breakdown
 - `/implement [tasks-dir]` — Phase 4a: AI implements via TDD, slice by slice
 - `/implement-coach [tasks-dir]` — Phase 4b: user implements, AI writes one test at a time
+- `/review-code [area]` — Phase 5: architectural review (standalone: entire codebase with no arguments, or the named area)
 
 ## Approval Gate Scope (read first)
 
-This skill has exactly **four** approval gates — Grill→spec, spec→Tasks, Tasks→Implement, Implement→done — the only points where you wait for user confirmation. Within an active phase, all routine operations (reads, writes, edits, bash, tests, environment bootstrap) proceed without per-call approval. Asking "OK to proceed?" before each tool batch is not how this skill works. (oh-my-pi: see `~/.omp/agent/RULES.md`, "Approval gates are user-facing only".)
+This skill has exactly **four** approval gates — Grill→Spec, Spec→Tasks, Tasks→Implement, Review→done — the only points where you wait for user confirmation. (Implementation flows into the Phase 5 review without a gate; the final gate is the review's commit-or-iterate decision.) Within an active phase, all routine operations (reads, writes, edits, bash, tests, environment bootstrap) proceed without per-call approval. Asking "OK to proceed?" before each tool batch is not how this skill works. (oh-my-pi: see `~/.omp/agent/RULES.md`, "Approval gates are user-facing only".)
 
 A gate clears on **any response that expresses confirmation or approval** — there is no required phrase or keyword. The prompts below say what comes next; the user may confirm however they like ("yes", "go", "sounds good", "ship it", a thumbs-up). If a response is ambiguous or raises a concern, resolve it instead of advancing.
 
@@ -70,7 +72,17 @@ Ask which mode:
 > - **`/implement`** — AI implements the code via vertical-slice TDD (one test → one impl → repeat)
 > - **`/implement-coach`** — You implement; I write ONE test at a time and verify
 
-If the user says "implement" or doesn't specify, load [../implement/SKILL.md](../implement/SKILL.md) and run `implement` with the feature directory. If they say "coach me" or "guided", load [../implement-coach/SKILL.md](../implement-coach/SKILL.md) and run `implement-coach`. Both run the same TDD philosophy, the verification loop, and the post-implementation review chain (`database-reviewer`, `refactorer` in hygiene mode, `code-reviewer`, `doc-updater`, `fact-checker`, `/diff-review`). After completion, report final status (slices, tests, verifications, visuals).
+If the user says "implement" or doesn't specify, load [../implement/SKILL.md](../implement/SKILL.md) and run `implement` with the feature directory. If they say "coach me" or "guided", load [../implement-coach/SKILL.md](../implement-coach/SKILL.md) and run `implement-coach`. Both run the same TDD philosophy, the verification loop, and the post-implementation review chain (`database-reviewer`, `refactorer` in hygiene mode, `code-reviewer`, `doc-updater`, `fact-checker`, `/diff-review`). After completion, report final status (slices, tests, verifications, visuals) and proceed straight to Phase 5 — no gate here.
+
+### Phase 5: Code Review (architectural — the pipeline's final step)
+
+Load [../review-code/SKILL.md](../review-code/SKILL.md), then run `review-code` scoped to **ONLY the changes** — the feature's diff against the branch point, never pre-existing code the feature didn't touch. The `architecture-reviewer` agent surfaces deepening candidates in the changed modules; the skill renders them as an HTML report.
+
+**The report is the Review→done gate** — the user decides:
+
+> Review's done — commit the feature as-is, or explore one of these findings first?
+
+Committing (which the user does themselves — you never commit) ends the pipeline. Picking a finding enters review-code's grilling loop, and from there `/refactor` (scoped deepening) or a fresh `/build` round (interface-changing deepening).
 
 ## Key Principles
 

@@ -68,13 +68,14 @@ Implications:
   so choose by *nature*, not coverage: a **skill** is a workflow the main
   session follows; an **agent** is a spawned sub-task invoked via the Task /
   `task` tool. The review chain uses agents (`code-reviewer`,
-  `database-reviewer`, `refactorer` in hygiene mode, `doc-updater`).
+  `database-reviewer`, `refactorer` in hygiene mode, `doc-updater`,
+  `fact-checker`).
 - `commands/` is a Claude-Code-originated slash-command concept that we mirror
   to both harnesses. A thin command for an existing skill should just say
   *"Load the `<skill>` skill, then …: `$ARGUMENTS`"*.
 - **Do not shadow a Claude built-in.** `/simplify` and `/fact-check` are
   Claude Code built-ins, so our own equivalents carry different names — the
-  `refactorer` hygiene sweep (not `simplify`) and the `fact-checker` skill
+  `refactorer` hygiene sweep (not `simplify`) and the `fact-checker` agent
   (not `fact-check`).
 - Reference another skill's assets by relative path
   (`../<skill>/references/<file>.md`); the gate resolves these links.

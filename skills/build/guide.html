@@ -189,8 +189,9 @@ code { font-family: var(--font-mono); font-size: 0.85em; background: var(--accen
         <li>Tests describe behavior through the spec/task public interface, not implementation</li>
         <li>Verification loop: type check, lint, test, build</li>
         <li>Agents: <span class="agent-tag">tdd-guide</span> <span class="agent-tag">database-reviewer</span> <span class="agent-tag">refactorer</span> (hygiene mode) <span class="agent-tag">code-reviewer</span> <span class="agent-tag">doc-updater</span></li>
-        <li>Runs the <span class="cmd-tag">fact-checker</span> skill + <span class="cmd-tag">/diff-review</span></li>
+        <li>Runs the <span class="agent-tag">fact-checker</span> skill + <span class="cmd-tag">/diff-review</span></li>
         <li>Coach variant: AI writes ONE test, user implements, AI verifies</li>
+        <li>Phase 5 closes the pipeline: <span class="cmd-tag">review-code</span> runs the <span class="agent-tag">architecture-reviewer</span> agent on ONLY the feature's changes — the report is where the user decides commit-or-iterate</li>
       </ul>
       <div class="out"><strong>Output:</strong> code + <code>diff-review.html</code></div>
     </div>
