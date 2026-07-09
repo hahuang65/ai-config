@@ -10,7 +10,7 @@ Report what was accomplished this session:
 - Tests added and passing
 - Type check / lint / build ✅
 - Review findings addressed
-- Which visuals were refreshed (`prd.html`, `tasks.html`, `diff-review.html`)
+- Which visuals were refreshed (`spec.html`, `tasks.html`, `diff-review.html`)
 
 ## Completion pointers
 

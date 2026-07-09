@@ -53,6 +53,6 @@ Once the document is selected (and confirmed, if an argument was given):
 1. **Read it in full.**
 2. **Briefly restate** the purpose and any suggested skills so the user can confirm the routing.
 3. **Invoke the first suggested skill** (if the handoff names one); otherwise begin executing on the purpose directly.
-4. Treat pointer paths (PRDs, tasks files, ADRs, diffs) as the next things to read once work begins.
+4. Treat pointer paths (specs, tasks files, ADRs, diffs) as the next things to read once work begins.
 
 **Do not delete the handoff file** after picking it up — the user may want to re-read it or hand off again. It lives in `/tmp/`; the OS cleans it up on its own schedule.

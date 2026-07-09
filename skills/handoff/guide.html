@@ -111,16 +111,16 @@ code { font-family: var(--font-mono); font-size: 0.85em; background: var(--accen
 
 ## Relevant context from this session
 &lt;Only what the next session needs to know.
-Do NOT duplicate content from PRDs, plans, ADRs, issues, commits, or diffs.
+Do NOT duplicate content from specs, plans, ADRs, issues, commits, or diffs.
 Reference them by path or URL instead.&gt;
 
 ## Suggested skills
 - /grill — to refine domain terminology around X before drafting
-- /prd — once the design is settled
+- /specs — once the design is settled
 - /implement — once tasks are approved
 
 ## Pointers (not duplicated content)
-- PRD: docs/features/&lt;slug&gt;/prd.md
+- spec: docs/features/&lt;slug&gt;/spec.md
 - Tasks: docs/features/&lt;slug&gt;/tasks.md
 - ADRs touched: docs/adr/0007-...
 - Recent diff: git log -p &lt;sha&gt;..&lt;sha&gt;
@@ -132,11 +132,11 @@ Reference them by path or URL instead.&gt;
   <table>
     <thead><tr><th>Rule</th><th>Why</th></tr></thead>
     <tbody>
-      <tr><td><strong>Reference, don't duplicate</strong></td><td>If a PRD says X, link to the PRD. The handoff is a routing slip, not a copy. Copies rot.</td></tr>
+      <tr><td><strong>Reference, don't duplicate</strong></td><td>If a spec says X, link to the spec. The handoff is a routing slip, not a copy. Copies rot.</td></tr>
       <tr><td><strong>Tailor to the brief</strong></td><td>If <code>$ARGUMENTS</code> is provided, shape the doc to that purpose. Skip context the next session won't need.</td></tr>
       <tr><td><strong>Redact sensitive content</strong></td><td>API keys, passwords, tokens, PII. Even in temp dir, the file is plaintext on disk.</td></tr>
-      <tr><td><strong>Suggest skills explicitly</strong></td><td>The next agent reads cold. Naming skills (<span class="cmd-tag">/grill</span>, <span class="cmd-tag">/prd</span>, <span class="cmd-tag">/tasks</span>, <span class="cmd-tag">/prototype</span>, etc.) lets it spin up directly.</td></tr>
-      <tr><td><strong>Disposable</strong></td><td>Don't commit it. Anything worth keeping belongs in a PRD, ADR, or commit message.</td></tr>
+      <tr><td><strong>Suggest skills explicitly</strong></td><td>The next agent reads cold. Naming skills (<span class="cmd-tag">/grill</span>, <span class="cmd-tag">/specs</span>, <span class="cmd-tag">/tasks</span>, <span class="cmd-tag">/prototype</span>, etc.) lets it spin up directly.</td></tr>
+      <tr><td><strong>Disposable</strong></td><td>Don't commit it. Anything worth keeping belongs in a spec, ADR, or commit message.</td></tr>
     </tbody>
   </table>
 </div>

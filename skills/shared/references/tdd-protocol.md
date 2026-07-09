@@ -37,7 +37,7 @@ Tests written in bulk test *imagined* behavior, not *actual* behavior. They chec
 
 ## Deep modules
 
-Before writing a slice's first test, confirm its public interface from the slice's Test surface and the PRD's Testing Decisions. Prefer [deep modules](https://github.com/mattpocock/skills/blob/main/skills/engineering/tdd/deep-modules.md) — a small interface over a deep implementation. The interface is what tests exercise; everything behind it is free to refactor. Do not ask whether tests are needed; ask only if the public-interface seam itself is ambiguous or seems wrong.
+Before writing a slice's first test, confirm its public interface from the slice's Test surface and the spec's Testing Decisions. Prefer [deep modules](https://github.com/mattpocock/skills/blob/main/skills/engineering/tdd/deep-modules.md) — a small interface over a deep implementation. The interface is what tests exercise; everything behind it is free to refactor. Do not ask whether tests are needed; ask only if the public-interface seam itself is ambiguous or seems wrong.
 
 ## Per-slice checklist
 

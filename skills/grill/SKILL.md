@@ -1,6 +1,6 @@
 ---
 name: grill
-description: Interactive grilling session that interviews the user about a feature, sharpens domain terminology, and updates project documentation (CONTEXT.md, ADRs) inline as decisions crystallise. Use when the user wants to stress-test an idea against their project's language and documented decisions before drafting a PRD. Based on Matt Pocock's grill-with-docs skill.
+description: Interactive grilling session that interviews the user about a feature, sharpens domain terminology, and updates project documentation (CONTEXT.md, ADRs) inline as decisions crystallise. Use when the user wants to stress-test an idea against their project's language and documented decisions before drafting a spec. Based on Matt Pocock's grill-with-docs skill.
 argument-hint: [feature-description]
 ---
 
@@ -55,8 +55,8 @@ The grill phase is done when the user is satisfied with the shared understanding
 > - `docs/adr/` with <n> new ADR(s): <list>
 >   *(or "no new ADRs — none of today's decisions met the hard-to-reverse + surprising + real-trade-off bar")*
 >
-> When you're ready, just confirm and I'll draft the PRD, synthesizing what we discussed via `/prd`.
+> When you're ready, just confirm and I'll draft the spec, synthesizing what we discussed via `/specs`.
 
-Do NOT start drafting the PRD until the user confirms. Any response that signals approval counts — there's no exact phrase to wait for. The grilling conversation IS the design phase — the PRD just transcribes its outcome.
+Do NOT start drafting the spec until the user confirms. Any response that signals approval counts — there's no exact phrase to wait for. The grilling conversation IS the design phase — the spec just transcribes its outcome.
 
 Ultrathink.

@@ -109,7 +109,7 @@ code { font-family: var(--font-mono); font-size: 0.85em; background: var(--accen
 
 <div class="header">
   <h1><span>/</span>implement &amp; <span>/</span>implement-coach</h1>
-  <p class="subtitle">Vertical-slice TDD execution of an approved <code>tasks.md</code>. One test, one implementation, repeat. Coach mode lets the user write the code; AI writes one test at a time. Inputs: <code>prd.md</code> + <code>tasks.md</code>.</p>
+  <p class="subtitle">Vertical-slice TDD execution of an approved <code>tasks.md</code>. One test, one implementation, repeat. Coach mode lets the user write the code; AI writes one test at a time. Inputs: <code>spec.md</code> + <code>tasks.md</code>.</p>
   <div class="cycle">
     <span class="cycle-step red">RED</span>
     <span class="cycle-arrow">→</span>
@@ -185,7 +185,7 @@ RED→GREEN: test3 → impl3
   <table>
     <thead><tr><th>Step</th><th>Action</th><th>Coach difference</th></tr></thead>
     <tbody>
-      <tr><td>1. Confirm interface</td><td>Use the PRD Testing Decisions and the slice's Test surface to identify the public interface. Look for deep modules — small interface, deep implementation.</td><td>same</td></tr>
+      <tr><td>1. Confirm interface</td><td>Use the spec Testing Decisions and the slice's Test surface to identify the public interface. Look for deep modules — small interface, deep implementation.</td><td>same</td></tr>
       <tr><td>2. Tracer bullet</td><td>Write ONE test through that interface for the end-to-end happy path. It must fail for the right reason (no impl yet, not a syntax error).</td><td>AI writes test</td></tr>
       <tr><td>3. GREEN</td><td>Write minimal code to make the test pass.</td><td><strong>User writes code</strong>, AI verifies on "check"</td></tr>
       <tr><td>4. Next criterion</td><td>For each remaining acceptance criterion, write the next test, then write code.</td><td>AI writes test; user writes code</td></tr>
@@ -212,8 +212,8 @@ RED→GREEN: test3 → impl3
       <tr><td><span class="agent-tag">refactorer</span> (hygiene mode)</td><td>Always — dead code, unused imports &amp; dependencies, duplication, simplification; SAFE applied, CAREFUL/RISKY reported</td><td><span class="must-tag">MUST</span></td></tr>
       <tr><td><span class="agent-tag">code-reviewer</span></td><td>Always — OWASP Top 10, &gt;80% confidence</td><td><span class="must-tag">MUST</span></td></tr>
       <tr><td><span class="agent-tag">doc-updater</span></td><td>If features / APIs / architecture changed</td><td><span class="cond-tag">CONDITIONAL</span></td></tr>
-      <tr><td><span class="cmd-tag">fact-checker</span> on <code>prd.md</code> &amp; <code>tasks.md</code></td><td>Always — catch drift between docs and code</td><td><span class="must-tag">MUST</span></td></tr>
-      <tr><td>Refresh <code>prd.html</code> + <code>tasks.html</code></td><td>Always — visual sync guarantee</td><td><span class="must-tag">MUST</span></td></tr>
+      <tr><td><span class="cmd-tag">fact-checker</span> on <code>spec.md</code> &amp; <code>tasks.md</code></td><td>Always — catch drift between docs and code</td><td><span class="must-tag">MUST</span></td></tr>
+      <tr><td>Refresh <code>spec.html</code> + <code>tasks.html</code></td><td>Always — visual sync guarantee</td><td><span class="must-tag">MUST</span></td></tr>
       <tr><td><span class="cmd-tag">/diff-review</span> → <code>diff-review.html</code></td><td>If <code>visual-explainer</code> is installed</td><td><span class="cond-tag">CONDITIONAL</span></td></tr>
     </tbody>
   </table>

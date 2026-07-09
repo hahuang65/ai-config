@@ -76,10 +76,10 @@ code { font-family: var(--font-mono); font-size: 0.85em; background: var(--accen
 
 <div class="section">
   <div class="section-title"><span class="num">01</span>Place in the Pipeline</div>
-  <p style="font-size: 0.95rem; margin-bottom: 16px;">Phase 1 of <span class="cmd-tag">/build</span>. The grilling session is the design phase. Phase 2 (<span class="cmd-tag">/prd</span>) just transcribes its outcome — it does NOT re-interview.</p>
+  <p style="font-size: 0.95rem; margin-bottom: 16px;">Phase 1 of <span class="cmd-tag">/build</span>. The grilling session is the design phase. Phase 2 (<span class="cmd-tag">/specs</span>) just transcribes its outcome — it does NOT re-interview.</p>
   <div class="pre">/build "feature"
   ├── Phase 1: /grill        ← YOU ARE HERE
-  ├── Phase 2: /prd
+  ├── Phase 2: /specs
   ├── Phase 3: /tasks
   └── Phase 4: /implement (or /implement-coach)</div>
 </div>
@@ -193,7 +193,7 @@ code { font-family: var(--font-mono); font-size: 0.85em; background: var(--accen
     <li style="padding: 6px 0 6px 22px; position: relative;"><span style="position: absolute; left: 0; color: var(--gold); font-weight: 700;">→</span> User has no questions you can't answer from the codebase</li>
   </ul>
   <div class="callout">
-    <strong>Then:</strong> tell the user what changed (terms added, ADRs created), say <em>"say 'draft the PRD' when ready"</em>, and <span class="must-tag">STOP</span>. The orchestrator does not advance autonomously.
+    <strong>Then:</strong> tell the user what changed (terms added, ADRs created), say <em>"say 'draft the spec' when ready"</em>, and <span class="must-tag">STOP</span>. The orchestrator does not advance autonomously.
   </div>
 </div>
 

@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>/prd Skill Guide</title>
+<title>/specs Skill Guide</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -16,7 +16,7 @@
   --text: #1e293b; --text-dim: #64748b;
   --accent: #1e3a5f; --accent-dim: rgba(30, 58, 95, 0.08);
   --gold: #d4a73a; --gold-dim: rgba(212, 167, 58, 0.10);
-  --prd: #0891b2; --prd-dim: rgba(8, 145, 178, 0.10);
+  --specs: #0891b2; --specs-dim: rgba(8, 145, 178, 0.10);
   --must: #be123c; --must-dim: rgba(190, 18, 60, 0.10);
   --grid: rgba(30, 58, 95, 0.04);
 }
@@ -27,7 +27,7 @@
     --text: #e2e8f0; --text-dim: #8b9dc3;
     --accent: #5b8cc9; --accent-dim: rgba(91, 140, 201, 0.12);
     --gold: #e8c56a; --gold-dim: rgba(232, 197, 106, 0.12);
-    --prd: #22d3ee; --prd-dim: rgba(34, 211, 238, 0.12);
+    --specs: #22d3ee; --specs-dim: rgba(34, 211, 238, 0.12);
     --must: #fb7185; --must-dim: rgba(251, 113, 133, 0.12);
     --grid: rgba(91, 140, 201, 0.04);
   }
@@ -36,7 +36,7 @@
 body { font-family: var(--font-body); background-color: var(--bg); background-image: linear-gradient(var(--grid) 1px, transparent 1px), linear-gradient(90deg, var(--grid) 1px, transparent 1px); background-size: 24px 24px; color: var(--text); line-height: 1.6; }
 .container { max-width: 1180px; margin: 0 auto; padding: 40px 24px 80px; }
 .header { text-align: center; padding: 48px 24px 40px; margin-bottom: 48px; background: var(--surface); border: 1px solid var(--border-bright); border-radius: 12px; position: relative; overflow: hidden; }
-.header::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; background: var(--prd); }
+.header::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; background: var(--specs); }
 .header h1 { font-family: var(--font-mono); font-size: clamp(1.6rem, 4vw, 2.4rem); font-weight: 700; letter-spacing: -0.02em; margin-bottom: 8px; }
 .header h1 span { color: var(--gold); }
 .header .subtitle { font-size: 1rem; color: var(--text-dim); max-width: 620px; margin: 0 auto; }
@@ -44,8 +44,8 @@ body { font-family: var(--font-body); background-color: var(--bg); background-im
 .section-title { font-family: var(--font-mono); font-size: 1.1rem; font-weight: 700; color: var(--gold); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 20px; padding-bottom: 8px; border-bottom: 1px solid var(--border-bright); }
 .section-title .num { color: var(--text-dim); margin-right: 8px; }
 .card-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; }
-.card { background: var(--surface); border: 1px solid var(--border); border-left: 4px solid var(--prd); border-radius: 8px; padding: 20px; }
-.card h3 { font-family: var(--font-mono); font-size: 0.95rem; font-weight: 700; color: var(--prd); margin-bottom: 10px; }
+.card { background: var(--surface); border: 1px solid var(--border); border-left: 4px solid var(--specs); border-radius: 8px; padding: 20px; }
+.card h3 { font-family: var(--font-mono); font-size: 0.95rem; font-weight: 700; color: var(--specs); margin-bottom: 10px; }
 .card p { font-size: 0.9rem; margin-bottom: 10px; }
 .card ul { list-style: none; padding: 0; font-size: 0.85rem; }
 .card li { padding: 4px 0; padding-left: 16px; position: relative; color: var(--text-dim); }
@@ -69,16 +69,16 @@ code { font-family: var(--font-mono); font-size: 0.85em; background: var(--accen
 <div class="container">
 
 <div class="header">
-  <h1><span>/</span>prd</h1>
-  <p class="subtitle">Synthesize a Product Requirements Document from the current conversation (typically a <span class="cmd-tag">/grill</span> session). User stories + decisions, no code snippets, no file paths — durable spec. Based on Matt Pocock's <code>to-prd</code>.</p>
+  <h1><span>/</span>specs</h1>
+  <p class="subtitle">Synthesize a feature spec from the current conversation (typically a <span class="cmd-tag">/grill</span> session). User stories + decisions, no code snippets, no file paths — durable. Based on Matt Pocock's <code>to-prd</code>.</p>
 </div>
 
 <div class="section">
   <div class="section-title"><span class="num">01</span>Place in the Pipeline</div>
-  <p style="font-size: 0.95rem; margin-bottom: 16px;">Phase 2 of <span class="cmd-tag">/build</span>. Inputs: <code>CONTEXT.md</code>, ADRs, prior conversation. Outputs: <code>prd.md</code> + <code>prd.html</code>.</p>
+  <p style="font-size: 0.95rem; margin-bottom: 16px;">Phase 2 of <span class="cmd-tag">/build</span>. Inputs: <code>CONTEXT.md</code>, ADRs, prior conversation. Outputs: <code>spec.md</code> + <code>spec.html</code>.</p>
   <div class="pre">/build "feature"
   ├── Phase 1: /grill
-  ├── Phase 2: /prd          ← YOU ARE HERE
+  ├── Phase 2: /specs          ← YOU ARE HERE
   ├── Phase 3: /tasks
   └── Phase 4: /implement (or /implement-coach)</div>
 </div>
@@ -86,13 +86,13 @@ code { font-family: var(--font-mono); font-size: 0.85em; background: var(--accen
 <div class="section">
   <div class="section-title"><span class="num">02</span>Synthesize, Don't Re-Interview</div>
   <div class="callout warn">
-    <strong>Critical:</strong> grilling was the design phase. <span class="cmd-tag">/prd</span> transcribes its outcome — it does <em>NOT</em> re-interview the user. If essential information is genuinely missing, ask one targeted question. But don't re-run the grill session.
+    <strong>Critical:</strong> grilling was the design phase. <span class="cmd-tag">/specs</span> transcribes its outcome — it does <em>NOT</em> re-interview the user. If essential information is genuinely missing, ask one targeted question. But don't re-run the grill session.
   </div>
   <p style="font-size: 0.9rem; color: var(--text-dim); margin-top: 10px;">The one micro-checkpoint that <em>is</em> in this phase: after sketching the major modules, propose their test surfaces yourself and ask the user only to correct module boundaries or public-interface seams. Don't ask which modules need tests — deep modules answer that.</p>
 </div>
 
 <div class="section">
-  <div class="section-title"><span class="num">03</span>PRD Structure</div>
+  <div class="section-title"><span class="num">03</span>spec Structure</div>
   <table>
     <thead><tr><th>Section</th><th>Content</th></tr></thead>
     <tbody>
@@ -108,7 +108,7 @@ code { font-family: var(--font-mono); font-size: 0.85em; background: var(--accen
 </div>
 
 <div class="section">
-  <div class="section-title"><span class="num">04</span>Forbidden in the PRD</div>
+  <div class="section-title"><span class="num">04</span>Forbidden in the spec</div>
   <div class="card-grid">
     <div class="card" style="border-left-color: var(--must);">
       <h3 style="color: var(--must);">No code snippets</h3>
@@ -116,7 +116,7 @@ code { font-family: var(--font-mono); font-size: 0.85em; background: var(--accen
     </div>
     <div class="card" style="border-left-color: var(--must);">
       <h3 style="color: var(--must);">No file paths</h3>
-      <p>Same reason. Files get renamed, moved, split. The PRD is durable; specific paths aren't. Reference modules by name (from <code>CONTEXT.md</code>), not by location.</p>
+      <p>Same reason. Files get renamed, moved, split. The spec is durable; specific paths aren't. Reference modules by name (from <code>CONTEXT.md</code>), not by location.</p>
     </div>
   </div>
   <div class="callout">
@@ -129,7 +129,7 @@ code { font-family: var(--font-mono); font-size: 0.85em; background: var(--accen
   <p style="font-size: 0.95rem; margin-bottom: 14px;">When sketching modules, actively look for <strong>deep</strong> modules over <strong>shallow</strong> ones.</p>
   <div class="card-grid">
     <div class="card">
-      <h3 style="color: var(--prd);">Deep</h3>
+      <h3 style="color: var(--specs);">Deep</h3>
       <p>Small interface, deep implementation. Encapsulates significant functionality behind a simple, testable API that rarely changes.</p>
     </div>
     <div class="card" style="border-left-color: var(--text-dim);">
@@ -137,12 +137,12 @@ code { font-family: var(--font-mono); font-size: 0.85em; background: var(--accen
       <p>Interface nearly as wide as the implementation. Provides little encapsulation. A pass-through. Refactor target.</p>
     </div>
   </div>
-  <p style="font-size: 0.9rem; color: var(--text-dim); margin-top: 14px;">Deep modules are testable through their stable public interface, their tests survive refactors, and they hide complexity from callers. The PRD's module sketch should bias toward these and record the test seam for each module.</p>
+  <p style="font-size: 0.9rem; color: var(--text-dim); margin-top: 14px;">Deep modules are testable through their stable public interface, their tests survive refactors, and they hide complexity from callers. The spec's module sketch should bias toward these and record the test seam for each module.</p>
 </div>
 
 <div class="section">
   <div class="section-title"><span class="num">06</span>Annotation Cycle</div>
-  <p style="font-size: 0.95rem; margin-bottom: 14px;">After writing <code>prd.md</code> and generating <code>prd.html</code>, STOP and wait. User adds <code>//</code> comments anywhere in the markdown:</p>
+  <p style="font-size: 0.95rem; margin-bottom: 14px;">After writing <code>spec.md</code> and generating <code>spec.html</code>, STOP and wait. User adds <code>//</code> comments anywhere in the markdown:</p>
   <div class="pre">## User Stories
 
 // also need: "as an admin, I want to revoke sessions"
@@ -152,20 +152,20 @@ code { font-family: var(--font-mono); font-size: 0.85em; background: var(--accen
 7. As a customer, I want to export to CSV...
 
 // this should reference ADR-0003, not 0002</div>
-  <p style="font-size: 0.9rem; color: var(--text-dim); margin-top: 14px;">For each annotation, the agent addresses it, updates <code>prd.md</code>, and removes the <code>//</code> comment — working from the markdown. The cycle repeats until the user is satisfied; <code>prd.html</code> is regenerated once at the end if the markdown changed, not per annotation.</p>
+  <p style="font-size: 0.9rem; color: var(--text-dim); margin-top: 14px;">For each annotation, the agent addresses it, updates <code>spec.md</code>, and removes the <code>//</code> comment — working from the markdown. The cycle repeats until the user is satisfied; <code>spec.html</code> is regenerated once at the end if the markdown changed, not per annotation.</p>
 </div>
 
 <div class="section">
   <div class="section-title"><span class="num">07</span>Visual Sync Guarantee</div>
   <div class="callout warn">
-    <strong>Build once, then leave it:</strong> <code>prd.html</code> is generated and opened when <code>prd.md</code> is first written. It is NOT regenerated during the review — the markdown is the source of truth, so the open visual may lag — then regenerated once before moving to <span class="cmd-tag">/tasks</span> if the markdown changed.
+    <strong>Build once, then leave it:</strong> <code>spec.html</code> is generated and opened when <code>spec.md</code> is first written. It is NOT regenerated during the review — the markdown is the source of truth, so the open visual may lag — then regenerated once before moving to <span class="cmd-tag">/tasks</span> if the markdown changed.
   </div>
-  <p style="font-size: 0.9rem; color: var(--text-dim); margin-top: 10px;">Visual generation uses the <span class="cmd-tag">visual-explainer</span> skill. The HTML's <code>&lt;title&gt;</code> and <code>&lt;h1&gt;</code> must say "PRD", not "Plan".</p>
+  <p style="font-size: 0.9rem; color: var(--text-dim); margin-top: 10px;">Visual generation uses the <span class="cmd-tag">visual-explainer</span> skill. The HTML's <code>&lt;title&gt;</code> and <code>&lt;h1&gt;</code> must say "spec", not "Plan".</p>
 </div>
 
 <div class="section">
   <div class="section-title"><span class="num">08</span>Completion</div>
-  <p style="font-size: 0.95rem;">On the user's confirmation, regenerate <code>prd.html</code> once if the markdown changed, tell the user, and advance to <span class="cmd-tag">/tasks</span> — any go-ahead works; no exact phrase needed.</p>
+  <p style="font-size: 0.95rem;">On the user's confirmation, regenerate <code>spec.html</code> once if the markdown changed, tell the user, and advance to <span class="cmd-tag">/tasks</span> — any go-ahead works; no exact phrase needed.</p>
 </div>
 
 </div>

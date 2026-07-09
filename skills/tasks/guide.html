@@ -80,15 +80,15 @@ code { font-family: var(--font-mono); font-size: 0.85em; background: var(--accen
 
 <div class="header">
   <h1><span>/</span>tasks</h1>
-  <p class="subtitle">Break an approved PRD into <strong>vertical-slice tracer bullets</strong>. Each slice cuts through every layer end-to-end and is demoable on its own. Reviewed and refined locally. Based on Matt Pocock's <code>to-issues</code>.</p>
+  <p class="subtitle">Break an approved spec into <strong>vertical-slice tracer bullets</strong>. Each slice cuts through every layer end-to-end and is demoable on its own. Reviewed and refined locally. Based on Matt Pocock's <code>to-issues</code>.</p>
 </div>
 
 <div class="section">
   <div class="section-title"><span class="num">01</span>Place in the Pipeline</div>
-  <p style="font-size: 0.95rem; margin-bottom: 16px;">Phase 3 of <span class="cmd-tag">/build</span>. Inputs: <code>prd.md</code>, <code>CONTEXT.md</code>, ADRs. Outputs: <code>tasks.md</code> + <code>tasks.html</code>.</p>
+  <p style="font-size: 0.95rem; margin-bottom: 16px;">Phase 3 of <span class="cmd-tag">/build</span>. Inputs: <code>spec.md</code>, <code>CONTEXT.md</code>, ADRs. Outputs: <code>tasks.md</code> + <code>tasks.html</code>.</p>
   <div class="pre">/build "feature"
   ├── Phase 1: /grill
-  ├── Phase 2: /prd
+  ├── Phase 2: /specs
   ├── Phase 3: /tasks         ← YOU ARE HERE
   └── Phase 4: /implement (or /implement-coach)</div>
 </div>
@@ -138,7 +138,7 @@ code { font-family: var(--font-mono); font-size: 0.85em; background: var(--accen
 
 **Type:** AFK
 **Blocked by:** None — can start immediately
-**User stories covered:** 1, 2, 3 (from the PRD)
+**User stories covered:** 1, 2, 3 (from the spec)
 **Test surface:** POST /orders public API behavior
 
 ### What to build
@@ -153,7 +153,7 @@ includes the new Order ID.
 - [ ] Returns 400 for an empty cart
 - [ ] Emits OrderPlaced event with the correct payload
 - [ ] Persists Order with status `pending`</div>
-  <p style="font-size: 0.9rem; color: var(--text-dim); margin-top: 14px;">Avoid file paths and code snippets in slice bodies — they go stale before the slice is picked up. The Test surface line names the stable public interface or observable behavior, not a spec file. Same narrow exception as the PRD: decision-rich snippets (state machines, reducers, schemas) may be inlined when prose can't carry the precision.</p>
+  <p style="font-size: 0.9rem; color: var(--text-dim); margin-top: 14px;">Avoid file paths and code snippets in slice bodies — they go stale before the slice is picked up. The Test surface line names the stable public interface or observable behavior, not a spec file. Same narrow exception as the spec: decision-rich snippets (state machines, reducers, schemas) may be inlined when prose can't carry the precision.</p>
 </div>
 
 <div class="section">
@@ -161,8 +161,8 @@ includes the new Order ID.
   <table>
     <thead><tr><th>Step</th><th>Action</th></tr></thead>
     <tbody>
-      <tr><td>1. Gather context</td><td>Read <code>prd.md</code>, <code>CONTEXT.md</code>, relevant ADRs. Explore code if not yet done.</td></tr>
-      <tr><td>2. Draft slices</td><td>Vertical only. Each slice cuts through every layer. Carry forward the PRD's public-interface test surface. Mark HITL/AFK. Order by dependency (blockers first).</td></tr>
+      <tr><td>1. Gather context</td><td>Read <code>spec.md</code>, <code>CONTEXT.md</code>, relevant ADRs. Explore code if not yet done.</td></tr>
+      <tr><td>2. Draft slices</td><td>Vertical only. Each slice cuts through every layer. Carry forward the spec's public-interface test surface. Mark HITL/AFK. Order by dependency (blockers first).</td></tr>
       <tr><td>3. Write <code>tasks.md</code></td><td>One slice per section, with Type/Blocked-by/User-stories-covered/Test-surface headers and an acceptance-criteria checklist.</td></tr>
       <tr><td>4. Generate <code>tasks.html</code></td><td>Via the <span class="cmd-tag">visual-explainer</span> skill; open it in the browser. Emphasizes the dependency graph, HITL/AFK split, and user-story coverage.</td></tr>
       <tr><td>5. Review</td><td>Present the numbered list; ask granularity / dependencies / HITL-AFK / coverage (or accept <code>//</code> annotations in <code>tasks.md</code>). Address feedback, re-present. Work from <code>tasks.md</code> — the visual is not regenerated mid-review.</td></tr>

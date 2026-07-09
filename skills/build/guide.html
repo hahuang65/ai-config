@@ -24,8 +24,8 @@
   --gold-dim: rgba(212, 167, 58, 0.10);
   --grill: #8b5cf6;
   --grill-dim: rgba(139, 92, 246, 0.10);
-  --prd: #0891b2;
-  --prd-dim: rgba(8, 145, 178, 0.10);
+  --specs: #0891b2;
+  --specs-dim: rgba(8, 145, 178, 0.10);
   --tasks: #d97706;
   --tasks-dim: rgba(217, 119, 6, 0.10);
   --implement: #059669;
@@ -49,8 +49,8 @@
     --gold-dim: rgba(232, 197, 106, 0.12);
     --grill: #a78bfa;
     --grill-dim: rgba(167, 139, 250, 0.12);
-    --prd: #22d3ee;
-    --prd-dim: rgba(34, 211, 238, 0.12);
+    --specs: #22d3ee;
+    --specs-dim: rgba(34, 211, 238, 0.12);
     --tasks: #fbbf24;
     --tasks-dim: rgba(251, 191, 36, 0.10);
     --implement: #34d399;
@@ -71,14 +71,14 @@ body {
 }
 .container { max-width: 1180px; margin: 0 auto; padding: 40px 24px 80px; }
 .header { text-align: center; padding: 48px 24px 40px; margin-bottom: 48px; background: var(--surface); border: 1px solid var(--border-bright); border-radius: 12px; position: relative; overflow: hidden; }
-.header::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; background: linear-gradient(90deg, var(--grill), var(--prd), var(--tasks), var(--implement)); }
+.header::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; background: linear-gradient(90deg, var(--grill), var(--specs), var(--tasks), var(--implement)); }
 .header h1 { font-family: var(--font-mono); font-size: clamp(1.6rem, 4vw, 2.4rem); font-weight: 700; letter-spacing: -0.02em; margin-bottom: 8px; }
 .header h1 span { color: var(--gold); }
 .header .subtitle { font-size: 1rem; color: var(--text-dim); max-width: 620px; margin: 0 auto 32px; }
 .phase-flow { display: flex; align-items: center; justify-content: center; gap: 0; flex-wrap: wrap; }
 .phase-pill { display: inline-flex; align-items: center; gap: 6px; padding: 8px 16px; border-radius: 6px; font-family: var(--font-mono); font-size: 0.82rem; font-weight: 600; border: 1px solid; }
 .phase-pill.grill { background: var(--grill-dim); border-color: var(--grill); color: var(--grill); }
-.phase-pill.prd { background: var(--prd-dim); border-color: var(--prd); color: var(--prd); }
+.phase-pill.specs { background: var(--specs-dim); border-color: var(--specs); color: var(--specs); }
 .phase-pill.tasks { background: var(--tasks-dim); border-color: var(--tasks); color: var(--tasks); }
 .phase-pill.implement { background: var(--implement-dim); border-color: var(--implement); color: var(--implement); }
 .phase-arrow { font-size: 1.1rem; color: var(--text-dim); padding: 0 8px; }
@@ -91,13 +91,13 @@ body {
 .card-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; }
 .card { background: var(--surface); border: 1px solid var(--border); border-left: 4px solid var(--accent); border-radius: 8px; padding: 20px; }
 .card.grill { border-left-color: var(--grill); }
-.card.prd { border-left-color: var(--prd); }
+.card.specs { border-left-color: var(--specs); }
 .card.tasks { border-left-color: var(--tasks); }
 .card.implement { border-left-color: var(--implement); }
 .card h3 { font-family: var(--font-mono); font-size: 0.95rem; font-weight: 700; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
 .card h3 .badge { font-size: 0.7rem; padding: 2px 8px; border-radius: 4px; font-weight: 600; }
 .card.grill h3 .badge { background: var(--grill-dim); color: var(--grill); }
-.card.prd h3 .badge { background: var(--prd-dim); color: var(--prd); }
+.card.specs h3 .badge { background: var(--specs-dim); color: var(--specs); }
 .card.tasks h3 .badge { background: var(--tasks-dim); color: var(--tasks); }
 .card.implement h3 .badge { background: var(--implement-dim); color: var(--implement); }
 .card p { font-size: 0.9rem; color: var(--text); margin-bottom: 12px; }
@@ -125,11 +125,11 @@ code { font-family: var(--font-mono); font-size: 0.85em; background: var(--accen
 
 <div class="header">
   <h1><span>/</span>build pipeline</h1>
-  <p class="subtitle">Four-phase feature workflow combining grill (domain modeling), PRD synthesis, vertical-slice tasks, and TDD implementation. Based on Matt Pocock's skills-TDD pipeline.</p>
+  <p class="subtitle">Four-phase feature workflow combining grill (domain modeling), spec synthesis, vertical-slice tasks, and TDD implementation. Based on Matt Pocock's skills-TDD pipeline.</p>
   <div class="phase-flow">
     <span class="phase-pill grill"><span class="phase-num"><span>1</span></span> grill</span>
     <span class="phase-arrow">→</span>
-    <span class="phase-pill prd"><span class="phase-num"><span>2</span></span> prd</span>
+    <span class="phase-pill specs"><span class="phase-num"><span>2</span></span> specs</span>
     <span class="phase-arrow">→</span>
     <span class="phase-pill tasks"><span class="phase-num"><span>3</span></span> tasks</span>
     <span class="phase-arrow">→</span>
@@ -154,25 +154,25 @@ code { font-family: var(--font-mono); font-size: 0.85em; background: var(--accen
       <div class="out"><strong>Output:</strong> <code>./CONTEXT.md</code> (glossary)<br><strong>Output:</strong> <code>./docs/adr/*.md</code> (decisions)</div>
     </div>
 
-    <div class="card prd">
-      <h3>prd <span class="badge">opus · synthesis</span></h3>
-      <p>Synthesizes a Product Requirements Document from the grilling outcome. Does NOT re-interview.</p>
+    <div class="card specs">
+      <h3>specs <span class="badge">opus · synthesis</span></h3>
+      <p>Synthesizes a feature spec from the grilling outcome. Does NOT re-interview.</p>
       <ul>
         <li>Reads <code>CONTEXT.md</code>, recent ADRs, conversation</li>
         <li>Sketches major modules (deep-modules philosophy)</li>
         <li>Proposes module test surfaces; user corrects boundaries/seams only</li>
-        <li>Writes PRD: problem, solution, user stories, decisions, testing</li>
+        <li>Writes spec: problem, solution, user stories, decisions, testing</li>
         <li>NO code snippets, NO file paths (they go stale)</li>
         <li>Annotation cycle via <code>//</code> comments until approved</li>
       </ul>
-      <div class="out"><strong>Output:</strong> <code>docs/features/&lt;slug&gt;/prd.md</code><br><strong>Output:</strong> <code>docs/features/&lt;slug&gt;/prd.html</code></div>
+      <div class="out"><strong>Output:</strong> <code>docs/features/&lt;slug&gt;/spec.md</code><br><strong>Output:</strong> <code>docs/features/&lt;slug&gt;/spec.html</code></div>
     </div>
 
     <div class="card tasks">
       <h3>tasks <span class="badge">opus · vertical slices</span></h3>
-      <p>Breaks the approved PRD into vertical-slice tracer bullets. Each slice cuts through every layer end-to-end.</p>
+      <p>Breaks the approved spec into vertical-slice tracer bullets. Each slice cuts through every layer end-to-end.</p>
       <ul>
-        <li>Reads <code>prd.md</code>, <code>CONTEXT.md</code>, ADRs</li>
+        <li>Reads <code>spec.md</code>, <code>CONTEXT.md</code>, ADRs</li>
         <li>Each slice = thin path through schema, API, UI, tests</li>
         <li>Marked HITL (human-in-loop) or AFK (away-from-keyboard)</li>
         <li>Dependency order: blockers first</li>
@@ -186,7 +186,7 @@ code { font-family: var(--font-mono); font-size: 0.85em; background: var(--accen
       <p>Executes the approved slices via vertical-slice TDD — one test, one implementation, repeat. No batching.</p>
       <ul>
         <li>For each slice: confirm interface → RED→GREEN per criterion → refactor</li>
-        <li>Tests describe behavior through the PRD/task public interface, not implementation</li>
+        <li>Tests describe behavior through the spec/task public interface, not implementation</li>
         <li>Verification loop: type check, lint, test, build</li>
         <li>Agents: <span class="agent-tag">tdd-guide</span> <span class="agent-tag">database-reviewer</span> <span class="agent-tag">refactorer</span> (hygiene mode) <span class="agent-tag">code-reviewer</span> <span class="agent-tag">doc-updater</span></li>
         <li>Runs the <span class="cmd-tag">fact-checker</span> skill + <span class="cmd-tag">/diff-review</span></li>
@@ -208,8 +208,8 @@ code { font-family: var(--font-mono); font-size: 0.85em; background: var(--accen
 │   │   └── 0002-postgres-for-write-model.md
 │   └── claude/
 │       └── &lt;YYYYMMDD-HHMM&gt;-&lt;slug&gt;/
-│           ├── prd.md             Phase 2 — PRD
-│           ├── prd.html           Phase 2 — visual companion
+│           ├── spec.md             Phase 2 — Spec
+│           ├── spec.html           Phase 2 — visual companion
 │           ├── tasks.md           Phase 3 — vertical slices
 │           ├── tasks.html         Phase 3 — visual companion
 │           └── diff-review.html   Phase 4 — diff review</div>
@@ -223,17 +223,17 @@ code { font-family: var(--font-mono); font-size: 0.85em; background: var(--accen
   <table>
     <thead><tr><th>Transition</th><th>User confirms (any wording)</th><th>Gate behavior</th></tr></thead>
     <tbody>
-      <tr><td>after <code>/grill</code></td><td>any go-ahead to draft the PRD</td><td><span class="stop">STOP</span> until the user confirms</td></tr>
-      <tr><td>after <code>/prd</code></td><td>any go-ahead to break it into tasks</td><td><span class="stop">STOP</span> until PRD is approved <em>and</em> the user confirms</td></tr>
+      <tr><td>after <code>/grill</code></td><td>any go-ahead to draft the spec</td><td><span class="stop">STOP</span> until the user confirms</td></tr>
+      <tr><td>after <code>/specs</code></td><td>any go-ahead to break it into tasks</td><td><span class="stop">STOP</span> until spec is approved <em>and</em> the user confirms</td></tr>
       <tr><td>after <code>/tasks</code></td><td>any go-ahead to implement (and which mode)</td><td><span class="stop">STOP</span> until tasks are approved <em>and</em> the user picks a mode</td></tr>
     </tbody>
   </table>
-  <p style="margin-top:14px; font-size:0.9rem; color: var(--text-dim);">The orchestrator never advances autonomously. Each gate exists so the user injects judgment — domain corrections during grill, scope cuts during PRD, granularity during tasks.</p>
+  <p style="margin-top:14px; font-size:0.9rem; color: var(--text-dim);">The orchestrator never advances autonomously. Each gate exists so the user injects judgment — domain corrections during grill, scope cuts during spec, granularity during tasks.</p>
 </div>
 
 <div class="section">
   <div class="section-title"><span class="num">04</span>Annotation Cycle</div>
-  <p style="margin-bottom: 16px; font-size: 0.95rem;">The PRD phase uses inline <code>//</code> comments for user feedback. Tasks uses a lighter quiz-the-user pattern.</p>
+  <p style="margin-bottom: 16px; font-size: 0.95rem;">The spec phase uses inline <code>//</code> comments for user feedback. Tasks uses a lighter quiz-the-user pattern.</p>
   <div class="pre">## User Stories
 
 // also need: "as an admin, I want to revoke sessions"
@@ -243,12 +243,12 @@ code { font-family: var(--font-mono); font-size: 0.85em; background: var(--accen
 7. As a customer, I want to export to CSV...
 
 // this should reference ADR-0003, not 0002</div>
-  <p style="margin-top:14px; font-size:0.9rem; color: var(--text-dim);">For each annotation, the agent addresses it, updates <code>prd.md</code>, and removes the <code>//</code> comment — working from the markdown. Cycles repeat until the user is satisfied; the visual is regenerated once at the end if the markdown changed.</p>
+  <p style="margin-top:14px; font-size:0.9rem; color: var(--text-dim);">For each annotation, the agent addresses it, updates <code>spec.md</code>, and removes the <code>//</code> comment — working from the markdown. Cycles repeat until the user is satisfied; the visual is regenerated once at the end if the markdown changed.</p>
 </div>
 
 <div class="section">
   <div class="section-title"><span class="num">05</span>Visual Sync Guarantee</div>
-  <p style="font-size: 0.95rem; margin-bottom: 14px;">Each HTML companion is generated and opened when its markdown is first written, left untouched during the review, and regenerated once afterward if the markdown changed (and again after implementation). <code>prd.html</code> mirrors <code>prd.md</code>; <code>tasks.html</code> mirrors <code>tasks.md</code>.</p>
+  <p style="font-size: 0.95rem; margin-bottom: 14px;">Each HTML companion is generated and opened when its markdown is first written, left untouched during the review, and regenerated once afterward if the markdown changed (and again after implementation). <code>spec.html</code> mirrors <code>spec.md</code>; <code>tasks.html</code> mirrors <code>tasks.md</code>.</p>
   <p style="font-size: 0.9rem; color: var(--text-dim);">If <code>visual-explainer</code> is not installed, visual steps are silently skipped — the workflow still produces the markdown artifacts.</p>
 </div>
 
@@ -257,9 +257,9 @@ code { font-family: var(--font-mono); font-size: 0.85em; background: var(--accen
   <table>
     <thead><tr><th>Command</th><th>Standalone use</th><th>Inside /build</th></tr></thead>
     <tbody>
-      <tr><td><span class="cmd-tag">/grill</span></td><td>Refine domain language without committing to a PRD</td><td>Phase 1</td></tr>
-      <tr><td><span class="cmd-tag">/prd</span></td><td>Turn an existing conversation into a PRD</td><td>Phase 2</td></tr>
-      <tr><td><span class="cmd-tag">/tasks</span></td><td>Break an existing PRD into vertical slices</td><td>Phase 3</td></tr>
+      <tr><td><span class="cmd-tag">/grill</span></td><td>Refine domain language without committing to a spec</td><td>Phase 1</td></tr>
+      <tr><td><span class="cmd-tag">/specs</span></td><td>Turn an existing conversation into a spec</td><td>Phase 2</td></tr>
+      <tr><td><span class="cmd-tag">/tasks</span></td><td>Break an existing spec into vertical slices</td><td>Phase 3</td></tr>
       <tr><td><span class="cmd-tag">/implement</span></td><td>Execute an existing tasks.md (AI)</td><td>Phase 4a</td></tr>
       <tr><td><span class="cmd-tag">/implement-coach</span></td><td>Execute an existing tasks.md (you write code)</td><td>Phase 4b</td></tr>
     </tbody>
@@ -279,11 +279,11 @@ code { font-family: var(--font-mono); font-size: 0.85em; background: var(--accen
     </div>
     <div class="card">
       <h3>CONTEXT.md vocabulary everywhere</h3>
-      <p>Terms resolved during grill appear unchanged in the PRD, tasks, test names, and code identifiers. Inconsistency triggers rework.</p>
+      <p>Terms resolved during grill appear unchanged in the spec, tasks, test names, and code identifiers. Inconsistency triggers rework.</p>
     </div>
     <div class="card">
       <h3>Markdown is the deliverable</h3>
-      <p>Files like <code>prd.md</code> and <code>tasks.md</code> are the durable spec — not chat summaries. Visual HTML companions are spatial aids; the markdown is the source.</p>
+      <p>Files like <code>spec.md</code> and <code>tasks.md</code> are the durable spec — not chat summaries. Visual HTML companions are spatial aids; the markdown is the source.</p>
     </div>
     <div class="card">
       <h3>User judgment via gates</h3>

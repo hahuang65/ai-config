@@ -1,6 +1,6 @@
 ---
 name: build
-description: Full feature development workflow — grill the idea, draft a PRD, break it into vertical-slice tasks, then implement via TDD (either AI or coached). Combines Matt Pocock's skills-TDD pipeline with annotation-cycle artifacts and visual HTML companions at each phase.
+description: Full feature development workflow — grill the idea, draft a spec, break it into vertical-slice tasks, then implement via TDD (either AI or coached). Combines Matt Pocock's skills-TDD pipeline with annotation-cycle artifacts and visual HTML companions at each phase.
 argument-hint: [feature-description]
 disable-model-invocation: true
 ---
@@ -9,7 +9,7 @@ disable-model-invocation: true
 
 A disciplined 4-phase workflow for building features. Each phase is its own skill; run them in order, waiting for user approval between phases.
 
-**Pipeline:** `/grill` → `/prd` → `/tasks` → `/implement` *(or `/implement-coach`)*
+**Pipeline:** `/grill` → `/specs` → `/tasks` → `/implement` *(or `/implement-coach`)*
 
 See [../shared/references/build-pipeline.md](../shared/references/build-pipeline.md) for the approval gates, file conventions (`docs/features/<slug>/`), session management, and visual-sync rules every phase obeys. Read it first.
 
@@ -18,7 +18,7 @@ See [../shared/references/build-pipeline.md](../shared/references/build-pipeline
 `/build` is an orchestrator, not a replacement for the phase skills. At the start of each phase, **read that phase's `SKILL.md` by relative path and follow it**:
 
 - Phase 1: [../grill/SKILL.md](../grill/SKILL.md)
-- Phase 2: [../prd/SKILL.md](../prd/SKILL.md)
+- Phase 2: [../specs/SKILL.md](../specs/SKILL.md)
 - Phase 3: [../tasks/SKILL.md](../tasks/SKILL.md)
 - Phase 4a: [../implement/SKILL.md](../implement/SKILL.md)
 - Phase 4b: [../implement-coach/SKILL.md](../implement-coach/SKILL.md)
@@ -28,14 +28,14 @@ Do **not** decide whether a phase exists from the `available_skills` list or by 
 Each phase also runs standalone:
 
 - `/grill [topic]` — Phase 1: interview, refine `CONTEXT.md`, write ADRs
-- `/prd [topic]` — Phase 2: synthesize PRD from grilling, with annotation cycles
-- `/tasks [prd-dir]` — Phase 3: vertical-slice tracer-bullet breakdown
+- `/specs [topic]` — Phase 2: synthesize spec from grilling, with annotation cycles
+- `/tasks [specs-dir]` — Phase 3: vertical-slice tracer-bullet breakdown
 - `/implement [tasks-dir]` — Phase 4a: AI implements via TDD, slice by slice
 - `/implement-coach [tasks-dir]` — Phase 4b: user implements, AI writes one test at a time
 
 ## Approval Gate Scope (read first)
 
-This skill has exactly **four** approval gates — Grill→PRD, PRD→Tasks, Tasks→Implement, Implement→done — the only points where you wait for user confirmation. Within an active phase, all routine operations (reads, writes, edits, bash, tests, environment bootstrap) proceed without per-call approval. Asking "OK to proceed?" before each tool batch is not how this skill works. (oh-my-pi: see `~/.omp/agent/RULES.md`, "Approval gates are user-facing only".)
+This skill has exactly **four** approval gates — Grill→spec, spec→Tasks, Tasks→Implement, Implement→done — the only points where you wait for user confirmation. Within an active phase, all routine operations (reads, writes, edits, bash, tests, environment bootstrap) proceed without per-call approval. Asking "OK to proceed?" before each tool batch is not how this skill works. (oh-my-pi: see `~/.omp/agent/RULES.md`, "Approval gates are user-facing only".)
 
 A gate clears on **any response that expresses confirmation or approval** — there is no required phrase or keyword. The prompts below say what comes next; the user may confirm however they like ("yes", "go", "sounds good", "ship it", a thumbs-up). If a response is ambiguous or raises a concern, resolve it instead of advancing.
 
@@ -47,19 +47,19 @@ Derive a short slug from `$ARGUMENTS` (lowercase, hyphens, max ~5 words). Run ea
 
 Load [../grill/SKILL.md](../grill/SKILL.md), then run `grill` with the feature description. It updates `CONTEXT.md` / `docs/adr/` project-wide and does NOT create the feature directory yet. After it completes, tell the user what was updated and:
 
-> Ready to move on? Confirm and I'll synthesize what we discussed into the PRD.
+> Ready to move on? Confirm and I'll synthesize what we discussed into the spec.
 
 **Wait for the user to confirm before Phase 2.** This is a phase-boundary gate; within Phase 1 nothing else pauses.
 
-### Phase 2: PRD + Review
+### Phase 2: Spec + Review
 
-Create the feature directory `docs/features/<YYYYMMDD-HHMM>-<slug>/`, then load [../prd/SKILL.md](../prd/SKILL.md) and run `prd` with the feature description and that path. It writes `prd.md`, generates and opens `prd.html`, and runs the artifact review (see [../shared/references/artifact-review.md](../shared/references/artifact-review.md)): the user gives feedback — `//` annotations or direct answers — which `prd` addresses and re-presents (the visual isn't regenerated mid-review), or confirms. On confirmation `prd` regenerates `prd.html` once if the markdown changed.
+Create the feature directory `docs/features/<YYYYMMDD-HHMM>-<slug>/`, then load [../specs/SKILL.md](../specs/SKILL.md) and run `specs` with the feature description and that path. It writes `spec.md`, generates and opens `spec.html`, and runs the artifact review (see [../shared/references/artifact-review.md](../shared/references/artifact-review.md)): the user gives feedback — `//` annotations or direct answers — which `specs` addresses and re-presents (the visual isn't regenerated mid-review), or confirms. On confirmation `specs` regenerates `spec.html` once if the markdown changed.
 
-**Wait for the user to confirm in that review** — their confirmation *is* the PRD→Tasks gate. No separate approval prompt; when they confirm rather than keep reviewing, proceed straight to Phase 3.
+**Wait for the user to confirm in that review** — their confirmation *is* the spec→Tasks gate. No separate approval prompt; when they confirm rather than keep reviewing, proceed straight to Phase 3.
 
 ### Phase 3: Tasks (vertical-slice tracer bullets)
 
-Load [../tasks/SKILL.md](../tasks/SKILL.md), then run `tasks` with the feature directory. It breaks the PRD into vertical slices with HITL/AFK markers, writes `tasks.md`, generates and opens `tasks.html`, runs the same review (no mid-review regen), and regenerates `tasks.html` once on confirmation if the markdown changed.
+Load [../tasks/SKILL.md](../tasks/SKILL.md), then run `tasks` with the feature directory. It breaks the spec into vertical slices with HITL/AFK markers, writes `tasks.md`, generates and opens `tasks.html`, runs the same review (no mid-review regen), and regenerates `tasks.html` once on confirmation if the markdown changed.
 
 **Wait for the user to confirm in that review** — their confirmation *is* the Tasks→Implement gate. Then proceed to Phase 4.
 
@@ -78,13 +78,13 @@ If the user says "implement" or doesn't specify, load [../implement/SKILL.md](..
 2. **Never write code before tasks are approved.** Phases 1–3 are gated.
 3. **Markdown files are the deliverables.** Visual HTML pages are companions.
 4. **Vertical slices, never horizontal.** Each slice cuts through every layer.
-5. **Test stable public interfaces.** Use [../shared/references/testable-interfaces.md](../shared/references/testable-interfaces.md): PRD proposes module test surfaces, tasks carry them forward, implementation writes one behavior test at a time through the seam.
+5. **Test stable public interfaces.** Use [../shared/references/testable-interfaces.md](../shared/references/testable-interfaces.md): Spec proposes module test surfaces, tasks carry them forward, implementation writes one behavior test at a time through the seam.
 6. **One test, one implementation, repeat.** No batched tests upfront.
-7. **`CONTEXT.md` vocabulary everywhere** — PRD, tasks, test names, code identifiers.
+7. **`CONTEXT.md` vocabulary everywhere** — spec, tasks, test names, code identifiers.
 
 ## Visual-Explainer Integration
 
-The `visual-explainer` skill is **optional** — all visual steps are skipped gracefully if it is not installed. When available it produces self-contained HTML (Mermaid diagrams, CSS-Grid layouts, styled tables, dark/light themes, zoom controls), generates the per-phase companions (`prd.html`, `tasks.html`, `diff-review.html`), and exposes these standalone commands: `/diff-review`, `/plan-review`, `/project-recap`. It also activates proactively for complex terminal tables (4+ rows or 3+ columns), rendering an HTML table instead.
+The `visual-explainer` skill is **optional** — all visual steps are skipped gracefully if it is not installed. When available it produces self-contained HTML (Mermaid diagrams, CSS-Grid layouts, styled tables, dark/light themes, zoom controls), generates the per-phase companions (`spec.html`, `tasks.html`, `diff-review.html`), and exposes these standalone commands: `/diff-review`, `/plan-review`, `/project-recap`. It also activates proactively for complex terminal tables (4+ rows or 3+ columns), rendering an HTML table instead.
 
 ## Cleanup
 

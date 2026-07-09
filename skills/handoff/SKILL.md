@@ -35,11 +35,11 @@ See [references/handoff-template.md](references/handoff-template.md) for the doc
 
 ## Rules
 
-1. **Reference, don't duplicate.** If a PRD already says X, link to the PRD. The handoff is a routing slip, not a copy.
+1. **Reference, don't duplicate.** If a spec already says X, link to the spec. The handoff is a routing slip, not a copy.
 2. **Tailor to the next session's purpose.** If `$ARGUMENTS` is provided, treat it as the brief for the next session and shape the document accordingly. Skip anything the next session won't need.
 3. **Redact sensitive content.** API keys, passwords, tokens, PII — strip them. Even though the doc is in the OS temp dir, anyone with file-system access can read it.
-4. **Suggest skills explicitly.** The next agent reads the handoff fresh. Naming the skills (`/grill`, `/prd`, `/tasks`, `/implement`, `/refactor`, `/improve-codebase`, `/prototype`) lets it spin up directly.
-5. **Disposable, not durable.** Don't add the temp file to git. If something turns out to be worth keeping, it belongs in the PRD, an ADR, or a commit message — not the handoff.
+4. **Suggest skills explicitly.** The next agent reads the handoff fresh. Naming the skills (`/grill`, `/specs`, `/tasks`, `/implement`, `/refactor`, `/improve-codebase`, `/prototype`) lets it spin up directly.
+5. **Disposable, not durable.** Don't add the temp file to git. If something turns out to be worth keeping, it belongs in the spec, an ADR, or a commit message — not the handoff.
 
 ## After Writing
 

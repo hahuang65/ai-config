@@ -1,18 +1,18 @@
 ---
 name: tasks
-description: Break a PRD into independently-grabbable tasks using tracer-bullet vertical slices. Produces docs/features/<slug>/tasks.md and tasks.html locally. Use after a PRD has been approved. Based on Matt Pocock's to-issues skill.
-argument-hint: [prd-path-or-slug]
+description: Break a spec into independently-grabbable tasks using tracer-bullet vertical slices. Produces docs/features/<slug>/tasks.md and tasks.html locally. Use after a spec has been approved. Based on Matt Pocock's to-issues skill.
+argument-hint: [specs-path-or-slug]
 ---
 
 # Tasks Phase
 
-Break an approved PRD into independently-grabbable tasks using **vertical slices** (tracer bullets). Each task is a thin slice that cuts through ALL integration layers end-to-end — NOT a horizontal slice of one layer.
+Break an approved spec into independently-grabbable tasks using **vertical slices** (tracer bullets). Each task is a thin slice that cuts through ALL integration layers end-to-end — NOT a horizontal slice of one layer.
 
 ## Place in the /build Pipeline
 
-This is **Phase 3** of the `/build` pipeline; it assumes Phase 2 (`/prd`) produced an approved `prd.md` / `prd.html`. See [../shared/references/build-pipeline.md](../shared/references/build-pipeline.md) for file conventions; write `tasks.md` and `tasks.html` into the feature directory. Read [../shared/references/testable-interfaces.md](../shared/references/testable-interfaces.md) before drafting slices so each slice carries the PRD's public-interface test surface forward.
+This is **Phase 3** of the `/build` pipeline; it assumes Phase 2 (`/specs`) produced an approved `spec.md` / `spec.html`. See [../shared/references/build-pipeline.md](../shared/references/build-pipeline.md) for file conventions; write `tasks.md` and `tasks.html` into the feature directory. Read [../shared/references/testable-interfaces.md](../shared/references/testable-interfaces.md) before drafting slices so each slice carries the spec's public-interface test surface forward.
 
-When invoked **standalone**, `$ARGUMENTS` may contain a PRD path, a slug to resolve, or a GitHub issue reference (fetch its body via `gh issue view` and treat it as the source).
+When invoked **standalone**, `$ARGUMENTS` may contain a spec path, a slug to resolve, or a GitHub issue reference (fetch its body via `gh issue view` and treat it as the source).
 
 
 ## Rules Adherence
@@ -23,11 +23,11 @@ Comply with the project rules in `rules/`. In Claude Code these are global instr
 
 ### Step 1: Gather context
 
-Read `prd.md` thoroughly (or the GitHub issue body if that was passed), `CONTEXT.md`, and relevant ADRs. If you haven't explored the relevant code areas yet, do so now — titles and descriptions should be grounded in real modules.
+Read `spec.md` thoroughly (or the GitHub issue body if that was passed), `CONTEXT.md`, and relevant ADRs. If you haven't explored the relevant code areas yet, do so now — titles and descriptions should be grounded in real modules.
 
 ### Step 2: Draft vertical slices
 
-Break the PRD into **tracer-bullet** tasks. Each is a thin vertical slice through every layer end-to-end (schema → API → UI → tests), NOT a horizontal slice of one layer. Carry forward the PRD's Testing Decisions: each slice names the public interface its first RED test should exercise, and tests remain inside the vertical slice instead of becoming separate "write specs" tasks. Mark each:
+Break the spec into **tracer-bullet** tasks. Each is a thin vertical slice through every layer end-to-end (schema → API → UI → tests), NOT a horizontal slice of one layer. Carry forward the spec's Testing Decisions: each slice names the public interface its first RED test should exercise, and tests remain inside the vertical slice instead of becoming separate "write specs" tasks. Mark each:
 
 - **HITL** (human-in-the-loop) — needs human interaction such as an architectural decision or design review
 - **AFK** (away-from-keyboard) — can be implemented and merged without human interaction
@@ -56,7 +56,7 @@ Review the breakdown with the user using the protocol in [../shared/references/a
 - Granularity — too coarse or too fine; any slice to merge or split
 - Dependency relationships between slices
 - HITL vs AFK markers
-- Any PRD user story left uncovered
+- Any spec user story left uncovered
 
 **Do not regenerate `tasks.html` during the review** — work from `tasks.md`; the open visual can lag until the cycles are done.
 

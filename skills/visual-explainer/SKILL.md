@@ -62,7 +62,7 @@ See [references/anti-patterns.md](references/anti-patterns.md) for forbidden pat
 
 ### 4. Deliver
 
-**Output location:** Write to `docs/features/<YYYYMMDD-HHMM>-<slug>/` if a feature directory exists. When accompanying a markdown file, use the same base name with `.html` extension (e.g., `prd.md` → `prd.html`). For standalone visuals: `diff-review.html`, `diagram.html`, `slides.html`.
+**Output location:** Write to `docs/features/<YYYYMMDD-HHMM>-<slug>/` if a feature directory exists. When accompanying a markdown file, use the same base name with `.html` extension (e.g., `spec.md` → `spec.html`). For standalone visuals: `diff-review.html`, `diagram.html`, `slides.html`.
 
 **Open in browser:** `xdg-open <path>` on Linux, `open <path>` on macOS.
 

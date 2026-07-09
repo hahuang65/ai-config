@@ -1,6 +1,6 @@
 # Artifact Review
 
-Shared reference for `prd` and `tasks`. The invoking skill writes the markdown artifact (`prd.md` / `tasks.md`), generates its visual companion (`prd.html` / `tasks.html`), and **opens it in the browser** — *then* runs this review. The visual is **not** rebuilt during the review; it's regenerated once at the end only if the markdown changed. The invoking skill supplies what the user should check, the default feedback channel, and what "advance" means; the loop below is identical for both.
+Shared reference for `specs` and `tasks`. The invoking skill writes the markdown artifact (`spec.md` / `tasks.md`), generates its visual companion (`spec.html` / `tasks.html`), and **opens it in the browser** — *then* runs this review. The visual is **not** rebuilt during the review; it's regenerated once at the end only if the markdown changed. The invoking skill supplies what the user should check, the default feedback channel, and what "advance" means; the loop below is identical for both.
 
 ## Protocol
 

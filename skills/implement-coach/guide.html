@@ -148,7 +148,7 @@ code { font-family: var(--font-mono); font-size: 0.85em; background: var(--accen
       <h3>Do</h3>
       <ul>
         <li>Write ONE failing test at a time</li>
-        <li>Show the user the expected public interface from the PRD/task test surface up front</li>
+        <li>Show the user the expected public interface from the spec/task test surface up front</li>
         <li>Run the test before claiming RED to confirm it fails for the right reason</li>
         <li>When the user signals they're ready (any wording, not a keyword), run only the relevant test</li>
         <li>Use <code>CONTEXT.md</code> vocabulary in test names</li>
@@ -188,7 +188,7 @@ code { font-family: var(--font-mono); font-size: 0.85em; background: var(--accen
   <table>
     <thead><tr><th>Step</th><th>Who</th><th>Action</th></tr></thead>
     <tbody>
-      <tr><td>2a. Confirm interface</td><td>AI ↔ user</td><td>Present proposed public interface from the PRD/task test surface; user confirms or adjusts the seam</td></tr>
+      <tr><td>2a. Confirm interface</td><td>AI ↔ user</td><td>Present proposed public interface from the spec/task test surface; user confirms or adjusts the seam</td></tr>
       <tr><td>2b. Tracer bullet</td><td>AI</td><td>Write ONE failing test through that interface for the happy path; show it failing</td></tr>
       <tr><td>2c. GREEN</td><td>User → AI verify</td><td>User writes minimal code; AI runs the test and reports pass/fail</td></tr>
       <tr><td>2d. Next criterion</td><td>AI → User → AI</td><td>AI writes the next test; user implements; AI verifies. Repeat per acceptance criterion.</td></tr>
@@ -208,8 +208,8 @@ code { font-family: var(--font-mono); font-size: 0.85em; background: var(--accen
       <tr><td><span class="agent-tag">refactorer</span> (hygiene mode)</td><td>Engine applies SAFE, user decides CAREFUL/RISKY</td><td><span class="must-tag">MUST</span></td></tr>
       <tr><td><span class="agent-tag">code-reviewer</span></td><td><strong>User fixes</strong> CRITICAL/HIGH findings</td><td><span class="must-tag">MUST</span></td></tr>
       <tr><td><span class="agent-tag">doc-updater</span></td><td>AI handles directly</td><td><span class="cond-tag">CONDITIONAL</span></td></tr>
-      <tr><td><span class="cmd-tag">fact-checker</span> on PRD &amp; tasks</td><td>AI handles directly</td><td><span class="must-tag">MUST</span></td></tr>
-      <tr><td>Refresh <code>prd.html</code> + <code>tasks.html</code></td><td>AI handles directly</td><td><span class="must-tag">MUST</span></td></tr>
+      <tr><td><span class="cmd-tag">fact-checker</span> on spec &amp; tasks</td><td>AI handles directly</td><td><span class="must-tag">MUST</span></td></tr>
+      <tr><td>Refresh <code>spec.html</code> + <code>tasks.html</code></td><td>AI handles directly</td><td><span class="must-tag">MUST</span></td></tr>
       <tr><td><span class="cmd-tag">/diff-review</span> → <code>diff-review.html</code></td><td>AI handles directly</td><td><span class="cond-tag">CONDITIONAL</span></td></tr>
     </tbody>
   </table>

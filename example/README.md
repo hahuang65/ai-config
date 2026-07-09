@@ -23,6 +23,9 @@ example/
 └── README.md                           # this file
 ```
 
+
+> **Naming note:** this example was generated before the `prd` skill was renamed to `specs` — its artifacts keep their original `prd.md` / `prd.html` filenames as a historical record. The pipeline now writes `spec.md` / `spec.html`.
+
 ## Pipeline Overview
 
 ```
@@ -83,8 +86,8 @@ The implementation phase also re-runs `/fact-check` on `prd.md` and `tasks.md`, 
 
 ## Key Conventions
 
-- **Repo-root vs per-feature**: `CONTEXT.md` and `docs/adr/` live at the repo root and accrete across many `/build` runs. Per-feature artifacts (PRD, tasks, diff review) live under `docs/features/<YYYYMMDD-HHMM>-<slug>/`.
-- **Companion naming**: HTML files share the base name of their markdown counterpart (`prd.md` → `prd.html`, `tasks.md` → `tasks.html`).
+- **Repo-root vs per-feature**: `CONTEXT.md` and `docs/adr/` live at the repo root and accrete across many `/build` runs. Per-feature artifacts (spec, tasks, diff review) live under `docs/features/<YYYYMMDD-HHMM>-<slug>/`.
+- **Companion naming**: HTML files share the base name of their markdown counterpart (`spec.md` → `spec.html`, `tasks.md` → `tasks.html`; `prd.*` in this example reflects the pre-rename naming).
 - **Visual sync guarantee**: whenever a markdown file changes — annotations, corrections, any update — the HTML companion is regenerated *before* proceeding to the next step.
 - **No code in the PRD**: code snippets and file paths go stale; the PRD is durable spec. Narrow exception: decision-rich snippets (state machines, schemas) may be inlined when prose can't carry the precision.
 - **Vertical, never horizontal**: every task slice cuts through every layer end-to-end and is demoable on its own. Many thin slices beat few thick ones.

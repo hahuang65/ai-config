@@ -5,14 +5,14 @@ Write `tasks.md` using this structure. Number slices in dependency order (blocke
 ```markdown
 # {Feature Name} — Tasks
 
-Source PRD: [prd.md](./prd.md)
+Source spec: [spec.md](./spec.md)
 
 ## Slice 1: {Short descriptive title}
 
 **Type:** AFK
 **Blocked by:** None — can start immediately
-**User stories covered:** 1, 2, 3 (from the PRD)
-**Test surface:** Public interface or behavior seam to exercise first (from the PRD Testing Decisions)
+**User stories covered:** 1, 2, 3 (from the spec)
+**Test surface:** Public interface or behavior seam to exercise first (from the spec Testing Decisions)
 
 ### What to build
 
@@ -31,7 +31,7 @@ A concise description of this vertical slice. Describe the end-to-end behavior, 
 **Type:** HITL — needs design review before implementation
 **Blocked by:** Slice 1
 **User stories covered:** 4, 5
-**Test surface:** Public interface or behavior seam to exercise first (from the PRD Testing Decisions)
+**Test surface:** Public interface or behavior seam to exercise first (from the spec Testing Decisions)
 
 ### What to build
 
@@ -45,4 +45,4 @@ A concise description of this vertical slice. Describe the end-to-end behavior, 
 ---
 ```
 
-Avoid specific file paths or code snippets in the slice body. The **Test surface** line should name a stable public interface or observable behavior, not a spec file path. *Exception:* if the PRD's Implementation Decisions section already inlined a critical snippet (state machine, reducer, schema, type shape) tied to this slice, you may inline it here too. Trim to the decision-rich parts.
+Avoid specific file paths or code snippets in the slice body. The **Test surface** line should name a stable public interface or observable behavior, not a spec file path. *Exception:* if the spec's Implementation Decisions section already inlined a critical snippet (state machine, reducer, schema, type shape) tied to this slice, you may inline it here too. Trim to the decision-rich parts.

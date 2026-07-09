@@ -14,7 +14,7 @@ Coach the user through approved vertical-slice tasks **one slice at a time, one 
 - The user has explicitly approved the tasks (do not assume approval).
 - `CONTEXT.md` and relevant ADRs have been read so test names use the project's vocabulary.
 
-See [../shared/references/build-pipeline.md](../shared/references/build-pipeline.md) for file conventions and visual-sync rules. See [../shared/references/testable-interfaces.md](../shared/references/testable-interfaces.md) for how PRD Testing Decisions and task Test surfaces determine where tests attach.
+See [../shared/references/build-pipeline.md](../shared/references/build-pipeline.md) for file conventions and visual-sync rules. See [../shared/references/testable-interfaces.md](../shared/references/testable-interfaces.md) for how spec Testing Decisions and task Test surfaces determine where tests attach.
 
 ## Holding the line — yielding to the user IS the deliverable
 
@@ -61,10 +61,10 @@ For each acceptance criterion:
 
 ## Process
 
-1. **Read context** — `tasks.md`, the linked `prd.md`, `CONTEXT.md`, ADRs. Announce the plan: one slice at a time, one test at a time; confirm Slice 1's interface before writing any test.
+1. **Read context** — `tasks.md`, the linked `spec.md`, `CONTEXT.md`, ADRs. Announce the plan: one slice at a time, one test at a time; confirm Slice 1's interface before writing any test.
 
 2. **For each slice (dependency order):**
-   - **Confirm interface** — present the proposed public interface from the slice's Test surface and the PRD's Testing Decisions (deep, not shallow). This is a seam check, not a request for the user to decide whether tests are needed. Wait for the user's confirmation before writing any test.
+   - **Confirm interface** — present the proposed public interface from the slice's Test surface and the spec's Testing Decisions (deep, not shallow). This is a seam check, not a request for the user to decide whether tests are needed. Wait for the user's confirmation before writing any test.
    - **Tracer bullet** — write ONE failing test (end-to-end happy path) through that interface using `CONTEXT.md` vocabulary. Run it to confirm it fails for the right reason. Show the user the test and failure output; wait for them to implement.
    - **Verify** — when the user signals they're done (any "ready to check" sentiment, not a specific keyword), run the test. If GREEN, move to the next criterion. If RED, show the failure and guide debugging — **do not write the fix**.
    - **Incremental loop** — for each remaining criterion: write ONE next test → wait for the user → verify. **One test at a time. NEVER queue up multiple tests. Do NOT preview future tests.**

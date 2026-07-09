@@ -1,9 +1,9 @@
-# PRD Template
+# Spec Template
 
-Write `prd.md` using this structure. Use `CONTEXT.md` vocabulary throughout. No code snippets or file paths in the body (except the narrow exception in Implementation Decisions).
+Write `spec.md` using this structure. Use `CONTEXT.md` vocabulary throughout. No code snippets or file paths in the body (except the narrow exception in Implementation Decisions).
 
 ```markdown
-# {Feature Name} — PRD
+# {Feature Name} — Spec
 
 ## Problem Statement
 
@@ -35,7 +35,7 @@ A list of implementation decisions that were made. This can include:
 - API contracts
 - Specific interactions
 
-**Do NOT include specific file paths or code snippets.** They go stale fast and the PRD outlives them.
+**Do NOT include specific file paths or code snippets.** They go stale fast and the spec outlives them.
 
 *Exception:* if grilling produced a snippet that encodes a decision more precisely than prose can (state machine, reducer, schema, type shape), inline it within the relevant decision and note briefly where it came from. Trim to the decision-rich parts — not a working demo, just the important bits.
 
@@ -47,11 +47,11 @@ A list of testing decisions that were derived from the module sketch and [../../
 - The test surface for each module: direct public-interface test, covered through a higher-level interface, or no product test with rationale
 - Prior art for the tests (i.e. similar types of tests already in the codebase)
 
-Do **not** write that the user still needs to decide which modules get tests. The PRD proposes that decision; the user only corrects module boundaries or public-interface choices.
+Do **not** write that the user still needs to decide which modules get tests. The spec proposes that decision; the user only corrects module boundaries or public-interface choices.
 
 ## Out of Scope
 
-A description of things that are deliberately out of scope for this PRD.
+A description of things that are deliberately out of scope for this spec.
 
 ## Further Notes
 

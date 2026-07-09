@@ -14,7 +14,7 @@ Execute approved vertical-slice tasks **one slice at a time** using strict red-g
 - The user has explicitly approved the tasks (do not assume approval).
 - `CONTEXT.md` and any relevant ADRs have been read so test and module names match the project's vocabulary.
 
-See [../shared/references/build-pipeline.md](../shared/references/build-pipeline.md) for file conventions and visual-sync rules. See [../shared/references/testable-interfaces.md](../shared/references/testable-interfaces.md) for how PRD Testing Decisions and task Test surfaces determine where tests attach.
+See [../shared/references/build-pipeline.md](../shared/references/build-pipeline.md) for file conventions and visual-sync rules. See [../shared/references/testable-interfaces.md](../shared/references/testable-interfaces.md) for how spec Testing Decisions and task Test surfaces determine where tests attach.
 
 ## Rules Adherence
 
@@ -29,7 +29,7 @@ Invoking `/implement` (or selecting "AI implement" from `/build` Phase 4) is **s
 - Running tests, type checks, linters, formatters, build commands.
 - Bringing up the project's documented dev services (per `AGENTS.md`, `README`, or `docker-compose.yml`) and activating its toolchain (`mise install`, `bundle install`, `npm ci`, `uv sync`, etc.) when tests can't load without them. Bootstrapping the harness is part of the TDD loop, not a separate decision.
 
-What still requires explicit user input: a slice that cannot be implemented as written (surface it, then stop); destructive operations on artifacts the session did not author (force-push, schema drops, dataset deletions, `rm -rf` of user code); a genuine architectural fork with no signal in `prd.md` / `tasks.md` / the codebase. Asking "OK to proceed?" before each batch of writes is **not** how this skill works.
+What still requires explicit user input: a slice that cannot be implemented as written (surface it, then stop); destructive operations on artifacts the session did not author (force-push, schema drops, dataset deletions, `rm -rf` of user code); a genuine architectural fork with no signal in `spec.md` / `tasks.md` / the codebase. Asking "OK to proceed?" before each batch of writes is **not** how this skill works.
 
 ## TDD Protocol
 
@@ -45,9 +45,9 @@ Use the `tdd-guide` agent (via the Agent tool) to guide each slice's cycle.
 
 ## Process
 
-1. **Read context** — `tasks.md`, the linked `prd.md`, `CONTEXT.md`, and relevant ADRs.
+1. **Read context** — `tasks.md`, the linked `spec.md`, `CONTEXT.md`, and relevant ADRs.
 2. **For each slice (dependency order)** — work one slice at a time; do NOT batch slices:
-   - **Confirm the public interface** from the slice's Test surface and the PRD's Testing Decisions (deep module: small interface, deep implementation). Do not ask whether tests are needed; derive the test seam from the shared testable-interface protocol.
+   - **Confirm the public interface** from the slice's Test surface and the spec's Testing Decisions (deep module: small interface, deep implementation). Do not ask whether tests are needed; derive the test seam from the shared testable-interface protocol.
    - **Tracer bullet** — write ONE end-to-end test through that interface → it fails (RED) → minimal code → it passes (GREEN).
    - **Incremental loop** — for each remaining acceptance criterion: one test → minimal code → GREEN.
    - **Refactor** (only while GREEN) — extract duplication, deepen modules; run tests after each step.
@@ -64,7 +64,7 @@ Wrap up per [../shared/references/implementation-completion.md](../shared/refere
 - **Minor issues:** fix and continue; note the deviation in the slice body.
 - **A slice can't be implemented as written:** STOP and tell the user; wait for guidance.
 - **Test failures during refactor:** revert the refactor step — refactoring must not change behavior.
-- **Terse corrections after implementation** ("wider", "still cropped", "move this to the admin app"): act immediately — you have full context from the PRD and tasks. When the user reverts, start fresh with the narrowed scope rather than patching a bad approach.
+- **Terse corrections after implementation** ("wider", "still cropped", "move this to the admin app"): act immediately — you have full context from the spec and tasks. When the user reverts, start fresh with the narrowed scope rather than patching a bad approach.
 - **References to existing code** ("make it look like the users table"): read that reference and match it precisely. Most features are variations on existing patterns.
 
 Ultrathink.

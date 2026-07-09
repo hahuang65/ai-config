@@ -194,20 +194,20 @@ test_phase_grill() {
   check_content_cached "$content" "$label" "[Cc]ross-reference with code"
   check_content_cached "$content" "$label" "[Hh]ard to reverse"
   check_content_cached "$content" "$label" "real trade-off"
-  check_content_cached "$content" "$label" "draft the PRD"
+  check_content_cached "$content" "$label" "draft the spec"
 }
 
 # ---------------------------------------------------------------------------
-# 5. Phase: prd
+# 5. Phase: specs
 # ---------------------------------------------------------------------------
 
-test_phase_prd() {
-  section "Phase: prd"
-  local file="$REPO_DIR/skills/prd/SKILL.md"
-  local label="skills/prd/SKILL.md"
+test_phase_specs() {
+  section "Phase: specs"
+  local file="$REPO_DIR/skills/specs/SKILL.md"
+  local label="skills/specs/SKILL.md"
   [[ -f "$file" ]] || { fail "$label" "file not found"; return; }
   local content
-  content="$(gather_skill_content prd)"
+  content="$(gather_skill_content specs)"
 
   check_content_cached "$content" "$label" "[Rr]ead [Cc]ontext"
   check_content_cached "$content" "$label" "CONTEXT\.md"
@@ -221,7 +221,7 @@ test_phase_prd() {
   else
     pass "$label does not ask the user to choose tested modules"
   fi
-  check_content_cached "$content" "$label" "Write the PRD"
+  check_content_cached "$content" "$label" "Write the spec"
 
   for section in "Problem Statement" Solution "User Stories" "Implementation Decisions" "Testing Decisions" "Out of Scope"; do
     check_content_cached "$content" "$label" "$section"
@@ -231,7 +231,7 @@ test_phase_prd() {
   check_content_cached "$content" "$label" "[Aa]ddress"
   check_content_cached "$content" "$label" "//"
   check_content_cached "$content" "$label" "visual-explainer"
-  check_content_cached "$content" "$label" "prd\.html"
+  check_content_cached "$content" "$label" "spec\.html"
 }
 
 # ---------------------------------------------------------------------------
@@ -288,7 +288,7 @@ test_phase_implement_post() {
   check_content_cached "$content" "$label" "OWASP"
   check_content_cached "$content" "$label" "doc-updater"
   check_content_cached "$content" "$label" "fact-checker"
-  check_content_cached "$content" "$label" "prd\.html|tasks\.html"
+  check_content_cached "$content" "$label" "spec\.html|tasks\.html"
   check_content_cached "$content" "$label" "diff-review"
   check_content_cached "$content" "$label" "never commit|NEVER commit|do not commit"
 }
@@ -336,7 +336,7 @@ test_phase_implement_coach() {
   check_content_cached "$content" "$label" "OWASP"
   check_content_cached "$content" "$label" "doc-updater"
   check_content_cached "$content" "$label" "fact-checker"
-  check_content_cached "$content" "$label" "prd\.html|tasks\.html"
+  check_content_cached "$content" "$label" "spec\.html|tasks\.html"
   check_content_cached "$content" "$label" "diff-review"
   check_content_cached "$content" "$label" "never commit|NEVER commit|do not commit"
 }
@@ -455,6 +455,13 @@ test_retired_cleaners() {
     pass "agents/refactor-cleaner.md absent"
   fi
 
+  # The prd skill was renamed to specs; the artifact is spec.md/spec.html.
+  if [[ -e "$REPO_DIR/skills/prd" || -e "$REPO_DIR/commands/prd.md" ]]; then
+    fail "retired" "skills/prd or commands/prd.md still exists (renamed to specs)"
+  else
+    pass "skills/prd and commands/prd.md absent (renamed to specs)"
+  fi
+
   local hits
   hits="$(grep -rlE 'code-cleaner|refactor-cleaner' \
     "$REPO_DIR/skills" "$REPO_DIR/agents" "$REPO_DIR/commands" "$REPO_DIR/rules" \
@@ -515,7 +522,7 @@ test_phase_orchestrator() {
   content="$(gather_skill_content build)"
 
   check_content_cached "$content" "$label" "docs/features/"
-  for phase in grill prd tasks implement implement-coach; do
+  for phase in grill specs tasks implement implement-coach; do
     check_content_cached "$content" "$label" "$phase"
   done
 
@@ -533,7 +540,7 @@ test_phase_orchestrator() {
   check_content_cached "$content" "$label" "Mandatory Phase Loading"
   check_content_cached "$content" "$label" "At the start of each phase"
   check_content_cached "$content" "$label" "available_skills"
-  for phase in grill prd tasks implement implement-coach; do
+  for phase in grill specs tasks implement implement-coach; do
     check_content_cached "$content" "$label" "../$phase/SKILL\.md"
   done
 }
@@ -543,7 +550,7 @@ test_phase_orchestrator() {
 # ---------------------------------------------------------------------------
 
 check_skill_references_phases() {
-  for phase in grill prd tasks implement implement-coach; do
+  for phase in grill specs tasks implement implement-coach; do
     local target="$REPO_DIR/skills/$phase/SKILL.md"
     if [[ -f "$target" ]]; then
       pass "skills/$phase/SKILL.md exists (referenced from build)"
@@ -1207,7 +1214,7 @@ run_content() {
   run test_frontmatter_agents
   run test_frontmatter_commands
   run test_phase_grill
-  run test_phase_prd
+  run test_phase_specs
   run test_phase_tasks
   run test_phase_implement
   run test_phase_implement_coach

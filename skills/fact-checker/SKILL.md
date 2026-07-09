@@ -1,6 +1,6 @@
 ---
 name: fact-checker
-description: Verify the factual accuracy of a document (PRD, tasks, or a generated HTML review page) against the actual codebase and git history, correct inaccuracies in place, and add a verification summary. Run after implementation to catch drift between docs and code.
+description: Verify the factual accuracy of a document (spec, tasks, or a generated HTML review page) against the actual codebase and git history, correct inaccuracies in place, and add a verification summary. Run after implementation to catch drift between docs and code.
 argument-hint: "[path to the document — defaults to the newest HTML in the current feature directory]"
 ---
 
@@ -22,7 +22,7 @@ Determine what to verify from the argument:
 Auto-detect the document type and adjust the verification strategy:
 
 - **HTML review pages** (diff-review, plan-review, project-recap): detect from page content; verify against the git ref or plan file the review was based on.
-- **Plan / spec documents** (markdown, e.g. `prd.md`, `tasks.md`): verify file references, function/type names, behavior descriptions, and architecture claims against the current codebase.
+- **Plan / spec documents** (markdown, e.g. `spec.md`, `tasks.md`): verify file references, function/type names, behavior descriptions, and architecture claims against the current codebase.
 - **Any other document**: extract and verify whatever factual claims about code it contains.
 
 ## Phase 1: Extract claims

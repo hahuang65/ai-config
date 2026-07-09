@@ -1,13 +1,13 @@
 # Build Pipeline Protocol
 
-Shared reference for the `/build` pipeline skills (`build`, `grill`, `prd`, `tasks`, `implement`, `implement-coach`). Defines the approval gates, file conventions, session management, and visual-sync rules they all obey.
+Shared reference for the `/build` pipeline skills (`build`, `grill`, `specs`, `tasks`, `implement`, `implement-coach`). Defines the approval gates, file conventions, session management, and visual-sync rules they all obey.
 
 ## Approval Gates
 
 The pipeline has exactly **four** approval gates. These are the only points where you wait for user confirmation:
 
-1. **Grill → PRD** — after grilling updates `CONTEXT.md` / `docs/adr/`
-2. **PRD → Tasks** — after the PRD and its visual are approved (annotation cycles complete)
+1. **Grill → spec** — after grilling updates `CONTEXT.md` / `docs/adr/`
+2. **spec → Tasks** — after the spec and its visual are approved (annotation cycles complete)
 3. **Tasks → Implement** — after the task breakdown is approved
 4. **Implement → Done** — after all slices are complete and verified
 
@@ -32,14 +32,14 @@ These outlive any single feature and should be committed.
 
 ```
 docs/features/<YYYYMMDD-HHMM>-<slug>/
-  prd.md             # Phase 2 output
-  prd.html           # Phase 2 visual companion
+  Spec.md             # Phase 2 output
+  Spec.html           # Phase 2 visual companion
   tasks.md           # Phase 3 output
   tasks.html         # Phase 3 visual companion
   diff-review.html   # Phase 4 visual companion — working tree vs branch point
 ```
 
-There is no `research.md` or `plan.md` in this pipeline. Grilling does its own ad-hoc codebase exploration; the PRD replaces the old plan format.
+There is no `research.md` or `plan.md` in this pipeline. Grilling does its own ad-hoc codebase exploration; the spec replaces the old plan format.
 
 To create the feature directory:
 
@@ -51,11 +51,11 @@ The directory is created once at the start of Phase 2 (the first phase that writ
 
 ## Testable Interface Thread
 
-The PRD, tasks, and implementation phases share the same testing contract in [testable-interfaces.md](testable-interfaces.md): tests attach to stable public interfaces of deep modules. `/prd` proposes the test surface with the module sketch, `/tasks` carries it into each vertical slice, and `/implement` / `/implement-coach` write one behavior test at a time through that seam. Do not ask the user to decide from scratch which modules need tests; ask only to correct module boundaries or public-interface choices.
+The spec, tasks, and implementation phases share the same testing contract in [testable-interfaces.md](testable-interfaces.md): tests attach to stable public interfaces of deep modules. `/specs` proposes the test surface with the module sketch, `/tasks` carries it into each vertical slice, and `/implement` / `/implement-coach` write one behavior test at a time through that seam. Do not ask the user to decide from scratch which modules need tests; ask only to correct module boundaries or public-interface choices.
 
 ## Session Management
 
-The workflow is designed to run in a **single long session**. By the time implementation starts, you've built deep shared understanding through grilling and PRD refinement. All artifacts — markdown and visual HTML — survive context compaction and can be re-read at any point.
+The workflow is designed to run in a **single long session**. By the time implementation starts, you've built deep shared understanding through grilling and spec refinement. All artifacts — markdown and visual HTML — survive context compaction and can be re-read at any point.
 
 `CONTEXT.md` and `docs/adr/` are the durable spine that successive `/build` runs sharpen.
 
@@ -63,7 +63,7 @@ The workflow is designed to run in a **single long session**. By the time implem
 
 Each visual HTML companion is generated and opened **when its markdown is first written**. It is **not** regenerated during the review — the markdown is the source of truth across the feedback loop, so the open visual may lag — then regenerated once after the review if the markdown changed, and again after implementation (drift / completion status). Regenerating on every intermediate feedback pass is slow and costly; don't.
 
-- **`prd.html`** — generated and opened when `prd.md` is first written; regenerated once after the PRD review if it changed, and after implementation if drift is detected.
+- **`spec.html`** — generated and opened when `spec.md` is first written; regenerated once after the spec review if it changed, and after implementation if drift is detected.
 - **`tasks.html`** — generated and opened when `tasks.md` is first written; regenerated once after the task review if it changed, and after implementation to reflect completion status.
 - **`diff-review.html`** — generated once after implementation: a visual HTML page comparing the working tree against the branch point (typically `main`), showing what changed.
 

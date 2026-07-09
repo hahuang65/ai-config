@@ -111,16 +111,20 @@ _Avoid_: baseline.
 
 ### Build-pipeline terms
 
+**Spec**:
+The Phase-2 artifact of the `/build` pipeline — `spec.md` (user stories, implementation and testing decisions) with its `spec.html` visual companion, synthesized by the `specs` skill from a grill session. Goes through `//` annotation cycles until approved; approval is the Spec→Tasks gate.
+_Avoid_: PRD / prd.md / prd.html (the artifact's former name, renamed 2026-07-09), plan (the pre-pipeline document format the spec replaced).
+
 **Pipeline skill**:
-One of the seven skills the `/build` orchestrator drives through its four phases — `build`, `grill`, `prd`, `tasks`, `implement`, `implement-coach`, `visual-explainer`. Distinct from a **standalone skill** (`refactor`, `improve-codebase`, `handoff`, `pickup`, `prototype`) which is invoked on its own, never orchestrated by `/build`.
+One of the seven skills the `/build` orchestrator drives through its four phases — `build`, `grill`, `specs`, `tasks`, `implement`, `implement-coach`, `visual-explainer`. Distinct from a **standalone skill** (`refactor`, `improve-codebase`, `handoff`, `pickup`, `prototype`) which is invoked on its own, never orchestrated by `/build`.
 _Avoid_: phase (a phase is a stage of the pipeline; a pipeline skill is the unit that runs it).
 
 **Progressive disclosure**:
-The skill-authoring convention where `SKILL.md` is a thin entry point that defers heavy detail to `references/*.md` files read on demand, instead of one monolithic file. Detail used by more than one skill lives in a global `skills/shared/references/` directory and is imported by relative path rather than duplicated (e.g. `prd`/`tasks`/`implement` read `../shared/references/build-pipeline.md`); detail used by a single skill lives in that skill's own `references/`.
+The skill-authoring convention where `SKILL.md` is a thin entry point that defers heavy detail to `references/*.md` files read on demand, instead of one monolithic file. Detail used by more than one skill lives in a global `skills/shared/references/` directory and is imported by relative path rather than duplicated (e.g. `specs`/`tasks`/`implement` read `../shared/references/build-pipeline.md`); detail used by a single skill lives in that skill's own `references/`.
 _Avoid_: lazy loading (overloaded with the oh-my-pi rulebook's on-demand `rule://` mechanism).
 
 **Feature directory**:
-The per-build-run home for feature artifacts: `docs/features/<YYYYMMDD-HHMM>-<slug>/`, holding `prd.md`/`prd.html`, `tasks.md`/`tasks.html`, and `diff-review.html`. Project-wide artifacts (`CONTEXT.md`, `docs/adr/`) live at the repo root and accrete across runs.
+The per-build-run home for feature artifacts: `docs/features/<YYYYMMDD-HHMM>-<slug>/`, holding `spec.md`/`spec.html`, `tasks.md`/`tasks.html`, and `diff-review.html`. Project-wide artifacts (`CONTEXT.md`, `docs/adr/`) live at the repo root and accrete across runs.
 _Avoid_: `docs/claude/` (the former Claude-specific name, replaced by the harness-neutral `docs/features/` — see [`adopt-docs-features-over-docs-claude`](docs/adr/0007-adopt-docs-features-over-docs-claude.md)).
 
 **Hygiene sweep**:
