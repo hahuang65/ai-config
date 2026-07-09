@@ -58,12 +58,20 @@ install_module() {
     local pi_real; pi_real="$(readlink -f "$pi_bin" 2>/dev/null)" || pi_real="$pi_bin"
     # The binary's depth within the package root varies by install method: under
     # bin/ (Homebrew/npm: .../bin/pi) or directly in the root (Linux tarball:
-    # /opt/pi-coding-agent/pi). Walk up from the binary until the bundled
-    # subagent example turns up, instead of hardcoding a dirname count.
+    # /opt/pi-coding-agent/pi). Homebrew adds a wrinkle: Cellar/<ver>/bin/pi is
+    # a bash shim (not a symlink), so readlink -f stops outside the real npm
+    # package root, which lives in the SIBLING subtree
+    # libexec/lib/node_modules/@earendil-works/pi-coding-agent/. Walk up from
+    # the binary probing both layouts, instead of hardcoding a dirname count.
     local dir; dir="$(dirname "$pi_real")"
+    local brew_pkg="libexec/lib/node_modules/@earendil-works/pi-coding-agent"
     while [ "$dir" != "/" ] && [ -n "$dir" ]; do
       if [ -d "$dir/examples/extensions/subagent" ]; then
         pi_subagent_src="$dir/examples/extensions/subagent"
+        break
+      fi
+      if [ -d "$dir/$brew_pkg/examples/extensions/subagent" ]; then
+        pi_subagent_src="$dir/$brew_pkg/examples/extensions/subagent"
         break
       fi
       dir="$(dirname "$dir")"
