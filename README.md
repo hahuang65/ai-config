@@ -167,7 +167,7 @@ The [`example/`](example/) directory contains sample artifacts from a previous v
 │
 ├── specs (opus)
 │   ├── architect (opus, conditional) → design review
-│   ├── frontend-patterns / api-design (loaded if detected)
+│   ├── api-designer / frontend-architect (sonnet, conditional) → domain consult
 │   └── visual-explainer → spec.html
 │
 ├── tasks (opus)
@@ -248,8 +248,6 @@ Agents read a subset relevant to their role.
 |------|-------|------|
 | `visual-explainer` | — | Generate self-contained HTML pages for visual explanations |
 | `diff-review` | — | Visual HTML diff review — before/after comparison + code-review analysis (also runs in `/implement`'s review chain) |
-| `frontend-patterns` | — | Reference patterns for component composition, state, a11y |
-| `api-design` | — | Reference patterns for REST API design |
 
 ### Commands
 
@@ -274,6 +272,8 @@ Agents read a subset relevant to their role.
 | Name | Model | Role | Rules Read |
 |------|-------|------|------------|
 | `architect` | opus | System design, trade-offs, architecture review | coding-style, performance, security |
+| `api-designer` | sonnet | REST endpoint contracts: resources, status codes, pagination, versioning — consulted by `/specs` when a feature touches the API | coding-style, security, performance |
+| `frontend-architect` | sonnet | Component boundaries, state ownership, data fetching, a11y baseline — consulted by `/specs` when a feature touches UI | coding-style, performance, security |
 | `tdd-guide` | sonnet | Red-green-refactor TDD execution | testing, coding-style |
 | `code-reviewer` | sonnet | OWASP Top 10 + quality review (>80% confidence) | coding-style, testing, security, performance |
 | `database-reviewer` | sonnet | Query optimization, schema, DB security | security, performance |

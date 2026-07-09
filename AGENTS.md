@@ -44,8 +44,11 @@ activates, so keep it thin and defer detail to references read on demand
   `BUILD_PIPELINE.md`).
 - `skills/shared/` is **not a skill** (no `SKILL.md`); the gate skips it.
 - **Exception:** a leaf reference skill whose entire payload *is* the
-  reference (`api-design`, `frontend-patterns`) stays a single `SKILL.md` —
-  there is nothing to disclose progressively. Don't force a split.
+  reference stays a single `SKILL.md` — there is nothing to disclose
+  progressively. Don't force a split. (Domain *knowledge* that should be
+  applied, not just read, belongs in a consultant agent instead — see
+  `api-designer` / `frontend-architect`, converted from former leaf
+  reference skills.)
 - If a skill has a human `guide.html`, keep it consistent with `SKILL.md`.
 - Feature artifacts live in `docs/features/<YYYYMMDD-HHMM>-<slug>/` — never
   `docs/claude/` (harness-neutral; ADR-0007).

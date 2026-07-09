@@ -89,6 +89,7 @@ code { font-family: var(--font-mono); font-size: 0.85em; background: var(--accen
     <strong>Critical:</strong> grilling was the design phase. <span class="cmd-tag">/specs</span> transcribes its outcome — it does <em>NOT</em> re-interview the user. If essential information is genuinely missing, ask one targeted question. But don't re-run the grill session.
   </div>
   <p style="font-size: 0.9rem; color: var(--text-dim); margin-top: 10px;">The one micro-checkpoint that <em>is</em> in this phase: after sketching the major modules, propose their test surfaces yourself and ask the user only to correct module boundaries or public-interface seams. Don't ask which modules need tests — deep modules answer that.</p>
+  <p style="font-size: 0.9rem; color: var(--text-dim); margin-top: 10px;">Domain consultants: when the feature touches REST endpoints, the module sketch consults the <span class="agent-tag">api-designer</span> agent for the endpoint contract; when it adds or restructures UI, the <span class="agent-tag">frontend-architect</span> agent for component boundaries and state ownership. Skipped silently for features that touch neither.</p>
 </div>
 
 <div class="section">

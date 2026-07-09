@@ -232,6 +232,11 @@ test_phase_specs() {
   check_content_cached "$content" "$label" "//"
   check_content_cached "$content" "$label" "visual-explainer"
   check_content_cached "$content" "$label" "spec\.html"
+
+  # Domain consultants: the module sketch consults the api-designer /
+  # frontend-architect agents when the feature touches their domain.
+  check_content_cached "$content" "$label" "api-designer"
+  check_content_cached "$content" "$label" "frontend-architect"
 }
 
 # ---------------------------------------------------------------------------
@@ -461,6 +466,23 @@ test_retired_cleaners() {
   else
     pass "skills/prd and commands/prd.md absent (renamed to specs)"
   fi
+
+  # The api-design and frontend-patterns reference skills were converted into
+  # consultant agents (api-designer, frontend-architect) wired into the specs
+  # phase — their old plan-phase wiring died with the plan format.
+  if [[ -e "$REPO_DIR/skills/api-design" || -e "$REPO_DIR/skills/frontend-patterns" ]]; then
+    fail "retired" "skills/api-design or skills/frontend-patterns still exists (converted to consultant agents)"
+  else
+    pass "skills/api-design and skills/frontend-patterns absent (converted to agents)"
+  fi
+  local consultant
+  for consultant in api-designer frontend-architect; do
+    if [[ -f "$REPO_DIR/agents/${consultant}.md" ]]; then
+      pass "agents/${consultant}.md exists"
+    else
+      fail "retired" "agents/${consultant}.md missing (replacement for the retired reference skill)"
+    fi
+  done
 
   local hits
   hits="$(grep -rlE 'code-cleaner|refactor-cleaner' \

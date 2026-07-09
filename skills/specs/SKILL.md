@@ -30,6 +30,8 @@ Identify the major production modules to build or modify. **Actively look for de
 
 For each module, derive the test surface yourself using [../shared/references/testable-interfaces.md](../shared/references/testable-interfaces.md): test user-visible behavior through the highest stable public interface; direct-test lower-level modules only when they are deep in their own right. The user should not have to answer "which modules get tests?" — the deep-module/testable-interface rule answers that.
 
+**Consult the domain agents when the feature touches their turf.** If the feature adds or changes REST API endpoints, run the `api-designer` agent (via the Agent tool) with the feature description — carry its endpoint contract (paths, status codes, pagination, error format) into the module sketch and Implementation Decisions. If the feature adds or restructures UI, run the `frontend-architect` agent the same way for component boundaries, state ownership, and the a11y baseline. Skip both silently for features that touch neither domain; run both for full-stack features.
+
 This is the one micro-checkpoint in this phase. Briefly confirm with the user:
 
 > Here are the modules I think this feature needs, with the test surface I will use:
