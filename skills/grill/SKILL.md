@@ -9,8 +9,10 @@ argument-hint: [feature-description]
 Interview the user relentlessly about every aspect of the feature idea until you reach a shared understanding. Walk down each branch of the design tree, resolving dependencies between decisions one-by-one. For each question, propose your recommended answer.
 
 **Ask the user questions one at a time, waiting for feedback before posing the next.** This applies to the user-facing interview questions — NOT to your own codebase exploration. Reads, searches, and other tool calls used to ground a question (or to avoid a question the code already answers) proceed without per-call confirmation.
+Asking multiple questions are once is bewildering and overwhelming.
 
-If a question can be answered by exploring the codebase, explore the codebase instead — do not bother the user with something the code already answers.
+If a *fact* can be found by exploring the codebase, look it up rather than asking me — do not bother the user with something the code already answers.
+The *decisions*, though, are mine — put each one to me and wait for my answer.
 
 ## Place in the /build Pipeline
 
@@ -48,6 +50,7 @@ Only offer to create an ADR when all three are true: **hard to reverse**, **surp
 The grill phase is done when the user is satisfied with the shared understanding — ambiguous terms pinned down, cardinality/lifecycle answered, ADR-worthy decisions recorded. Then tell the user:
 
 > **Grill phase complete.** I've updated:
+>
 > - `CONTEXT.md` with <n> term(s): <list>
 > - `docs/adr/` with <n> new ADR(s): <list>
 >   *(or "no new ADRs — none of today's decisions met the hard-to-reverse + surprising + real-trade-off bar")*
