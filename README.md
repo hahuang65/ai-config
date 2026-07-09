@@ -267,8 +267,6 @@ Agents read a subset relevant to their role.
 | `/handoff` | Write a handoff doc to OS temp dir for another agent session |
 | `/pickup` | Resume from a handoff doc (most recent by default, or matched from an argument) |
 | `/visualize-diff` | Visual HTML diff review — before/after architecture comparison |
-| `/plan-review` | Visual HTML: current state vs. proposed implementation |
-| `/project-recap` | Visual HTML: rebuild mental model of project state |
 
 ### Agents
 

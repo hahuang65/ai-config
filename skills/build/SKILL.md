@@ -96,7 +96,7 @@ Committing (which the user does themselves — you never commit) ends the pipeli
 
 ## Visual-Explainer Integration
 
-The `visualize` skill is **optional** — all visual steps are skipped gracefully if it is not installed. When available it produces self-contained HTML (Mermaid diagrams, CSS-Grid layouts, styled tables, dark/light themes, zoom controls), generates the per-phase companions (`specs.html`, `tasks.html`, `diff-review.html`), and exposes these standalone commands: `/visualize-diff`, `/plan-review`, `/project-recap`. It also activates proactively for complex terminal tables (4+ rows or 3+ columns), rendering an HTML table instead.
+The `visualize` skill is **optional** — all visual steps are skipped gracefully if it is not installed. When available it produces self-contained HTML (Mermaid diagrams, CSS-Grid layouts, styled tables, dark/light themes, zoom controls), generates the per-phase companions (`specs.html`, `tasks.html`, `diff-review.html`), and exposes the standalone `/visualize-diff` command. It also activates proactively for complex terminal tables (4+ rows or 3+ columns), rendering an HTML table instead.
 
 ## Cleanup
 

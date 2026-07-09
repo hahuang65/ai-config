@@ -544,6 +544,16 @@ test_retired_cleaners() {
     fi
   done
 
+  # plan-review and project-recap were standalone visualize companions the
+  # user never invoked — removed rather than renamed into the verb scheme.
+  for old_name in plan-review project-recap; do
+    if [[ -e "$REPO_DIR/commands/$old_name.md" || -e "$REPO_DIR/skills/$old_name" ]]; then
+      fail "retired" "commands/$old_name.md or skills/$old_name still exists (removed as unused)"
+    else
+      pass "commands/$old_name.md and skills/$old_name absent (removed as unused)"
+    fi
+  done
+
   # The fact-checker skill became an agent: verification needs no session
   # context, and independence from the session that authored the documents
   # is a feature — the author shouldn't grade its own homework.
@@ -1145,9 +1155,11 @@ test_stale_stubs() {
 # ---------------------------------------------------------------------------
 
 # True if any symlink under config root $1 resolves into repo module dir $2.
+# pwd -P keeps the comparison physical on both sides — readlink -f resolves
+# symlink components, so a logical mod_real would silently never match.
 root_leaks_into_module() {
   local root="$1" module="$2" mod_real link tgt
-  mod_real="$(cd "$REPO_DIR/$module" 2>/dev/null && pwd)" || return 1
+  mod_real="$(cd "$REPO_DIR/$module" 2>/dev/null && pwd -P)" || return 1
   [[ -d "$root" ]] || return 1
   while IFS= read -r -d '' link; do
     tgt="$(readlink -f "$link" 2>/dev/null)" || continue
@@ -1212,10 +1224,12 @@ test_isolation() {
   # test-the-test: a planted sibling link MUST be detected, or the check is vacuous.
   mkdir -p "$tmphome/.omp/agent/skills"
   ln -sf "$REPO_DIR/harnesses/claude/settings.json" "$tmphome/.omp/agent/skills/_leak.json"
-  if root_leaks_into_module "$tmphome/.omp/agent" "harnesses/claude"; then
+  if [[ ! -L "$tmphome/.omp/agent/skills/_leak.json" ]]; then
+    fail "isolation" "could not plant the leak fixture (skills/ not writable as a real dir?) — detector unverified"
+  elif root_leaks_into_module "$tmphome/.omp/agent" "harnesses/claude"; then
     pass "isolation check catches a planted sibling leak"
   else
-    fail "isolation" "planted sibling leak was NOT detected (test-the-test failed)"
+    fail "isolation" "planted sibling leak was NOT detected (plant=$(readlink "$tmphome/.omp/agent/skills/_leak.json" 2>/dev/null || echo '?') resolves=$(readlink -f "$tmphome/.omp/agent/skills/_leak.json" 2>/dev/null || echo 'READLINK-FAILED') module=$(cd "$REPO_DIR/harnesses/claude" 2>/dev/null && pwd -P || echo 'CD-FAILED'))"
   fi
 
   rm -rf "$tmphome"
