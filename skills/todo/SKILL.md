@@ -1,5 +1,5 @@
 ---
-name: tasks
+name: todo
 description: Break a spec into independently-grabbable tasks using tracer-bullet vertical slices. Produces docs/features/<slug>/tasks.md and tasks.html locally. Use after a spec has been approved. Based on Matt Pocock's to-issues skill.
 argument-hint: [specs-path-or-slug]
 ---
@@ -10,7 +10,7 @@ Break an approved spec into independently-grabbable tasks using **vertical slice
 
 ## Place in the /build Pipeline
 
-This is **Phase 3** of the `/build` pipeline; it assumes Phase 2 (`/specs`) produced an approved `spec.md` / `spec.html`. See [../shared/references/build-pipeline.md](../shared/references/build-pipeline.md) for file conventions; write `tasks.md` and `tasks.html` into the feature directory. Read [../shared/references/testable-interfaces.md](../shared/references/testable-interfaces.md) before drafting slices so each slice carries the spec's public-interface test surface forward.
+This is **Phase 3** of the `/build` pipeline; it assumes Phase 2 (`/spec`) produced an approved `specs.md` / `specs.html`. See [../shared/references/build-pipeline.md](../shared/references/build-pipeline.md) for file conventions; write `tasks.md` and `tasks.html` into the feature directory. Read [../shared/references/testable-interfaces.md](../shared/references/testable-interfaces.md) before drafting slices so each slice carries the spec's public-interface test surface forward.
 
 When invoked **standalone**, `$ARGUMENTS` may contain a spec path, a slug to resolve, or a GitHub issue reference (fetch its body via `gh issue view` and treat it as the source).
 
@@ -23,7 +23,7 @@ Comply with the project rules in `rules/`. In Claude Code these are global instr
 
 ### Step 1: Gather context
 
-Read `spec.md` thoroughly (or the GitHub issue body if that was passed), `CONTEXT.md`, and relevant ADRs. If you haven't explored the relevant code areas yet, do so now — titles and descriptions should be grounded in real modules.
+Read `specs.md` thoroughly (or the GitHub issue body if that was passed), `CONTEXT.md`, and relevant ADRs. If you haven't explored the relevant code areas yet, do so now — titles and descriptions should be grounded in real modules.
 
 ### Step 2: Draft vertical slices
 
@@ -47,7 +47,7 @@ Use the structure in [references/task-template.md](references/task-template.md).
 
 ### Step 4: Generate `tasks.html`
 
-Invoke the `visual-explainer` skill to produce `tasks.html` in the feature directory, and **open it in the browser**. The HTML must use "Tasks" in its `<title>` and `<h1>`, and emphasize the **dependency graph** between slices, the HITL/AFK split, and which user stories each slice covers.
+Invoke the `visualize` skill to produce `tasks.html` in the feature directory, and **open it in the browser**. The HTML must use "Tasks" in its `<title>` and `<h1>`, and emphasize the **dependency graph** between slices, the HITL/AFK split, and which user stories each slice covers.
 
 ### Step 5: Review and finalize
 
@@ -65,7 +65,7 @@ On the user's confirmation, finalize:
 1. If the markdown changed during the review, regenerate `tasks.html` once (reopen it).
 2. Report the slice count and HITL/AFK split, then advance to implementation:
 
-> **Tasks ready** — <n> slices (<a> AFK / <h> HITL). `/implement` (I write tests and code) or `/implement-coach` (you code, I write one test at a time) — which do you prefer?
+> **Tasks ready** — <n> slices (<a> AFK / <h> HITL). `/code` (I write tests and code) or `/coach` (you code, I write one test at a time) — which do you prefer?
 
 ## Important Guidelines
 

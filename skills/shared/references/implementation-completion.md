@@ -1,6 +1,6 @@
 # Completion
 
-Shared reference for `implement` and `implement-coach`. Run this **after the post-implementation review chain (see [review-chain.md](review-chain.md)) is clean.** The completion is identical for both skills — only *who* did the work differs (the AI in `/implement`, the user in `/implement-coach`), so report it accordingly.
+Shared reference for `code` and `coach`. Run this **after the post-implementation review chain (see [review-chain.md](review-chain.md)) is clean.** The completion is identical for both skills — only *who* did the work differs (the AI in `/code`, the user in `/coach`), so report it accordingly.
 
 ## Report
 
@@ -10,12 +10,12 @@ Report what was accomplished this session:
 - Tests added and passing
 - Type check / lint / build ✅
 - Review findings addressed
-- Which visuals were refreshed (`spec.html`, `tasks.html`, `diff-review.html`)
+- Which visuals were refreshed (`specs.html`, `tasks.html`, `diff-review.html`)
 
 ## What happens next
 
 - **Inside `/build`:** proceed straight to Phase 5 — `review-code` scoped to ONLY the feature's changes. No gate between implementation and the review; the review report carries the pipeline's final commit-or-iterate decision.
-- **Standalone `/implement`:** after reporting, add these pointers:
+- **Standalone `/code`:** after reporting, add these pointers:
 
 > If you notice structural issues now that the code is done:
 > - **Local restructuring** (a file got too big, a helper is worth extracting, a rename is worth doing) → run `/refactor` — it's user-directed and works on what you point it at.

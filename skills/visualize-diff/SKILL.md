@@ -1,22 +1,22 @@
 ---
-name: diff-review
+name: visualize-diff
 description: Generate a visual HTML diff review — a before/after architecture comparison with code-review analysis, a decision log, and re-entry context — as a self-contained page. Use to review the working tree against a branch, commit, PR, or range.
 argument-hint: "[ref — branch / commit / HEAD / PR number / range; defaults to main]"
 ---
 
 # Diff Review
 
-Generate a comprehensive visual diff review as a self-contained HTML page. This is a specialized companion of `visual-explainer` — it borrows that skill's aesthetic and CSS but renders a GitHub-diff-inspired before/after review.
+Generate a comprehensive visual diff review as a self-contained HTML page. This is a specialized companion of `visualize` — it borrows that skill's aesthetic and CSS but renders a GitHub-diff-inspired before/after review.
 
-Before generating, read these `visual-explainer` references:
+Before generating, read these `visualize` references:
 
-- [core.md](../visual-explainer/core.md) — quality guide (aesthetic, typography, color, style, checks)
-- [css-core.md](../visual-explainer/references/css-core.md) — theme, cards, code blocks, overflow
-- [css-mermaid.md](../visual-explainer/references/css-mermaid.md) — Mermaid containers, zoom controls, connectors
-- [css-components.md](../visual-explainer/references/css-components.md) — grids, KPI cards, before/after, collapsible, animations
-- [libraries.md](../visual-explainer/references/libraries.md) — Mermaid theming, font imports
+- [core.md](../visualize/core.md) — quality guide (aesthetic, typography, color, style, checks)
+- [css-core.md](../visualize/references/css-core.md) — theme, cards, code blocks, overflow
+- [css-mermaid.md](../visualize/references/css-mermaid.md) — Mermaid containers, zoom controls, connectors
+- [css-components.md](../visualize/references/css-components.md) — grids, KPI cards, before/after, collapsible, animations
+- [libraries.md](../visualize/references/libraries.md) — Mermaid theming, font imports
 
-Use a GitHub-diff-inspired aesthetic with red/green before/after panels, but vary fonts and palette from previous diagrams. If `visual-explainer` is not installed, fall back to a clean self-contained page using the diff color language described below.
+Use a GitHub-diff-inspired aesthetic with red/green before/after panels, but vary fonts and palette from previous diagrams. If `visualize` is not installed, fall back to a clean self-contained page using the diff color language described below.
 
 ## Scope detection
 

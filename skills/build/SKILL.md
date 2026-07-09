@@ -9,7 +9,7 @@ disable-model-invocation: true
 
 A disciplined 5-phase workflow for building features. Each phase is its own skill; run them in order, waiting for user approval between phases.
 
-**Pipeline:** `/grill` → `/specs` → `/tasks` → `/implement` *(or `/implement-coach`)* → `/review-code`
+**Pipeline:** `/grill` → `/spec` → `/todo` → `/code` *(or `/coach`)* → `/review-code`
 
 See [../shared/references/build-pipeline.md](../shared/references/build-pipeline.md) for the approval gates, file conventions (`docs/features/<slug>/`), session management, and visual-sync rules every phase obeys. Read it first.
 
@@ -18,10 +18,10 @@ See [../shared/references/build-pipeline.md](../shared/references/build-pipeline
 `/build` is an orchestrator, not a replacement for the phase skills. At the start of each phase, **read that phase's `SKILL.md` by relative path and follow it**:
 
 - Phase 1: [../grill/SKILL.md](../grill/SKILL.md)
-- Phase 2: [../specs/SKILL.md](../specs/SKILL.md)
-- Phase 3: [../tasks/SKILL.md](../tasks/SKILL.md)
-- Phase 4a: [../implement/SKILL.md](../implement/SKILL.md)
-- Phase 4b: [../implement-coach/SKILL.md](../implement-coach/SKILL.md)
+- Phase 2: [../spec/SKILL.md](../spec/SKILL.md)
+- Phase 3: [../todo/SKILL.md](../todo/SKILL.md)
+- Phase 4a: [../code/SKILL.md](../code/SKILL.md)
+- Phase 4b: [../coach/SKILL.md](../coach/SKILL.md)
 - Phase 5: [../review-code/SKILL.md](../review-code/SKILL.md)
 
 Do **not** decide whether a phase exists from the `available_skills` list or by interpreting names like "grill" as ordinary English. If this `/build` skill loaded, these phase files are part of the same installed skill bundle; load them directly by path. In harnesses without a skill-invocation tool, "invoke `<phase>`" means: read the phase `SKILL.md`, follow its linked references as needed, and execute its workflow.
@@ -29,10 +29,10 @@ Do **not** decide whether a phase exists from the `available_skills` list or by 
 Each phase also runs standalone:
 
 - `/grill [topic]` — Phase 1: interview, refine `CONTEXT.md`, write ADRs
-- `/specs [topic]` — Phase 2: synthesize spec from grilling, with annotation cycles
-- `/tasks [specs-dir]` — Phase 3: vertical-slice tracer-bullet breakdown
-- `/implement [tasks-dir]` — Phase 4a: AI implements via TDD, slice by slice
-- `/implement-coach [tasks-dir]` — Phase 4b: user implements, AI writes one test at a time
+- `/spec [topic]` — Phase 2: synthesize spec from grilling, with annotation cycles
+- `/todo [spec-dir]` — Phase 3: vertical-slice tracer-bullet breakdown
+- `/code [tasks-dir]` — Phase 4a: AI implements via TDD, slice by slice
+- `/coach [tasks-dir]` — Phase 4b: user implements, AI writes one test at a time
 - `/review-code [area]` — Phase 5: architectural review (standalone: entire codebase with no arguments, or the named area)
 
 ## Approval Gate Scope (read first)
@@ -55,13 +55,13 @@ Load [../grill/SKILL.md](../grill/SKILL.md), then run `grill` with the feature d
 
 ### Phase 2: Spec + Review
 
-Create the feature directory `docs/features/<YYYYMMDD-HHMM>-<slug>/`, then load [../specs/SKILL.md](../specs/SKILL.md) and run `specs` with the feature description and that path. It writes `spec.md`, generates and opens `spec.html`, and runs the artifact review (see [../shared/references/artifact-review.md](../shared/references/artifact-review.md)): the user gives feedback — `//` annotations or direct answers — which `specs` addresses and re-presents (the visual isn't regenerated mid-review), or confirms. On confirmation `specs` regenerates `spec.html` once if the markdown changed.
+Create the feature directory `docs/features/<YYYYMMDD-HHMM>-<slug>/`, then load [../spec/SKILL.md](../spec/SKILL.md) and run `spec` with the feature description and that path. It writes `specs.md`, generates and opens `specs.html`, and runs the artifact review (see [../shared/references/artifact-review.md](../shared/references/artifact-review.md)): the user gives feedback — `//` annotations or direct answers — which `spec` addresses and re-presents (the visual isn't regenerated mid-review), or confirms. On confirmation `spec` regenerates `specs.html` once if the markdown changed.
 
 **Wait for the user to confirm in that review** — their confirmation *is* the spec→Tasks gate. No separate approval prompt; when they confirm rather than keep reviewing, proceed straight to Phase 3.
 
 ### Phase 3: Tasks (vertical-slice tracer bullets)
 
-Load [../tasks/SKILL.md](../tasks/SKILL.md), then run `tasks` with the feature directory. It breaks the spec into vertical slices with HITL/AFK markers, writes `tasks.md`, generates and opens `tasks.html`, runs the same review (no mid-review regen), and regenerates `tasks.html` once on confirmation if the markdown changed.
+Load [../todo/SKILL.md](../todo/SKILL.md), then run `todo` with the feature directory. It breaks the spec into vertical slices with HITL/AFK markers, writes `tasks.md`, generates and opens `tasks.html`, runs the same review (no mid-review regen), and regenerates `tasks.html` once on confirmation if the markdown changed.
 
 **Wait for the user to confirm in that review** — their confirmation *is* the Tasks→Implement gate. Then proceed to Phase 4.
 
@@ -69,10 +69,10 @@ Load [../tasks/SKILL.md](../tasks/SKILL.md), then run `tasks` with the feature d
 
 Ask which mode:
 
-> - **`/implement`** — AI implements the code via vertical-slice TDD (one test → one impl → repeat)
-> - **`/implement-coach`** — You implement; I write ONE test at a time and verify
+> - **`/code`** — AI implements the code via vertical-slice TDD (one test → one impl → repeat)
+> - **`/coach`** — You implement; I write ONE test at a time and verify
 
-If the user says "implement" or doesn't specify, load [../implement/SKILL.md](../implement/SKILL.md) and run `implement` with the feature directory. If they say "coach me" or "guided", load [../implement-coach/SKILL.md](../implement-coach/SKILL.md) and run `implement-coach`. Both run the same TDD philosophy, the verification loop, and the post-implementation review chain (`database-reviewer`, `refactorer` in hygiene mode, `code-reviewer`, `doc-updater`, `fact-checker`, `/diff-review`). After completion, report final status (slices, tests, verifications, visuals) and proceed straight to Phase 5 — no gate here.
+If the user says "implement" or doesn't specify, load [../code/SKILL.md](../code/SKILL.md) and run `code` with the feature directory. If they say "coach me" or "guided", load [../coach/SKILL.md](../coach/SKILL.md) and run `coach`. Both run the same TDD philosophy, the verification loop, and the post-implementation review chain (`database-reviewer`, `refactorer` in hygiene mode, `code-reviewer`, `doc-updater`, `fact-checker`, `/visualize-diff`). After completion, report final status (slices, tests, verifications, visuals) and proceed straight to Phase 5 — no gate here.
 
 ### Phase 5: Code Review (architectural — the pipeline's final step)
 
@@ -96,7 +96,7 @@ Committing (which the user does themselves — you never commit) ends the pipeli
 
 ## Visual-Explainer Integration
 
-The `visual-explainer` skill is **optional** — all visual steps are skipped gracefully if it is not installed. When available it produces self-contained HTML (Mermaid diagrams, CSS-Grid layouts, styled tables, dark/light themes, zoom controls), generates the per-phase companions (`spec.html`, `tasks.html`, `diff-review.html`), and exposes these standalone commands: `/diff-review`, `/plan-review`, `/project-recap`. It also activates proactively for complex terminal tables (4+ rows or 3+ columns), rendering an HTML table instead.
+The `visualize` skill is **optional** — all visual steps are skipped gracefully if it is not installed. When available it produces self-contained HTML (Mermaid diagrams, CSS-Grid layouts, styled tables, dark/light themes, zoom controls), generates the per-phase companions (`specs.html`, `tasks.html`, `diff-review.html`), and exposes these standalone commands: `/visualize-diff`, `/plan-review`, `/project-recap`. It also activates proactively for complex terminal tables (4+ rows or 3+ columns), rendering an HTML table instead.
 
 ## Cleanup
 

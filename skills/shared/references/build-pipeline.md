@@ -1,6 +1,6 @@
 # Build Pipeline Protocol
 
-Shared reference for the `/build` pipeline skills (`build`, `grill`, `specs`, `tasks`, `implement`, `implement-coach`, `review-code`). Defines the approval gates, file conventions, session management, and visual-sync rules they all obey.
+Shared reference for the `/build` pipeline skills (`build`, `grill`, `spec`, `todo`, `code`, `coach`, `review-code`). Defines the approval gates, file conventions, session management, and visual-sync rules they all obey.
 
 ## Approval Gates
 
@@ -51,7 +51,7 @@ The directory is created once at the start of Phase 2 (the first phase that writ
 
 ## Testable Interface Thread
 
-The spec, tasks, and implementation phases share the same testing contract in [testable-interfaces.md](testable-interfaces.md): tests attach to stable public interfaces of deep modules. `/specs` proposes the test surface with the module sketch, `/tasks` carries it into each vertical slice, and `/implement` / `/implement-coach` write one behavior test at a time through that seam. Do not ask the user to decide from scratch which modules need tests; ask only to correct module boundaries or public-interface choices.
+The spec, tasks, and implementation phases share the same testing contract in [testable-interfaces.md](testable-interfaces.md): tests attach to stable public interfaces of deep modules. `/spec` proposes the test surface with the module sketch, `/todo` carries it into each vertical slice, and `/code` / `/coach` write one behavior test at a time through that seam. Do not ask the user to decide from scratch which modules need tests; ask only to correct module boundaries or public-interface choices.
 
 ## Session Management
 
@@ -63,11 +63,11 @@ The workflow is designed to run in a **single long session**. By the time implem
 
 Each visual HTML companion is generated and opened **when its markdown is first written**. It is **not** regenerated during the review — the markdown is the source of truth across the feedback loop, so the open visual may lag — then regenerated once after the review if the markdown changed, and again after implementation (drift / completion status). Regenerating on every intermediate feedback pass is slow and costly; don't.
 
-- **`spec.html`** — generated and opened when `spec.md` is first written; regenerated once after the spec review if it changed, and after implementation if drift is detected.
+- **`specs.html`** — generated and opened when `specs.md` is first written; regenerated once after the spec review if it changed, and after implementation if drift is detected.
 - **`tasks.html`** — generated and opened when `tasks.md` is first written; regenerated once after the task review if it changed, and after implementation to reflect completion status.
 - **`diff-review.html`** — generated once after implementation: a visual HTML page comparing the working tree against the branch point (typically `main`), showing what changed.
 
-The `visual-explainer` skill produces these companions. If it is not installed, every visual step is skipped silently.
+The `visualize` skill produces these companions. If it is not installed, every visual step is skipped silently.
 
 ## Cleanup
 

@@ -45,7 +45,7 @@ It also runs standalone, invoked whenever the user feels architectural friction:
 - A periodic "architectural health check" (no arguments — entire codebase)
 - A grilling session keeps tripping over the same friction (arguments — that area)
 
-For surface-level cleanup right after implementation (dead code, unused imports, quick reuse opportunities) the `refactorer` agent's hygiene sweep already runs inside `/implement`. `/review-code` is for deeper structural questions.
+For surface-level cleanup right after implementation (dead code, unused imports, quick reuse opportunities) the `refactorer` agent's hygiene sweep already runs inside `/code`. `/review-code` is for deeper structural questions.
 
 ## Process
 

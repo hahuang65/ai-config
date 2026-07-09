@@ -1,6 +1,6 @@
 ---
-name: implement
-description: Execute approved vertical-slice tasks from docs/features/<slug>/tasks.md, slice by slice, using red-green-refactor TDD. Use after /tasks has produced an approved tasks.md.
+name: code
+description: Execute approved vertical-slice tasks from docs/features/<slug>/tasks.md, slice by slice, using red-green-refactor TDD. Use after /todo has produced an approved tasks.md.
 argument-hint: [feature-dir-or-slug]
 ---
 
@@ -22,14 +22,14 @@ Comply with the project rules in `rules/` (coding-style, testing, security, perf
 
 ## Standing Authorization
 
-Invoking `/implement` (or selecting "AI implement" from `/build` Phase 4) is **standing authorization** for the routine TDD loop and everything it requires. You do NOT re-request approval between cycles, between slices, or before each file write. What proceeds without further confirmation:
+Invoking `/code` (or selecting "AI implement" from `/build` Phase 4) is **standing authorization** for the routine TDD loop and everything it requires. You do NOT re-request approval between cycles, between slices, or before each file write. What proceeds without further confirmation:
 
 - Writing the failing test, the minimal implementation, then refactoring.
 - Reading any file in the working tree.
 - Running tests, type checks, linters, formatters, build commands.
 - Bringing up the project's documented dev services (per `AGENTS.md`, `README`, or `docker-compose.yml`) and activating its toolchain (`mise install`, `bundle install`, `npm ci`, `uv sync`, etc.) when tests can't load without them. Bootstrapping the harness is part of the TDD loop, not a separate decision.
 
-What still requires explicit user input: a slice that cannot be implemented as written (surface it, then stop); destructive operations on artifacts the session did not author (force-push, schema drops, dataset deletions, `rm -rf` of user code); a genuine architectural fork with no signal in `spec.md` / `tasks.md` / the codebase. Asking "OK to proceed?" before each batch of writes is **not** how this skill works.
+What still requires explicit user input: a slice that cannot be implemented as written (surface it, then stop); destructive operations on artifacts the session did not author (force-push, schema drops, dataset deletions, `rm -rf` of user code); a genuine architectural fork with no signal in `specs.md` / `tasks.md` / the codebase. Asking "OK to proceed?" before each batch of writes is **not** how this skill works.
 
 ## TDD Protocol
 
@@ -45,7 +45,7 @@ Use the `tdd-guide` agent (via the Agent tool) to guide each slice's cycle.
 
 ## Process
 
-1. **Read context** — `tasks.md`, the linked `spec.md`, `CONTEXT.md`, and relevant ADRs.
+1. **Read context** — `tasks.md`, the linked `specs.md`, `CONTEXT.md`, and relevant ADRs.
 2. **For each slice (dependency order)** — work one slice at a time; do NOT batch slices:
    - **Confirm the public interface** from the slice's Test surface and the spec's Testing Decisions (deep module: small interface, deep implementation). Do not ask whether tests are needed; derive the test seam from the shared testable-interface protocol.
    - **Tracer bullet** — write ONE end-to-end test through that interface → it fails (RED) → minimal code → it passes (GREEN).
@@ -53,7 +53,7 @@ Use the `tdd-guide` agent (via the Agent tool) to guide each slice's cycle.
    - **Refactor** (only while GREEN) — extract duplication, deepen modules; run tests after each step.
    - **Mark the slice complete** in `tasks.md` (check off criteria, append `**Status:** ✅ Complete`), then move on. Stop only if a slice can't be implemented as written.
 3. **Verification loop** — after all slices, run type check, lint, full test suite, and build per [../shared/references/tooling.md](../shared/references/tooling.md). Fix failures (via TDD where applicable) until all pass.
-4. **Post-implementation review chain** — run the `database-reviewer` (conditional), `refactorer` (hygiene mode), `code-reviewer`, `doc-updater` (conditional), `fact-checker`, visual refresh, and `/diff-review` steps in [../shared/references/review-chain.md](../shared/references/review-chain.md). In AI mode you fix CRITICAL/HIGH findings directly.
+4. **Post-implementation review chain** — run the `database-reviewer` (conditional), `refactorer` (hygiene mode), `code-reviewer`, `doc-updater` (conditional), `fact-checker`, visual refresh, and `/visualize-diff` steps in [../shared/references/review-chain.md](../shared/references/review-chain.md). In AI mode you fix CRITICAL/HIGH findings directly.
 
 ## Completion
 

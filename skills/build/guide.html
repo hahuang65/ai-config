@@ -165,14 +165,14 @@ code { font-family: var(--font-mono); font-size: 0.85em; background: var(--accen
         <li>NO code snippets, NO file paths (they go stale)</li>
         <li>Annotation cycle via <code>//</code> comments until approved</li>
       </ul>
-      <div class="out"><strong>Output:</strong> <code>docs/features/&lt;slug&gt;/spec.md</code><br><strong>Output:</strong> <code>docs/features/&lt;slug&gt;/spec.html</code></div>
+      <div class="out"><strong>Output:</strong> <code>docs/features/&lt;slug&gt;/specs.md</code><br><strong>Output:</strong> <code>docs/features/&lt;slug&gt;/specs.html</code></div>
     </div>
 
     <div class="card tasks">
       <h3>tasks <span class="badge">opus · vertical slices</span></h3>
       <p>Breaks the approved spec into vertical-slice tracer bullets. Each slice cuts through every layer end-to-end.</p>
       <ul>
-        <li>Reads <code>spec.md</code>, <code>CONTEXT.md</code>, ADRs</li>
+        <li>Reads <code>specs.md</code>, <code>CONTEXT.md</code>, ADRs</li>
         <li>Each slice = thin path through schema, API, UI, tests</li>
         <li>Marked HITL (human-in-loop) or AFK (away-from-keyboard)</li>
         <li>Dependency order: blockers first</li>
@@ -189,7 +189,7 @@ code { font-family: var(--font-mono); font-size: 0.85em; background: var(--accen
         <li>Tests describe behavior through the spec/task public interface, not implementation</li>
         <li>Verification loop: type check, lint, test, build</li>
         <li>Agents: <span class="agent-tag">tdd-guide</span> <span class="agent-tag">database-reviewer</span> <span class="agent-tag">refactorer</span> (hygiene mode) <span class="agent-tag">code-reviewer</span> <span class="agent-tag">doc-updater</span></li>
-        <li>Runs the <span class="agent-tag">fact-checker</span> skill + <span class="cmd-tag">/diff-review</span></li>
+        <li>Runs the <span class="agent-tag">fact-checker</span> skill + <span class="cmd-tag">/visualize-diff</span></li>
         <li>Coach variant: AI writes ONE test, user implements, AI verifies</li>
         <li>Phase 5 closes the pipeline: <span class="cmd-tag">review-code</span> runs the <span class="agent-tag">architecture-reviewer</span> agent on ONLY the feature's changes — the report is where the user decides commit-or-iterate</li>
       </ul>
@@ -209,8 +209,8 @@ code { font-family: var(--font-mono); font-size: 0.85em; background: var(--accen
 │   │   └── 0002-postgres-for-write-model.md
 │   └── claude/
 │       └── &lt;YYYYMMDD-HHMM&gt;-&lt;slug&gt;/
-│           ├── spec.md             Phase 2 — Spec
-│           ├── spec.html           Phase 2 — visual companion
+│           ├── specs.md             Phase 2 — Spec
+│           ├── specs.html           Phase 2 — visual companion
 │           ├── tasks.md           Phase 3 — vertical slices
 │           ├── tasks.html         Phase 3 — visual companion
 │           └── diff-review.html   Phase 4 — diff review</div>
@@ -225,8 +225,8 @@ code { font-family: var(--font-mono); font-size: 0.85em; background: var(--accen
     <thead><tr><th>Transition</th><th>User confirms (any wording)</th><th>Gate behavior</th></tr></thead>
     <tbody>
       <tr><td>after <code>/grill</code></td><td>any go-ahead to draft the spec</td><td><span class="stop">STOP</span> until the user confirms</td></tr>
-      <tr><td>after <code>/specs</code></td><td>any go-ahead to break it into tasks</td><td><span class="stop">STOP</span> until spec is approved <em>and</em> the user confirms</td></tr>
-      <tr><td>after <code>/tasks</code></td><td>any go-ahead to implement (and which mode)</td><td><span class="stop">STOP</span> until tasks are approved <em>and</em> the user picks a mode</td></tr>
+      <tr><td>after <code>/spec</code></td><td>any go-ahead to break it into tasks</td><td><span class="stop">STOP</span> until spec is approved <em>and</em> the user confirms</td></tr>
+      <tr><td>after <code>/todo</code></td><td>any go-ahead to implement (and which mode)</td><td><span class="stop">STOP</span> until tasks are approved <em>and</em> the user picks a mode</td></tr>
     </tbody>
   </table>
   <p style="margin-top:14px; font-size:0.9rem; color: var(--text-dim);">The orchestrator never advances autonomously. Each gate exists so the user injects judgment — domain corrections during grill, scope cuts during spec, granularity during tasks.</p>
@@ -244,13 +244,13 @@ code { font-family: var(--font-mono); font-size: 0.85em; background: var(--accen
 7. As a customer, I want to export to CSV...
 
 // this should reference ADR-0003, not 0002</div>
-  <p style="margin-top:14px; font-size:0.9rem; color: var(--text-dim);">For each annotation, the agent addresses it, updates <code>spec.md</code>, and removes the <code>//</code> comment — working from the markdown. Cycles repeat until the user is satisfied; the visual is regenerated once at the end if the markdown changed.</p>
+  <p style="margin-top:14px; font-size:0.9rem; color: var(--text-dim);">For each annotation, the agent addresses it, updates <code>specs.md</code>, and removes the <code>//</code> comment — working from the markdown. Cycles repeat until the user is satisfied; the visual is regenerated once at the end if the markdown changed.</p>
 </div>
 
 <div class="section">
   <div class="section-title"><span class="num">05</span>Visual Sync Guarantee</div>
-  <p style="font-size: 0.95rem; margin-bottom: 14px;">Each HTML companion is generated and opened when its markdown is first written, left untouched during the review, and regenerated once afterward if the markdown changed (and again after implementation). <code>spec.html</code> mirrors <code>spec.md</code>; <code>tasks.html</code> mirrors <code>tasks.md</code>.</p>
-  <p style="font-size: 0.9rem; color: var(--text-dim);">If <code>visual-explainer</code> is not installed, visual steps are silently skipped — the workflow still produces the markdown artifacts.</p>
+  <p style="font-size: 0.95rem; margin-bottom: 14px;">Each HTML companion is generated and opened when its markdown is first written, left untouched during the review, and regenerated once afterward if the markdown changed (and again after implementation). <code>specs.html</code> mirrors <code>specs.md</code>; <code>tasks.html</code> mirrors <code>tasks.md</code>.</p>
+  <p style="font-size: 0.9rem; color: var(--text-dim);">If <code>visualize</code> is not installed, visual steps are silently skipped — the workflow still produces the markdown artifacts.</p>
 </div>
 
 <div class="section">
@@ -259,10 +259,10 @@ code { font-family: var(--font-mono); font-size: 0.85em; background: var(--accen
     <thead><tr><th>Command</th><th>Standalone use</th><th>Inside /build</th></tr></thead>
     <tbody>
       <tr><td><span class="cmd-tag">/grill</span></td><td>Refine domain language without committing to a spec</td><td>Phase 1</td></tr>
-      <tr><td><span class="cmd-tag">/specs</span></td><td>Turn an existing conversation into a spec</td><td>Phase 2</td></tr>
-      <tr><td><span class="cmd-tag">/tasks</span></td><td>Break an existing spec into vertical slices</td><td>Phase 3</td></tr>
-      <tr><td><span class="cmd-tag">/implement</span></td><td>Execute an existing tasks.md (AI)</td><td>Phase 4a</td></tr>
-      <tr><td><span class="cmd-tag">/implement-coach</span></td><td>Execute an existing tasks.md (you write code)</td><td>Phase 4b</td></tr>
+      <tr><td><span class="cmd-tag">/spec</span></td><td>Turn an existing conversation into a spec</td><td>Phase 2</td></tr>
+      <tr><td><span class="cmd-tag">/todo</span></td><td>Break an existing spec into vertical slices</td><td>Phase 3</td></tr>
+      <tr><td><span class="cmd-tag">/code</span></td><td>Execute an existing tasks.md (AI)</td><td>Phase 4a</td></tr>
+      <tr><td><span class="cmd-tag">/coach</span></td><td>Execute an existing tasks.md (you write code)</td><td>Phase 4b</td></tr>
     </tbody>
   </table>
 </div>
@@ -284,7 +284,7 @@ code { font-family: var(--font-mono); font-size: 0.85em; background: var(--accen
     </div>
     <div class="card">
       <h3>Markdown is the deliverable</h3>
-      <p>Files like <code>spec.md</code> and <code>tasks.md</code> are the durable spec — not chat summaries. Visual HTML companions are spatial aids; the markdown is the source.</p>
+      <p>Files like <code>specs.md</code> and <code>tasks.md</code> are the durable spec — not chat summaries. Visual HTML companions are spatial aids; the markdown is the source.</p>
     </div>
     <div class="card">
       <h3>User judgment via gates</h3>
@@ -292,7 +292,7 @@ code { font-family: var(--font-mono); font-size: 0.85em; background: var(--accen
     </div>
     <div class="card">
       <h3>Never commits</h3>
-      <p>Neither <code>/implement</code> nor <code>/implement-coach</code> runs <code>git commit</code>. The user reviews and commits when ready.</p>
+      <p>Neither <code>/code</code> nor <code>/coach</code> runs <code>git commit</code>. The user reviews and commits when ready.</p>
     </div>
   </div>
 </div>

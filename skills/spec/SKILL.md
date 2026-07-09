@@ -1,6 +1,6 @@
 ---
-name: specs
-description: Synthesize a feature spec from the current conversation context (typically a /grill session) and the codebase. Produces docs/features/<slug>/spec.md with user stories, decisions, and testing notes — no code snippets, no file paths. Supports annotation cycles. Based on Matt Pocock's to-prd skill.
+name: spec
+description: Synthesize a feature spec from the current conversation context (typically a /grill session) and the codebase. Produces docs/features/<slug>/specs.md with user stories, decisions, and testing notes — no code snippets, no file paths. Supports annotation cycles. Based on Matt Pocock's to-prd skill.
 argument-hint: [feature-description]
 ---
 
@@ -10,7 +10,7 @@ Synthesize a feature spec from the grill session and codebase. **Do NOT intervie
 
 ## Place in the /build Pipeline
 
-This is **Phase 2** of the `/build` pipeline. It assumes `/grill` (Phase 1) already happened — either in this conversation or recorded in `CONTEXT.md` / `docs/adr/`. If invoked standalone and the context feels thin, point the user at `/grill` instead. See [../shared/references/build-pipeline.md](../shared/references/build-pipeline.md) for the file conventions; write `spec.md` and `spec.html` into the feature directory (`docs/features/<YYYYMMDD-HHMM>-<slug>/`, created standalone if needed). Read [../shared/references/testable-interfaces.md](../shared/references/testable-interfaces.md) before sketching modules so the testing plan is derived from public interfaces, not delegated back to the user.
+This is **Phase 2** of the `/build` pipeline. It assumes `/grill` (Phase 1) already happened — either in this conversation or recorded in `CONTEXT.md` / `docs/adr/`. If invoked standalone and the context feels thin, point the user at `/grill` instead. See [../shared/references/build-pipeline.md](../shared/references/build-pipeline.md) for the file conventions; write `specs.md` and `specs.html` into the feature directory (`docs/features/<YYYYMMDD-HHMM>-<slug>/`, created standalone if needed). Read [../shared/references/testable-interfaces.md](../shared/references/testable-interfaces.md) before sketching modules so the testing plan is derived from public interfaces, not delegated back to the user.
 
 ## Rules Adherence
 
@@ -43,28 +43,28 @@ Wait for the answer before continuing. If they simply confirm, use the proposed 
 
 ### Step 3: Write the spec
 
-Synthesize `spec.md` using the structure in [references/spec-template.md](references/spec-template.md). Use `CONTEXT.md` vocabulary; reference ADRs by number.
+Synthesize `specs.md` using the structure in [references/spec-template.md](references/spec-template.md). Use `CONTEXT.md` vocabulary; reference ADRs by number.
 
 ### Step 4: Generate the visual spec
 
-Invoke the `visual-explainer` skill to produce `spec.html` in the feature directory (not `~/.agent/diagrams/`), and **open it in the browser**. The HTML must use "Spec" (not "Plan") in its `<title>` and `<h1>` (e.g. `<h1>Cursor Pagination — Spec</h1>`) and emphasize user stories, decisions, and module sketches — not file maps or code.
+Invoke the `visualize` skill to produce `specs.html` in the feature directory (not `~/.agent/diagrams/`), and **open it in the browser**. The HTML must use "Spec" (not "Plan") in its `<title>` and `<h1>` (e.g. `<h1>Cursor Pagination — Spec</h1>`) and emphasize user stories, decisions, and module sketches — not file maps or code.
 
 ### Step 5: Review and advance
 
-Review `spec.md` with the user using the protocol in [../shared/references/artifact-review.md](../shared/references/artifact-review.md). For a spec, default to **`//` annotations** — there's usually a lot to mark up inline. Point the user at what to check: missing or mis-stated user stories, implementation and testing decisions, and scope to cut. **Do not regenerate `spec.html` during the review** — work from `spec.md`; the open visual can lag until the cycles are done.
+Review `specs.md` with the user using the protocol in [../shared/references/artifact-review.md](../shared/references/artifact-review.md). For a spec, default to **`//` annotations** — there's usually a lot to mark up inline. Point the user at what to check: missing or mis-stated user stories, implementation and testing decisions, and scope to cut. **Do not regenerate `specs.html` during the review** — work from `specs.md`; the open visual can lag until the cycles are done.
 
-On the user's confirmation, regenerate `spec.html` once if the markdown changed (reopen it), then advance to the task breakdown:
+On the user's confirmation, regenerate `specs.html` once if the markdown changed (reopen it), then advance to the task breakdown:
 
-> **Spec ready** — visual at `<diagram-path>` (opened in your browser). Breaking it into tasks via `/tasks`.
+> **Spec ready** — visual at `<diagram-path>` (opened in your browser). Breaking it into tasks via `/todo`.
 
-Then proceed to `/tasks`.
+Then proceed to `/todo`.
 
 ## Important Guidelines
 
 - **Synthesize, don't interview.** If essential information is genuinely missing, ask one targeted question — don't re-run the grill.
 - **Use `CONTEXT.md` vocabulary.** If the glossary says "Customer", don't write "User" or "Account".
 - **No code snippets, no file paths** in the body (except the narrow exception in the template).
-- **Generate `spec.html` when `spec.md` is first written and open it** — don't regenerate during the review; regenerate once at the end only if the markdown changed (and later on implementation drift).
+- **Generate `specs.html` when `specs.md` is first written and open it** — don't regenerate during the review; regenerate once at the end only if the markdown changed (and later on implementation drift).
 - Keep the spec focused — suggest cutting scope if it grows too large.
 
 Ultrathink.

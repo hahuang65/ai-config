@@ -198,16 +198,16 @@ test_phase_grill() {
 }
 
 # ---------------------------------------------------------------------------
-# 5. Phase: specs
+# 5. Phase: spec
 # ---------------------------------------------------------------------------
 
-test_phase_specs() {
-  section "Phase: specs"
-  local file="$REPO_DIR/skills/specs/SKILL.md"
-  local label="skills/specs/SKILL.md"
+test_phase_spec() {
+  section "Phase: spec"
+  local file="$REPO_DIR/skills/spec/SKILL.md"
+  local label="skills/spec/SKILL.md"
   [[ -f "$file" ]] || { fail "$label" "file not found"; return; }
   local content
-  content="$(gather_skill_content specs)"
+  content="$(gather_skill_content spec)"
 
   check_content_cached "$content" "$label" "[Rr]ead [Cc]ontext"
   check_content_cached "$content" "$label" "CONTEXT\.md"
@@ -230,8 +230,8 @@ test_phase_specs() {
   check_content_cached "$content" "$label" "[Aa]nnotat"
   check_content_cached "$content" "$label" "[Aa]ddress"
   check_content_cached "$content" "$label" "//"
-  check_content_cached "$content" "$label" "visual-explainer"
-  check_content_cached "$content" "$label" "spec\.html"
+  check_content_cached "$content" "$label" "visualize"
+  check_content_cached "$content" "$label" "specs\.html"
 
   # Domain consultants: the module sketch consults the api-designer /
   # frontend-architect agents when the feature touches their domain.
@@ -243,13 +243,13 @@ test_phase_specs() {
 # 5b. Phase: tasks
 # ---------------------------------------------------------------------------
 
-test_phase_tasks() {
-  section "Phase: tasks"
-  local file="$REPO_DIR/skills/tasks/SKILL.md"
-  local label="skills/tasks/SKILL.md"
+test_phase_todo() {
+  section "Phase: todo"
+  local file="$REPO_DIR/skills/todo/SKILL.md"
+  local label="skills/todo/SKILL.md"
   [[ -f "$file" ]] || { fail "$label" "file not found"; return; }
   local content
-  content="$(gather_skill_content tasks)"
+  content="$(gather_skill_content todo)"
 
   check_content_cached "$content" "$label" "vertical slice|vertical-slice|tracer bullet"
   check_content_cached "$content" "$label" "[Hh]oriz" # rejects horizontal slices
@@ -260,14 +260,14 @@ test_phase_tasks() {
   check_content_cached "$content" "$label" "[Tt]est surface"
   check_content_cached "$content" "$label" "tasks\.md"
   check_content_cached "$content" "$label" "tasks\.html"
-  check_content_cached "$content" "$label" "visual-explainer"
+  check_content_cached "$content" "$label" "visualize"
 }
 
 # ---------------------------------------------------------------------------
-# 6. Phase: implement
+# 6. Phase: code
 # ---------------------------------------------------------------------------
 
-test_phase_implement_core() {
+test_phase_code_core() {
   local content="$1"
   local label="$2"
   check_content_cached "$content" "$label" "tasks\.md"
@@ -284,7 +284,7 @@ test_phase_implement_core() {
   check_content_cached "$content" "$label" "database-reviewer"
 }
 
-test_phase_implement_post() {
+test_phase_code_post() {
   local content="$1"
   local label="$2"
   check_content_cached "$content" "$label" "refactorer"
@@ -293,33 +293,33 @@ test_phase_implement_post() {
   check_content_cached "$content" "$label" "OWASP"
   check_content_cached "$content" "$label" "doc-updater"
   check_content_cached "$content" "$label" "fact-checker"
-  check_content_cached "$content" "$label" "spec\.html|tasks\.html"
+  check_content_cached "$content" "$label" "specs\.html|tasks\.html"
   check_content_cached "$content" "$label" "diff-review"
   check_content_cached "$content" "$label" "never commit|NEVER commit|do not commit"
 }
 
-test_phase_implement() {
-  section "Phase: implement"
-  local file="$REPO_DIR/skills/implement/SKILL.md"
-  local label="skills/implement/SKILL.md"
+test_phase_code() {
+  section "Phase: code"
+  local file="$REPO_DIR/skills/code/SKILL.md"
+  local label="skills/code/SKILL.md"
   [[ -f "$file" ]] || { fail "$label" "file not found"; return; }
   local content
-  content="$(gather_skill_content implement)"
-  test_phase_implement_core "$content" "$label"
-  test_phase_implement_post "$content" "$label"
+  content="$(gather_skill_content code)"
+  test_phase_code_core "$content" "$label"
+  test_phase_code_post "$content" "$label"
 }
 
 # ---------------------------------------------------------------------------
-# 6b. Phase: implement-coach
+# 6b. Phase: coach
 # ---------------------------------------------------------------------------
 
-test_phase_implement_coach() {
-  section "Phase: implement-coach"
-  local file="$REPO_DIR/skills/implement-coach/SKILL.md"
-  local label="skills/implement-coach/SKILL.md"
+test_phase_coach() {
+  section "Phase: coach"
+  local file="$REPO_DIR/skills/coach/SKILL.md"
+  local label="skills/coach/SKILL.md"
   [[ -f "$file" ]] || { fail "$label" "file not found"; return; }
   local content
-  content="$(gather_skill_content "implement-coach")"
+  content="$(gather_skill_content coach)"
 
   # Coaching-phase checks (vertical-slice TDD, one test at a time)
   check_content_cached "$content" "$label" "Coach the user"
@@ -341,34 +341,35 @@ test_phase_implement_coach() {
   check_content_cached "$content" "$label" "OWASP"
   check_content_cached "$content" "$label" "doc-updater"
   check_content_cached "$content" "$label" "fact-checker"
-  check_content_cached "$content" "$label" "spec\.html|tasks\.html"
+  check_content_cached "$content" "$label" "specs\.html|tasks\.html"
   check_content_cached "$content" "$label" "diff-review"
   check_content_cached "$content" "$label" "never commit|NEVER commit|do not commit"
 }
 
 # ---------------------------------------------------------------------------
-# 6c. Phase: implement-coach holding-line discipline
+# 6c. Phase: coach holding-line discipline
 #
 # Coach mode's load-bearing rule is "yielding to the user IS the deliverable".
 # A prior session rationalized its way out of waiting after the harness's
 # `N incomplete todos - reminder K/M` injection fired: it polled the user's
-# files for silent progress, then silently switched to /implement and took
+# files for silent progress, then silently switched to /code (then named
+# /implement) and took
 # over both tests and code. The skill grew a Holding-the-line / Todo-hygiene
 # section to forbid each of those moves. These assertions are the gate that
 # stops a future edit from softening or deleting that section.
 # ---------------------------------------------------------------------------
 
-test_phase_implement_coach_holding_line() {
-  section "Phase: implement-coach holding-line discipline"
-  local skill_file="$REPO_DIR/skills/implement-coach/SKILL.md"
-  local skill_label="skills/implement-coach/SKILL.md"
-  local cmd_file="$REPO_DIR/commands/implement-coach.md"
-  local cmd_label="commands/implement-coach.md"
+test_phase_coach_holding_line() {
+  section "Phase: coach holding-line discipline"
+  local skill_file="$REPO_DIR/skills/coach/SKILL.md"
+  local skill_label="skills/coach/SKILL.md"
+  local cmd_file="$REPO_DIR/commands/coach.md"
+  local cmd_label="commands/coach.md"
   [[ -f "$skill_file" ]] || { fail "$skill_label" "file not found"; return; }
   [[ -f "$cmd_file" ]] || { fail "$cmd_label" "file not found"; return; }
 
   local skill_content
-  skill_content="$(gather_skill_content "implement-coach")"
+  skill_content="$(gather_skill_content coach)"
 
   # One assertion per named rationalization. Phrasing is tight because the
   # failure mode is precise: drift here is almost always softening, not
@@ -378,7 +379,7 @@ test_phase_implement_coach_holding_line() {
   check_content_cached "$skill_content" "$skill_label" "[Nn]ever poll"
   check_content_cached "$skill_content" "$skill_label" "[Nn]ever switch modes unilaterally"
   check_content_cached "$skill_content" "$skill_label" "[Ss]ilence is not consent"
-  check_content_cached "$skill_content" "$skill_label" "switch to .?/implement"
+  check_content_cached "$skill_content" "$skill_label" "switch to .?/code"
   check_content_cached "$skill_content" "$skill_label" "Todo hygiene"
   check_content_cached "$skill_content" "$skill_label" "coach actions"
 
@@ -387,7 +388,7 @@ test_phase_implement_coach_holding_line() {
   local cmd_content
   cmd_content="$(cat "$cmd_file")"
   check_content_cached "$cmd_content" "$cmd_label" "[Ww]aiting is the deliverable"
-  check_content_cached "$cmd_content" "$cmd_label" "switch to .?/implement"
+  check_content_cached "$cmd_content" "$cmd_label" "switch to .?/code"
   check_content_cached "$cmd_content" "$cmd_label" "[Ss]ilence is not consent"
 }
 
@@ -501,7 +502,7 @@ test_retired_cleaners() {
     pass "agents/refactor-cleaner.md absent"
   fi
 
-  # The prd skill was renamed to specs; the artifact is spec.md/spec.html.
+  # The prd skill was renamed to specs; the artifact is specs.md/specs.html.
   if [[ -e "$REPO_DIR/skills/prd" || -e "$REPO_DIR/commands/prd.md" ]]; then
     fail "retired" "skills/prd or commands/prd.md still exists (renamed to specs)"
   else
@@ -521,6 +522,27 @@ test_retired_cleaners() {
   else
     fail "retired" "skills/review-code/SKILL.md or commands/review-code.md missing (replacement for improve-codebase)"
   fi
+
+  # The 2026-07 naming pass: short imperative verbs. specs->spec,
+  # tasks->todo, implement->code, implement-coach->coach,
+  # visual-explainer->visualize, diff-review->visualize-diff.
+  # Artifact names (specs.md, tasks.md, diff-review.html) are unchanged.
+  local old_name
+  for old_name in specs tasks implement implement-coach visual-explainer diff-review; do
+    if [[ -e "$REPO_DIR/skills/$old_name" || -e "$REPO_DIR/commands/$old_name.md" ]]; then
+      fail "retired" "skills/$old_name or commands/$old_name.md still exists (renamed in the verb naming pass)"
+    else
+      pass "skills/$old_name and commands/$old_name.md absent (renamed)"
+    fi
+  done
+  local new_name
+  for new_name in spec todo code coach visualize visualize-diff; do
+    if [[ -f "$REPO_DIR/skills/$new_name/SKILL.md" ]]; then
+      pass "skills/$new_name/SKILL.md exists"
+    else
+      fail "retired" "skills/$new_name/SKILL.md missing (target of the verb naming pass)"
+    fi
+  done
 
   # The fact-checker skill became an agent: verification needs no session
   # context, and independence from the session that authored the documents
@@ -613,7 +635,7 @@ test_phase_orchestrator() {
   content="$(gather_skill_content build)"
 
   check_content_cached "$content" "$label" "docs/features/"
-  for phase in grill specs tasks implement implement-coach review-code; do
+  for phase in grill spec todo code coach review-code; do
     check_content_cached "$content" "$label" "$phase"
   done
 
@@ -625,13 +647,13 @@ test_phase_orchestrator() {
     fail "$label" "'Wait for the user' appears $wait_count time(s), expected >= 2"
   fi
 
-  check_content_cached "$content" "$label" "visual-explainer"
+  check_content_cached "$content" "$label" "visualize"
   check_content_cached "$content" "$label" "diff-review"
 
   check_content_cached "$content" "$label" "Mandatory Phase Loading"
   check_content_cached "$content" "$label" "At the start of each phase"
   check_content_cached "$content" "$label" "available_skills"
-  for phase in grill specs tasks implement implement-coach review-code; do
+  for phase in grill spec todo code coach review-code; do
     check_content_cached "$content" "$label" "../$phase/SKILL\.md"
   done
 }
@@ -641,7 +663,7 @@ test_phase_orchestrator() {
 # ---------------------------------------------------------------------------
 
 check_skill_references_phases() {
-  for phase in grill specs tasks implement implement-coach review-code; do
+  for phase in grill spec todo code coach review-code; do
     local target="$REPO_DIR/skills/$phase/SKILL.md"
     if [[ -f "$target" ]]; then
       pass "skills/$phase/SKILL.md exists (referenced from build)"
@@ -669,7 +691,7 @@ check_agent_files_exist() {
 }
 
 check_ve_paths() {
-  local ve_dir="$REPO_DIR/skills/visual-explainer"
+  local ve_dir="$REPO_DIR/skills/visualize"
   local cmd_file
   for cmd_file in "$REPO_DIR"/commands/*.md; do
     local cmd_label="commands/$(basename "$cmd_file")"
@@ -679,20 +701,20 @@ check_ve_paths() {
     local ve_subpath
     while read -r ve_subpath; do
       [[ -z "$ve_subpath" ]] && continue
-      local rel_path="${ve_subpath#visual-explainer/}"
+      local rel_path="${ve_subpath#visualize/}"
       local target="$ve_dir/$rel_path"
       if [[ -f "$target" ]]; then
-        pass "skills/visual-explainer/$rel_path exists"
+        pass "skills/visualize/$rel_path exists"
       else
         fail "cross-ref" "$target not found (referenced from $cmd_label)"
       fi
-    done < <(echo "$content" | grep -oE "visual-explainer/(references|templates)/[a-z._-]+" | sort -u || true)
+    done < <(echo "$content" | grep -oE "visualize/(references|templates)/[a-z._-]+" | sort -u || true)
     # Check core.md
-    if [[ "$content" =~ visual-explainer/core\.md ]]; then
+    if [[ "$content" =~ visualize/core\.md ]]; then
       if [[ -f "$ve_dir/core.md" ]]; then
-        pass "skills/visual-explainer/core.md exists (referenced from $cmd_label)"
+        pass "skills/visualize/core.md exists (referenced from $cmd_label)"
       else
-        fail "cross-ref" "skills/visual-explainer/core.md not found"
+        fail "cross-ref" "skills/visualize/core.md not found"
       fi
     fi
   done
@@ -1107,7 +1129,7 @@ test_stale_stubs() {
   check_stale_in_dir "$REPO_DIR/agents" "agents"
   check_stale_in_dir "$REPO_DIR/commands" "commands"
   check_stale_in_dir "$REPO_DIR/rules" "rules"
-  check_stale_in_dir "$REPO_DIR/skills/visual-explainer/references" "skills/visual-explainer/references"
+  check_stale_in_dir "$REPO_DIR/skills/visualize/references" "skills/visualize/references"
   check_stale_in_dir "$REPO_DIR/skills/shared/references" "skills/shared/references"
 }
 
@@ -1305,11 +1327,11 @@ run_content() {
   run test_frontmatter_agents
   run test_frontmatter_commands
   run test_phase_grill
-  run test_phase_specs
-  run test_phase_tasks
-  run test_phase_implement
-  run test_phase_implement_coach
-  run test_phase_implement_coach_holding_line
+  run test_phase_spec
+  run test_phase_todo
+  run test_phase_code
+  run test_phase_coach
+  run test_phase_coach_holding_line
   run test_phase_review_code
   run test_agent_refactorer
   run test_retired_cleaners

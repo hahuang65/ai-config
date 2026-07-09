@@ -3,7 +3,7 @@ description: Full feature workflow — grill, draft a spec, break into vertical-
 ---
 Load the build skill, then build: $ARGUMENTS
 
-Follow the build skill workflow through all four phases. Because `/build` is only an orchestrator, load each phase skill's `SKILL.md` when entering that phase (`grill`, `specs`, `tasks`, then `implement` or `implement-coach`) and follow it; do not rely on whether the phase appears in an available-skills list.
+Follow the build skill workflow through all four phases. Because `/build` is only an orchestrator, load each phase skill's `SKILL.md` when entering that phase (`grill`, `spec`, `todo`, then `code` or `coach`) and follow it; do not rely on whether the phase appears in an available-skills list.
 
 1. **Grill** — interview the user, refine `CONTEXT.md` and ADRs inline, sharpen domain terminology
 2. **spec** — synthesize a spec from the grilling outcome, propose public-interface test surfaces, iterate through annotation cycles until approved

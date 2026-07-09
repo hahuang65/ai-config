@@ -1,6 +1,6 @@
 # Project Tooling & Verification Loop
 
-Shared reference for `implement`, `implement-coach`, and `refactor`. Defines how to detect a project's toolchain and the verification loop to run after changes.
+Shared reference for `code`, `coach`, and `refactor`. Defines how to detect a project's toolchain and the verification loop to run after changes.
 
 ## Detect the toolchain
 

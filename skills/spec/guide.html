@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>/specs Skill Guide</title>
+<title>/spec Skill Guide</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -75,18 +75,18 @@ code { font-family: var(--font-mono); font-size: 0.85em; background: var(--accen
 
 <div class="section">
   <div class="section-title"><span class="num">01</span>Place in the Pipeline</div>
-  <p style="font-size: 0.95rem; margin-bottom: 16px;">Phase 2 of <span class="cmd-tag">/build</span>. Inputs: <code>CONTEXT.md</code>, ADRs, prior conversation. Outputs: <code>spec.md</code> + <code>spec.html</code>.</p>
+  <p style="font-size: 0.95rem; margin-bottom: 16px;">Phase 2 of <span class="cmd-tag">/build</span>. Inputs: <code>CONTEXT.md</code>, ADRs, prior conversation. Outputs: <code>specs.md</code> + <code>specs.html</code>.</p>
   <div class="pre">/build "feature"
   ├── Phase 1: /grill
-  ├── Phase 2: /specs          ← YOU ARE HERE
-  ├── Phase 3: /tasks
-  └── Phase 4: /implement (or /implement-coach)</div>
+  ├── Phase 2: /spec          ← YOU ARE HERE
+  ├── Phase 3: /todo
+  └── Phase 4: /code (or /coach)</div>
 </div>
 
 <div class="section">
   <div class="section-title"><span class="num">02</span>Synthesize, Don't Re-Interview</div>
   <div class="callout warn">
-    <strong>Critical:</strong> grilling was the design phase. <span class="cmd-tag">/specs</span> transcribes its outcome — it does <em>NOT</em> re-interview the user. If essential information is genuinely missing, ask one targeted question. But don't re-run the grill session.
+    <strong>Critical:</strong> grilling was the design phase. <span class="cmd-tag">/spec</span> transcribes its outcome — it does <em>NOT</em> re-interview the user. If essential information is genuinely missing, ask one targeted question. But don't re-run the grill session.
   </div>
   <p style="font-size: 0.9rem; color: var(--text-dim); margin-top: 10px;">The one micro-checkpoint that <em>is</em> in this phase: after sketching the major modules, propose their test surfaces yourself and ask the user only to correct module boundaries or public-interface seams. Don't ask which modules need tests — deep modules answer that.</p>
   <p style="font-size: 0.9rem; color: var(--text-dim); margin-top: 10px;">Domain consultants: when the feature touches REST endpoints, the module sketch consults the <span class="agent-tag">api-designer</span> agent for the endpoint contract; when it adds or restructures UI, the <span class="agent-tag">frontend-architect</span> agent for component boundaries and state ownership. Skipped silently for features that touch neither.</p>
@@ -143,7 +143,7 @@ code { font-family: var(--font-mono); font-size: 0.85em; background: var(--accen
 
 <div class="section">
   <div class="section-title"><span class="num">06</span>Annotation Cycle</div>
-  <p style="font-size: 0.95rem; margin-bottom: 14px;">After writing <code>spec.md</code> and generating <code>spec.html</code>, STOP and wait. User adds <code>//</code> comments anywhere in the markdown:</p>
+  <p style="font-size: 0.95rem; margin-bottom: 14px;">After writing <code>specs.md</code> and generating <code>specs.html</code>, STOP and wait. User adds <code>//</code> comments anywhere in the markdown:</p>
   <div class="pre">## User Stories
 
 // also need: "as an admin, I want to revoke sessions"
@@ -153,20 +153,20 @@ code { font-family: var(--font-mono); font-size: 0.85em; background: var(--accen
 7. As a customer, I want to export to CSV...
 
 // this should reference ADR-0003, not 0002</div>
-  <p style="font-size: 0.9rem; color: var(--text-dim); margin-top: 14px;">For each annotation, the agent addresses it, updates <code>spec.md</code>, and removes the <code>//</code> comment — working from the markdown. The cycle repeats until the user is satisfied; <code>spec.html</code> is regenerated once at the end if the markdown changed, not per annotation.</p>
+  <p style="font-size: 0.9rem; color: var(--text-dim); margin-top: 14px;">For each annotation, the agent addresses it, updates <code>specs.md</code>, and removes the <code>//</code> comment — working from the markdown. The cycle repeats until the user is satisfied; <code>specs.html</code> is regenerated once at the end if the markdown changed, not per annotation.</p>
 </div>
 
 <div class="section">
   <div class="section-title"><span class="num">07</span>Visual Sync Guarantee</div>
   <div class="callout warn">
-    <strong>Build once, then leave it:</strong> <code>spec.html</code> is generated and opened when <code>spec.md</code> is first written. It is NOT regenerated during the review — the markdown is the source of truth, so the open visual may lag — then regenerated once before moving to <span class="cmd-tag">/tasks</span> if the markdown changed.
+    <strong>Build once, then leave it:</strong> <code>specs.html</code> is generated and opened when <code>specs.md</code> is first written. It is NOT regenerated during the review — the markdown is the source of truth, so the open visual may lag — then regenerated once before moving to <span class="cmd-tag">/todo</span> if the markdown changed.
   </div>
-  <p style="font-size: 0.9rem; color: var(--text-dim); margin-top: 10px;">Visual generation uses the <span class="cmd-tag">visual-explainer</span> skill. The HTML's <code>&lt;title&gt;</code> and <code>&lt;h1&gt;</code> must say "spec", not "Plan".</p>
+  <p style="font-size: 0.9rem; color: var(--text-dim); margin-top: 10px;">Visual generation uses the <span class="cmd-tag">visualize</span> skill. The HTML's <code>&lt;title&gt;</code> and <code>&lt;h1&gt;</code> must say "spec", not "Plan".</p>
 </div>
 
 <div class="section">
   <div class="section-title"><span class="num">08</span>Completion</div>
-  <p style="font-size: 0.95rem;">On the user's confirmation, regenerate <code>spec.html</code> once if the markdown changed, tell the user, and advance to <span class="cmd-tag">/tasks</span> — any go-ahead works; no exact phrase needed.</p>
+  <p style="font-size: 0.95rem;">On the user's confirmation, regenerate <code>specs.html</code> once if the markdown changed, tell the user, and advance to <span class="cmd-tag">/todo</span> — any go-ahead works; no exact phrase needed.</p>
 </div>
 
 </div>

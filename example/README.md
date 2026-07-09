@@ -24,7 +24,7 @@ example/
 ```
 
 
-> **Naming note:** this example was generated before the `prd` skill was renamed to `specs` — its artifacts keep their original `prd.md` / `prd.html` filenames as a historical record. The pipeline now writes `spec.md` / `spec.html`.
+> **Naming note:** this example was generated before the `prd` skill was renamed to `spec` — its artifacts keep their original `prd.md` / `prd.html` filenames as a historical record. The pipeline now writes `spec.md` / `spec.html`.
 
 ## Pipeline Overview
 
@@ -35,9 +35,9 @@ Phase 1: /grill     → CONTEXT.md (glossary)
                        docs/adr/ (decisions)
 Phase 2: /prd       → prd.md + prd.html
                        (↻ // annotation cycles)
-Phase 3: /tasks     → tasks.md + tasks.html
+Phase 3: /todo     → tasks.md + tasks.html
                        (↻ quiz-the-user cycles)
-Phase 4: /implement → code + diff-review.html
+Phase 4: /code → code + diff-review.html
         (vertical-slice TDD, one slice at a time)
 ```
 

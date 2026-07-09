@@ -31,14 +31,14 @@ The pipeline merges Boris Tane's research-first discipline with Matt Pocock's sk
   ├── Phase 1: /grill        → ./CONTEXT.md  (glossary)
   │                            ./docs/adr/    (ADRs — hard-to-reverse decisions)
   │
-  ├── Phase 2: /specs          → docs/features/<slug>/spec.md + spec.html
+  ├── Phase 2: /spec          → docs/features/<slug>/specs.md + specs.html
   │                            (annotation cycles via // comments)
   │
-  ├── Phase 3: /tasks        → docs/features/<slug>/tasks.md + tasks.html
+  ├── Phase 3: /todo        → docs/features/<slug>/tasks.md + tasks.html
   │                            (vertical-slice tracer bullets, HITL/AFK)
   │
-  ├── Phase 4: /implement         → AI writes test → AI writes impl → repeat
-  │     or    /implement-coach    → AI writes test → YOU write impl → AI verifies → repeat
+  ├── Phase 4: /code         → AI writes test → AI writes impl → repeat
+  │     or    /coach    → AI writes test → YOU write impl → AI verifies → repeat
   │                                 (diff-review.html)
   │
   └── Phase 5: /review-code       → architecture-reviewer agent on ONLY the changes
@@ -64,24 +64,24 @@ If a question can be answered by exploring the codebase, grill does so instead o
 
 ### Phase 2: Spec
 
-**Entry**: User says "draft the spec" or `/specs [description]`
+**Entry**: User says "draft the spec" or `/spec [description]`
 
 1. Reads `CONTEXT.md`, recent ADRs, and any prior session context
 2. **Does NOT re-interview** — grilling was the design phase; this transcribes its outcome
 3. Sketches major modules (deep-modules philosophy) and checks them with the user
-4. Writes `spec.md`
+4. Writes `specs.md`
    - Sections: Problem Statement, Solution, User Stories (extensive numbered list), Implementation Decisions, Testing Decisions, Out of Scope, Further Notes
    - **No code snippets, no file paths** (they go stale; spec is durable)
-5. Generates `spec.html` via visual-explainer (companion to `spec.md`)
+5. Generates `specs.html` via visualize (companion to `specs.md`)
 6. **STOPS — waits for user review**
-7. **Annotation cycle**: user adds `//` comments → agent addresses every note → updates `spec.md` → removes annotations → regenerates `spec.html`
+7. **Annotation cycle**: user adds `//` comments → agent addresses every note → updates `specs.md` → removes annotations → regenerates `specs.html`
 8. Repeats until user explicitly approves the spec
 
 ### Phase 3: Tasks
 
-**Entry**: User says "break it into tasks" or `/tasks [specs-dir]`
+**Entry**: User says "break it into tasks" or `/todo [spec-dir]`
 
-1. Reads the approved `spec.md`, `CONTEXT.md`, and relevant ADRs
+1. Reads the approved `specs.md`, `CONTEXT.md`, and relevant ADRs
 2. Drafts **vertical-slice tracer bullets** — each slice cuts through every layer end-to-end (schema, API, UI, tests) and is demoable on its own
 3. Marks each slice **HITL** (human-in-the-loop) or **AFK** (away-from-keyboard); prefers AFK
 4. Writes `tasks.md` (dependency order, blockers first), generates `tasks.html`, and opens it in the browser
@@ -91,13 +91,13 @@ If a question can be answered by exploring the codebase, grill does so instead o
 
 ### Phase 4: Implement (vertical-slice TDD)
 
-**Entry**: User says "implement" or `/implement [tasks-dir]` or `/implement-coach [tasks-dir]`
+**Entry**: User says "implement" or `/code [tasks-dir]` or `/coach [tasks-dir]`
 
 Both modes follow the same TDD philosophy: **vertical, never horizontal. One test → one implementation → repeat.** Tests written in batches upfront test *imagined* behavior, not *actual* behavior; this pattern is explicitly rejected.
 
 **Good tests** describe behavior through public interfaces; they survive refactors. **Bad tests** couple to implementation details, mock internal collaborators, or test private methods.
 
-#### AI Mode (`/implement`)
+#### AI Mode (`/code`)
 
 1. Reads `tasks.md` and works one slice at a time, in dependency order
 2. For each slice: confirms interface → RED→GREEN per acceptance criterion → refactor when GREEN → mark complete
@@ -108,12 +108,12 @@ Both modes follow the same TDD philosophy: **vertical, never horizontal. One tes
 7. Runs the **`refactorer` agent in hygiene mode** — dead code, unused imports & dependencies, duplication, simplification (SAFE applied, CAREFUL/RISKY reported)
 8. Runs **`code-reviewer` agent** — OWASP Top 10, confidence >80% threshold
 9. Runs **`doc-updater` agent** if APIs/architecture changed
-10. Runs the **`fact-checker` agent** on both `spec.md` and `tasks.md` — independent, cold-context verification
-11. **Refreshes `spec.html` and `tasks.html`** — mandatory regeneration to mirror finals
-12. **Generates `diff-review.html`** via visual-explainer, then runs the `fact-checker` agent on it
+10. Runs the **`fact-checker` agent** on both `specs.md` and `tasks.md` — independent, cold-context verification
+11. **Refreshes `specs.html` and `tasks.html`** — mandatory regeneration to mirror finals
+12. **Generates `diff-review.html`** via visualize, then runs the `fact-checker` agent on it
 13. **NEVER commits** — leaves that to the user
 
-#### Coach Mode (`/implement-coach`)
+#### Coach Mode (`/coach`)
 
 1. For each slice: AI confirms interface → AI writes ONE failing test → **user implements** → AI verifies → next test
 2. AI **never** writes implementation code during the coaching loop — the user does
@@ -159,7 +159,7 @@ The `git-commit` rule covers what to include: `CONTEXT.md` and `docs/adr/` ship 
 
 ### Legacy Example
 
-The [`example/`](example/) directory contains sample artifacts from a previous version of the pipeline (research → plan → implement). It's preserved as a stylistic reference for the annotation cycle and visual companions, but the new pipeline produces `spec.md` and `tasks.md` instead of `research.md` and `plan.md`. See [example/README.md](example/README.md) for a side-by-side note.
+The [`example/`](example/) directory contains sample artifacts from a previous version of the pipeline (research → plan → implement). It's preserved as a stylistic reference for the annotation cycle and visual companions, but the new pipeline produces `specs.md` and `tasks.md` instead of `research.md` and `plan.md`. See [example/README.md](example/README.md) for a side-by-side note.
 
 ## Skill / Rule / Agent Graph
 
@@ -172,10 +172,10 @@ The [`example/`](example/) directory contains sample artifacts from a previous v
 ├── specs (opus)
 │   ├── architect (opus, conditional) → design review
 │   ├── api-designer / frontend-architect (sonnet, conditional) → domain consult
-│   └── visual-explainer → spec.html
+│   └── visualize → specs.html
 │
 ├── tasks (opus)
-│   └── visual-explainer → tasks.html
+│   └── visualize → tasks.html
 │
 ├── implement (sonnet)
 │   ├── tdd-guide (sonnet) → vertical-slice TDD
@@ -183,13 +183,13 @@ The [`example/`](example/) directory contains sample artifacts from a previous v
 │   ├── refactorer (sonnet) → hygiene sweep: dead code, duplication
 │   ├── database-reviewer (sonnet) → conditional DB review
 │   ├── doc-updater (sonnet) → conditional doc updates
-│   └── visual-explainer → spec.html, tasks.html, diff-review.html
+│   └── visualize → specs.html, tasks.html, diff-review.html
 │
-└── implement-coach (sonnet)
+└── coach (sonnet)
     ├── AI writes ONE test at a time (no batching)
     ├── User implements; AI verifies
     ├── Refactor together when GREEN
-    └── visual-explainer → spec.html, tasks.html, diff-review.html
+    └── visualize → specs.html, tasks.html, diff-review.html
 
 Rules (6 advisory files). In Claude Code they auto-load as global instructions every turn; in oh-my-pi they load on demand from the rulebook via `rule://<name>`. All *enforcement* lives in the shared guard core (per ADR-0012), not in rules — see Guardrails below.
 Agents read a subset relevant to their role.
@@ -199,8 +199,8 @@ Agents read a subset relevant to their role.
 
 ```text
 .
-├── skills/           17 workflow skills (build, grill, specs, tasks, implement, implement-coach, ...)
-├── commands/         13 slash commands (/diff-review, /implement-coach, /pickup, ...)
+├── skills/           17 workflow skills (build, grill, specs, tasks, implement, coach, ...)
+├── commands/         13 slash commands (/visualize-diff, /coach, /pickup, ...)
 ├── agents/           7 sub-agents (architect, tdd-guide, code-reviewer, ...)
 ├── rules/            6 advisory rules (rulebook; all enforcement is in shared/)
 ├── harnesses/        Pluggable per-harness modules, each with a manifest.sh (ADR-0010)
@@ -230,10 +230,10 @@ Agents read a subset relevant to their role.
 |------|-------|------|
 | `build` | — | Orchestrator: coordinates grill → specs → tasks → implement |
 | `grill` | opus | Interview-driven domain modeling; updates `CONTEXT.md` + ADRs inline |
-| `specs` | opus | Synthesize a spec from grilling outcome; user-stories + decisions, no code |
-| `tasks` | opus | Break spec into vertical-slice tracer bullets; optional GitHub publish |
-| `implement` | sonnet | Execute approved tasks via vertical-slice TDD + multi-agent verification |
-| `implement-coach` | sonnet | Coach user through implementation; AI writes ONE test at a time |
+| `spec` | opus | Synthesize a spec from grilling outcome; user-stories + decisions, no code |
+| `todo` | opus | Break spec into vertical-slice tracer bullets; optional GitHub publish |
+| `code` | sonnet | Execute approved tasks via vertical-slice TDD + multi-agent verification |
+| `coach` | sonnet | Coach user through implementation; AI writes ONE test at a time |
 
 #### Standalone tools that pair with `/build`
 
@@ -244,14 +244,13 @@ Agents read a subset relevant to their role.
 | `prototype` | sonnet | Throwaway prototype to flesh out a design — terminal TUI for logic, or N UI variants on one route |
 | `handoff` | sonnet | Summarise the current session into a disposable handoff doc in the OS temp dir for another session |
 | `pickup` | sonnet | Resume work from a handoff doc — most recent by default, or one matched from an argument |
-| `fact-checker` | sonnet | Verify a spec/tasks/HTML doc against the codebase and correct it in place — runs in `/implement`'s review chain. Our own, not Claude's built-in `/fact-check` |
 
 #### Reference / utility
 
 | Name | Model (rec.) | Role |
 |------|-------|------|
-| `visual-explainer` | — | Generate self-contained HTML pages for visual explanations |
-| `diff-review` | — | Visual HTML diff review — before/after comparison + code-review analysis (also runs in `/implement`'s review chain) |
+| `visualize` | — | Generate self-contained HTML pages for visual explanations |
+| `visualize-diff` | — | Visual HTML diff review — before/after comparison + code-review analysis (also runs in `/code`'s review chain) |
 
 ### Commands
 
@@ -259,15 +258,15 @@ Agents read a subset relevant to their role.
 |---------|-------------|
 | `/build` | Full feature workflow — grill, spec, tasks, implement |
 | `/grill` | Interactive domain-modeling session (updates `CONTEXT.md` + ADRs) |
-| `/specs` | Synthesize a spec from current conversation; annotation cycles |
-| `/tasks` | Break a spec into vertical-slice tasks (reviewed locally) |
-| `/implement` | Execute approved tasks via vertical-slice TDD (AI implements) |
-| `/implement-coach` | Coach-guided implementation (AI writes one test, you write the code) |
+| `/spec` | Synthesize a spec from current conversation; annotation cycles |
+| `/todo` | Break a spec into vertical-slice tasks (reviewed locally) |
+| `/code` | Execute approved tasks via vertical-slice TDD (AI implements) |
+| `/coach` | Coach-guided implementation (AI writes one test, you write the code) |
 | `/review-code` | Architectural review — no args: entire codebase; args: that area; HTML report + grilling loop |
 | `/prototype` | Throwaway prototype (logic TUI or UI variants) to flesh out a design |
 | `/handoff` | Write a handoff doc to OS temp dir for another agent session |
 | `/pickup` | Resume from a handoff doc (most recent by default, or matched from an argument) |
-| `/diff-review` | Visual HTML diff review — before/after architecture comparison |
+| `/visualize-diff` | Visual HTML diff review — before/after architecture comparison |
 | `/plan-review` | Visual HTML: current state vs. proposed implementation |
 | `/project-recap` | Visual HTML: rebuild mental model of project state |
 
@@ -277,13 +276,13 @@ Agents read a subset relevant to their role.
 |------|-------|------|------------|
 | `architect` | opus | System design, trade-offs, architecture review | coding-style, performance, security |
 | `architecture-reviewer` | opus | Discovery engine for `/review-code` — walks a scope, returns deepening candidates (deletion test, depth/seams/locality) | coding-style, performance |
-| `api-designer` | sonnet | REST endpoint contracts: resources, status codes, pagination, versioning — consulted by `/specs` when a feature touches the API | coding-style, security, performance |
-| `frontend-architect` | sonnet | Component boundaries, state ownership, data fetching, a11y baseline — consulted by `/specs` when a feature touches UI | coding-style, performance, security |
+| `api-designer` | sonnet | REST endpoint contracts: resources, status codes, pagination, versioning — consulted by `/spec` when a feature touches the API | coding-style, security, performance |
+| `frontend-architect` | sonnet | Component boundaries, state ownership, data fetching, a11y baseline — consulted by `/spec` when a feature touches UI | coding-style, performance, security |
 | `tdd-guide` | sonnet | Red-green-refactor TDD execution | testing, coding-style |
 | `code-reviewer` | sonnet | OWASP Top 10 + quality review (>80% confidence) | coding-style, testing, security, performance |
 | `database-reviewer` | sonnet | Query optimization, schema, DB security | security, performance |
 | `doc-updater` | sonnet | Keep documentation in sync with code | git-commit |
-| `fact-checker` | sonnet | Independent verification of spec/tasks/HTML docs against code and git history — corrects drift in place (review-chain step; our own, not Claude's built-in `/fact-check`) | git-commit |
+| `fact-checker` | sonnet | Independent verification of specs/tasks/HTML docs against code and git history — corrects drift in place (review-chain step; our own, not Claude's built-in `/fact-check`) | git-commit |
 | `refactorer` | sonnet | The engine for behavior-preserving change: plan mode (approved transformation plans) + hygiene mode (dead code, unused deps, duplication — the review chain's Refactor step) | coding-style, performance, security, testing |
 
 ### Rules
@@ -355,7 +354,7 @@ This repository serves three AI coding harnesses with different runtime models. 
 Finally it sets `core.hooksPath` to `.githooks`. The guard core in `shared/` is resolved by the adapters via symlink realpath, so it is not separately mirrored.
 7. **oh-my-pi** → `omp/config.yml` symlinked to `~/.omp/agent/config.yml`, plus `skills/`, `commands/`, `agents/`, `rules/` symlinked into `~/.omp/agent/` (all commands installed — the Claude duality skip-rule does not apply)
 
-The command/skill duality means that commands sharing a name with a skill (`build`, `grill`, `specs`, `tasks`, `implement`, `implement-coach`, `refactor`) are skipped for Claude Code (where skills take precedence) but installed for oh-my-pi (which reads all commands).
+The command/skill duality means that commands sharing a name with a skill (`build`, `grill`, `spec`, `todo`, `code`, `coach`, `refactor`) are skipped for Claude Code (where skills take precedence) but installed for oh-my-pi (which reads all commands).
 
 ## Infrastructure
 
@@ -385,8 +384,8 @@ shows every individual check). The `test/content` + `test/install` categories
 This project stands on the shoulders of others:
 
 - **[Boris Tane's Claude Code workflow](https://boristane.com/blog/how-i-use-claude-code/)** — The annotation-cycle discipline, the "think before you code" guardrails, and the markdown-as-shared-state philosophy at the heart of `/build` originate from Boris's research → plan → implement method. This project's first pipeline was a direct port of his approach.
-- **[Matt Pocock's skills-TDD pipeline](https://www.aihero.dev/skills-tdd)** and the broader [skills repo](https://github.com/mattpocock/skills) — the core pipeline (`grill-with-docs → to-prd → to-issues → tdd`) and Matt's stance on vertical-slice TDD ("write one test, one implementation, repeat — batched tests describe imagined behavior, not actual behavior") drive the design of `/grill`, `/specs`, `/tasks`, and the vertical-slice rewrites of `/implement` and `/implement-coach`. The standalone tools `/handoff` ([article](https://www.aihero.dev/skills-handoff)), `/prototype`, and `/review-code` (renamed from `improve-codebase-architecture`) are also ports of Matt's skills, with internal references rewritten to match this repo's naming. The format files (CONTEXT-FORMAT.md, ADR-FORMAT.md) and the LANGUAGE/DEEPENING/HTML-REPORT/INTERFACE-DESIGN supporting docs are taken directly from his repo.
-- **[nicobailon/visual-explainer](https://github.com/nicobailon/visual-explainer)** — The `visual-explainer` skill is taken wholesale from this repository, with only minor modifications. All the HTML visual generation (spec, tasks, diff-review, architecture diagrams, slides, etc.) is powered by this work.
+- **[Matt Pocock's skills-TDD pipeline](https://www.aihero.dev/skills-tdd)** and the broader [skills repo](https://github.com/mattpocock/skills) — the core pipeline (`grill-with-docs → to-prd → to-issues → tdd`) and Matt's stance on vertical-slice TDD ("write one test, one implementation, repeat — batched tests describe imagined behavior, not actual behavior") drive the design of `/grill`, `/spec`, `/todo`, and the vertical-slice rewrites of `/code` and `/coach`. The standalone tools `/handoff` ([article](https://www.aihero.dev/skills-handoff)), `/prototype`, and `/review-code` (renamed from `improve-codebase-architecture`) are also ports of Matt's skills, with internal references rewritten to match this repo's naming. The format files (CONTEXT-FORMAT.md, ADR-FORMAT.md) and the LANGUAGE/DEEPENING/HTML-REPORT/INTERFACE-DESIGN supporting docs are taken directly from his repo.
+- **[nicobailon/visual-explainer](https://github.com/nicobailon/visual-explainer)** — The `visualize` skill (renamed from `visual-explainer`) is taken wholesale from this repository, with only minor modifications. All the HTML visual generation (spec, tasks, diff-review, architecture diagrams, slides, etc.) is powered by this work.
 - **[affaan-m/everything-claude-code](https://github.com/affaan-m/everything-claude-code)** — The rules and agent definitions in this repo are borrowed and adapted from this collection. The coding-style, testing, security, and performance rules, as well as the agent configurations (architect, tdd-guide, code-reviewer, etc.), draw heavily from this source.
 - **[can1357/oh-my-pi](https://github.com/can1357/oh-my-pi)** ([docs](https://omp.sh/docs)) — The second harness this repo configures. The **TTSR** (time-traveling stream rules) concept — mid-stream regex-triggered rule injection with stream-abort + retry — was oh-my-pi's contribution to the cross-harness rule shape; it carried the command/content enforcement rules until [ADR-0012](docs/adr/0012-consolidate-enforcement-retire-ttsr.md) consolidated them into the shared guard core and retired TTSR. The YAML-based extension / hook / skill model oh-my-pi uses informed how this repo's per-harness boundaries got drawn (see [ADR-0004](docs/adr/0004-omp-permissions-and-hooks-decoupled.md) and [ADR-0005](docs/adr/0005-flat-shared-config-no-per-harness-scoping.md)).
 - **[pi (badlogic/earendil-works)](https://pi.dev)** — The third harness this repo configures (`@earendil-works/pi-coding-agent`, config root `~/.pi/agent`). pi's `tool_call` extension API is near-identical to oh-my-pi's hook API, so its guardrail adapter is a thin twin routing the shared guard core; its single-file `AGENTS.md` context model is why advisory rules reach it as a generated concatenation ([ADR-0013](docs/adr/0013-advisory-rules-project-into-pi-as-gated-concatenation.md)).

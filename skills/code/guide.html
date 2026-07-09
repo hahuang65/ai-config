@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>/implement Skill Guide</title>
+<title>/code Skill Guide</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -108,8 +108,8 @@ code { font-family: var(--font-mono); font-size: 0.85em; background: var(--accen
 <div class="container">
 
 <div class="header">
-  <h1><span>/</span>implement &amp; <span>/</span>implement-coach</h1>
-  <p class="subtitle">Vertical-slice TDD execution of an approved <code>tasks.md</code>. One test, one implementation, repeat. Coach mode lets the user write the code; AI writes one test at a time. Inputs: <code>spec.md</code> + <code>tasks.md</code>.</p>
+  <h1><span>/</span>implement &amp; <span>/</span>coach</h1>
+  <p class="subtitle">Vertical-slice TDD execution of an approved <code>tasks.md</code>. One test, one implementation, repeat. Coach mode lets the user write the code; AI writes one test at a time. Inputs: <code>specs.md</code> + <code>tasks.md</code>.</p>
   <div class="cycle">
     <span class="cycle-step red">RED</span>
     <span class="cycle-arrow">→</span>
@@ -125,8 +125,8 @@ code { font-family: var(--font-mono); font-size: 0.85em; background: var(--accen
   <table>
     <thead><tr><th>Mode</th><th>Who writes the test</th><th>Who writes the impl</th><th>Cadence</th></tr></thead>
     <tbody>
-      <tr><td><span class="cmd-tag">/implement</span></td><td>AI</td><td>AI</td><td>Per slice: AI does RED→GREEN→REFACTOR, marks complete, moves on</td></tr>
-      <tr><td><span class="cmd-tag">/implement-coach</span></td><td>AI</td><td><strong>User</strong></td><td>AI writes ONE test → user codes → AI verifies → AI writes next test</td></tr>
+      <tr><td><span class="cmd-tag">/code</span></td><td>AI</td><td>AI</td><td>Per slice: AI does RED→GREEN→REFACTOR, marks complete, moves on</td></tr>
+      <tr><td><span class="cmd-tag">/coach</span></td><td>AI</td><td><strong>User</strong></td><td>AI writes ONE test → user codes → AI verifies → AI writes next test</td></tr>
     </tbody>
   </table>
   <p style="margin-top:14px; font-size:0.9rem; color: var(--text-dim);">Both modes use the same TDD philosophy. Coach mode hands the keyboard to the user during the GREEN step.</p>
@@ -212,9 +212,9 @@ RED→GREEN: test3 → impl3
       <tr><td><span class="agent-tag">refactorer</span> (hygiene mode)</td><td>Always — dead code, unused imports &amp; dependencies, duplication, simplification; SAFE applied, CAREFUL/RISKY reported</td><td><span class="must-tag">MUST</span></td></tr>
       <tr><td><span class="agent-tag">code-reviewer</span></td><td>Always — OWASP Top 10, &gt;80% confidence</td><td><span class="must-tag">MUST</span></td></tr>
       <tr><td><span class="agent-tag">doc-updater</span></td><td>If features / APIs / architecture changed</td><td><span class="cond-tag">CONDITIONAL</span></td></tr>
-      <tr><td><span class="agent-tag">fact-checker</span> on <code>spec.md</code> &amp; <code>tasks.md</code></td><td>Always — catch drift between docs and code</td><td><span class="must-tag">MUST</span></td></tr>
-      <tr><td>Refresh <code>spec.html</code> + <code>tasks.html</code></td><td>Always — visual sync guarantee</td><td><span class="must-tag">MUST</span></td></tr>
-      <tr><td><span class="cmd-tag">/diff-review</span> → <code>diff-review.html</code></td><td>If <code>visual-explainer</code> is installed</td><td><span class="cond-tag">CONDITIONAL</span></td></tr>
+      <tr><td><span class="agent-tag">fact-checker</span> on <code>specs.md</code> &amp; <code>tasks.md</code></td><td>Always — catch drift between docs and code</td><td><span class="must-tag">MUST</span></td></tr>
+      <tr><td>Refresh <code>specs.html</code> + <code>tasks.html</code></td><td>Always — visual sync guarantee</td><td><span class="must-tag">MUST</span></td></tr>
+      <tr><td><span class="cmd-tag">/visualize-diff</span> → <code>diff-review.html</code></td><td>If <code>visualize</code> is installed</td><td><span class="cond-tag">CONDITIONAL</span></td></tr>
     </tbody>
   </table>
   <p style="margin-top:14px; font-size:0.9rem; color: var(--text-dim);">In coach mode, <span class="agent-tag">database-reviewer</span> and <span class="agent-tag">code-reviewer</span> findings are surfaced to the user to fix (they own the code). Other cleanup is AI-driven.</p>

@@ -1,6 +1,6 @@
 # Spec Template
 
-Write `spec.md` using this structure. Use `CONTEXT.md` vocabulary throughout. No code snippets or file paths in the body (except the narrow exception in Implementation Decisions).
+Write `specs.md` using this structure. Use `CONTEXT.md` vocabulary throughout. No code snippets or file paths in the body (except the narrow exception in Implementation Decisions).
 
 ```markdown
 # {Feature Name} — Spec

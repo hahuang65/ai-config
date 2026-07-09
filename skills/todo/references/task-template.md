@@ -5,7 +5,7 @@ Write `tasks.md` using this structure. Number slices in dependency order (blocke
 ```markdown
 # {Feature Name} — Tasks
 
-Source spec: [spec.md](./spec.md)
+Source spec: [specs.md](./specs.md)
 
 ## Slice 1: {Short descriptive title}
 

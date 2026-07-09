@@ -20,12 +20,12 @@ Do NOT duplicate content from specs, plans, ADRs, issues, commits, or diffs
 <Skills the next session should invoke, in the order they make sense.
 Example:
 - /grill — to refine domain terminology around X before drafting
-- /specs — once the design is settled
-- /implement — once tasks are approved>
+- /spec — once the design is settled
+- /code — once tasks are approved>
 
 ## Pointers (not duplicated content)
 
-- spec: docs/features/<slug>/spec.md
+- spec: docs/features/<slug>/specs.md
 - Tasks: docs/features/<slug>/tasks.md
 - ADRs touched: docs/adr/0007-...
 - Recent diff: git log -p <sha>..<sha>

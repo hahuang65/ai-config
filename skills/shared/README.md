@@ -2,7 +2,7 @@
 
 This directory is **not a skill** — it has no `SKILL.md`. It holds reference files imported by **more than one** skill, so the detail lives in exactly one place.
 
-Skills import these by relative path, e.g. from `skills/specs/SKILL.md`:
+Skills import these by relative path, e.g. from `skills/spec/SKILL.md`:
 
 ```
 ../shared/references/build-pipeline.md
@@ -10,13 +10,13 @@ Skills import these by relative path, e.g. from `skills/specs/SKILL.md`:
 
 | File | Imported by |
 |------|-------------|
-| `references/build-pipeline.md` | build, grill, specs, tasks, implement, implement-coach |
+| `references/build-pipeline.md` | build, grill, specs, tasks, implement, coach |
 | `references/artifact-review.md` | specs, tasks |
-| `references/tdd-protocol.md` | implement, implement-coach |
-| `references/testable-interfaces.md` | specs, tasks, implement, implement-coach |
-| `references/tooling.md` | implement, implement-coach, refactor |
-| `references/review-chain.md` | implement, implement-coach |
-| `references/implementation-completion.md` | implement, implement-coach |
+| `references/tdd-protocol.md` | implement, coach |
+| `references/testable-interfaces.md` | specs, tasks, implement, coach |
+| `references/tooling.md` | implement, coach, refactor |
+| `references/review-chain.md` | implement, coach |
+| `references/implementation-completion.md` | implement, coach |
 | `references/context-format.md` | grill, review-code |
 | `references/adr-format.md` | grill, review-code, prototype |
 

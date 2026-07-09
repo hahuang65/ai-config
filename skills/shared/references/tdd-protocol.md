@@ -1,6 +1,6 @@
 # TDD Protocol
 
-Shared reference for `implement` and `implement-coach`. Both run strict vertical-slice TDD — the only difference is who writes the implementation code (the AI in `/implement`; the user in `/implement-coach`).
+Shared reference for `code` and `coach`. Both run strict vertical-slice TDD — the only difference is who writes the implementation code (the AI in `/code`; the user in `/coach`).
 
 ## Philosophy
 

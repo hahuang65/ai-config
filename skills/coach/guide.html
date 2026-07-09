@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>/implement-coach Skill Guide</title>
+<title>/coach Skill Guide</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -91,7 +91,7 @@ code { font-family: var(--font-mono); font-size: 0.85em; background: var(--accen
 <div class="container">
 
 <div class="header">
-  <h1><span>/</span>implement-coach</h1>
+  <h1><span>/</span>coach</h1>
   <p class="subtitle">Vertical-slice TDD where <strong>the user writes the code</strong>. AI writes ONE failing test, waits, verifies, writes the next. No batched tests, no AI-authored implementation during the coaching loop.</p>
 </div>
 
@@ -209,8 +209,8 @@ code { font-family: var(--font-mono); font-size: 0.85em; background: var(--accen
       <tr><td><span class="agent-tag">code-reviewer</span></td><td><strong>User fixes</strong> CRITICAL/HIGH findings</td><td><span class="must-tag">MUST</span></td></tr>
       <tr><td><span class="agent-tag">doc-updater</span></td><td>AI handles directly</td><td><span class="cond-tag">CONDITIONAL</span></td></tr>
       <tr><td><span class="agent-tag">fact-checker</span> on spec &amp; tasks</td><td>AI handles directly</td><td><span class="must-tag">MUST</span></td></tr>
-      <tr><td>Refresh <code>spec.html</code> + <code>tasks.html</code></td><td>AI handles directly</td><td><span class="must-tag">MUST</span></td></tr>
-      <tr><td><span class="cmd-tag">/diff-review</span> → <code>diff-review.html</code></td><td>AI handles directly</td><td><span class="cond-tag">CONDITIONAL</span></td></tr>
+      <tr><td>Refresh <code>specs.html</code> + <code>tasks.html</code></td><td>AI handles directly</td><td><span class="must-tag">MUST</span></td></tr>
+      <tr><td><span class="cmd-tag">/visualize-diff</span> → <code>diff-review.html</code></td><td>AI handles directly</td><td><span class="cond-tag">CONDITIONAL</span></td></tr>
     </tbody>
   </table>
   <p style="margin-top:14px; font-size:0.9rem; color: var(--text-dim);"><strong>Coaching philosophy:</strong> the user owns the implementation code, so anything that requires editing implementation code is on them. Cleanup that doesn't touch implementation logic (visual sync, docs, fact-checking) is AI-driven.</p>

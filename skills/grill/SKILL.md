@@ -55,7 +55,7 @@ The grill phase is done when the user is satisfied with the shared understanding
 > - `docs/adr/` with <n> new ADR(s): <list>
 >   *(or "no new ADRs — none of today's decisions met the hard-to-reverse + surprising + real-trade-off bar")*
 >
-> When you're ready, just confirm and I'll draft the spec, synthesizing what we discussed via `/specs`.
+> When you're ready, just confirm and I'll draft the spec, synthesizing what we discussed via `/spec`.
 
 Do NOT start drafting the spec until the user confirms. Any response that signals approval counts — there's no exact phrase to wait for. The grilling conversation IS the design phase — the spec just transcribes its outcome.
 

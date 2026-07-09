@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>/tasks Skill Guide</title>
+<title>/todo Skill Guide</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -85,12 +85,12 @@ code { font-family: var(--font-mono); font-size: 0.85em; background: var(--accen
 
 <div class="section">
   <div class="section-title"><span class="num">01</span>Place in the Pipeline</div>
-  <p style="font-size: 0.95rem; margin-bottom: 16px;">Phase 3 of <span class="cmd-tag">/build</span>. Inputs: <code>spec.md</code>, <code>CONTEXT.md</code>, ADRs. Outputs: <code>tasks.md</code> + <code>tasks.html</code>.</p>
+  <p style="font-size: 0.95rem; margin-bottom: 16px;">Phase 3 of <span class="cmd-tag">/build</span>. Inputs: <code>specs.md</code>, <code>CONTEXT.md</code>, ADRs. Outputs: <code>tasks.md</code> + <code>tasks.html</code>.</p>
   <div class="pre">/build "feature"
   ├── Phase 1: /grill
-  ├── Phase 2: /specs
-  ├── Phase 3: /tasks         ← YOU ARE HERE
-  └── Phase 4: /implement (or /implement-coach)</div>
+  ├── Phase 2: /spec
+  ├── Phase 3: /todo         ← YOU ARE HERE
+  └── Phase 4: /code (or /coach)</div>
 </div>
 
 <div class="section">
@@ -161,10 +161,10 @@ includes the new Order ID.
   <table>
     <thead><tr><th>Step</th><th>Action</th></tr></thead>
     <tbody>
-      <tr><td>1. Gather context</td><td>Read <code>spec.md</code>, <code>CONTEXT.md</code>, relevant ADRs. Explore code if not yet done.</td></tr>
+      <tr><td>1. Gather context</td><td>Read <code>specs.md</code>, <code>CONTEXT.md</code>, relevant ADRs. Explore code if not yet done.</td></tr>
       <tr><td>2. Draft slices</td><td>Vertical only. Each slice cuts through every layer. Carry forward the spec's public-interface test surface. Mark HITL/AFK. Order by dependency (blockers first).</td></tr>
       <tr><td>3. Write <code>tasks.md</code></td><td>One slice per section, with Type/Blocked-by/User-stories-covered/Test-surface headers and an acceptance-criteria checklist.</td></tr>
-      <tr><td>4. Generate <code>tasks.html</code></td><td>Via the <span class="cmd-tag">visual-explainer</span> skill; open it in the browser. Emphasizes the dependency graph, HITL/AFK split, and user-story coverage.</td></tr>
+      <tr><td>4. Generate <code>tasks.html</code></td><td>Via the <span class="cmd-tag">visualize</span> skill; open it in the browser. Emphasizes the dependency graph, HITL/AFK split, and user-story coverage.</td></tr>
       <tr><td>5. Review</td><td>Present the numbered list; ask granularity / dependencies / HITL-AFK / coverage (or accept <code>//</code> annotations in <code>tasks.md</code>). Address feedback, re-present. Work from <code>tasks.md</code> — the visual is not regenerated mid-review.</td></tr>
       <tr><td>6. Finalize</td><td>On confirmation, regenerate <code>tasks.html</code> once if it changed, report counts, advance to implementation.</td></tr>
     </tbody>
@@ -173,7 +173,7 @@ includes the new Order ID.
 
 <div class="section">
   <div class="section-title"><span class="num">06</span>Completion</div>
-  <p style="font-size: 0.95rem;">On the user's confirmation, regenerate <code>tasks.html</code> once if it changed, report the counts, and advance to Phase 4 (<span class="cmd-tag">/implement</span> or <span class="cmd-tag">/implement-coach</span>) — any go-ahead works; no exact phrase needed.</p>
+  <p style="font-size: 0.95rem;">On the user's confirmation, regenerate <code>tasks.html</code> once if it changed, report the counts, and advance to Phase 4 (<span class="cmd-tag">/code</span> or <span class="cmd-tag">/coach</span>) — any go-ahead works; no exact phrase needed.</p>
 </div>
 
 </div>

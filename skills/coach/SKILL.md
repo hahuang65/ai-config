@@ -1,6 +1,6 @@
 ---
-name: implement-coach
-description: Coach the user through implementing approved vertical-slice tasks. The AI writes ONE test at a time and waits for the user to implement; never batches tests upfront. Use after /tasks has produced an approved tasks.md and the user wants to write the code themselves.
+name: coach
+description: Coach the user through implementing approved vertical-slice tasks. The AI writes ONE test at a time and waits for the user to implement; never batches tests upfront. Use after /todo has produced an approved tasks.md and the user wants to write the code themselves.
 argument-hint: [feature-dir-or-slug]
 ---
 
@@ -24,8 +24,8 @@ Hard rules — no rationale ("pragmatic", "the system is pushing me to continue"
 
 - **Incomplete-criteria reminders are not advance signals.** Reminders enumerating remaining acceptance criteria — including the harness's `N incomplete todos - reminder K/M` injection — are expected. The remaining criteria belong to the user and stay open by design until each RED→GREEN cycle completes. Acknowledge them in your head; do nothing.
 - **Never poll the user's files to "discover" silent progress.** If the user has not signalled ready-to-check, they are not done. Reading their implementation files to guess whether they quietly implemented the slice is forbidden — it is the first step of taking over work they intended to do.
-- **Never switch modes unilaterally.** The only exits from the waiting state are: (1) the user signals ready-to-check ("check", "verify", "ready", or equivalent sentiment), (2) the user explicitly hands over the keyboard ("switch to /implement", "take over", or equivalent), or (3) the user asks a question you can answer without writing implementation code. Silence is not consent to take over.
-- **If you have offered the `/implement` switch once, do not re-offer it.** Repeating the offer turns waiting into nagging.
+- **Never switch modes unilaterally.** The only exits from the waiting state are: (1) the user signals ready-to-check ("check", "verify", "ready", or equivalent sentiment), (2) the user explicitly hands over the keyboard ("switch to /code", "take over", or equivalent), or (3) the user asks a question you can answer without writing implementation code. Silence is not consent to take over.
+- **If you have offered the `/code` switch once, do not re-offer it.** Repeating the offer turns waiting into nagging.
 
 If the user has been silent across multiple reminders, the correct move is to **stay silent**. Their absence is not a problem you are responsible for solving. When they return they will type `check` or change the contract.
 
@@ -61,7 +61,7 @@ For each acceptance criterion:
 
 ## Process
 
-1. **Read context** — `tasks.md`, the linked `spec.md`, `CONTEXT.md`, ADRs. Announce the plan: one slice at a time, one test at a time; confirm Slice 1's interface before writing any test.
+1. **Read context** — `tasks.md`, the linked `specs.md`, `CONTEXT.md`, ADRs. Announce the plan: one slice at a time, one test at a time; confirm Slice 1's interface before writing any test.
 
 2. **For each slice (dependency order):**
    - **Confirm interface** — present the proposed public interface from the slice's Test surface and the spec's Testing Decisions (deep, not shallow). This is a seam check, not a request for the user to decide whether tests are needed. Wait for the user's confirmation before writing any test.
@@ -73,7 +73,7 @@ For each acceptance criterion:
 
 3. **Verification loop** — after all slices, run type check, lint, full test suite, and build per [../shared/references/tooling.md](../shared/references/tooling.md). Guide the user through any fixes until all pass.
 
-4. **Post-implementation review chain** — run the steps in [../shared/references/review-chain.md](../shared/references/review-chain.md): `database-reviewer` (conditional), `refactorer` (hygiene mode), `code-reviewer`, `doc-updater` (conditional), `fact-checker`, visual refresh, `/diff-review`. **Coaching rule:** surface findings and guide the user to fix the ones they own (the implementation code) — apply mechanical cleanup, documentation, and visuals directly yourself; surface the hygiene sweep's CAREFUL/RISKY findings for the user to decide.
+4. **Post-implementation review chain** — run the steps in [../shared/references/review-chain.md](../shared/references/review-chain.md): `database-reviewer` (conditional), `refactorer` (hygiene mode), `code-reviewer`, `doc-updater` (conditional), `fact-checker`, visual refresh, `/visualize-diff`. **Coaching rule:** surface findings and guide the user to fix the ones they own (the implementation code) — apply mechanical cleanup, documentation, and visuals directly yourself; surface the hygiene sweep's CAREFUL/RISKY findings for the user to decide.
 
 ## Completion
 
@@ -84,7 +84,7 @@ Wrap up per [../shared/references/implementation-completion.md](../shared/refere
 1. **One test at a time. Never write tests in batches.**
 2. **Guide, don't implement.** During the slice loop you write tests; the user writes code. Provide hints, explain APIs, point at examples — but do not write the fix.
 3. **Test through the interface.** Behavior, not implementation.
-4. **Be patient — silently.** Wait for the user. Do not write the next test, do not poll their files for hidden progress, do not switch to `/implement` because reminders fire or the room goes quiet. The only exit from the waiting state is an explicit user signal (see *Holding the line*).
+4. **Be patient — silently.** Wait for the user. Do not write the next test, do not poll their files for hidden progress, do not switch to `/code` because reminders fire or the room goes quiet. The only exit from the waiting state is an explicit user signal (see *Holding the line*).
 5. **`CONTEXT.md` vocabulary everywhere** — test names, helper names, error messages.
 6. **Post-completion cleanup is AI-driven** — once tests pass and verification is clean, the AI handles cleanup, docs, and visuals directly; `database-reviewer` / `code-reviewer` findings are the exception (surfaced and guided, since the user owns the code).
 7. **NEVER commit to version control** — no `git add`, `git commit`, or `git push`.

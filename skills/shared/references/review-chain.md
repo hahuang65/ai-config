@@ -1,11 +1,11 @@
 # Post-Implementation Review Chain
 
-Shared reference for `implement` and `implement-coach`. Run this chain **after all slices are complete and the verification loop (see [tooling.md](tooling.md)) passes cleanly.**
+Shared reference for `code` and `coach`. Run this chain **after all slices are complete and the verification loop (see [tooling.md](tooling.md)) passes cleanly.**
 
 ## Who fixes what
 
-- **`/implement` (AI mode):** the AI fixes CRITICAL and HIGH findings directly, then re-runs tests.
-- **`/implement-coach` (coached mode):** the AI **surfaces** findings and **guides the user** to fix the ones they own (the implementation code) — they wrote it, they fix it. The AI still applies mechanical cleanup, documentation, and visual artifacts directly. Re-run tests after each fix.
+- **`/code` (AI mode):** the AI fixes CRITICAL and HIGH findings directly, then re-runs tests.
+- **`/coach` (coached mode):** the AI **surfaces** findings and **guides the user** to fix the ones they own (the implementation code) — they wrote it, they fix it. The AI still applies mechanical cleanup, documentation, and visual artifacts directly. Re-run tests after each fix.
 
 ## Chain
 
@@ -17,13 +17,13 @@ Shared reference for `implement` and `implement-coach`. Run this chain **after a
 
 4. **Documentation update** *(conditional)* — if the implementation added features, changed APIs, or modified architecture, run the `doc-updater` agent. Skip for trivial changes. (Documentation is not implementation code, so the AI handles it directly even in coach mode.)
 
-5. **Fact-check** — run the `fact-checker` agent (via the Agent tool) on both `spec.md` and `tasks.md`. It starts cold on purpose — independent of the session that wrote the documents — and re-derives every claim (module names, decisions, behavior descriptions) from the code and git history, correcting drift in place.
+5. **Fact-check** — run the `fact-checker` agent (via the Agent tool) on both `specs.md` and `tasks.md`. It starts cold on purpose — independent of the session that wrote the documents — and re-derives every claim (module names, decisions, behavior descriptions) from the code and git history, correcting drift in place.
 
-6. **Refresh visuals** — regenerate `spec.html` and `tasks.html` so they mirror the final markdown, and open them in the browser. Mandatory — the visuals MUST always mirror the markdown.
+6. **Refresh visuals** — regenerate `specs.html` and `tasks.html` so they mirror the final markdown, and open them in the browser. Mandatory — the visuals MUST always mirror the markdown.
 
-7. **Diff review** — if `visual-explainer` is available, generate `diff-review.html` via `/diff-review`: compare the working tree against the branch point (typically `main`). Open it in the browser, then run the `fact-checker` agent (via the Agent tool) on the generated HTML. If `visual-explainer` is not available, skip silently.
+7. **Diff review** — if `visualize` is available, generate `diff-review.html` via `/visualize-diff`: compare the working tree against the branch point (typically `main`). Open it in the browser, then run the `fact-checker` agent (via the Agent tool) on the generated HTML. If `visualize` is not available, skip silently.
 
-8. **Verify task-to-implementation sync** — every acceptance criterion checked off (`- [x]`), every slice marked `**Status:** ✅ Complete`, deviations documented in the slice body, and both `tasks.html` and `spec.html` reflecting the final state.
+8. **Verify task-to-implementation sync** — every acceptance criterion checked off (`- [x]`), every slice marked `**Status:** ✅ Complete`, deviations documented in the slice body, and both `tasks.html` and `specs.html` reflecting the final state.
 
 ## Completion
 

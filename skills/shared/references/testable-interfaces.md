@@ -1,6 +1,6 @@
 # Testable Interfaces Protocol
 
-Shared reference for `/specs`, `/tasks`, `/implement`, and `/implement-coach`. It carries one testing decision through the build pipeline: **test the stable public interface of a deep module, not every implementation piece that changes behind it.**
+Shared reference for `/spec`, `/todo`, `/code`, and `/coach`. It carries one testing decision through the build pipeline: **test the stable public interface of a deep module, not every implementation piece that changes behind it.**
 
 ## Core principle
 
@@ -20,7 +20,7 @@ Use this default unless the codebase's testing rule or an ADR says otherwise:
 
 ## How the decision moves through the pipeline
 
-### `/specs`
+### `/spec`
 
 Sketch production modules and their test surface together. For each module, classify one of:
 
@@ -30,14 +30,14 @@ Sketch production modules and their test surface together. For each module, clas
 
 The spec's Testing Decisions section records this plan. If the user simply confirms the module sketch, keep the proposed test plan; do not ask them to choose test ownership from scratch.
 
-### `/tasks`
+### `/todo`
 
 Each vertical slice carries the test surface forward. Acceptance criteria describe observable behavior, and the slice includes a concise **Test surface** line naming the public interface the first RED test should exercise. Never create a horizontal slice whose only deliverable is "write specs"; tests are part of each vertical slice.
 
-### `/implement`
+### `/code`
 
 Before a slice's first RED test, confirm or refine the public interface from the task's Test surface and the spec's Testing Decisions. Write one behavior test through that interface. Add lower-level tests only when the deep-module rule above applies or the RED/GREEN cycle reveals an uncovered edge case.
 
-### `/implement-coach`
+### `/coach`
 
-Same as `/implement`, except the AI writes one test and the user writes the implementation. The interface confirmation is about the public seam, not whether tests are needed. Never queue extra tests or turn internals into direct-test targets merely because they are visible while coaching.
+Same as `/code`, except the AI writes one test and the user writes the implementation. The interface confirmation is about the public seam, not whether tests are needed. Never queue extra tests or turn internals into direct-test targets merely because they are visible while coaching.

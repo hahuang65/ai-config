@@ -199,7 +199,7 @@ EOF
 }
 
 # ---------------------------------------------------------------------------
-# Self-test 5: Broken cross-reference to visual-explainer references
+# Self-test 5: Broken cross-reference to visualize references
 # ---------------------------------------------------------------------------
 
 test_broken_ve_reference_fails() {
@@ -210,7 +210,7 @@ test_broken_ve_reference_fails() {
 description: test command with broken reference
 ---
 
-See ~/.claude/skills/visual-explainer/references/nonexistent-file.md for details.
+See ~/.claude/skills/visualize/references/nonexistent-file.md for details.
 EOF
 
   if run_pipeline; then
@@ -469,13 +469,13 @@ test_skill_dir_missing_skill_md_fails() {
 }
 
 # ---------------------------------------------------------------------------
-# Self-test 15: implement-coach SKILL.md missing the Holding-the-line and
+# Self-test 15: coach SKILL.md missing the Holding-the-line and
 # Todo-hygiene sections — proves the gate would catch a regression that
 # softens or deletes coach mode's load-bearing waiting discipline.
 # ---------------------------------------------------------------------------
 
 test_implement_coach_missing_holding_line_fails() {
-  local rel="skills/implement-coach/SKILL.md"
+  local rel="skills/coach/SKILL.md"
   # Replace with a symlink to a temp copy so the awk modification never
   # touches the repo file.
   fixture_replace "$rel"
@@ -491,9 +491,9 @@ test_implement_coach_missing_holding_line_fails() {
   mv "$TMPDIR/$rel.tmp" "$TMPDIR/$rel"
 
   if run_pipeline; then
-    self_fail "stripped implement-coach holding-line section: test-pipeline.sh should exit non-zero"
+    self_fail "stripped coach holding-line section: test-pipeline.sh should exit non-zero"
   else
-    self_pass "stripped implement-coach holding-line section: test-pipeline.sh correctly exits non-zero"
+    self_pass "stripped coach holding-line section: test-pipeline.sh correctly exits non-zero"
   fi
 }
 
