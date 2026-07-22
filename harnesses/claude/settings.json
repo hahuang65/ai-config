@@ -212,5 +212,6 @@
     "terraform-ls@claude-code-lsps": true,
     "gopls-lsp@claude-plugins-official": true
   },
-  "tui": "fullscreen"
+  "tui": "fullscreen",
+  "model": "claude-fable-5[1m]"
 }
