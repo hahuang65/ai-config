@@ -47,6 +47,11 @@ install_module() {
   ln -sf "$MOD/guard-policies.bundle.ts" "$config_root/extensions/guard-policies.ts"
   dim "  $config_root/extensions/guard-policies.ts (bundled guard)"
 
+  # local-models.ts is self-contained (type-only imports erase at transpile),
+  # so unlike the guard it needs no bundle — pi loads it fine through a symlink.
+  ln -sf "$MOD/extensions/local-models.ts" "$config_root/extensions/local-models.ts"
+  dim "  $config_root/extensions/local-models.ts (local model auto-discovery)"
+
   # Subagent extension — ships as an example with pi. Symlinked if present;
   # skipped gracefully on a system where pi is not installed. Resolves the
   # subagent path dynamically from the pi binary's real location rather than
