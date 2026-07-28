@@ -12,7 +12,6 @@
       "Bash(mkdir -p */docs/features/*)",
       "Read(CONTEXT.md)",
       "Edit(CONTEXT.md)",
-      "Write(CONTEXT.md)",
       "Bash(mkdir -p docs/adr)",
       "Bash(mkdir -p docs/adr/*)",
       "Bash(mkdir -p */docs/adr)",
@@ -21,17 +20,12 @@
       "Read(*/docs/adr/**)",
       "Edit(docs/adr/**)",
       "Edit(*/docs/adr/**)",
-      "Write(docs/adr/**)",
-      "Write(*/docs/adr/**)",
       "Read(docs/features/**)",
       "Read(*/docs/features/**)",
       "Read(**/docs/features/**)",
       "Edit(docs/features/**)",
       "Edit(*/docs/features/**)",
       "Edit(**/docs/features/**)",
-      "Write(docs/features/**)",
-      "Write(*/docs/features/**)",
-      "Write(**/docs/features/**)",
       "Bash(open docs/features/*.html)",
       "Bash(open docs/features/*/*.html)",
       "Bash(open **/docs/features/*.html)",
@@ -129,10 +123,8 @@
       "Bash(terraform validate *)",
       "Read(~/.claude/*)",
       "Read(~/.claude/skills/**)",
-      "Glob(~/.claude/skills/**)",
       "Grep(~/.claude/skills/**)",
       "Read(~/.dotfiles/ai/**)",
-      "Glob(~/.dotfiles/ai/**)",
       "Grep(~/.dotfiles/ai/**)",
       "Read(~/.gitmessage)",
       "Read(~/.dotfiles/git/message)",
@@ -185,6 +177,7 @@
       "/tmp"
     ]
   },
+  "model": "claude-fable-5[1m]",
   "hooks": {
     "PreToolUse": [
       {
@@ -212,6 +205,5 @@
     "terraform-ls@claude-code-lsps": true,
     "gopls-lsp@claude-plugins-official": true
   },
-  "tui": "fullscreen",
-  "model": "claude-fable-5[1m]"
+  "tui": "fullscreen"
 }
