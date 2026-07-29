@@ -17,6 +17,7 @@ Fallback summary (used only when `~/.gitmessage` is absent):
 - Blank line, then links to issue-tracker tickets or helpful articles, one URL per line, with no section header. If there are no links, omit this section entirely.
 - Allowed types: `FEATURE`, `FIX`, `REFACTOR`, `STYLE`, `DOCS`, `TEST`, `CHORE`.
 - Use the body to explain what and why, not how. Bullets with `-` are fine.
+- NEVER auto-add the agent name as a co-author.
 
 ## Branching
 
