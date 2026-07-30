@@ -17,7 +17,7 @@ When invoked **standalone**, `$ARGUMENTS` may contain a spec path, a slug to res
 
 ## Rules Adherence
 
-Comply with the project rules in `rules/`. In Claude Code these are global instructions; in pi, read from `~/.pi/agent/rules/`; in oh-my-pi, load via `rule://<name>` when entering the rule's domain. Task titles and descriptions use the domain vocabulary from `CONTEXT.md` and respect ADRs in the area being touched.
+Comply with the project rules in `rules/`. Read detailed rules from `~/.dotfiles/ai/rules/`; in oh-my-pi, the equivalent native lookup is `rule://<name>`. Task titles and descriptions use the domain vocabulary from `CONTEXT.md` and respect ADRs in the area being touched.
 
 ## Process
 

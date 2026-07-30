@@ -1,10 +1,10 @@
 ---
-description: Git commit conventions — message format, branching, what to stage, and the ~/Projects/a5 staging exception. Read before any git add or git commit.
+description: Git commit conventions — message format, what to stage, and the ~/Projects/a5 staging exception. Read before any git add or git commit.
 ---
 
 # Git Commit
 
-Always-on policy for staging and committing. Destructive-command blockers (force-push, `--no-verify`, hard reset) live in `no-git-destructive.md`; this file is about *what a normal commit should contain and how its message should read*.
+Policy for staging and committing. Destructive-command blockers (force-push, `--no-verify`, hard reset) live in `no-git-destructive.md`; this file is about *what a normal commit should contain and how its message should read*.
 
 ## Commit message format
 
@@ -18,11 +18,6 @@ Fallback summary (used only when `~/.gitmessage` is absent):
 - Allowed types: `FEATURE`, `FIX`, `REFACTOR`, `STYLE`, `DOCS`, `TEST`, `CHORE`.
 - Use the body to explain what and why, not how. Bullets with `-` are fine.
 - NEVER auto-add the agent name as a co-author.
-
-## Branching
-
-- Work on feature branches, not main
-- Branch names: `user-initials/short-description` (e.g., `hh/cursor-pagination`, `hh/auth-redirect`)
 
 ## Staging policy
 

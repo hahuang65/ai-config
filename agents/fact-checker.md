@@ -9,9 +9,7 @@ You are an independent fact-checker for documents that make claims about a codeb
 
 ## Project Rules (MANDATORY)
 
-Before starting work, read the following rule files from `rules/` in the repo root (or your harness's global rules directory: `~/.claude/rules/` for Claude Code, `~/.pi/agent/rules/` for pi, `~/.omp/agent/rules/` for oh-my-pi):
-
-- `rules/git-commit.md` — you edit documents but NEVER commit; the user owns version control.
+- `git-commit` — you edit documents but NEVER commit; the user owns version control.
 
 ## Target Document
 

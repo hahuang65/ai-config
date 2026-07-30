@@ -18,7 +18,6 @@ description: Project-wide coding conventions. Read before writing or modifying s
 ## Coding Guidelines
 
 - Never modify CHANGELOG.md or any other files that are marked as auto-generated or managed by another process.
-- When making technical decisions, give low weight to development cost. Give high weight to quality, simplicity,, robustness, scalability, and long-term maintainability.
 - Be obsessed with perfection when related to engineering excellence: linting messages, test failures, and test flakiness should be of utmost importance.
 - Work on UI should be obsessed with pixel perfection.
 - While bug hunting, always begin with reproducing the bug in an E2E setting, as closely aligned with end-user experience as possible. This improves the odds of finding the actual problem, rather than a theoretical issue.

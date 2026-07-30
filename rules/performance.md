@@ -1,18 +1,8 @@
 ---
-description: Performance guidance and Claude model routing. Read when choosing a model for a subagent task, before optimizing code, or when adding caching, pagination, or external-call timeouts.
+description: Performance guidance. Read before optimizing code or adding caching, pagination, lazy loading, or external-call timeouts.
 ---
 
-# Performance & Model Selection
-
-## Model routing guidance
-
-Choose the right model for the task:
-
-- **Haiku**: Deterministic, low-risk mechanical changes. Renaming, reformatting, simple find-and-replace, generating boilerplate, running linters. Fast and cheap.
-- **Sonnet**: Default for most work. Implementation, refactoring, bug fixes, code review, test writing. Covers ~90% of tasks.
-- **Opus**: Architecture decisions, deep code review, ambiguous requirements, complex multi-file refactors, planning phases. Use when accuracy matters more than speed.
-
-When in doubt, start with Sonnet. Escalate to Opus if the task requires reasoning across many files or making judgment calls about design.
+# Performance
 
 ## General performance
 

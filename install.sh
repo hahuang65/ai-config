@@ -36,10 +36,29 @@ prune_dangling() {
   done
 }
 
+# Remove this repo's old mirrored rule links from a harness directory while
+# preserving unrelated user-managed files. Claude and pi read the canonical
+# ~/.dotfiles/ai/rules/ files directly; only omp still needs a native mirror.
+prune_repo_rule_links() {
+  local d="$1" link raw resolved
+  [ -d "$d" ] || return 0
+  for link in "$d"/*.md; do
+    [ -L "$link" ] || continue
+    raw="$(readlink "$link" 2>/dev/null || true)"
+    resolved="$(readlink -f "$link" 2>/dev/null || true)"
+    case "$raw" in
+      "$REPO_DIR"/rules/*) rm -f "$link"; continue ;;
+    esac
+    case "$resolved" in
+      "$REPO_DIR"/rules/*) rm -f "$link" ;;
+    esac
+  done
+  rmdir "$d" 2>/dev/null || true
+}
+
 # Mirror one shared category from the repo root into a config root. Skills are
 # directories (symlinked with -n); commands/agents/rules are .md files. When
-# `dedupe` is true (Claude Code), a command sharing a name with a skill dir is
-# skipped — Claude registers both as /name, which would duplicate the command.
+# `dedupe` is true, a command sharing a name with a skill dir is skipped.
 mirror_category() {
   local cat="$1" config_root="$2" dedupe="$3" entry name
   case "$cat" in
@@ -121,9 +140,9 @@ install_harness() {
   )
 }
 
-# Neutral instruction source filename (relative to repo root). Empty by
-# default — no module wires an instruction file yet.
-INSTRUCTION_SOURCE="${INSTRUCTION_SOURCE:-}"
+# Small neutral bootstrap shared by harnesses that support a global context
+# file. Harness manifests choose their convention name via instruction_target.
+INSTRUCTION_SOURCE="${INSTRUCTION_SOURCE:-harness-system-prompt.md}"
 
 # Modules live under harnesses/ by default; HARNESSES_DIR can override the
 # root (used by the install behavior test to exercise add/remove in isolation).

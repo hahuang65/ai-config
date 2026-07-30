@@ -1,13 +1,13 @@
 # ai-config
 
-A single configuration source that powers multiple AI coding harnesses (Claude Code and oh-my-pi). Skills, commands, agents, and rules are authored once and installed into each via `install.sh`.
+A single configuration source that powers multiple AI coding harnesses (Claude Code, oh-my-pi, and pi). Skills, commands, agents, and rules are authored once and installed into each via `install.sh`.
 
 ## Language
 
 ### Core concepts
 
 **Harness**:
-The runtime program that drives an LLM through tool calls, system prompts, and a session UI — Claude Code and oh-my-pi are the two this repo configures. Per-harness config lives in a self-contained **harness module** under `harnesses/` — `harnesses/claude/`, `harnesses/omp/`, with a pending `harnesses/pi/` slot (see [`modular-harness-modules-and-isolation`](docs/adr/0010-modular-harness-modules-and-isolation.md)).
+The runtime program that drives an LLM through tool calls, system prompts, and a session UI — Claude Code, oh-my-pi, and pi are the three this repo configures. Per-harness config lives in a self-contained **harness module** under `harnesses/` — `harnesses/claude/`, `harnesses/omp/`, and `harnesses/pi/` (see [`modular-harness-modules-and-isolation`](docs/adr/0010-modular-harness-modules-and-isolation.md)).
 _Avoid_: Tool (overloaded with the Bash/Read/Edit primitives a harness gives the model), assistant, agent (overloaded with subagent), AI coding tool.
 
 **Tool**:
@@ -15,7 +15,7 @@ A primitive the harness exposes to the model — `Bash`, `Read`, `Edit`, `Write`
 _Avoid_: Capability (oh-my-pi-internal jargon for its discovery registry), primitive in user-facing copy.
 
 **Skill**:
-A file-backed capability pack discoverable by name, defined by `<root>/skills/<name>/SKILL.md`. Loaded as lightweight metadata in the system prompt and read on demand. Shared across both harnesses without per-harness translation.
+A file-backed capability pack discoverable by name, defined by `<root>/skills/<name>/SKILL.md`. Loaded as lightweight metadata in the system prompt and read on demand. Shared across all harnesses without per-harness translation.
 
 **Command** (slash command):
 A `<root>/commands/<name>.md` file invoked by the user as `/<name>`. Frontmatter is parsed; body is rendered as a prompt template with `$ARGUMENTS` / `$1` substitutions.
@@ -25,26 +25,26 @@ A specialized sub-runtime invoked by the main session via the Task tool (Claude 
 _Avoid_: Worker, child session.
 
 **Rule**:
-A `<root>/rules/<name>.md` file holding guidance the harness can pull into context. Claude Code injects them automatically as global user instructions on every turn. oh-my-pi puts them in the **rulebook** (a system-prompt index of `name + description` entries that the model reads on demand via `rule://<name>`) — see [`description-only-rules-in-rulebook`](docs/adr/0002-description-only-rules-in-rulebook.md) for why this repo deliberately picks the lazy-load bucket over `alwaysApply: true`.
+A `<root>/rules/<name>.md` file holding guidance the harness pulls into context on demand. Claude and pi read the canonical `~/.dotfiles/ai/rules/` files directly; oh-my-pi uses a native mirror (`name + description`, read via `rule://<name>`). See [`small-always-on-bootstrap-lazy-rulebooks`](docs/adr/0016-small-always-on-bootstrap-lazy-rulebooks.md).
 
 ### Harness-specific terms
 
 **`.claude` / `~/.claude/`**:
-Claude Code's config root. This repo's `harnesses/claude/` module contains `settings.json`, `statusline.sh`, `hooks.json`, the tier-B guard shim `hooks/guard.ts`, and a `manifest.sh`, all symlinked into `~/.claude/` by `install.sh`. Skills, commands, agents, rules live under `~/.claude/{skills,commands,agents,rules}/` as symlinks back to the repo.
+Claude Code's config root. This repo's `harnesses/claude/` module contains `settings.json`, `statusline.sh`, `hooks.json`, the tier-B guard shim `hooks/guard.ts`, and a `manifest.sh`, all symlinked into `~/.claude/` by `install.sh`. Skills, commands, and agents use their conventional directories; detailed rules remain at the canonical `~/.dotfiles/ai/rules/` path so Claude does not auto-inject them, and `~/.claude/CLAUDE.md` supplies the small global bootstrap.
 
 **`.omp` / `~/.omp/agent/`**:
 oh-my-pi's config roots — project-level (`<cwd>/.omp/`) and user-level (`~/.omp/agent/`, with the extra `agent` subfolder). This repo's `harnesses/omp/` module holds oh-my-pi-specific config (`config.yml`, `RULES.md`, `extensions/`, `hooks/`, `manifest.sh`).
 
 **Source priority** (oh-my-pi):
-oh-my-pi's built-in ordering for cross-harness config discovery — higher number wins on name collisions: `.omp` (100) > `.claude` (80) > `.codex` (70) > `.gemini` (60) > `.opencode` (55). Means our `~/.claude/skills/` is discoverable by oh-my-pi without any new symlinks — but `~/.claude/rules/` is not, because oh-my-pi has no Claude rule provider.
+oh-my-pi's built-in ordering for cross-harness config discovery — higher number wins on name collisions: `.omp` (100) > `.claude` (80) > `.codex` (70) > `.gemini` (60) > `.opencode` (55). Means `~/.claude/skills/` is technically discoverable by oh-my-pi, although this repo disables that cross-discovery and explicitly mirrors the curated shared set.
 
 ### Lifecycle terms
 
 **Always-on context**:
-Content the harness injects into every conversation's system prompt without the model having to ask for it. Claude Code does this for `~/.claude/rules/*.md` automatically. oh-my-pi does it only for rules with `alwaysApply: true` frontmatter — which this repo deliberately doesn't use. See **Rulebook** below.
+Content the harness injects into every conversation's system prompt without the model having to ask for it. This repo keeps that surface to `harness-system-prompt.md` for Claude and pi: a critical baseline plus the shared rule location and load triggers. Claude Code would also auto-load `~/.claude/rules/*.md`, so this repo deliberately leaves detailed rules only at the canonical source path. Oh-my-pi uses no `alwaysApply: true` rules.
 
 **Rulebook** (oh-my-pi):
-oh-my-pi's bucket of rules that are listed in the system prompt by `name + description` and read on demand via `rule://<name>`. Requires `description:` frontmatter. This repo's three rulebook rules (`coding-style`, `testing`, `performance`) live here — the descriptions are written as load-triggers ("Read before writing tests…", "Read when handling user input…") so the model knows when to pull them in. The eight remaining rules in `rules/` are TTSR (below), not rulebook.
+oh-my-pi's bucket of rules that are listed in the system prompt by `name + description` and read on demand via `rule://<name>`. Requires `description:` frontmatter. All six advisory rules live here; descriptions are written as load triggers so the model knows when to pull them in. Claude and pi emulate the routing behavior through `harness-system-prompt.md` plus ordinary file reads.
 
 **TTSR** (oh-my-pi — time-traveling stream rules):
 oh-my-pi's mid-stream rule injection: a regex match against the model's output aborts the stream, injects the rule body as a `<system-reminder>`, and retries from the same token. Configured via `condition:` frontmatter (plus optional `scope:`). **Retired in this repo (ADR-0012):** every TTSR enforcement rule was migrated into the **guard core** (command and write-**content** detection), so no `rules/*.md` carries `condition:` frontmatter any more. Kept here as historical vocabulary for ADR-0003 (which ADR-0012 supersedes).
@@ -76,13 +76,13 @@ A `rules/*.md` file that is pure guidance the model reads — shares verbatim ac
 _Avoid_: rule (unqualified — the bare word hides the advisory-vs-guardrail split).
 
 **Rule projection**:
-How the advisory rules reach a given harness — there is **no single shared path** (ADR-0013); each harness gets the rules through the mechanism that fits its context model. Three exist: **Claude** auto-injects the rules dir always-on; **oh-my-pi** lists them in its native **rulebook** and loads them lazily via `rule://<name>` (ADR-0002); **pi** reads a **generated concatenation** (see **Rule concatenation**). Enforcement, by contrast, travels one shared path (the **guard core**), not by projection.
+How advisory rules reach a harness. **Claude** and **pi** read ordinary files from the canonical `~/.dotfiles/ai/rules/` directory; **oh-my-pi** loads mirrored native rulebook entries via `rule://<name>`. Claude and pi share the same small always-on bootstrap for routing. Enforcement, by contrast, travels through the **guard core**, not rule projection. (ADR-0016)
 
-**Rule concatenation** (pi):
-pi has no native rulebook and reads only a single always-on instruction file, so the advisory rules are joined into one committed file (`harnesses/pi/advisory-rules.md`), symlinked as pi's global `~/.pi/agent/AGENTS.md` (install-once, live through the symlink; the source carries a distinct name so it isn't confused with — or gitignored as — a stray `AGENTS.md`). A **drift-check** in the gate regenerates it from `rules/*.md` and fails if the committed copy is stale, so a forgotten regeneration can't be committed. (ADR-0013)
+**Global instruction bootstrap**:
+The small harness-neutral `harness-system-prompt.md` installed as Claude's `~/.claude/CLAUDE.md` and pi's `~/.pi/agent/AGENTS.md`. It contains only critical cross-task constraints, rulebook locations, and load triggers. It is distinct from the repo-root `AGENTS.md`, which is this repository's authoring contract and is never installed globally.
 
 **Context file** (pi):
-A file pi loads at startup: global `~/.pi/agent/AGENTS.md` (always-on instructions) and `SYSTEM.md` (replaces the system prompt), plus project `AGENTS.md`/`CLAUDE.md` discovered walking up from cwd. pi reads single files, not a directory, and does not expand `@import` references — which is why **Rule concatenation** is necessary. The module's generated `harnesses/pi/advisory-rules.md` (installed as pi's `AGENTS.md`) is distinct from the repo-root `AGENTS.md` (this repo's authoring contract), which is never installed into a config root.
+A file pi loads at startup: global `~/.pi/agent/AGENTS.md` (the bootstrap) and `SYSTEM.md` (replaces the system prompt), plus project `AGENTS.md`/`CLAUDE.md` discovered walking up from cwd. Pi reads named context files, not arbitrary rule directories, so detailed rule loading remains an explicit model action.
 
 **Guardrail policy**:
 A security/safety constraint with a *shared intent* but a *per-harness enforcement mechanism* (e.g. never read secrets, never write a secret literal, no curl-pipe-to-shell, no cloud teardown). Recorded once in the **policy registry** and projected into each harness via its adapter.

@@ -782,6 +782,24 @@ test_agent_rule_deps() {
         fail "$label" "references $rule_path which does not exist"
       fi
     done < <(echo "$body" | grep -oE 'rules/[a-z._-]+\.md' | sort -u || true)
+
+    # Agent Project Rules sections use bare canonical names to avoid repeating
+    # harness-specific lookup instructions in every isolated prompt.
+    local project_rules rule_name target
+    project_rules="$(echo "$body" | awk '
+      /^## Project Rules/ { in_rules=1; next }
+      in_rules && /^## / { exit }
+      in_rules { print }
+    ')"
+    while read -r rule_name; do
+      [[ -z "$rule_name" ]] && continue
+      target="$REPO_DIR/rules/$rule_name.md"
+      if [[ -f "$target" ]]; then
+        pass "$label references existing shared rule '$rule_name'"
+      else
+        fail "$label" "references shared rule '$rule_name' which does not exist"
+      fi
+    done < <(echo "$project_rules" | grep -oE '^-[[:space:]]+`[a-z0-9._-]+`' | tr -d '`' | sed -E 's/^-[[:space:]]+//' | sort -u || true)
   done
 }
 
@@ -1082,10 +1100,9 @@ test_omp_hook_shape() {
 # 11c. Forbidden Claude-centric phrasing
 #
 # The phrase "already loaded in context" (and close variants) asserts that
-# rule content is auto-injected into the conversation — true in Claude Code,
-# false in omp under rulebook semantics. Allowing it in any AI-readable file
-# (skills/commands/agents/rules) misinforms the model on omp. Enforce its
-# absence as a permanent guard.
+# detailed rule content is auto-injected. All harnesses now keep detailed rules
+# on demand, so allowing the phrase in an AI-readable file misinforms every
+# model. Enforce its absence as a permanent guard.
 # ---------------------------------------------------------------------------
 
 test_no_forbidden_claude_centric_phrasing() {
@@ -1272,24 +1289,48 @@ test_install_behavior() {
   else
     fail "install-behavior" "pi guard extension has relative imports pi can't resolve (must be bundled)"
   fi
-  [[ -d "$tmphome/.pi/agent/rules" ]] && pass "pi has rules/ dir with on-demand rule files" \
-    || fail "install-behavior" "pi rules/ directory missing — expected after switching to on-demand rules"
+  [[ -f "$tmphome/.pi/agent/AGENTS.md" ]] && pass "pi global bootstrap installed as AGENTS.md" \
+    || fail "install-behavior" "pi AGENTS.md bootstrap missing"
+  [[ ! -d "$tmphome/.pi/agent/rules" ]] && pass "pi uses the canonical shared rulebook without a mirror" \
+    || fail "install-behavior" "pi rules/ mirror should not be installed"
+
+  [[ -f "$tmphome/.claude/CLAUDE.md" ]] && pass "Claude global bootstrap installed as CLAUDE.md" \
+    || fail "install-behavior" "Claude CLAUDE.md bootstrap missing"
+  [[ ! -d "$tmphome/.claude/rules" ]] && pass "Claude has no repo-managed auto-loaded rules directory" \
+    || fail "install-behavior" "Claude rules/ mirror should not be installed"
+  [[ ! -d "$tmphome/.claude/rulebook" ]] && pass "Claude uses the canonical shared rulebook without a mirror" \
+    || fail "install-behavior" "Claude rulebook/ mirror should not be installed"
+
   for rule_file in coding-style testing security performance git-commit mise; do
-    [[ -f "$tmphome/.pi/agent/rules/$rule_file.md" ]] && pass "pi rules/$rule_file.md present" \
-      || fail "install-behavior" "pi rules/$rule_file.md missing"
+    [[ -f "$tmphome/.omp/agent/rules/$rule_file.md" ]] && pass "oh-my-pi native rulebook has $rule_file.md" \
+      || fail "install-behavior" "oh-my-pi rules/$rule_file.md missing"
   done
   [[ -f "$tmphome/.pi/agent/extensions/subagent/index.ts" ]] && pass "pi subagent extension index.ts installed" \
     || fail "install-behavior" "pi subagent extension index.ts missing"
   [[ -f "$tmphome/.pi/agent/extensions/subagent/agents.ts" ]] && pass "pi subagent extension agents.ts installed" \
     || fail "install-behavior" "pi subagent extension agents.ts missing"
 
-  # Idempotency: a second run succeeds and a known link still resolves.
+  # Migration + idempotency: remove old repo-managed Claude/pi rule mirrors
+  # without touching unrelated user rules, then verify a second run succeeds.
+  mkdir -p "$tmphome/.claude/rules" "$tmphome/.claude/rulebook" "$tmphome/.pi/agent/rules"
+  ln -sf "$REPO_DIR/rules/git-commit.md" "$tmphome/.claude/rules/git-commit.md"
+  ln -sf "$REPO_DIR/rules/testing.md" "$tmphome/.claude/rulebook/testing.md"
+  ln -sf "$REPO_DIR/rules/mise.md" "$tmphome/.pi/agent/rules/mise.md"
+  printf '%s\n' '# User rule' >"$tmphome/.claude/rules/custom.md"
   if HOME="$tmphome" bash "$REPO_DIR/install.sh" >/dev/null 2>&1 \
      && [[ -e "$tmphome/.claude/settings.json" ]]; then
     pass "re-running install is idempotent"
   else
     fail "install-behavior" "second install run was not idempotent"
   fi
+  [[ ! -e "$tmphome/.claude/rules/git-commit.md" ]] && pass "re-install removes a legacy auto-loaded Claude rule" \
+    || fail "install-behavior" "legacy Claude rules/git-commit.md was not removed"
+  [[ ! -e "$tmphome/.claude/rulebook/testing.md" ]] && pass "re-install removes a legacy Claude rulebook mirror" \
+    || fail "install-behavior" "legacy Claude rulebook/testing.md was not removed"
+  [[ ! -e "$tmphome/.pi/agent/rules/mise.md" ]] && pass "re-install removes a legacy pi rule mirror" \
+    || fail "install-behavior" "legacy pi rules/mise.md was not removed"
+  [[ -f "$tmphome/.claude/rules/custom.md" ]] && pass "re-install preserves unrelated Claude rules" \
+    || fail "install-behavior" "unrelated Claude rules/custom.md was removed"
 
   # Prune: a dangling link in a managed category dir is removed on re-install.
   ln -s "/nonexistent-$(basename "$tmphome")" "$tmphome/.omp/agent/skills/_dangling"

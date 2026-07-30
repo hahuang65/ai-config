@@ -22,7 +22,7 @@ The centerpiece of this repository is `/build` — a disciplined 5-phase workflo
 4. **Implement** via vertical-slice TDD — AI does it, or AI coaches you through it one test at a time
 5. **Review the changes** architecturally — deepening opportunities in what was just built; the report is where you decide to commit or iterate
 
-The pipeline merges Boris Tane's research-first discipline with Matt Pocock's skills-TDD workflow (`grill-with-docs → to-prd → to-issues → tdd`), adapted to keep all artifacts local, annotatable, and paired with visual HTML companions. Both implementation modes and all five phases work identically in Claude Code and oh-my-pi — the skills are harness-agnostic and discovered from the same source files in each harness's root.
+The pipeline merges Boris Tane's research-first discipline with Matt Pocock's skills-TDD workflow (`grill-with-docs → to-prd → to-issues → tdd`), adapted to keep all artifacts local, annotatable, and paired with visual HTML companions. Both implementation modes and all five phases are harness-neutral across Claude Code, oh-my-pi, and pi; each harness discovers the same source skills through its config root.
 
 ### Pipeline Overview
 
@@ -191,7 +191,7 @@ The [`example/`](example/) directory contains sample artifacts from a previous v
     ├── Refactor together when GREEN
     └── visualize → specs.html, tasks.html, diff-review.html
 
-Rules (6 advisory files). In Claude Code they auto-load as global instructions every turn; in oh-my-pi they load on demand from the rulebook via `rule://<name>`. All *enforcement* lives in the shared guard core (per ADR-0012), not in rules — see Guardrails below.
+Rules (6 advisory files) load on demand in every harness. Claude Code and pi read the common `~/.dotfiles/ai/rules/` sources directly; oh-my-pi uses its native mirror via `rule://<name>`. Claude and pi always load only the small `harness-system-prompt.md` bootstrap containing critical constraints, the shared location, and load triggers. All *enforcement* lives in the shared guard core (per ADR-0012), not in rules — see Guardrails below.
 Agents read a subset relevant to their role.
 ```
 
@@ -202,11 +202,12 @@ Agents read a subset relevant to their role.
 ├── skills/           17 workflow skills (build, grill, specs, tasks, implement, coach, ...)
 ├── commands/         13 slash commands (/visualize-diff, /coach, /pickup, ...)
 ├── agents/           7 sub-agents (architect, tdd-guide, code-reviewer, ...)
-├── rules/            6 advisory rules (rulebook; all enforcement is in shared/)
+├── harness-system-prompt.md  Small always-on critical baseline + rule routing
+├── rules/            6 on-demand advisory rules (all enforcement is in shared/)
 ├── harnesses/        Pluggable per-harness modules, each with a manifest.sh (ADR-0010)
 │   ├── claude/         Claude Code module (settings.json, hooks.json, statusline.sh, hooks/guard.ts)
 │   ├── omp/            oh-my-pi module (config.yml, RULES.md, extensions/, hooks/{pre,post}/)
-│   └── pi/             pi module (settings.json, extensions/, advisory-rules.md→AGENTS.md) — @earendil-works/pi-coding-agent
+│   └── pi/             pi module (settings.json, extensions/) — @earendil-works/pi-coding-agent
 ├── shared/           guard core — policy-registry.ts (IDs + floor flags), guard-core.ts (detection, written once), conformance.ts
 ├── test/             bun tests — adapter + conformance behavior
 ├── Makefile          Developer tasks — run `make` for the menu
@@ -285,14 +286,14 @@ Agents read a subset relevant to their role.
 
 ### Rules
 
-`rules/` is **advisory guidance only** (per [ADR-0012](docs/adr/0012-consolidate-enforcement-retire-ttsr.md)) — no rule blocks anything; all enforcement lives in the guard core (below). In Claude Code rules auto-load as global instructions; in oh-my-pi they're listed in the **rulebook** for on-demand loading via `rule://<name>` ([ADR-0002](docs/adr/0002-description-only-rules-in-rulebook.md)). No rule carries `condition:`/`scope:` — the retired TTSR frontmatter; the gate rejects any that does.
+`rules/` is **advisory guidance only** (per [ADR-0012](docs/adr/0012-consolidate-enforcement-retire-ttsr.md)) — no rule blocks anything; all enforcement lives in the guard core (below). Detailed rules load on demand in every harness. Claude and pi receive the small always-on [`harness-system-prompt.md`](harness-system-prompt.md) bootstrap, which provides critical constraints, rule locations, and load triggers without injecting all rule content ([ADR-0016](docs/adr/0016-small-always-on-bootstrap-lazy-rulebooks.md)). Oh-my-pi lists rules in its native rulebook for loading via `rule://<name>` ([ADR-0002](docs/adr/0002-description-only-rules-in-rulebook.md)). No rule carries `condition:`/`scope:` — the retired TTSR frontmatter; the gate rejects any that does.
 
 | Rule | Scope |
 |------|-------|
 | `coding-style` | Immutability, file size limits, naming, nesting, magic numbers |
 | `testing` | TDD, behavior testing, no shared state, shared setup |
-| `performance` | Model routing, profiling before optimizing, caching, timeouts |
-| `git-commit` | Commit message format (`@~/.gitmessage`), branching, staging policy |
+| `performance` | Profiling before optimizing, caching, pagination, timeouts |
+| `git-commit` | Commit format (`@~/.gitmessage`) and staging policy |
 | `mise` | Toolchain managed by mise; ignore other version managers |
 | `security` | Security anti-patterns that are *guidance* (string-concat SQL, `eval`, `exec`-concat, input→file API) + always-on input/output/authz/logging rules. The hard-blockable part (hardcoded secret literals) is the `no-hardcoded-secret` guardrail. |
 
@@ -322,7 +323,7 @@ Security guardrails are defined **once** and projected into each harness (ports-
 
 ## Multi-Harness Support
 
-This repository serves three AI coding harnesses with different runtime models. `install.sh` mirrors every shared primitive into each harness root (per [ADR-0001](docs/adr/0001-full-mirror-per-harness.md)) — same source files, three sets of symlinks. The table below contrasts the two most different runtime models; **pi** (`@earendil-works/pi-coding-agent`, config root `~/.pi/agent`) tracks oh-my-pi's tier-A model — an auto-discovered extension routing the shared guard core, with advisory rules delivered as a generated `AGENTS.md` (ADR-0013).
+This repository serves three AI coding harnesses with different runtime models. `install.sh` projects the same curated primitives into each harness using native paths where required; Claude and pi share detailed rules directly from the canonical source rather than duplicating rule symlinks. The table below contrasts the two most different runtime models; **pi** (`@earendil-works/pi-coding-agent`, config root `~/.pi/agent`) tracks oh-my-pi's tier-A model through an auto-discovered extension routing the shared guard core. Pi and Claude share a small always-on bootstrap and keep detailed rules on demand (ADR-0016).
 
 | Aspect | Claude Code | oh-my-pi |
 |--------|-------------|-----|
@@ -330,8 +331,8 @@ This repository serves three AI coding harnesses with different runtime models. 
 | Skills | `~/.claude/skills/` (symlinked) | `~/.omp/agent/skills/` (symlinked) |
 | Commands | `~/.claude/commands/` (symlinked, dedup against skills) | `~/.omp/agent/commands/` (all symlinked) |
 | Agents | `~/.claude/agents/` (symlinked) | `~/.omp/agent/agents/` (symlinked) |
-| Rules | `~/.claude/rules/` (symlinked) | `~/.omp/agent/rules/` (symlinked) |
-| Rule semantics (advisory) | Auto-loaded as global instructions every turn | **Rulebook** — loaded on demand via `rule://` |
+| Rules | `~/.dotfiles/ai/rules/` (canonical source) | `~/.omp/agent/rules/` (native symlinks) |
+| Rule semantics (advisory) | Small global bootstrap; canonical files read on demand | **Rulebook** — loaded on demand via `rule://` |
 | Permissions format | `"Bash(echo *)"` in JSON arrays | `tools.approvalMode: write` tiers + `tools.approval.<tool>` overrides in YAML |
 | Per-pattern bash allowlist | Yes (~80 entries) | **No** — the shared guard core enforces the guardrails instead |
 | Permission source of truth | `harnesses/claude/settings.json` | Hand-authored `harnesses/omp/config.yml` |
@@ -344,8 +345,8 @@ This repository serves three AI coding harnesses with different runtime models. 
 `install.sh` is a **generic loop over harness modules** (`harnesses/*/manifest.sh`, per [ADR-0010](docs/adr/0010-modular-harness-modules-and-isolation.md)) — adding a harness is dropping in a module, removing one is deleting its directory. For each module it:
 
 1. Reads the module's `manifest.sh` (its `config_root`, the shared categories it consumes, and an `install_module` hook).
-2. **Mirrors the shared set** (`skills/`, `commands/`, `agents/`, `rules/`) into the config root — skills as directory symlinks; commands deduped against skills for Claude (avoids duplicate slash commands).
-3. **Installs the module's own files** via `install_module` (Claude: `settings.json`, `statusline.sh`, `hooks.json`; oh-my-pi: `config.yml`, `RULES.md`, `extensions/`, `hooks/`).
+2. **Mirrors each module's consumed shared set** into its config root. Skills and agents reach all harnesses; commands reach Claude and oh-my-pi; only oh-my-pi needs a rules mirror. Claude and pi read canonical rule sources directly.
+3. **Installs module files and global instructions** via each manifest (Claude: `CLAUDE.md`, `settings.json`, `statusline.sh`, `hooks.json`; pi: `AGENTS.md`, settings, extensions; oh-my-pi: `config.yml`, `RULES.md`, extensions, hooks).
 4. **Prunes dangling links** so the install self-heals after a rename/delete.
 5. Skips any `harness_pending` modules (none currently — Claude, oh-my-pi, and pi all install).
 
@@ -386,7 +387,7 @@ This project stands on the shoulders of others:
 - **[nicobailon/visual-explainer](https://github.com/nicobailon/visual-explainer)** — The `visualize` skill (renamed from `visual-explainer`) is taken wholesale from this repository, with only minor modifications. All the HTML visual generation (spec, tasks, diff-review, architecture diagrams, slides, etc.) is powered by this work.
 - **[affaan-m/everything-claude-code](https://github.com/affaan-m/everything-claude-code)** — The rules and agent definitions in this repo are borrowed and adapted from this collection. The coding-style, testing, security, and performance rules, as well as the agent configurations (architect, tdd-guide, code-reviewer, etc.), draw heavily from this source.
 - **[can1357/oh-my-pi](https://github.com/can1357/oh-my-pi)** ([docs](https://omp.sh/docs)) — The second harness this repo configures. The **TTSR** (time-traveling stream rules) concept — mid-stream regex-triggered rule injection with stream-abort + retry — was oh-my-pi's contribution to the cross-harness rule shape; it carried the command/content enforcement rules until [ADR-0012](docs/adr/0012-consolidate-enforcement-retire-ttsr.md) consolidated them into the shared guard core and retired TTSR. The YAML-based extension / hook / skill model oh-my-pi uses informed how this repo's per-harness boundaries got drawn (see [ADR-0004](docs/adr/0004-omp-permissions-and-hooks-decoupled.md) and [ADR-0005](docs/adr/0005-flat-shared-config-no-per-harness-scoping.md)).
-- **[pi (badlogic/earendil-works)](https://pi.dev)** — The third harness this repo configures (`@earendil-works/pi-coding-agent`, config root `~/.pi/agent`). pi's `tool_call` extension API is near-identical to oh-my-pi's hook API, so its guardrail adapter is a thin twin routing the shared guard core; its single-file `AGENTS.md` context model is why advisory rules reach it as a generated concatenation ([ADR-0013](docs/adr/0013-advisory-rules-project-into-pi-as-gated-concatenation.md)).
+- **[pi (badlogic/earendil-works)](https://pi.dev)** — The third harness this repo configures (`@earendil-works/pi-coding-agent`, config root `~/.pi/agent`). pi's `tool_call` extension API is near-identical to oh-my-pi's hook API, so its guardrail adapter is a thin twin routing the shared guard core; its single global `AGENTS.md` carries only the small shared bootstrap while detailed rules remain on demand ([ADR-0016](docs/adr/0016-small-always-on-bootstrap-lazy-rulebooks.md)).
 
 ## License
 

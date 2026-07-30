@@ -1,9 +1,9 @@
 # Authoring contract for this repo
 
-*(This is `AGENTS.md` — read at the repo root by Claude Code and oh-my-pi. It is force-tracked past the global `AGENTS.md` gitignore because defining cross-harness agent config is this repo's whole purpose.)*
+*(This is `AGENTS.md` — read at the repo root by Claude Code, oh-my-pi, and pi. It is force-tracked past the global `AGENTS.md` gitignore because defining cross-harness agent config is this repo's whole purpose.)*
 
-This repo is one source of truth for two AI coding harnesses — Claude Code
-and oh-my-pi. Primitives are authored **once** under `skills/`,
+This repo is one source of truth for three AI coding harnesses — Claude Code,
+oh-my-pi, and pi. Primitives are authored **once** under `skills/`,
 `commands/`, `agents/`, `rules/`, and `install.sh` fans them out to each
 harness. `CONTEXT.md` is the glossary; `docs/adr/` records *why* each
 decision was made; **this file is the prescriptive "how to add or edit
@@ -55,23 +55,23 @@ activates, so keep it thin and defer detail to references read on demand
 
 ## Which primitive, and which harnesses consume it
 
-| Primitive | Authored at | Claude Code | oh-my-pi |
-|---|---|---|---|
-| **Skill** | `skills/<name>/SKILL.md` | yes — `~/.claude/skills` | yes — `~/.omp/agent/skills` |
-| **Command** | `commands/<name>.md` | yes — `~/.claude/commands` (skipped if a skill of the same name exists, to avoid a duplicate `/name`) | yes — `~/.omp/agent/commands` |
-| **Agent** | `agents/<name>.md` | yes — `~/.claude/agents` | yes — `~/.omp/agent/agents` |
-| **Rule** | `rules/<name>.md` | yes — `~/.claude/rules` (auto-injected each turn) | yes — `~/.omp/agent/rules` (rulebook, advisory-only) |
+| Primitive | Authored at | Claude Code | oh-my-pi | pi |
+|---|---|---|---|---|
+| **Skill** | `skills/<name>/SKILL.md` | `~/.claude/skills` | `~/.omp/agent/skills` | `~/.pi/agent/skills` |
+| **Command** | `commands/<name>.md` | `~/.claude/commands` (deduped against skills) | `~/.omp/agent/commands` | not consumed |
+| **Agent** | `agents/<name>.md` | `~/.claude/agents` | `~/.omp/agent/agents` | `~/.pi/agent/agents` |
+| **Rule** | `rules/<name>.md` | canonical source (on demand) | `~/.omp/agent/rules` (native rulebook) | canonical source (on demand) |
 
 Implications:
 
-- Both **skills** and **agents** reach both harnesses (Claude Code and oh-my-pi),
+- **Skills** and **agents** reach all three harnesses,
   so choose by *nature*, not coverage: a **skill** is a workflow the main
   session follows; an **agent** is a spawned sub-task invoked via the Task /
   `task` tool. The review chain uses agents (`code-reviewer`,
   `database-reviewer`, `refactorer` in hygiene mode, `doc-updater`,
   `fact-checker`).
-- `commands/` is a Claude-Code-originated slash-command concept that we mirror
-  to both harnesses. A thin command for an existing skill should just say
+- `commands/` is a Claude-Code-originated slash-command concept mirrored to
+  Claude Code and oh-my-pi, but not pi. A thin command for an existing skill should just say
   *"Load the `<skill>` skill, then …: `$ARGUMENTS`"*.
 - **Do not shadow a Claude built-in.** `/simplify` and `/fact-check` are
   Claude Code built-ins, so our own equivalents carry different names — the
@@ -82,12 +82,15 @@ Implications:
 
 ## Rules are advisory; guardrails are enforced
 
-`rules/*.md` is **advisory only** (ADR-0012). Claude Code injects every rule as
-always-on context; oh-my-pi lists each by `description:` in the **rulebook** and
-the model pulls it in on demand via `rule://<name>` (ADR-0002 — phrase the
-description as a load-trigger, "Read before writing tests…"). **No rule carries
-`condition:`/`scope:`** — the retired TTSR (stream-rule) frontmatter; the gate
-fails any rule that re-introduces it.
+`rules/*.md` is **advisory only** (ADR-0012). Detailed rules are on demand:
+Claude and pi read the canonical `~/.dotfiles/ai/rules/` files, while oh-my-pi
+uses its mirrored native rulebook via `rule://<name>`. A small shared bootstrap
+(`global-instructions.md`, ADR-0016) is always loaded by Claude and pi; it holds
+only critical constraints, the shared location, and load triggers. Agent
+`Project Rules` sections contain only bare rule names. Phrase every rule
+`description:` as a load trigger ("Read before writing tests…"). **No rule
+carries `condition:`/`scope:`** — the retired TTSR frontmatter; the gate fails
+any rule that re-introduces it.
 
 **Enforcement** (mechanically *blocking* a dangerous tool call) is **not** a
 rule. It lives once in the **guard core** as a guardrail policy (see Permissions)

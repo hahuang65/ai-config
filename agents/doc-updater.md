@@ -9,9 +9,7 @@ You are a documentation specialist focused on keeping documentation synchronized
 
 ## Project Rules (MANDATORY)
 
-Before starting work, read the following rule files from `rules/` in the repo root (or your harness's global rules directory: `~/.claude/rules/` for Claude Code, `~/.pi/agent/rules/` for pi, `~/.omp/agent/rules/` for oh-my-pi). These are non-negotiable constraints. All documentation you produce MUST comply.
-
-- `rules/git-commit.md`
+- `git-commit`
 
 ## Core Principle
 

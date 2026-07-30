@@ -7,21 +7,24 @@
 # its own. pi has no built-in permission system, so that extension is its whole
 # policy layer (sandboxing is a separate, deferred concern).
 #
-# pi has no native rulebook, so the shared advisory rules reach it via
-# individual rule files symlinked into ~/.pi/agent/rules/ (available for
-# sub-agents to read on demand) — not as a generated AGENTS.md concatenation.
+# pi has no native rulebook. Main sessions and isolated subagents read detailed
+# rules on demand from the canonical ~/.dotfiles/ai/rules/ directory.
 
 config_root="$HOME/.pi/agent"
-consumed_categories=(skills agents rules)
+consumed_categories=(skills agents)
 
 # pi does not have a native commands/ resource type — its only /-triggered
 # resources are prompt templates (prompts/), skills (/skill:name), built-in
 # commands, and extension-registered commands. Commands are a Claude Code
 # concept not used here.
 
-instruction_target=""
+# Small always-on bootstrap: critical baseline plus lazy-rule load triggers.
+instruction_target="AGENTS.md"
 
 install_module() {
+  # Remove the former per-harness rule mirror; preserve unrelated user files.
+  prune_repo_rule_links "$config_root/rules"
+
   # Copy base settings once (regular file, not symlink) so pi can write
   # runtime fields (lastChangelogVersion, etc.) without dirtying git.
   # Machine-specific edits (model, etc.) go directly into the installed copy.

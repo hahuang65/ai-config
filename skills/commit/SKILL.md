@@ -12,8 +12,8 @@ Create one focused git commit that follows the user's commit-message template an
 
 Before staging or writing a commit message, read both:
 
-1. `../../rules/git-commit.md` — staging policy, docs/features handling, branch guidance, and the `~/Projects/a5/**` exception.
-2. `~/.gitmessage` — authoritative commit-message format. If it is absent, use the fallback format in `rules/git-commit.md`.
+1. `~/.dotfiles/ai/rules/git-commit.md` — staging policy, docs/features handling, and the `~/Projects/a5/**` exception.
+2. `~/.gitmessage` — authoritative commit-message format. If it is absent, use the fallback format in the Git rule.
 
 Do not rely on memory for the commit format. Do not invent a different format.
 
@@ -30,7 +30,7 @@ Do not rely on memory for the commit format. Do not invent a different format.
    - If there are already staged files, treat them as intentional but still verify they form one logical change.
 
 3. **Stage safely**
-   - Follow `../../rules/git-commit.md` exactly, including the `docs/features/` policy and the `~/Projects/a5/**` exception.
+   - Follow the resolved Git rule exactly, including the `docs/features/` policy and the `~/Projects/a5/**` exception.
    - Prefer explicit paths. Do not use broad staging commands like `git add .` unless the user explicitly asked for every changed file and the status confirms that is safe.
    - Never stage secrets, credentials, `.env` files, or files blocked by the rule.
 
@@ -51,6 +51,6 @@ Stop and ask the user instead of committing when:
 
 - Changes span multiple logical commits.
 - The requested scope is ambiguous.
-- Staging would violate `../../rules/git-commit.md`.
+- Staging would violate the resolved Git rule.
 - `~/.gitmessage` is missing and the fallback format is insufficient for the repository.
 - The commit would require `--no-verify`, `--amend`, force-push, reset, or other destructive git behavior.
