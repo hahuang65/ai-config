@@ -22,7 +22,7 @@ Fallback summary (used only when `~/.gitmessage` is absent):
 ## Branching
 
 - Work on feature branches, not main
-- Branch names: `type/short-description` (e.g., `feature/cursor-pagination`, `fix/auth-redirect`)
+- Branch names: `user-initials/short-description` (e.g., `hh/cursor-pagination`, `hh/auth-redirect`)
 
 ## Staging policy
 
