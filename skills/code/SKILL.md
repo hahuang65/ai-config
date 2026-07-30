@@ -18,7 +18,7 @@ See [../shared/references/build-pipeline.md](../shared/references/build-pipeline
 
 ## Rules Adherence
 
-Comply with the project rules in `rules/` (coding-style, testing, security, performance, git-commit). Read detailed rules from `~/.dotfiles/ai/rules/`; in oh-my-pi, the equivalent native lookup is `rule://<name>`. The skill itself — not just the agents it invokes — must follow them.
+Comply with the project rules in `rules/` (coding-style, testing, security, performance, git-commit). Read detailed rules from `~/.dotfiles/ai/rules/`. The skill itself — not just the agents it invokes — must follow them.
 
 ## Standing Authorization
 

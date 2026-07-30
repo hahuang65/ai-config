@@ -38,7 +38,7 @@ prune_dangling() {
 
 # Remove this repo's old mirrored rule links from a harness directory while
 # preserving unrelated user-managed files. Claude and pi read the canonical
-# ~/.dotfiles/ai/rules/ files directly; only omp still needs a native mirror.
+# ~/.dotfiles/ai/rules/ files directly.
 prune_repo_rule_links() {
   local d="$1" link raw resolved
   [ -d "$d" ] || return 0

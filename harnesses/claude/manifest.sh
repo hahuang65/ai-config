@@ -17,9 +17,8 @@ dedupe_commands_with_skills=true
 # The source is harness-system-prompt.md, not the repo-root authoring contract.
 instruction_target="CLAUDE.md"
 
-# Claude reads no sibling config root, so there is no cross-discovery to
-# disable here (contrast oh-my-pi). The guardrail shim (tier B) is referenced
-# by absolute path from settings.json, so it needs no symlink.
+# The guardrail shim (tier B) is referenced by absolute path from settings.json,
+# so it needs no symlink.
 install_module() {
   # Migrate both the old auto-loaded rules/ mirror and the brief rulebook/
   # experiment to the canonical shared path. Preserve unrelated user files.

@@ -3,7 +3,7 @@ import guard from "../harnesses/pi/extensions/guard-policies";
 
 // Drive the pi adapter the way pi would: register its tool_call handler via a
 // fake ExtensionAPI, then invoke the handler with a structured event. pi's
-// extension API mirrors oh-my-pi's hook API, so this mirrors the omp test.
+// Drive pi's extension API through a representative tool_call event.
 function runToolCall(event: unknown): { block?: boolean; reason?: string } | undefined {
   let handler: ((e: unknown) => any) | undefined;
   const pi = { on: (name: string, fn: (e: unknown) => any) => { if (name === "tool_call") handler = fn; } };

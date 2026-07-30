@@ -1,11 +1,10 @@
 # pi harness module manifest (sourced by install.sh, ADR-0010/0011/0013).
 #
-# pi (@earendil-works/pi-coding-agent) reads its config from ~/.pi/agent. It is
-# a different engine from oh-my-pi but exposes the same tool_call adapter shape,
-# so its guardrail adapter (extensions/guard-policies.ts) is a thin twin that
-# routes the shared guard core (tier A, ADR-0011/0012) — no detection logic of
-# its own. pi has no built-in permission system, so that extension is its whole
-# policy layer (sandboxing is a separate, deferred concern).
+# pi (@earendil-works/pi-coding-agent) reads its config from ~/.pi/agent.
+# Its guardrail adapter (extensions/guard-policies.ts) routes the shared guard
+# core (tier A, ADR-0011/0012) with no detection logic of its own. pi has no
+# built-in permission system, so that extension is its whole policy layer
+# (sandboxing is a separate, deferred concern).
 #
 # pi has no native rulebook. Main sessions and isolated subagents read detailed
 # rules on demand from the canonical ~/.dotfiles/ai/rules/ directory.
@@ -40,8 +39,8 @@ install_module() {
   mkdir -p "$config_root/extensions"
   prune_dangling "$config_root/extensions"
 
-  # pi auto-discovers extensions from extensions/, but — unlike oh-my-pi — it
-  # does NOT realpath-resolve a symlinked extension, so the adapter can't reach
+  # pi auto-discovers extensions from extensions/, but it does not
+  # realpath-resolve a symlinked extension, so the adapter can't reach
   # the repo's shared/ via a relative import through a symlink. We therefore
   # ship a committed, self-contained BUNDLE (built by `make bundle`, kept current
   # by a gate drift-check) and symlink that: with no relative imports there is

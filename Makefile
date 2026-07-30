@@ -9,7 +9,7 @@ help: ## Show this help
 	@awk 'BEGIN{FS=":.*## "} /^[a-zA-Z0-9_\/-]+:.*## /{printf "  \033[36m%-15s\033[0m %s\n",$$1,$$2}' $(MAKEFILE_LIST)
 	@printf '\n  \033[2mtip: VERBOSE=1 make test/content  shows every check\033[0m\n\n'
 
-install: ## Symlink config into each harness root (~/.claude, ~/.omp/agent, ~/.pi/agent)
+install: ## Symlink config into each harness root (~/.claude, ~/.pi/agent)
 	@bash install.sh
 
 bundle: ## Rebuild pi's self-contained guard extension bundle (pi can't resolve symlinked imports)

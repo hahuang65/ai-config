@@ -25,9 +25,6 @@ remove_fixtures() {
   rm -f "$REPO_DIR"/commands/test-self-test-*.md 2>/dev/null || true
   rm -f "$REPO_DIR"/rules/test-self-test-*.md 2>/dev/null || true
   rm -rf "$REPO_DIR"/harnesses/test-self-test-* 2>/dev/null || true
-  rm -f "$REPO_DIR"/harnesses/omp/test-self-test-* 2>/dev/null || true
-  rm -f "$REPO_DIR"/harnesses/omp/hooks/pre/guard-test-self-test-*.ts 2>/dev/null || true
-  rm -f "$REPO_DIR"/harnesses/omp/hooks/post/redact-test-self-test-*.ts 2>/dev/null || true
   # Restore any __real__ files left behind by an interrupted fixture_replace.
   # First remove the symlink that replaced the original (if still present),
   # then move the backup back.
@@ -277,7 +274,7 @@ description: A fixture skill that smuggles in the Claude-centric phrase.
 ---
 
 Comply with the project rules already loaded in context. This phrase is
-Claude-Code-centric and is wrong on omp under rulebook semantics.
+wrong because detailed rules are loaded on demand.
 EOF
 
   if run_pipeline content forbidden-phrasing; then
@@ -331,67 +328,27 @@ test_stale_pi_bundle_fails() {
 }
 
 # ---------------------------------------------------------------------------
-# Self-test 10: Rulebook rule (no condition:) missing description
+# Self-test 10: Advisory rule missing description metadata
 # ---------------------------------------------------------------------------
 
-test_rulebook_rule_missing_description_fails() {
+test_advisory_rule_missing_description_fails() {
   local f
-  f="$(fixture_file "rules/test-self-test-rulebook-no-desc.md")"
+  f="$(fixture_file "rules/test-self-test-no-desc.md")"
   cat >"$f" <<'EOF'
 # Rule with no frontmatter
 
-This rule has neither description nor condition. omp would silently drop it
-from the rulebook bucket; our pipeline must flag it instead of letting it rot.
+This advisory rule has no description metadata.
 EOF
 
-  if run_pipeline content rulebook-frontmatter; then
-    self_fail "rulebook rule missing description: test-pipeline.sh should exit non-zero"
+  if run_pipeline content advisory-frontmatter; then
+    self_fail "advisory rule missing description: test-pipeline.sh should exit non-zero"
   else
-    self_pass "rulebook rule missing description: test-pipeline.sh correctly exits non-zero"
+    self_pass "advisory rule missing description: test-pipeline.sh correctly exits non-zero"
   fi
 }
 
 # ---------------------------------------------------------------------------
-# Self-test 11: omp install target missing (rename omp/config.yml aside)
-# ---------------------------------------------------------------------------
-
-test_omp_install_target_missing_fails() {
-  local rel="harnesses/omp/config.yml"
-  local tmp="$TMPDIR/$rel"
-  mkdir -p "$(dirname "$tmp")"
-  mv "$REPO_DIR/$rel" "$tmp"
-
-  if run_pipeline install harness-modules; then
-    self_fail "missing omp/config.yml: test-pipeline.sh should exit non-zero"
-  else
-    self_pass "missing omp/config.yml: test-pipeline.sh correctly exits non-zero"
-  fi
-
-  # Restore immediately so subsequent tests can find the file.
-  mv "$tmp" "$REPO_DIR/$rel"
-}
-
-# ---------------------------------------------------------------------------
-# Self-test 11b: re-enabling oh-my-pi cross-discovery fails isolation (ADR-0010)
-# ---------------------------------------------------------------------------
-
-test_cross_discovery_enabled_fails() {
-  local rel="harnesses/omp/config.yml"
-  # Replace with a symlink to a temp copy so the sed modification never
-  # touches the repo file.
-  fixture_replace "$rel"
-  sed -i.bak 's/enableClaudeUser:[[:space:]]*false/enableClaudeUser: true/' "$TMPDIR/$rel"
-  rm -f "$TMPDIR/$rel.bak"
-
-  if run_pipeline install isolation; then
-    self_fail "cross-discovery re-enabled: test-pipeline.sh should exit non-zero"
-  else
-    self_pass "cross-discovery re-enabled: test-pipeline.sh correctly exits non-zero"
-  fi
-}
-
-# ---------------------------------------------------------------------------
-# Self-test 11c: a harness manifest missing config_root fails the contract
+# Self-test 11: a harness manifest missing config_root fails the contract
 # ---------------------------------------------------------------------------
 
 test_bad_manifest_fails() {
@@ -411,51 +368,7 @@ EOF
 }
 
 # ---------------------------------------------------------------------------
-# Self-test 12: invalid YAML in omp/
-# ---------------------------------------------------------------------------
-
-test_omp_yaml_invalid_fails() {
-  local f
-  f="$(fixture_file "harnesses/omp/test-self-test-broken.yml")"
-  cat >"$f" <<'EOF'
-key: [unclosed list
-  - "and: { mixed: types"
-  more: { broken
-EOF
-
-  if run_pipeline install omp-yaml-valid; then
-    self_fail "broken omp YAML: test-pipeline.sh should exit non-zero"
-  else
-    self_pass "broken omp YAML: test-pipeline.sh correctly exits non-zero"
-  fi
-}
-
-# ---------------------------------------------------------------------------
-# Self-test 13: omp hook missing default export
-# ---------------------------------------------------------------------------
-
-test_omp_hook_missing_default_export_fails() {
-  local f
-  f="$(fixture_file "harnesses/omp/hooks/pre/guard-test-self-test-bad.ts")"
-  cat >"$f" <<'EOF'
-import type { HookAPI } from "@oh-my-pi/pi-coding-agent/extensibility/hooks";
-
-// Intentionally missing `export default function` — should fail the
-// test_omp_hook_shape pipeline check.
-function notAHook(pi: HookAPI): void {
-  pi.on("tool_call", () => undefined);
-}
-EOF
-
-  if run_pipeline install omp-hook-shape; then
-    self_fail "hook missing default export: test-pipeline.sh should exit non-zero"
-  else
-    self_pass "hook missing default export: test-pipeline.sh correctly exits non-zero"
-  fi
-}
-
-# ---------------------------------------------------------------------------
-# Self-test 14: Skill directory with no SKILL.md
+# Self-test 12: Skill directory with no SKILL.md
 # ---------------------------------------------------------------------------
 
 test_skill_dir_missing_skill_md_fails() {
@@ -539,12 +452,8 @@ main() {
   test_forbidden_already_loaded_in_context_fails
   test_reintroduced_ttsr_rule_fails
   test_stale_pi_bundle_fails
-  test_rulebook_rule_missing_description_fails
-  test_omp_install_target_missing_fails
-  test_cross_discovery_enabled_fails
+  test_advisory_rule_missing_description_fails
   test_bad_manifest_fails
-  test_omp_yaml_invalid_fails
-  test_omp_hook_missing_default_export_fails
   test_skill_dir_missing_skill_md_fails
   test_implement_coach_missing_holding_line_fails
   test_build_missing_phase_loading_fails

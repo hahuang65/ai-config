@@ -1,18 +1,18 @@
 # ai-config
 
-A single configuration source that powers multiple AI coding harnesses (Claude Code, oh-my-pi, and pi). Skills, commands, agents, and rules are authored once and installed into each via `install.sh`.
+A single configuration source that powers Claude Code and pi. Skills, commands, agents, and rules are authored once and installed into each via `install.sh`.
 
 ## Language
 
 ### Core concepts
 
 **Harness**:
-The runtime program that drives an LLM through tool calls, system prompts, and a session UI — Claude Code, oh-my-pi, and pi are the three this repo configures. Per-harness config lives in a self-contained **harness module** under `harnesses/` — `harnesses/claude/`, `harnesses/omp/`, and `harnesses/pi/` (see [`modular-harness-modules-and-isolation`](docs/adr/0010-modular-harness-modules-and-isolation.md)).
+The runtime program that drives an LLM through tool calls, system prompts, and a session UI — Claude Code and pi are the two this repo configures. Per-harness config lives in a self-contained **harness module** under `harnesses/` — `harnesses/claude/` and `harnesses/pi/` (see [`modular-harness-modules-and-isolation`](docs/adr/0010-modular-harness-modules-and-isolation.md)).
 _Avoid_: Tool (overloaded with the Bash/Read/Edit primitives a harness gives the model), assistant, agent (overloaded with subagent), AI coding tool.
 
 **Tool**:
 A primitive the harness exposes to the model — `Bash`, `Read`, `Edit`, `Write`, `WebFetch`, `WebSearch`, `Glob`, `Grep`, and so on. Distinct from a harness, which is the program that hosts the tools.
-_Avoid_: Capability (oh-my-pi-internal jargon for its discovery registry), primitive in user-facing copy.
+_Avoid_: Capability, primitive in user-facing copy.
 
 **Skill**:
 A file-backed capability pack discoverable by name, defined by `<root>/skills/<name>/SKILL.md`. Loaded as lightweight metadata in the system prompt and read on demand. Shared across all harnesses without per-harness translation.
@@ -21,36 +21,24 @@ A file-backed capability pack discoverable by name, defined by `<root>/skills/<n
 A `<root>/commands/<name>.md` file invoked by the user as `/<name>`. Frontmatter is parsed; body is rendered as a prompt template with `$ARGUMENTS` / `$1` substitutions.
 
 **Agent** (subagent):
-A specialized sub-runtime invoked by the main session via the Task tool (Claude Code) or `task` tool (oh-my-pi). Defined in `<root>/agents/<name>.md` with a tool allowlist in frontmatter.
+A specialized sub-runtime invoked by the main session through its subagent tool. Defined in `<root>/agents/<name>.md` with a tool allowlist in frontmatter.
 _Avoid_: Worker, child session.
 
 **Rule**:
-A `<root>/rules/<name>.md` file holding guidance the harness pulls into context on demand. Claude and pi read the canonical `~/.dotfiles/ai/rules/` files directly; oh-my-pi uses a native mirror (`name + description`, read via `rule://<name>`). See [`small-always-on-bootstrap-lazy-rulebooks`](docs/adr/0016-small-always-on-bootstrap-lazy-rulebooks.md).
+A `<root>/rules/<name>.md` file holding guidance the harness pulls into context on demand. Claude and pi read the canonical `~/.dotfiles/ai/rules/` files directly. See [`small-always-on-bootstrap-lazy-rulebooks`](docs/adr/0016-small-always-on-bootstrap-lazy-rulebooks.md).
 
 ### Harness-specific terms
 
 **`.claude` / `~/.claude/`**:
 Claude Code's config root. This repo's `harnesses/claude/` module contains `settings.json`, `statusline.sh`, `hooks.json`, the tier-B guard shim `hooks/guard.ts`, and a `manifest.sh`, all symlinked into `~/.claude/` by `install.sh`. Skills, commands, and agents use their conventional directories; detailed rules remain at the canonical `~/.dotfiles/ai/rules/` path so Claude does not auto-inject them, and `~/.claude/CLAUDE.md` supplies the small global bootstrap.
 
-**`.omp` / `~/.omp/agent/`**:
-oh-my-pi's config roots — project-level (`<cwd>/.omp/`) and user-level (`~/.omp/agent/`, with the extra `agent` subfolder). This repo's `harnesses/omp/` module holds oh-my-pi-specific config (`config.yml`, `RULES.md`, `extensions/`, `hooks/`, `manifest.sh`).
-
-**Source priority** (oh-my-pi):
-oh-my-pi's built-in ordering for cross-harness config discovery — higher number wins on name collisions: `.omp` (100) > `.claude` (80) > `.codex` (70) > `.gemini` (60) > `.opencode` (55). Means `~/.claude/skills/` is technically discoverable by oh-my-pi, although this repo disables that cross-discovery and explicitly mirrors the curated shared set.
+**`.pi` / `~/.pi/agent/`**:
+pi's config root. This repo's `harnesses/pi/` module contains settings, extensions, a bundled tier-A guard adapter, and a `manifest.sh`. Skills and agents use their conventional directories; detailed rules remain at the canonical `~/.dotfiles/ai/rules/` path, and `~/.pi/agent/AGENTS.md` supplies the small global bootstrap.
 
 ### Lifecycle terms
 
 **Always-on context**:
-Content the harness injects into every conversation's system prompt without the model having to ask for it. This repo keeps that surface to `harness-system-prompt.md` for Claude and pi: a critical baseline plus the shared rule location and load triggers. Claude Code would also auto-load `~/.claude/rules/*.md`, so this repo deliberately leaves detailed rules only at the canonical source path. Oh-my-pi uses no `alwaysApply: true` rules.
-
-**Rulebook** (oh-my-pi):
-oh-my-pi's bucket of rules that are listed in the system prompt by `name + description` and read on demand via `rule://<name>`. Requires `description:` frontmatter. All six advisory rules live here; descriptions are written as load triggers so the model knows when to pull them in. Claude and pi emulate the routing behavior through `harness-system-prompt.md` plus ordinary file reads.
-
-**TTSR** (oh-my-pi — time-traveling stream rules):
-oh-my-pi's mid-stream rule injection: a regex match against the model's output aborts the stream, injects the rule body as a `<system-reminder>`, and retries from the same token. Configured via `condition:` frontmatter (plus optional `scope:`). **Retired in this repo (ADR-0012):** every TTSR enforcement rule was migrated into the **guard core** (command and write-**content** detection), so no `rules/*.md` carries `condition:` frontmatter any more. Kept here as historical vocabulary for ADR-0003 (which ADR-0012 supersedes).
-
-**Hook** (oh-my-pi — pre/post-tool TS modules):
-TS/JS modules at `harnesses/omp/hooks/{pre,post}/*.ts` (symlinked to `~/.omp/agent/hooks/{pre,post}/`). Subscribe to oh-my-pi runtime events via the `HookAPI` from `@oh-my-pi/pi-coding-agent/extensibility/hooks`. Pre-hooks fire on `tool_call` (before execution) and can return `{ block, reason }` to refuse the call. Post-hooks fire on `tool_result` (after execution) and can return `{ content, details, isError }` to mutate what the model sees. Unlike TTSR, hooks see **structured tool input** (`event.input.command`, `event.input.path`), so they catch what regex on stream text can't: process substitution (`bash <(…)`), find-exec, interpreter wrappers (`python -c "os.system(…)"`). Hooks can also **mutate output** (TTSR can only block). This repo uses hooks for input-bound patterns where TTSR's regex has known bypasses, and for output redaction (which TTSR fundamentally can't do). See [`hooks-replace-ttsr-for-input-bound-patterns`](docs/adr/0006-hooks-replace-ttsr-for-input-bound-patterns.md). Distinct from oh-my-pi **extensions** (`harnesses/omp/extensions/`), which use the same event API but can also register commands, tools, and renderers — extensions are the superset, hooks are the narrower event-handler surface.
+Content the harness injects into every conversation's system prompt without the model having to ask for it. This repo keeps that surface to `harness-system-prompt.md` for Claude and pi: a critical baseline plus the shared rule location and load triggers. Claude Code would also auto-load `~/.claude/rules/*.md`, so this repo deliberately leaves detailed rules only at the canonical source path.
 
 ### Harness-modularity & guardrail terms
 
@@ -59,24 +47,20 @@ A self-contained directory holding everything specific to one harness — its ru
 _Avoid_: harness folder, plugin, per-harness block.
 
 **Config root**:
-The home-directory location a harness reads its config from — `~/.claude/`, `~/.omp/agent/`, `~/.pi/agent/`. Each config root is owned **exclusively** by one harness module.
-
-**Cross-discovery**:
-A harness's built-in scavenging of *another* harness's config root (e.g. oh-my-pi reading `~/.claude/skills/` via its Claude provider at priority 80). Deliberately **disabled** in this repo (`skills.enableClaudeUser: false`, etc.) so that sharing is push-only — every harness sees only what `install.sh` mirrored into its own root.
-_Avoid_: fallback, delegation, scavenge.
+The home-directory location a harness reads its config from — `~/.claude/` or `~/.pi/agent/`. Each config root is owned **exclusively** by one harness module.
 
 **Isolation invariant**:
-The guarantee that each harness sees only its own module's files plus the curated shared set — never content leaked from a sibling harness. Upheld by disabling cross-discovery and verified by the **isolation test**. Distinct from **sandboxing** (runtime VM isolation of a harness process — a different, orthogonal concept).
+The guarantee that each harness sees only its own module's files plus the curated shared set — never content leaked from a sibling harness. Verified by the **isolation test**. Distinct from **sandboxing** (runtime VM isolation of a harness process — a different, orthogonal concept).
 
 **Isolation test**:
-The check asserting each config root contains only `{its module's files} ∪ {the curated shared set}` — no symlink resolving into a sibling harness's directory, cross-discovery flags off. A leak fails CI.
+The check asserting each config root contains only `{its module's files} ∪ {the curated shared set}` — no symlink may resolve into a sibling harness's directory. A leak fails CI.
 
 **Advisory rule**:
 A `rules/*.md` file that is pure guidance the model reads — shares verbatim across harnesses like a skill, with no mechanical enforcement. After the guardrail consolidation (ADR-0012), **`rules/` is advisory-only**: `coding-style`, `testing`, `performance`, `git-commit`, `mise`, and `security` (its non-blockable principles). All *enforcement* moved to the **guard core**. Distinct from a **Guardrail policy**.
 _Avoid_: rule (unqualified — the bare word hides the advisory-vs-guardrail split).
 
 **Rule projection**:
-How advisory rules reach a harness. **Claude** and **pi** read ordinary files from the canonical `~/.dotfiles/ai/rules/` directory; **oh-my-pi** loads mirrored native rulebook entries via `rule://<name>`. Claude and pi share the same small always-on bootstrap for routing. Enforcement, by contrast, travels through the **guard core**, not rule projection. (ADR-0016)
+How advisory rules reach a harness. **Claude** and **pi** read ordinary files from the canonical `~/.dotfiles/ai/rules/` directory and share the same small always-on bootstrap for routing. Enforcement, by contrast, travels through the **guard core**, not rule projection. (ADR-0016)
 
 **Global instruction bootstrap**:
 The small harness-neutral `harness-system-prompt.md` installed as Claude's `~/.claude/CLAUDE.md` and pi's `~/.pi/agent/AGENTS.md`. It contains only critical cross-task constraints, rulebook locations, and load triggers. It is distinct from the repo-root `AGENTS.md`, which is this repository's authoring contract and is never installed globally.
@@ -96,7 +80,7 @@ The shared TypeScript module implementing the *detection* logic for guardrail po
 _Avoid_: hook (a harness's event surface), matcher.
 
 **Enforcement tier** (a.k.a. **adapter archetype**):
-The classification of a harness by *how* it can enforce policies — **A** programmable (runs the guard core in-process: pi, oh-my-pi), **B** command-hook (runs the guard core via an external command + shim: Claude Code), **C** declarative (static allow/deny patterns only), **D** sandbox (environment isolation, e.g. Gondolin), **E** guidance (prompt text only). A new harness maps to one or more tiers; each tier has a reusable adapter.
+The classification of a harness by *how* it can enforce policies — **A** programmable (runs the guard core in-process: pi), **B** command-hook (runs the guard core via an external command + shim: Claude Code), **C** declarative (static allow/deny patterns only), **D** sandbox (environment isolation, e.g. Gondolin), **E** guidance (prompt text only). A new harness maps to one or more tiers; each tier has a reusable adapter.
 _Avoid_: harness type.
 
 **Coverage matrix**:
@@ -121,7 +105,7 @@ _Avoid_: phase (a phase is a stage of the pipeline; a pipeline skill is the unit
 
 **Progressive disclosure**:
 The skill-authoring convention where `SKILL.md` is a thin entry point that defers heavy detail to `references/*.md` files read on demand, instead of one monolithic file. Detail used by more than one skill lives in a global `skills/shared/references/` directory and is imported by relative path rather than duplicated (e.g. `spec`/`todo`/`code` read `../shared/references/build-pipeline.md`); detail used by a single skill lives in that skill's own `references/`.
-_Avoid_: lazy loading (overloaded with the oh-my-pi rulebook's on-demand `rule://` mechanism).
+_Avoid_: lazy loading.
 
 **Feature directory**:
 The per-build-run home for feature artifacts: `docs/features/<YYYYMMDD-HHMM>-<slug>/`, holding `specs.md`/`specs.html`, `tasks.md`/`tasks.html`, and `diff-review.html`. Project-wide artifacts (`CONTEXT.md`, `docs/adr/`) live at the repo root and accrete across runs.
@@ -138,13 +122,7 @@ _Avoid_: refactoring (unqualified — hides the directed-vs-hygiene split).
 ## Example dialogue
 
 > **Dev**: I want to add `/refactor` so it works in both harnesses.
-> **Expert**: That's a slash command, not a skill. Drop a markdown file at `commands/refactor.md` with frontmatter and a body template. `install.sh` symlinks it into `~/.claude/commands/` and — for oh-my-pi — either we symlink it to `~/.omp/agent/commands/` for native priority, or we rely on oh-my-pi's `.claude` fallback at priority 80. The skill/command duality matters: if a `skills/refactor/` directory already exists, the command file gets skipped for Claude Code (to avoid registering both as `/refactor`).
+> **Expert**: Claude exposes slash commands, while pi uses skills and prompt templates. Put reusable behavior in `skills/refactor/SKILL.md`; add `commands/refactor.md` only when Claude needs a command-shaped entry point. The installer projects each resource only into harnesses that consume that category.
 >
-> **Dev**: And if I want the testing rule to be picked up by oh-my-pi too?
-> **Expert**: Rules with no frontmatter are silently dropped by oh-my-pi's rulebook pipeline. Add a `description:` to `rules/testing.md` — phrased as a load-trigger like "Read before writing tests…" — and oh-my-pi lists it in the rulebook for the model to pull in on demand. We deliberately skip `alwaysApply: true` for context economy; oh-my-pi's context-tax-per-turn would be high if every rule injected wholesale. The frontmatter is harmless to Claude Code.
->
-> **Dev**: And `security.md` — I never want any harness reading my `.env`. Same deal, just symlink it?
-> **Expert**: No — that's the split. `security.md` as *guidance* is an **advisory rule** and shares fine. But "never read secrets" as an *enforced* constraint is a **guardrail policy**: it gets an ID in the **policy registry**, the detection lives once in the **guard core** (`isSecretPath`), and each **harness module** wires that core in via its **enforcement tier** — pi and oh-my-pi run it in-process (tier A), Claude runs it through a stdin/stdout shim (tier B). The **conformance test** then proves every harness covers it, because `no-secret-access` is in the **mandatory policy floor**.
->
-> **Dev**: But oh-my-pi already reads `~/.claude/skills/` for free. Doesn't it just pick up Claude's security setup too?
-> **Expert**: That "for free" is exactly the pollution we close. That's **cross-discovery**, and we disable it (`enableClaudeUser: false`) so sharing is push-only — every **config root** sees only what `install.sh` mirrored into it. The **isolation test** fails CI if anything under `~/.omp/agent/` resolves back into `claude/`. Sharing is a curated set we push, never something a harness scavenges.
+> **Dev**: And `security.md` — I never want any harness reading my `.env`. Same deal, just share the rule?
+> **Expert**: No — that's the split. `security.md` as *guidance* is an **advisory rule** and shares fine. But "never read secrets" as an *enforced* constraint is a **guardrail policy**: it gets an ID in the **policy registry**, the detection lives once in the **guard core** (`isSecretPath`), and each **harness module** wires that core in via its **enforcement tier** — pi runs it in-process (tier A), while Claude runs it through a stdin/stdout shim (tier B). The **conformance test** proves both harnesses cover it because `no-secret-access` is in the **mandatory policy floor**.

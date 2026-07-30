@@ -43,7 +43,7 @@ Mark each done as you finish *your* half of the cycle. The user's pending implem
 
 ## Rules Adherence
 
-Comply with the project rules in `rules/`. Read detailed rules from `~/.dotfiles/ai/rules/`; in oh-my-pi, the equivalent native lookup is `rule://<name>`. Guide the user to follow them while implementing.
+Comply with the project rules in `rules/`. Read detailed rules from `~/.dotfiles/ai/rules/`. Guide the user to follow them while implementing.
 
 ## TDD Protocol
 

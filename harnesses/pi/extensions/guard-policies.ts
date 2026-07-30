@@ -3,8 +3,8 @@
 // pi guardrail adapter (enforcement tier A, ADR-0011). A thin extension for pi
 // (@earendil-works/pi-coding-agent): it normalizes pi's structured tool_call
 // event and routes it through the shared guard core, which holds all detection
-// logic. No policy logic of its own — the same matchers run here, on oh-my-pi,
-// and through the Claude shim.
+// logic. No policy logic of its own — the same matchers run here and through
+// the Claude shim.
 //
 // pi has no built-in permission system, so this extension is pi's entire
 // policy layer (sandboxing is a separate, deferred concern). pi auto-discovers

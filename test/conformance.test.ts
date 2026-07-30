@@ -2,17 +2,14 @@ import { test, expect } from "bun:test";
 import { findFloorGaps, formatMatrix, floorPolicies, type Coverage } from "../shared/conformance";
 import { POLICIES } from "../shared/policy-registry";
 import { evaluate, type ToolCall } from "../shared/guard-core";
-import ompGuard from "../harnesses/omp/hooks/pre/guard-policies";
 import piGuard from "../harnesses/pi/extensions/guard-policies";
 
-const HARNESSES = ["oh-my-pi", "Claude Code"];
+const HARNESSES = ["pi", "Claude Code"];
 
 // The conformance probe for each policy is its registry `example` — no
 // separate map to drift from the registry.
 
-// Tier-A harnesses (oh-my-pi, pi) are different engines that share the same
-// tool_call adapter shape, so drive either's in-process default export the way
-// its engine would.
+// Drive pi's in-process default export through its tool_call adapter shape.
 function inProcessBlocks(guard: (pi: unknown) => void, call: ToolCall): boolean {
   let handler: ((e: unknown) => any) | undefined;
   guard({ on: (n: string, f: any) => { if (n === "tool_call") handler = f; } });
@@ -33,7 +30,6 @@ async function claudeBlocks(call: ToolCall): Promise<boolean> {
 }
 
 const ADAPTERS = [
-  { name: "oh-my-pi", blocks: async (c: ToolCall) => inProcessBlocks(ompGuard, c) },
   { name: "pi", blocks: async (c: ToolCall) => inProcessBlocks(piGuard, c) },
   { name: "Claude Code", blocks: claudeBlocks },
 ];
@@ -67,7 +63,7 @@ test("every harness enforces every floor policy", async () => {
 });
 
 test("the coverage matrix labels floor policies and lists every harness", () => {
-  const coverage = { "no-secret-access": { "oh-my-pi": true, "Claude Code": true } };
+  const coverage = { "no-secret-access": { pi: true, "Claude Code": true } };
   const matrix = formatMatrix(coverage, HARNESSES);
   expect(matrix).toContain("no-secret-access");
   expect(matrix).toContain("floor");
@@ -75,7 +71,7 @@ test("the coverage matrix labels floor policies and lists every harness", () => 
 });
 
 test("reports a floor policy left uncovered by a harness", () => {
-  const coverage = { "no-secret-access": { "oh-my-pi": true, "Claude Code": false } };
+  const coverage = { "no-secret-access": { pi: true, "Claude Code": false } };
   const gaps = findFloorGaps(coverage, HARNESSES);
   expect(gaps).toContainEqual({ policy: "no-secret-access", harness: "Claude Code" });
 });
@@ -84,8 +80,8 @@ test("does not report an uncovered non-floor policy as a gap", () => {
   // Every floor policy covered; a non-floor policy left uncovered.
   const coverage: Coverage = {};
   for (const policy of floorPolicies()) {
-    coverage[policy.id] = { "oh-my-pi": true, "Claude Code": true };
+    coverage[policy.id] = { pi: true, "Claude Code": true };
   }
-  coverage["no-shell-write"] = { "oh-my-pi": false, "Claude Code": false };
+  coverage["no-shell-write"] = { pi: false, "Claude Code": false };
   expect(findFloorGaps(coverage, HARNESSES)).toEqual([]);
 });
