@@ -114,7 +114,7 @@ cleanup() {
 trap cleanup EXIT
 
 run_pipeline() {
-  bash "$PIPELINE" >/dev/null 2>&1
+  bash "$PIPELINE" "$@" >/dev/null 2>&1
 }
 
 # ---------------------------------------------------------------------------
@@ -144,7 +144,7 @@ description: A skill missing the name field
 Some body content here.
 EOF
 
-  if run_pipeline; then
+  if run_pipeline content frontmatter-skills; then
     self_fail "skill missing name: test-pipeline.sh should exit non-zero"
   else
     self_pass "skill missing name: test-pipeline.sh correctly exits non-zero"
@@ -167,7 +167,7 @@ description: An agent missing the tools field
 Some agent body content.
 EOF
 
-  if run_pipeline; then
+  if run_pipeline content frontmatter-agents; then
     self_fail "agent missing tools: test-pipeline.sh should exit non-zero"
   else
     self_pass "agent missing tools: test-pipeline.sh correctly exits non-zero"
@@ -191,7 +191,7 @@ tools: ["FakeTool"]
 Some agent body content.
 EOF
 
-  if run_pipeline; then
+  if run_pipeline content frontmatter-agents; then
     self_fail "agent unknown tool: test-pipeline.sh should exit non-zero"
   else
     self_pass "agent unknown tool: test-pipeline.sh correctly exits non-zero"
@@ -213,7 +213,7 @@ description: test command with broken reference
 See ~/.claude/skills/visualize/references/nonexistent-file.md for details.
 EOF
 
-  if run_pipeline; then
+  if run_pipeline content cross-references; then
     self_fail "broken VE reference: test-pipeline.sh should exit non-zero"
   else
     self_pass "broken VE reference: test-pipeline.sh correctly exits non-zero"
@@ -237,7 +237,7 @@ tools: ["Read"]
 Follow the guidelines in rules/nonexistent-rule.md.
 EOF
 
-  if run_pipeline; then
+  if run_pipeline content agent-rule-deps; then
     self_fail "agent missing rule: test-pipeline.sh should exit non-zero"
   else
     self_pass "agent missing rule: test-pipeline.sh correctly exits non-zero"
@@ -256,7 +256,7 @@ This agent has been moved to code-reviewer.md
 See agents/code-reviewer.md instead
 EOF
 
-  if run_pipeline; then
+  if run_pipeline content stale-stubs; then
     self_fail "stale stub: test-pipeline.sh should exit non-zero"
   else
     self_pass "stale stub: test-pipeline.sh correctly exits non-zero"
@@ -280,7 +280,7 @@ Comply with the project rules already loaded in context. This phrase is
 Claude-Code-centric and is wrong on omp under rulebook semantics.
 EOF
 
-  if run_pipeline; then
+  if run_pipeline content forbidden-phrasing; then
     self_fail "forbidden phrase: test-pipeline.sh should exit non-zero"
   else
     self_pass "forbidden phrase: test-pipeline.sh correctly exits non-zero"
@@ -305,7 +305,7 @@ scope: tool:bash
 Enforcement belongs in the guard core now, not in a stream rule.
 EOF
 
-  if run_pipeline; then
+  if run_pipeline content no-ttsr-frontmatter; then
     self_fail "re-introduced TTSR rule: test-pipeline.sh should exit non-zero"
   else
     self_pass "re-introduced TTSR rule: test-pipeline.sh correctly exits non-zero"
@@ -323,7 +323,7 @@ test_stale_pi_bundle_fails() {
   # Simulate "edited the adapter/guard-core, forgot to `make bundle`".
   printf '\nconst __stale_drift__ = true;\n' >>"$TMPDIR/$rel"
 
-  if run_pipeline; then
+  if run_pipeline content pi-bundle-current; then
     self_fail "stale pi guard bundle: test-pipeline.sh should exit non-zero"
   else
     self_pass "stale pi guard bundle: test-pipeline.sh correctly exits non-zero"
@@ -344,7 +344,7 @@ This rule has neither description nor condition. omp would silently drop it
 from the rulebook bucket; our pipeline must flag it instead of letting it rot.
 EOF
 
-  if run_pipeline; then
+  if run_pipeline content rulebook-frontmatter; then
     self_fail "rulebook rule missing description: test-pipeline.sh should exit non-zero"
   else
     self_pass "rulebook rule missing description: test-pipeline.sh correctly exits non-zero"
@@ -361,7 +361,7 @@ test_omp_install_target_missing_fails() {
   mkdir -p "$(dirname "$tmp")"
   mv "$REPO_DIR/$rel" "$tmp"
 
-  if run_pipeline; then
+  if run_pipeline install harness-modules; then
     self_fail "missing omp/config.yml: test-pipeline.sh should exit non-zero"
   else
     self_pass "missing omp/config.yml: test-pipeline.sh correctly exits non-zero"
@@ -383,7 +383,7 @@ test_cross_discovery_enabled_fails() {
   sed -i.bak 's/enableClaudeUser:[[:space:]]*false/enableClaudeUser: true/' "$TMPDIR/$rel"
   rm -f "$TMPDIR/$rel.bak"
 
-  if run_pipeline; then
+  if run_pipeline install isolation; then
     self_fail "cross-discovery re-enabled: test-pipeline.sh should exit non-zero"
   else
     self_pass "cross-discovery re-enabled: test-pipeline.sh correctly exits non-zero"
@@ -403,7 +403,7 @@ consumed_categories=(skills)
 install_module() { :; }
 EOF
 
-  if run_pipeline; then
+  if run_pipeline install harness-modules; then
     self_fail "bad manifest (no config_root): test-pipeline.sh should exit non-zero"
   else
     self_pass "bad manifest (no config_root): test-pipeline.sh correctly exits non-zero"
@@ -423,7 +423,7 @@ key: [unclosed list
   more: { broken
 EOF
 
-  if run_pipeline; then
+  if run_pipeline install omp-yaml-valid; then
     self_fail "broken omp YAML: test-pipeline.sh should exit non-zero"
   else
     self_pass "broken omp YAML: test-pipeline.sh correctly exits non-zero"
@@ -447,7 +447,7 @@ function notAHook(pi: HookAPI): void {
 }
 EOF
 
-  if run_pipeline; then
+  if run_pipeline install omp-hook-shape; then
     self_fail "hook missing default export: test-pipeline.sh should exit non-zero"
   else
     self_pass "hook missing default export: test-pipeline.sh correctly exits non-zero"
@@ -459,9 +459,9 @@ EOF
 # ---------------------------------------------------------------------------
 
 test_skill_dir_missing_skill_md_fails() {
-  fixture_skill_dir "test-self-test-empty"
+  fixture_skill_dir "test-self-test-empty" >/dev/null
 
-  if run_pipeline; then
+  if run_pipeline content symlink-targets; then
     self_fail "missing SKILL.md: test-pipeline.sh should exit non-zero"
   else
     self_pass "missing SKILL.md: test-pipeline.sh correctly exits non-zero"
@@ -490,7 +490,7 @@ test_implement_coach_missing_holding_line_fails() {
   ' "$TMPDIR/$rel" > "$TMPDIR/$rel.tmp"
   mv "$TMPDIR/$rel.tmp" "$TMPDIR/$rel"
 
-  if run_pipeline; then
+  if run_pipeline content coach-holding-line; then
     self_fail "stripped coach holding-line section: test-pipeline.sh should exit non-zero"
   else
     self_pass "stripped coach holding-line section: test-pipeline.sh correctly exits non-zero"
@@ -514,7 +514,7 @@ test_build_missing_phase_loading_fails() {
   ' "$TMPDIR/$rel" > "$TMPDIR/$rel.tmp"
   mv "$TMPDIR/$rel.tmp" "$TMPDIR/$rel"
 
-  if run_pipeline; then
+  if run_pipeline content phase-orchestrator; then
     self_fail "stripped build phase-loading section: test-pipeline.sh should exit non-zero"
   else
     self_pass "stripped build phase-loading section: test-pipeline.sh correctly exits non-zero"

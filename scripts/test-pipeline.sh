@@ -1372,23 +1372,56 @@ run_install() {
   run test_install_behavior
 }
 
-# Usage: test-pipeline.sh [content|install]   (no arg runs both)
+# Run one named check for the meta-suite. Keeping this allowlist explicit avoids
+# turning a command-line argument into arbitrary shell function execution.
+run_selected() {
+  case "$1" in
+    frontmatter-skills)        run test_frontmatter_skills ;;
+    frontmatter-agents)        run test_frontmatter_agents ;;
+    cross-references)          run test_cross_references ;;
+    agent-rule-deps)           run test_agent_rule_deps ;;
+    stale-stubs)               run test_stale_stubs ;;
+    forbidden-phrasing)        run test_no_forbidden_claude_centric_phrasing ;;
+    no-ttsr-frontmatter)       run test_no_ttsr_frontmatter ;;
+    pi-bundle-current)         run test_pi_bundle_current ;;
+    rulebook-frontmatter)      run test_rulebook_rule_frontmatter ;;
+    symlink-targets)           run test_symlink_targets ;;
+    coach-holding-line)        run test_phase_coach_holding_line ;;
+    phase-orchestrator)        run test_phase_orchestrator ;;
+    harness-modules)           run test_harness_modules ;;
+    omp-yaml-valid)            run test_omp_yaml_valid ;;
+    omp-hook-shape)            run test_omp_hook_shape ;;
+    isolation)                 run test_isolation ;;
+    *) printf 'unknown check %q\n' "$1" >&2; exit 2 ;;
+  esac
+}
+
+# Usage: test-pipeline.sh [content|install] [check]   (no arg runs both)
+# The optional check selector is for test-pipeline-self-test.sh, which plants
+# one error at a time and exercises only the detector responsible for it.
 main() {
   _cache_agent_names
-  local category="${1:-all}" label
+  local category="${1:-all}" selected="${2:-}" label
   case "$category" in
     content) label="authoring contract" ;;
     install) label="install + harness modules" ;;
     all)     label="content + install" ;;
     *) printf 'unknown category %q — use: content | install (or none for all)\n' "$category" >&2; exit 2 ;;
   esac
+  if [[ -n "$selected" ]]; then
+    label="$label / $selected"
+  fi
   printf '\n  %s▌%s %sai-config%s %s— %s%s\n\n' "$C" "$N" "$B" "$N" "$D" "$label" "$N"
 
-  case "$category" in
-    content) run_content ;;
-    install) run_install ;;
-    all)     run_content; run_install ;;
-  esac
+  if [[ -n "$selected" ]]; then
+    run_selected "$selected"
+  else
+    case "$category" in
+      content) run_content ;;
+      install) run_install ;;
+      all)     run_content; run_install ;;
+    esac
+  fi
 
   if [[ "${#ERRORS[@]}" -eq 0 ]]; then
     printf '\n  %s✓ %d checks passed%s\n\n' "$G$B" "$PASS" "$N"
