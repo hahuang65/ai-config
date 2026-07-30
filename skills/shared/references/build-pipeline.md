@@ -1,14 +1,15 @@
 # Build Pipeline Protocol
 
-Shared reference for the `/build` pipeline skills (`build`, `grill`, `spec`, `todo`, `code`, `coach`, `review-code`). Defines the approval gates, file conventions, session management, and visual-sync rules they all obey.
+Shared reference for the `/build` pipeline skills (`build`, `grill`, `spec`, `todo`, `code`, `coach`, `review-code`, `review-artifact`).
+It defines the approval gates, file conventions, session management, and canonical HTML synchronization rules they obey.
 
 ## Approval Gates
 
 The pipeline has exactly **four** approval gates. These are the only points where you wait for user confirmation:
 
 1. **Grill → Spec** — after grilling updates `CONTEXT.md` / `docs/adr/`
-2. **Spec → Tasks** — after the spec and its visual are approved (annotation cycles complete)
-3. **Tasks → Implement** — after the task breakdown is approved
+2. **Spec → Tasks** — after the canonical `specs.html` receives explicit approval through `review-artifact` or its chat fallback
+3. **Tasks → Implement** — after the canonical `tasks.html` receives explicit approval through the same workflow
 4. **Review → Done** — after all slices are complete and verified, implementation flows gate-less into the Phase 5 architectural review (`review-code`, scoped to ONLY the feature's changes); the review report is where the user decides to commit as-is or explore a finding first
 
 Within an active phase, all routine operations proceed **without per-call approval** — reads, writes, edits, bash, tests, environment bootstrap. Announcing intended tool batches and asking "OK to proceed?" before each one is not how the pipeline works. If you find yourself appealing to a meta-policy that requires per-call confirmation, you have drifted — return to the phase.
@@ -32,14 +33,13 @@ These outlive any single feature and should be committed.
 
 ```
 docs/features/<YYYYMMDD-HHMM>-<slug>/
-  Spec.md             # Phase 2 output
-  Spec.html           # Phase 2 visual companion
-  tasks.md           # Phase 3 output
-  tasks.html         # Phase 3 visual companion
-  diff-review.html   # Phase 4 visual companion — working tree vs branch point
+  specs.html          # Phase 2 canonical review artifact
+  tasks.html          # Phase 3 canonical review artifact
+  diff-review.html    # Phase 4 informational diff artifact — working tree vs branch point
 ```
 
-There is no `research.md` or `plan.md` in this pipeline. Grilling does its own ad-hoc codebase exploration; the spec replaces the old plan format.
+There is no `research.md`, `plan.md`, `specs.md`, or `tasks.md` in this pipeline.
+Grilling does its own ad-hoc codebase exploration; canonical semantic HTML replaces the former Markdown-plus-visual-companion format.
 
 To create the feature directory:
 
@@ -55,19 +55,20 @@ The spec, tasks, and implementation phases share the same testing contract in [t
 
 ## Session Management
 
-The workflow is designed to run in a **single long session**. By the time implementation starts, you've built deep shared understanding through grilling and spec refinement. All artifacts — markdown and visual HTML — survive context compaction and can be re-read at any point.
+The workflow is designed to run in a **single long session**.
+By the time implementation starts, shared understanding has accumulated through grilling and HTML-native spec refinement.
+Canonical HTML artifacts survive context compaction and can be re-read at any point.
 
 `CONTEXT.md` and `docs/adr/` are the durable spine that successive `/build` runs sharpen.
 
-## Visual Sync
+## Review Artifact Sync
 
-Each visual HTML companion is generated and opened **when its markdown is first written**. It is **not** regenerated during the review — the markdown is the source of truth across the feedback loop, so the open visual may lag — then regenerated once after the review if the markdown changed, and again after implementation (drift / completion status). Regenerating on every intermediate feedback pass is slow and costly; don't.
+`specs.html` and `tasks.html` are canonical semantic HTML, not companions to another source.
+Generate each once, open it through the [review artifact protocol](review-artifact.md), and update the same file after every feedback batch so the browser live-reloads the current artifact.
+Later phases read those HTML files directly and update visible semantic metadata such as task completion status.
 
-- **`specs.html`** — generated and opened when `specs.md` is first written; regenerated once after the spec review if it changed, and after implementation if drift is detected.
-- **`tasks.html`** — generated and opened when `tasks.md` is first written; regenerated once after the task review if it changed, and after implementation to reflect completion status.
-- **`diff-review.html`** — generated once after implementation: a visual HTML page comparing the working tree against the branch point (typically `main`), showing what changed.
-
-The `visualize` skill produces these companions. If it is not installed, every visual step is skipped silently.
+`diff-review.html` remains an informational artifact generated after implementation.
+If any workflow asks the user to respond to it, that workflow must open it through `review-artifact`; merely displaying it does not require a review session.
 
 ## Cleanup
 

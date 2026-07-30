@@ -49,7 +49,7 @@ Before marking a slice complete:
 - [ ] The code is minimal for the tests it satisfies
 - [ ] No speculative features added beyond the acceptance criteria
 
-Then mark the slice complete in `tasks.md`: check off its acceptance-criteria boxes (`- [ ]` → `- [x]`) and append a `**Status:** ✅ Complete` line under the slice title.
+Then mark the slice complete in canonical `tasks.html`: change every criterion's visible and `data-status` state to `complete`, and change the slice's visible and `data-status` state to `complete`.
 
 ## Handling issues
 

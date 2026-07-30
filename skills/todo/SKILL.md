@@ -1,6 +1,6 @@
 ---
 name: todo
-description: Break a spec into independently-grabbable tasks using tracer-bullet vertical slices. Produces docs/features/<slug>/tasks.md and tasks.html locally. Use after a spec has been approved. Based on Matt Pocock's to-issues skill.
+description: Break an approved HTML-native spec into independently grabbable tracer-bullet slices, write canonical tasks.html with stable task metadata, and review it through review-artifact.
 argument-hint: [specs-path-or-slug]
 ---
 
@@ -10,9 +10,12 @@ Break an approved spec into independently-grabbable tasks using **vertical slice
 
 ## Place in the /build Pipeline
 
-This is **Phase 3** of the `/build` pipeline; it assumes Phase 2 (`/spec`) produced an approved `specs.md` / `specs.html`. See [../shared/references/build-pipeline.md](../shared/references/build-pipeline.md) for file conventions; write `tasks.md` and `tasks.html` into the feature directory. Read [../shared/references/testable-interfaces.md](../shared/references/testable-interfaces.md) before drafting slices so each slice carries the spec's public-interface test surface forward.
+This is **Phase 3** of the `/build` pipeline; it assumes Phase 2 produced an approved canonical `specs.html`.
+See [../shared/references/build-pipeline.md](../shared/references/build-pipeline.md) for file conventions; write canonical `tasks.html` into the feature directory.
+Read [../shared/references/testable-interfaces.md](../shared/references/testable-interfaces.md) before drafting slices so each slice carries the spec's public-interface test surface forward.
 
-When invoked **standalone**, `$ARGUMENTS` may contain a spec path, a slug to resolve, or a GitHub issue reference (fetch its body via `gh issue view` and treat it as the source).
+When invoked **standalone**, `$ARGUMENTS` may contain an HTML spec path, a slug to resolve, or a GitHub issue reference.
+Fetch a referenced issue body via `gh issue view` and treat it as the source.
 
 
 ## Rules Adherence
@@ -23,7 +26,8 @@ Comply with the project rules in `rules/`. Read detailed rules from `~/.dotfiles
 
 ### Step 1: Gather context
 
-Read `specs.md` thoroughly (or the GitHub issue body if that was passed), `CONTEXT.md`, and relevant ADRs. If you haven't explored the relevant code areas yet, do so now — titles and descriptions should be grounded in real modules.
+Read canonical `specs.html` thoroughly (or the GitHub issue body if that was passed), `CONTEXT.md`, and relevant ADRs.
+If you have not explored the relevant code areas yet, do so now; titles and descriptions should be grounded in real modules.
 
 ### Step 2: Draft vertical slices
 
@@ -41,29 +45,21 @@ Prefer **AFK over HITL** where possible.
 - Avoid file paths and code snippets in task bodies — they go stale fast
 </vertical-slice-rules>
 
-### Step 3: Write `tasks.md`
+### Step 3: Write canonical `tasks.html`
 
-Use the structure in [references/task-template.md](references/task-template.md). Number slices in dependency order (blockers first).
+Use the semantic structure in [references/task-template.md](references/task-template.md).
+Number slices in dependency order and include stable visible metadata for identity, completion status, dependencies, HITL/AFK mode, user-story coverage, test surface, and acceptance criteria.
+The HTML must use "Tasks" in its `<title>` and `<h1>` and emphasize the dependency graph, HITL/AFK split, and story coverage.
+Do not create `tasks.md` or a hidden duplicate model.
 
-### Step 4: Generate `tasks.html`
+### Step 4: Review and finalize
 
-Invoke the `visualize` skill to produce `tasks.html` in the feature directory, and **open it in the browser**. The HTML must use "Tasks" in its `<title>` and `<h1>`, and emphasize the **dependency graph** between slices, the HITL/AFK split, and which user stories each slice covers.
+Load `review-artifact` and review `tasks.html` through [the shared protocol](../shared/references/review-artifact.md).
+Ask the user to check granularity, dependency relationships, HITL/AFK markers, and uncovered spec stories.
+After each feedback batch, update the same HTML and resume polling with an agent reply.
+If the browser runtime fails, use the protocol's chat fallback.
 
-### Step 5: Review and finalize
-
-Review the breakdown with the user using the protocol in [../shared/references/artifact-review.md](../shared/references/artifact-review.md). For tasks, present the slices as a compact numbered list and **ask directly** — the list is short enough that conversation beats inline notes, though the user may also drop `//` annotations in `tasks.md`. Ask about:
-
-- Granularity — too coarse or too fine; any slice to merge or split
-- Dependency relationships between slices
-- HITL vs AFK markers
-- Any spec user story left uncovered
-
-**Do not regenerate `tasks.html` during the review** — work from `tasks.md`; the open visual can lag until the cycles are done.
-
-On the user's confirmation, finalize:
-
-1. If the markdown changed during the review, regenerate `tasks.html` once (reopen it).
-2. Report the slice count and HITL/AFK split, then advance to implementation:
+On explicit browser approval or chat-fallback confirmation, report the slice count and HITL/AFK split, then advance to implementation:
 
 > **Tasks ready** — <n> slices (<a> AFK / <h> HITL). `/code` (I write tests and code) or `/coach` (you code, I write one test at a time) — which do you prefer?
 
@@ -71,7 +67,8 @@ On the user's confirmation, finalize:
 
 - **Vertical, never horizontal.** "Set up the database schema" is a horizontal layer, not a tracer bullet. Reject it.
 - **Each slice is demoable on its own.** If finishing slice N leaves the system broken or invisible, the slice is wrong.
-- **No file paths or code snippets in task bodies.** They go stale before the task is even picked up.
+- **No file paths or code snippets in task bodies.** They go stale before a slice is picked up.
+- **The visible semantic HTML is canonical.** Later phases read it directly and update its status metadata.
 - **Use `CONTEXT.md` vocabulary** in titles and descriptions.
 - **Many thin slices beat few thick ones.** If a slice looks fat, split it.
 

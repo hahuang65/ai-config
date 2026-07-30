@@ -1,48 +1,51 @@
-# Task Template
+# Tasks HTML Contract
 
-Write `tasks.md` using this structure. Number slices in dependency order (blockers first). Use `CONTEXT.md` vocabulary in titles and descriptions.
+Write one canonical `tasks.html` file.
+Do not create a Markdown companion or duplicate hidden JSON model.
+The visible semantic HTML is the approved task source consumed and updated by implementation.
 
-```markdown
-# {Feature Name} — Tasks
+## Document metadata
 
-Source spec: [specs.md](./specs.md)
+- Use `Tasks` in both `<title>` and `<h1>`.
+- Put `data-artifact-kind="tasks"` and `data-artifact-version="1"` on the main content element.
+- Link visibly to the source `specs.html`.
+- Show the dependency graph and AFK/HITL split near the top.
 
-## Slice 1: {Short descriptive title}
+## Slice contract
 
-**Type:** AFK
-**Blocked by:** None — can start immediately
-**User stories covered:** 1, 2, 3 (from the spec)
-**Test surface:** Public interface or behavior seam to exercise first (from the spec Testing Decisions)
+Represent each slice with a semantic container carrying:
 
-### What to build
+- `data-slice-id` — stable dependency-order identifier
+- `data-status` — `pending`, `in-progress`, or `complete`
+- `data-mode` — `AFK` or `HITL`
+- `data-dependencies` — comma-separated slice IDs, empty when unblocked
+- `data-stories` — comma-separated user-story numbers from the spec
 
-A concise description of this vertical slice. Describe the end-to-end behavior, not layer-by-layer implementation.
+Each slice visibly includes:
 
-### Acceptance criteria
+1. A short descriptive title.
+2. Type and reason when HITL.
+3. Blocking slices or “None.”
+4. Covered user stories.
+5. The stable public **Test surface** for the first RED test.
+6. A concise end-to-end “What to build” description.
+7. Acceptance criteria.
 
-- [ ] Criterion 1
-- [ ] Criterion 2
-- [ ] Criterion 3
+Each acceptance criterion has a stable `data-criterion-id` and `data-status` of `pending` or `complete`.
+Use native, accessible visual status rather than relying on emoji alone.
+Implementation changes both the metadata and visible status when work completes.
 
----
+## Slice rules
 
-## Slice 2: {Short descriptive title}
+- Number slices in dependency order.
+- Each slice is a thin but complete path through every integration layer.
+- A completed slice is independently demonstrable or verifiable.
+- Prefer many thin AFK slices over a few thick HITL slices.
+- Keep tests inside the slice rather than creating horizontal test-only tasks.
+- Avoid implementation file paths and code snippets because they go stale.
 
-**Type:** HITL — needs design review before implementation
-**Blocked by:** Slice 1
-**User stories covered:** 4, 5
-**Test surface:** Public interface or behavior seam to exercise first (from the spec Testing Decisions)
+## Review behavior
 
-### What to build
-
-...
-
-### Acceptance criteria
-
-- [ ] Criterion 1
-- [ ] Criterion 2
-
----
-```
-
-Avoid specific file paths or code snippets in the slice body. The **Test surface** line should name a stable public interface or observable behavior, not a spec file path. *Exception:* if the spec's Implementation Decisions section already inlined a critical snippet (state machine, reducer, schema, type shape) tied to this slice, you may inline it here too. Trim to the decision-rich parts.
+Design the page for element and selected-text annotation through `review-artifact`.
+After each feedback batch, edit this same HTML file and preserve stable slice and criterion IDs where possible.
+An explicit approval event finalizes the tasks.

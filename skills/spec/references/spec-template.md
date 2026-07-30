@@ -1,59 +1,56 @@
-# Spec Template
+# Spec HTML Contract
 
-Write `specs.md` using this structure. Use `CONTEXT.md` vocabulary throughout. No code snippets or file paths in the body (except the narrow exception in Implementation Decisions).
+Write one canonical `specs.html` file.
+Do not create a Markdown companion or a hidden JSON source model.
+The visible semantic HTML is both the review surface and the durable input to later phases.
 
-```markdown
-# {Feature Name} — Spec
+## Document metadata
 
-## Problem Statement
+- Use `Spec` in both `<title>` and `<h1>`.
+- Put `data-artifact-kind="spec"` and `data-artifact-version="1"` on the document's main content element.
+- Use stable section IDs so feedback remains understandable after live reload.
+- Keep styling and scripts self-contained except for optional visualization CDNs.
+- Use semantic headings, lists, tables, sections, articles, and native controls.
 
-The problem the user is facing, from the user's perspective.
+## Required visible sections
 
-## Solution
+### Problem Statement
 
-The solution to the problem, from the user's perspective.
+Describe the problem from the user's perspective.
 
-## User Stories
+### Solution
 
-A LONG, numbered list of user stories. Each in the format:
+Describe the solution from the user's perspective.
 
-1. As an <actor>, I want a <feature>, so that <benefit>
+### User Stories
 
-Example: "As a mobile bank customer, I want to see the balance on my accounts, so that I can make better informed decisions about my spending."
+Include an extensive numbered list.
+Each story follows: “As an <actor>, I want <feature>, so that <benefit>.”
+Cover the complete agreed scope, error paths, lifecycle, accessibility, security, and fallback behavior where relevant.
 
-This list should be extensive and cover all aspects of the feature.
+### Implementation Decisions
 
-## Implementation Decisions
+Record the modules and their interfaces, technical clarifications, ADR references, schema or protocol changes, and concrete interactions agreed during grilling.
+Do not include file paths or implementation code because they go stale.
+A small decision-rich state machine, schema, or type shape is allowed only when prose would be materially less precise.
 
-A list of implementation decisions that were made. This can include:
+### Testing Decisions
 
-- The modules that will be built/modified (from the module sketch)
-- The interfaces of those modules
-- Technical clarifications agreed during grilling
-- Architectural decisions (and pointers to relevant ADRs)
-- Schema changes
-- API contracts
-- Specific interactions
+Describe tests through stable public interfaces rather than implementation details.
+For every production module, identify whether it is tested directly, covered through a higher-level seam, or has no product test with a reason.
+Name relevant prior art already present in the repository.
+Do not defer test ownership back to the user.
 
-**Do NOT include specific file paths or code snippets.** They go stale fast and the spec outlives them.
+### Out of Scope
 
-*Exception:* if grilling produced a snippet that encodes a decision more precisely than prose can (state machine, reducer, schema, type shape), inline it within the relevant decision and note briefly where it came from. Trim to the decision-rich parts — not a working demo, just the important bits.
+List deliberate exclusions clearly enough that later phases do not reintroduce them.
 
-## Testing Decisions
+### Further Notes
 
-A list of testing decisions that were derived from the module sketch and [../../shared/references/testable-interfaces.md](../../shared/references/testable-interfaces.md). Include:
+Include only durable context that does not belong in the required sections.
 
-- A description of what makes a good test in this codebase (test external behavior through stable public interfaces, not implementation details — see the testing rules)
-- The test surface for each module: direct public-interface test, covered through a higher-level interface, or no product test with rationale
-- Prior art for the tests (i.e. similar types of tests already in the codebase)
+## Review behavior
 
-Do **not** write that the user still needs to decide which modules get tests. The spec proposes that decision; the user only corrects module boundaries or public-interface choices.
-
-## Out of Scope
-
-A description of things that are deliberately out of scope for this spec.
-
-## Further Notes
-
-Any further notes about the feature.
-```
+Design the page for element and selected-text annotation through `review-artifact`.
+After each feedback batch, edit this same HTML file and preserve stable IDs where possible.
+An explicit approval event finalizes the spec.

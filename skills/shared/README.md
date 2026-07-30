@@ -11,7 +11,7 @@ Skills import these by relative path, e.g. from `skills/spec/SKILL.md`:
 | File | Imported by |
 |------|-------------|
 | `references/build-pipeline.md` | build, grill, specs, tasks, implement, coach |
-| `references/artifact-review.md` | specs, tasks |
+| `references/review-artifact.md` | spec, todo, review-artifact |
 | `references/tdd-protocol.md` | implement, coach |
 | `references/testable-interfaces.md` | specs, tasks, implement, coach |
 | `references/tooling.md` | implement, coach, refactor |

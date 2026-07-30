@@ -22,7 +22,9 @@ The centerpiece of this repository is `/build` — a disciplined 5-phase workflo
 4. **Implement** via vertical-slice TDD — AI does it, or AI coaches you through it one test at a time
 5. **Review the changes** architecturally — deepening opportunities in what was just built; the report is where you decide to commit or iterate
 
-The pipeline merges Boris Tane's research-first discipline with Matt Pocock's skills-TDD workflow (`grill-with-docs → to-prd → to-issues → tdd`), adapted to keep all artifacts local, annotatable, and paired with visual HTML companions. Both implementation modes and all five phases are harness-neutral across Claude Code and pi; each harness discovers the same source skills through its config root.
+The pipeline merges Boris Tane's research-first discipline with Matt Pocock's skills-TDD workflow (`grill-with-docs → to-prd → to-issues → tdd`), adapted around canonical local HTML review artifacts.
+The `review-artifact` skill adds element and text annotations, durable feedback polling, live reload, severe layout warnings, and explicit approval.
+Both implementation modes and all five phases are harness-neutral across Claude Code and pi.
 
 ### Pipeline Overview
 
@@ -31,18 +33,18 @@ The pipeline merges Boris Tane's research-first discipline with Matt Pocock's sk
   ├── Phase 1: /grill        → ./CONTEXT.md  (glossary)
   │                            ./docs/adr/    (ADRs — hard-to-reverse decisions)
   │
-  ├── Phase 2: /spec          → docs/features/<slug>/specs.md + specs.html
-  │                            (annotation cycles via // comments)
+  ├── Phase 2: /spec          → docs/features/<slug>/specs.html
+  │                            (canonical HTML reviewed via review-artifact)
   │
-  ├── Phase 3: /todo        → docs/features/<slug>/tasks.md + tasks.html
-  │                            (vertical-slice tracer bullets, HITL/AFK)
+  ├── Phase 3: /todo        → docs/features/<slug>/tasks.html
+  │                            (canonical vertical slices, HITL/AFK)
   │
   ├── Phase 4: /code         → AI writes test → AI writes impl → repeat
   │     or    /coach    → AI writes test → YOU write impl → AI verifies → repeat
   │                                 (diff-review.html)
   │
   └── Phase 5: /review-code       → architecture-reviewer agent on ONLY the changes
-                                    → HTML report → user commits or iterates
+                                    → review-artifact → user commits or iterates
 ```
 
 `CONTEXT.md` and `docs/adr/` live at the repo root and accrete across many `/build` runs. Per-feature artifacts (spec, tasks, diff review) live in `docs/features/<YYYYMMDD-HHMM>-<slug>/`.
@@ -69,25 +71,24 @@ If a question can be answered by exploring the codebase, grill does so instead o
 1. Reads `CONTEXT.md`, recent ADRs, and any prior session context
 2. **Does NOT re-interview** — grilling was the design phase; this transcribes its outcome
 3. Sketches major modules (deep-modules philosophy) and checks them with the user
-4. Writes `specs.md`
-   - Sections: Problem Statement, Solution, User Stories (extensive numbered list), Implementation Decisions, Testing Decisions, Out of Scope, Further Notes
-   - **No code snippets, no file paths** (they go stale; spec is durable)
-5. Generates `specs.html` via visualize (companion to `specs.md`)
-6. **STOPS — waits for user review**
-7. **Annotation cycle**: user adds `//` comments → agent addresses every note → updates `specs.md` → removes annotations → regenerates `specs.html`
-8. Repeats until user explicitly approves the spec
+4. Writes canonical semantic `specs.html`
+   - Sections: Problem Statement, Solution, User Stories, Implementation Decisions, Testing Decisions, Out of Scope, Further Notes
+   - **No code snippets or file paths** because they go stale
+5. Opens `specs.html` through `review-artifact`
+6. Applies every browser annotation or message to the same HTML and lets the session live-reload it
+7. Repeats until the user emits explicit approval; ending or closing review is not approval
 
 ### Phase 3: Tasks
 
 **Entry**: User says "break it into tasks" or `/todo [spec-dir]`
 
-1. Reads the approved `specs.md`, `CONTEXT.md`, and relevant ADRs
-2. Drafts **vertical-slice tracer bullets** — each slice cuts through every layer end-to-end (schema, API, UI, tests) and is demoable on its own
-3. Marks each slice **HITL** (human-in-the-loop) or **AFK** (away-from-keyboard); prefers AFK
-4. Writes `tasks.md` (dependency order, blockers first), generates `tasks.html`, and opens it in the browser
-5. **Reviews with the user** (asks directly, or accepts `//` annotations on `tasks.md`): granularity? dependency relationships? HITL/AFK split? coverage of user stories?
-6. Iterates on feedback — the markdown is the source of truth; no per-pass visual regeneration
-7. On the user's confirmation, regenerates `tasks.html` once if it changed, then advances to implementation
+1. Reads approved canonical `specs.html`, `CONTEXT.md`, and relevant ADRs
+2. Drafts **vertical-slice tracer bullets** that cut through every layer and remain independently demoable
+3. Marks each slice **HITL** or **AFK** and prefers AFK
+4. Writes canonical `tasks.html` with stable slice, status, dependency, story, test-surface, and acceptance-criterion metadata
+5. Opens it through `review-artifact` and asks about granularity, dependencies, HITL/AFK, and story coverage
+6. Applies each feedback batch to the same live-reloading HTML
+7. Advances only on explicit approval or the chat fallback
 
 ### Phase 4: Implement (vertical-slice TDD)
 
@@ -99,17 +100,17 @@ Both modes follow the same TDD philosophy: **vertical, never horizontal. One tes
 
 #### AI Mode (`/code`)
 
-1. Reads `tasks.md` and works one slice at a time, in dependency order
+1. Reads canonical `tasks.html` and works one slice at a time in dependency order
 2. For each slice: confirms interface → RED→GREEN per acceptance criterion → refactor when GREEN → mark complete
-3. Marks each slice `**Status:** ✅ Complete` in `tasks.md`
+3. Updates visible status and `data-status="complete"` for each criterion and slice in `tasks.html`
 4. Runs continuous type checks and linters
 5. **Verification loop**: type check → lint → test suite → build (repeat until all pass)
 6. Runs **`database-reviewer` agent** if DB code was touched
 7. Runs the **`refactorer` agent in hygiene mode** — dead code, unused imports & dependencies, duplication, simplification (SAFE applied, CAREFUL/RISKY reported)
 8. Runs **`code-reviewer` agent** — OWASP Top 10, confidence >80% threshold
 9. Runs **`doc-updater` agent** if APIs/architecture changed
-10. Runs the **`fact-checker` agent** on both `specs.md` and `tasks.md` — independent, cold-context verification
-11. **Refreshes `specs.html` and `tasks.html`** — mandatory regeneration to mirror finals
+10. Runs the **`fact-checker` agent** on canonical `specs.html` and `tasks.html` using independent cold context
+11. **Refreshes canonical `specs.html` and `tasks.html`** for implementation drift and final completion status
 12. **Generates `diff-review.html`** via visualize, then runs the `fact-checker` agent on it
 13. **NEVER commits** — leaves that to the user
 
@@ -123,29 +124,16 @@ Both modes follow the same TDD philosophy: **vertical, never horizontal. One tes
 6. Post-completion cleanup is AI-driven; code-review findings are surfaced to the user to fix
 7. **NEVER commits** — leaves that to the user
 
-### Annotation Cycles
+### Review Artifact Loop
 
-The spec phase uses inline `//` annotations for user feedback:
+When an HTML artifact asks for feedback, a decision, or approval, `review-artifact` serves it in a sandboxed local browser shell.
+The user can annotate an exact rendered element or selected text, queue several notes with a freeform message, and send one coherent batch.
+The foreground agent poll returns those targets with a compact DOM snapshot.
+The agent edits the same canonical HTML, the open browser live-reloads it, and polling resumes with an agent reply.
 
-```markdown
-## User Stories
-
-// also need: "as an admin, I want to revoke sessions"
-1. As a customer, I want to see my balance...
-
-// remove this — it's out of scope per the grill session
-7. As a customer, I want to export to CSV...
-```
-
-The agent addresses every annotation, updates the document, removes the `//` comments, and re-presents — working from the markdown during the review. The tasks phase defaults to direct questioning (present a numbered list of slices, ask, iterate); both phases also accept `//` annotations. The visual companion is generated and opened when the markdown is first written, left untouched during the review, then regenerated once at the end only if the markdown changed.
-
-### Visual Sync Guarantee
-
-Visual HTML companions are generated and opened when the markdown is first written, and regenerated:
-
-- **Spec phase**: once after the review, only if the markdown changed — never mid-review
-- **Tasks phase**: once after the review, only if the markdown changed — never mid-review
-- **Implement phase**: after implementation completes — mandatory regardless of whether the markdown changed
+Only the browser's explicit **Approve** action clears a gate.
+**End review**, browser close, disconnect, or poll interruption never implies approval.
+If browser review cannot start, the phase uses chat while preserving the same approval semantics.
 
 ### Artifact Lifecycle
 
@@ -159,7 +147,8 @@ The `git-commit` rule covers what to include: `CONTEXT.md` and `docs/adr/` ship 
 
 ### Legacy Example
 
-The [`example/`](example/) directory contains sample artifacts from a previous version of the pipeline (research → plan → implement). It's preserved as a stylistic reference for the annotation cycle and visual companions, but the new pipeline produces `specs.md` and `tasks.md` instead of `research.md` and `plan.md`. See [example/README.md](example/README.md) for a side-by-side note.
+The [`example/`](example/) directory contains historical artifacts from a previous research → plan → implement pipeline.
+It remains a stylistic reference only; new pipeline runs produce canonical `specs.html` and `tasks.html`.
 
 ## Skill / Rule / Agent Graph
 
@@ -169,15 +158,14 @@ The [`example/`](example/) directory contains sample artifacts from a previous v
 │   ├── CONTEXT.md     ← repo root
 │   └── docs/adr/      ← repo root
 │
-├── specs (opus)
-│   ├── architect (opus, conditional) → design review
-│   ├── api-designer / frontend-architect (sonnet, conditional) → domain consult
-│   └── visualize → specs.html
+├── spec
+│   ├── api-designer / frontend-architect (conditional) → domain consult
+│   └── review-artifact → canonical specs.html feedback + approval
 │
-├── tasks (opus)
-│   └── visualize → tasks.html
+├── todo
+│   └── review-artifact → canonical tasks.html feedback + approval
 │
-├── implement (sonnet)
+├── code
 │   ├── tdd-guide (sonnet) → vertical-slice TDD
 │   ├── code-reviewer (sonnet) → OWASP + quality review
 │   ├── refactorer (sonnet) → hygiene sweep: dead code, duplication
@@ -185,11 +173,11 @@ The [`example/`](example/) directory contains sample artifacts from a previous v
 │   ├── doc-updater (sonnet) → conditional doc updates
 │   └── visualize → specs.html, tasks.html, diff-review.html
 │
-└── coach (sonnet)
+└── coach
     ├── AI writes ONE test at a time (no batching)
     ├── User implements; AI verifies
     ├── Refactor together when GREEN
-    └── visualize → specs.html, tasks.html, diff-review.html
+    └── refreshes canonical HTML + informational diff-review.html
 
 Rules (6 advisory files) load on demand in every harness. Claude Code and pi read the common `~/.dotfiles/ai/rules/` sources directly and always load only the small `harness-system-prompt.md` bootstrap containing critical constraints, the shared location, and load triggers. All *enforcement* lives in the shared guard core (per ADR-0012), not in rules — see Guardrails below.
 Agents read a subset relevant to their role.
@@ -228,10 +216,10 @@ Agents read a subset relevant to their role.
 
 | Name | Model (rec.) | Role |
 |------|-------|------|
-| `build` | — | Orchestrator: coordinates grill → specs → tasks → implement |
+| `build` | — | Orchestrator: coordinates grill → spec → todo → code/coach → review-code |
 | `grill` | opus | Interview-driven domain modeling; updates `CONTEXT.md` + ADRs inline |
-| `spec` | opus | Synthesize a spec from grilling outcome; user-stories + decisions, no code |
-| `todo` | opus | Break spec into vertical-slice tracer bullets; optional GitHub publish |
+| `spec` | opus | Synthesize canonical specs.html and review it through review-artifact |
+| `todo` | opus | Break the approved spec into canonical HTML vertical slices |
 | `code` | sonnet | Execute approved tasks via vertical-slice TDD + multi-agent verification |
 | `coach` | sonnet | Coach user through implementation; AI writes ONE test at a time |
 
@@ -249,8 +237,9 @@ Agents read a subset relevant to their role.
 
 | Name | Model (rec.) | Role |
 |------|-------|------|
+| `review-artifact` | — | Review local HTML with exact annotations, durable polling, live reload, layout warnings, and explicit approval |
 | `visualize` | — | Generate self-contained HTML pages for visual explanations |
-| `visualize-diff` | — | Visual HTML diff review — before/after comparison + code-review analysis (also runs in `/code`'s review chain) |
+| `visualize-diff` | — | Visual HTML diff review — before/after comparison + code-review analysis |
 
 ### Commands
 
@@ -258,11 +247,12 @@ Agents read a subset relevant to their role.
 |---------|-------------|
 | `/build` | Full feature workflow — grill, spec, tasks, implement |
 | `/grill` | Interactive domain-modeling session (updates `CONTEXT.md` + ADRs) |
-| `/spec` | Synthesize a spec from current conversation; annotation cycles |
-| `/todo` | Break a spec into vertical-slice tasks (reviewed locally) |
+| `/spec` | Synthesize and browser-review canonical specs.html |
+| `/todo` | Break a spec into canonical vertical-slice tasks.html |
 | `/code` | Execute approved tasks via vertical-slice TDD (AI implements) |
 | `/coach` | Coach-guided implementation (AI writes one test, you write the code) |
-| `/review-code` | Architectural review — no args: entire codebase; args: that area; HTML report + grilling loop |
+| `/review-code` | Architectural review — no args: entire codebase; args: that area; browser-reviewed HTML report |
+| `/review-artifact` | Review an existing local HTML artifact with annotations and explicit approval |
 | `/prototype` | Throwaway prototype (logic TUI or UI variants) to flesh out a design |
 | `/handoff` | Write a handoff doc to OS temp dir for another agent session |
 | `/pickup` | Resume from a handoff doc (most recent by default, or matched from an argument) |
@@ -280,7 +270,7 @@ Agents read a subset relevant to their role.
 | `code-reviewer` | sonnet | OWASP Top 10 + quality review (>80% confidence) | coding-style, testing, security, performance |
 | `database-reviewer` | sonnet | Query optimization, schema, DB security | security, performance |
 | `doc-updater` | sonnet | Keep documentation in sync with code | git-commit |
-| `fact-checker` | sonnet | Independent verification of specs/tasks/HTML docs against code and git history — corrects drift in place (review-chain step; our own, not Claude's built-in `/fact-check`) | git-commit |
+| `fact-checker` | sonnet | Independent verification of canonical HTML artifacts and other codebase claims — corrects drift in place | git-commit |
 | `refactorer` | sonnet | The engine for behavior-preserving change: plan mode (approved transformation plans) + hygiene mode (dead code, unused deps, duplication — the review chain's Refactor step) | coding-style, performance, security, testing |
 
 ### Rules
@@ -375,9 +365,10 @@ shows every individual check). The `test/content` + `test/install` categories
 
 This project stands on the shoulders of others:
 
-- **[Boris Tane's Claude Code workflow](https://boristane.com/blog/how-i-use-claude-code/)** — The annotation-cycle discipline, the "think before you code" guardrails, and the markdown-as-shared-state philosophy at the heart of `/build` originate from Boris's research → plan → implement method. This project's first pipeline was a direct port of his approach.
+- **[Boris Tane's Claude Code workflow](https://boristane.com/blog/how-i-use-claude-code/)** — The review-cycle discipline and think-before-you-code guardrails originated in Boris's research → plan → implement method. This project's first pipeline was a direct port before review artifacts became HTML-native.
 - **[Matt Pocock's skills-TDD pipeline](https://www.aihero.dev/skills-tdd)** and the broader [skills repo](https://github.com/mattpocock/skills) — the core pipeline (`grill-with-docs → to-prd → to-issues → tdd`) and Matt's stance on vertical-slice TDD ("write one test, one implementation, repeat — batched tests describe imagined behavior, not actual behavior") drive the design of `/grill`, `/spec`, `/todo`, and the vertical-slice rewrites of `/code` and `/coach`. The standalone tools `/handoff` ([article](https://www.aihero.dev/skills-handoff)), `/prototype`, and `/review-code` (renamed from `improve-codebase-architecture`) are also ports of Matt's skills, with internal references rewritten to match this repo's naming. The format files (CONTEXT-FORMAT.md, ADR-FORMAT.md) and the LANGUAGE/DEEPENING/HTML-REPORT/INTERFACE-DESIGN supporting docs are taken directly from his repo.
-- **[nicobailon/visual-explainer](https://github.com/nicobailon/visual-explainer)** — The `visualize` skill (renamed from `visual-explainer`) is taken wholesale from this repository, with only minor modifications. All the HTML visual generation (spec, tasks, diff-review, architecture diagrams, slides, etc.) is powered by this work.
+- **[nicobailon/visual-explainer](https://github.com/nicobailon/visual-explainer)** — The `visualize` skill (renamed from `visual-explainer`) is taken wholesale from this repository, with only minor modifications. HTML visual generation is powered by this work.
+- **[kunchenguid/lavish-axi](https://github.com/kunchenguid/lavish-axi)** — The local browser review loop, path-keyed sessions, element and text annotations, foreground polling, live reload, and evidence-based layout warnings inspired `review-artifact`. Relevant MIT-licensed core concepts and code were adapted into the narrower locally owned runtime; see [`skills/review-artifact/ATTRIBUTION.md`](skills/review-artifact/ATTRIBUTION.md).
 - **[affaan-m/everything-claude-code](https://github.com/affaan-m/everything-claude-code)** — The rules and agent definitions in this repo are borrowed and adapted from this collection. The coding-style, testing, security, and performance rules, as well as the agent configurations (architect, tdd-guide, code-reviewer, etc.), draw heavily from this source.
 - **[can1357/oh-my-pi](https://github.com/can1357/oh-my-pi)** — Its TTSR and hook models informed the guardrail architecture before the harness was retired by [ADR-0017](docs/adr/0017-retire-oh-my-pi.md).
 - **[pi (badlogic/earendil-works)](https://pi.dev)** — The second harness this repo configures (`@earendil-works/pi-coding-agent`, config root `~/.pi/agent`). Its `tool_call` extension routes the shared guard core, while its global `AGENTS.md` carries only the small shared bootstrap and detailed rules remain on demand ([ADR-0016](docs/adr/0016-small-always-on-bootstrap-lazy-rulebooks.md)).

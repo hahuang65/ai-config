@@ -62,11 +62,14 @@ See [references/anti-patterns.md](references/anti-patterns.md) for forbidden pat
 
 ### 4. Deliver
 
-**Output location:** Write to `docs/features/<YYYYMMDD-HHMM>-<slug>/` if a feature directory exists. When accompanying a markdown file, use the same base name with `.html` extension (e.g., `specs.md` → `specs.html`). For standalone visuals: `diff-review.html`, `diagram.html`, `slides.html`.
+**Output location:** Write to `docs/features/<YYYYMMDD-HHMM>-<slug>/` if a feature directory exists.
+For pipeline artifacts, write canonical `specs.html`, `tasks.html`, or informational `diff-review.html` as requested.
+For standalone visuals, use a descriptive name such as `diagram.html` or `slides.html`.
 
-**Open in browser:** `xdg-open <path>` on Linux, `open <path>` on macOS.
+**Open in browser:** when the artifact is informational only, use `xdg-open <path>` on Linux or `open <path>` on macOS.
+When the user is expected to give feedback, make a decision, or approve, load `review-artifact` and open the file through its browser workflow instead of opening it directly.
 
-**Tell the user** the file path so they can re-open or share it.
+**Tell the user** the file path so they can reopen or share it.
 
 ## Diagram Types
 

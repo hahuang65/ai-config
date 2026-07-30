@@ -1,0 +1,322 @@
+import { afterEach, describe, expect, test } from "bun:test";
+import { mkdir, mkdtemp, realpath, writeFile } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import path from "node:path";
+
+import { startReviewServer } from "../../skills/review-artifact/runtime/server.mjs";
+
+const servers: Array<{ close(): Promise<void> }> = [];
+
+afterEach(async () => {
+  await Promise.all(servers.splice(0).map((server) => server.close()));
+});
+
+describe("review server", () => {
+  test("identifies the local runtime through its health endpoint", async () => {
+    const directory = await mkdtemp(path.join(tmpdir(), "review-artifact-"));
+    const server = await startReviewServer({ port: 0, stateFile: path.join(directory, "state.json") });
+    servers.push(server);
+
+    const response = await fetch(`${server.baseUrl}/health`);
+
+    expect(await response.json()).toEqual({ ok: true, app: "review-artifact", version: 1 });
+  });
+
+  test("opens a local HTML artifact without modifying its source", async () => {
+    const directory = await mkdtemp(path.join(tmpdir(), "review-artifact-"));
+    const artifact = path.join(directory, "specs.html");
+    const source = "<!doctype html><html><body><main>Review me</main></body></html>";
+    await writeFile(artifact, source);
+
+    const server = await startReviewServer({ port: 0, stateFile: path.join(directory, "state.json") });
+    servers.push(server);
+
+    const response = await fetch(`${server.baseUrl}/api/sessions`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ file: artifact }),
+    });
+    const session = await response.json();
+
+    expect(response.status).toBe(201);
+    expect(session.file).toBe(await realpath(artifact));
+    expect(session.status).toBe("open");
+    expect(session.url).toContain("/session/");
+    expect(await Bun.file(artifact).text()).toBe(source);
+  });
+
+  test("rejects untrusted hosts and browser origins", async () => {
+    const directory = await mkdtemp(path.join(tmpdir(), "review-artifact-"));
+    const artifact = path.join(directory, "specs.html");
+    await writeFile(artifact, "<!doctype html><main>Secure</main>");
+    const server = await startReviewServer({ port: 0, stateFile: path.join(directory, "state.json") });
+    servers.push(server);
+    const badHost = await fetch(`${server.baseUrl}/health`, { headers: { host: "evil.example" } });
+    const created = await fetch(`${server.baseUrl}/api/sessions`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ file: artifact }),
+    }).then((response) => response.json());
+    const badOrigin = await fetch(`${server.baseUrl}/api/sessions/${created.key}/feedback`, {
+      method: "POST",
+      headers: { "content-type": "application/json", origin: "https://evil.example" },
+      body: JSON.stringify({ prompts: [{ prompt: "Injected" }] }),
+    });
+
+    expect(badHost.status).toBe(403);
+    expect(badOrigin.status).toBe(403);
+  });
+
+  test("delivers browser feedback through the agent poll", async () => {
+    const directory = await mkdtemp(path.join(tmpdir(), "review-artifact-"));
+    const artifact = path.join(directory, "specs.html");
+    await writeFile(artifact, "<!doctype html><main>Review me</main>");
+    const server = await startReviewServer({ port: 0, stateFile: path.join(directory, "state.json") });
+    servers.push(server);
+    const created = await fetch(`${server.baseUrl}/api/sessions`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ file: artifact }),
+    }).then((response) => response.json());
+
+    await fetch(`${server.baseUrl}/api/sessions/${created.key}/feedback`, {
+      method: "POST",
+      headers: { "content-type": "application/json", origin: server.baseUrl },
+      body: JSON.stringify({
+        prompts: [{ prompt: "Cut this", selector: "main", tag: "main", text: "Review me" }],
+        domSnapshot: 'main "Review me"',
+      }),
+    });
+    const event = await fetch(`${server.baseUrl}/api/sessions/${created.key}/poll`).then((response) => response.json());
+
+    expect(event).toMatchObject({ status: "feedback", prompts: [{ prompt: "Cut this", selector: "main" }] });
+  });
+
+  test("keeps a foreground poll open until later feedback arrives", async () => {
+    const directory = await mkdtemp(path.join(tmpdir(), "review-artifact-"));
+    const artifact = path.join(directory, "specs.html");
+    await writeFile(artifact, "<!doctype html><main>Wait here</main>");
+    const server = await startReviewServer({ port: 0, stateFile: path.join(directory, "state.json") });
+    servers.push(server);
+    const created = await fetch(`${server.baseUrl}/api/sessions`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ file: artifact }),
+    }).then((response) => response.json());
+
+    const polling = fetch(`${server.baseUrl}/api/sessions/${created.key}/poll`).then((response) => response.json());
+    await Bun.sleep(100);
+    await fetch(`${server.baseUrl}/api/sessions/${created.key}/feedback`, {
+      method: "POST",
+      headers: { "content-type": "application/json", origin: server.baseUrl },
+      body: JSON.stringify({ prompts: [{ prompt: "Arrived later" }] }),
+    });
+
+    expect(await polling).toMatchObject({ status: "feedback", prompts: [{ prompt: "Arrived later" }] });
+  });
+
+  test("reports browser approval as a structured terminal event", async () => {
+    const directory = await mkdtemp(path.join(tmpdir(), "review-artifact-"));
+    const artifact = path.join(directory, "specs.html");
+    await writeFile(artifact, "<!doctype html><main>Approve me</main>");
+    const server = await startReviewServer({ port: 0, stateFile: path.join(directory, "state.json") });
+    servers.push(server);
+    const created = await fetch(`${server.baseUrl}/api/sessions`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ file: artifact }),
+    }).then((response) => response.json());
+
+    await fetch(`${server.baseUrl}/api/sessions/${created.key}/feedback`, {
+      method: "POST",
+      headers: { "content-type": "application/json", origin: server.baseUrl },
+      body: JSON.stringify({ prompts: [], domSnapshot: "main", action: "approve" }),
+    });
+    const decision = await fetch(`${server.baseUrl}/api/sessions/${created.key}/poll`).then((response) => response.json());
+
+    expect(decision).toEqual({ status: "approved", endedBy: "user" });
+  });
+
+  test("delivers proven severe layout warnings through the agent poll", async () => {
+    const directory = await mkdtemp(path.join(tmpdir(), "review-artifact-"));
+    const artifact = path.join(directory, "specs.html");
+    await writeFile(artifact, "<!doctype html><main>Wide</main>");
+    const server = await startReviewServer({ port: 0, stateFile: path.join(directory, "state.json") });
+    servers.push(server);
+    const created = await fetch(`${server.baseUrl}/api/sessions`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ file: artifact }),
+    }).then((response) => response.json());
+
+    await fetch(`${server.baseUrl}/api/sessions/${created.key}/layout-warnings`, {
+      method: "POST",
+      headers: { "content-type": "application/json", origin: server.baseUrl },
+      body: JSON.stringify({
+        layoutWarnings: [{ selector: "main", kind: "escaped-content", axis: "horizontal", overflowPx: 120, viewportWidth: 800, severity: "error" }],
+      }),
+    });
+    const event = await fetch(`${server.baseUrl}/api/sessions/${created.key}/poll`).then((response) => response.json());
+
+    expect(event).toMatchObject({ status: "layout_warnings", layoutWarnings: [{ selector: "main", severity: "error" }] });
+  });
+
+  test("does not reopen a review the user already approved", async () => {
+    const directory = await mkdtemp(path.join(tmpdir(), "review-artifact-"));
+    const artifact = path.join(directory, "specs.html");
+    await writeFile(artifact, "<!doctype html><main>Approved</main>");
+    const server = await startReviewServer({ port: 0, stateFile: path.join(directory, "state.json") });
+    servers.push(server);
+    const create = () => fetch(`${server.baseUrl}/api/sessions`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ file: artifact }),
+    }).then((response) => response.json());
+    const opened = await create();
+    await fetch(`${server.baseUrl}/api/sessions/${opened.key}/feedback`, {
+      method: "POST",
+      headers: { "content-type": "application/json", origin: server.baseUrl },
+      body: JSON.stringify({ prompts: [], action: "approve" }),
+    });
+
+    const reopened = await create();
+
+    expect(reopened.status).toBe("approved");
+    expect(reopened.reopened).toBe(false);
+  });
+
+  test("shows an agent reply in the review conversation", async () => {
+    const directory = await mkdtemp(path.join(tmpdir(), "review-artifact-"));
+    const artifact = path.join(directory, "specs.html");
+    await writeFile(artifact, "<!doctype html><main>Reply here</main>");
+    const server = await startReviewServer({ port: 0, stateFile: path.join(directory, "state.json") });
+    servers.push(server);
+    const created = await fetch(`${server.baseUrl}/api/sessions`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ file: artifact }),
+    }).then((response) => response.json());
+
+    await fetch(`${server.baseUrl}/api/sessions/${created.key}/agent-reply`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ text: "Updated the scope." }),
+    });
+    const shell = await fetch(created.url).then((response) => response.text());
+
+    expect(shell).toContain("Updated the scope.");
+  });
+
+  test("streams a reload event when the reviewed artifact changes", async () => {
+    const directory = await mkdtemp(path.join(tmpdir(), "review-artifact-"));
+    const artifact = path.join(directory, "tasks.html");
+    await writeFile(artifact, "<!doctype html><main>Pending</main>");
+    const server = await startReviewServer({ port: 0, stateFile: path.join(directory, "state.json") });
+    servers.push(server);
+    const created = await fetch(`${server.baseUrl}/api/sessions`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ file: artifact }),
+    }).then((response) => response.json());
+    const controller = new AbortController();
+    const stream = await fetch(`${server.baseUrl}/api/sessions/${created.key}/events`, { signal: controller.signal });
+    const reader = stream.body!.getReader();
+
+    await Bun.sleep(100);
+    await writeFile(artifact, "<!doctype html><main>Complete</main>");
+    let received = "";
+    const deadline = Date.now() + 2_000;
+    while (!received.includes('"type":"reload"') && Date.now() < deadline) {
+      const chunk = await Promise.race([
+        reader.read(),
+        Bun.sleep(2_000).then(() => ({ done: true, value: undefined })),
+      ]);
+      if (chunk.done) break;
+      received += new TextDecoder().decode(chunk.value);
+    }
+    controller.abort();
+
+    expect(received).toContain('"type":"reload"');
+  });
+
+  test("exposes agent presence as an accessible live status", async () => {
+    const directory = await mkdtemp(path.join(tmpdir(), "review-artifact-"));
+    const artifact = path.join(directory, "specs.html");
+    await writeFile(artifact, "<!doctype html><main>Presence</main>");
+    const server = await startReviewServer({ port: 0, stateFile: path.join(directory, "state.json") });
+    servers.push(server);
+    const created = await fetch(`${server.baseUrl}/api/sessions`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ file: artifact }),
+    }).then((response) => response.json());
+
+    const shell = await fetch(created.url).then((response) => response.text());
+
+    expect(shell).toContain('id="presence"');
+    expect(shell).toContain('aria-live="polite"');
+  });
+
+  test("serves the browser assets used by the review shell and artifact bridge", async () => {
+    const directory = await mkdtemp(path.join(tmpdir(), "review-artifact-"));
+    const server = await startReviewServer({ port: 0, stateFile: path.join(directory, "state.json") });
+    servers.push(server);
+
+    const [bridge, shellClient, shellCss] = await Promise.all([
+      fetch(`${server.baseUrl}/bridge.js`).then((response) => response.text()),
+      fetch(`${server.baseUrl}/shell.js`).then((response) => response.text()),
+      fetch(`${server.baseUrl}/shell.css`).then((response) => response.text()),
+    ]);
+
+    expect(bridge).toContain("review:queue");
+    expect(shellClient).toContain("feedback");
+    expect(shellCss).toContain(".conversation");
+  });
+
+  test("serves sibling assets while confining reads to the artifact directory", async () => {
+    const directory = await mkdtemp(path.join(tmpdir(), "review-artifact-"));
+    const artifactDirectory = path.join(directory, "artifact");
+    await mkdir(artifactDirectory);
+    const artifact = path.join(artifactDirectory, "index.html");
+    await writeFile(artifact, '<!doctype html><link rel="stylesheet" href="theme.css">');
+    await writeFile(path.join(artifactDirectory, "theme.css"), "main { color: green; }");
+    const server = await startReviewServer({ port: 0, stateFile: path.join(directory, "state.json") });
+    servers.push(server);
+    const created = await fetch(`${server.baseUrl}/api/sessions`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ file: artifact }),
+    }).then((response) => response.json());
+
+    const allowed = await fetch(`${server.baseUrl}/artifact/${created.key}/theme.css`);
+    const escaped = await fetch(`${server.baseUrl}/artifact/${created.key}/%2e%2e/state.json`);
+
+    expect(await allowed.text()).toBe("main { color: green; }");
+    expect(escaped.status).toBe(404);
+  });
+
+  test("serves the artifact inside a sandboxed review shell", async () => {
+    const directory = await mkdtemp(path.join(tmpdir(), "review-artifact-"));
+    const artifact = path.join(directory, "tasks.html");
+    const source = "<!doctype html><html><body><main>Six slices</main></body></html>";
+    await writeFile(artifact, source);
+    const server = await startReviewServer({ port: 0, stateFile: path.join(directory, "state.json") });
+    servers.push(server);
+
+    const created = await fetch(`${server.baseUrl}/api/sessions`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ file: artifact }),
+    }).then((response) => response.json());
+    const shell = await fetch(created.url).then((response) => response.text());
+    const servedArtifact = await fetch(`${server.baseUrl}/artifact/${created.key}/index.html`).then((response) =>
+      response.text(),
+    );
+
+    expect(shell).toContain('sandbox="allow-scripts allow-forms"');
+    expect(shell).toContain(`/artifact/${created.key}/index.html`);
+    expect(servedArtifact).toContain("Six slices");
+    expect(servedArtifact).toContain(`/bridge.js?key=${created.key}`);
+    expect(await Bun.file(artifact).text()).toBe(source);
+  });
+});

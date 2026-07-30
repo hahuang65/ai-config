@@ -69,13 +69,13 @@ code { font-family: var(--font-mono); font-size: 0.85em; background: var(--accen
 <div class="container">
 
 <div class="header">
-  <h1><span>/</span>specs</h1>
+  <h1><span>/</span>spec</h1>
   <p class="subtitle">Synthesize a feature spec from the current conversation (typically a <span class="cmd-tag">/grill</span> session). User stories + decisions, no code snippets, no file paths — durable. Based on Matt Pocock's <code>to-prd</code>.</p>
 </div>
 
 <div class="section">
   <div class="section-title"><span class="num">01</span>Place in the Pipeline</div>
-  <p style="font-size: 0.95rem; margin-bottom: 16px;">Phase 2 of <span class="cmd-tag">/build</span>. Inputs: <code>CONTEXT.md</code>, ADRs, prior conversation. Outputs: <code>specs.md</code> + <code>specs.html</code>.</p>
+  <p style="font-size: 0.95rem; margin-bottom: 16px;">Phase 2 of <span class="cmd-tag">/build</span>. Inputs: <code>CONTEXT.md</code>, ADRs, prior conversation. Output: canonical <code>specs.html</code>.</p>
   <div class="pre">/build "feature"
   ├── Phase 1: /grill
   ├── Phase 2: /spec          ← YOU ARE HERE
@@ -113,7 +113,7 @@ code { font-family: var(--font-mono); font-size: 0.85em; background: var(--accen
   <div class="card-grid">
     <div class="card" style="border-left-color: var(--must);">
       <h3 style="color: var(--must);">No code snippets</h3>
-      <p>Code rots fast — what's correct today won't be by the time the task is picked up. Code lives in <code>tasks.md</code> (and even there, only sparingly).</p>
+      <p>Code rots fast — what's correct today may not be when a task is picked up. Keep implementation code out of canonical review artifacts.</p>
     </div>
     <div class="card" style="border-left-color: var(--must);">
       <h3 style="color: var(--must);">No file paths</h3>
@@ -142,31 +142,25 @@ code { font-family: var(--font-mono); font-size: 0.85em; background: var(--accen
 </div>
 
 <div class="section">
-  <div class="section-title"><span class="num">06</span>Annotation Cycle</div>
-  <p style="font-size: 0.95rem; margin-bottom: 14px;">After writing <code>specs.md</code> and generating <code>specs.html</code>, STOP and wait. User adds <code>//</code> comments anywhere in the markdown:</p>
-  <div class="pre">## User Stories
-
-// also need: "as an admin, I want to revoke sessions"
-1. As a customer, I want to see my balance...
-
-// remove this — it's out of scope per the grill session
-7. As a customer, I want to export to CSV...
-
-// this should reference ADR-0003, not 0002</div>
-  <p style="font-size: 0.9rem; color: var(--text-dim); margin-top: 14px;">For each annotation, the agent addresses it, updates <code>specs.md</code>, and removes the <code>//</code> comment — working from the markdown. The cycle repeats until the user is satisfied; <code>specs.html</code> is regenerated once at the end if the markdown changed, not per annotation.</p>
+  <div class="section-title"><span class="num">06</span>Browser Review Loop</div>
+  <p style="font-size: 0.95rem; margin-bottom: 14px;">Write canonical <code>specs.html</code>, then open it through <span class="cmd-tag">review-artifact</span>. The user can annotate exact elements or selected text and send a coherent feedback batch.</p>
+  <div class="pre">open specs.html → annotate → foreground poll
+        ↑                         ↓
+        └──── edit same HTML ← feedback</div>
+  <p style="font-size: 0.9rem; color: var(--text-dim); margin-top: 14px;">Address every note in the visible semantic HTML, save it, and let the existing browser session live-reload before polling again with an agent reply.</p>
 </div>
 
 <div class="section">
-  <div class="section-title"><span class="num">07</span>Visual Sync Guarantee</div>
+  <div class="section-title"><span class="num">07</span>Live Sync Guarantee</div>
   <div class="callout warn">
-    <strong>Build once, then leave it:</strong> <code>specs.html</code> is generated and opened when <code>specs.md</code> is first written. It is NOT regenerated during the review — the markdown is the source of truth, so the open visual may lag — then regenerated once before moving to <span class="cmd-tag">/todo</span> if the markdown changed.
+    <strong>One reviewed source:</strong> <code>specs.html</code> is both the durable spec and the review surface. There is no Markdown companion and no intentionally stale visual.
   </div>
-  <p style="font-size: 0.9rem; color: var(--text-dim); margin-top: 10px;">Visual generation uses the <span class="cmd-tag">visualize</span> skill. The HTML's <code>&lt;title&gt;</code> and <code>&lt;h1&gt;</code> must say "spec", not "Plan".</p>
+  <p style="font-size: 0.9rem; color: var(--text-dim); margin-top: 10px;">Use semantic headings and stable IDs. The HTML's <code>&lt;title&gt;</code> and <code>&lt;h1&gt;</code> must say "Spec", not "Plan".</p>
 </div>
 
 <div class="section">
   <div class="section-title"><span class="num">08</span>Completion</div>
-  <p style="font-size: 0.95rem;">On the user's confirmation, regenerate <code>specs.html</code> once if the markdown changed, tell the user, and advance to <span class="cmd-tag">/todo</span> — any go-ahead works; no exact phrase needed.</p>
+  <p style="font-size: 0.95rem;">An explicit approval event advances to <span class="cmd-tag">/todo</span>. Ending or closing review is not approval; browser failure uses the chat fallback.</p>
 </div>
 
 </div>

@@ -17,13 +17,16 @@ Shared reference for `code` and `coach`. Run this chain **after all slices are c
 
 4. **Documentation update** *(conditional)* — if the implementation added features, changed APIs, or modified architecture, run the `doc-updater` agent. Skip for trivial changes. (Documentation is not implementation code, so the AI handles it directly even in coach mode.)
 
-5. **Fact-check** — run the `fact-checker` agent (via the Agent tool) on both `specs.md` and `tasks.md`. It starts cold on purpose — independent of the session that wrote the documents — and re-derives every claim (module names, decisions, behavior descriptions) from the code and git history, correcting drift in place.
+5. **Fact-check** — run the `fact-checker` agent on canonical `specs.html` and `tasks.html`.
+It starts cold on purpose and re-derives every claim from code and git history, correcting drift directly in the visible semantic HTML.
 
-6. **Refresh visuals** — regenerate `specs.html` and `tasks.html` so they mirror the final markdown, and open them in the browser. Mandatory — the visuals MUST always mirror the markdown.
+6. **Refresh canonical artifacts** — update `specs.html` for implementation drift and `tasks.html` for final visible completion status.
+There is no Markdown source to regenerate from.
 
-7. **Diff review** — if `visualize` is available, generate `diff-review.html` via `/visualize-diff`: compare the working tree against the branch point (typically `main`). Open it in the browser, then run the `fact-checker` agent (via the Agent tool) on the generated HTML. If `visualize` is not available, skip silently.
+7. **Diff review** — if `visualize` is available, generate `diff-review.html` via `/visualize-diff` against the branch point, then run the `fact-checker` agent on it.
+This is informational inside implementation; start `review-artifact` only if the workflow asks the user to respond to it.
 
-8. **Verify task-to-implementation sync** — every acceptance criterion checked off (`- [x]`), every slice marked `**Status:** ✅ Complete`, deviations documented in the slice body, and both `tasks.html` and `specs.html` reflecting the final state.
+8. **Verify task-to-implementation sync** — every acceptance criterion and slice has visible `complete` status plus `data-status="complete"`, deviations are documented in the slice body, and both canonical HTML artifacts reflect the final implementation.
 
 ## Completion
 

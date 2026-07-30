@@ -1,6 +1,6 @@
 ---
 name: coach
-description: Coach the user through implementing approved vertical-slice tasks. The AI writes ONE test at a time and waits for the user to implement; never batches tests upfront. Use after /todo has produced an approved tasks.md and the user wants to write the code themselves.
+description: Coach the user through approved vertical slices from canonical tasks.html. The AI writes ONE test at a time and waits for the user to implement; never batches tests upfront.
 argument-hint: [feature-dir-or-slug]
 ---
 
@@ -10,7 +10,8 @@ Coach the user through approved vertical-slice tasks **one slice at a time, one 
 
 ## Prerequisites
 
-- An approved `tasks.md` in a feature directory under `docs/features/`. Resolve it from `$ARGUMENTS` (a path or slug), or — with no argument — find the most recent `docs/features/*/tasks.md` and confirm it.
+- An approved canonical `tasks.html` in a feature directory under `docs/features/`.
+Resolve it from `$ARGUMENTS` (a path or slug), or with no argument find the most recent `docs/features/*/tasks.html` and confirm it.
 - The user has explicitly approved the tasks (do not assume approval).
 - `CONTEXT.md` and relevant ADRs have been read so test names use the project's vocabulary.
 
@@ -31,7 +32,8 @@ If the user has been silent across multiple reminders, the correct move is to **
 
 ## Todo hygiene in coach mode
 
-Your todo list tracks **coach actions**, not user-acceptance criteria. Acceptance criteria live in `tasks.md`; mirroring them into the todo list inflates the "incomplete" count and tempts later turns to misread it as a queue you owe progress on.
+Your todo list tracks **coach actions**, not user-acceptance criteria.
+Acceptance criteria live in canonical `tasks.html`; mirroring them into the todo list inflates the incomplete count and tempts later turns to misread it as a queue you owe progress on.
 
 Use one in-progress todo per slice, phrased as the coach loop you are currently in:
 
@@ -61,7 +63,8 @@ For each acceptance criterion:
 
 ## Process
 
-1. **Read context** — `tasks.md`, the linked `specs.md`, `CONTEXT.md`, ADRs. Announce the plan: one slice at a time, one test at a time; confirm Slice 1's interface before writing any test.
+1. **Read context** — canonical `tasks.html`, its linked `specs.html`, `CONTEXT.md`, and ADRs.
+Announce the plan: one slice at a time, one test at a time; confirm Slice 1's interface before writing any test.
 
 2. **For each slice (dependency order):**
    - **Confirm interface** — present the proposed public interface from the slice's Test surface and the spec's Testing Decisions (deep, not shallow). This is a seam check, not a request for the user to decide whether tests are needed. Wait for the user's confirmation before writing any test.
@@ -69,7 +72,7 @@ For each acceptance criterion:
    - **Verify** — when the user signals they're done (any "ready to check" sentiment, not a specific keyword), run the test. If GREEN, move to the next criterion. If RED, show the failure and guide debugging — **do not write the fix**.
    - **Incremental loop** — for each remaining criterion: write ONE next test → wait for the user → verify. **One test at a time. NEVER queue up multiple tests. Do NOT preview future tests.**
    - **Refactor together** (only while GREEN) — offer refactor candidates; guide one step at a time, re-running tests after each.
-   - **Mark complete** in `tasks.md` (check off criteria, append `**Status:** ✅ Complete`), then move on.
+   - **Mark complete** in `tasks.html` by changing the slice and criterion visible statuses plus their `data-status` attributes to `complete`, then move on.
 
 3. **Verification loop** — after all slices, run type check, lint, full test suite, and build per [../shared/references/tooling.md](../shared/references/tooling.md). Guide the user through any fixes until all pass.
 

@@ -96,11 +96,24 @@ _Avoid_: baseline.
 ### Build-pipeline terms
 
 **Spec**:
-The Phase-2 artifact of the `/build` pipeline — `specs.md` (user stories, implementation and testing decisions) with its `specs.html` visual companion, synthesized by the `spec` skill from a grill session. Goes through `//` annotation cycles until approved; approval is the Spec→Tasks gate.
-_Avoid_: PRD / prd.md / prd.html (the artifact's former name, renamed 2026-07-09), plan (the pre-pipeline document format the spec replaced).
+The canonical Phase-2 review artifact of the `/build` pipeline — `specs.html`, containing user stories plus implementation and testing decisions, synthesized by the `spec` skill from a grill session.
+Its approval event is the Spec→Tasks gate.
+_Avoid_: PRD / prd.md / prd.html (the artifact's former name, renamed 2026-07-09), plan (the pre-pipeline document format the spec replaced), Markdown companion.
+
+**Review artifact**:
+A canonical semantic HTML document presented through the **review artifact workflow** when the pipeline needs feedback or approval.
+It is the durable source consumed by later phases, not a visual companion to Markdown.
+_Avoid_: visual companion, Markdown artifact.
+
+**Review artifact workflow**:
+The local browser feedback loop provided by the `review-artifact` skill for a **review artifact**: the user annotates elements or text, sends feedback, or emits an explicit approval event while the agent polls and updates the same HTML document.
+Closing or ending the session without approval does not clear a pipeline gate.
+_Avoid_: artifact review, annotation cycle, inline `//` review.
 
 **Pipeline skill**:
-One of the eight skills the `/build` orchestrator drives through its five phases — `build`, `grill`, `spec`, `todo`, `code`, `coach`, `review-code`, `visualize`. Distinct from a **standalone skill** (`refactor`, `handoff`, `pickup`, `prototype`) which is invoked on its own, never orchestrated by `/build`. (`review-code` also runs standalone — diff-scoped inside the pipeline, whole-codebase or area-scoped on its own — like `grill`/`spec`/`todo` do.)
+One of the nine skills the `/build` orchestrator drives through its five phases and supporting review workflow — `build`, `grill`, `spec`, `todo`, `code`, `coach`, `review-code`, `visualize`, `review-artifact`.
+Distinct from a **standalone skill** (`refactor`, `handoff`, `pickup`, `prototype`) which is invoked on its own, never orchestrated by `/build`.
+(`review-code` also runs standalone — diff-scoped inside the pipeline, whole-codebase or area-scoped on its own — like `grill`/`spec`/`todo` do.)
 _Avoid_: phase (a phase is a stage of the pipeline; a pipeline skill is the unit that runs it).
 
 **Progressive disclosure**:
@@ -108,8 +121,9 @@ The skill-authoring convention where `SKILL.md` is a thin entry point that defer
 _Avoid_: lazy loading.
 
 **Feature directory**:
-The per-build-run home for feature artifacts: `docs/features/<YYYYMMDD-HHMM>-<slug>/`, holding `specs.md`/`specs.html`, `tasks.md`/`tasks.html`, and `diff-review.html`. Project-wide artifacts (`CONTEXT.md`, `docs/adr/`) live at the repo root and accrete across runs.
-_Avoid_: `docs/claude/` (the former Claude-specific name, replaced by the harness-neutral `docs/features/` — see [`adopt-docs-features-over-docs-claude`](docs/adr/0007-adopt-docs-features-over-docs-claude.md)).
+The per-build-run home for canonical HTML review artifacts: `docs/features/<YYYYMMDD-HHMM>-<slug>/`, holding `specs.html`, `tasks.html`, and `diff-review.html`.
+Project-wide artifacts (`CONTEXT.md`, `docs/adr/`) live at the repo root and accrete across runs.
+_Avoid_: `docs/claude/` (the former Claude-specific name, replaced by the harness-neutral `docs/features/` — see [`adopt-docs-features-over-docs-claude`](docs/adr/0007-adopt-docs-features-over-docs-claude.md)), Markdown companions.
 
 **Hygiene sweep**:
 The automatic, plan-less cleanup of just-changed files — dead code, unused imports and dependencies, duplicate consolidation, simplification, idiom fixes — executed by the `refactorer` agent in hygiene mode. Runs unattended as the single "Refactor" step of the post-implementation review chain, and standalone when `/refactor` is given a vague goal ("clean up X"). SAFE changes are applied directly; CAREFUL/RISKY findings are reported, never auto-applied. Never commits.

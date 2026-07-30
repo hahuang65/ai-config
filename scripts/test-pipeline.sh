@@ -221,7 +221,7 @@ test_phase_spec() {
   else
     pass "$label does not ask the user to choose tested modules"
   fi
-  check_content_cached "$content" "$label" "Write the spec"
+  check_content_cached "$content" "$label" "Write (the )?canonical spec"
 
   for section in "Problem Statement" Solution "User Stories" "Implementation Decisions" "Testing Decisions" "Out of Scope"; do
     check_content_cached "$content" "$label" "$section"
@@ -229,8 +229,9 @@ test_phase_spec() {
 
   check_content_cached "$content" "$label" "[Aa]nnotat"
   check_content_cached "$content" "$label" "[Aa]ddress"
-  check_content_cached "$content" "$label" "//"
-  check_content_cached "$content" "$label" "visualize"
+  check_content_cached "$content" "$label" "review-artifact"
+  check_content_cached "$content" "$label" "[Ee]xplicit.*approval"
+  check_content_cached "$content" "$label" "canonical"
   check_content_cached "$content" "$label" "specs\.html"
 
   # Domain consultants: the module sketch consults the api-designer /
@@ -256,11 +257,12 @@ test_phase_todo() {
   check_content_cached "$content" "$label" "HITL"
   check_content_cached "$content" "$label" "AFK"
   check_content_cached "$content" "$label" "[Aa]cceptance criteria"
-  check_content_cached "$content" "$label" "[Bb]locked by"
+  check_content_cached "$content" "$label" "[Bb]locking slices|data-dependencies"
   check_content_cached "$content" "$label" "[Tt]est surface"
-  check_content_cached "$content" "$label" "tasks\.md"
   check_content_cached "$content" "$label" "tasks\.html"
-  check_content_cached "$content" "$label" "visualize"
+  check_content_cached "$content" "$label" "review-artifact"
+  check_content_cached "$content" "$label" "data-status"
+  check_content_cached "$content" "$label" "canonical"
 }
 
 # ---------------------------------------------------------------------------
@@ -270,7 +272,7 @@ test_phase_todo() {
 test_phase_code_core() {
   local content="$1"
   local label="$2"
-  check_content_cached "$content" "$label" "tasks\.md"
+  check_content_cached "$content" "$label" "tasks\.html"
   check_content_cached "$content" "$label" "tdd-guide|RED.*GREEN|red-green-refactor"
   check_content_cached "$content" "$label" "vertical slice|vertical-slice|one slice at a time"
   check_content_cached "$content" "$label" "[Tt]racer bullet"
@@ -383,13 +385,11 @@ test_phase_coach_holding_line() {
   check_content_cached "$skill_content" "$skill_label" "Todo hygiene"
   check_content_cached "$skill_content" "$skill_label" "coach actions"
 
-  # The command file carries a one-paragraph copy so the rule lands before
-  # the skill body unrolls. Drift either way (skill vs command) is a gap.
+  # Commands are intentionally thin wrappers; the load-bearing discipline lives
+  # once in the skill and the command routes to that source of truth.
   local cmd_content
   cmd_content="$(cat "$cmd_file")"
-  check_content_cached "$cmd_content" "$cmd_label" "[Ww]aiting is the deliverable"
-  check_content_cached "$cmd_content" "$cmd_label" "switch to .?/code"
-  check_content_cached "$cmd_content" "$cmd_label" "[Ss]ilence is not consent"
+  check_content_cached "$cmd_content" "$cmd_label" "Load the .?coach.? skill"
 }
 
 # ---------------------------------------------------------------------------
@@ -423,14 +423,46 @@ test_phase_review_code() {
   # The skill is a wrapper: discovery runs in the architecture-reviewer agent
   check_content_cached "$content" "$label" "architecture-reviewer"
 
-  # The pipeline-terminal decision: the user chooses commit vs act on findings
+  # The pipeline-terminal decision is carried by the browser review.
   check_content_cached "$content" "$label" "commit"
+  check_content_cached "$content" "$label" "review-artifact"
+  check_content_cached "$content" "$label" "approval"
 
   if [[ -f "$REPO_DIR/agents/architecture-reviewer.md" ]]; then
     pass "agents/architecture-reviewer.md exists"
   else
     fail "$label" "agents/architecture-reviewer.md missing (the discovery engine review-code wraps)"
   fi
+}
+
+# ---------------------------------------------------------------------------
+# 6c3. Skill: review-artifact
+# ---------------------------------------------------------------------------
+
+test_skill_review_artifact() {
+  section "Skill: review-artifact"
+  local file="$REPO_DIR/skills/review-artifact/SKILL.md"
+  local label="skills/review-artifact/SKILL.md"
+  [[ -f "$file" ]] || { fail "$label" "file not found"; return; }
+  local content
+  content="$(gather_skill_content review-artifact)"
+
+  check_content_cached "$content" "$label" "foreground"
+  check_content_cached "$content" "$label" "layout_warnings|layout warnings"
+  check_content_cached "$content" "$label" "[Ee]xplicit approval|approved"
+  check_content_cached "$content" "$label" "[Ee]nded.*not.*approval|not approval"
+  check_content_cached "$content" "$label" "live-reload|live reload"
+  check_content_cached "$content" "$label" "chat.*fallback|fallback.*chat"
+  check_content_cached "$content" "$label" "Do not call .?lavish-axi"
+
+  local runtime_file
+  for runtime_file in bin/review-artifact.mjs runtime/server.mjs runtime/session-store.mjs runtime/assets/bridge.js runtime/assets/shell.js runtime/assets/layout-audit.js ATTRIBUTION.md; do
+    if [[ -f "$REPO_DIR/skills/review-artifact/$runtime_file" ]]; then
+      pass "skills/review-artifact/$runtime_file exists"
+    else
+      fail "$label" "$runtime_file missing"
+    fi
+  done
 }
 
 # ---------------------------------------------------------------------------
@@ -502,7 +534,7 @@ test_retired_cleaners() {
     pass "agents/refactor-cleaner.md absent"
   fi
 
-  # The prd skill was renamed to specs; the artifact is specs.md/specs.html.
+  # The prd skill was renamed to spec; its canonical artifact is specs.html.
   if [[ -e "$REPO_DIR/skills/prd" || -e "$REPO_DIR/commands/prd.md" ]]; then
     fail "retired" "skills/prd or commands/prd.md still exists (renamed to specs)"
   else
@@ -526,7 +558,7 @@ test_retired_cleaners() {
   # The 2026-07 naming pass: short imperative verbs. specs->spec,
   # tasks->todo, implement->code, implement-coach->coach,
   # visual-explainer->visualize, diff-review->visualize-diff.
-  # Artifact names (specs.md, tasks.md, diff-review.html) are unchanged.
+  # Canonical artifact names are specs.html, tasks.html, and diff-review.html.
   local old_name
   for old_name in specs tasks implement implement-coach visual-explainer diff-review; do
     if [[ -e "$REPO_DIR/skills/$old_name" || -e "$REPO_DIR/commands/$old_name.md" ]]; then
@@ -650,14 +682,15 @@ test_phase_orchestrator() {
   done
 
   local wait_count
-  wait_count="$(count_matches "Wait for the user" "$file")"
-  if [[ "$wait_count" -ge 2 ]]; then
-    pass "$label has 'Wait for the user' >= 2 times"
+  wait_count="$(count_matches "Wait for" "$file")"
+  if [[ "$wait_count" -ge 3 ]]; then
+    pass "$label has explicit wait gates >= 3 times"
   else
-    fail "$label" "'Wait for the user' appears $wait_count time(s), expected >= 2"
+    fail "$label" "'Wait for' appears $wait_count time(s), expected >= 3"
   fi
 
   check_content_cached "$content" "$label" "visualize"
+  check_content_cached "$content" "$label" "review-artifact"
   check_content_cached "$content" "$label" "diff-review"
 
   check_content_cached "$content" "$label" "Mandatory Phase Loading"
@@ -1265,6 +1298,7 @@ run_content() {
   run test_phase_coach
   run test_phase_coach_holding_line
   run test_phase_review_code
+  run test_skill_review_artifact
   run test_agent_refactorer
   run test_retired_cleaners
   run test_skill_refactor

@@ -23,13 +23,14 @@ See [../shared/references/build-pipeline.md](../shared/references/build-pipeline
 - Phase 4a: [../code/SKILL.md](../code/SKILL.md)
 - Phase 4b: [../coach/SKILL.md](../coach/SKILL.md)
 - Phase 5: [../review-code/SKILL.md](../review-code/SKILL.md)
+- HTML feedback support in Phases 2, 3, and 5: [../review-artifact/SKILL.md](../review-artifact/SKILL.md)
 
 Do **not** decide whether a phase exists from the `available_skills` list or by interpreting names like "grill" as ordinary English. If this `/build` skill loaded, these phase files are part of the same installed skill bundle; load them directly by path. In harnesses without a skill-invocation tool, "invoke `<phase>`" means: read the phase `SKILL.md`, follow its linked references as needed, and execute its workflow.
 
 Each phase also runs standalone:
 
 - `/grill [topic]` — Phase 1: interview, refine `CONTEXT.md`, write ADRs
-- `/spec [topic]` — Phase 2: synthesize spec from grilling, with annotation cycles
+- `/spec [topic]` — Phase 2: synthesize canonical HTML from grilling and review it through `review-artifact`
 - `/todo [spec-dir]` — Phase 3: vertical-slice tracer-bullet breakdown
 - `/code [tasks-dir]` — Phase 4a: AI implements via TDD, slice by slice
 - `/coach [tasks-dir]` — Phase 4b: user implements, AI writes one test at a time
@@ -55,15 +56,20 @@ Load [../grill/SKILL.md](../grill/SKILL.md), then run `grill` with the feature d
 
 ### Phase 2: Spec + Review
 
-Create the feature directory `docs/features/<YYYYMMDD-HHMM>-<slug>/`, then load [../spec/SKILL.md](../spec/SKILL.md) and run `spec` with the feature description and that path. It writes `specs.md`, generates and opens `specs.html`, and runs the artifact review (see [../shared/references/artifact-review.md](../shared/references/artifact-review.md)): the user gives feedback — `//` annotations or direct answers — which `spec` addresses and re-presents (the visual isn't regenerated mid-review), or confirms. On confirmation `spec` regenerates `specs.html` once if the markdown changed.
+Create the feature directory `docs/features/<YYYYMMDD-HHMM>-<slug>/`, then load [../spec/SKILL.md](../spec/SKILL.md) and run `spec` with the feature description and that path.
+It writes the canonical `specs.html` and runs the [review artifact workflow](../shared/references/review-artifact.md) through `review-artifact`.
+The user annotates rendered elements or text and sends messages; `spec` addresses every batch in the same HTML so the browser live-reloads the current artifact.
 
-**Wait for the user to confirm in that review** — their confirmation *is* the spec→Tasks gate. No separate approval prompt; when they confirm rather than keep reviewing, proceed straight to Phase 3.
+**Wait for an explicit browser approval or chat-fallback confirmation** — that approval *is* the Spec→Tasks gate.
+No separate approval prompt follows; proceed straight to Phase 3.
 
 ### Phase 3: Tasks (vertical-slice tracer bullets)
 
-Load [../todo/SKILL.md](../todo/SKILL.md), then run `todo` with the feature directory. It breaks the spec into vertical slices with HITL/AFK markers, writes `tasks.md`, generates and opens `tasks.html`, runs the same review (no mid-review regen), and regenerates `tasks.html` once on confirmation if the markdown changed.
+Load [../todo/SKILL.md](../todo/SKILL.md), then run `todo` with the feature directory.
+It reads `specs.html`, writes the canonical `tasks.html` with vertical slices and HITL/AFK metadata, then runs the same live review artifact workflow.
 
-**Wait for the user to confirm in that review** — their confirmation *is* the Tasks→Implement gate. Then proceed to Phase 4.
+**Wait for explicit browser approval or chat-fallback confirmation** — that approval *is* the Tasks→Implement gate.
+Then proceed to Phase 4.
 
 ### Phase 4: Implementation (vertical-slice TDD)
 
@@ -76,9 +82,9 @@ If the user says "implement" or doesn't specify, load [../code/SKILL.md](../code
 
 ### Phase 5: Code Review (architectural — the pipeline's final step)
 
-Load [../review-code/SKILL.md](../review-code/SKILL.md), then run `review-code` scoped to **ONLY the changes** — the feature's diff against the branch point, never pre-existing code the feature didn't touch. The `architecture-reviewer` agent surfaces deepening candidates in the changed modules; the skill renders them as an HTML report.
+Load [../review-code/SKILL.md](../review-code/SKILL.md), then run `review-code` scoped to **ONLY the changes** — the feature's diff against the branch point, never pre-existing code the feature didn't touch. The `architecture-reviewer` agent surfaces deepening candidates in the changed modules; the skill renders them as an HTML report and opens it through `review-artifact`.
 
-**The report is the Review→done gate** — the user decides:
+**The report's explicit approval is the Review→done gate** — the user decides:
 
 > Review's done — commit the feature as-is, or explore one of these findings first?
 
@@ -88,7 +94,7 @@ Committing (which the user does themselves — you never commit) ends the pipeli
 
 1. **Grill before drafting.** Pin terminology in `CONTEXT.md` first; codify decisions in ADRs.
 2. **Never write code before tasks are approved.** Phases 1–3 are gated.
-3. **Markdown files are the deliverables.** Visual HTML pages are companions.
+3. **Canonical semantic HTML files are the feature deliverables.** Do not create Markdown companions.
 4. **Vertical slices, never horizontal.** Each slice cuts through every layer.
 5. **Test stable public interfaces.** Use [../shared/references/testable-interfaces.md](../shared/references/testable-interfaces.md): Spec proposes module test surfaces, tasks carry them forward, implementation writes one behavior test at a time through the seam.
 6. **One test, one implementation, repeat.** No batched tests upfront.
@@ -96,7 +102,9 @@ Committing (which the user does themselves — you never commit) ends the pipeli
 
 ## Visual-Explainer Integration
 
-The `visualize` skill is **optional** — all visual steps are skipped gracefully if it is not installed. When available it produces self-contained HTML (Mermaid diagrams, CSS-Grid layouts, styled tables, dark/light themes, zoom controls), generates the per-phase companions (`specs.html`, `tasks.html`, `diff-review.html`), and exposes the standalone `/visualize-diff` command. It also activates proactively for complex terminal tables (4+ rows or 3+ columns), rendering an HTML table instead.
+The `visualize` skill is **optional** for informational visuals and diff review, but Phase 2 and Phase 3 still produce their required canonical semantic HTML artifacts.
+When available it provides Mermaid diagrams, CSS-Grid layouts, styled tables, dark/light themes, zoom controls, and the standalone `/visualize-diff` command.
+Whenever one of those HTML files asks the user for feedback or approval, open it through `review-artifact` rather than directly.
 
 ## Cleanup
 

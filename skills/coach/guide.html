@@ -193,7 +193,7 @@ code { font-family: var(--font-mono); font-size: 0.85em; background: var(--accen
       <tr><td>2c. GREEN</td><td>User → AI verify</td><td>User writes minimal code; AI runs the test and reports pass/fail</td></tr>
       <tr><td>2d. Next criterion</td><td>AI → User → AI</td><td>AI writes the next test; user implements; AI verifies. Repeat per acceptance criterion.</td></tr>
       <tr><td>2e. Refactor (optional)</td><td>AI suggests, user executes</td><td>Only when GREEN. AI offers candidates; user accepts or declines; tests run after each step.</td></tr>
-      <tr><td>2f. Mark complete</td><td>AI</td><td>Check off acceptance criteria in <code>tasks.md</code>; append <code>**Status:** ✅ Complete</code></td></tr>
+      <tr><td>2f. Mark complete</td><td>AI</td><td>Set visible slice and criterion status plus <code>data-status</code> to <code>complete</code> in canonical <code>tasks.html</code></td></tr>
     </tbody>
   </table>
 </div>

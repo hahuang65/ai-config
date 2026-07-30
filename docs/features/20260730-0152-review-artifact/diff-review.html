@@ -1,0 +1,204 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>review-artifact — Source Change Review</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;650;750&family=Fira+Code:wght@400;600&display=swap" rel="stylesheet">
+  <style>
+    :root { color-scheme: light dark; --font-body:"DM Sans",sans-serif; --font-mono:"Fira Code",monospace; --bg:#f3f1ea; --surface:#fffdf8; --surface2:#ebe8df; --border:#cbc6b8; --text:#202620; --dim:#657067; --green:#187149; --green-dim:#dceee2; --red:#a53c34; --red-dim:#f3ddd8; --amber:#94680d; --amber-dim:#f2e4be; --blue:#286987; --blue-dim:#dcebf1; --ink:#18231d; }
+    @media(prefers-color-scheme:dark){:root{--bg:#121713;--surface:#1c231e;--surface2:#273029;--border:#3d493f;--text:#edf3ee;--dim:#aeb9b0;--green:#83c89c;--green-dim:#253d2d;--red:#e49289;--red-dim:#482925;--amber:#dfbc68;--amber-dim:#41371f;--blue:#88c0da;--blue-dim:#223844;--ink:#edf3ee}}
+    *{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background-color:var(--bg);background-image:radial-gradient(circle,var(--border) .8px,transparent .8px);background-size:26px 26px;color:var(--text);font:16px/1.65 var(--font-body);overflow-wrap:break-word}.shell{width:min(1180px,calc(100% - 32px));margin:auto;padding:46px 0 90px}.hero{position:relative;padding:clamp(34px,7vw,72px);background:color-mix(in srgb,var(--surface) 92%,var(--green) 8%);border:1px solid color-mix(in srgb,var(--border) 50%,var(--green) 50%);box-shadow:0 20px 55px rgba(18,40,25,.12);overflow:hidden}.hero:after{content:"";position:absolute;width:300px;height:300px;border:72px solid color-mix(in srgb,var(--green) 9%,transparent);border-radius:50%;right:-110px;top:-130px}.eyebrow,.label,.badge{font-family:var(--font-mono);font-weight:600;letter-spacing:.12em;text-transform:uppercase}.eyebrow,.label{font-size:12px;color:var(--green)}h1,h2,h3{margin:0;line-height:1.12}h1{position:relative;z-index:1;max-width:850px;margin-top:14px;font-size:clamp(3rem,8vw,6.4rem);letter-spacing:-.065em}h2{font-size:clamp(2rem,4vw,3.25rem);letter-spacing:-.04em}h3{font-size:1.25rem}.hero p{position:relative;z-index:1;max-width:800px;margin:26px 0 0;color:var(--dim);font-size:clamp(1.15rem,2vw,1.45rem);line-height:1.5}.scope-note{display:inline-block;margin-top:26px;padding:8px 12px;background:var(--surface);border:1px solid var(--border);font:600 12px/1.4 var(--font-mono);color:var(--blue)}nav{display:flex;gap:8px;flex-wrap:wrap;margin:20px 0 60px}nav a{padding:8px 11px;background:var(--surface);border:1px solid var(--border);color:var(--text);font:600 12px/1 var(--font-mono);text-decoration:none}section{margin-top:70px;scroll-margin-top:24px}.section-head{display:grid;grid-template-columns:160px minmax(0,1fr);gap:24px;align-items:baseline;margin-bottom:24px}.kpis{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:12px}.kpi{min-width:0;padding:26px 24px;background:var(--surface);border:1px solid var(--border);box-shadow:0 3px 12px rgba(20,35,24,.05)}.kpi strong{display:block;color:var(--green);font:750 clamp(1.8rem,4vw,2.7rem)/1 var(--font-mono);letter-spacing:-.07em}.kpi span{display:block;margin-top:10px;color:var(--dim);font-size:.9rem}.panel,.ve-card{min-width:0;padding:28px 30px;background:var(--surface);border:1px solid var(--border)}.panel{margin-top:14px}.diff-panels{display:grid;grid-template-columns:1fr 1fr;border:1px solid var(--border)}.diff-panels>*{min-width:0}.before,.after{padding:30px}.before{background:var(--red-dim);border-right:1px solid var(--border)}.after{background:var(--green-dim)}.diff-panels ul,.ve-card ul,.panel ul{padding-left:2em}.arch-cards{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-top:14px}.ve-card{border-top:5px solid var(--blue)}.ve-card.green{border-top-color:var(--green)}.ve-card.amber{border-top-color:var(--amber)}.ve-card p{margin-bottom:0;color:var(--dim)}code{padding:.12em .38em;background:var(--surface2);border-radius:4px;color:var(--blue);font: .9em/1.4 var(--font-mono)}.mermaid-wrap{position:relative;display:flex;justify-content:center;align-items:center;min-height:430px;padding:46px 30px;background:var(--surface);border:1px solid var(--border);overflow:auto;cursor:grab}.mermaid-wrap.is-panning{cursor:grabbing;user-select:none}.mermaid-wrap .mermaid{min-width:0}.mermaid .nodeLabel{color:var(--text)!important;font-family:var(--font-body)!important;font-size:16px!important}.mermaid .edgeLabel{color:var(--dim)!important;background-color:var(--bg)!important;font-family:var(--font-mono)!important;font-size:13px!important}.mermaid .edgeLabel rect{fill:var(--bg)!important}.zoom-controls{position:absolute;z-index:10;top:10px;right:10px;display:flex;gap:3px;padding:3px;background:var(--surface);border:1px solid var(--border);border-radius:6px}.zoom-controls button{display:grid;place-items:center;width:32px;height:32px;border:0;border-radius:4px;background:transparent;color:var(--dim);font:600 14px/1 var(--font-mono);cursor:pointer}.zoom-controls button:hover{background:var(--surface2);color:var(--text)}.capability-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:13px}.capability{border-left:5px solid var(--green)}.capability .path{display:block;margin-bottom:12px;color:var(--blue);font:600 12px/1.5 var(--font-mono)}.api-table{width:100%;border-collapse:collapse;background:var(--surface)}.api-table th,.api-table td{padding:15px 17px;border:1px solid var(--border);text-align:left;vertical-align:top}.api-table th{background:var(--surface2);color:var(--dim);font:600 12px/1.3 var(--font-mono);text-transform:uppercase;letter-spacing:.08em}.method{font:600 12px/1 var(--font-mono);color:var(--green)}.tree{white-space:pre-wrap;color:var(--dim);font:14px/1.75 var(--font-mono)}details{background:var(--surface);border:1px solid var(--border)}summary{padding:18px 22px;cursor:pointer;font:600 13px/1.4 var(--font-mono)}details>div{padding:0 24px 24px}.coverage{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px}.coverage .ve-card{padding:22px;border-top-width:4px}.coverage strong{display:block;font-size:1.05rem}.coverage span{display:block;margin-top:8px;color:var(--dim);font-size:.9rem}.review-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:13px}.good{border-left:6px solid var(--green)}.bad{border-left:6px solid var(--red)}.ugly{border-left:6px solid var(--amber)}.question{border-left:6px solid var(--blue)}.review-grid .ve-card{border-top:1px solid var(--border)}.review-grid p{color:var(--dim)}.decision-list{display:grid;gap:12px}.decision{border-left:6px solid var(--green);border-top:1px solid var(--border)}.decision.inferred{border-left-color:var(--blue)}.badge{display:inline-block;margin-bottom:12px;padding:5px 9px;border-radius:999px;background:var(--green-dim);color:var(--green);font-size:11px}.inferred .badge{background:var(--blue-dim);color:var(--blue)}.reentry{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.reentry .ve-card{border-top-color:var(--amber)}footer{margin-top:70px;padding-top:22px;border-top:1px solid var(--border);color:var(--dim);font:12px/1.6 var(--font-mono)}.kpis>*,.arch-cards>*,.capability-grid>*,.coverage>*,.review-grid>*,.reentry>*{min-width:0}@media(max-width:900px){.kpis{grid-template-columns:repeat(2,minmax(0,1fr))}.arch-cards,.coverage{grid-template-columns:repeat(2,minmax(0,1fr))}}@media(max-width:680px){.shell{width:min(100% - 20px,1180px);padding-top:10px}.hero{padding:32px 23px}.section-head,.diff-panels,.arch-cards,.capability-grid,.coverage,.review-grid,.reentry,.kpis{grid-template-columns:1fr}.before{border-right:0;border-bottom:1px solid var(--border)}.mermaid-wrap{min-height:360px;padding:44px 12px 20px}}@media(prefers-reduced-motion:reduce){*{scroll-behavior:auto!important}}
+  </style>
+</head>
+<body>
+<main class="shell">
+  <header class="hero">
+    <div class="eyebrow">Source-only diff · working tree vs main</div>
+    <h1>A browser review loop now lives inside the repo.</h1>
+    <p>Before this feature, the repository had no executable artifact-review surface. The substantive addition is a dependency-free local runtime that turns any existing HTML file into a sandboxed, annotatable review session and carries exact feedback back to the agent through a durable foreground poll.</p>
+    <div class="scope-note">Scope filter: only skills/review-artifact runtime + test/review-artifact. Cross-skill documentation and pipeline prose are intentionally excluded.</div>
+  </header>
+  <nav aria-label="Sections"><a href="#scope">Scope</a><a href="#architecture">Architecture</a><a href="#capabilities">Capabilities</a><a href="#flow">Lifecycle</a><a href="#api">HTTP surface</a><a href="#files">Files</a><a href="#tests">Tests</a><a href="#review">Review</a><a href="#decisions">Decisions</a><a href="#reentry">Re-entry</a></nav>
+
+  <section id="scope">
+    <div class="section-head"><div class="label">01 · Scope</div><h2>What actually executes</h2></div>
+    <div class="kpis">
+      <div class="kpi"><strong>14</strong><span>new implementation files</span></div>
+      <div class="kpi"><strong>1,656</strong><span>runtime source lines</span></div>
+      <div class="kpi"><strong>5</strong><span>new test files</span></div>
+      <div class="kpi"><strong>26</strong><span>feature tests passing</span></div>
+      <div class="kpi"><strong>0</strong><span>third-party runtime packages</span></div>
+    </div>
+    <div class="diff-panels" style="margin-top:14px">
+      <div class="before"><div class="label" style="color:var(--red)">Before</div><h3>No executable review boundary</h3><ul><li>Opening HTML meant opening a file or browser tab.</li><li>Feedback came back through chat without stable DOM targets.</li><li>No durable session, long poll, approval event, reload signal, or browser layout evidence existed.</li></ul></div>
+      <div class="after"><div class="label">After</div><h3>One local command boundary</h3><ul><li><code>open</code>, <code>poll</code>, <code>end</code>, and <code>stop</code> expose the lifecycle.</li><li>Element and text-range feedback includes selectors and context.</li><li>Session events survive interrupted polls and server restarts.</li></ul></div>
+    </div>
+  </section>
+
+  <section id="architecture">
+    <div class="section-head"><div class="label">02 · Architecture</div><h2>Five layers, one narrow purpose</h2></div>
+    <div class="mermaid-wrap">
+      <div class="zoom-controls"><button onclick="zoomDiagram(this,1.2)" title="Zoom in">+</button><button onclick="zoomDiagram(this,.8)" title="Zoom out">−</button><button onclick="resetZoom(this)" title="Reset">↻</button></div>
+      <pre class="mermaid">flowchart TD
+        CLI["Command seam\nopen · poll · end · stop"] --> DAEMON["Daemon lifecycle\nhealth · start · shutdown"]
+        DAEMON --> SERVER["Loopback HTTP server\nroutes · SSE · file watch"]
+        SERVER --> STORE["Durable session store\natomic JSON · event queue"]
+        SERVER --> SHELL["Review shell\nconversation · decisions · presence"]
+        SHELL --> FRAME["Opaque sandbox iframe"]
+        FRAME --> BRIDGE["Artifact bridge\nelement + text anchors · snapshot"]
+        BRIDGE --> AUDIT["Layout audit\nescape · clipping · occlusion"]
+        STORE -.-> CLI
+        SERVER -.->|"reload + replies"| SHELL</pre>
+    </div>
+    <div class="arch-cards">
+      <article class="ve-card green"><h3>Command + daemon</h3><p>Starts exactly one identified loopback service, rejects an occupied foreign port, opens the platform browser, and keeps the agent waiting in a foreground long poll.</p></article>
+      <article class="ve-card"><h3>Server + store</h3><p>Routes browser and agent traffic, canonicalizes artifact identity, serializes state mutations, writes atomically, and delivers queued events exactly once.</p></article>
+      <article class="ve-card amber"><h3>Two browser contexts</h3><p>The trusted parent shell owns network calls and conversation state. The reviewed artifact runs as an opaque-origin sandbox with only an injected bridge.</p></article>
+    </div>
+  </section>
+
+  <section id="capabilities">
+    <div class="section-head"><div class="label">03 · Capabilities</div><h2>The substantive behaviors</h2></div>
+    <div class="capability-grid">
+      <article class="ve-card capability"><span class="path">runtime/assets/bridge.js: 8–239</span><h3>Element and exact-text annotations</h3><p>Hover targeting generates bounded CSS selectors and nearby text. Selection targeting additionally records start/end node paths and offsets so feedback can identify a precise range rather than only a containing element.</p></article>
+      <article class="ve-card capability"><span class="path">runtime/session-store.mjs: 9–141</span><h3>Durable, path-keyed sessions</h3><p>A SHA-256-derived key identifies the canonical real path. Promise serialization prevents mutation races; temporary-file rename makes each persisted update atomic; event removal happens in the same mutation that returns it.</p></article>
+      <article class="ve-card capability"><span class="path">runtime/server.mjs: 92–252</span><h3>Indefinite foreground polling</h3><p>The poll first checks durable state, then waits on an in-process event. Client disconnect returns an interrupted state without deleting queued feedback. There is no runtime poll deadline.</p></article>
+      <article class="ve-card capability"><span class="path">runtime/server.mjs: 194–229</span><h3>Live reload and presence</h3><p>A debounced file watcher emits SSE reload events. The shell refreshes only the iframe, attempts scroll restoration, restores annotation mode, and displays whether the agent is listening or working.</p></article>
+      <article class="ve-card capability"><span class="path">runtime/assets/shell.js: 29–105; session-store.mjs: 35–54</span><h3>Visible, persistent conversation</h3><p>Queued annotations can be removed before sending. Successfully submitted element annotations and freeform messages render as “You” messages and persist alongside agent replies across full-page reloads.</p></article>
+      <article class="ve-card capability"><span class="path">runtime/assets/layout-audit.js: 1–182</span><h3>Stable severe-layout evidence</h3><p>Two geometry samples report only persistent material escape, accidental text clipping, and near-total required-control occlusion. Explicit truncation, scroll containers, masks, and intentional regions are suppressed.</p></article>
+      <article class="ve-card capability"><span class="path">runtime/http.mjs: 1–117; artifact-files.mjs: 1–55</span><h3>Local attack-surface controls</h3><p>Loopback binding, Host and Origin checks, 256 KiB body bounds, per-field limits, no-sniff responses, real-path file checks, and sibling-only asset serving constrain untrusted browser input.</p></article>
+      <article class="ve-card capability"><span class="path">runtime/shell.mjs: 1–53</span><h3>Source-preserving sandbox injection</h3><p>The server injects bridge scripts only into the served response. The saved artifact is untouched, and the iframe omits <code>allow-same-origin</code>, preventing reviewed code from reaching the trusted parent DOM.</p></article>
+    </div>
+  </section>
+
+  <section id="flow">
+    <div class="section-head"><div class="label">04 · Lifecycle</div><h2>One feedback cycle end to end</h2></div>
+    <div class="mermaid-wrap">
+      <div class="zoom-controls"><button onclick="zoomDiagram(this,1.2)" title="Zoom in">+</button><button onclick="zoomDiagram(this,.8)" title="Zoom out">−</button><button onclick="resetZoom(this)" title="Reset">↻</button></div>
+      <pre class="mermaid">sequenceDiagram
+        participant A as Agent command
+        participant S as Local server
+        participant B as Browser shell
+        participant F as Sandboxed artifact
+        participant D as Durable store
+        A->>S: Open canonical HTML path
+        S->>D: Upsert path-keyed session
+        S-->>B: Shell with sandboxed iframe
+        S-->>F: HTML response with bridge
+        F->>B: Queue element or text feedback
+        B->>S: Submit prompts and DOM snapshot
+        S->>D: Persist chat and feedback event
+        S-->>A: Resolve foreground poll
+        A->>S: Send concise reply
+        A->>A: Edit canonical HTML
+        S-->>B: Stream reply and reload event
+        B-->>F: Reload current artifact
+        B->>S: Explicit approve or end
+        S->>D: Persist distinct terminal event</pre>
+    </div>
+  </section>
+
+  <section id="api">
+    <div class="section-head"><div class="label">05 · HTTP surface</div><h2>Routes behind the command</h2></div>
+    <div style="overflow-x:auto"><table class="api-table"><thead><tr><th>Method</th><th>Route</th><th>Caller</th><th>Responsibility</th></tr></thead><tbody>
+      <tr><td class="method">GET</td><td><code>/health</code></td><td>daemon</td><td>Identifies the service before reuse; a merely responsive foreign service is rejected.</td></tr>
+      <tr><td class="method">POST</td><td><code>/api/sessions</code></td><td>CLI</td><td>Canonicalizes an HTML path, opens or resumes its durable session, and starts file watching.</td></tr>
+      <tr><td class="method">GET</td><td><code>…/poll</code></td><td>agent</td><td>Atomically takes the next queued event or waits indefinitely for one.</td></tr>
+      <tr><td class="method">POST</td><td><code>…/agent-reply</code></td><td>agent</td><td>Persists the reply and streams it into the open conversation.</td></tr>
+      <tr><td class="method">POST</td><td><code>…/feedback</code></td><td>browser shell</td><td>Validates and queues prompts, snapshots, approval, or unapproved end.</td></tr>
+      <tr><td class="method">POST</td><td><code>…/layout-warnings</code></td><td>browser shell</td><td>Accepts only proven error-level findings and suppresses finished sessions.</td></tr>
+      <tr><td class="method">GET</td><td><code>…/events</code></td><td>browser shell</td><td>Streams presence, replies, reloads, and terminal state via SSE.</td></tr>
+      <tr><td class="method">GET</td><td><code>/artifact/…</code></td><td>sandbox iframe</td><td>Serves injected HTML and real-path-confined sibling assets.</td></tr>
+    </tbody></table></div>
+  </section>
+
+  <section id="files">
+    <div class="section-head"><div class="label">06 · File map</div><h2>Only the new executable surface</h2></div>
+    <details open><summary>14 implementation files · 1,656 lines</summary><div class="tree">skills/review-artifact/
+├── bin/review-artifact.mjs              19  process entrypoint
+└── runtime/
+    ├── cli.mjs                          102  command contract
+    ├── daemon.mjs                        65  detached lifecycle + health
+    ├── browser.mjs                       19  platform launcher
+    ├── paths.mjs                         28  state and port configuration
+    ├── server.mjs                       273  route orchestration + long poll + SSE
+    ├── http.mjs                         121  validation and response boundary
+    ├── artifact-files.mjs                58  canonical and confined files
+    ├── session-store.mjs                159  durable serialized state
+    ├── shell.mjs                         56  sandbox shell + response injection
+    └── assets/
+        ├── shell.js                     213  conversation and live sync client
+        ├── shell.css                    114  responsive accessible shell
+        ├── bridge.js                    243  annotation and DOM snapshot bridge
+        └── layout-audit.js              186  stable browser geometry audit</div></details>
+    <details><summary>5 test files · 541 lines</summary><div class="tree">test/review-artifact/
+├── server.test.ts                       322  HTTP, security, lifecycle, SSE, sandbox
+├── cli.test.ts                           70  command behaviors
+├── session-store.test.ts                 71  delivery, concurrency, decisions, chat
+├── layout-audit.test.ts                  54  classifier boundaries
+└── daemon.test.ts                        24  foreign health handling</div></details>
+  </section>
+
+  <section id="tests">
+    <div class="section-head"><div class="label">07 · Verification</div><h2>Behavior at each seam</h2></div>
+    <div class="coverage">
+      <div class="ve-card green"><strong>14 server tests</strong><span>Routes, attacks, polling, decisions, reload, sandbox, and assets.</span></div>
+      <div class="ve-card green"><strong>4 store tests</strong><span>Exactly-once delivery, chat history, concurrency, terminal distinction.</span></div>
+      <div class="ve-card green"><strong>4 layout tests</strong><span>Escape, clipping, intentional truncation, and occlusion thresholds.</span></div>
+      <div class="ve-card green"><strong>3 CLI tests</strong><span>Open without browser, structured poll result, agent end.</span></div>
+      <div class="ve-card green"><strong>1 daemon test</strong><span>Malformed foreign health is not mistaken for this runtime.</span></div>
+    </div>
+    <div class="panel"><strong>Latest complete gate:</strong> <code>make test</code> passed with 551 content checks, 27 install checks, 93 Bun tests, and 15 planted-error meta-tests. The feature itself contributes 26 of those Bun tests. No CHANGELOG exists in this repository; documentation changes are outside this report by request.</div>
+  </section>
+
+  <section id="review">
+    <div class="section-head"><div class="label">08 · Code review</div><h2>Good, bad, ugly, questions</h2></div>
+    <div class="review-grid">
+      <article class="ve-card good"><h3>Good</h3><p><strong>Deep boundaries.</strong> Command, HTTP validation, file confinement, persistent state, and browser behavior are separated without framework scaffolding. All implementation files stay below 300 lines. The security model is explicit at the dangerous boundaries, and no third-party runtime dependency is introduced.</p></article>
+      <article class="ve-card bad"><h3>Bad</h3><p><strong>No real-browser automated E2E.</strong> <code>test/review-artifact/server.test.ts</code> exercises HTTP and streamed events, while classifier tests exercise geometry decisions, but pointer selection, iframe focus, actual postMessage behavior, and responsive rendering still rely on manual browser use.</p></article>
+      <article class="ve-card ugly"><h3>Ugly</h3><p><strong>Two growth seams are uncapped.</strong> <code>session-store.mjs</code> retains full chat history and up to 200 warning keys indefinitely per artifact. Inputs are individually bounded, but a long-lived, heavily used session can grow the JSON state file without a total-history retention policy.</p></article>
+      <article class="ve-card question"><h3>Question</h3><p><strong>When should history compact?</strong> The current behavior favors complete local durability. Before broad use, decide whether reopen should retain all conversation forever or compact acknowledged history after a size or age threshold.</p></article>
+    </div>
+  </section>
+
+  <section id="decisions">
+    <div class="section-head"><div class="label">09 · Decision log</div><h2>Why the runtime has this shape</h2></div>
+    <div class="decision-list">
+      <article class="ve-card decision"><span class="badge">High confidence</span><h3>Own the runtime instead of invoking an upstream package</h3><p>The user explicitly chose a locally maintained implementation. The result uses only Node built-ins and keeps the review protocol inspectable in this repository.</p></article>
+      <article class="ve-card decision"><span class="badge">High confidence</span><h3>Keep the reviewed source untouched</h3><p>Bridge and audit scripts are injected into the served response, not written into the artifact. This keeps review instrumentation out of canonical HTML while still allowing arbitrary semantic documents.</p></article>
+      <article class="ve-card decision"><span class="badge">High confidence</span><h3>Treat approval as data, not affirmative prose</h3><p><code>approved</code> and <code>ended</code> are separate terminal events with an actor. Browser close, poll interruption, and an agent-ended session do not masquerade as approval.</p></article>
+      <article class="ve-card decision"><span class="badge">High confidence</span><h3>Use an opaque-origin iframe</h3><p>The parent shell performs network operations; reviewed content receives only scripts and forms. Cross-context messages validate <code>event.source</code> because an opaque sandbox cannot provide a useful same-origin string.</p></article>
+      <article class="ve-card decision inferred"><span class="badge">Inferred</span><h3>Use JSON persistence rather than a local database</h3><p>One serialized daemon and small per-path review sessions make atomic JSON sufficient today. A database would add migration and packaging surface without improving the current command contract.</p></article>
+    </div>
+  </section>
+
+  <section id="reentry">
+    <div class="section-head"><div class="label">10 · Re-entry</div><h2>Things future-you must preserve</h2></div>
+    <div class="reentry">
+      <article class="ve-card"><h3>Key invariants</h3><ul><li>Canonical real path defines session identity.</li><li>Event take and removal must remain one atomic store mutation.</li><li>Only explicit <code>approved</code> clears a gate.</li><li>Artifact source must not be rewritten for instrumentation.</li></ul></article>
+      <article class="ve-card"><h3>Non-obvious coupling</h3><ul><li><code>shell.js</code> and <code>bridge.js</code> share literal postMessage event names across separate globals.</li><li><code>server.mjs</code> SSE event types must match shell client handlers.</li><li>Session chat shape is serialized into <code>shell.mjs</code> bootstrap JSON.</li></ul></article>
+      <article class="ve-card"><h3>Gotchas</h3><ul><li>Do not add <code>allow-same-origin</code> to the iframe.</li><li>Host validation and Origin validation defend different paths; retain both.</li><li>String-prefix path checks are insufficient; asset confinement depends on <code>realpath</code> plus <code>path.relative</code>.</li></ul></article>
+      <article class="ve-card"><h3>Worth doing next</h3><ul><li>Add a fixture-driven real-browser E2E harness when this repository is ready to own that dependency.</li><li>Define a session-history retention limit before usage becomes high-volume.</li><li>Centralize browser event names only if the protocol grows enough to justify another module.</li></ul></article>
+    </div>
+  </section>
+
+  <footer>Verified against branch <strong>hh/artifact-feedback</strong> · base <strong>main @ 9e4355d</strong> · source facts from file reads, line counts, exported symbols, and a fresh full test run.</footer>
+</main>
+<script type="module">
+  import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';
+  const dark = matchMedia('(prefers-color-scheme: dark)').matches;
+  mermaid.initialize({startOnLoad:false,theme:'base',look:'classic',themeVariables:{fontSize:'18px',fontFamily:'DM Sans',primaryColor:dark?'#253d2d':'#dceee2',primaryBorderColor:dark?'#83c89c':'#187149',primaryTextColor:dark?'#edf3ee':'#202620',secondaryColor:dark?'#223844':'#dcebf1',secondaryBorderColor:dark?'#88c0da':'#286987',secondaryTextColor:dark?'#edf3ee':'#202620',tertiaryColor:dark?'#41371f':'#f2e4be',tertiaryBorderColor:dark?'#dfbc68':'#94680d',tertiaryTextColor:dark?'#edf3ee':'#202620',lineColor:dark?'#8fa095':'#75837a'}});
+  await mermaid.run();
+  setTimeout(fitMermaidDiagrams,100);
+</script>
+<script>
+  function fitMermaidDiagrams(){document.querySelectorAll('.mermaid-wrap').forEach(function(wrap){var el=wrap.querySelector('.mermaid'),svg=el&&el.querySelector('svg');if(!svg)return;el.style.zoom=1;var z=Math.min((wrap.clientWidth-64)/svg.getBoundingClientRect().width,(wrap.clientHeight-64)/svg.getBoundingClientRect().height);z=Math.max(z,2.5);el.style.zoom=z;el.dataset.zoom=z;el.dataset.fitZoom=z;});}
+  function zoomDiagram(btn,factor){var el=btn.closest('.mermaid-wrap').querySelector('.mermaid'),current=parseFloat(el.dataset.zoom||1),next=Math.min(Math.max(current*factor,.5),8);el.dataset.zoom=next;el.style.zoom=next;}
+  function resetZoom(btn){var el=btn.closest('.mermaid-wrap').querySelector('.mermaid'),z=parseFloat(el.dataset.fitZoom||1);el.dataset.zoom=z;el.style.zoom=z;}
+  document.querySelectorAll('.mermaid-wrap').forEach(function(wrap){wrap.addEventListener('wheel',function(e){if(!e.ctrlKey&&!e.metaKey)return;e.preventDefault();var el=wrap.querySelector('.mermaid'),current=parseFloat(el.dataset.zoom||1),next=Math.min(Math.max(current*(e.deltaY<0?1.1:.9),.5),8);el.dataset.zoom=next;el.style.zoom=next;},{passive:false});var x,y,l,t;wrap.addEventListener('mousedown',function(e){if(e.target.closest('.zoom-controls'))return;wrap.classList.add('is-panning');x=e.clientX;y=e.clientY;l=wrap.scrollLeft;t=wrap.scrollTop;});window.addEventListener('mousemove',function(e){if(!wrap.classList.contains('is-panning'))return;wrap.scrollLeft=l-(e.clientX-x);wrap.scrollTop=t-(e.clientY-y);});window.addEventListener('mouseup',function(){wrap.classList.remove('is-panning');});});
+</script>
+</body>
+</html>

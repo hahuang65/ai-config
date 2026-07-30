@@ -166,9 +166,9 @@ code { font-family: var(--font-mono); font-size: 0.85em; background: var(--accen
   <table>
     <thead><tr><th>Step</th><th>Action</th><th>Output</th></tr></thead>
     <tbody>
-      <tr><td><strong>1. Explore</strong></td><td>Read <code>CONTEXT.md</code> and relevant ADRs first. Then walk the codebase via the <code>Explore</code> agent, noting friction (shallow modules, leaks across seams, tightly-coupled clusters).</td><td>Notes</td></tr>
-      <tr><td><strong>2. Report</strong></td><td>Self-contained HTML written to OS temp dir. Tailwind + Mermaid via CDN. Each candidate gets a before/after diagram and a recommendation badge.</td><td><code>architecture-review-&lt;ts&gt;.html</code></td></tr>
-      <tr><td><strong>3. Grilling loop</strong></td><td>User picks a candidate. Walk the design tree — constraints, dependencies, the shape of the deepened module. <code>CONTEXT.md</code> updates inline; ADR offered for load-bearing rejections.</td><td>Decisions + maybe an ADR</td></tr>
+      <tr><td><strong>1. Explore</strong></td><td>Read <code>CONTEXT.md</code> and relevant ADRs first. Then walk the codebase via the <code>architecture-reviewer</code> agent, noting friction (shallow modules, leaks across seams, tightly-coupled clusters).</td><td>Notes</td></tr>
+      <tr><td><strong>2. Report</strong></td><td>Self-contained HTML written to the OS temp dir and opened through <code>review-artifact</code>. Each candidate gets a before/after diagram and a recommendation badge; explicit approval means commit as-is.</td><td><code>architecture-review-&lt;ts&gt;.html</code></td></tr>
+      <tr><td><strong>3. Grilling loop</strong></td><td>User annotates or messages to pick a candidate. Walk the design tree — constraints, dependencies, the shape of the deepened module. <code>CONTEXT.md</code> updates inline; ADR offered for load-bearing rejections.</td><td>Decisions + maybe an ADR</td></tr>
     </tbody>
   </table>
 </div>

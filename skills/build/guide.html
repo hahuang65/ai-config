@@ -155,7 +155,7 @@ code { font-family: var(--font-mono); font-size: 0.85em; background: var(--accen
     </div>
 
     <div class="card specs">
-      <h3>specs <span class="badge">opus · synthesis</span></h3>
+      <h3>spec <span class="badge">synthesis</span></h3>
       <p>Synthesizes a feature spec from the grilling outcome. Does NOT re-interview.</p>
       <ul>
         <li>Reads <code>CONTEXT.md</code>, recent ADRs, conversation</li>
@@ -163,22 +163,23 @@ code { font-family: var(--font-mono); font-size: 0.85em; background: var(--accen
         <li>Proposes module test surfaces; user corrects boundaries/seams only</li>
         <li>Writes spec: problem, solution, user stories, decisions, testing</li>
         <li>NO code snippets, NO file paths (they go stale)</li>
-        <li>Annotation cycle via <code>//</code> comments until approved</li>
+        <li>Browser annotations and messages through <code>review-artifact</code></li>
+        <li>Explicit approval advances the gate</li>
       </ul>
-      <div class="out"><strong>Output:</strong> <code>docs/features/&lt;slug&gt;/specs.md</code><br><strong>Output:</strong> <code>docs/features/&lt;slug&gt;/specs.html</code></div>
+      <div class="out"><strong>Canonical output:</strong> <code>docs/features/&lt;slug&gt;/specs.html</code></div>
     </div>
 
     <div class="card tasks">
-      <h3>tasks <span class="badge">opus · vertical slices</span></h3>
+      <h3>todo <span class="badge">vertical slices</span></h3>
       <p>Breaks the approved spec into vertical-slice tracer bullets. Each slice cuts through every layer end-to-end.</p>
       <ul>
-        <li>Reads <code>specs.md</code>, <code>CONTEXT.md</code>, ADRs</li>
+        <li>Reads canonical <code>specs.html</code>, <code>CONTEXT.md</code>, ADRs</li>
         <li>Each slice = thin path through schema, API, UI, tests</li>
         <li>Marked HITL (human-in-loop) or AFK (away-from-keyboard)</li>
         <li>Dependency order: blockers first</li>
-        <li>Review (ask or annotate) until the user confirms</li>
+        <li>Review through <code>review-artifact</code> until explicit approval</li>
       </ul>
-      <div class="out"><strong>Output:</strong> <code>docs/features/&lt;slug&gt;/tasks.md</code><br><strong>Output:</strong> <code>docs/features/&lt;slug&gt;/tasks.html</code></div>
+      <div class="out"><strong>Canonical output:</strong> <code>docs/features/&lt;slug&gt;/tasks.html</code></div>
     </div>
 
     <div class="card implement">
@@ -207,13 +208,11 @@ code { font-family: var(--font-mono); font-size: 0.85em; background: var(--accen
 │   ├── adr/                project-wide ADRs (added by /grill)
 │   │   ├── 0001-event-sourced-orders.md
 │   │   └── 0002-postgres-for-write-model.md
-│   └── claude/
+│   └── features/
 │       └── &lt;YYYYMMDD-HHMM&gt;-&lt;slug&gt;/
-│           ├── specs.md             Phase 2 — Spec
-│           ├── specs.html           Phase 2 — visual companion
-│           ├── tasks.md           Phase 3 — vertical slices
-│           ├── tasks.html         Phase 3 — visual companion
-│           └── diff-review.html   Phase 4 — diff review</div>
+│           ├── specs.html         Phase 2 — canonical spec
+│           ├── tasks.html         Phase 3 — canonical vertical slices
+│           └── diff-review.html   Phase 4 — informational diff review</div>
   <div class="callout">
     <strong>Lifespan:</strong> <code>CONTEXT.md</code> and <code>docs/adr/</code> live at the repo root and accrete across many <code>/build</code> runs. Per-feature artifacts are scoped to one slug-directory and can be kept, deleted, or <code>.gitignore</code>d.
   </div>
@@ -225,32 +224,26 @@ code { font-family: var(--font-mono); font-size: 0.85em; background: var(--accen
     <thead><tr><th>Transition</th><th>User confirms (any wording)</th><th>Gate behavior</th></tr></thead>
     <tbody>
       <tr><td>after <code>/grill</code></td><td>any go-ahead to draft the spec</td><td><span class="stop">STOP</span> until the user confirms</td></tr>
-      <tr><td>after <code>/spec</code></td><td>any go-ahead to break it into tasks</td><td><span class="stop">STOP</span> until spec is approved <em>and</em> the user confirms</td></tr>
-      <tr><td>after <code>/todo</code></td><td>any go-ahead to implement (and which mode)</td><td><span class="stop">STOP</span> until tasks are approved <em>and</em> the user picks a mode</td></tr>
+      <tr><td>after <code>/spec</code></td><td>explicit <code>review-artifact</code> approval or chat fallback</td><td><span class="stop">STOP</span> until canonical <code>specs.html</code> is approved</td></tr>
+      <tr><td>after <code>/todo</code></td><td>explicit <code>review-artifact</code> approval or chat fallback</td><td><span class="stop">STOP</span> until canonical <code>tasks.html</code> is approved and implementation mode is known</td></tr>
     </tbody>
   </table>
   <p style="margin-top:14px; font-size:0.9rem; color: var(--text-dim);">The orchestrator never advances autonomously. Each gate exists so the user injects judgment — domain corrections during grill, scope cuts during spec, granularity during tasks.</p>
 </div>
 
 <div class="section">
-  <div class="section-title"><span class="num">04</span>Annotation Cycle</div>
-  <p style="margin-bottom: 16px; font-size: 0.95rem;">The spec phase uses inline <code>//</code> comments for user feedback. Tasks uses a lighter quiz-the-user pattern.</p>
-  <div class="pre">## User Stories
-
-// also need: "as an admin, I want to revoke sessions"
-1. As a customer, I want to see my balance...
-
-// remove this — it's out of scope per the grill session
-7. As a customer, I want to export to CSV...
-
-// this should reference ADR-0003, not 0002</div>
-  <p style="margin-top:14px; font-size:0.9rem; color: var(--text-dim);">For each annotation, the agent addresses it, updates <code>specs.md</code>, and removes the <code>//</code> comment — working from the markdown. Cycles repeat until the user is satisfied; the visual is regenerated once at the end if the markdown changed.</p>
+  <div class="section-title"><span class="num">04</span>Review Artifact Loop</div>
+  <p style="margin-bottom: 16px; font-size: 0.95rem;">Whenever an HTML artifact asks for feedback or approval, <code>review-artifact</code> opens it in a local browser surface.</p>
+  <div class="pre">generate canonical HTML → annotate exact element or text
+          ↑                          ↓
+          └──── live reload ← agent applies feedback</div>
+  <p style="margin-top:14px; font-size:0.9rem; color: var(--text-dim);">The foreground poll returns durable feedback batches, severe layout warnings, and an explicit approval event. Ending or closing review is not approval.</p>
 </div>
 
 <div class="section">
-  <div class="section-title"><span class="num">05</span>Visual Sync Guarantee</div>
-  <p style="font-size: 0.95rem; margin-bottom: 14px;">Each HTML companion is generated and opened when its markdown is first written, left untouched during the review, and regenerated once afterward if the markdown changed (and again after implementation). <code>specs.html</code> mirrors <code>specs.md</code>; <code>tasks.html</code> mirrors <code>tasks.md</code>.</p>
-  <p style="font-size: 0.9rem; color: var(--text-dim);">If <code>visualize</code> is not installed, visual steps are silently skipped — the workflow still produces the markdown artifacts.</p>
+  <div class="section-title"><span class="num">05</span>Canonical HTML Sync</div>
+  <p style="font-size: 0.95rem; margin-bottom: 14px;"><code>specs.html</code> and <code>tasks.html</code> are durable sources, not visual companions. Every feedback batch updates the same semantic HTML so the browser never intentionally lags.</p>
+  <p style="font-size: 0.9rem; color: var(--text-dim);">If browser review cannot start, the phase falls back to chat while preserving explicit approval semantics.</p>
 </div>
 
 <div class="section">
@@ -261,8 +254,8 @@ code { font-family: var(--font-mono); font-size: 0.85em; background: var(--accen
       <tr><td><span class="cmd-tag">/grill</span></td><td>Refine domain language without committing to a spec</td><td>Phase 1</td></tr>
       <tr><td><span class="cmd-tag">/spec</span></td><td>Turn an existing conversation into a spec</td><td>Phase 2</td></tr>
       <tr><td><span class="cmd-tag">/todo</span></td><td>Break an existing spec into vertical slices</td><td>Phase 3</td></tr>
-      <tr><td><span class="cmd-tag">/code</span></td><td>Execute an existing tasks.md (AI)</td><td>Phase 4a</td></tr>
-      <tr><td><span class="cmd-tag">/coach</span></td><td>Execute an existing tasks.md (you write code)</td><td>Phase 4b</td></tr>
+      <tr><td><span class="cmd-tag">/code</span></td><td>Execute existing canonical tasks.html (AI)</td><td>Phase 4a</td></tr>
+      <tr><td><span class="cmd-tag">/coach</span></td><td>Execute existing canonical tasks.html (you write code)</td><td>Phase 4b</td></tr>
     </tbody>
   </table>
 </div>
@@ -283,12 +276,12 @@ code { font-family: var(--font-mono); font-size: 0.85em; background: var(--accen
       <p>Terms resolved during grill appear unchanged in the spec, tasks, test names, and code identifiers. Inconsistency triggers rework.</p>
     </div>
     <div class="card">
-      <h3>Markdown is the deliverable</h3>
-      <p>Files like <code>specs.md</code> and <code>tasks.md</code> are the durable spec — not chat summaries. Visual HTML companions are spatial aids; the markdown is the source.</p>
+      <h3>Semantic HTML is the deliverable</h3>
+      <p><code>specs.html</code> and <code>tasks.html</code> are durable reviewed sources. There are no Markdown companions or hidden duplicate models.</p>
     </div>
     <div class="card">
       <h3>User judgment via gates</h3>
-      <p>Annotation cycles and quiz cycles exist so the user injects domain knowledge, business constraints, and trade-offs. The orchestrator never barrels through.</p>
+      <p>Browser annotations, messages, and explicit approvals let the user inject domain knowledge, constraints, and trade-offs. The orchestrator never infers approval from ending review.</p>
     </div>
     <div class="card">
       <h3>Never commits</h3>

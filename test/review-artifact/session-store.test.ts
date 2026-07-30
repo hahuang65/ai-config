@@ -1,0 +1,71 @@
+import { describe, expect, test } from "bun:test";
+import { mkdtemp } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import path from "node:path";
+
+import { SessionStore } from "../../skills/review-artifact/runtime/session-store.mjs";
+
+describe("review session store", () => {
+  test("delivers a queued feedback batch exactly once", async () => {
+    const directory = await mkdtemp(path.join(tmpdir(), "review-artifact-store-"));
+    const store = new SessionStore(path.join(directory, "state.json"));
+    const session = await store.upsert("/project/specs.html", "http://127.0.0.1/session/key");
+
+    await store.queueFeedback(session.key, {
+      prompts: [{ prompt: "Clarify this", selector: "main > section", tag: "section", text: "Scope" }],
+      domSnapshot: "main\n  section Scope",
+    });
+
+    expect(await store.takeEvent(session.key)).toMatchObject({
+      status: "feedback",
+      prompts: [{ prompt: "Clarify this", selector: "main > section" }],
+      domSnapshot: "main\n  section Scope",
+    });
+    expect(await store.takeEvent(session.key)).toEqual({ status: "waiting" });
+  });
+
+  test("keeps submitted user feedback in the conversation history", async () => {
+    const directory = await mkdtemp(path.join(tmpdir(), "review-artifact-store-"));
+    const store = new SessionStore(path.join(directory, "state.json"));
+    const session = await store.upsert("/project/specs.html", "http://127.0.0.1/session/spec");
+
+    await store.queueFeedback(session.key, {
+      prompts: [
+        { prompt: "Clarify this", selector: "main" },
+        { prompt: "I prefer the first option", tag: "message" },
+      ],
+    });
+
+    expect((await store.find(session.key)).chat).toMatchObject([
+      { role: "user", text: "Clarify this" },
+      { role: "user", text: "I prefer the first option" },
+    ]);
+  });
+
+  test("preserves concurrent feedback batches", async () => {
+    const directory = await mkdtemp(path.join(tmpdir(), "review-artifact-store-"));
+    const store = new SessionStore(path.join(directory, "state.json"));
+    const session = await store.upsert("/project/specs.html", "http://127.0.0.1/session/spec");
+
+    await Promise.all([
+      store.queueFeedback(session.key, { prompts: [{ prompt: "First" }] }),
+      store.queueFeedback(session.key, { prompts: [{ prompt: "Second" }] }),
+    ]);
+    const events = [await store.takeEvent(session.key), await store.takeEvent(session.key)];
+
+    expect(events.map((event) => event.prompts[0].prompt).sort()).toEqual(["First", "Second"]);
+  });
+
+  test("delivers explicit approval separately from an unapproved end", async () => {
+    const directory = await mkdtemp(path.join(tmpdir(), "review-artifact-store-"));
+    const store = new SessionStore(path.join(directory, "state.json"));
+    const approved = await store.upsert("/project/specs.html", "http://127.0.0.1/session/spec");
+    const ended = await store.upsert("/project/tasks.html", "http://127.0.0.1/session/tasks");
+
+    await store.finish(approved.key, { decision: "approved", endedBy: "user" });
+    await store.finish(ended.key, { decision: "ended", endedBy: "user" });
+
+    expect(await store.takeEvent(approved.key)).toEqual({ status: "approved", endedBy: "user" });
+    expect(await store.takeEvent(ended.key)).toEqual({ status: "ended", endedBy: "user" });
+  });
+});

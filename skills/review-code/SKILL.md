@@ -57,7 +57,10 @@ Resolve the scope per the rules above, then run the `architecture-reviewer` agen
 
 ### 2. Present Candidates as an HTML Report
 
-Render the agent's findings as a self-contained HTML file written to the OS temp directory so nothing lands in the repo. Resolve the temp dir from `$TMPDIR`, falling back to `/tmp` (or `%TEMP%` on Windows), and write to `<tmpdir>/architecture-review-<timestamp>.html` so each run gets a fresh file. Open it for the user — `xdg-open <path>` on Linux, `open <path>` on macOS, `start <path>` on Windows — and tell them the absolute path.
+Render the agent's findings as a self-contained HTML file written to the OS temp directory so nothing lands in the repo.
+Resolve the temp dir from `$TMPDIR`, falling back to `/tmp` or `%TEMP%` on Windows, and write to `<tmpdir>/architecture-review-<timestamp>.html` so each run gets a fresh file.
+Load `review-artifact` and open the report through [the shared review protocol](../shared/references/review-artifact.md), then tell the user the absolute path.
+If the runtime fails, use the protocol's chat fallback.
 
 The report uses **Tailwind via CDN** for layout and styling, and **Mermaid via CDN** for diagrams where a graph/flow/sequence reliably communicates the structure. Mix Mermaid with hand-crafted CSS/SVG visuals — use Mermaid when relationships are graph-shaped (call graphs, dependencies, sequences), and hand-built divs/SVG when you want something more editorial (mass diagrams, cross-sections, collapse animations). Each candidate gets a **before/after visualisation**. Be visual.
 
@@ -78,10 +81,13 @@ End the report with a **Top recommendation** section: which candidate you'd tack
 
 See [html-report.md](references/html-report.md) for the full HTML scaffold, diagram patterns, and styling guidance.
 
-Do NOT propose interfaces yet. After the file is written, the ask depends on the mode:
+Do NOT propose interfaces yet.
+The report itself carries the decision:
 
-- **From `/build`:** this is the pipeline's terminal decision. Ask: "Review's done — commit the feature as-is, or explore one of these findings first?" Any affirmative-to-commit answer ends the pipeline (the user commits; you never do). Picking a candidate enters the grilling loop below.
-- **Standalone:** ask "Which of these would you like to explore?"
+- **From `/build`:** browser approval means commit the feature as-is and ends the pipeline; annotations or messages that choose a candidate enter the grilling loop below.
+- **Standalone:** annotations or messages choose a candidate; approval means no candidate will be explored now.
+
+Ending the review without approval is not a decision; fall back to chat rather than inferring one.
 
 ### 3. Grilling Loop
 

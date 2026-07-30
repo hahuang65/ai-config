@@ -109,7 +109,7 @@ code { font-family: var(--font-mono); font-size: 0.85em; background: var(--accen
 
 <div class="header">
   <h1><span>/</span>implement &amp; <span>/</span>coach</h1>
-  <p class="subtitle">Vertical-slice TDD execution of an approved <code>tasks.md</code>. One test, one implementation, repeat. Coach mode lets the user write the code; AI writes one test at a time. Inputs: <code>specs.md</code> + <code>tasks.md</code>.</p>
+  <p class="subtitle">Vertical-slice TDD execution of approved canonical <code>tasks.html</code>. One test, one implementation, repeat. Coach mode lets the user write the code; AI writes one test at a time. Inputs: <code>specs.html</code> + <code>tasks.html</code>.</p>
   <div class="cycle">
     <span class="cycle-step red">RED</span>
     <span class="cycle-arrow">→</span>
@@ -190,7 +190,7 @@ RED→GREEN: test3 → impl3
       <tr><td>3. GREEN</td><td>Write minimal code to make the test pass.</td><td><strong>User writes code</strong>, AI verifies on "check"</td></tr>
       <tr><td>4. Next criterion</td><td>For each remaining acceptance criterion, write the next test, then write code.</td><td>AI writes test; user writes code</td></tr>
       <tr><td>5. Refactor</td><td>After all tests for the slice pass — only while GREEN — extract, deepen, simplify. Run tests after each step.</td><td>Done together; AI suggests, user executes</td></tr>
-      <tr><td>6. Mark complete</td><td>Check off acceptance criteria in <code>tasks.md</code>, append <code>**Status:** ✅ Complete</code>.</td><td>same</td></tr>
+      <tr><td>6. Mark complete</td><td>Update each criterion and slice to visible <code>complete</code> state with <code>data-status=&quot;complete&quot;</code> in <code>tasks.html</code>.</td><td>same</td></tr>
     </tbody>
   </table>
   <div class="callout warn">
@@ -212,7 +212,7 @@ RED→GREEN: test3 → impl3
       <tr><td><span class="agent-tag">refactorer</span> (hygiene mode)</td><td>Always — dead code, unused imports &amp; dependencies, duplication, simplification; SAFE applied, CAREFUL/RISKY reported</td><td><span class="must-tag">MUST</span></td></tr>
       <tr><td><span class="agent-tag">code-reviewer</span></td><td>Always — OWASP Top 10, &gt;80% confidence</td><td><span class="must-tag">MUST</span></td></tr>
       <tr><td><span class="agent-tag">doc-updater</span></td><td>If features / APIs / architecture changed</td><td><span class="cond-tag">CONDITIONAL</span></td></tr>
-      <tr><td><span class="agent-tag">fact-checker</span> on <code>specs.md</code> &amp; <code>tasks.md</code></td><td>Always — catch drift between docs and code</td><td><span class="must-tag">MUST</span></td></tr>
+      <tr><td><span class="agent-tag">fact-checker</span> on canonical <code>specs.html</code> &amp; <code>tasks.html</code></td><td>Always — catch drift between docs and code</td><td><span class="must-tag">MUST</span></td></tr>
       <tr><td>Refresh <code>specs.html</code> + <code>tasks.html</code></td><td>Always — visual sync guarantee</td><td><span class="must-tag">MUST</span></td></tr>
       <tr><td><span class="cmd-tag">/visualize-diff</span> → <code>diff-review.html</code></td><td>If <code>visualize</code> is installed</td><td><span class="cond-tag">CONDITIONAL</span></td></tr>
     </tbody>

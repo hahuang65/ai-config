@@ -6,11 +6,11 @@ Shared reference for `code` and `coach`. Run this **after the post-implementatio
 
 Report what was accomplished this session:
 
-- Slices completed (each checked off and marked `**Status:** ✅ Complete` in `tasks.md`)
+- Slices completed (each criterion and slice visibly complete with `data-status="complete"` in canonical `tasks.html`)
 - Tests added and passing
 - Type check / lint / build ✅
 - Review findings addressed
-- Which visuals were refreshed (`specs.html`, `tasks.html`, `diff-review.html`)
+- Which canonical or informational HTML artifacts were refreshed (`specs.html`, `tasks.html`, `diff-review.html`)
 
 ## What happens next
 
