@@ -1,5 +1,13 @@
-export function buildReviewChangePrompt({ target, intent, scopeKind, sourceRoot, sourceScopeResolved, skillDirectory }) {
-  const invocation = JSON.stringify({ target, intent, scopeKind, sourceRoot, sourceScopeResolved });
+export function buildReviewChangePrompt({
+  target,
+  intent,
+  scopeKind,
+  sourceRoot,
+  reviewRoot,
+  sourceScopeResolved,
+  skillDirectory,
+}) {
+  const invocation = JSON.stringify({ target, intent, scopeKind, sourceRoot, reviewRoot, sourceScopeResolved });
   return [
     "Act as the outer standalone Review change driver.",
     `Load and execute the review-change skill from ${JSON.stringify(skillDirectory)}.`,
@@ -14,8 +22,8 @@ export function buildReviewChangePrompt({ target, intent, scopeKind, sourceRoot,
     "During adversarial review, announce these sub-stages as work advances: Establish scope and intent; Dispatch the fresh change-reviewer; Check scope and intent coverage; Validate anchors and project terminology; Normalize Findings and risk.",
     "For later stages, use equally concrete sub-stage messages that state the current operational intent, such as selecting evidence, running one focused check, checking changed documentation, running focused lint, or assembling the report.",
     "Before completing review or report, require every Finding card to include an exact reviewed path:line anchor, and rewrite titles/descriptions with project terms while defining any unavoidable new term.",
-    "Render every primary Finding anchor as a compact right-aligned monospaced bordered badge in the card header: display the repository-relative path:line, place an accessible copy button beside it, copy the absolute source file path resolved beneath sourceRoot, and persistently show successful copied state.",
-    "Store each absolute copy value in a hidden text node and copy it through a static report-owned handler that reads textContent; never interpolate a dynamic path into script or an event-handler attribute, and never construct a path that escapes sourceRoot.",
+    "Render every primary Finding anchor as a compact right-aligned monospaced bordered badge in the card header: display the repository-relative path:line, place an accessible copy button beside it, copy the absolute reviewed file path resolved beneath reviewRoot, and persistently show successful copied state.",
+    "Store each absolute copy value in a hidden text node and copy it through a static report-owned handler that reads textContent; never interpolate a dynamic path into script or an event-handler attribute, and never construct a path that escapes reviewRoot.",
     "In pull-request reports, render one copyable general-review Markdown block plus one copyable Markdown block per Finding; keep each Finding severity and path:line outside the copied text, and place an accessible copy-icon button inside every Markdown panel, reserve clear space between the button and text, and persistently mark the panel copied after success.",
     "Explain every severity and action tag in a concise legend before the Findings, including who decides next and that standalone tags never trigger mutation.",
     "Progress messages must describe observable actions and outcomes only, never hidden reasoning or chain-of-thought; include structured findings and risk whenever they become known.",

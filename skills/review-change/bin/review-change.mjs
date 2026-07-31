@@ -23,8 +23,9 @@ With no target, Review change resolves the current branch pull request or branch
 Every CLI review is read-only and runs in a disposable isolated clone of the current working state.
 In a TTY, the terminal shows a full-screen pipeline with the active sub-stage intent and retained per-stage STEP/activity logs.
 Use j/k to navigate stages, Ctrl-D/Ctrl-U to scroll the log, Enter to expand or collapse lines, f to follow the active stage, ? for help, and Ctrl-C to abort an active run.
-After cleanup, the TTY renders Markdown with Glow when available and keeps the pipeline/log layout on the final Summary stage; use Ctrl-U and Ctrl-D to scroll, then Ctrl-C to exit the completed review.
-Non-interactive output uses plain status lines and prints the textual summary normally.
+The TTY renders Markdown with Glow when available and keeps the pipeline/log layout on the final Summary stage; use Ctrl-U and Ctrl-D to scroll, then Ctrl-C to exit the completed review.
+While that Summary remains open, copied Finding paths point into the retained isolated review clone.
+The clone is removed after dismissal; non-interactive output uses plain status lines and prints the textual summary normally.
 The completed HTML report opens automatically in the browser; no review-artifact approval is required.
 Pull-request reports include copyable Markdown.
 The command never stages, commits, pushes, or mutates provider state.

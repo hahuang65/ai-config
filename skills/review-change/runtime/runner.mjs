@@ -21,28 +21,42 @@ export async function runReviewChange(options, dependencies = {}) {
   }
   const status = dependencies.status ?? createTerminalStatus();
   const cancellation = createLifecycleCancellation({ processRef: dependencies.processRef, status });
-  const state = { workspace: null, exitCode: 1, failure: null };
+  const state = {
+    workspace: null,
+    exitCode: 1,
+    failure: null,
+    reportOpened: false,
+    summaryPrinted: false,
+    failureAfterSummary: false,
+  };
   try {
     status.start({ target: options.target, intent: options.intent });
     state.exitCode = await executeReviewLifecycle({ options, dependencies, environment, status, cancellation, state });
   } catch (error) {
     if (cancellation.exitCode() === null) state.failure = error;
   }
+  if (!state.reportOpened) await captureCleanupFailure(state, status);
+  const interruptedBeforeSummary = cancellation.exitCode();
+  if (interruptedBeforeSummary !== null) state.exitCode = interruptedBeforeSummary;
   try {
-    await cleanupReviewWorkspace(state.workspace, status);
-  } catch (error) {
-    state.failure ??= error;
-    state.exitCode = 1;
-  }
-  const interruptedExitCode = cancellation.exitCode();
-  if (interruptedExitCode !== null) state.exitCode = interruptedExitCode;
-  try {
-    await status.finish(state.exitCode);
+    try {
+      await status.finish(state.exitCode);
+      state.summaryPrinted = true;
+    } catch (error) {
+      state.failure ??= error;
+      state.exitCode = 1;
+    }
+    if (state.reportOpened) {
+      const cleanupFailed = await captureCleanupFailure(state, status, { deferred: true });
+      state.failureAfterSummary = state.summaryPrinted && cleanupFailed;
+    }
   } finally {
     cancellation.cleanup();
   }
+  const interruptedExitCode = cancellation.exitCode();
+  if (interruptedExitCode !== null) state.exitCode = interruptedExitCode;
   if (state.failure && interruptedExitCode === null) {
-    state.failure.reviewChangeSummaryPrinted = true;
+    state.failure.reviewChangeSummaryPrinted = state.summaryPrinted && !state.failureAfterSummary;
     throw state.failure;
   }
   return state.exitCode;
@@ -71,6 +85,7 @@ async function executeReviewLifecycle({ options, dependencies, environment, stat
   const openReport = dependencies.openReport ?? openReportArtifact;
   try {
     const reportPath = await openReport(state.workspace.reportRoot, { signal: cancellation.signal });
+    state.reportOpened = true;
     status.setReportPath?.(reportPath);
     status.activity?.("report", "open", `Opened report at ${reportPath}`);
     return exitCode;
@@ -106,12 +121,30 @@ async function createIsolatedWorkspace({ sourceDirectory, dependencies, status, 
   }, () => "Snapshot ready · push disabled");
 }
 
-async function cleanupReviewWorkspace(workspace, status) {
+async function captureCleanupFailure(state, status, options = {}) {
+  try {
+    await cleanupReviewWorkspace(state.workspace, status, options);
+    return false;
+  } catch (error) {
+    state.failure ??= error;
+    state.exitCode = 1;
+    return true;
+  }
+}
+
+async function cleanupReviewWorkspace(workspace, status, { deferred = false } = {}) {
   if (!workspace) return;
-  await runStatusStage(
-    status, "cleanup", "Cleanup", () => workspace.cleanup(),
-    () => "Removed",
-  );
+  if (!deferred) {
+    await runStatusStage(status, "cleanup", "Cleanup", () => workspace.cleanup(), () => "Removed");
+    return;
+  }
+  try {
+    await workspace.cleanup();
+    status.succeed("cleanup", "Removed");
+  } catch (error) {
+    status.fail("cleanup", error);
+    throw error;
+  }
 }
 
 async function runReviewStage(status, options, workspace, skillDirectory, environment, dependencies, cancellation) {
@@ -150,7 +183,12 @@ function scopeLabel(scopeKind) {
 
 async function runInWorkspace(options, workspace, skillDirectory, environment, dependencies, status, cancellation) {
   const reportRoot = workspace.reportRoot;
-  const prompt = buildReviewChangePrompt({ ...options, sourceRoot: workspace.sourceRoot, skillDirectory });
+  const prompt = buildReviewChangePrompt({
+    ...options,
+    sourceRoot: workspace.sourceRoot,
+    reviewRoot: workspace.cwd,
+    skillDirectory,
+  });
   const args = [...options.piOptions, "--mode", "json", "--print", "--no-session", "--skill", skillDirectory, prompt];
   const subagentModel = selectedSubagentModel(options.piOptions);
   const gateEnvironment = {

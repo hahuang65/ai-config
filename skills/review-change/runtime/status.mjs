@@ -16,7 +16,7 @@ const STAGES = [
   { id: "documentation", label: "Documentation", description: "Check changed documentation and claims" },
   { id: "lint", label: "Lint", description: "Run focused deterministic quality checks" },
   { id: "report", label: "Build report", description: "Assemble the retained results-only HTML" },
-  { id: "cleanup", label: "Cleanup", description: "Remove only the isolated workspace" },
+  { id: "cleanup", label: "Cleanup on exit", description: "Remove the isolated workspace after review" },
   { id: "summary", label: "Summary", description: "Present retained results and stage outcomes" },
 ];
 const STAGE_IDS = new Set(STAGES.map(({ id }) => id));
@@ -371,6 +371,7 @@ class TerminalStatus {
     this.redraw();
     this.detachInput();
     this.stream.write(`${ESCAPE}[?25h${ESCAPE}[?1049l`);
+    this.fullScreen = false;
   }
 
   attachInput() {

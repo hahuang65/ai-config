@@ -50,12 +50,14 @@ Every pipeline stage lists its purpose and recorded sub-stages vertically beneat
 Keep sub-stage and collected-item messages to six words or fewer; emit one `log` event per Finding, missing-evidence item, documentation issue, or similar result so the left pane lists each beneath its parent sub-stage without repeating successful completion text.
 The left pane enforces the sub-stage display bound while the selected right-pane log retains the bounded original telemetry message as a `STEP` entry.
 The header shows the isolated review worktree path alongside immutable scope, risk, and open Findings.
+Finding copy controls use absolute paths beneath that isolated worktree, and the parent retains it until the final Summary is dismissed.
 Each active stage shows its current sub-stage as operational intent alongside bounded, credential-redacted lifecycle operations, tool calls, durations, and outcomes without exposing hidden model reasoning; non-interactive output falls back to plain status lines.
 Adversarial review separately announces scope and intent setup, fresh reviewer dispatch, coverage checking, and Finding/risk normalization.
 The parent validates ordered successful telemetry, requires an observable sub-stage before successful stage completion, and owns interruption through cleanup.
 In a TTY it renders parent and assistant Markdown through bounded non-interactive Glow when available, forces Glow color when terminal color is enabled, rerenders after terminal-width changes, and falls back to the built-in renderer on missing, failed, oversized, or timed-out Glow output.
 It keeps that summary plus the report path in the scrollable final stage within the existing pipeline/log layout until Ctrl-C exits the completed review, then restores the terminal without duplicate shell output; Ctrl-D remains dedicated to downward scrolling, and non-interactive runs print the summaries normally.
 It opens the completed disposable HTML report in a new Firefox window on macOS, or the platform HTML viewer elsewhere, without waiting for browser closure, starting `review-artifact`, or waiting for approval, and includes one copyable general comment and separately copyable inline Finding comments inside pull-request reports, with exact locations, a severity/action legend, and persistent copied-state styling.
+After the final Summary is dismissed, it removes the exact isolated review worktree.
 When `REVIEW_CHANGE_GATE=1`, an outer CLI gate already owns orchestration: execute only the assigned workflow and never invoke the `review-change` executable recursively.
 
 ## Boundaries

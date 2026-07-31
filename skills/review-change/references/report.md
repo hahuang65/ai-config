@@ -31,8 +31,11 @@ Write Finding titles and descriptions with terms found in Authoritative intent, 
 Render each Finding card's primary anchor in the card header using the same compact treatment: a right-aligned, high-contrast, monospaced badge with a visible border, rounded corners, and semibold text.
 Display the repository-relative `path:line`, with the complete relative path rather than only the basename; on narrow layouts move the intact badge to its own line rather than dropping the path or line number.
 Place a compact, accessible copy button directly beside every primary anchor.
-The button copies the absolute source file path without the line suffix while the report continues to display only the repository-relative `path:line`.
-Resolve that absolute path beneath the persistent source repository root supplied by the CLI or established before creating a disposable pull-request worktree, normalize it, and never emit a copy control for a path that escapes that root.
+The button copies the absolute reviewed file path without the line suffix while the report continues to display only the repository-relative `path:line`.
+Resolve that absolute path beneath the checkout or worktree containing the materialized reviewed snapshot, normalize it, and never emit a copy control for a path that escapes that review root.
+In standalone CLI mode, use the isolated `reviewRoot` rather than `sourceRoot`, retain it until final Summary dismissal, then remove it.
+In other modes, use the active checkout or disposable pull-request worktree used to inspect the reviewed state rather than a different persistent checkout.
+Keep a disposable review root alive while its review presentation is active so copied paths remain valid.
 Store the copy value in a hidden text node, copy it through a static report-owned handler that reads `textContent`, never interpolate it into script or an event-handler attribute, and persistently mark the anchor copied after success.
 In the pull-request copy section, keep each Finding's severity and `path:line` metadata outside its Markdown text so the user knows where to create the inline comment without copying that metadata into the comment.
 Provide a compact copy-icon button inside each Markdown panel for the general review and every Finding comment; reserve enough panel padding that Markdown text never runs beneath or against the button, give it an accessible label, copy only the associated Markdown text through a static report-owned handler that reads `textContent`, never dynamic HTML, and persistently recolor or collapse the panel after a successful copy so completed actions remain visible.
@@ -64,6 +67,7 @@ In pull-request, explicit-range, standalone skill, and standalone CLI modes, omi
 Retain the complete results, HTML report, and pull-request copyable Markdown.
 Opening the report is presentation only: return after successful viewer dispatch and do not poll for feedback, require approval, wait for viewer closure, or otherwise block completion on browser interaction.
 When `REVIEW_CHANGE_GATE=1`, write the report into the provided report root, report its path, and return after the report stage; the parent CLI validates and launches the single generated HTML file in a new Firefox window through a `file:` URL on macOS or uses the platform HTML viewer elsewhere.
+The parent retains the isolated review root while its final Summary is visible, then removes that root after the user dismisses the CLI.
 In an ordinary agent session, open the completed HTML file once with the platform's normal file opener and return the review results in chat.
 If opening fails, report the path and failure so the user can open the retained HTML manually.
 
