@@ -1,4 +1,4 @@
-const CHANGE_REVIEW_AGENTS = new Set([
+const REVIEW_CHANGE_AGENTS = new Set([
   "change-reviewer",
   "database-reviewer",
   "fact-checker",
@@ -9,8 +9,8 @@ export function resolveAgentModel(
   configuredModel: string | undefined,
   environment: Record<string, string | undefined> = process.env,
 ): string | undefined {
-  if (environment.CHANGE_REVIEW_GATE !== "1" || !CHANGE_REVIEW_AGENTS.has(agentName)) {
+  if (environment.REVIEW_CHANGE_GATE !== "1" || !REVIEW_CHANGE_AGENTS.has(agentName)) {
     return configuredModel;
   }
-  return environment.CHANGE_REVIEW_SUBAGENT_MODEL || undefined;
+  return environment.REVIEW_CHANGE_SUBAGENT_MODEL || undefined;
 }

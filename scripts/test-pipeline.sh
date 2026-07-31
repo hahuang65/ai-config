@@ -292,9 +292,9 @@ test_phase_code_post() {
   check_content_cached "$content" "$label" "[Hh]ygiene [Mm]ode"
   check_content_cached "$content" "$label" "never commit|NEVER commit|do not commit"
   if [[ "$content" =~ (database-reviewer|code-reviewer|doc-updater|fact-checker|diff-review) ]]; then
-    fail "$label" "implementation phase still invokes final-review work owned by change-review"
+    fail "$label" "implementation phase still invokes final-review work owned by review-change"
   else
-    pass "$label leaves final validation to change-review"
+    pass "$label leaves final validation to review-change"
   fi
 }
 
@@ -384,16 +384,16 @@ test_phase_coach_holding_line() {
 }
 
 # ---------------------------------------------------------------------------
-# 6c2. Phase: change-review
+# 6c2. Phase: review-change
 # ---------------------------------------------------------------------------
 
-test_phase_change_review() {
-  section "Phase: change-review"
-  local file="$REPO_DIR/skills/change-review/SKILL.md"
-  local label="skills/change-review/SKILL.md"
+test_phase_review_change() {
+  section "Phase: review-change"
+  local file="$REPO_DIR/skills/review-change/SKILL.md"
+  local label="skills/review-change/SKILL.md"
   [[ -f "$file" ]] || { fail "$label" "file not found"; return; }
   local content
-  content="$(gather_skill_content change-review)"
+  content="$(gather_skill_content review-change)"
 
   check_content_cached "$content" "$label" "explicit Git base/head range.*local-range mode"
   check_content_cached "$content" "$label" "adversarial review.*targeted evidence.*documentation checks.*lint.*fixed order"
@@ -411,7 +411,13 @@ test_phase_change_review() {
   check_content_cached "$content" "$label" "Untrusted.*[Dd]o not run checkout.*submodule.*hooks.*content filters.*archive extraction"
   check_content_cached "$content" "$label" "path-scoped.*git worktree remove.*[Nn]ever force removal.*repository-wide worktree pruning.*cleanup fails"
   check_content_cached "$content" "$label" "Pull-request.*never.*Change fixer.*copyable review Markdown.*never post"
-  check_content_cached "$content" "$label" "Finding card.*path:line.*pull-request copy section.*severity.*path:line.*outside.*Markdown text.*copy-icon button.*general review.*every Finding comment.*recolor or collapse"
+  check_content_cached "$content" "$label" "Finding card.*primary anchor.*right-aligned.*monospaced badge"
+  check_content_cached "$content" "$label" "repository-relative.*path:line.*complete relative path.*basename"
+  check_content_cached "$content" "$label" "copy button.*primary anchor"
+  check_content_cached "$content" "$label" "button copies.*absolute source file path.*line suffix.*display.*repository-relative.*path:line"
+  check_content_cached "$content" "$label" "absolute path.*beneath.*source repository root.*never.*escapes.*root"
+  check_content_cached "$content" "$label" "hidden text node.*textContent.*event-handler attribute.*persistently mark"
+  check_content_cached "$content" "$label" "pull-request copy section.*severity.*path:line.*outside.*Markdown text.*copy-icon button.*general review.*every Finding comment.*recolor or collapse"
   check_content_cached "$content" "$label" "legend.*severity.*error.*warning.*info.*action.*auto-fix.*ask-user.*no-op.*standalone tags never trigger a mutation"
   check_content_cached "$content" "$label" "[Uu]se terminology.*Authoritative intent.*source.*tests.*project documentation"
   check_content_cached "$content" "$label" "[Dd]efine.*new term.*first use"
@@ -429,17 +435,17 @@ test_phase_change_review() {
   check_content_cached "$content" "$label" "CLI-specific pi guard.*model|model.*CLI-specific pi guard"
 }
 
-test_change_review_cli() {
-  section "CLI: change-review"
-  local bin="$REPO_DIR/skills/change-review/bin/change-review.mjs"
-  local runtime="$REPO_DIR/skills/change-review/runtime"
-  local guard="$REPO_DIR/harnesses/pi/extensions/change-review-guard.ts"
-  local progress="$REPO_DIR/harnesses/pi/extensions/change-review-progress.ts"
-  local label="skills/change-review/bin/change-review.mjs"
+test_review_change_cli() {
+  section "CLI: review-change"
+  local bin="$REPO_DIR/skills/review-change/bin/review-change.mjs"
+  local runtime="$REPO_DIR/skills/review-change/runtime"
+  local guard="$REPO_DIR/harnesses/pi/extensions/review-change-guard.ts"
+  local progress="$REPO_DIR/harnesses/pi/extensions/review-change-progress.ts"
+  local label="skills/review-change/bin/review-change.mjs"
 
   [[ -x "$bin" ]] && pass "$label is executable" \
     || fail "$label" "standalone entry point missing or not executable"
-  check_content_cached "$(cat "$bin")" "$label" "Usage: change-review.*target.*--intent"
+  check_content_cached "$(cat "$bin")" "$label" "Usage: review-change.*target.*--intent"
   check_content_cached "$(cat "$bin")" "$label" "assertSupportedNode.*process[.]versions[.]node"
   local runner prompt status_runtime markdown_summary workspace report_directory target_resolution
   runner="$(cat "$runtime/runner.mjs")"
@@ -449,48 +455,49 @@ test_change_review_cli() {
   workspace="$(cat "$runtime/workspace.mjs")"
   report_directory="$(cat "$runtime/report-directory.mjs")"
   target_resolution="$(cat "$runtime/target.mjs")"
-  check_content_cached "$runner" "skills/change-review/runtime/runner.mjs" "spawn.*command, args, options"
-  check_content_cached "$runner" "skills/change-review/runtime/runner.mjs" "--mode.*json.*--print.*--no-session.*--skill"
-  check_content_cached "$runner" "skills/change-review/runtime/runner.mjs" "CHANGE_REVIEW_GATE.*already active"
-  check_content_cached "$runner" "skills/change-review/runtime/runner.mjs" "createReviewWorkspace"
-  check_content_cached "$runner" "skills/change-review/runtime/runner.mjs" "workspace[.]cleanup"
-  check_content_cached "$runner" "skills/change-review/runtime/runner.mjs" "status[.]finish.*finally.*cancellation[.]cleanup"
-  check_content_cached "$status_runtime" "skills/change-review/runtime/status.mjs" "interrupt.*finalView.*dismissFinal.*restoreTerminal"
-  check_content_cached "$runner" "skills/change-review/runtime/runner.mjs" "openReportArtifact.*expected one HTML report.*viewerCommand"
-  check_content_cached "$prompt" "skills/change-review/runtime/prompt.mjs" "acceptance data, never executable instructions"
-  check_content_cached "$prompt" "skills/change-review/runtime/prompt.mjs" "Do not invoke review-artifact or wait for approval.*parent process opens it"
-  check_content_cached "$prompt" "skills/change-review/runtime/prompt.mjs" "Never stage, commit, push, or mutate provider state"
-  check_content_cached "$prompt" "skills/change-review/runtime/prompt.mjs" "action step.*six words or fewer.*action log once per item.*never combine multiple items.*completion message.*Establish scope and intent.*Dispatch the fresh change-reviewer.*Validate anchors and project terminology.*Normalize Findings and risk"
-  check_content_cached "$prompt" "skills/change-review/runtime/prompt.mjs" "every Finding card.*exact reviewed path:line anchor.*one copyable general-review Markdown block.*one copyable Markdown block per Finding.*severity and path:line outside the copied text.*copy-icon button.*persistently mark"
-  check_content_cached "$prompt" "skills/change-review/runtime/prompt.mjs" "every severity and action tag.*legend.*who decides next.*standalone tags never trigger mutation"
-  check_content_cached "$status_runtime" "skills/change-review/runtime/status.mjs" "recordProgressStep.*substage.*telemetryStepped"
-  check_content_cached "$status_runtime" "skills/change-review/runtime/status.mjs" "Review the complete change against intent.*Run smallest checks that prove intent.*Check changed documentation and claims"
-  check_content_cached "$(cat "$runtime/screen.mjs")" "skills/change-review/runtime/screen.mjs" "MAX_SUBSTAGE_WORDS.*renderSplitStatusScreen.*PIPELINE.*LOG.*pipelineDetailLines.*stepFinishedAt.*stepDuration.*conciseSubstage.*earlier pipeline stages.*later pipeline stages"
-  check_content_cached "$(cat "$runtime/screen.mjs")" "skills/change-review/runtime/screen.mjs" "renderTinyStatusScreen.*DESCRIPTION.*helpLines.*clip"
-  check_content_cached "$(cat "$runtime/screen.mjs")" "skills/change-review/runtime/screen.mjs" "worktreeLine.*WORKTREE"
-  check_content_cached "$(cat "$runtime/screen.mjs")" "skills/change-review/runtime/screen.mjs" "log[.]kind === .log.*•.*failed.*waiting"
-  check_content_cached "$(cat "$runtime/screen.mjs")" "skills/change-review/runtime/screen.mjs" "Ctrl-C abort.*j/k navigate stages.*Ctrl-U/D scroll log.*Enter expand/collapse lines.*f follow.*Ctrl-C exit"
-  check_content_cached "$status_runtime" "skills/change-review/runtime/status.mjs" "key === .k.*selectRelative\(-1\).*key === .j.*selectRelative\(1\).*logOffset"
-  check_content_cached "$runner" "skills/change-review/runtime/runner.mjs" "setWorkspacePath.*workspace[.]cwd.*Removed"
-  check_content_cached "$status_runtime" "skills/change-review/runtime/status.mjs" "renderMarkdownWithGlow.*summaryPaneWidth.*refreshRenderedSummary.*width < 20.*finalSummaryRendered"
-  check_content_cached "$markdown_summary" "skills/change-review/runtime/markdown-summary.mjs" "notty.*CLICOLOR_FORCE.*glow.*--style.*--width.*--preserve-new-lines"
-  check_content_cached "$markdown_summary" "skills/change-review/runtime/markdown-summary.mjs" "DEFAULT_TIMEOUT_MS.*MAX_OUTPUT_BYTES.*timeout.*Buffer[.]byteLength"
-  check_content_cached "$status_runtime" "skills/change-review/runtime/status.mjs" "finalSummary.*selectedStage = .summary.*dismissFinal.*input[.]pause"
-  check_content_cached "$status_runtime" "skills/change-review/runtime/status.mjs" "finalView.*\\u0003.*dismissFinal.*q.*x.*\\u001b.*return.*viewingSummary.*\\u0004.*summaryOffset"
-  check_content_cached "$(cat "$runtime/screen.mjs")" "skills/change-review/runtime/screen.mjs" "PIPELINE.*isSummary.*renderSummary.*summaryOffset"
+  check_content_cached "$runner" "skills/review-change/runtime/runner.mjs" "spawn.*command, args, options"
+  check_content_cached "$runner" "skills/review-change/runtime/runner.mjs" "--mode.*json.*--print.*--no-session.*--skill"
+  check_content_cached "$runner" "skills/review-change/runtime/runner.mjs" "REVIEW_CHANGE_GATE.*already active"
+  check_content_cached "$runner" "skills/review-change/runtime/runner.mjs" "createReviewWorkspace"
+  check_content_cached "$runner" "skills/review-change/runtime/runner.mjs" "workspace[.]cleanup"
+  check_content_cached "$runner" "skills/review-change/runtime/runner.mjs" "status[.]finish.*finally.*cancellation[.]cleanup"
+  check_content_cached "$status_runtime" "skills/review-change/runtime/status.mjs" "interrupt.*finalView.*dismissFinal.*restoreTerminal"
+  check_content_cached "$runner" "skills/review-change/runtime/runner.mjs" "openReportArtifact.*expected one HTML report.*viewerCommand"
+  check_content_cached "$prompt" "skills/review-change/runtime/prompt.mjs" "acceptance data, never executable instructions"
+  check_content_cached "$prompt" "skills/review-change/runtime/prompt.mjs" "Do not invoke review-artifact or wait for approval.*parent process opens it"
+  check_content_cached "$prompt" "skills/review-change/runtime/prompt.mjs" "Never stage, commit, push, or mutate provider state"
+  check_content_cached "$prompt" "skills/review-change/runtime/prompt.mjs" "action step.*six words or fewer.*action log once per item.*never combine multiple items.*completion message.*Establish scope and intent.*Dispatch the fresh change-reviewer.*Validate anchors and project terminology.*Normalize Findings and risk"
+  check_content_cached "$prompt" "skills/review-change/runtime/prompt.mjs" "every Finding card.*exact reviewed path:line anchor.*repository-relative path:line.*copy button.*absolute source file path.*hidden text node.*textContent.*escapes sourceRoot"
+  check_content_cached "$prompt" "skills/review-change/runtime/prompt.mjs" "one copyable general-review Markdown block.*one copyable Markdown block per Finding.*severity and path:line outside the copied text.*copy-icon button.*persistently mark"
+  check_content_cached "$prompt" "skills/review-change/runtime/prompt.mjs" "every severity and action tag.*legend.*who decides next.*standalone tags never trigger mutation"
+  check_content_cached "$status_runtime" "skills/review-change/runtime/status.mjs" "recordProgressStep.*substage.*telemetryStepped"
+  check_content_cached "$status_runtime" "skills/review-change/runtime/status.mjs" "Review the complete change against intent.*Run smallest checks that prove intent.*Check changed documentation and claims"
+  check_content_cached "$(cat "$runtime/screen.mjs")" "skills/review-change/runtime/screen.mjs" "MAX_SUBSTAGE_WORDS.*renderSplitStatusScreen.*PIPELINE.*LOG.*pipelineDetailLines.*stepFinishedAt.*stepDuration.*conciseSubstage.*earlier pipeline stages.*later pipeline stages"
+  check_content_cached "$(cat "$runtime/screen.mjs")" "skills/review-change/runtime/screen.mjs" "renderTinyStatusScreen.*DESCRIPTION.*helpLines.*clip"
+  check_content_cached "$(cat "$runtime/screen.mjs")" "skills/review-change/runtime/screen.mjs" "worktreeLine.*WORKTREE"
+  check_content_cached "$(cat "$runtime/screen.mjs")" "skills/review-change/runtime/screen.mjs" "log[.]kind === .log.*•.*failed.*waiting"
+  check_content_cached "$(cat "$runtime/screen.mjs")" "skills/review-change/runtime/screen.mjs" "Ctrl-C abort.*j/k navigate stages.*Ctrl-U/D scroll log.*Enter expand/collapse lines.*f follow.*Ctrl-C exit"
+  check_content_cached "$status_runtime" "skills/review-change/runtime/status.mjs" "key === .k.*selectRelative\(-1\).*key === .j.*selectRelative\(1\).*logOffset"
+  check_content_cached "$runner" "skills/review-change/runtime/runner.mjs" "setWorkspacePath.*workspace[.]cwd.*Removed"
+  check_content_cached "$status_runtime" "skills/review-change/runtime/status.mjs" "renderMarkdownWithGlow.*summaryPaneWidth.*refreshRenderedSummary.*width < 20.*finalSummaryRendered"
+  check_content_cached "$markdown_summary" "skills/review-change/runtime/markdown-summary.mjs" "notty.*CLICOLOR_FORCE.*glow.*--style.*--width.*--preserve-new-lines"
+  check_content_cached "$markdown_summary" "skills/review-change/runtime/markdown-summary.mjs" "DEFAULT_TIMEOUT_MS.*MAX_OUTPUT_BYTES.*timeout.*Buffer[.]byteLength"
+  check_content_cached "$status_runtime" "skills/review-change/runtime/status.mjs" "finalSummary.*selectedStage = .summary.*dismissFinal.*input[.]pause"
+  check_content_cached "$status_runtime" "skills/review-change/runtime/status.mjs" "finalView.*\\u0003.*dismissFinal.*q.*x.*\\u001b.*return.*viewingSummary.*\\u0004.*summaryOffset"
+  check_content_cached "$(cat "$runtime/screen.mjs")" "skills/review-change/runtime/screen.mjs" "PIPELINE.*isSummary.*renderSummary.*summaryOffset"
   check_content_cached "$(cat "$bin")" "$label" "j/k.*navigate stages.*Ctrl-D/Ctrl-U.*Enter to expand or collapse lines.*f to follow.*Ctrl-C to abort.*pipeline/log layout.*final Summary stage.*Ctrl-U and Ctrl-D.*Ctrl-C to exit"
-  check_content_cached "$workspace" "skills/change-review/runtime/workspace.mjs" "defaultReviewWorkspaceRoot"
-  check_content_cached "$workspace" "skills/change-review/runtime/workspace.mjs" "[.]review-treehouse"
-  check_content_cached "$workspace" "skills/change-review/runtime/workspace.mjs" "--no-hardlinks.*--no-checkout"
-  check_content_cached "$workspace" "skills/change-review/runtime/workspace.mjs" "ls-files.*--others.*--exclude-standard"
-  check_content_cached "$workspace" "skills/change-review/runtime/workspace.mjs" "set-url.*--push.*no-push://change-review"
-  check_content_cached "$report_directory" "skills/change-review/runtime/report-directory.mjs" "protectedRoots"
-  check_content_cached "$report_directory" "skills/change-review/runtime/report-directory.mjs" "prepareSafeRoot"
-  check_content_cached "$target_resolution" "skills/change-review/runtime/target.mjs" "currentPullRequest"
-  check_content_cached "$target_resolution" "skills/change-review/runtime/target.mjs" "merge-base"
-  check_content_cached "$(cat "$guard")" "harnesses/pi/extensions/change-review-guard.ts" "Git delivery mutation.*provider mutation.*read-only workspace"
-  check_content_cached "$(cat "$progress")" "harnesses/pi/extensions/change-review-progress.ts" "change_review_status.*review.*evidence.*documentation.*lint.*report"
-  check_content_cached "$(cat "$progress")" "harnesses/pi/extensions/change-review-progress.ts" "step.*current sub-stage"
+  check_content_cached "$workspace" "skills/review-change/runtime/workspace.mjs" "defaultReviewWorkspaceRoot"
+  check_content_cached "$workspace" "skills/review-change/runtime/workspace.mjs" "[.]review-treehouse"
+  check_content_cached "$workspace" "skills/review-change/runtime/workspace.mjs" "--no-hardlinks.*--no-checkout"
+  check_content_cached "$workspace" "skills/review-change/runtime/workspace.mjs" "ls-files.*--others.*--exclude-standard"
+  check_content_cached "$workspace" "skills/review-change/runtime/workspace.mjs" "set-url.*--push.*no-push://review-change"
+  check_content_cached "$report_directory" "skills/review-change/runtime/report-directory.mjs" "protectedRoots"
+  check_content_cached "$report_directory" "skills/review-change/runtime/report-directory.mjs" "prepareSafeRoot"
+  check_content_cached "$target_resolution" "skills/review-change/runtime/target.mjs" "currentPullRequest"
+  check_content_cached "$target_resolution" "skills/review-change/runtime/target.mjs" "merge-base"
+  check_content_cached "$(cat "$guard")" "harnesses/pi/extensions/review-change-guard.ts" "Git delivery mutation.*provider mutation.*read-only workspace"
+  check_content_cached "$(cat "$progress")" "harnesses/pi/extensions/review-change-progress.ts" "review_change_status.*review.*evidence.*documentation.*lint.*report"
+  check_content_cached "$(cat "$progress")" "harnesses/pi/extensions/review-change-progress.ts" "step.*current sub-stage"
 }
 
 test_agent_change_reviewer() {
@@ -561,7 +568,7 @@ test_agent_database_reviewer_read_only() {
 #
 # review-code (renamed from improve-codebase) is standalone architectural
 # exploration: whole-codebase with no arguments or area-scoped when arguments
-# name one. Change review owns the final build gate. These assertions pin the
+# name one. Review change owns the final build gate. These assertions pin the
 # two standalone modes and the discovery core.
 # ---------------------------------------------------------------------------
 
@@ -674,11 +681,11 @@ test_agent_refactorer() {
 }
 
 # ---------------------------------------------------------------------------
-# 6e. Agents superseded by Change review stay retired
+# 6e. Agents superseded by Review change stay retired
 # ---------------------------------------------------------------------------
 
-test_retired_change_review_agents() {
-  section "Retired Change review agents"
+test_retired_review_change_agents() {
+  section "Retired Review change agents"
   local retired
   for retired in architect code-reviewer doc-updater; do
     if [[ -e "$REPO_DIR/agents/$retired.md" ]]; then
@@ -699,7 +706,7 @@ test_retired_change_review_agents() {
     "$REPO_DIR"/example/README.md \
     2>/dev/null || true)"
   if [[ -z "$hits" ]]; then
-    pass "live authoring surfaces do not invoke retired Change review agents"
+    pass "live authoring surfaces do not invoke retired Review change agents"
   else
     fail "retired agents" "live references remain: $(echo "$hits" | sed "s|$REPO_DIR/||g" | tr '\n' ' ')"
   fi
@@ -741,7 +748,7 @@ test_retired_cleaners() {
 
   # The improve-codebase skill was renamed to review-code and remains the
   # optional standalone architectural workflow (whole-codebase or area scope).
-  # Change review owns the final /build gate.
+  # Review change owns the final /build gate.
   if [[ -e "$REPO_DIR/skills/improve-codebase" || -e "$REPO_DIR/commands/improve-codebase.md" ]]; then
     fail "retired" "skills/improve-codebase or commands/improve-codebase.md still exists (renamed to review-code)"
   else
@@ -876,7 +883,7 @@ test_phase_orchestrator() {
   content="$(gather_skill_content build)"
 
   check_content_cached "$content" "$label" "docs/features/"
-  for phase in grill spec todo code coach change-review; do
+  for phase in grill spec todo code coach review-change; do
     check_content_cached "$content" "$label" "$phase"
   done
 
@@ -896,13 +903,13 @@ test_phase_orchestrator() {
   check_content_cached "$content" "$label" "Mandatory Phase Loading"
   check_content_cached "$content" "$label" "At the start of each phase"
   check_content_cached "$content" "$label" "available_skills"
-  for phase in grill spec todo code coach change-review; do
+  for phase in grill spec todo code coach review-change; do
     check_content_cached "$content" "$label" "../$phase/SKILL\.md"
   done
 
   local bootstrap
   bootstrap="$(<"$REPO_DIR/harness-system-prompt.md")"
-  check_content_cached "$bootstrap" "harness-system-prompt.md" "development Git worktrees.*~/[.]treehouse/.*<project-basename>-<short-intent>.*Change review isolation.*~/[.]review-treehouse/"
+  check_content_cached "$bootstrap" "harness-system-prompt.md" "development Git worktrees.*~/[.]treehouse/.*<project-basename>-<short-intent>.*Review change isolation.*~/[.]review-treehouse/"
 }
 
 # ---------------------------------------------------------------------------
@@ -910,7 +917,7 @@ test_phase_orchestrator() {
 # ---------------------------------------------------------------------------
 
 check_skill_references_phases() {
-  for phase in grill spec todo code coach change-review; do
+  for phase in grill spec todo code coach review-change; do
     local target="$REPO_DIR/skills/$phase/SKILL.md"
     if [[ -f "$target" ]]; then
       pass "skills/$phase/SKILL.md exists (referenced from build)"
@@ -1383,6 +1390,8 @@ test_install_behavior() {
   section "Install loop: idempotency, prune, module add/remove"
   local tmphome tmpmods
   tmphome="$(mktemp -d)"
+  mkdir -p "$tmphome/.local/bin"
+  ln -s "$REPO_DIR/skills/change-review/bin/change-review.mjs" "$tmphome/.local/bin/change-review"
 
   if HOME="$tmphome" bash "$REPO_DIR/install.sh" >/dev/null 2>&1; then
     pass "install.sh succeeds into a throwaway HOME"
@@ -1399,12 +1408,12 @@ test_install_behavior() {
     || fail "install-behavior" "pi settings.json missing"
   [[ -e "$tmphome/.pi/agent/extensions/guard-policies.ts" ]] && pass "pi guard extension installed" \
     || fail "install-behavior" "pi guard extension missing"
-  [[ -e "$tmphome/.pi/agent/extensions/change-review-guard.ts" ]] \
-    && pass "standalone Change review guard installed" \
-    || fail "install-behavior" "standalone Change review guard missing"
-  [[ -e "$tmphome/.pi/agent/extensions/change-review-progress.ts" ]] \
-    && pass "standalone Change review progress extension installed" \
-    || fail "install-behavior" "standalone Change review progress extension missing"
+  [[ -e "$tmphome/.pi/agent/extensions/review-change-guard.ts" ]] \
+    && pass "standalone Review change guard installed" \
+    || fail "install-behavior" "standalone Review change guard missing"
+  [[ -e "$tmphome/.pi/agent/extensions/review-change-progress.ts" ]] \
+    && pass "standalone Review change progress extension installed" \
+    || fail "install-behavior" "standalone Review change progress extension missing"
   # pi does not realpath-resolve symlinked extensions, so the installed adapter
   # must be a self-contained bundle — no leftover relative imports it can't find.
   if [[ -f "$tmphome/.pi/agent/extensions/guard-policies.ts" ]] \
@@ -1422,18 +1431,21 @@ test_install_behavior() {
     || fail "install-behavior" "Claude CLAUDE.md bootstrap missing"
 
   for target in \
-    "$tmphome/.claude/skills/change-review/SKILL.md" \
-    "$tmphome/.pi/agent/skills/change-review/SKILL.md" \
+    "$tmphome/.claude/skills/review-change/SKILL.md" \
+    "$tmphome/.pi/agent/skills/review-change/SKILL.md" \
     "$tmphome/.claude/agents/change-reviewer.md" \
     "$tmphome/.claude/agents/change-fixer.md" \
     "$tmphome/.pi/agent/agents/change-reviewer.md" \
     "$tmphome/.pi/agent/agents/change-fixer.md"; do
-    [[ -f "$target" ]] && pass "Change review primitive installed: ${target#"$tmphome"/}" \
-      || fail "install-behavior" "Change review primitive missing: ${target#"$tmphome"/}"
+    [[ -f "$target" ]] && pass "Review change primitive installed: ${target#"$tmphome"/}" \
+      || fail "install-behavior" "Review change primitive missing: ${target#"$tmphome"/}"
   done
-  [[ -x "$tmphome/.local/bin/change-review" ]] \
-    && pass "standalone change-review executable installed" \
-    || fail "install-behavior" "standalone change-review executable missing or not executable"
+  [[ -x "$tmphome/.local/bin/review-change" ]] \
+    && pass "standalone review-change executable installed" \
+    || fail "install-behavior" "standalone review-change executable missing or not executable"
+  [[ ! -L "$tmphome/.local/bin/change-review" ]] \
+    && pass "renamed CLI removes the old repo-managed change-review link" \
+    || fail "install-behavior" "old repo-managed change-review link remains"
   [[ ! -d "$tmphome/.claude/rules" ]] && pass "Claude has no repo-managed auto-loaded rules directory" \
     || fail "install-behavior" "Claude rules/ mirror should not be installed"
   [[ ! -d "$tmphome/.claude/rulebook" ]] && pass "Claude uses the canonical shared rulebook without a mirror" \
@@ -1458,9 +1470,9 @@ test_install_behavior() {
   ln -sf "$REPO_DIR/rules/testing.md" "$tmphome/.claude/rulebook/testing.md"
   ln -sf "$REPO_DIR/rules/mise.md" "$tmphome/.pi/agent/rules/mise.md"
   printf '%s\n' '# User rule' >"$tmphome/.claude/rules/custom.md"
-  rm -f "$tmphome/.local/bin/change-review"
-  printf '%s\n' '#!/bin/sh' 'echo user-owned' >"$tmphome/.local/bin/change-review"
-  chmod +x "$tmphome/.local/bin/change-review"
+  rm -f "$tmphome/.local/bin/review-change"
+  printf '%s\n' '#!/bin/sh' 'echo user-owned' >"$tmphome/.local/bin/review-change"
+  chmod +x "$tmphome/.local/bin/review-change"
   if HOME="$tmphome" bash "$REPO_DIR/install.sh" >/dev/null 2>&1 \
      && [[ -e "$tmphome/.claude/settings.json" ]]; then
     pass "re-running install is idempotent"
@@ -1475,9 +1487,9 @@ test_install_behavior() {
     || fail "install-behavior" "legacy pi rules/mise.md was not removed"
   [[ -f "$tmphome/.claude/rules/custom.md" ]] && pass "re-install preserves unrelated Claude rules" \
     || fail "install-behavior" "unrelated Claude rules/custom.md was removed"
-  grep -q "user-owned" "$tmphome/.local/bin/change-review" \
-    && pass "re-install preserves an unrelated change-review executable" \
-    || fail "install-behavior" "unrelated change-review executable was overwritten"
+  grep -q "user-owned" "$tmphome/.local/bin/review-change" \
+    && pass "re-install preserves an unrelated review-change executable" \
+    || fail "install-behavior" "unrelated review-change executable was overwritten"
 
   # Prune: dangling and retired links in managed category dirs are removed on re-install.
   ln -s "/nonexistent-$(basename "$tmphome")" "$tmphome/.pi/agent/skills/_dangling"
@@ -1542,8 +1554,8 @@ run_content() {
   run test_phase_code
   run test_phase_coach
   run test_phase_coach_holding_line
-  run test_phase_change_review
-  run test_change_review_cli
+  run test_phase_review_change
+  run test_review_change_cli
   run test_agent_change_reviewer
   run test_agent_change_fixer
   run test_agent_fact_checker_idempotent
@@ -1551,7 +1563,7 @@ run_content() {
   run test_phase_review_code
   run test_skill_review_artifact
   run test_agent_refactorer
-  run test_retired_change_review_agents
+  run test_retired_review_change_agents
   run test_retired_cleaners
   run test_skill_refactor
   run test_phase_orchestrator

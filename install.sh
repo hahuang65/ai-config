@@ -161,20 +161,26 @@ done
 # ── Standalone executables (shared tooling — not harness-specific) ──────────
 
 CLI_BIN_DIR="${AI_CONFIG_BIN_DIR:-$HOME/.local/bin}"
-CLI_SOURCE="$REPO_DIR/skills/change-review/bin/change-review.mjs"
-CLI_TARGET="$CLI_BIN_DIR/change-review"
+CLI_SOURCE="$REPO_DIR/skills/review-change/bin/review-change.mjs"
+CLI_TARGET="$CLI_BIN_DIR/review-change"
+LEGACY_CLI_SOURCE="$REPO_DIR/skills/change-review/bin/change-review.mjs"
+LEGACY_CLI_TARGET="$CLI_BIN_DIR/change-review"
 mkdir -p "$CLI_BIN_DIR"
+if [ -L "$LEGACY_CLI_TARGET" ] && [ "$(readlink "$LEGACY_CLI_TARGET" 2>/dev/null || true)" = "$LEGACY_CLI_SOURCE" ]; then
+  rm -f "$LEGACY_CLI_TARGET"
+  dim "  pruned renamed executable → $LEGACY_CLI_TARGET"
+fi
 if [ -e "$CLI_TARGET" ] || [ -L "$CLI_TARGET" ]; then
   current_cli_target="$(readlink "$CLI_TARGET" 2>/dev/null || true)"
   if [ "$current_cli_target" != "$CLI_SOURCE" ] && [ "$INSTALL_FORCE" != true ]; then
     dim "  $CLI_TARGET — exists, skipping (--force to overwrite)"
   else
     ln -sfn "$CLI_SOURCE" "$CLI_TARGET"
-    dim "  $CLI_TARGET → skills/change-review/bin/change-review.mjs"
+    dim "  $CLI_TARGET → skills/review-change/bin/review-change.mjs"
   fi
 else
   ln -s "$CLI_SOURCE" "$CLI_TARGET"
-  dim "  $CLI_TARGET → skills/change-review/bin/change-review.mjs"
+  dim "  $CLI_TARGET → skills/review-change/bin/review-change.mjs"
 fi
 
 # ── Repository git hook (shared dev tooling — not harness-specific) ──────────

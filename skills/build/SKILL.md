@@ -1,6 +1,6 @@
 ---
 name: build
-description: Full feature development workflow — grill, canonical HTML spec and tasks, vertical-slice TDD implementation, then intent-aware Change review as the final gate.
+description: Full feature development workflow — grill, canonical HTML spec and tasks, vertical-slice TDD implementation, then intent-aware Review change as the final gate.
 argument-hint: [feature-description]
 disable-model-invocation: true
 ---
@@ -9,7 +9,7 @@ disable-model-invocation: true
 
 A disciplined 5-phase workflow for building features. Each phase is its own skill; run them in order, waiting for user approval between phases.
 
-**Pipeline:** `/grill` → `/spec` → `/todo` → `/code` *(or `/coach`)* → `/change-review`
+**Pipeline:** `/grill` → `/spec` → `/todo` → `/code` *(or `/coach`)* → `/review-change`
 
 See [../shared/references/build-pipeline.md](../shared/references/build-pipeline.md) for the approval gates, file conventions (`docs/features/<slug>/`), session management, and visual-sync rules every phase obeys. Read it first.
 
@@ -22,7 +22,7 @@ See [../shared/references/build-pipeline.md](../shared/references/build-pipeline
 - Phase 3: [../todo/SKILL.md](../todo/SKILL.md)
 - Phase 4a: [../code/SKILL.md](../code/SKILL.md)
 - Phase 4b: [../coach/SKILL.md](../coach/SKILL.md)
-- Phase 5: [../change-review/SKILL.md](../change-review/SKILL.md)
+- Phase 5: [../review-change/SKILL.md](../review-change/SKILL.md)
 - HTML feedback support in Phases 2, 3, and 5: [../review-artifact/SKILL.md](../review-artifact/SKILL.md)
 
 Do **not** decide whether a phase exists from the `available_skills` list or by interpreting names like "grill" as ordinary English. If this `/build` skill loaded, these phase files are part of the same installed skill bundle; load them directly by path. In harnesses without a skill-invocation tool, "invoke `<phase>`" means: read the phase `SKILL.md`, follow its linked references as needed, and execute its workflow.
@@ -34,12 +34,12 @@ Each phase also runs standalone:
 - `/todo [spec-dir]` — Phase 3: vertical-slice tracer-bullet breakdown
 - `/code [tasks-dir]` — Phase 4a: AI implements via TDD, slice by slice
 - `/coach [tasks-dir]` — Phase 4b: user implements, AI writes one test at a time
-- `/change-review [target]` — Phase 5: intent-aware review of the feature change, a local Git range, or a GitHub pull request
+- `/review-change [target]` — Phase 5: intent-aware review of the feature change, a local Git range, or a GitHub pull request
 - `/review-code [area]` — optional standalone architectural exploration of the entire codebase or named area
 
 ## Approval Gate Scope (read first)
 
-This skill has exactly **four** approval gates — Grill→Spec, Spec→Tasks, Tasks→Implement, Review→done — the only points where you wait for user confirmation. (Implementation flows into the Phase 5 review without a gate; the final gate is Change review's approve-as-is or fix-selected decision.) Within an active phase, all routine operations (reads, writes, edits, bash, tests, environment bootstrap) proceed without per-call approval. Asking "OK to proceed?" before each tool batch is not how this skill works.
+This skill has exactly **four** approval gates — Grill→Spec, Spec→Tasks, Tasks→Implement, Review→done — the only points where you wait for user confirmation. (Implementation flows into the Phase 5 review without a gate; the final gate is Review change's approve-as-is or fix-selected decision.) Within an active phase, all routine operations (reads, writes, edits, bash, tests, environment bootstrap) proceed without per-call approval. Asking "OK to proceed?" before each tool batch is not how this skill works.
 
 A gate clears on **any response that expresses confirmation or approval** — there is no required phrase or keyword. The prompts below say what comes next; the user may confirm however they like ("yes", "go", "sounds good", "ship it", a thumbs-up). If a response is ambiguous or raises a concern, resolve it instead of advancing.
 
@@ -81,13 +81,13 @@ Ask which mode:
 
 If the user says "implement" or doesn't specify, load [../code/SKILL.md](../code/SKILL.md) and run `code` with the feature directory. If they say "coach me" or "guided", load [../coach/SKILL.md](../coach/SKILL.md) and run `coach`. Both run the same TDD philosophy and full verification loop, then run only the `refactorer` hygiene sweep on changed files. After completion, report final status (slices, tests, every final verification command with its scope and outcome, and hygiene) and proceed straight to Phase 5 — no gate here.
 
-### Phase 5: Change Review (the pipeline's final step)
+### Phase 5: Review Change (the pipeline's final step)
 
-Load [../change-review/SKILL.md](../change-review/SKILL.md), then run `change-review` in build mode against **ONLY the feature change** from the branch point through the current working state. Pass canonical `specs.html` and `tasks.html` as Authoritative intent, the implementation mode (`code` or `coach`) for repair ownership, and the exact final implementation verification commands, scopes, and outcomes as prior broad evidence that Change review records but does not rerun.
+Load [../review-change/SKILL.md](../review-change/SKILL.md), then run `review-change` in build mode against **ONLY the feature change** from the branch point through the current working state. Pass canonical `specs.html` and `tasks.html` as Authoritative intent, the implementation mode (`code` or `coach`) for repair ownership, and the exact final implementation verification commands, scopes, and outcomes as prior broad evidence that Review change records but does not rerun.
 
-Change review runs the fixed validation kernel: fresh adversarial full-change review, targeted Validation evidence, documentation check, lint, canonical-artifact fact-checking, and final report generation. It may repair objective Findings according to its mode and always reruns from the earliest invalidated stage.
+Review change runs the fixed validation kernel: fresh adversarial full-change review, targeted Validation evidence, documentation check, lint, canonical-artifact fact-checking, and final report generation. It may repair objective Findings according to its mode and always reruns from the earliest invalidated stage.
 
-Open the self-contained Change review report through `review-artifact`; its explicit approval is the Review→done gate. The user may add or disposition Findings, attach instructions, fix selected Findings, or approve as-is. Every `ask-user` Finding needs an explicit disposition before approval.
+Open the self-contained Review change report through `review-artifact`; its explicit approval is the Review→done gate. The user may add or disposition Findings, attach instructions, fix selected Findings, or approve as-is. Every `ask-user` Finding needs an explicit disposition before approval.
 
 Approval ends the pipeline. The user decides whether and when to commit; you never commit. `/review-code` remains available afterward when the user explicitly wants optional architectural deepening.
 
@@ -105,7 +105,7 @@ Approval ends the pipeline. The user decides whether and when to commit; you nev
 
 The `visualize` skill is optional for informational visuals, but Phase 2 and Phase 3 always produce their required canonical semantic HTML artifacts.
 When available it provides presentation guidance and the standalone `/visualize-diff` command.
-Change review fact-checks and updates the canonical `specs.html` and `tasks.html` directly rather than generating Markdown companions or an automatic diff review.
+Review change fact-checks and updates the canonical `specs.html` and `tasks.html` directly rather than generating Markdown companions or an automatic diff review.
 Whenever an HTML file asks the user for feedback or approval, open it through `review-artifact` rather than directly.
 
 ## Cleanup

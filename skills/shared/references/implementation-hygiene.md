@@ -14,7 +14,7 @@ In AI implementation mode, apply an additional reported item only when its behav
 In coached mode, present CAREFUL and RISKY items to the user because they own the implementation.
 
 After any applied hygiene change, rerun the repository verification loop.
-Do not run adversarial review, database review, documentation synchronization, feature-artifact fact-checking, visual refresh, or diff review here; Change review owns final validation in build mode.
+Do not run adversarial review, database review, documentation synchronization, feature-artifact fact-checking, visual refresh, or diff review here; Review change owns final validation in build mode.
 
 ## Completion
 

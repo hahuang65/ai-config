@@ -42,14 +42,14 @@ Phase 4: /code → code + diff-review.html
         (vertical-slice TDD, one slice at a time)
 ```
 
-The current pipeline instead ends implementation after full verification and hygiene, then runs the mandatory Change review gate:
+The current pipeline instead ends implementation after full verification and hygiene, then runs the mandatory Review change gate:
 
 ```
 Phase 1: /grill         → CONTEXT.md + ADRs
 Phase 2: /spec          → canonical specs.html + review-artifact approval
 Phase 3: /todo          → canonical tasks.html + review-artifact approval
 Phase 4: /code|/coach   → vertical-slice TDD + verification + hygiene
-Phase 5: /change-review → adversarial review + evidence + docs + lint + final report
+Phase 5: /review-change → adversarial review + evidence + docs + lint + final report
 ```
 
 ## Phase 1: Grill — Domain Modeling
@@ -93,13 +93,13 @@ Implementation walks through the slices one at a time using strict red-green-ref
 |------|-------------|
 | [diff-review.html](https://hahuang65.github.io/ai-config/example/docs/features/20260516-1430-order-placement/diff-review.html) | Post-implementation visual: executive summary, KPI dashboard (6/6 slices complete, 47 tests added, 94% coverage), slice completion status, file-by-file changes, code review findings (Good / Fixed-before-merge / Tracked follow-ups), decision log, re-entry context. |
 
-This legacy example predates Change review and shows the former implementation-owned review artifact. The current pipeline keeps TDD, full verification, and the `refactorer` hygiene sweep in implementation, then delegates final validation and artifact synchronization to Change review. The agent **never** runs `git commit` — the user reviews the final state and commits when ready.
+This legacy example predates Review change and shows the former implementation-owned review artifact. The current pipeline keeps TDD, full verification, and the `refactorer` hygiene sweep in implementation, then delegates final validation and artifact synchronization to Review change. The agent **never** runs `git commit` — the user reviews the final state and commits when ready.
 
 ## Key Conventions
 
 - **Repo-root vs per-feature**: `CONTEXT.md` and `docs/adr/` live at the repo root and accrete across many `/build` runs. Current per-feature spec and task artifacts live under `docs/features/<YYYYMMDD-HHMM>-<slug>/`; the archived example also contains the former diff review.
 - **Legacy companion naming**: this archived example pairs Markdown with HTML (`prd.md` → `prd.html`, `tasks.md` → `tasks.html`). The current pipeline uses canonical `specs.html` and `tasks.html` without Markdown companions.
-- **Canonical sync**: Change review cold-fact-checks the final canonical HTML in place. The archived artifacts reflect the older companion-regeneration behavior.
+- **Canonical sync**: Review change cold-fact-checks the final canonical HTML in place. The archived artifacts reflect the older companion-regeneration behavior.
 - **No code in the PRD**: code snippets and file paths go stale; the PRD is durable spec. Narrow exception: decision-rich snippets (state machines, schemas) may be inlined when prose can't carry the precision.
 - **Vertical, never horizontal**: every task slice cuts through every layer end-to-end and is demoable on its own. Many thin slices beat few thick ones.
 - **CONTEXT.md vocabulary everywhere**: terms resolved during grill appear unchanged in the PRD, tasks, test names, and code identifiers.

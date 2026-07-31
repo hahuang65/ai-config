@@ -132,7 +132,7 @@ code { font-family: var(--font-mono); font-size: 0.85em; background: var(--accen
 
 <div class="header">
   <h1><span>/</span>build pipeline</h1>
-  <p class="subtitle">Five-phase workflow combining domain modeling, canonical HTML artifacts, vertical-slice TDD, and intent-aware Change review.</p>
+  <p class="subtitle">Five-phase workflow combining domain modeling, canonical HTML artifacts, vertical-slice TDD, and intent-aware Review change.</p>
   <div class="phase-flow">
     <span class="phase-pill grill"><span class="phase-num"><span>1</span></span> grill</span>
     <span class="phase-arrow">→</span>
@@ -142,7 +142,7 @@ code { font-family: var(--font-mono); font-size: 0.85em; background: var(--accen
     <span class="phase-arrow">→</span>
     <span class="phase-pill implement"><span class="phase-num"><span>4</span></span> implement</span>
     <span class="phase-arrow">→</span>
-    <span class="phase-pill review"><span class="phase-num"><span>5</span></span> change review</span>
+    <span class="phase-pill review"><span class="phase-num"><span>5</span></span> review change</span>
   </div>
 </div>
 
@@ -205,7 +205,7 @@ code { font-family: var(--font-mono); font-size: 0.85em; background: var(--accen
     </div>
 
     <div class="card review">
-      <h3>change review <span class="badge">opus · final gate</span></h3>
+      <h3>review change <span class="badge">opus · final gate</span></h3>
       <p>Validates the complete feature change against canonical approved intent rather than searching for optional redesign.</p>
       <ul>
         <li>Fresh adversarial reviewer evaluates the full feature diff</li>
@@ -246,7 +246,7 @@ code { font-family: var(--font-mono); font-size: 0.85em; background: var(--accen
       <tr><td>after <code>/grill</code></td><td>any go-ahead to draft the spec</td><td><span class="stop">STOP</span> until the user confirms</td></tr>
       <tr><td>after <code>/spec</code></td><td>explicit <code>review-artifact</code> approval or chat fallback</td><td><span class="stop">STOP</span> until canonical <code>specs.html</code> is approved</td></tr>
       <tr><td>after <code>/todo</code></td><td>explicit <code>review-artifact</code> approval or chat fallback</td><td><span class="stop">STOP</span> until canonical <code>tasks.html</code> is approved and implementation mode is known</td></tr>
-      <tr><td>after <code>/change-review</code></td><td>explicit report approval after every ask-user disposition</td><td><span class="stop">STOP</span> until the Review-to-done decision is submitted</td></tr>
+      <tr><td>after <code>/review-change</code></td><td>explicit report approval after every ask-user disposition</td><td><span class="stop">STOP</span> until the Review-to-done decision is submitted</td></tr>
     </tbody>
   </table>
   <p style="margin-top:14px; font-size:0.9rem; color: var(--text-dim);">The orchestrator never crosses an approval gate autonomously. Verified implementation advances directly from Phase 4 into Phase 5; every listed gate still requires the user's judgment.</p>
@@ -277,7 +277,7 @@ code { font-family: var(--font-mono); font-size: 0.85em; background: var(--accen
       <tr><td><span class="cmd-tag">/todo</span></td><td>Break an existing spec into vertical slices</td><td>Phase 3</td></tr>
       <tr><td><span class="cmd-tag">/code</span></td><td>Execute existing canonical tasks.html (AI)</td><td>Phase 4a</td></tr>
       <tr><td><span class="cmd-tag">/coach</span></td><td>Execute existing canonical tasks.html (you write code)</td><td>Phase 4b</td></tr>
-      <tr><td><span class="cmd-tag">/change-review</span></td><td>Read-only PR, local-range, or isolated CLI review with HTML and terminal output</td><td>Phase 5</td></tr>
+      <tr><td><span class="cmd-tag">/review-change</span></td><td>Read-only PR, local-range, or isolated CLI review with HTML and terminal output</td><td>Phase 5</td></tr>
       <tr><td><span class="cmd-tag">/review-code</span></td><td>Optional architecture exploration</td><td>Not automatic</td></tr>
     </tbody>
   </table>

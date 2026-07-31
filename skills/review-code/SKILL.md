@@ -14,7 +14,7 @@ Surface architectural friction and propose **deepening opportunities** — refac
 - **With arguments:** `$ARGUMENTS` names the area or module to review; resolve it to files/directories and pass that scope to the agent.
 
 This workflow is optional standalone architectural exploration.
-It is never invoked automatically by `/build`; Change review owns that pipeline's final validation gate.
+It is never invoked automatically by `/build`; Review change owns that pipeline's final validation gate.
 
 ## Glossary
 

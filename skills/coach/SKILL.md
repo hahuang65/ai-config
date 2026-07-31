@@ -76,7 +76,7 @@ Announce the plan: one slice at a time, one test at a time; confirm Slice 1's in
 
 3. **Verification loop** — after all slices, run type check, lint, full test suite, and build per [../shared/references/tooling.md](../shared/references/tooling.md). Guide the user through any fixes until all pass.
 
-4. **Post-implementation hygiene** — run the `refactorer` in hygiene mode through [../shared/references/implementation-hygiene.md](../shared/references/implementation-hygiene.md). Apply grep-verified SAFE cleanup directly and surface CAREFUL/RISKY candidates for the user to decide. Rerun full verification after any edit. Final adversarial validation belongs to Change review, where coached ownership of source and tests still applies.
+4. **Post-implementation hygiene** — run the `refactorer` in hygiene mode through [../shared/references/implementation-hygiene.md](../shared/references/implementation-hygiene.md). Apply grep-verified SAFE cleanup directly and surface CAREFUL/RISKY candidates for the user to decide. Rerun full verification after any edit. Final adversarial validation belongs to Review change, where coached ownership of source and tests still applies.
 
 ## Completion
 
@@ -89,7 +89,7 @@ Wrap up per [../shared/references/implementation-completion.md](../shared/refere
 3. **Test through the interface.** Behavior, not implementation.
 4. **Be patient — silently.** Wait for the user. Do not write the next test, do not poll their files for hidden progress, do not switch to `/code` because reminders fire or the room goes quiet. The only exit from the waiting state is an explicit user signal (see *Holding the line*).
 5. **`CONTEXT.md` vocabulary everywhere** — test names, helper names, error messages.
-6. **Post-completion hygiene is AI-driven** — once tests pass and verification is clean, the AI applies SAFE mechanical cleanup; Change review later handles final Findings, documentation, and visuals while preserving coached ownership of source and tests.
+6. **Post-completion hygiene is AI-driven** — once tests pass and verification is clean, the AI applies SAFE mechanical cleanup; Review change later handles final Findings, documentation, and visuals while preserving coached ownership of source and tests.
 7. **NEVER commit to version control** — no `git add`, `git commit`, or `git push`.
 
 Ultrathink.

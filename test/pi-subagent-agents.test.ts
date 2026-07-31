@@ -17,10 +17,10 @@ test("normalizes comma-separated tool declarations", () => {
   expect(parseAgentTools("Read, Grep, Glob")).toEqual(["read", "grep", "find"]);
 });
 
-test("inherits the CLI-selected model for Change review subagents", () => {
+test("inherits the CLI-selected model for Review change subagents", () => {
   const environment = {
-    CHANGE_REVIEW_GATE: "1",
-    CHANGE_REVIEW_SUBAGENT_MODEL: "openai/gpt-5",
+    REVIEW_CHANGE_GATE: "1",
+    REVIEW_CHANGE_SUBAGENT_MODEL: "openai/gpt-5",
   };
 
   expect(resolveAgentModel("change-reviewer", "opus", environment)).toBe("openai/gpt-5");
@@ -29,7 +29,7 @@ test("inherits the CLI-selected model for Change review subagents", () => {
 });
 
 test("uses the pi default model for CLI subagents without an override", () => {
-  expect(resolveAgentModel("change-reviewer", "opus", { CHANGE_REVIEW_GATE: "1" })).toBeUndefined();
+  expect(resolveAgentModel("change-reviewer", "opus", { REVIEW_CHANGE_GATE: "1" })).toBeUndefined();
   expect(resolveAgentModel("change-reviewer", "opus", {})).toBe("opus");
 });
 

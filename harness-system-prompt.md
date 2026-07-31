@@ -9,7 +9,7 @@ read only the rule needed for the current action, before taking that action.
   `user-initials/short-description` (for example, `hh/auth-redirect`).
 - Create development Git worktrees under `~/.treehouse/`. Name each worktree
   `<project-basename>-<short-intent>` (for example, `billing-auth-redirect`).
-  Change review isolation uses `~/.review-treehouse/` instead.
+  Review change isolation uses `~/.review-treehouse/` instead.
 - Language toolchains are managed by mise. Invoke tools by bare name; do not
   activate or recommend rbenv, rvm, chruby, asdf, nvm, or pyenv.
 - When making technical decisions, give low weight to development cost. Give

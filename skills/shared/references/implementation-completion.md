@@ -10,11 +10,11 @@ Report what was accomplished this session:
 - Tests added and passing
 - Every final type-check, lint, test, and build command with its exact scope and outcome
 - Hygiene items applied or reported
-- That final documentation, canonical-artifact fact-checking, and the decision report remain owned by Change review in build mode
+- That final documentation, canonical-artifact fact-checking, and the decision report remain owned by Review change in build mode
 
 ## What happens next
 
-- **Inside `/build`:** proceed straight to Phase 5 — `change-review` scoped to only the feature change, with canonical `specs.html` and `tasks.html` as Authoritative intent, the implementation mode for repair ownership, and the exact final verification commands, scopes, and outcomes as prior broad evidence that it records without rerunning. No gate sits between implementation and Change review; its report carries the final approve-as-is or fix-selected decision.
+- **Inside `/build`:** proceed straight to Phase 5 — `review-change` scoped to only the feature change, with canonical `specs.html` and `tasks.html` as Authoritative intent, the implementation mode for repair ownership, and the exact final verification commands, scopes, and outcomes as prior broad evidence that it records without rerunning. No gate sits between implementation and Review change; its report carries the final approve-as-is or fix-selected decision.
 - **Standalone `/code`:** after reporting, add these pointers:
 
 > If you notice structural issues now that the code is done:

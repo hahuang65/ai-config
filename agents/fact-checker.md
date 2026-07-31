@@ -1,6 +1,6 @@
 ---
 name: fact-checker
-description: Independent verification of a document that makes claims about a codebase — extract every verifiable claim, check each against code and git history, correct inaccuracies in place, and maintain one idempotent verification summary. Change review uses it on canonical specs/tasks HTML; dispatch it on any document suspected of drift.
+description: Independent verification of a document that makes claims about a codebase — extract every verifiable claim, check each against code and git history, correct inaccuracies in place, and maintain one idempotent verification summary. Review change uses it on canonical specs/tasks HTML; dispatch it on any document suspected of drift.
 tools: ["Read", "Write", "Edit", "Bash", "Grep", "Glob"]
 model: sonnet
 ---

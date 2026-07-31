@@ -54,13 +54,13 @@ install_module() {
   ln -sf "$MOD/extensions/local-models.ts" "$config_root/extensions/local-models.ts"
   dim "  $config_root/extensions/local-models.ts (local model auto-discovery)"
 
-  # Active only inside the standalone Change review CLI process tree.
+  # Active only inside the standalone Review change CLI process tree.
   # It blocks structured writes and common mutation commands inside the CLI's
   # disposable clone, plus Git/provider delivery mutation across the process tree.
-  ln -sf "$MOD/extensions/change-review-guard.ts" "$config_root/extensions/change-review-guard.ts"
-  dim "  $config_root/extensions/change-review-guard.ts (standalone Change review boundary)"
-  ln -sf "$MOD/extensions/change-review-progress.ts" "$config_root/extensions/change-review-progress.ts"
-  dim "  $config_root/extensions/change-review-progress.ts (standalone Change review TUI telemetry)"
+  ln -sf "$MOD/extensions/review-change-guard.ts" "$config_root/extensions/review-change-guard.ts"
+  dim "  $config_root/extensions/review-change-guard.ts (standalone Review change boundary)"
+  ln -sf "$MOD/extensions/review-change-progress.ts" "$config_root/extensions/review-change-progress.ts"
+  dim "  $config_root/extensions/review-change-progress.ts (standalone Review change TUI telemetry)"
 
   # Subagent extension — ships as an example with pi. Symlinked if present;
   # skipped gracefully on a system where pi is not installed. Resolves the

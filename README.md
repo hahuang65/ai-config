@@ -43,30 +43,30 @@ Both implementation modes and all five phases are harness-neutral across Claude 
   │     or    /coach         → AI writes test → YOU write impl → AI verifies → repeat
   │                            → full verification + hygiene
   │
-  └── Phase 5: /change-review → adversarial review → evidence → docs → lint
+  └── Phase 5: /review-change → adversarial review → evidence → docs → lint
                                 → review-artifact → approve as-is or fix selected
 ```
 
-`CONTEXT.md` and `docs/adr/` live at the repo root and accrete across many `/build` runs. Canonical per-feature `specs.html` and `tasks.html` live in `docs/features/<YYYYMMDD-HHMM>-<slug>/`; the final Change review report is disposable and lives in the operating-system temp directory.
+`CONTEXT.md` and `docs/adr/` live at the repo root and accrete across many `/build` runs. Canonical per-feature `specs.html` and `tasks.html` live in `docs/features/<YYYYMMDD-HHMM>-<slug>/`; the final Review change report is disposable and lives in the operating-system temp directory.
 
-### Standalone Change Review CLI
+### Standalone Review Change CLI
 
-`./install.sh` links `change-review` into `~/.local/bin/` so the same validation gate can run without entering an agent session.
+`./install.sh` links `review-change` into `~/.local/bin/` so the same validation gate can run without entering an agent session.
 The executable resolves the source pull request or freezes a source branch or base/head range before cloning, snapshots tracked and untracked state into a disposable isolated clone, launches one foreground `pi` process as its AI backend, and remains read-only for every target.
 
 ```sh
-change-review
-change-review --intent "Preserve the public API while adding cache invalidation"
-change-review feature/cache-invalidation --intent "Review this branch read-only"
-change-review main...HEAD --intent "Review this historical range read-only"
-change-review 123 --intent "Validate the pull request against its stated intent"
-change-review main...HEAD --provider openai --model gpt-5 --thinking high
+review-change
+review-change --intent "Preserve the public API while adding cache invalidation"
+review-change feature/cache-invalidation --intent "Review this branch read-only"
+review-change main...HEAD --intent "Review this historical range read-only"
+review-change 123 --intent "Validate the pull request against its stated intent"
+review-change main...HEAD --provider openai --model gpt-5 --thinking high
 ```
 
 With no target, the CLI resolves the current branch pull request or branch point against the source repository before isolation, then reviews that frozen scope from the isolated snapshot.
 One explicit target may be a local or remote branch name, local Git range, GitHub pull-request URL, or pull-request number, and every mode remains read-only.
 Review-owned clones and worktrees live under `~/.review-treehouse/`, separate from development worktrees under `~/.treehouse/`.
-Provider, model, and thinking overrides pass directly to `pi` as argument-array values rather than through a shell; the selected model also reaches mandatory Change review subagents.
+Provider, model, and thinking overrides pass directly to `pi` as argument-array values rather than through a shell; the selected model also reaches mandatory Review change subagents.
 In a sufficiently wide TTY, the CLI displays a color-coded left-right view: the pipeline occupies the left pane and the selected stage log occupies the right pane; narrow terminals retain the stacked layout.
 Stage states and log outcomes use distinct terminal colors, with `NO_COLOR` support for monochrome output.
 Each pipeline stage lists its purpose and recorded sub-stages vertically beneath it with a live or completed elapsed timer beside every sub-stage, shortening left-pane sub-stage labels to at most six words while retaining the bounded original telemetry text in the navigable, credential-redacted right-pane log alongside observable lifecycle actions, commands, durations, and outcomes.
@@ -80,7 +80,7 @@ After validation, it opens the disposable HTML report in a new Firefox window on
 After cleanup, an interactive run renders the parent and assistant Markdown through non-interactive Glow when available, forces color when terminal color is enabled, selects a final Summary stage within the existing pipeline/log layout rather than replacing it with a full-screen summary, and rerenders it when terminal width changes.
 Glow failure or a Summary pane narrower than 20 columns falls back to the built-in renderer, Ctrl-U and Ctrl-D scroll the final log, and Ctrl-C exits once the review is no longer running; `q`, `x`, and Escape do not dismiss it.
 Redirected output prints the same summary normally.
-Standalone Change review does not invoke `review-artifact`, poll for feedback, or require approval.
+Standalone Review change does not invoke `review-artifact`, poll for feedback, or require approval.
 A disabled push URL plus the CLI-specific pi guard protect the original checkout and block structured writes, common direct mutation, staging, commits, pushes, and provider mutations.
 Structured writes are allowed only inside a dedicated report directory whose resolved path is validated not to overlap the source checkout or clone.
 
@@ -142,7 +142,7 @@ Both modes follow the same TDD philosophy: **vertical, never horizontal. One tes
 5. **Verification loop**: type check → lint → test suite → build (repeat until all pass)
 6. Runs the **`refactorer` agent in hygiene mode** — dead code, unused imports and dependencies, duplication, simplification (SAFE applied, CAREFUL/RISKY reported)
 7. Reports every final verification command, scope, and outcome
-8. Proceeds directly to Phase 5 Change review, which owns adversarial review, conditional database Findings, targeted evidence, documentation, lint, canonical-artifact fact-checking, and the final decision report
+8. Proceeds directly to Phase 5 Review change, which owns adversarial review, conditional database Findings, targeted evidence, documentation, lint, canonical-artifact fact-checking, and the final decision report
 9. **NEVER commits** — leaves that to the user
 
 #### Coach Mode (`/coach`)
@@ -153,7 +153,7 @@ Both modes follow the same TDD philosophy: **vertical, never horizontal. One tes
 4. Refactor together when GREEN (never while RED), re-running tests after each step
 5. Final verification loop (same as AI mode)
 6. Post-completion hygiene applies SAFE mechanical cleanup and reports higher-risk candidates
-7. Change review preserves user ownership of source and test fixes while handling selected documentation and formatting repairs mechanically
+7. Review change preserves user ownership of source and test fixes while handling selected documentation and formatting repairs mechanically
 8. **NEVER commits** — leaves that to the user
 
 ### Review Artifact Loop
@@ -180,7 +180,7 @@ The `git-commit` rule covers what to include: `CONTEXT.md` and `docs/adr/` ship 
 ### Legacy Example
 
 The [`example/`](example/) directory contains historical artifacts from the earlier grill → PRD → tasks → implementation-with-diff-review pipeline.
-It remains a stylistic reference only; current runs produce canonical `specs.html` and `tasks.html` and end with Change review.
+It remains a stylistic reference only; current runs produce canonical `specs.html` and `tasks.html` and end with Review change.
 
 ## Skill / Rule / Agent Graph
 
@@ -201,7 +201,7 @@ It remains a stylistic reference only; current runs produce canonical `specs.htm
 │   ├── tdd-guide (sonnet) → vertical-slice TDD
 │   └── refactorer (sonnet) → hygiene sweep
 │
-└── change-review
+└── review-change
     ├── change-reviewer (opus) → independent adversarial review
     ├── change-fixer (sonnet) → selected objective repairs
     ├── database-reviewer (sonnet, conditional) → read-only specialist Findings
@@ -216,7 +216,7 @@ Agents read a subset relevant to their role.
 
 ```text
 .
-├── skills/           Shared workflow skills (build, change-review, review-artifact, ...)
+├── skills/           Shared workflow skills (build, review-change, review-artifact, ...)
 ├── commands/         Claude Code command wrappers
 ├── agents/           Shared specialist agents (change-reviewer, tdd-guide, refactorer, ...)
 ├── harness-system-prompt.md  Small always-on critical baseline + rule routing
@@ -245,13 +245,13 @@ Agents read a subset relevant to their role.
 
 | Name | Model (rec.) | Role |
 |------|-------|------|
-| `build` | — | Orchestrator: coordinates grill → spec → todo → code/coach → change-review |
+| `build` | — | Orchestrator: coordinates grill → spec → todo → code/coach → review-change |
 | `grill` | opus | Interview-driven domain modeling; updates `CONTEXT.md` + ADRs inline |
 | `spec` | opus | Synthesize canonical specs.html and review it through review-artifact |
 | `todo` | opus | Break the approved spec into canonical HTML vertical slices |
 | `code` | sonnet | Execute approved tasks via vertical-slice TDD + multi-agent verification |
 | `coach` | sonnet | Coach user through implementation; AI writes ONE test at a time |
-| `change-review` | opus | Validate a feature change, branch, local Git range, or GitHub pull request against Authoritative intent; also installed as a standalone pi-backed executable |
+| `review-change` | opus | Validate a feature change, branch, local Git range, or GitHub pull request against Authoritative intent; also installed as a standalone pi-backed executable |
 
 #### Standalone tools that pair with `/build`
 
@@ -275,13 +275,13 @@ Agents read a subset relevant to their role.
 
 | Command | Description |
 |---------|-------------|
-| `/build` | Full feature workflow — grill, spec, tasks, implement, final Change review |
+| `/build` | Full feature workflow — grill, spec, tasks, implement, final Review change |
 | `/grill` | Interactive domain-modeling session (updates `CONTEXT.md` + ADRs) |
 | `/spec` | Synthesize and browser-review canonical specs.html |
 | `/todo` | Break a spec into canonical vertical-slice tasks.html |
 | `/code` | Execute approved tasks via vertical-slice TDD (AI implements) |
 | `/coach` | Coach-guided implementation (AI writes one test, you write the code) |
-| `/change-review` | Validate a branch, local Git range, or GitHub pull request; final `/build` gate in pipeline mode |
+| `/review-change` | Validate a branch, local Git range, or GitHub pull request; final `/build` gate in pipeline mode |
 | `/review-code` | Architectural review — no args: entire codebase; args: that area; browser-reviewed HTML report |
 | `/review-artifact` | Review an existing local HTML artifact with annotations and explicit approval |
 | `/prototype` | Throwaway prototype (logic TUI or UI variants) to flesh out a design |
@@ -299,7 +299,7 @@ Agents read a subset relevant to their role.
 | `tdd-guide` | sonnet | Red-green-refactor TDD execution | testing, coding-style |
 | `change-reviewer` | opus | Read-only full-change adversarial review with structured Findings and intent coverage | coding-style, testing, security, performance |
 | `change-fixer` | sonnet | Selected repairs within mode ownership with focused verification | coding-style, testing, security, performance |
-| `database-reviewer` | sonnet | Read-only database specialist Findings for Change review | coding-style, testing, security, performance |
+| `database-reviewer` | sonnet | Read-only database specialist Findings for Review change | coding-style, testing, security, performance |
 | `fact-checker` | sonnet | Independent verification of canonical HTML artifacts and other codebase claims — corrects drift in place | git-commit |
 | `refactorer` | sonnet | Behavior-preserving directed refactors plus post-implementation hygiene | coding-style, performance, security, testing |
 
@@ -362,12 +362,12 @@ Cross-harness guardrails live once in `shared/` and project into both harnesses 
 2. **Mirrors each module's consumed shared set** into its config root. Skills and agents reach both harnesses; commands reach Claude; rules remain at their canonical source path.
 3. **Installs module files and global instructions** via each manifest (Claude: `CLAUDE.md`, `settings.json`, `statusline.sh`, `hooks.json`; pi: `AGENTS.md`, settings, extensions).
 4. **Prunes dangling links** so the install self-heals after a rename/delete.
-5. Links the standalone `change-review` executable into `~/.local/bin/` independently of either harness.
+5. Links the standalone `review-change` executable into `~/.local/bin/` independently of either harness.
 6. Skips any `harness_pending` modules.
 
 Finally it sets `core.hooksPath` to `.githooks`. The guard core in `shared/` is resolved by the adapters via symlink realpath, so it is not separately mirrored.
 
-Commands sharing a name with a skill (`build`, `grill`, `spec`, `todo`, `code`, `coach`, `change-review`, `refactor`) are skipped for Claude Code because skills take precedence.
+Commands sharing a name with a skill (`build`, `grill`, `spec`, `todo`, `code`, `coach`, `review-change`, `refactor`) are skipped for Claude Code because skills take precedence.
 
 ## Infrastructure
 
@@ -399,7 +399,7 @@ This project stands on the shoulders of others:
 - **[Boris Tane's Claude Code workflow](https://boristane.com/blog/how-i-use-claude-code/)** — The review-cycle discipline and think-before-you-code guardrails originated in Boris's research → plan → implement method. This project's first pipeline was a direct port before review artifacts became HTML-native.
 - **[Matt Pocock's skills-TDD pipeline](https://www.aihero.dev/skills-tdd)** and the broader [skills repo](https://github.com/mattpocock/skills) — the core pipeline (`grill-with-docs → to-prd → to-issues → tdd`) and Matt's stance on vertical-slice TDD ("write one test, one implementation, repeat — batched tests describe imagined behavior, not actual behavior") drive the design of `/grill`, `/spec`, `/todo`, and the vertical-slice rewrites of `/code` and `/coach`. The standalone tools `/handoff` ([article](https://www.aihero.dev/skills-handoff)), `/prototype`, and `/review-code` (renamed from `improve-codebase-architecture`) are also ports of Matt's skills, with internal references rewritten to match this repo's naming. The format files (CONTEXT-FORMAT.md, ADR-FORMAT.md) and the LANGUAGE/DEEPENING/HTML-REPORT/INTERFACE-DESIGN supporting docs are taken directly from his repo.
 - **[nicobailon/visual-explainer](https://github.com/nicobailon/visual-explainer)** — The `visualize` skill (renamed from `visual-explainer`) is taken wholesale from this repository, with only minor modifications. HTML visual generation is powered by this work.
-- **[kunchenguid/no-mistakes](https://github.com/kunchenguid/no-mistakes)** — Change review adapts its independent reviewer/fixer roles, intent-aware Findings, evidence-first validation, bounded repair loops, and human-owned decisions without reproducing its push gate, daemon, TUI, or delivery automation.
+- **[kunchenguid/no-mistakes](https://github.com/kunchenguid/no-mistakes)** — Review change adapts its independent reviewer/fixer roles, intent-aware Findings, evidence-first validation, bounded repair loops, and human-owned decisions without reproducing its push gate, daemon, TUI, or delivery automation.
 - **[kunchenguid/lavish-axi](https://github.com/kunchenguid/lavish-axi)** — The local browser review loop, path-keyed sessions, element and text annotations, foreground polling, live reload, and evidence-based layout warnings inspired `review-artifact`. Relevant MIT-licensed core concepts and code were adapted into the narrower locally owned runtime; see [`skills/review-artifact/ATTRIBUTION.md`](skills/review-artifact/ATTRIBUTION.md).
 - **[affaan-m/everything-claude-code](https://github.com/affaan-m/everything-claude-code)** — The rules and agent definitions in this repo are borrowed and adapted from this collection. The coding-style, testing, security, and performance rules, as well as several retained specialist-agent configurations, draw heavily from this source.
 - **[can1357/oh-my-pi](https://github.com/can1357/oh-my-pi)** — Its TTSR and hook models informed the guardrail architecture before the harness was retired by [ADR-0017](docs/adr/0017-retire-oh-my-pi.md).
