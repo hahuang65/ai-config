@@ -202,22 +202,16 @@ RED→GREEN: test3 → impl3
 </div>
 
 <div class="section">
-  <div class="section-title"><span class="num">05</span>Post-Implementation: Verification &amp; Review</div>
+  <div class="section-title"><span class="num">05</span>Post-Implementation: Verification &amp; Hygiene</div>
   <table>
     <thead><tr><th>Step</th><th>Trigger</th><th>Severity</th></tr></thead>
     <tbody>
-      <tr><td><strong>Type check / lint / test / build</strong></td><td>Always — verification loop</td><td><span class="must-tag">MUST</span></td></tr>
-      <tr><td><span class="agent-tag">tdd-guide</span></td><td>Always — guides the RED→GREEN→REFACTOR cycle for each slice</td><td><span class="must-tag">MUST</span></td></tr>
-      <tr><td><span class="agent-tag">database-reviewer</span></td><td>If SQL / migrations / ORM was touched</td><td><span class="cond-tag">CONDITIONAL</span></td></tr>
-      <tr><td><span class="agent-tag">refactorer</span> (hygiene mode)</td><td>Always — dead code, unused imports &amp; dependencies, duplication, simplification; SAFE applied, CAREFUL/RISKY reported</td><td><span class="must-tag">MUST</span></td></tr>
-      <tr><td><span class="agent-tag">code-reviewer</span></td><td>Always — OWASP Top 10, &gt;80% confidence</td><td><span class="must-tag">MUST</span></td></tr>
-      <tr><td><span class="agent-tag">doc-updater</span></td><td>If features / APIs / architecture changed</td><td><span class="cond-tag">CONDITIONAL</span></td></tr>
-      <tr><td><span class="agent-tag">fact-checker</span> on canonical <code>specs.html</code> &amp; <code>tasks.html</code></td><td>Always — catch drift between docs and code</td><td><span class="must-tag">MUST</span></td></tr>
-      <tr><td>Refresh <code>specs.html</code> + <code>tasks.html</code></td><td>Always — visual sync guarantee</td><td><span class="must-tag">MUST</span></td></tr>
-      <tr><td><span class="cmd-tag">/visualize-diff</span> → <code>diff-review.html</code></td><td>If <code>visualize</code> is installed</td><td><span class="cond-tag">CONDITIONAL</span></td></tr>
+      <tr><td><strong>Type check / lint / test / build</strong></td><td>Always — full verification loop with exact commands and outcomes recorded</td><td><span class="must-tag">MUST</span></td></tr>
+      <tr><td><span class="agent-tag">tdd-guide</span></td><td>Always — guides each RED→GREEN→REFACTOR cycle</td><td><span class="must-tag">MUST</span></td></tr>
+      <tr><td><span class="agent-tag">refactorer</span> (hygiene mode)</td><td>Always — dead code, unused imports and dependencies, duplication, simplification; SAFE applied, CAREFUL/RISKY reported</td><td><span class="must-tag">MUST</span></td></tr>
     </tbody>
   </table>
-  <p style="margin-top:14px; font-size:0.9rem; color: var(--text-dim);">In coach mode, <span class="agent-tag">database-reviewer</span> and <span class="agent-tag">code-reviewer</span> findings are surfaced to the user to fix (they own the code). Other cleanup is AI-driven.</p>
+  <p style="margin-top:14px; font-size:0.9rem; color: var(--text-dim);">Phase 5 Change review owns adversarial review, conditional database Findings, targeted evidence, documentation, lint, canonical-artifact fact-checking, and the final decision report. Coach mode keeps source and test fixes user-owned.</p>
 </div>
 
 <div class="section">

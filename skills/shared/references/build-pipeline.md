@@ -1,6 +1,6 @@
 # Build Pipeline Protocol
 
-Shared reference for the `/build` pipeline skills (`build`, `grill`, `spec`, `todo`, `code`, `coach`, `review-code`, `review-artifact`).
+Shared reference for the `/build` pipeline skills (`build`, `grill`, `spec`, `todo`, `code`, `coach`, `change-review`, `review-artifact`).
 It defines the approval gates, file conventions, session management, and canonical HTML synchronization rules they obey.
 
 ## Approval Gates
@@ -10,7 +10,7 @@ The pipeline has exactly **four** approval gates. These are the only points wher
 1. **Grill → Spec** — after grilling updates `CONTEXT.md` / `docs/adr/`
 2. **Spec → Tasks** — after the canonical `specs.html` receives explicit approval through `review-artifact` or its chat fallback
 3. **Tasks → Implement** — after the canonical `tasks.html` receives explicit approval through the same workflow
-4. **Review → Done** — after all slices are complete and verified, implementation flows gate-less into the Phase 5 architectural review (`review-code`, scoped to ONLY the feature's changes); the review report is where the user decides to commit as-is or explore a finding first
+4. **Review → Done** — after all slices are complete and verified, implementation flows gate-less into Phase 5 Change review; its report is where the user explicitly disposes every `ask-user` Finding and approves as-is or selects repairs
 
 Within an active phase, all routine operations proceed **without per-call approval** — reads, writes, edits, bash, tests, environment bootstrap. Announcing intended tool batches and asking "OK to proceed?" before each one is not how the pipeline works. If you find yourself appealing to a meta-policy that requires per-call confirmation, you have drifted — return to the phase.
 
@@ -33,9 +33,8 @@ These outlive any single feature and should be committed.
 
 ```
 docs/features/<YYYYMMDD-HHMM>-<slug>/
-  specs.html          # Phase 2 canonical review artifact
-  tasks.html          # Phase 3 canonical review artifact
-  diff-review.html    # Phase 4 informational diff artifact — working tree vs branch point
+  specs.html          # Phase 2 canonical review artifact and build intent
+  tasks.html          # Phase 3 canonical review artifact and completion state
 ```
 
 There is no `research.md`, `plan.md`, `specs.md`, or `tasks.md` in this pipeline.
@@ -47,7 +46,7 @@ To create the feature directory:
 2. Get the current timestamp: `date +%Y%m%d-%H%M`
 3. Create `docs/features/<timestamp>-<slug>/`
 
-The directory is created once at the start of Phase 2 (the first phase that writes feature-specific artifacts) and reused across Phases 2–4. When sub-skills are invoked, pass the directory path so they write into it.
+The directory is created once at the start of Phase 2 (the first phase that writes feature-specific artifacts) and reused across Phases 2–5. When sub-skills are invoked, pass the directory path so they write into it.
 
 ## Testable Interface Thread
 
@@ -67,8 +66,9 @@ Canonical HTML artifacts survive context compaction and can be re-read at any po
 Generate each once, open it through the [review artifact protocol](review-artifact.md), and update the same file after every feedback batch so the browser live-reloads the current artifact.
 Later phases read those HTML files directly and update visible semantic metadata such as task completion status.
 
-`diff-review.html` remains an informational artifact generated after implementation.
-If any workflow asks the user to respond to it, that workflow must open it through `review-artifact`; merely displaying it does not require a review session.
+After implementation, Change review cold-fact-checks both canonical artifacts against final code and Git history, applies factual corrections in place, and confirms that a second clean pass is idempotent.
+It does not generate an automatic `diff-review.html`; `/visualize-diff` remains available standalone.
+The disposable Change review report lives in the operating-system temp directory and is opened through `review-artifact` for the final decision.
 
 ## Cleanup
 

@@ -204,16 +204,11 @@ code { font-family: var(--font-mono); font-size: 0.85em; background: var(--accen
     <thead><tr><th>Step</th><th>Who fixes</th><th>Severity</th></tr></thead>
     <tbody>
       <tr><td><strong>Type check / lint / test / build</strong></td><td>AI guides, user fixes</td><td><span class="must-tag">MUST</span></td></tr>
-      <tr><td><span class="agent-tag">database-reviewer</span></td><td><strong>User fixes</strong> (they own the code)</td><td><span class="cond-tag">CONDITIONAL</span></td></tr>
       <tr><td><span class="agent-tag">refactorer</span> (hygiene mode)</td><td>Engine applies SAFE, user decides CAREFUL/RISKY</td><td><span class="must-tag">MUST</span></td></tr>
-      <tr><td><span class="agent-tag">code-reviewer</span></td><td><strong>User fixes</strong> CRITICAL/HIGH findings</td><td><span class="must-tag">MUST</span></td></tr>
-      <tr><td><span class="agent-tag">doc-updater</span></td><td>AI handles directly</td><td><span class="cond-tag">CONDITIONAL</span></td></tr>
-      <tr><td><span class="agent-tag">fact-checker</span> on spec &amp; tasks</td><td>AI handles directly</td><td><span class="must-tag">MUST</span></td></tr>
-      <tr><td>Refresh <code>specs.html</code> + <code>tasks.html</code></td><td>AI handles directly</td><td><span class="must-tag">MUST</span></td></tr>
-      <tr><td><span class="cmd-tag">/visualize-diff</span> → <code>diff-review.html</code></td><td>AI handles directly</td><td><span class="cond-tag">CONDITIONAL</span></td></tr>
+      <tr><td><span class="cmd-tag">/change-review</span></td><td>User fixes source/test Findings with guidance; AI may handle docs and formatting</td><td><span class="must-tag">MUST</span></td></tr>
     </tbody>
   </table>
-  <p style="margin-top:14px; font-size:0.9rem; color: var(--text-dim);"><strong>Coaching philosophy:</strong> the user owns the implementation code, so anything that requires editing implementation code is on them. Cleanup that doesn't touch implementation logic (visual sync, docs, fact-checking) is AI-driven.</p>
+  <p style="margin-top:14px; font-size:0.9rem; color: var(--text-dim);"><strong>Coaching philosophy:</strong> the user owns source and test repairs through final Change review. SAFE hygiene, documentation, formatting, fact-checking, and visual sync remain AI-driven.</p>
 </div>
 
 <div class="section">

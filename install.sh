@@ -158,6 +158,25 @@ for manifest in "$HARNESSES_DIR"/*/manifest.sh; do
   harness_count=$((harness_count + 1))
 done
 
+# ── Standalone executables (shared tooling — not harness-specific) ──────────
+
+CLI_BIN_DIR="${AI_CONFIG_BIN_DIR:-$HOME/.local/bin}"
+CLI_SOURCE="$REPO_DIR/skills/change-review/bin/change-review.mjs"
+CLI_TARGET="$CLI_BIN_DIR/change-review"
+mkdir -p "$CLI_BIN_DIR"
+if [ -e "$CLI_TARGET" ] || [ -L "$CLI_TARGET" ]; then
+  current_cli_target="$(readlink "$CLI_TARGET" 2>/dev/null || true)"
+  if [ "$current_cli_target" != "$CLI_SOURCE" ] && [ "$INSTALL_FORCE" != true ]; then
+    dim "  $CLI_TARGET — exists, skipping (--force to overwrite)"
+  else
+    ln -sfn "$CLI_SOURCE" "$CLI_TARGET"
+    dim "  $CLI_TARGET → skills/change-review/bin/change-review.mjs"
+  fi
+else
+  ln -s "$CLI_SOURCE" "$CLI_TARGET"
+  dim "  $CLI_TARGET → skills/change-review/bin/change-review.mjs"
+fi
+
 # ── Repository git hook (shared dev tooling — not harness-specific) ──────────
 
 echo ""

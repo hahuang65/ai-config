@@ -111,22 +111,83 @@ Closing or ending the session without approval does not clear a pipeline gate.
 _Avoid_: artifact review, annotation cycle, inline `//` review.
 
 **Pipeline skill**:
-One of the nine skills the `/build` orchestrator drives through its five phases and supporting review workflow — `build`, `grill`, `spec`, `todo`, `code`, `coach`, `review-code`, `visualize`, `review-artifact`.
-Distinct from a **standalone skill** (`refactor`, `handoff`, `pickup`, `prototype`) which is invoked on its own, never orchestrated by `/build`.
-(`review-code` also runs standalone — diff-scoped inside the pipeline, whole-codebase or area-scoped on its own — like `grill`/`spec`/`todo` do.)
+A skill the `/build` orchestrator drives through its five phases and supporting review workflow — `build`, `grill`, `spec`, `todo`, `code`, `coach`, **Change review**, and `review-artifact`.
+Some pipeline skills also run standalone, including `grill`, `spec`, `todo`, and **Change review**.
+Distinct from a **standalone skill** (`refactor`, `review-code`, `handoff`, `pickup`, `prototype`) that `/build` never invokes automatically.
 _Avoid_: phase (a phase is a stage of the pipeline; a pipeline skill is the unit that runs it).
+
+**Authoritative intent**:
+The explicit acceptance context a **Change review** uses to distinguish a defect from a deliberate choice.
+Build mode takes it from approved canonical `specs.html` and `tasks.html`; pull-request mode takes it from the sanitized PR title and body, augmented or overridden by explicit `/change-review` or `change-review --intent` arguments.
+_Avoid_: Diff summary, inferred intent, prompt instructions.
+
+**Finding**:
+A substantiated issue or observation produced by a **Change review**, classified independently by severity (`error`, `warning`, `info`) and action (`auto-fix`, `ask-user`, `no-op`).
+An absent or uncertain action fails closed to `ask-user` so intent-sensitive decisions remain human-owned.
+Severity describes impact: `error` should not merge without repair or override, `warning` may be accepted for follow-up, and `info` records context.
+Action describes who decides next: `auto-fix` is an objective low-risk build repair, `ask-user` needs a human decision, and `no-op` requests no action; standalone reports never mutate from a tag.
+Every reportable Finding has an exact changed `path:line`, uses project terminology, and defines any unavoidable new term.
+_Avoid_: Comment, suggestion, concern.
+
+**Validation evidence**:
+The smallest relevant tests, checks, and reviewer-visible artifacts that substantiate the **Authoritative intent** without repeating a repository-wide suite.
+If focused evidence cannot establish an intent criterion, the **Change review** emits an `ask-user` warning instead of claiming success.
+_Avoid_: Test suite, CI result, confidence.
+
+**Trusted change**:
+A build or local-range change, a remote pull request explicitly trusted by the user or isolated by a documented sandbox, or a pull request whose originating repository has its primary working tree under `~/Projects/a5/`.
+Only a Trusted change may execute local tests, linters, hooks, or package scripts; other remote pull requests remain unmaterialized and use static inspection of immutable Git objects plus provider CI as **Validation evidence**.
+_Avoid_: Same-repository change, disposable worktree, trusted author.
+
+**Change review report**:
+A disposable, self-contained HTML document containing intent, risk, **Findings**, validation evidence, and, in build mode, a persistent decision ledger and complete chat fallback.
+Build mode presents it as a **review artifact** through the interactive **review artifact workflow**, allowing selected repairs and explicit approval after every `ask-user` Finding has a disposition.
+Standalone modes present it as read-only results by opening it once with the platform viewer, without `review-artifact`, feedback polling, or approval.
+It lives in the OS temporary directory, updates in place across build fix rounds, and never becomes a repository artifact.
+_Avoid_: Architecture review report, diff review, build artifact.
+
+**Change reviewer**:
+The read-only adversarial agent that performs a complete review of the current change against **Authoritative intent**.
+Each review round starts fresh with the intent and prior decision ledger, never the **Change fixer** rationale.
+_Avoid_: Code reviewer, architecture reviewer.
+
+**Change fixer**:
+The repair agent that applies selected objective **Findings** within mode ownership without sharing its rationale or session with the **Change reviewer**.
+Build modes may invoke it within their ownership rules; standalone CLI reviews, explicit ranges, and pull requests never do.
+_Avoid_: Reviewer, refactorer.
+
+**Change review**:
+The mandatory final `/build` phase: a fixed validation of a specific change against its **Authoritative intent** through adversarial review, targeted evidence, documentation checks, then lint.
+AI build mode may run up to three automatic fix/recheck rounds per stage; pull requests, explicit branches or local ranges, and standalone CLI reviews report Findings without mutation.
+Coached build mode preserves user ownership of source and tests, applying only documentation and mechanical formatting fixes automatically while guiding the user through source fixes.
+Delivery automation and optional standalone `review-code` architectural exploration remain outside this phase.
+Its terminal decision is presented through a **Change review report**.
+_Avoid_: No-mistakes, code review (too broad), architecture review.
+
+**Change review CLI**:
+The standalone `change-review` executable that runs **Change review** through an isolated foreground pi process without requiring an existing agent session.
+It accepts branch names, local ranges, and pull-request targets read-only and snapshots the current tracked and untracked state into a disposable isolated clone under `~/.review-treehouse/`, separate from development worktrees under `~/.treehouse/`, before launching pi.
+Its CLI-specific pi guard blocks writes within that clone plus staging, commits, pushes, and provider mutations; the original checkout and Git metadata remain outside the child process workspace.
+In a TTY it renders target resolution, isolation, adversarial review, targeted evidence, documentation, lint, report generation, cleanup, and a final Summary stage within the same color-coded full-screen pipeline/log layout with `NO_COLOR` support and navigable bounded and credential-redacted per-stage action and outcome logs.
+The header retains the isolated review worktree path, immutable scope, risk, and open Findings; Resolve target and Create isolation use concise left-pane outcomes without repeating target URLs, workspace/report paths, or snapshot details; Cleanup displays only `Removed`; the parent validates ordered successful telemetry, uses a wide-terminal left-right pipeline/log split, lists each stage purpose and sub-stages vertically in the left pane with a live or completed elapsed timer beside every sub-stage, bounds left-pane sub-stage labels to six words, marks the active sub-stage, lists each concise Finding, missing-evidence item, documentation issue, or similar collected result on its own line without repeating successful completion text, and retains bounded original sub-stage messages as right-pane `STEP` log entries, opens the completed report in a new Firefox window on macOS, or the platform HTML viewer elsewhere, without waiting for browser closure, owns cancellation through final Summary dismissal, and uses `j`/`k` to navigate stages, Ctrl-D/Ctrl-U for selected-log scrolling, Enter to expand or collapse lines, `f` to follow the active stage, and Ctrl-C as the only active-run abort key, and keeps the existing pipeline/log layout while showing the report path plus complete Ctrl-D/Ctrl-U-scrollable parent and assistant summaries in the final stage until Ctrl-C exits the completed review; Ctrl-D remains dedicated to downward scrolling, and `q`, `x`, and Escape do not close it.
+When available, non-interactive `glow` renders that final Markdown at the panel width, forces color when terminal color is enabled, and rerenders it after width changes; a Summary pane narrower than 20 columns or missing, failed, oversized, or timed-out Glow output falls back to the built-in summary renderer.
+It never starts `review-artifact` or waits for approval, emits no duplicate summary into the restored interactive shell, exposes observable activity rather than hidden model reasoning, and falls back to plain status lines plus a textual summary when output is not interactive.
+_Avoid_: no-mistakes remote, delivery gate, pi session.
 
 **Progressive disclosure**:
 The skill-authoring convention where `SKILL.md` is a thin entry point that defers heavy detail to `references/*.md` files read on demand, instead of one monolithic file. Detail used by more than one skill lives in a global `skills/shared/references/` directory and is imported by relative path rather than duplicated (e.g. `spec`/`todo`/`code` read `../shared/references/build-pipeline.md`); detail used by a single skill lives in that skill's own `references/`.
 _Avoid_: lazy loading.
 
 **Feature directory**:
-The per-build-run home for canonical HTML review artifacts: `docs/features/<YYYYMMDD-HHMM>-<slug>/`, holding `specs.html`, `tasks.html`, and `diff-review.html`.
-Project-wide artifacts (`CONTEXT.md`, `docs/adr/`) live at the repo root and accrete across runs.
+The per-build-run home for canonical HTML review artifacts: `docs/features/<YYYYMMDD-HHMM>-<slug>/`, holding `specs.html` and `tasks.html`.
+The **Change review report** is disposable and stays in the operating-system temp directory; project-wide artifacts (`CONTEXT.md`, `docs/adr/`) live at the repo root and accrete across runs.
 _Avoid_: `docs/claude/` (the former Claude-specific name, replaced by the harness-neutral `docs/features/` — see [`adopt-docs-features-over-docs-claude`](docs/adr/0007-adopt-docs-features-over-docs-claude.md)), Markdown companions.
 
 **Hygiene sweep**:
-The automatic, plan-less cleanup of just-changed files — dead code, unused imports and dependencies, duplicate consolidation, simplification, idiom fixes — executed by the `refactorer` agent in hygiene mode. Runs unattended as the single "Refactor" step of the post-implementation review chain, and standalone when `/refactor` is given a vague goal ("clean up X"). SAFE changes are applied directly; CAREFUL/RISKY findings are reported, never auto-applied. Never commits.
+The automatic, plan-less cleanup of just-changed files — dead code, unused imports and dependencies, duplicate consolidation, simplification, idiom fixes — executed by the `refactorer` agent in hygiene mode.
+It closes implementation before Change review and also runs standalone when `/refactor` is given a vague goal ("clean up X").
+SAFE changes are applied directly; CAREFUL/RISKY findings are reported, never auto-applied.
+Never commits.
 _Avoid_: clean up / refactor cleanup (the two former review-chain step names whose overlap this term resolves), `code-cleaner`, `refactor-cleaner` (the retired components it replaces).
 
 **Directed refactor**:

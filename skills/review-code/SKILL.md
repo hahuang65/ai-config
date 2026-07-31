@@ -1,6 +1,6 @@
 ---
 name: review-code
-description: Architectural code review — find deepening opportunities via the architecture-reviewer agent and present them as an HTML report with a grilling loop. Runs as the final step of /build (scoped to ONLY the feature's changes), or standalone — no arguments reviews the entire codebase, arguments name the area to review. Based on Matt Pocock's improve-codebase-architecture skill.
+description: Optional standalone architectural review via the architecture-reviewer agent, rendered as an HTML report through review-artifact with a grilling loop. No arguments reviews the entire codebase; arguments name the area.
 argument-hint: [area or module to review — empty for the entire codebase]
 ---
 
@@ -8,11 +8,13 @@ argument-hint: [area or module to review — empty for the entire codebase]
 
 Surface architectural friction and propose **deepening opportunities** — refactors that turn shallow modules into deep ones. The aim is testability and AI-navigability. This skill is a wrapper: the codebase walking happens in the `architecture-reviewer` agent; the report rendering and the grilling conversation stay here in the main session.
 
-## Scope — determined by how you were invoked
+## Scope
 
-- **From `/build` (the pipeline's final step):** review **ONLY the changes** — the feature's diff against the branch point (`git diff --name-only <branch-point>`), never pre-existing code the feature didn't touch. Pass the changed-file list to the agent.
-- **Standalone, no arguments:** review the **entire codebase**.
-- **Standalone, with arguments:** `$ARGUMENTS` names the area or module to review; resolve it to files/directories and pass that scope to the agent.
+- **No arguments:** review the **entire codebase**.
+- **With arguments:** `$ARGUMENTS` names the area or module to review; resolve it to files/directories and pass that scope to the agent.
+
+This workflow is optional standalone architectural exploration.
+It is never invoked automatically by `/build`; Change review owns that pipeline's final validation gate.
 
 ## Glossary
 
@@ -35,11 +37,9 @@ Key principles (see [language.md](references/language.md) for the full list):
 
 This skill is _informed_ by the project's domain model. The domain language gives names to good seams; ADRs record decisions the skill should not re-litigate.
 
-## Place in the Pipeline
+## Standalone Use
 
-`/review-code` is the **final step of the `/build` pipeline**: after implementation and its review chain complete, `/build` runs this skill scoped to the feature's changes, and the resulting report is where the user decides whether to **commit** the work as-is or act on the review's findings first (via `/refactor` for scoped deepenings, or another `/build` round for interface-changing ones).
-
-It also runs standalone, invoked whenever the user feels architectural friction:
+Invoke `/review-code` whenever the user explicitly wants architectural exploration:
 
 - A sub-system has grown hard to navigate
 - A periodic "architectural health check" (no arguments — entire codebase)
@@ -53,7 +53,7 @@ For surface-level cleanup right after implementation (dead code, unused imports,
 
 Read the project's domain glossary (`CONTEXT.md`) and any ADRs in the area first — their vocabulary and recorded decisions frame the review.
 
-Resolve the scope per the rules above, then run the `architecture-reviewer` agent (via the Agent tool) with: the scope (changed-file list, area files, or "entire codebase"), the relevant `CONTEXT.md` terms, and any ADR numbers in the area. The agent walks the code, applies the **deletion test**, and returns structured candidates (files, problem, solution, benefits, before/after sketch, strength, ADR conflicts). It never edits and never proposes final interfaces — that's the grilling loop's job.
+Resolve the scope per the rules above, then run the `architecture-reviewer` agent (via the Agent tool) with: the scope (area files or "entire codebase"), the relevant `CONTEXT.md` terms, and any ADR numbers in the area. The agent walks the code, applies the **deletion test**, and returns structured candidates (files, problem, solution, benefits, before/after sketch, strength, ADR conflicts). It never edits and never proposes final interfaces — that's the grilling loop's job.
 
 ### 2. Present Candidates as an HTML Report
 
@@ -82,10 +82,7 @@ End the report with a **Top recommendation** section: which candidate you'd tack
 See [html-report.md](references/html-report.md) for the full HTML scaffold, diagram patterns, and styling guidance.
 
 Do NOT propose interfaces yet.
-The report itself carries the decision:
-
-- **From `/build`:** browser approval means commit the feature as-is and ends the pipeline; annotations or messages that choose a candidate enter the grilling loop below.
-- **Standalone:** annotations or messages choose a candidate; approval means no candidate will be explored now.
+The report itself carries the standalone decision: annotations or messages choose a candidate; approval means no candidate will be explored now.
 
 Ending the review without approval is not a decision; fall back to chat rather than inferring one.
 

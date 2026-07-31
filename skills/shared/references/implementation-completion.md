@@ -1,6 +1,6 @@
 # Completion
 
-Shared reference for `code` and `coach`. Run this **after the post-implementation review chain (see [review-chain.md](review-chain.md)) is clean.** The completion is identical for both skills — only *who* did the work differs (the AI in `/code`, the user in `/coach`), so report it accordingly.
+Shared reference for `code` and `coach`. Run this **after post-implementation hygiene (see [implementation-hygiene.md](implementation-hygiene.md)) and full verification are clean.** The completion is identical for both skills — only *who* did the work differs (the AI in `/code`, the user in `/coach`), so report it accordingly.
 
 ## Report
 
@@ -8,13 +8,13 @@ Report what was accomplished this session:
 
 - Slices completed (each criterion and slice visibly complete with `data-status="complete"` in canonical `tasks.html`)
 - Tests added and passing
-- Type check / lint / build ✅
-- Review findings addressed
-- Which canonical or informational HTML artifacts were refreshed (`specs.html`, `tasks.html`, `diff-review.html`)
+- Every final type-check, lint, test, and build command with its exact scope and outcome
+- Hygiene items applied or reported
+- That final documentation, canonical-artifact fact-checking, and the decision report remain owned by Change review in build mode
 
 ## What happens next
 
-- **Inside `/build`:** proceed straight to Phase 5 — `review-code` scoped to ONLY the feature's changes. No gate between implementation and the review; the review report carries the pipeline's final commit-or-iterate decision.
+- **Inside `/build`:** proceed straight to Phase 5 — `change-review` scoped to only the feature change, with canonical `specs.html` and `tasks.html` as Authoritative intent, the implementation mode for repair ownership, and the exact final verification commands, scopes, and outcomes as prior broad evidence that it records without rerunning. No gate sits between implementation and Change review; its report carries the final approve-as-is or fix-selected decision.
 - **Standalone `/code`:** after reporting, add these pointers:
 
 > If you notice structural issues now that the code is done:

@@ -3,6 +3,12 @@ set -euo pipefail
 
 REPO_DIR="$(git rev-parse --show-toplevel)"
 
+# Git exports repository-local variables to hooks, including GIT_INDEX_FILE.
+# Clear them so tests that create nested repositories discover their own state.
+while IFS= read -r variable; do
+  unset "$variable"
+done < <(git rev-parse --local-env-vars)
+
 # Run every check before each commit: content, install, guard, and meta
 # (same as `make test`).
 if [[ -f "$REPO_DIR/Makefile" ]]; then

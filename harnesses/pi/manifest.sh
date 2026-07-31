@@ -54,6 +54,14 @@ install_module() {
   ln -sf "$MOD/extensions/local-models.ts" "$config_root/extensions/local-models.ts"
   dim "  $config_root/extensions/local-models.ts (local model auto-discovery)"
 
+  # Active only inside the standalone Change review CLI process tree.
+  # It blocks structured writes and common mutation commands inside the CLI's
+  # disposable clone, plus Git/provider delivery mutation across the process tree.
+  ln -sf "$MOD/extensions/change-review-guard.ts" "$config_root/extensions/change-review-guard.ts"
+  dim "  $config_root/extensions/change-review-guard.ts (standalone Change review boundary)"
+  ln -sf "$MOD/extensions/change-review-progress.ts" "$config_root/extensions/change-review-progress.ts"
+  dim "  $config_root/extensions/change-review-progress.ts (standalone Change review TUI telemetry)"
+
   # Subagent extension — ships as an example with pi. Symlinked if present;
   # skipped gracefully on a system where pi is not installed. Resolves the
   # subagent path dynamically from the pi binary's real location rather than
@@ -87,8 +95,14 @@ install_module() {
   if [ -n "$pi_subagent_src" ] && [ -d "$pi_subagent_src" ]; then
     mkdir -p "$config_root/extensions/subagent"
     ln -sf "$pi_subagent_src/index.ts" "$config_root/extensions/subagent/index.ts"
-    ln -sf "$pi_subagent_src/agents.ts" "$config_root/extensions/subagent/agents.ts"
-    dim "  $config_root/extensions/subagent/ (subagent extension)"
+    # Keep the upstream runner but adapt agent discovery locally: shared agent
+    # frontmatter uses YAML tool arrays for Claude compatibility, while pi's
+    # example parser accepts only comma-separated strings. The adapter handles
+    # both and maps Claude's Glob tool to pi's find tool.
+    ln -sf "$MOD/extensions/subagent/agents.ts" "$config_root/extensions/subagent/agents.ts"
+    ln -sf "$MOD/extensions/subagent/tool-names.ts" "$config_root/extensions/subagent/tool-names.ts"
+    ln -sf "$MOD/extensions/subagent/model-selection.ts" "$config_root/extensions/subagent/model-selection.ts"
+    dim "  $config_root/extensions/subagent/ (subagent extension + shared-agent adapter)"
 
     # Workflow prompt templates (e.g. /implement, /scout-and-plan)
     if [ -d "$pi_subagent_src/prompts" ]; then

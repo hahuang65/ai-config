@@ -1,8 +1,9 @@
 # Example: /build Artifacts
 
-Sample artifacts from a complete `/build` run. The example feature is **customer-facing order placement with idempotency, order history, cancellation, and at-least-once event emission for downstream consumers**.
+Historical sample artifacts from a complete `/build` run that predates the current five-phase pipeline.
+The example feature is **customer-facing order placement with idempotency, order history, cancellation, and at-least-once event emission for downstream consumers**.
 
-The example walks through every artifact the new pipeline produces:
+The tree preserves every artifact the former pipeline produced; the current-pipeline comparison follows it:
 
 ```
 example/
@@ -13,20 +14,20 @@ example/
 │   │   ├── 0001-idempotency-key-storage.md
 │   │   ├── 0002-linear-order-state-machine.md
 │   │   └── 0003-at-least-once-event-delivery.md
-│   └── claude/
+│   └── features/
 │       └── 20260516-1430-order-placement/
 │           ├── prd.md                  # Phase 2 — PRD (user stories + decisions)
 │           ├── prd.html                # Phase 2 — visual companion
 │           ├── tasks.md                # Phase 3 — vertical-slice tracer bullets
 │           ├── tasks.html              # Phase 3 — visual companion
-│           └── diff-review.html        # Phase 4 — post-implementation review
+│           └── diff-review.html        # Legacy Phase 4 review artifact
 └── README.md                           # this file
 ```
 
 
-> **Naming note:** this example was generated before the `prd` skill was renamed to `spec` — its artifacts keep their original `prd.md` / `prd.html` filenames as a historical record. The pipeline now writes `spec.md` / `spec.html`.
+> **Naming note:** this example was generated before the `prd` skill was renamed to `spec` — its artifacts keep their original `prd.md` / `prd.html` filenames as a historical record. The current pipeline writes canonical `specs.html` with no Markdown companion.
 
-## Pipeline Overview
+## Historical Pipeline Overview
 
 ```
 /build "Add customer-facing order placement"
@@ -39,6 +40,16 @@ Phase 3: /todo     → tasks.md + tasks.html
                        (↻ quiz-the-user cycles)
 Phase 4: /code → code + diff-review.html
         (vertical-slice TDD, one slice at a time)
+```
+
+The current pipeline instead ends implementation after full verification and hygiene, then runs the mandatory Change review gate:
+
+```
+Phase 1: /grill         → CONTEXT.md + ADRs
+Phase 2: /spec          → canonical specs.html + review-artifact approval
+Phase 3: /todo          → canonical tasks.html + review-artifact approval
+Phase 4: /code|/coach   → vertical-slice TDD + verification + hygiene
+Phase 5: /change-review → adversarial review + evidence + docs + lint + final report
 ```
 
 ## Phase 1: Grill — Domain Modeling
@@ -82,13 +93,13 @@ Implementation walks through the slices one at a time using strict red-green-ref
 |------|-------------|
 | [diff-review.html](https://hahuang65.github.io/ai-config/example/docs/features/20260516-1430-order-placement/diff-review.html) | Post-implementation visual: executive summary, KPI dashboard (6/6 slices complete, 47 tests added, 94% coverage), slice completion status, file-by-file changes, code review findings (Good / Fixed-before-merge / Tracked follow-ups), decision log, re-entry context. |
 
-The implementation phase also runs the `fact-checker` agent on `prd.md` and `tasks.md`, refreshes `prd.html` and `tasks.html`, and runs the multi-agent verification stack (`tdd-guide`, `database-reviewer`, `refactorer` in hygiene mode, `code-reviewer`, `doc-updater`). The agent **never** runs `git commit` — the user reviews the final state and commits when ready.
+This legacy example predates Change review and shows the former implementation-owned review artifact. The current pipeline keeps TDD, full verification, and the `refactorer` hygiene sweep in implementation, then delegates final validation and artifact synchronization to Change review. The agent **never** runs `git commit` — the user reviews the final state and commits when ready.
 
 ## Key Conventions
 
-- **Repo-root vs per-feature**: `CONTEXT.md` and `docs/adr/` live at the repo root and accrete across many `/build` runs. Per-feature artifacts (spec, tasks, diff review) live under `docs/features/<YYYYMMDD-HHMM>-<slug>/`.
-- **Companion naming**: HTML files share the base name of their markdown counterpart (`spec.md` → `spec.html`, `tasks.md` → `tasks.html`; `prd.*` in this example reflects the pre-rename naming).
-- **Visual sync guarantee**: whenever a markdown file changes — annotations, corrections, any update — the HTML companion is regenerated *before* proceeding to the next step.
+- **Repo-root vs per-feature**: `CONTEXT.md` and `docs/adr/` live at the repo root and accrete across many `/build` runs. Current per-feature spec and task artifacts live under `docs/features/<YYYYMMDD-HHMM>-<slug>/`; the archived example also contains the former diff review.
+- **Legacy companion naming**: this archived example pairs Markdown with HTML (`prd.md` → `prd.html`, `tasks.md` → `tasks.html`). The current pipeline uses canonical `specs.html` and `tasks.html` without Markdown companions.
+- **Canonical sync**: Change review cold-fact-checks the final canonical HTML in place. The archived artifacts reflect the older companion-regeneration behavior.
 - **No code in the PRD**: code snippets and file paths go stale; the PRD is durable spec. Narrow exception: decision-rich snippets (state machines, schemas) may be inlined when prose can't carry the precision.
 - **Vertical, never horizontal**: every task slice cuts through every layer end-to-end and is demoable on its own. Many thin slices beat few thick ones.
 - **CONTEXT.md vocabulary everywhere**: terms resolved during grill appear unchanged in the PRD, tasks, test names, and code identifiers.

@@ -30,6 +30,8 @@
   --tasks-dim: rgba(217, 119, 6, 0.10);
   --implement: #059669;
   --implement-dim: rgba(5, 150, 105, 0.10);
+  --review: #be123c;
+  --review-dim: rgba(190, 18, 60, 0.10);
   --must: #be123c;
   --must-dim: rgba(190, 18, 60, 0.10);
   --grid: rgba(30, 58, 95, 0.04);
@@ -55,6 +57,8 @@
     --tasks-dim: rgba(251, 191, 36, 0.10);
     --implement: #34d399;
     --implement-dim: rgba(52, 211, 153, 0.12);
+    --review: #fb7185;
+    --review-dim: rgba(251, 113, 133, 0.12);
     --must: #fb7185;
     --must-dim: rgba(251, 113, 133, 0.12);
     --grid: rgba(91, 140, 201, 0.04);
@@ -71,7 +75,7 @@ body {
 }
 .container { max-width: 1180px; margin: 0 auto; padding: 40px 24px 80px; }
 .header { text-align: center; padding: 48px 24px 40px; margin-bottom: 48px; background: var(--surface); border: 1px solid var(--border-bright); border-radius: 12px; position: relative; overflow: hidden; }
-.header::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; background: linear-gradient(90deg, var(--grill), var(--specs), var(--tasks), var(--implement)); }
+.header::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; background: linear-gradient(90deg, var(--grill), var(--specs), var(--tasks), var(--implement), var(--review)); }
 .header h1 { font-family: var(--font-mono); font-size: clamp(1.6rem, 4vw, 2.4rem); font-weight: 700; letter-spacing: -0.02em; margin-bottom: 8px; }
 .header h1 span { color: var(--gold); }
 .header .subtitle { font-size: 1rem; color: var(--text-dim); max-width: 620px; margin: 0 auto 32px; }
@@ -81,6 +85,7 @@ body {
 .phase-pill.specs { background: var(--specs-dim); border-color: var(--specs); color: var(--specs); }
 .phase-pill.tasks { background: var(--tasks-dim); border-color: var(--tasks); color: var(--tasks); }
 .phase-pill.implement { background: var(--implement-dim); border-color: var(--implement); color: var(--implement); }
+.phase-pill.review { background: var(--review-dim); border-color: var(--review); color: var(--review); }
 .phase-arrow { font-size: 1.1rem; color: var(--text-dim); padding: 0 8px; }
 .phase-num { display: inline-flex; align-items: center; justify-content: center; width: 20px; height: 20px; border-radius: 50%; font-size: 0.66rem; font-weight: 700; background: currentColor; }
 .phase-num span { color: var(--surface); }
@@ -94,12 +99,14 @@ body {
 .card.specs { border-left-color: var(--specs); }
 .card.tasks { border-left-color: var(--tasks); }
 .card.implement { border-left-color: var(--implement); }
+.card.review { border-left-color: var(--review); }
 .card h3 { font-family: var(--font-mono); font-size: 0.95rem; font-weight: 700; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
 .card h3 .badge { font-size: 0.7rem; padding: 2px 8px; border-radius: 4px; font-weight: 600; }
 .card.grill h3 .badge { background: var(--grill-dim); color: var(--grill); }
 .card.specs h3 .badge { background: var(--specs-dim); color: var(--specs); }
 .card.tasks h3 .badge { background: var(--tasks-dim); color: var(--tasks); }
 .card.implement h3 .badge { background: var(--implement-dim); color: var(--implement); }
+.card.review h3 .badge { background: var(--review-dim); color: var(--review); }
 .card p { font-size: 0.9rem; color: var(--text); margin-bottom: 12px; }
 .card ul { list-style: none; padding: 0; font-size: 0.85rem; }
 .card li { padding: 4px 0; padding-left: 16px; position: relative; color: var(--text-dim); }
@@ -125,7 +132,7 @@ code { font-family: var(--font-mono); font-size: 0.85em; background: var(--accen
 
 <div class="header">
   <h1><span>/</span>build pipeline</h1>
-  <p class="subtitle">Four-phase feature workflow combining grill (domain modeling), spec synthesis, vertical-slice tasks, and TDD implementation. Based on Matt Pocock's skills-TDD pipeline.</p>
+  <p class="subtitle">Five-phase workflow combining domain modeling, canonical HTML artifacts, vertical-slice TDD, and intent-aware Change review.</p>
   <div class="phase-flow">
     <span class="phase-pill grill"><span class="phase-num"><span>1</span></span> grill</span>
     <span class="phase-arrow">→</span>
@@ -134,11 +141,13 @@ code { font-family: var(--font-mono); font-size: 0.85em; background: var(--accen
     <span class="phase-pill tasks"><span class="phase-num"><span>3</span></span> tasks</span>
     <span class="phase-arrow">→</span>
     <span class="phase-pill implement"><span class="phase-num"><span>4</span></span> implement</span>
+    <span class="phase-arrow">→</span>
+    <span class="phase-pill review"><span class="phase-num"><span>5</span></span> change review</span>
   </div>
 </div>
 
 <div class="section">
-  <div class="section-title"><span class="num">01</span>The Four Phases</div>
+  <div class="section-title"><span class="num">01</span>The Five Phases</div>
   <div class="card-grid">
 
     <div class="card grill">
@@ -189,12 +198,24 @@ code { font-family: var(--font-mono); font-size: 0.85em; background: var(--accen
         <li>For each slice: confirm interface → RED→GREEN per criterion → refactor</li>
         <li>Tests describe behavior through the spec/task public interface, not implementation</li>
         <li>Verification loop: type check, lint, test, build</li>
-        <li>Agents: <span class="agent-tag">tdd-guide</span> <span class="agent-tag">database-reviewer</span> <span class="agent-tag">refactorer</span> (hygiene mode) <span class="agent-tag">code-reviewer</span> <span class="agent-tag">doc-updater</span></li>
-        <li>Runs the <span class="agent-tag">fact-checker</span> skill + <span class="cmd-tag">/visualize-diff</span></li>
+        <li>Agents: <span class="agent-tag">tdd-guide</span> and <span class="agent-tag">refactorer</span> (hygiene mode)</li>
         <li>Coach variant: AI writes ONE test, user implements, AI verifies</li>
-        <li>Phase 5 closes the pipeline: <span class="cmd-tag">review-code</span> runs the <span class="agent-tag">architecture-reviewer</span> agent on ONLY the feature's changes — the report is where the user decides commit-or-iterate</li>
       </ul>
-      <div class="out"><strong>Output:</strong> code + <code>diff-review.html</code></div>
+      <div class="out"><strong>Output:</strong> verified code ready for final validation</div>
+    </div>
+
+    <div class="card review">
+      <h3>change review <span class="badge">opus · final gate</span></h3>
+      <p>Validates the complete feature change against canonical approved intent rather than searching for optional redesign.</p>
+      <ul>
+        <li>Fresh adversarial reviewer evaluates the full feature diff</li>
+        <li>Runs targeted evidence, documentation checks, and lint in fixed order</li>
+        <li>Fact-checks canonical <code>specs.html</code> and <code>tasks.html</code> in place</li>
+        <li>Presents Findings with independent severity and action</li>
+        <li>Opens the final report through <code>review-artifact</code></li>
+        <li><span class="cmd-tag">review-code</span> remains optional standalone architecture exploration</li>
+      </ul>
+      <div class="out"><strong>Output:</strong> disposable decision report + Review-to-done approval</div>
     </div>
 
   </div>
@@ -210,9 +231,8 @@ code { font-family: var(--font-mono); font-size: 0.85em; background: var(--accen
 │   │   └── 0002-postgres-for-write-model.md
 │   └── features/
 │       └── &lt;YYYYMMDD-HHMM&gt;-&lt;slug&gt;/
-│           ├── specs.html         Phase 2 — canonical spec
-│           ├── tasks.html         Phase 3 — canonical vertical slices
-│           └── diff-review.html   Phase 4 — informational diff review</div>
+│           ├── specs.html         Phase 2 — canonical spec and build intent
+│           └── tasks.html         Phase 3 — canonical slices and completion state</div>
   <div class="callout">
     <strong>Lifespan:</strong> <code>CONTEXT.md</code> and <code>docs/adr/</code> live at the repo root and accrete across many <code>/build</code> runs. Per-feature artifacts are scoped to one slug-directory and can be kept, deleted, or <code>.gitignore</code>d.
   </div>
@@ -226,9 +246,10 @@ code { font-family: var(--font-mono); font-size: 0.85em; background: var(--accen
       <tr><td>after <code>/grill</code></td><td>any go-ahead to draft the spec</td><td><span class="stop">STOP</span> until the user confirms</td></tr>
       <tr><td>after <code>/spec</code></td><td>explicit <code>review-artifact</code> approval or chat fallback</td><td><span class="stop">STOP</span> until canonical <code>specs.html</code> is approved</td></tr>
       <tr><td>after <code>/todo</code></td><td>explicit <code>review-artifact</code> approval or chat fallback</td><td><span class="stop">STOP</span> until canonical <code>tasks.html</code> is approved and implementation mode is known</td></tr>
+      <tr><td>after <code>/change-review</code></td><td>explicit report approval after every ask-user disposition</td><td><span class="stop">STOP</span> until the Review-to-done decision is submitted</td></tr>
     </tbody>
   </table>
-  <p style="margin-top:14px; font-size:0.9rem; color: var(--text-dim);">The orchestrator never advances autonomously. Each gate exists so the user injects judgment — domain corrections during grill, scope cuts during spec, granularity during tasks.</p>
+  <p style="margin-top:14px; font-size:0.9rem; color: var(--text-dim);">The orchestrator never crosses an approval gate autonomously. Verified implementation advances directly from Phase 4 into Phase 5; every listed gate still requires the user's judgment.</p>
 </div>
 
 <div class="section">
@@ -243,7 +264,7 @@ code { font-family: var(--font-mono); font-size: 0.85em; background: var(--accen
 <div class="section">
   <div class="section-title"><span class="num">05</span>Canonical HTML Sync</div>
   <p style="font-size: 0.95rem; margin-bottom: 14px;"><code>specs.html</code> and <code>tasks.html</code> are durable sources, not visual companions. Every feedback batch updates the same semantic HTML so the browser never intentionally lags.</p>
-  <p style="font-size: 0.9rem; color: var(--text-dim);">If browser review cannot start, the phase falls back to chat while preserving explicit approval semantics.</p>
+  <p style="font-size: 0.9rem; color: var(--text-dim);">Phase 5 cold-fact-checks those same files against final code, confirms idempotence, and opens its disposable decision report through <code>review-artifact</code>. Browser failure falls back to chat without weakening explicit approval.</p>
 </div>
 
 <div class="section">
@@ -256,6 +277,8 @@ code { font-family: var(--font-mono); font-size: 0.85em; background: var(--accen
       <tr><td><span class="cmd-tag">/todo</span></td><td>Break an existing spec into vertical slices</td><td>Phase 3</td></tr>
       <tr><td><span class="cmd-tag">/code</span></td><td>Execute existing canonical tasks.html (AI)</td><td>Phase 4a</td></tr>
       <tr><td><span class="cmd-tag">/coach</span></td><td>Execute existing canonical tasks.html (you write code)</td><td>Phase 4b</td></tr>
+      <tr><td><span class="cmd-tag">/change-review</span></td><td>Read-only PR, local-range, or isolated CLI review with HTML and terminal output</td><td>Phase 5</td></tr>
+      <tr><td><span class="cmd-tag">/review-code</span></td><td>Optional architecture exploration</td><td>Not automatic</td></tr>
     </tbody>
   </table>
 </div>

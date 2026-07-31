@@ -1,6 +1,6 @@
 ---
 name: refactorer
-description: The single engine for behavior-preserving code change. Plan mode executes an approved transformation plan (extract, inline, move, rename, restructure, decouple) with incremental test verification. Hygiene mode sweeps changed files with no plan — dead code, unused imports and dependencies, duplicate consolidation, simplification. Use via the refactor skill or the review chain's Refactor step.
+description: The single engine for behavior-preserving code change. Plan mode executes an approved transformation plan with incremental test verification. Hygiene mode sweeps changed files for dead code, unused dependencies, duplication, and simplification. Use via refactor or post-implementation hygiene.
 tools: ["Read", "Write", "Edit", "Bash", "Grep", "Glob"]
 model: sonnet
 ---

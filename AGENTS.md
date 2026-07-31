@@ -50,6 +50,9 @@ activates, so keep it thin and defer detail to references read on demand
 - If a skill has a human `guide.html`, keep it consistent with `SKILL.md`.
 - Feature artifacts live in `docs/features/<YYYYMMDD-HHMM>-<slug>/` — never
   `docs/claude/` (harness-neutral; ADR-0007).
+- Artifacts that require pipeline feedback or approval are canonical semantic
+  HTML reviewed through `review-artifact`; do not add Markdown companions or
+  hidden duplicate models (ADR-0018).
 
 ## Which primitive, and which harnesses consume it
 
@@ -59,11 +62,12 @@ activates, so keep it thin and defer detail to references read on demand
 | **Command** | `commands/<name>.md` | `~/.claude/commands` (deduped against skills) | not consumed |
 | **Agent** | `agents/<name>.md` | `~/.claude/agents` | `~/.pi/agent/agents` |
 | **Rule** | `rules/<name>.md` | canonical source (on demand) | canonical source (on demand) |
+| **Standalone CLI** | `skills/<name>/bin/` | harness-independent | harness-independent |
 
 Implications:
 
 - **Skills** and **agents** reach both harnesses, so choose by *nature*, not coverage: a **skill** is a workflow the main session follows; an **agent** is a spawned sub-task invoked via the harness's subagent tool.
-  The review chain uses agents (`code-reviewer`, `database-reviewer`, `refactorer` in hygiene mode, `doc-updater`, `fact-checker`).
+  Change review separates the read-only `change-reviewer` from the mutating `change-fixer`, consults `database-reviewer` conditionally, and uses `fact-checker` for build artifacts; implementation owns only the `refactorer` hygiene sweep.
 - `commands/` is a Claude Code slash-command concept that pi does not consume.
   A thin command for an existing skill should just say *"Load the `<skill>` skill, then …: `$ARGUMENTS`"*.
 - **Do not shadow a Claude built-in.** `/simplify` and `/fact-check` are
@@ -72,6 +76,9 @@ Implications:
   (not `fact-check`).
 - Reference another skill's assets by relative path
   (`../<skill>/references/<file>.md`); the gate resolves these links.
+- A standalone executable that drives a skill lives with that skill, reuses its
+  canonical workflow, and is linked into `~/.local/bin/` by `install.sh`.
+  It must not fork a second copy of the workflow contract.
 
 ## Rules are advisory; guardrails are enforced
 

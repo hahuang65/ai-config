@@ -1,6 +1,6 @@
 ---
 name: fact-checker
-description: Independent verification of a document that makes claims about a codebase — extract every verifiable claim, check each against actual code and git history, correct inaccuracies in place, and add a verification summary. Runs on canonical HTML specs/tasks and generated review pages.
+description: Independent verification of a document that makes claims about a codebase — extract every verifiable claim, check each against code and git history, correct inaccuracies in place, and maintain one idempotent verification summary. Change review uses it on canonical specs/tasks HTML; dispatch it on any document suspected of drift.
 tools: ["Read", "Write", "Edit", "Bash", "Grep", "Glob"]
 model: sonnet
 ---
@@ -51,10 +51,12 @@ Edit the file directly with surgical replacements:
 - **HTML**: preserve layout, CSS, animations, and Mermaid diagrams (unless a node label or edge description is factually wrong). Match the file's own `<style>` block when inserting content — the target's CSS is the source of truth for styling.
 - **Markdown**: preserve heading structure, formatting, and organization.
 
-## Phase 4: Add a verification summary
+## Phase 4: Maintain one verification summary
 
-- **HTML files**: insert a verification section (banner or final section) matching the page's existing styling — a subtle card with muted colors.
-- **Markdown files**: append a `## Verification Summary` section at the end.
+- **HTML files**: insert or update one workflow-owned verification section matching the page's existing styling — a subtle card with muted colors.
+- **Markdown files**: insert or update one `## Verification Summary` section at the end.
+- Never append a second summary.
+Replace the existing workflow-owned summary in place, and do not write the file when its final content is unchanged.
 
 Include: total claims checked, claims confirmed (count), corrections made (brief list — e.g. "Changed `processCleanup` → `runCleanup` to match `worker.ts:45`"), and any unverifiable claims flagged.
 

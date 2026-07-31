@@ -1,0 +1,27 @@
+# Run standalone Change review through pi
+
+Change review must be executable outside an active agent session without creating a second validation implementation that can drift from the skill.
+The standalone `change-review` executable therefore launches an isolated foreground `pi` process, loads the canonical Change review skill, and carries target and intent as inert acceptance data.
+Every CLI invocation resolves its pull request or freezes its explicit branch or local range against the source repository before running read-only inside a disposable isolated clone containing tracked and untracked working state, with a disabled push URL and path-scoped cleanup.
+Review-owned clones and worktrees live under `~/.review-treehouse/`, keeping them distinct from development worktrees under `~/.treehouse/`.
+Branch targets derive a merge base from a non-self upstream or repository default branch and freeze both ends to immutable commit objects before isolation.
+A CLI-specific pi guard blocks structured writes and common mutation commands inside the clone plus staging, commits, pushes, and provider mutation, while mandatory Change review subagents inherit the CLI-selected model.
+The only writable tool path is a dedicated report directory whose resolved location is validated not to overlap the source checkout or clone.
+The CLI retains the skill's disposable HTML report, separately copyable pull-request general and inline Finding comments, and terminal summary rather than creating a second report format.
+The parent consumes pi's JSON event stream and renders a full-screen TTY with a wide-terminal left-right pipeline/log split, a stacked narrow fallback, and a bounded tiny-terminal fallback.
+A gate-only pi extension supplies explicit stage transitions, while ordinary tool events supply sanitized per-stage action, duration, and outcome logs without exposing chain-of-thought.
+The parent accepts transitions only after successful telemetry-tool completion, enforces the fixed stage order, requires at least one observable sub-stage before successful stage completion, bounds and redacts result evidence, and fails closed on missing or invalid telemetry.
+Every left-pane pipeline stage displays its purpose and recorded sub-stages vertically with a live or completed elapsed timer beside each one, bounds each displayed sub-stage to six words, and marks the active sub-stage as operational intent; the selected right-pane log retains each bounded original sub-stage as a `STEP` entry, and adversarial review separately announces scope and intent setup, fresh reviewer dispatch, coverage checking, and Finding/risk normalization.
+Collected Findings, missing evidence, documentation issues, and similar results use one concise telemetry log and one sidebar line per item beneath the owning sub-stage; successful completion text remains in the stage log and is not duplicated in the sidebar.
+The header retains the isolated review worktree path with immutable scope, risk, and open Findings.
+Resolve target and Create isolation use concise left-pane outcomes; target URLs, workspace/report paths, and snapshot details remain in the header or selected-stage log rather than being duplicated below those stages.
+Cleanup displays only `Removed` because the header already retains its worktree path.
+It owns cancellation from terminal setup through final Summary dismissal, propagates one AbortSignal into setup subprocesses, dismisses the final view through normal teardown on an external signal, restores terminal state on interruption, and always emits a parent summary even when no assistant summary exists.
+After successful report generation, the parent validates that the dedicated report root contains one HTML report, activates Firefox and opens its `file:` URL through a macOS Apple event, or uses the platform HTML viewer elsewhere, without waiting for browser closure, and includes its retained path in the final summary.
+Standalone execution never invokes `review-artifact`, foreground-polls browser feedback, or waits for approval; those semantics remain build-mode concerns.
+After cleanup in a TTY, the parent renders final Markdown through bounded non-interactive Glow when available, forces color when terminal color is enabled, rerenders it at changed terminal widths, uses monochrome output under `NO_COLOR`, and falls back to the built-in renderer when the Summary pane is narrower than 20 columns or Glow is missing, fails, times out, or exceeds its output bound.
+It uses Vim-style `j`/`k` stage navigation, Ctrl-D/Ctrl-U scrolling within the selected log, Enter to expand or collapse lines, and `f` to resume following the active stage.
+Ctrl-C is the only active-run abort key, and no single-character key aborts or closes the review.
+It selects a final Summary stage containing that output and the retained report path in the existing pipeline/log layout rather than switching to a full-screen summary, supports Ctrl-U upward scrolling and Ctrl-D downward scrolling, and uses Ctrl-C to exit once the review is no longer running; `q`, `x`, and Escape do not dismiss the final stage.
+Dismissal removes the data listener, restores raw mode and the alternate screen, and pauses stdin so the process exits instead of retaining a flowing terminal handle; the parent does not duplicate the summary into the shell.
+Non-TTY output falls back to plain status lines, and the parent and assistant summaries remain normal standard output.
