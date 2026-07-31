@@ -1,9 +1,11 @@
 (() => {
   "use strict";
 
+  const DEFAULT_THEME = "catppuccin-mocha";
   const session = JSON.parse(document.getElementById("review-session").textContent);
   const artifact = document.getElementById("artifact");
   const modeButton = document.getElementById("mode");
+  const themeSelect = document.getElementById("theme");
   const presence = document.getElementById("presence");
   const messageInput = document.getElementById("message");
   const queuedContainer = document.getElementById("queued");
@@ -16,9 +18,33 @@
   const layoutGateCopy = document.getElementById("layout-gate-copy");
   const showAnywayButton = document.getElementById("show-anyway");
   const storageKey = `review-artifact:${session.key}:queued`;
+  const themeStorageKey = "review-artifact:theme";
+  const supportedThemes = new Set([...themeSelect.options].map((option) => option.value));
   let annotationMode = true;
   let queued = readQueue();
   let pendingAction = "feedback";
+  applyTheme(readTheme(), { persist: false });
+
+  function readTheme() {
+    try {
+      const storedTheme = localStorage.getItem(themeStorageKey);
+      return supportedThemes.has(storedTheme) ? storedTheme : DEFAULT_THEME;
+    } catch {
+      return DEFAULT_THEME;
+    }
+  }
+
+  function applyTheme(theme, { persist = true } = {}) {
+    const selectedTheme = supportedThemes.has(theme) ? theme : DEFAULT_THEME;
+    document.documentElement.dataset.theme = selectedTheme;
+    themeSelect.value = selectedTheme;
+    if (!persist) return;
+    try {
+      localStorage.setItem(themeStorageKey, selectedTheme);
+    } catch {
+      // Theme persistence is optional when browser storage is unavailable.
+    }
+  }
 
   function readQueue() {
     try {
@@ -203,6 +229,7 @@
     modeButton.textContent = annotationMode ? "Annotate" : "Explore";
     artifact.contentWindow?.postMessage({ type: "review:set-mode", enabled: annotationMode }, "*");
   });
+  themeSelect.addEventListener("change", () => applyTheme(themeSelect.value));
   sendButton.addEventListener("click", () => requestSnapshot("feedback"));
   showAnywayButton.addEventListener("click", () => { layoutGate.hidden = true; });
   approveButton.addEventListener("click", () => requestSnapshot("approve"));

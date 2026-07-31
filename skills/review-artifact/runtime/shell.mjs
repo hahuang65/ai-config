@@ -13,6 +13,17 @@ export function renderReviewShell(session) {
 <body>
   <header class="toolbar">
     <strong>Review Artifact</strong>
+    <label class="theme-control" for="theme">
+      <span>Theme</span>
+      <select id="theme" name="theme" aria-label="Review theme">
+        <option value="catppuccin-mocha" selected>Catppuccin Mocha</option>
+        <option value="catppuccin-latte">Catppuccin Latte</option>
+        <option value="dracula">Dracula</option>
+        <option value="nord">Nord</option>
+        <option value="tokyo-night">Tokyo Night</option>
+        <option value="gruvbox-dark">Gruvbox Dark</option>
+      </select>
+    </label>
     <span id="presence" aria-live="polite">Agent not listening</span>
     <button id="mode" type="button" aria-pressed="true">Annotate</button>
   </header>

@@ -257,6 +257,36 @@ describe("review server", () => {
     expect(shell).toContain('aria-live="polite"');
   });
 
+  test("defaults to Catppuccin Mocha and offers persistent theme choices", async () => {
+    const directory = await mkdtemp(path.join(tmpdir(), "review-artifact-"));
+    const artifact = path.join(directory, "specs.html");
+    await writeFile(artifact, "<!doctype html><main>Theme me</main>");
+    const server = await startReviewServer({ port: 0, stateFile: path.join(directory, "state.json") });
+    servers.push(server);
+    const created = await fetch(`${server.baseUrl}/api/sessions`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ file: artifact }),
+    }).then((response) => response.json());
+
+    const [shell, shellClient, shellCss] = await Promise.all([
+      fetch(created.url).then((response) => response.text()),
+      fetch(`${server.baseUrl}/shell.js`).then((response) => response.text()),
+      fetch(`${server.baseUrl}/shell.css`).then((response) => response.text()),
+    ]);
+
+    expect(shell).toContain('<select id="theme"');
+    expect(shell).toContain('<option value="catppuccin-mocha" selected>Catppuccin Mocha</option>');
+    expect(shell).toContain('<option value="dracula">Dracula</option>');
+    expect(shell).toContain('<option value="nord">Nord</option>');
+    expect(shell).toContain('<option value="tokyo-night">Tokyo Night</option>');
+    expect(shell).toContain('<option value="gruvbox-dark">Gruvbox Dark</option>');
+    expect(shellCss).toContain(':root[data-theme="catppuccin-mocha"]');
+    expect(shellCss).toContain(':root[data-theme="catppuccin-latte"]');
+    expect(shellClient).toContain('localStorage.getItem(themeStorageKey)');
+    expect(shellClient).toContain('document.documentElement.dataset.theme');
+  });
+
   test("serves the browser assets used by the review shell and artifact bridge", async () => {
     const directory = await mkdtemp(path.join(tmpdir(), "review-artifact-"));
     const server = await startReviewServer({ port: 0, stateFile: path.join(directory, "state.json") });
