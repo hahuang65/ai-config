@@ -273,6 +273,34 @@ describe("review server", () => {
     expect(shellCss).toContain(".conversation");
   });
 
+  test("keeps the desktop panes bounded while scaling the conversation width", async () => {
+    const directory = await mkdtemp(path.join(tmpdir(), "review-artifact-"));
+    const server = await startReviewServer({ port: 0, stateFile: path.join(directory, "state.json") });
+    servers.push(server);
+
+    const shellCss = await fetch(`${server.baseUrl}/shell.css`).then((response) => response.text());
+
+    expect(shellCss).toContain("grid-template-columns: minmax(0, 1fr) clamp(300px, 32vw, 520px)");
+    expect(shellCss).toContain("grid-template-rows: minmax(0, 1fr)");
+    expect(shellCss).toContain("#messages { min-height: 0; overflow-y: auto");
+  });
+
+  test("links annotation messages to artifact elements through the locate protocol", async () => {
+    const directory = await mkdtemp(path.join(tmpdir(), "review-artifact-"));
+    const server = await startReviewServer({ port: 0, stateFile: path.join(directory, "state.json") });
+    servers.push(server);
+
+    const [bridge, shellClient] = await Promise.all([
+      fetch(`${server.baseUrl}/bridge.js`).then((response) => response.text()),
+      fetch(`${server.baseUrl}/shell.js`).then((response) => response.text()),
+    ]);
+
+    expect(shellClient).toContain("annotation-badge");
+    expect(shellClient).toContain('type: "review:locate"');
+    expect(bridge).toContain('type === "review:locate"');
+    expect(bridge).toContain("review:locate-result");
+  });
+
   test("serves sibling assets while confining reads to the artifact directory", async () => {
     const directory = await mkdtemp(path.join(tmpdir(), "review-artifact-"));
     const artifactDirectory = path.join(directory, "artifact");

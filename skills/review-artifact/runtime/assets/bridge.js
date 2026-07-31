@@ -3,6 +3,7 @@
 
   let annotationMode = true;
   let hovered = null;
+  let locateTarget = null;
   let cardHost = null;
   let returnFocus = null;
   const ids = new WeakMap();
@@ -66,6 +67,42 @@
     if (!element) return;
     element.style.outline = "";
     element.style.outlineOffset = "";
+  }
+
+  function flashElement(element) {
+    const originalOutline = element.style.outline;
+    const originalOffset = element.style.outlineOffset;
+    element.style.outline = "3px solid #d17a4d";
+    element.style.outlineOffset = "3px";
+    setTimeout(() => {
+      element.style.outline = originalOutline;
+      element.style.outlineOffset = originalOffset;
+    }, 1600);
+  }
+
+  function locateInArtifact(message) {
+    clearHighlight(locateTarget);
+    locateTarget = null;
+    let element = null;
+    if (message.selector) {
+      try {
+        element = document.querySelector(message.selector);
+      } catch {
+        element = null;
+      }
+    }
+    if (!element) {
+      parent.postMessage({ type: "review:locate-result", ok: false }, "*");
+      return;
+    }
+    if (message.scroll) {
+      flashElement(element);
+      element.scrollIntoView({ block: "center", behavior: "smooth" });
+    } else {
+      locateTarget = element;
+      highlight(element);
+    }
+    parent.postMessage({ type: "review:locate-result", ok: true }, "*");
   }
 
   function closestElement(node) {
@@ -196,6 +233,7 @@
   document.addEventListener("mouseover", (event) => {
     if (!annotationMode || isReviewUi(event.target) || isInteractive(event.target)) return;
     clearHighlight(hovered);
+    if (locateTarget && locateTarget !== event.target) clearHighlight(locateTarget);
     hovered = event.target;
     highlight(hovered);
   }, true);
@@ -228,6 +266,13 @@
     }
     if (event.data?.type === "review:request-snapshot") {
       parent.postMessage({ type: "review:snapshot", snapshot: snapshot() }, "*");
+    }
+    if (event.data?.type === "review:locate") {
+      locateInArtifact(event.data);
+    }
+    if (event.data?.type === "review:locate-clear") {
+      clearHighlight(locateTarget);
+      locateTarget = null;
     }
   });
 

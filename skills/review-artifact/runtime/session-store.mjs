@@ -50,9 +50,18 @@ export class SessionStore {
       };
       const at = new Date().toISOString();
       const userMessages = event.prompts
-        .map((prompt) => String(prompt.prompt ?? "").trim())
-        .filter(Boolean)
-        .map((text) => ({ role: "user", text, at }));
+        .map((prompt) => {
+          const text = String(prompt.prompt ?? "").trim();
+          if (!text) return null;
+          const metadata = {
+            tag: String(prompt.tag ?? "message"),
+            selector: String(prompt.selector ?? ""),
+            text: String(prompt.text ?? ""),
+          };
+          if (prompt.target && typeof prompt.target === "object") metadata.target = prompt.target;
+          return { role: "user", text, prompt: metadata, at };
+        })
+        .filter(Boolean);
       session.events = [...(session.events ?? []), event];
       session.chat = [...(session.chat ?? []), ...userMessages];
       session.status = "feedback";

@@ -37,9 +37,44 @@ describe("review session store", () => {
     });
 
     expect((await store.find(session.key)).chat).toMatchObject([
-      { role: "user", text: "Clarify this" },
-      { role: "user", text: "I prefer the first option" },
+      {
+        role: "user",
+        text: "Clarify this",
+        prompt: { tag: "message", selector: "main", text: "" },
+      },
+      {
+        role: "user",
+        text: "I prefer the first option",
+        prompt: { tag: "message", selector: "", text: "" },
+      },
     ]);
+  });
+
+  test("keeps element and text-range targets in the conversation history", async () => {
+    const directory = await mkdtemp(path.join(tmpdir(), "review-artifact-store-"));
+    const store = new SessionStore(path.join(directory, "state.json"));
+    const session = await store.upsert("/project/specs.html", "http://127.0.0.1/session/spec");
+
+    await store.queueFeedback(session.key, {
+      prompts: [{
+        prompt: "Reword this",
+        selector: "main > p",
+        tag: "text",
+        text: "Current wording",
+        target: { type: "text-range", selector: "main > p", text: "Current wording" },
+      }],
+    });
+
+    expect((await store.find(session.key)).chat).toMatchObject([{
+      role: "user",
+      text: "Reword this",
+      prompt: {
+        tag: "text",
+        selector: "main > p",
+        text: "Current wording",
+        target: { type: "text-range", selector: "main > p", text: "Current wording" },
+      },
+    }]);
   });
 
   test("preserves concurrent feedback batches", async () => {

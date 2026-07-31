@@ -42,8 +42,8 @@ body[data-presence="working"] #presence { color: var(--accent); }
 }
 .toolbar button[aria-pressed="true"] { border-color: var(--accent); color: var(--accent); }
 
-.layout { height: calc(100% - 54px); display: grid; grid-template-columns: minmax(0, 1fr) 360px; }
-.artifact-panel { min-width: 0; padding: 10px; background: #101210; }
+.layout { height: calc(100% - 54px); display: grid; grid-template-columns: minmax(0, 1fr) clamp(300px, 32vw, 520px); grid-template-rows: minmax(0, 1fr); }
+.artifact-panel { min-width: 0; min-height: 0; padding: 10px; background: #101210; }
 #artifact { display: block; width: 100%; height: 100%; border: 0; border-radius: 8px; background: white; }
 
 .conversation {
@@ -59,7 +59,28 @@ body[data-presence="working"] #presence { color: var(--accent); }
 #messages { min-height: 0; overflow-y: auto; display: grid; align-content: start; gap: 10px; }
 .message { padding: 10px 12px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--panel-raised); overflow-wrap: anywhere; }
 .message.user { border-color: color-mix(in srgb, var(--accent) 60%, var(--line)); }
+.message.user.annotation { border-inline-start: 3px solid var(--accent); }
 .message strong { display: block; margin-bottom: 4px; font-size: 11px; color: var(--muted); text-transform: uppercase; }
+.annotation-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  max-width: 100%;
+  margin-bottom: 8px;
+  padding: 4px 10px;
+  border: 1px solid color-mix(in srgb, var(--accent) 55%, var(--line));
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--accent) 14%, var(--panel-raised));
+  color: var(--accent);
+  font: 600 11px/1.3 ui-monospace, monospace;
+  cursor: pointer;
+  overflow: hidden;
+}
+.annotation-badge .pin { flex: none; font-size: 13px; }
+.annotation-badge .target { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.annotation-badge:hover { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 22%, var(--panel-raised)); }
+.annotation-badge.missing { border-color: var(--line); color: var(--muted); background: var(--panel-raised); }
+.annotation-badge.missing .pin { opacity: .5; }
 
 #queued { display: flex; flex-wrap: wrap; gap: 6px; max-height: 120px; overflow-y: auto; }
 .queued-prompt { min-width: 0; display: flex; align-items: center; gap: 8px; padding: 7px 8px; border-radius: 7px; background: color-mix(in srgb, var(--accent) 16%, var(--panel-raised)); border: 1px solid color-mix(in srgb, var(--accent) 45%, var(--line)); font-size: 12px; }

@@ -39,7 +39,8 @@
       const pill = document.createElement("div");
       pill.className = "queued-prompt";
       const text = document.createElement("span");
-      text.textContent = prompt.prompt;
+      const prefix = prompt.tag && prompt.tag !== "message" ? `[${prompt.tag}] ` : "";
+      text.textContent = prefix + prompt.prompt;
       const remove = document.createElement("button");
       remove.type = "button";
       remove.setAttribute("aria-label", "Remove queued feedback");
@@ -54,17 +55,70 @@
     }
   }
 
-  function addMessage(role, text) {
+  function addMessage(entry) {
+    const role = entry?.role ?? "user";
+    const text = entry?.text ?? "";
     if (!text) return;
     const bubble = document.createElement("div");
     bubble.className = `message ${role}`;
     const label = document.createElement("strong");
     label.textContent = role === "agent" ? "Agent" : "You";
+    bubble.append(label);
+    const annotation = entry?.prompt;
+    if (role === "user" && annotation && annotation.tag && annotation.tag !== "message") {
+      bubble.classList.add("annotation");
+      bubble.append(annotationBadge(annotation));
+    }
     const body = document.createElement("div");
     body.textContent = text;
-    bubble.append(label, body);
+    bubble.append(body);
     messages.append(bubble);
     bubble.scrollIntoView({ block: "nearest" });
+  }
+
+  function annotationBadge(annotation) {
+    const badge = document.createElement("button");
+    badge.type = "button";
+    badge.className = "annotation-badge";
+    badge.setAttribute("aria-label", "Highlight the annotated element in the artifact");
+    badge.title = annotation.selector ? `Annotated element: ${annotation.selector}` : "Annotated element";
+    const pin = document.createElement("span");
+    pin.className = "pin";
+    pin.textContent = "◎";
+    const target = document.createElement("span");
+    target.className = "target";
+    target.textContent = annotationLabel(annotation);
+    badge.append(pin, target);
+    badge.addEventListener("mouseenter", () => locateAnnotation(annotation, badge, { scroll: false }));
+    badge.addEventListener("mouseleave", () => locateClear());
+    badge.addEventListener("click", () => locateAnnotation(annotation, badge, { scroll: true }));
+    return badge;
+  }
+
+  function annotationLabel(annotation) {
+    const snippet = (annotation.target?.text || annotation.text || "").replace(/\s+/g, " ").trim();
+    const shortened = snippet.length > 60 ? `${snippet.slice(0, 60)}…` : snippet;
+    const quoted = shortened ? ` “${shortened}”` : "";
+    if (annotation.tag === "text") return `text${quoted}`;
+    return `${annotation.tag}${quoted}`;
+  }
+
+  function annotationTarget(annotation) {
+    return annotation.target?.selector || annotation.selector || "";
+  }
+
+  let activeLocateBadge = null;
+  function locateAnnotation(annotation, badge, { scroll }) {
+    activeLocateBadge = badge;
+    artifact.contentWindow?.postMessage(
+      { type: "review:locate", selector: annotationTarget(annotation), scroll },
+      "*",
+    );
+  }
+
+  function locateClear() {
+    activeLocateBadge = null;
+    artifact.contentWindow?.postMessage({ type: "review:locate-clear" }, "*");
   }
 
   function requestSnapshot(action) {
@@ -91,13 +145,15 @@
     });
     if (!response.ok) {
       setWorking(false);
-      addMessage("agent", "Feedback could not be sent. Please retry.");
+      addMessage({ role: "agent", text: "Feedback could not be sent. Please retry." });
       return;
     }
     queued = [];
     persistQueue();
     renderQueue();
-    for (const prompt of submitted) addMessage("user", prompt.prompt);
+    for (const prompt of submitted) {
+      addMessage({ role: "user", text: prompt.prompt, prompt });
+    }
     if (pendingAction !== "feedback") markEnded(pendingAction);
   }
 
@@ -122,6 +178,9 @@
     }
     if (event.data?.type === "review:snapshot") submit(event.data.snapshot || "");
     if (event.data?.type === "review:layout") reportLayout(event.data.layoutWarnings || []);
+    if (event.data?.type === "review:locate-result") {
+      if (activeLocateBadge?.isConnected) activeLocateBadge.classList.toggle("missing", !event.data.ok);
+    }
   });
 
   async function reportLayout(layoutWarnings) {
@@ -158,7 +217,7 @@
   eventStream.onmessage = (event) => {
     const update = JSON.parse(event.data);
     if (update.type === "agent-reply") {
-      addMessage("agent", update.text);
+      addMessage({ role: "agent", text: update.text });
       setWorking(false);
     }
     if (update.type === "presence") {
@@ -207,7 +266,7 @@
     if (layoutGateTitle.textContent === "Checking layout") layoutGate.hidden = true;
   }, 4_000);
 
-  for (const chat of session.initialChat || []) addMessage(chat.role, chat.text);
+  for (const chat of session.initialChat || []) addMessage(chat);
   renderQueue();
   setWorking(false);
 })();
