@@ -45,6 +45,16 @@ Do not rely on memory for the commit format. Do not invent a different format.
    - If the user invoked this skill with an explicit commit request and the staged set is unambiguous, run `git commit -F <temp-message-file>`.
    - Otherwise, ask for confirmation before committing.
 
+## Checkout-local boundary
+
+- Never invoke Treehouse.
+- Never change branches or worktree lifecycle.
+- Never merge, rebase, or push.
+- Never chain a successful commit into another workflow.
+
+Integration is a separate explicit `/merge` action requested by the user.
+A completed commit ends this skill.
+
 ## Hard stops
 
 Stop and ask the user instead of committing when:

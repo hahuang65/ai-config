@@ -54,6 +54,11 @@ install_module() {
   ln -sf "$MOD/extensions/local-models.ts" "$config_root/extensions/local-models.ts"
   dim "  $config_root/extensions/local-models.ts (local model auto-discovery)"
 
+  # Treehouse lifecycle remains Git-owned. This thin adapter invokes the
+  # independently installed CLI and performs pi's native session replacement.
+  ln -sf "$MOD/extensions/treehouse.ts" "$config_root/extensions/treehouse.ts"
+  dim "  $config_root/extensions/treehouse.ts (Treehouse session transitions)"
+
   # Active only inside the standalone Review change CLI process tree.
   # It blocks structured writes and common mutation commands inside the CLI's
   # disposable clone, plus Git/provider delivery mutation across the process tree.

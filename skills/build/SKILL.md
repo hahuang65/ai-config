@@ -13,6 +13,25 @@ A disciplined 5-phase workflow for building features. Each phase is its own skil
 
 See [../shared/references/build-pipeline.md](../shared/references/build-pipeline.md) for the approval gates, file conventions (`docs/features/<slug>/`), session management, and visual-sync rules every phase obeys. Read it first.
 
+## Worktree Isolation Before Phase 1
+
+Inspect Git worktree metadata before starting the pipeline.
+If the current checkout is any existing linked worktree, continue there without Treehouse adoption or relocation.
+This includes linked worktrees that Treehouse does not manage.
+Do not require the executable merely to continue in an existing linked worktree.
+
+Outside a linked worktree, run `command -v treehouse` and verify `treehouse status --json` reports the supported protocol.
+When preflight succeeds, load [../treehouse/SKILL.md](../treehouse/SKILL.md) and delegate the branch-state choice, acquisition, and same-window transition to Treehouse.
+Build contains no native-transition implementation of its own.
+Resume the phase that requested the transition without restarting the pipeline.
+
+When preflight reports a missing or incompatible executable, warn that worktree isolation and Treehouse merge support will be unavailable.
+Ask for explicit approval to continue on an ordinary local task branch through the established branch workflow.
+This degraded mode is never automatic and is not Treehouse-managed.
+If the user declines, stop with guidance to run `~/.dotfiles/git/install.sh`.
+Never offer the branch fallback after acquisition or native transition begins; preserve and report the task path instead.
+The degraded-mode choice is an environment safety decision, not an additional pipeline approval gate.
+
 ## Mandatory Phase Loading
 
 `/build` is an orchestrator, not a replacement for the phase skills. At the start of each phase, **read that phase's `SKILL.md` by relative path and follow it**:
@@ -39,7 +58,7 @@ Each phase also runs standalone:
 
 ## Approval Gate Scope (read first)
 
-This skill has exactly **four** approval gates — Grill→Spec, Spec→Tasks, Tasks→Implement, Review→done — the only points where you wait for user confirmation. (Implementation flows into the Phase 5 review without a gate; the final gate is Review change's approve-as-is or fix-selected decision.) Within an active phase, all routine operations (reads, writes, edits, bash, tests, environment bootstrap) proceed without per-call approval. Asking "OK to proceed?" before each tool batch is not how this skill works.
+This skill has exactly **four** approval gates — Grill→Spec, Spec→Tasks, Tasks→Implement, Review→done — the only phase-boundary confirmations. (Implementation flows into the Phase 5 review without a gate; the final gate is Review change's approve-as-is or fix-selected decision.) The one pre-pipeline degraded-mode consent described above is a safety choice, not an artifact-approval gate. Within an active phase, all routine operations (reads, writes, edits, bash, tests, environment bootstrap) proceed without per-call approval. Asking "OK to proceed?" before each tool batch is not how this skill works.
 
 A gate clears on **any response that expresses confirmation or approval** — there is no required phrase or keyword. The prompts below say what comes next; the user may confirm however they like ("yes", "go", "sounds good", "ship it", a thumbs-up). If a response is ambiguous or raises a concern, resolve it instead of advancing.
 

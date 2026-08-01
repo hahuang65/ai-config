@@ -40,6 +40,70 @@ pi's config root. This repo's `harnesses/pi/` module contains settings, extensio
 **Always-on context**:
 Content the harness injects into every conversation's system prompt without the model having to ask for it. This repo keeps that surface to `harness-system-prompt.md` for Claude and pi: a critical baseline plus the shared rule location and load triggers. Claude Code would also auto-load `~/.claude/rules/*.md`, so this repo deliberately leaves detailed rules only at the canonical source path.
 
+### Worktree lifecycle terms
+
+**Main project directory**:
+The primary repository checkout from which changes are integrated onto **trunk**.
+A merge never runs from another linked worktree.
+_Avoid_: Main worktree, root repo, original clone.
+
+**Trunk**:
+The repository's primary integration branch, resolved from repository metadata rather than assumed to be named `main`.
+_Avoid_: Main (unless that is the branch's actual name), default branch when discussing integration policy.
+
+**Local task branch**:
+A named feature branch worked directly in the **main project directory**.
+It is the default home for ordinary work and may later be converted into a **task worktree**.
+_Avoid_: Local branch (all non-remote Git branches are local), main-repo branch.
+
+**Project group**:
+The directory beneath `~/.treehouse/` that owns one repository's worktree pool, lifecycle state, and lock.
+Its ordinary name is the project basename; when that name is already owned by another repository, only the new group prepends the main project directory's parent name.
+
+**Worktree pool**:
+The reusable set of managed Git worktrees inside one **project group**.
+Each member is either an **available worktree** or a **task worktree**.
+
+**Available worktree**:
+A clean, detached, pre-warmed member of a **worktree pool** aligned with **trunk** and eligible for acquisition.
+_Avoid_: Empty worktree, spare clone.
+
+**Task worktree**:
+A **worktree pool** member exclusively assigned to one task and attached to that task's named feature branch.
+It remains task-owned while dirty or unmerged.
+_Avoid_: Leased worktree (a lease is ownership metadata, not the worktree's lifecycle role), feature clone.
+
+**Convert**:
+The recoverable transition of a **local task branch** into a **task worktree** without changing branch identity.
+Conversion preserves staged, unstaged, and untracked work; ignored files remain with their original working directory.
+_Avoid_: Move (ambiguous about branch and working state), migrate (implies a permanent storage change).
+
+**Treehouse CLI**:
+The standalone lifecycle authority installed by the Git dotfiles repository at `~/.local/bin/treehouse`.
+It owns Git and filesystem transitions without depending on an AI harness and exposes a versioned structured protocol for automation.
+AI skills and adapters invoke it as an external command rather than importing or duplicating its implementation.
+_Avoid_: Treehouse skill (the AI workflow surface), harness adapter (the native parent-session transition layer).
+
+**Worktree transition**:
+The Treehouse-owned continuation of an interactive caller inside an acquired or selected **task worktree**.
+A harness continues in its current visible interface through its native worktree or session-switching capability, while a terminal caller enters through its shell.
+The **Treehouse CLI** selects and validates the destination, while an AI harness adapter performs the native parent-session transition that a child process cannot perform itself.
+Claude Code records a live Treehouse ownership claim, enters through its native existing-worktree operation, returns through its native exit operation with keep behavior, and releases the exact claim so Treehouse alone owns worktree cleanup.
+Pi preloads a one-time authenticated transition command into an empty editor; the user presses Enter once so pi can run its privileged session-switching context without another model turn or typed command text.
+`/build` delegates this transition to Treehouse when it starts outside a linked worktree and executable preflight succeeds.
+When preflight fails before acquisition, `/build` may continue on a **local task branch** only after warning and receiving explicit approval; that degraded path is not a worktree transition.
+_Avoid_: Handoff (transfers work to an independently started session), relocation (describes only the directory change).
+
+**Landed**:
+The state in which a **task worktree**'s exact feature tip is proven integrated into **trunk**.
+Git ancestry is authoritative; read-only forge metadata is a fallback for squash or rebase merges.
+_Avoid_: Merged (ambiguous about merge strategy and whether the exact local tip was included), closed.
+
+**Recycle**:
+The verified transition of a clean, **landed** **task worktree** back into an **available worktree**.
+Recycling detaches the worktree from its completed feature branch without discarding unlanded work.
+_Avoid_: Delete, reset, return (each describes only part of the transition).
+
 ### Harness-modularity & guardrail terms
 
 **Harness module**:
@@ -201,3 +265,9 @@ _Avoid_: refactoring (unqualified — hides the directed-vs-hygiene split).
 >
 > **Dev**: And `security.md` — I never want any harness reading my `.env`. Same deal, just share the rule?
 > **Expert**: No — that's the split. `security.md` as *guidance* is an **advisory rule** and shares fine. But "never read secrets" as an *enforced* constraint is a **guardrail policy**: it gets an ID in the **policy registry**, the detection lives once in the **guard core** (`isSecretPath`), and each **harness module** wires that core in via its **enforcement tier** — pi runs it in-process (tier A), while Claude runs it through a stdin/stdout shim (tier B). The **conformance test** proves both harnesses cover it because `no-secret-access` is in the **mandatory policy floor**.
+>
+> **Dev**: Should this small fix get a worktree now, in case it grows?
+> **Expert**: No. Start with a **local task branch** unless you explicitly want isolation; `/build` is the exception and must run in a linked worktree. It continues inside an existing linked worktree without adopting it, or acquires a **task worktree** through Treehouse when started from the **main project directory**. If an ordinary task grows, convert its branch without changing its identity.
+>
+> **Dev**: The feature is merged. Can I remove its task worktree now?
+> **Expert**: Integrate the branch onto **trunk** from the **main project directory**. Once the branch is proven merged and the worktree is clean, **recycle** the **task worktree** into an **available worktree**; never clean or merge through a different linked worktree.

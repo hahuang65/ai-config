@@ -1411,6 +1411,8 @@ test_install_behavior() {
     || fail "install-behavior" "pi settings.json missing"
   [[ -e "$tmphome/.pi/agent/extensions/guard-policies.ts" ]] && pass "pi guard extension installed" \
     || fail "install-behavior" "pi guard extension missing"
+  [[ -e "$tmphome/.pi/agent/extensions/treehouse.ts" ]] && pass "pi Treehouse transition extension installed" \
+    || fail "install-behavior" "pi Treehouse transition extension missing"
   [[ -e "$tmphome/.pi/agent/extensions/review-change-guard.ts" ]] \
     && pass "standalone Review change guard installed" \
     || fail "install-behavior" "standalone Review change guard missing"
