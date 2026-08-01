@@ -1,15 +1,15 @@
-# Keep development worktrees in one shared treehouse
+# Keep development worktrees in one shared orchard
 
 Agent-created worktrees were previously placed ad hoc, which made them difficult to discover, distinguish from primary checkouts, and clean up safely.
 A worktree convention must be available before the first worktree is created, so loading it only with detailed Git rules is too late.
 
 ## Decision
 
-Create development Git worktrees under `~/.treehouse/`.
+Create development Git worktrees under `~/.orchard/`.
 Name each worktree `<project-basename>-<short-intent>`, where the intent is concise and specific enough to distinguish concurrent work.
-Review change isolation is operational rather than development work and uses `~/.review-treehouse/` instead, as recorded in ADR 0022.
+Review change isolation is operational rather than development work and uses `~/.review-orchard/` instead, as recorded in ADR 0022.
 Keep this convention in the small always-on harness bootstrap alongside the existing feature-branch naming rule.
-Workflows may remove only the exact worktree path they created and recorded; they do not own other treehouse entries or repository-wide pruning.
+Workflows may remove only the exact worktree path they created and recorded; they do not own other orchard entries or repository-wide pruning.
 
 ## Consequences
 

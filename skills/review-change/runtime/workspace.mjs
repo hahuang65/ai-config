@@ -146,7 +146,7 @@ function throwIfAborted(signal) {
 }
 
 export function defaultReviewWorkspaceRoot(homeDirectory = homedir()) {
-  return path.join(homeDirectory, ".review-treehouse");
+  return path.join(homeDirectory, ".review-orchard");
 }
 
 export function safeRemoteUrl(remoteUrl) {

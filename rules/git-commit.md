@@ -1,5 +1,5 @@
 ---
-description: Git commit conventions — message format, what to stage, and the ~/Projects/a5 staging exception. Read before any git add or git commit.
+description: Git commit and branch-integration conventions — message format, staging, rebasing, and the ~/Projects/a5 exception. Read before any git add, git commit, or branch integration.
 ---
 
 # Git Commit
@@ -18,6 +18,13 @@ Fallback summary (used only when `~/.gitmessage` is absent):
 - Allowed types: `FEATURE`, `FIX`, `REFACTOR`, `STYLE`, `DOCS`, `TEST`, `CHORE`.
 - Use the body to explain what and why, not how. Bullets with `-` are fine.
 - NEVER auto-add the agent name as a co-author.
+
+## Branch integration
+
+- Rebase local feature branches onto the current target branch before integration.
+- Never create merge commits.
+- Advance the target branch by fast-forward only.
+- If a rebase fails, abort it and preserve both branches unless the user explicitly asks to resolve the conflicts.
 
 ## Staging policy
 

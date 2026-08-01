@@ -2,7 +2,7 @@
 
 The `review-change` executable is an outer read-only gate driver, not a second validation implementation.
 Before cloning, it resolves a current-branch pull request or freezes an explicit branch or local base/head range to immutable source-repository object IDs; if the source base remains ambiguous, it emits `ask-user` rather than deriving from clone tracking refs.
-It then snapshots the invoking repository's tracked and untracked working state into a disposable isolated clone under `~/.review-treehouse/<project>-review-change-cli-<id>`, separate from development worktrees under `~/.treehouse/`, starts one foreground `pi --print --no-session` process with this skill loaded, and streams the result directly to the terminal.
+It then snapshots the invoking repository's tracked and untracked working state into a disposable isolated clone under `~/.review-orchard/<project>-review-change-cli-<id>`, separate from development worktrees under `~/.orchard/`, starts one foreground `pi --print --no-session` process with this skill loaded, and streams the result directly to the terminal.
 In a sufficiently wide TTY, the parent process consumes pi's JSON event stream and renders a color-coded left-right screen with the pipeline on the left and the selected stage log on the right; narrow terminals use a stacked fallback and tiny terminals use a bounded minimal frame.
 Stage states, risk, and log outcomes use distinct terminal colors; `NO_COLOR` requests monochrome rendering.
 Every stage retains a navigable, bounded, credential-redacted activity log containing observable lifecycle operations, tool calls, durations, failures, and explicit stage outcomes; it never exposes model chain-of-thought.

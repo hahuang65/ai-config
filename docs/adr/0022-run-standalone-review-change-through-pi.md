@@ -3,7 +3,7 @@
 Review change must be executable outside an active agent session without creating a second validation implementation that can drift from the skill.
 The standalone `review-change` executable therefore launches an isolated foreground `pi` process, loads the canonical Review change skill, and carries target and intent as inert acceptance data.
 Every CLI invocation resolves its pull request or freezes its explicit branch or local range against the source repository before running read-only inside a disposable isolated clone containing tracked and untracked working state, with a disabled push URL and path-scoped cleanup.
-Review-owned clones and worktrees live under `~/.review-treehouse/`, keeping them distinct from development worktrees under `~/.treehouse/`.
+Review-owned clones and worktrees live under `~/.review-orchard/`, keeping them distinct from development worktrees under `~/.orchard/`.
 Branch targets derive a merge base from a non-self upstream or repository default branch and freeze both ends to immutable commit objects before isolation.
 A CLI-specific pi guard blocks structured writes and common mutation commands inside the clone plus staging, commits, pushes, and provider mutation, while mandatory Review change subagents inherit the CLI-selected model.
 The only writable tool path is a dedicated report directory whose resolved location is validated not to overlap the source checkout or clone.

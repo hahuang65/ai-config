@@ -65,7 +65,7 @@ review-change main...HEAD --provider openai --model gpt-5 --thinking high
 
 With no target, the CLI resolves the current branch pull request or branch point against the source repository before isolation, then reviews that frozen scope from the isolated snapshot.
 One explicit target may be a local or remote branch name, local Git range, GitHub pull-request URL, or pull-request number, and every mode remains read-only.
-Review-owned clones and worktrees live under `~/.review-treehouse/`, separate from development worktrees under `~/.treehouse/`.
+Review-owned clones and worktrees live under `~/.review-orchard/`, separate from development worktrees under `~/.orchard/`.
 Provider, model, and thinking overrides pass directly to `pi` as argument-array values rather than through a shell; the selected model also reaches mandatory Review change subagents.
 In a sufficiently wide TTY, the CLI displays a color-coded left-right view: the pipeline occupies the left pane and the selected stage log occupies the right pane; narrow terminals retain the stacked layout.
 Stage states and log outcomes use distinct terminal colors, with `NO_COLOR` support for monochrome output.

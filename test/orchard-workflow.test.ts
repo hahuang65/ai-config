@@ -72,6 +72,14 @@ test("commit remains checkout-local and never chains into Orchard integration", 
   expect(commit).toContain("Integration is a separate explicit `/merge` action");
 });
 
+test("Git policy rebases feature branches and forbids merge commits", async () => {
+  const policy = await source("rules/git-commit.md");
+
+  expect(policy).toContain("Rebase local feature branches");
+  expect(policy).toContain("Never create merge commits");
+  expect(policy).toContain("fast-forward only");
+});
+
 test("Claude permits Orchard lifecycle and native transitions without broad Git bypasses", async () => {
   const settings = JSON.parse(await source("harnesses/claude/settings.json"));
   const allowed = settings.permissions.allow as string[];

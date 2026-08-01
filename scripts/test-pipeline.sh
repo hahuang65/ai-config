@@ -404,7 +404,7 @@ test_phase_review_change() {
   check_content_cached "$content" "$label" "every initial adversarial stage.*every restart.*dispatch a fresh.*change-reviewer.*complete immutable scope.*decision ledger.*specialist Findings"
   check_content_cached "$content" "$label" "Coached build.*(does not|never).*source or tests.*documentation.*formatting"
   check_content_cached "$content" "$label" "coached-mode scope.*prohibits source and test edits.*Change fixer|Change fixer.*coached build mode.*documentation.*mechanical-formatting.*source or test change.*outside scope"
-  check_content_cached "$content" "$label" "GitHub.*(URL|number).*title and body.*Authoritative intent.*immutable.*detached review worktree.*~/[.]review-treehouse"
+  check_content_cached "$content" "$label" "GitHub.*(URL|number).*title and body.*Authoritative intent.*immutable.*detached review worktree.*~/[.]review-orchard"
   check_content_cached "$content" "$label" "[Nn]o explicit target.*current branch.*pull request.*branch point"
   check_content_cached "$content" "$label" "[Cc]lassify execution trust before materializing.*Untrusted.*--no-checkout.*never.*materialize.*checkout hooks.*content filters"
   check_content_cached "$content" "$label" "not a sandbox.*must not execute.*~/Projects/a5/.*provider CI.*ask-user"
@@ -490,7 +490,7 @@ test_review_change_cli() {
   check_content_cached "$(cat "$runtime/screen.mjs")" "skills/review-change/runtime/screen.mjs" "PIPELINE.*isSummary.*renderSummary.*summaryOffset"
   check_content_cached "$(cat "$bin")" "$label" "j/k.*navigate stages.*Ctrl-D/Ctrl-U.*Enter to expand or collapse lines.*f to follow.*Ctrl-C to abort.*pipeline/log layout.*final Summary stage.*Ctrl-U and Ctrl-D.*Ctrl-C to exit"
   check_content_cached "$workspace" "skills/review-change/runtime/workspace.mjs" "defaultReviewWorkspaceRoot"
-  check_content_cached "$workspace" "skills/review-change/runtime/workspace.mjs" "[.]review-treehouse"
+  check_content_cached "$workspace" "skills/review-change/runtime/workspace.mjs" "[.]review-orchard"
   check_content_cached "$workspace" "skills/review-change/runtime/workspace.mjs" "--no-hardlinks.*--no-checkout"
   check_content_cached "$workspace" "skills/review-change/runtime/workspace.mjs" "ls-files.*--others.*--exclude-standard"
   check_content_cached "$workspace" "skills/review-change/runtime/workspace.mjs" "set-url.*--push.*no-push://review-change"
@@ -912,7 +912,7 @@ test_phase_orchestrator() {
 
   local bootstrap
   bootstrap="$(<"$REPO_DIR/harness-system-prompt.md")"
-  check_content_cached "$bootstrap" "harness-system-prompt.md" "development Git worktrees.*~/[.]treehouse/.*<project-basename>-<short-intent>.*Review change isolation.*~/[.]review-treehouse/"
+  check_content_cached "$bootstrap" "harness-system-prompt.md" "development Git worktrees.*~/[.]orchard/.*<project-basename>-<short-intent>.*Review change isolation.*~/[.]review-orchard/"
 }
 
 # ---------------------------------------------------------------------------

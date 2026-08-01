@@ -40,7 +40,7 @@ When `REVIEW_CHANGE_GATE=1`, do not open the file from the child process because
 `review-change` runs this same workflow outside an existing agent session by launching an isolated foreground `pi` process.
 The repository installer links the executable into `~/.local/bin/review-change`.
 It accepts one branch name, local range, or GitHub pull-request target plus optional `--intent`, `--provider`, `--model`, and `--thinking` overrides.
-Every CLI invocation is read-only and snapshots tracked plus untracked working state into a disposable isolated clone under `~/.review-treehouse/` before launching pi, keeping review isolation separate from development worktrees under `~/.treehouse/`.
+Every CLI invocation is read-only and snapshots tracked plus untracked working state into a disposable isolated clone under `~/.review-orchard/` before launching pi, keeping review isolation separate from development worktrees under `~/.orchard/`.
 A selected CLI model is inherited by mandatory Review change subagents, while the CLI-specific pi guard blocks structured repository writes, direct shell mutation, staging, commits, pushes, and provider mutations.
 The only writable tool path is a dedicated report directory validated not to overlap either checkout.
 The CLI shows a color-coded full-screen TTY with `NO_COLOR` support: wide terminals place the pipeline on the left and the selected log on the right, while narrow terminals use a stacked fallback.

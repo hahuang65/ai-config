@@ -33,14 +33,14 @@ describe("standalone Review change remote metadata", () => {
 
 describe("standalone Review change workspace", () => {
   test("keeps review isolation separate from development worktrees", () => {
-    expect(defaultReviewWorkspaceRoot("/Users/example")).toBe("/Users/example/.review-treehouse");
+    expect(defaultReviewWorkspaceRoot("/Users/example")).toBe("/Users/example/.review-orchard");
   });
 
   test("snapshots tracked and untracked working state into an isolated clone", async () => {
     const root = await mkdtemp(path.join(tmpdir(), "review-change-source-"));
-    const treehouse = await mkdtemp(path.join(tmpdir(), "review-change-treehouse-"));
+    const orchard = await mkdtemp(path.join(tmpdir(), "review-change-orchard-"));
     cleanups.push(async () => {
-      await Promise.all([rm(root, { recursive: true, force: true }), rm(treehouse, { recursive: true, force: true })]);
+      await Promise.all([rm(root, { recursive: true, force: true }), rm(orchard, { recursive: true, force: true })]);
     });
     await exec("git", ["init", "-b", "feature/cli", root]);
     await exec("git", ["-C", root, "config", "user.name", "Test User"]);
@@ -55,7 +55,7 @@ describe("standalone Review change workspace", () => {
     const activity: string[] = [];
     const workspace = await createReviewWorkspace({
       cwd: root,
-      reviewRoot: treehouse,
+      reviewRoot: orchard,
       onActivity: (kind, message) => activity.push(`${kind}:${message}`),
     });
     cleanups.push(workspace.cleanup);
@@ -84,7 +84,7 @@ describe("standalone Review change workspace", () => {
     await writeFile(path.join(root, "README.md"), "source\n");
     await exec("git", ["-C", root, "add", "README.md"]);
     await exec("git", ["-C", root, "commit", "-m", "initial"]);
-    const reviewRoot = path.join(root, ".review-treehouse");
+    const reviewRoot = path.join(root, ".review-orchard");
 
     await expect(createReviewWorkspace({ cwd: root, reviewRoot })).rejects
       .toThrow("review workspace root must be outside");
@@ -93,19 +93,19 @@ describe("standalone Review change workspace", () => {
 
   test("removes only its recorded workspace", async () => {
     const root = await mkdtemp(path.join(tmpdir(), "review-change-source-"));
-    const treehouse = await mkdtemp(path.join(tmpdir(), "review-change-treehouse-"));
+    const orchard = await mkdtemp(path.join(tmpdir(), "review-change-orchard-"));
     await exec("git", ["init", "-b", "main", root]);
     await exec("git", ["-C", root, "config", "user.name", "Test User"]);
     await exec("git", ["-C", root, "config", "user.email", "test@example.invalid"]);
     await writeFile(path.join(root, "README.md"), "source\n");
     await exec("git", ["-C", root, "add", "README.md"]);
     await exec("git", ["-C", root, "commit", "-m", "initial"]);
-    const workspace = await createReviewWorkspace({ cwd: root, reviewRoot: treehouse });
+    const workspace = await createReviewWorkspace({ cwd: root, reviewRoot: orchard });
 
     await workspace.cleanup();
 
     await expect(stat(workspace.cwd)).rejects.toThrow();
     expect(await readFile(path.join(root, "README.md"), "utf8")).toBe("source\n");
-    await Promise.all([rm(root, { recursive: true, force: true }), rm(treehouse, { recursive: true, force: true })]);
+    await Promise.all([rm(root, { recursive: true, force: true }), rm(orchard, { recursive: true, force: true })]);
   });
 });
