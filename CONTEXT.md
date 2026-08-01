@@ -57,7 +57,7 @@ It is the default home for ordinary work and may later be converted into a **tas
 _Avoid_: Local branch (all non-remote Git branches are local), main-repo branch.
 
 **Project group**:
-The directory beneath `~/.treehouse/` that owns one repository's worktree pool, lifecycle state, and lock.
+The directory beneath `~/.orchard/` that owns one repository's worktree pool, lifecycle state, and lock.
 Its ordinary name is the project basename; when that name is already owned by another repository, only the new group prepends the main project directory's parent name.
 
 **Worktree pool**:
@@ -78,19 +78,19 @@ The recoverable transition of a **local task branch** into a **task worktree** w
 Conversion preserves staged, unstaged, and untracked work; ignored files remain with their original working directory.
 _Avoid_: Move (ambiguous about branch and working state), migrate (implies a permanent storage change).
 
-**Treehouse CLI**:
-The standalone lifecycle authority installed by the Git dotfiles repository at `~/.local/bin/treehouse`.
+**Orchard CLI**:
+The standalone lifecycle authority installed by the Git dotfiles repository at `~/.local/bin/orchard`.
 It owns Git and filesystem transitions without depending on an AI harness and exposes a versioned structured protocol for automation.
 AI skills and adapters invoke it as an external command rather than importing or duplicating its implementation.
-_Avoid_: Treehouse skill (the AI workflow surface), harness adapter (the native parent-session transition layer).
+_Avoid_: Orchard skill (the AI workflow surface), harness adapter (the native parent-session transition layer).
 
 **Worktree transition**:
-The Treehouse-owned continuation of an interactive caller inside an acquired or selected **task worktree**.
+The Orchard-owned continuation of an interactive caller inside an acquired or selected **task worktree**.
 A harness continues in its current visible interface through its native worktree or session-switching capability, while a terminal caller enters through its shell.
-The **Treehouse CLI** selects and validates the destination, while an AI harness adapter performs the native parent-session transition that a child process cannot perform itself.
-Claude Code records a live Treehouse ownership claim, enters through its native existing-worktree operation, returns through its native exit operation with keep behavior, and releases the exact claim so Treehouse alone owns worktree cleanup.
+The **Orchard CLI** selects and validates the destination, while an AI harness adapter performs the native parent-session transition that a child process cannot perform itself.
+Claude Code records a live Orchard ownership claim, enters through its native existing-worktree operation, returns through its native exit operation with keep behavior, and releases the exact claim so Orchard alone owns worktree cleanup.
 Pi preloads a one-time authenticated transition command into an empty editor; the user presses Enter once so pi can run its privileged session-switching context without another model turn or typed command text.
-`/build` delegates this transition to Treehouse when it starts outside a linked worktree and executable preflight succeeds.
+`/build` delegates this transition to Orchard when it starts outside a linked worktree and executable preflight succeeds.
 When preflight fails before acquisition, `/build` may continue on a **local task branch** only after warning and receiving explicit approval; that degraded path is not a worktree transition.
 _Avoid_: Handoff (transfers work to an independently started session), relocation (describes only the directory change).
 
@@ -267,7 +267,7 @@ _Avoid_: refactoring (unqualified — hides the directed-vs-hygiene split).
 > **Expert**: No — that's the split. `security.md` as *guidance* is an **advisory rule** and shares fine. But "never read secrets" as an *enforced* constraint is a **guardrail policy**: it gets an ID in the **policy registry**, the detection lives once in the **guard core** (`isSecretPath`), and each **harness module** wires that core in via its **enforcement tier** — pi runs it in-process (tier A), while Claude runs it through a stdin/stdout shim (tier B). The **conformance test** proves both harnesses cover it because `no-secret-access` is in the **mandatory policy floor**.
 >
 > **Dev**: Should this small fix get a worktree now, in case it grows?
-> **Expert**: No. Start with a **local task branch** unless you explicitly want isolation; `/build` is the exception and must run in a linked worktree. It continues inside an existing linked worktree without adopting it, or acquires a **task worktree** through Treehouse when started from the **main project directory**. If an ordinary task grows, convert its branch without changing its identity.
+> **Expert**: No. Start with a **local task branch** unless you explicitly want isolation; `/build` is the exception and must run in a linked worktree. It continues inside an existing linked worktree without adopting it, or acquires a **task worktree** through Orchard when started from the **main project directory**. If an ordinary task grows, convert its branch without changing its identity.
 >
 > **Dev**: The feature is merged. Can I remove its task worktree now?
 > **Expert**: Integrate the branch onto **trunk** from the **main project directory**. Once the branch is proven merged and the worktree is clean, **recycle** the **task worktree** into an **available worktree**; never clean or merge through a different linked worktree.

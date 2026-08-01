@@ -10,7 +10,7 @@ const PROTOCOL_VERSION = 1;
 const CLI_TIMEOUT_MS = 120_000;
 const TRANSITION_TOKEN_TTL_MS = 10 * 60 * 1_000;
 const STRING_SCHEMA = { type: "string", "~kind": "String" };
-const TREEHOUSE_PARAMETERS = {
+const ORCHARD_PARAMETERS = {
   type: "object",
   required: ["command", "args", "continuation"],
   properties: {
@@ -28,7 +28,7 @@ const TREEHOUSE_PARAMETERS = {
   "~kind": "Object",
 };
 
-type TreehouseCommand = "new" | "convert" | "enter" | "merge" | "status";
+type OrchardCommand = "new" | "convert" | "enter" | "merge" | "status";
 
 interface WorktreeOutcome {
   path: string;
@@ -38,7 +38,7 @@ interface WorktreeOutcome {
 
 interface MachineOutcome {
   protocolVersion: number;
-  command: TreehouseCommand;
+  command: OrchardCommand;
   project?: { name: string; root: string; trunk: string; slots?: WorktreeOutcome[] };
   projects?: Array<{ name: string; root: string; slots: Array<WorktreeOutcome & { lifecycle: string }> }>;
   worktree?: WorktreeOutcome;
@@ -66,7 +66,7 @@ interface CliResult {
   killed: boolean;
 }
 
-interface TreehouseExtensionDependencies {
+interface OrchardExtensionDependencies {
   randomToken: () => string;
   now: () => number;
   processId: number;
@@ -74,10 +74,10 @@ interface TreehouseExtensionDependencies {
   executeCli: (args: string[], cwd: string, signal?: AbortSignal) => Promise<CliResult>;
 }
 
-export function createTreehouseExtension(
-  dependencyOverrides: Partial<TreehouseExtensionDependencies> = {},
+export function createOrchardExtension(
+  dependencyOverrides: Partial<OrchardExtensionDependencies> = {},
 ) {
-  const dependencies: TreehouseExtensionDependencies = {
+  const dependencies: OrchardExtensionDependencies = {
     randomToken: randomUUID,
     now: Date.now,
     processId: process.pid,
@@ -86,7 +86,7 @@ export function createTreehouseExtension(
     ...dependencyOverrides,
   };
 
-  return function registerTreehouse(pi: ExtensionAPI): void {
+  return function registerOrchard(pi: ExtensionAPI): void {
     const pending = new Map<string, PendingTransition>();
     let transitioning = false;
     let activeOwner: ActiveOwner | undefined;
@@ -101,29 +101,29 @@ export function createTreehouseExtension(
       activeOwner = undefined;
     });
 
-    pi.registerCommand("treehouse-continue", {
-      description: "Complete an authenticated Treehouse worktree transition",
+    pi.registerCommand("orchard-continue", {
+      description: "Complete an authenticated Orchard worktree transition",
       handler: async (args, ctx) => {
         const token = args.trim();
         const request = pending.get(token);
         if (!request || dependencies.now() - request.createdAt > TRANSITION_TOKEN_TTL_MS) {
           pending.delete(token);
-          ctx.ui.notify("Treehouse transition request is missing or expired", "error");
+          ctx.ui.notify("Orchard transition request is missing or expired", "error");
           return;
         }
         pending.delete(token);
         if (ctx.mode !== "tui") {
-          ctx.ui.notify("Treehouse session transitions require pi TUI mode", "error");
+          ctx.ui.notify("Orchard session transitions require pi TUI mode", "error");
           return;
         }
         const sourceSession = ctx.sessionManager.getSessionFile();
         if (!sourceSession) {
-          ctx.ui.notify("Treehouse cannot transition an unpersisted pi session", "error");
+          ctx.ui.notify("Orchard cannot transition an unpersisted pi session", "error");
           return;
         }
         const targetPath = request.outcome.transition?.targetPath;
         if (!targetPath) {
-          ctx.ui.notify("Treehouse transition target is missing", "error");
+          ctx.ui.notify("Orchard transition target is missing", "error");
           return;
         }
         try {
@@ -135,7 +135,7 @@ export function createTreehouseExtension(
                 await completeReturnCleanup(dependencies, request, targetPath);
               } catch (error) {
                 replacementCtx.ui.notify(
-                  `Treehouse cleanup failed; landed work remains preserved: ${errorMessage(error)}`,
+                  `Orchard cleanup failed; landed work remains preserved: ${errorMessage(error)}`,
                   "warning",
                 );
               }
@@ -144,41 +144,41 @@ export function createTreehouseExtension(
           });
           if (result.cancelled) {
             transitioning = false;
-            ctx.ui.notify(`Treehouse transition was cancelled; work remains at ${targetPath}`, "warning");
+            ctx.ui.notify(`Orchard transition was cancelled; work remains at ${targetPath}`, "warning");
           }
         } catch (error) {
           transitioning = false;
-          ctx.ui.notify(`Treehouse transition failed; work remains at ${targetPath}`, "error");
+          ctx.ui.notify(`Orchard transition failed; work remains at ${targetPath}`, "error");
           throw error;
         }
       },
     });
 
     pi.registerTool({
-      name: "treehouse_transition",
-      label: "Treehouse Transition",
-      description: "Run an interactive Treehouse lifecycle command and continue this pi conversation in its target worktree.",
-      promptSnippet: "Acquire, convert, enter, or return through Treehouse in the same pi session",
+      name: "orchard_transition",
+      label: "Orchard Transition",
+      description: "Run an interactive Orchard lifecycle command and continue this pi conversation in its target worktree.",
+      promptSnippet: "Acquire, convert, enter, or return through Orchard in the same pi session",
       promptGuidelines: [
-        "Use treehouse_transition as the final action in a turn when a Treehouse command must move the current pi conversation.",
-        "After calling treehouse_transition, do not emit another assistant response in the same turn.",
+        "Use orchard_transition as the final action in a turn when an Orchard command must move the current pi conversation.",
+        "After calling orchard_transition, do not emit another assistant response in the same turn.",
       ],
-      parameters: TREEHOUSE_PARAMETERS as any,
+      parameters: ORCHARD_PARAMETERS as any,
       executionMode: "sequential",
       async execute(_toolCallId, params, signal, _onUpdate, ctx) {
         if (pending.size > 0) {
-          throw new Error("A Treehouse transition is already awaiting confirmation");
+          throw new Error("An Orchard transition is already awaiting confirmation");
         }
         if (ctx.ui.getEditorText().trim()) {
-          throw new Error("Treehouse will not overwrite the current editor draft");
+          throw new Error("Orchard will not overwrite the current editor draft");
         }
-        const command = params.command as Exclude<TreehouseCommand, "status">;
+        const command = params.command as Exclude<OrchardCommand, "status">;
         const commandArgs = command === "enter"
           ? [command, ...params.args, "--owner-pid", String(dependencies.processId), "--json"]
           : [command, ...params.args, "--json"];
-        const outcome = await runTreehouse(dependencies, commandArgs, ctx.cwd, signal, true);
+        const outcome = await runOrchard(dependencies, commandArgs, ctx.cwd, signal, true);
         if (outcome.transition?.kind === "none") {
-          throw new Error("Treehouse command completed without requiring a session transition");
+          throw new Error("Orchard command completed without requiring a session transition");
         }
         const claimed = await claimAcquiredWorktree(dependencies, outcome, command, signal);
         if (claimed) activeOwner = claimed;
@@ -189,10 +189,10 @@ export function createTreehouseExtension(
           owner: claimed ?? activeOwner,
           createdAt: dependencies.now(),
         });
-        ctx.ui.setEditorText(`/treehouse-continue ${token}`);
-        ctx.ui.notify("Press Enter to continue the Treehouse transition", "info");
+        ctx.ui.setEditorText(`/orchard-continue ${token}`);
+        ctx.ui.notify("Press Enter to continue the Orchard transition", "info");
         return {
-          content: [{ type: "text", text: `Queued Treehouse transition to ${outcome.transition?.targetPath}.` }],
+          content: [{ type: "text", text: `Queued Orchard transition to ${outcome.transition?.targetPath}.` }],
           details: { targetPath: outcome.transition?.targetPath, operationId: outcome.transition?.operationId },
           terminate: true,
         };
@@ -202,15 +202,15 @@ export function createTreehouseExtension(
 }
 
 async function discoverActiveOwner(
-  dependencies: TreehouseExtensionDependencies,
+  dependencies: OrchardExtensionDependencies,
   cwd: string,
 ): Promise<ActiveOwner | undefined> {
-  const status = await runTreehouse(dependencies, ["status", "--json"], cwd, undefined, false);
+  const status = await runOrchard(dependencies, ["status", "--json"], cwd, undefined, false);
   for (const project of status.projects ?? []) {
     const slot = project.slots.find((candidate) => candidate.lifecycle === "task"
       && path.resolve(candidate.path) === path.resolve(cwd));
     if (!slot) continue;
-    const claimed = await runTreehouse(dependencies, [
+    const claimed = await runOrchard(dependencies, [
       "enter",
       slot.intent,
       "--owner-pid",
@@ -224,46 +224,46 @@ async function discoverActiveOwner(
 }
 
 async function claimAcquiredWorktree(
-  dependencies: TreehouseExtensionDependencies,
+  dependencies: OrchardExtensionDependencies,
   outcome: MachineOutcome,
-  command: Exclude<TreehouseCommand, "status">,
+  command: Exclude<OrchardCommand, "status">,
   signal?: AbortSignal,
 ): Promise<ActiveOwner | undefined> {
   if (outcome.transition?.kind !== "enter-worktree" || !outcome.worktree) return undefined;
   if (command === "enter") {
-    if (!outcome.owner || !outcome.project) throw new Error("Treehouse enter did not return an ownership claim");
+    if (!outcome.owner || !outcome.project) throw new Error("Orchard enter did not return an ownership claim");
     return { token: outcome.owner.token, intent: outcome.worktree.intent, projectRoot: outcome.project.root };
   }
   const projectRoot = outcome.project?.root ?? outcome.worktree.path;
-  const claimed = await runTreehouse(dependencies, [
+  const claimed = await runOrchard(dependencies, [
     "enter",
     outcome.worktree.intent,
     "--owner-pid",
     String(dependencies.processId),
     "--json",
   ], projectRoot, signal, true);
-  if (!claimed.owner) throw new Error("Treehouse did not return an ownership claim");
+  if (!claimed.owner) throw new Error("Orchard did not return an ownership claim");
   return { token: claimed.owner.token, intent: outcome.worktree.intent, projectRoot };
 }
 
 async function completeReturnCleanup(
-  dependencies: TreehouseExtensionDependencies,
+  dependencies: OrchardExtensionDependencies,
   request: PendingTransition,
   targetPath: string,
 ): Promise<void> {
   if (request.outcome.transition?.kind !== "return-main") return;
   if (request.owner) await releaseOwner(dependencies, request.owner, targetPath);
   const operationId = request.outcome.transition.operationId;
-  if (!operationId) throw new Error("Treehouse merge did not return a cleanup operation");
-  await runTreehouse(dependencies, ["merge", "--finalize", operationId, "--json"], targetPath, undefined, false);
+  if (!operationId) throw new Error("Orchard merge did not return a cleanup operation");
+  await runOrchard(dependencies, ["merge", "--finalize", operationId, "--json"], targetPath, undefined, false);
 }
 
 async function releaseOwner(
-  dependencies: TreehouseExtensionDependencies,
+  dependencies: OrchardExtensionDependencies,
   owner: ActiveOwner,
   cwd: string,
 ): Promise<void> {
-  await runTreehouse(dependencies, [
+  await runOrchard(dependencies, [
     "enter",
     owner.intent,
     "--release-owner",
@@ -272,27 +272,27 @@ async function releaseOwner(
   ], cwd || owner.projectRoot, undefined, false);
 }
 
-async function runTreehouse(
-  dependencies: TreehouseExtensionDependencies,
+async function runOrchard(
+  dependencies: OrchardExtensionDependencies,
   args: string[],
   cwd: string,
   signal: AbortSignal | undefined,
   requireTransition: boolean,
 ): Promise<MachineOutcome> {
   const result = await dependencies.executeCli(args, cwd, signal);
-  if (result.code !== 0) throw new Error(result.stderr.trim() || `treehouse exited with status ${result.code}`);
+  if (result.code !== 0) throw new Error(result.stderr.trim() || `orchard exited with status ${result.code}`);
   let outcome: MachineOutcome;
   try {
     outcome = JSON.parse(result.stdout) as MachineOutcome;
   } catch {
-    throw new Error("Treehouse returned malformed JSON");
+    throw new Error("Orchard returned malformed JSON");
   }
   if (outcome.protocolVersion !== PROTOCOL_VERSION) {
     const preservedPath = outcome.transition?.targetPath ? `; work remains at ${outcome.transition.targetPath}` : "";
-    throw new Error(`Unsupported Treehouse protocol version ${outcome.protocolVersion}${preservedPath}`);
+    throw new Error(`Unsupported Orchard protocol version ${outcome.protocolVersion}${preservedPath}`);
   }
   if (requireTransition && (!outcome.transition || !path.isAbsolute(outcome.transition.targetPath))) {
-    throw new Error("Treehouse did not return a safe absolute transition target");
+    throw new Error("Orchard did not return a safe absolute transition target");
   }
   return outcome;
 }
@@ -303,7 +303,7 @@ async function defaultExecuteCli(
   signal?: AbortSignal,
 ): Promise<CliResult> {
   try {
-    const { stdout, stderr } = await execFileAsync("treehouse", args, {
+    const { stdout, stderr } = await execFileAsync("orchard", args, {
       cwd,
       encoding: "utf8",
       timeout: CLI_TIMEOUT_MS,
@@ -325,7 +325,7 @@ async function defaultForkSession(sourceSession: string, targetCwd: string): Pro
   const { SessionManager } = await import("@earendil-works/pi-coding-agent");
   const fork = SessionManager.forkFrom(sourceSession, targetCwd);
   const sessionFile = fork.getSessionFile();
-  if (!sessionFile) throw new Error("Treehouse could not persist the replacement pi session");
+  if (!sessionFile) throw new Error("Orchard could not persist the replacement pi session");
   return sessionFile;
 }
 
@@ -333,4 +333,4 @@ function errorMessage(error: unknown): string {
   return error instanceof Error ? error.message : String(error);
 }
 
-export default createTreehouseExtension();
+export default createOrchardExtension();

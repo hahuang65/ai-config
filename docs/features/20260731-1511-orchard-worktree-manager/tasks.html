@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Treehouse Worktree Manager Tasks</title>
+  <title>Orchard Worktree Manager Tasks</title>
   <style>
     :root {
       color-scheme: light dark;
@@ -94,8 +94,8 @@
 <main data-artifact-kind="tasks" data-artifact-version="1">
   <header id="tasks-overview">
     <div class="eyebrow">Approved intent → executable slices</div>
-    <h1>Treehouse Worktree Manager Tasks</h1>
-    <p class="lede">Seventeen tracer bullets deliver the hybrid worktree lifecycle across two ownership boundaries: baseline CLI functionality in Git dotfiles and thin workflow, transition, and permission integrations in AI dotfiles. Source: <a href="specs.html">Treehouse Worktree Manager Spec</a>.</p>
+    <h1>Orchard Worktree Manager Tasks</h1>
+    <p class="lede">Seventeen tracer bullets deliver the hybrid worktree lifecycle across two ownership boundaries: baseline CLI functionality in Git dotfiles and thin workflow, transition, and permission integrations in AI dotfiles. Source: <a href="specs.html">Orchard Worktree Manager Spec</a>.</p>
   </header>
 
   <div class="summary" aria-label="Task summary">
@@ -130,12 +130,12 @@
 
   <section id="slice-list" class="slices" aria-label="Implementation slices">
     <article class="slice" data-slice-id="T01" data-status="complete" data-mode="AFK" data-repository="git" data-dependencies="" data-stories="4,16,17,18,37,38">
-      <div class="slice-head"><div><div class="slice-id">T01</div><h2>Inspect Treehouse projects from the CLI</h2></div><div class="badges"><span class="badge mode">AFK</span><span class="badge status">Complete</span></div></div>
+      <div class="slice-head"><div><div class="slice-id">T01</div><h2>Inspect Orchard projects from the CLI</h2></div><div class="badges"><span class="badge mode">AFK</span><span class="badge status">Complete</span></div></div>
       <div class="metadata"><div><strong>Repository:</strong> Git dotfiles</div><div><strong>Blocked by:</strong> None</div><div><strong>Stories:</strong> 4, 16–18, 37–38</div></div>
       <h3>Test surface</h3>
-      <p>First RED through black-box <code>treehouse</code> execution in isolated homes and temporary repositories; direct service coverage for repository discovery edge cases.</p>
+      <p>First RED through black-box <code>orchard</code> execution in isolated homes and temporary repositories; direct service coverage for repository discovery edge cases.</p>
       <h3>What to build</h3>
-      <p>In the Git dotfiles repository, deliver the executable, command parser, top-level and status help, repository discovery, bare-command status behavior, and human and versioned JSON summaries. Its installer exposes <code>treehouse/bin/treehouse.mjs</code> at <code>~/.local/bin/treehouse</code>. Status scopes to the current project in a repository and all known project groups elsewhere without mutating Git state.</p>
+      <p>In the Git dotfiles repository, deliver the executable, command parser, top-level and status help, repository discovery, bare-command status behavior, and human and versioned JSON summaries. Its installer exposes <code>orchard/bin/orchard.mjs</code> at <code>~/.local/bin/orchard</code>. Status scopes to the current project in a repository and all known project groups elsewhere without mutating Git state.</p>
       <h3>Acceptance criteria</h3>
       <ul class="criteria">
         <li data-criterion-id="T01-C1" data-status="complete"><strong>Complete:</strong> Bare invocation and explicit status return equivalent project information.</li>
@@ -149,7 +149,7 @@
       <div class="slice-head"><div><div class="slice-id">T02</div><h2>Acquire an offline task worktree safely</h2></div><div class="badges"><span class="badge mode">AFK</span><span class="badge status">Complete</span></div></div>
       <div class="metadata"><div><strong>Repository:</strong> Git dotfiles</div><div><strong>Blocked by:</strong> T01</div><div><strong>Stories:</strong> 5–6, 10, 15, 21–22, 34</div></div>
       <h3>Test surface</h3>
-      <p>First RED through black-box <code>treehouse new --offline</code>; direct project-registry tests for naming, capacity, atomic state, and lock contention.</p>
+      <p>First RED through black-box <code>orchard new --offline</code>; direct project-registry tests for naming, capacity, atomic state, and lock contention.</p>
       <h3>What to build</h3>
       <p>Create project groups, normalize intents, allocate a slot from local trunk, attach an ordinary named branch, and return human, path-only, or JSON outcomes. Enforce the total active-plus-available capacity and serialize mutation through a filesystem lock.</p>
       <h3>Acceptance criteria</h3>
@@ -166,7 +166,7 @@
       <div class="slice-head"><div><div class="slice-id">T03</div><h2>Acquire from synchronized trunk</h2></div><div class="badges"><span class="badge mode">AFK</span><span class="badge status">Complete</span></div></div>
       <div class="metadata"><div><strong>Repository:</strong> Git dotfiles</div><div><strong>Blocked by:</strong> T02</div><div><strong>Stories:</strong> 7–9</div></div>
       <h3>Test surface</h3>
-      <p>First RED through online <code>treehouse new</code> against controlled remotes; direct Git workspace gateway tests for alias selection and verified postconditions.</p>
+      <p>First RED through online <code>orchard new</code> against controlled remotes; direct Git workspace gateway tests for alias selection and verified postconditions.</p>
       <h3>What to build</h3>
       <p>Require a clean main project directory on trunk, synchronize before branch creation, honor trusted user-level <code>git sync</code> and <code>git new</code> aliases, and use explicit safe fallbacks only when those aliases are absent. Never execute repository-local shell aliases.</p>
       <h3>Acceptance criteria</h3>
@@ -182,7 +182,7 @@
       <div class="slice-head"><div><div class="slice-id">T04</div><h2>Enter and share task worktrees deliberately</h2></div><div class="badges"><span class="badge mode">AFK</span><span class="badge status">Complete</span></div></div>
       <div class="metadata"><div><strong>Repository:</strong> Git dotfiles</div><div><strong>Blocked by:</strong> T02</div><div><strong>Stories:</strong> 13, 19–20</div></div>
       <h3>Test surface</h3>
-      <p>First RED through black-box <code>treehouse enter</code> with controlled process ownership; direct registry tests for claims and stale-owner validation.</p>
+      <p>First RED through black-box <code>orchard enter</code> with controlled process ownership; direct registry tests for claims and stale-owner validation.</p>
       <h3>What to build</h3>
       <p>Reopen an existing task worktree without changing its lifecycle, establish caller ownership, refuse accidental concurrent use, support explicit shared entry, and provide managed-shell, path-only, and JSON behavior.</p>
       <h3>Acceptance criteria</h3>
@@ -198,7 +198,7 @@
       <div class="slice-head"><div><div class="slice-id">T05</div><h2>Convert a clean local task branch</h2></div><div class="badges"><span class="badge mode">AFK</span><span class="badge status">Complete</span></div></div>
       <div class="metadata"><div><strong>Repository:</strong> Git dotfiles</div><div><strong>Blocked by:</strong> T02</div><div><strong>Stories:</strong> 6, 13</div></div>
       <h3>Test surface</h3>
-      <p>First RED through black-box <code>treehouse convert</code> in a real temporary repository.</p>
+      <p>First RED through black-box <code>orchard convert</code> in a real temporary repository.</p>
       <h3>What to build</h3>
       <p>Move a clean local task branch from the main project directory into an acquired task worktree without changing branch identity, then expose the same interactive and automation outcomes as acquisition.</p>
       <h3>Acceptance criteria</h3>
@@ -214,7 +214,7 @@
       <div class="slice-head"><div><div class="slice-id">T06</div><h2>Convert dirty work without loss</h2></div><div class="badges"><span class="badge mode">AFK</span><span class="badge status">Complete</span></div></div>
       <div class="metadata"><div><strong>Repository:</strong> Git dotfiles</div><div><strong>Blocked by:</strong> T05</div><div><strong>Stories:</strong> 11–12</div></div>
       <h3>Test surface</h3>
-      <p>First RED through <code>treehouse convert</code> with staged, unstaged, untracked, ignored, conflicting, and interrupted working states in real repositories.</p>
+      <p>First RED through <code>orchard convert</code> with staged, unstaged, untracked, ignored, conflicting, and interrupted working states in real repositories.</p>
       <h3>What to build</h3>
       <p>Extend conversion into a locked recoverable transaction using uniquely identified temporary Git state. Restore staged, unstaged, and untracked work in the task worktree, leave ignored files in the main project directory, and retain recovery evidence until restoration is proven.</p>
       <h3>Acceptance criteria</h3>
@@ -230,7 +230,7 @@
       <div class="slice-head"><div><div class="slice-id">T07</div><h2>Prove local landing and recycle safely</h2></div><div class="badges"><span class="badge mode">AFK</span><span class="badge status">Complete</span></div></div>
       <div class="metadata"><div><strong>Repository:</strong> Git dotfiles</div><div><strong>Blocked by:</strong> T04, T06</div><div><strong>Stories:</strong> 31</div></div>
       <h3>Test surface</h3>
-      <p>First RED through black-box <code>treehouse recycle</code>; direct service tests for the landed-to-available state transition.</p>
+      <p>First RED through black-box <code>orchard recycle</code>; direct service tests for the landed-to-available state transition.</p>
       <h3>What to build</h3>
       <p>Use Git ancestry to prove the exact feature tip is on trunk, require a clean unoccupied task worktree, detach and align it as an available slot, and remove the completed local branch by default while supporting explicit retention.</p>
       <h3>Acceptance criteria</h3>
@@ -259,16 +259,16 @@
     </article>
 
     <article class="slice" data-slice-id="T09" data-status="complete" data-mode="AFK" data-repository="git" data-dependencies="T03,T07" data-stories="23,24,25,28">
-      <div class="slice-head"><div><div class="slice-id">T09</div><h2>Fast-forward trunk and keep the task worktree</h2></div><div class="badges"><span class="badge mode">AFK</span><span class="badge status">Complete</span></div></div>
+      <div class="slice-head"><div><div class="slice-id">T09</div><h2>Rebase the task, fast-forward trunk, and keep the worktree</h2></div><div class="badges"><span class="badge mode">AFK</span><span class="badge status">Complete</span></div></div>
       <div class="metadata"><div><strong>Repository:</strong> Git dotfiles</div><div><strong>Blocked by:</strong> T03, T07</div><div><strong>Stories:</strong> 23–25, 28</div></div>
       <h3>Test surface</h3>
-      <p>First RED through black-box <code>treehouse merge --keep</code> in divergent and fast-forwardable real Git graphs.</p>
+      <p>First RED through black-box <code>orchard merge --keep</code> in divergent, conflict-free, and conflicting real Git graphs.</p>
       <h3>What to build</h3>
-      <p>Validate clean synchronized trunk and a clean feature tip, execute integration from the main project directory with fast-forward-only semantics, never push, and preserve the task worktree, branch, and caller location when keep is requested.</p>
+      <p>Validate clean synchronized trunk and a clean feature tip, rebase the task branch onto trunk, automatically abort and verify restoration after failure, then advance trunk from the main project directory by fast-forward only. Never create a merge commit or push, and preserve the task worktree, branch, and caller location when keep is requested.</p>
       <h3>Acceptance criteria</h3>
       <ul class="criteria">
-        <li data-criterion-id="T09-C1" data-status="complete"><strong>Complete:</strong> A fast-forwardable feature advances trunk exactly to the feature tip without a merge commit.</li>
-        <li data-criterion-id="T09-C2" data-status="complete"><strong>Complete:</strong> Divergence leaves trunk, task worktree, feature branch, and caller location unchanged.</li>
+        <li data-criterion-id="T09-C1" data-status="complete"><strong>Complete:</strong> Divergence rebases the clean task branch onto synchronized trunk and advances trunk exactly to the rebased feature tip without a merge commit.</li>
+        <li data-criterion-id="T09-C2" data-status="complete"><strong>Complete:</strong> A rebase conflict or failure is automatically aborted and restores the original feature tip while leaving trunk, both checkouts, and caller location unchanged.</li>
         <li data-criterion-id="T09-C3" data-status="complete"><strong>Complete:</strong> Dirty or incorrectly checked-out main project state stops before integration.</li>
         <li data-criterion-id="T09-C4" data-status="complete"><strong>Complete:</strong> No merge path pushes or mutates a remote.</li>
       </ul>
@@ -310,7 +310,7 @@
       <div class="slice-head"><div><div class="slice-id">T12</div><h2>Prune only safe excess capacity</h2></div><div class="badges"><span class="badge mode">AFK</span><span class="badge status">Complete</span></div></div>
       <div class="metadata"><div><strong>Repository:</strong> Git dotfiles</div><div><strong>Blocked by:</strong> T11</div><div><strong>Stories:</strong> 32</div></div>
       <h3>Test surface</h3>
-      <p>First RED through black-box <code>treehouse prune</code> over mixed available, landed, active, dirty, and quarantined states.</p>
+      <p>First RED through black-box <code>orchard prune</code> over mixed available, landed, active, dirty, and quarantined states.</p>
       <h3>What to build</h3>
       <p>Preview pruning by default, identify eligible landed task worktrees for recycling, and remove only available slots exceeding current capacity. Keep the operation bounded to one explicitly resolved project group.</p>
       <h3>Acceptance criteria</h3>
@@ -326,7 +326,7 @@
       <div class="slice-head"><div><div class="slice-id">T13</div><h2>Destroy project groups through explicit risk gates</h2></div><div class="badges"><span class="badge mode">AFK</span><span class="badge status">Complete</span></div></div>
       <div class="metadata"><div><strong>Repository:</strong> Git dotfiles</div><div><strong>Blocked by:</strong> T11</div><div><strong>Stories:</strong> 33, 35</div></div>
       <h3>Test surface</h3>
-      <p>First RED through black-box <code>treehouse destroy</code> with every risk category independently present.</p>
+      <p>First RED through black-box <code>orchard destroy</code> with every risk category independently present.</p>
       <h3>What to build</h3>
       <p>Preview complete project-group destruction and require independent explicit authorization for unlanded work, live use, unverifiable state, and local branch deletion. Never broaden a named-project request into global destruction.</p>
       <h3>Acceptance criteria</h3>
@@ -339,13 +339,13 @@
     </article>
 
     <article class="slice" data-slice-id="T14" data-status="complete" data-mode="HITL" data-repository="ai" data-dependencies="T06,T10,T11" data-stories="2,13,14,26,27,38">
-      <div class="slice-head"><div><div class="slice-id">T14</div><h2>Continue Treehouse workflows in pi</h2></div><div class="badges"><span class="badge mode">HITL</span><span class="badge status">Complete</span></div></div>
+      <div class="slice-head"><div><div class="slice-id">T14</div><h2>Continue Orchard workflows in pi</h2></div><div class="badges"><span class="badge mode">HITL</span><span class="badge status">Complete</span></div></div>
       <div class="metadata"><div><strong>Repository:</strong> AI dotfiles</div><div><strong>Blocked by:</strong> T06, T10, T11</div><div><strong>Stories:</strong> 2, 13–14, 26–27, 38</div></div>
       <div class="hitl-reason"><strong>HITL reason:</strong> the automated extension contract is testable, but final acceptance requires observing the prefilled one-Enter confirmation, same-window pi session replacement, and return in a real TUI.</div>
       <h3>Test surface</h3>
       <p>First RED through a fake pi Extension API exercising editor preservation, authenticated command prefill, one-time token handling, and the registered command; targeted integration through pi’s documented session manager and one human smoke check.</p>
       <h3>What to build</h3>
-      <p>In the AI dotfiles repository, install a user-level pi adapter that invokes the independently installed Treehouse CLI in machine mode, validates its protocol version, records ownership, requires an empty editor, stores a one-time authenticated transition, preloads its internal command, and terminates the initiating tool turn. One user Enter executes the privileged command context, forks the persisted conversation into the target cwd, switches the same TUI, and resumes the requesting workflow without another model turn. Refuse to overwrite editor drafts, reject token replay, release ownership on ordinary session shutdown, and preserve work when confirmation is declined or transition fails.</p>
+      <p>In the AI dotfiles repository, install a user-level pi adapter that invokes the independently installed Orchard CLI in machine mode, validates its protocol version, records ownership, requires an empty editor, stores a one-time authenticated transition, preloads its internal command, and terminates the initiating tool turn. One user Enter executes the privileged command context, forks the persisted conversation into the target cwd, switches the same TUI, and resumes the requesting workflow without another model turn. Refuse to overwrite editor drafts, reject token replay, release ownership on ordinary session shutdown, and preserve work when confirmation is declined or transition fails.</p>
       <h3>Acceptance criteria</h3>
       <ul class="criteria">
         <li data-criterion-id="T14-C1" data-status="complete"><strong>Complete:</strong> The tool preloads one authenticated internal transition command into an empty editor and prevents an extra pre-transition model turn.</li>
@@ -357,21 +357,21 @@
     </article>
 
     <article class="slice" data-slice-id="T15" data-status="complete" data-mode="HITL" data-repository="ai" data-dependencies="T06,T10,T11" data-stories="1,2,3,13,14,26,27,38,39">
-      <div class="slice-head"><div><div class="slice-id">T15</div><h2>Delegate build isolation and transitions through Treehouse</h2></div><div class="badges"><span class="badge mode">HITL</span><span class="badge status">Complete</span></div></div>
+      <div class="slice-head"><div><div class="slice-id">T15</div><h2>Delegate build isolation and transitions through Orchard</h2></div><div class="badges"><span class="badge mode">HITL</span><span class="badge status">Complete</span></div></div>
       <div class="metadata"><div><strong>Repository:</strong> AI dotfiles</div><div><strong>Blocked by:</strong> T06, T10, T11</div><div><strong>Stories:</strong> 1–3, 13–14, 26–27, 38–39</div></div>
       <div class="hitl-reason"><strong>HITL reason:</strong> final acceptance requires observing Claude Code enter and return from a registered external worktree while retaining the current conversation.</div>
       <h3>Test surface</h3>
-      <p>First RED through the shared workflow-content contract and fake available, missing, incompatible, and post-acquisition Treehouse outcomes, followed by one real Claude Code native-worktree smoke check.</p>
+      <p>First RED through the shared workflow-content contract and fake available, missing, incompatible, and post-acquisition Orchard outcomes, followed by one real Claude Code native-worktree smoke check.</p>
       <h3>What to build</h3>
-      <p>In the AI dotfiles repository, deliver the Treehouse skill as the workflow owner that delegates acquisition, conversion, entry, and return to the installed lifecycle CLI before generic continuation. Update build to continue inside any existing linked worktree, preflight the CLI outside one, and otherwise delegate without altering its four gates. Missing or incompatible CLI preflight may offer an explicit ordinary local-branch fallback with clear loss of Treehouse merge support. Route Claude entry through <code>EnterWorktree</code>, return through <code>ExitWorktree</code> with keep behavior before CLI cleanup, and fail safely when either native operation is unavailable.</p>
+      <p>In the AI dotfiles repository, deliver the Orchard skill as the workflow owner that delegates acquisition, conversion, entry, and return to the installed lifecycle CLI before generic continuation. Update build to continue inside any existing linked worktree, preflight the CLI outside one, and otherwise delegate without altering its four gates. Missing or incompatible CLI preflight may offer an explicit ordinary local-branch fallback with clear loss of Orchard merge support. Route Claude entry through <code>EnterWorktree</code>, return through <code>ExitWorktree</code> with keep behavior before CLI cleanup, and fail safely when either native operation is unavailable.</p>
       <h3>Acceptance criteria</h3>
       <ul class="criteria">
-        <li data-criterion-id="T15-C1" data-status="complete"><strong>Complete:</strong> Build started in an unmanaged linked worktree continues without Treehouse adoption or relocation.</li>
-        <li data-criterion-id="T15-C2" data-status="complete"><strong>Complete:</strong> Build started outside a linked worktree delegates the branch-state choice, acquisition, and transition to Treehouse.</li>
-        <li data-criterion-id="T15-C3" data-status="complete"><strong>Complete:</strong> Treehouse contains no build-phase knowledge and resumes callers with a generic continuation.</li>
+        <li data-criterion-id="T15-C1" data-status="complete"><strong>Complete:</strong> Build started in an unmanaged linked worktree continues without Orchard adoption or relocation.</li>
+        <li data-criterion-id="T15-C2" data-status="complete"><strong>Complete:</strong> Build started outside a linked worktree delegates the branch-state choice, acquisition, and transition to Orchard.</li>
+        <li data-criterion-id="T15-C3" data-status="complete"><strong>Complete:</strong> Orchard contains no build-phase knowledge and resumes callers with a generic continuation.</li>
         <li data-criterion-id="T15-C4" data-status="complete"><strong>Complete:</strong> Native transition failure reports the safe task path without launching another agent or creating a handoff artifact.</li>
         <li data-criterion-id="T15-C5" data-status="complete"><strong>Complete:</strong> A human verified Claude entry through <code>EnterWorktree</code> and default merge return through <code>ExitWorktree</code> with keep behavior in the same visible conversation.</li>
-        <li data-criterion-id="T15-C6" data-status="complete"><strong>Complete:</strong> Missing or incompatible CLI preflight stops standalone Treehouse workflows, while build alone may warn and request explicit approval for a non-Treehouse local task branch.</li>
+        <li data-criterion-id="T15-C6" data-status="complete"><strong>Complete:</strong> Missing or incompatible CLI preflight stops standalone Orchard workflows, while build alone may warn and request explicit approval for a non-Orchard local task branch.</li>
       </ul>
     </article>
 
@@ -379,30 +379,30 @@
       <div class="slice-head"><div><div class="slice-id">T16</div><h2>Expose explicit merge and commit workflow boundaries</h2></div><div class="badges"><span class="badge mode">AFK</span><span class="badge status">Complete</span></div></div>
       <div class="metadata"><div><strong>Repository:</strong> Git + AI dotfiles</div><div><strong>Blocked by:</strong> T09, T14, T15</div><div><strong>Stories:</strong> 29–30, 37–38</div></div>
       <h3>Test surface</h3>
-      <p>First RED through the shared skill-authoring contract, with behavior delegated to the already tested Treehouse merge and commit interfaces.</p>
+      <p>First RED through the shared skill-authoring contract, with behavior delegated to the already tested Orchard merge and commit interfaces.</p>
       <h3>What to build</h3>
-      <p>In AI dotfiles, add a harness-neutral merge skill that forwards arguments to the installed Treehouse CLI and refuses unmanaged contexts, and tighten the commit skill to inspect, stage, and commit only. In Git dotfiles, complete every command's help. Verify both independent installers and their final cross-repository boundary.</p>
+      <p>In AI dotfiles, add a harness-neutral merge skill that forwards arguments to the installed Orchard CLI and refuses unmanaged contexts, and tighten the commit skill to inspect, stage, and commit only. In Git dotfiles, complete every command's help. Verify both independent installers and their final cross-repository boundary.</p>
       <h3>Acceptance criteria</h3>
       <ul class="criteria">
         <li data-criterion-id="T16-C1" data-status="complete"><strong>Complete:</strong> The merge skill contains no independent Git integration logic and passes keep behavior through unchanged.</li>
         <li data-criterion-id="T16-C2" data-status="complete"><strong>Complete:</strong> Merge refuses outside a managed task worktree or without a compatible executable and never falls back to raw Git merge.</li>
-        <li data-criterion-id="T16-C3" data-status="complete"><strong>Complete:</strong> Commit explicitly forbids Treehouse invocation, lifecycle changes, merge, rebase, push, and automatic merge chaining.</li>
+        <li data-criterion-id="T16-C3" data-status="complete"><strong>Complete:</strong> Commit explicitly forbids Orchard invocation, lifecycle changes, merge, rebase, push, and automatic merge chaining.</li>
         <li data-criterion-id="T16-C4" data-status="complete"><strong>Complete:</strong> Top-level and every subcommand help document arguments, output modes, safety gates, defaults, and failure outcomes.</li>
         <li data-criterion-id="T16-C5" data-status="complete"><strong>Complete:</strong> Throwaway-home installation proves Git dotfiles alone exposes the CLI, AI dotfiles alone exposes only integrations, and combined installation remains idempotent without sibling-module leakage.</li>
       </ul>
     </article>
 
     <article class="slice" data-slice-id="T17" data-status="complete" data-mode="AFK" data-repository="ai" data-dependencies="T14,T15,T16" data-stories="40">
-      <div class="slice-head"><div><div class="slice-id">T17</div><h2>Allow Treehouse operations without repeated harness prompts</h2></div><div class="badges"><span class="badge mode">AFK</span><span class="badge status">Complete</span></div></div>
+      <div class="slice-head"><div><div class="slice-id">T17</div><h2>Allow Orchard operations without repeated harness prompts</h2></div><div class="badges"><span class="badge mode">AFK</span><span class="badge status">Complete</span></div></div>
       <div class="metadata"><div><strong>Repository:</strong> AI dotfiles</div><div><strong>Blocked by:</strong> T14, T15, T16</div><div><strong>Stories:</strong> 40</div></div>
       <h3>Test surface</h3>
-      <p>First RED through the committed harness-permission contract, asserting exact Treehouse and native-transition entries while rejecting broad Git authorization.</p>
+      <p>First RED through the committed harness-permission contract, asserting exact Orchard and native-transition entries while rejecting broad Git authorization.</p>
       <h3>What to build</h3>
-      <p>Allow Claude Code to discover and invoke the installed Treehouse executable and use <code>EnterWorktree</code>/<code>ExitWorktree</code> without repeated prompts. Keep pi on its registered extension tool and authenticated one-Enter command. Preserve all mandatory guardrails and avoid broad Git or shell permission patterns.</p>
+      <p>Allow Claude Code to discover and invoke the installed Orchard executable and use <code>EnterWorktree</code>/<code>ExitWorktree</code> without repeated prompts. Keep pi on its registered extension tool and authenticated one-Enter command. Preserve all mandatory guardrails and avoid broad Git or shell permission patterns.</p>
       <h3>Acceptance criteria</h3>
       <ul class="criteria">
-        <li data-criterion-id="T17-C1" data-status="complete"><strong>Complete:</strong> Claude permits executable discovery, direct Treehouse invocations, and both native worktree transition tools.</li>
-        <li data-criterion-id="T17-C2" data-status="complete"><strong>Complete:</strong> Pi uses its registered Treehouse tool and authenticated command without a separate shell permission prompt.</li>
+        <li data-criterion-id="T17-C1" data-status="complete"><strong>Complete:</strong> Claude permits executable discovery, direct Orchard invocations, and both native worktree transition tools.</li>
+        <li data-criterion-id="T17-C2" data-status="complete"><strong>Complete:</strong> Pi uses its registered Orchard tool and authenticated command without a separate shell permission prompt.</li>
         <li data-criterion-id="T17-C3" data-status="complete"><strong>Complete:</strong> No broad Git or shell bypass is added, and mandatory guardrail hooks remain active.</li>
       </ul>
     </article>

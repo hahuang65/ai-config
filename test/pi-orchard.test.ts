@@ -1,6 +1,6 @@
 import { expect, test } from "bun:test";
 
-import { createTreehouseExtension } from "../harnesses/pi/extensions/treehouse";
+import { createOrchardExtension } from "../harnesses/pi/extensions/orchard";
 
 function machineOutcome(command: string, payload: Record<string, unknown>) {
   return JSON.stringify({ protocolVersion: 1, command, ...payload });
@@ -20,7 +20,7 @@ function registerExtension(outputs: string[], dependencyOverrides: Record<string
     on: (event: string, handler: any) => handlers.set(event, [...(handlers.get(event) ?? []), handler]),
     sendUserMessage: (message: string) => queued.push(message),
   };
-  createTreehouseExtension({
+  createOrchardExtension({
     randomToken: () => "authenticated-token",
     processId: 4242,
     forkSession: (source: string, target: string) => {
@@ -28,7 +28,7 @@ function registerExtension(outputs: string[], dependencyOverrides: Record<string
       return "/sessions/fork.jsonl";
     },
     executeCli: async (args: string[], cwd: string) => {
-      executions.push({ command: "treehouse", args, cwd });
+      executions.push({ command: "orchard", args, cwd });
       return { stdout: outputs.shift() ?? "", stderr: "", code: 0, killed: false };
     },
     ...dependencyOverrides,
@@ -64,17 +64,17 @@ function registerExtension(outputs: string[], dependencyOverrides: Record<string
   };
 }
 
-test("Treehouse tool preloads one authenticated transition command and terminates the turn", async () => {
+test("Orchard tool preloads one authenticated transition command and terminates the turn", async () => {
   const extension = registerExtension([
     machineOutcome("new", {
       project: { name: "alpha", root: "/projects/alpha", trunk: "main" },
-      worktree: { path: "/home/.treehouse/alpha/feature", intent: "feature", branch: "feature" },
-      transition: { kind: "enter-worktree", operationId: "cli-operation", targetPath: "/home/.treehouse/alpha/feature" },
+      worktree: { path: "/home/.orchard/alpha/feature", intent: "feature", branch: "feature" },
+      transition: { kind: "enter-worktree", operationId: "cli-operation", targetPath: "/home/.orchard/alpha/feature" },
     }),
     machineOutcome("enter", {
       owner: { token: "owner-token", pid: 4242 },
-      worktree: { path: "/home/.treehouse/alpha/feature", intent: "feature", branch: "feature" },
-      transition: { kind: "enter-worktree", operationId: "owner-token", targetPath: "/home/.treehouse/alpha/feature" },
+      worktree: { path: "/home/.orchard/alpha/feature", intent: "feature", branch: "feature" },
+      transition: { kind: "enter-worktree", operationId: "owner-token", targetPath: "/home/.orchard/alpha/feature" },
     }),
   ]);
 
@@ -87,7 +87,7 @@ test("Treehouse tool preloads one authenticated transition command and terminate
   );
 
   expect(result.terminate).toBe(true);
-  expect(extension.editorText).toBe("/treehouse-continue authenticated-token");
+  expect(extension.editorText).toBe("/orchard-continue authenticated-token");
   expect(extension.queued).toEqual([]);
   expect(extension.executions.map((execution) => execution.args)).toEqual([
     ["new", "Feature", "--offline", "--json"],
@@ -95,7 +95,7 @@ test("Treehouse tool preloads one authenticated transition command and terminate
   ]);
 });
 
-test("Treehouse refuses to overwrite an existing pi editor draft", async () => {
+test("Orchard refuses to overwrite an existing pi editor draft", async () => {
   const extension = registerExtension([]);
   const context = extension.context("/projects/alpha");
   context.ui.setEditorText("unfinished prompt");
@@ -117,8 +117,8 @@ test("pi refuses a second lifecycle request while confirmation is pending", asyn
     machineOutcome("enter", {
       project: { name: "alpha", root: "/projects/alpha", trunk: "main" },
       owner: { token: "owner-token", pid: 4242 },
-      worktree: { path: "/home/.treehouse/alpha/feature", intent: "feature", branch: "feature" },
-      transition: { kind: "enter-worktree", operationId: "owner-token", targetPath: "/home/.treehouse/alpha/feature" },
+      worktree: { path: "/home/.orchard/alpha/feature", intent: "feature", branch: "feature" },
+      transition: { kind: "enter-worktree", operationId: "owner-token", targetPath: "/home/.orchard/alpha/feature" },
     }),
   ]);
   const context = extension.context("/projects/alpha");
@@ -146,8 +146,8 @@ test("authenticated command forks persisted history and switches the same pi ses
     machineOutcome("enter", {
       project: { name: "alpha", root: "/projects/alpha", trunk: "main" },
       owner: { token: "owner-token", pid: 4242 },
-      worktree: { path: "/home/.treehouse/alpha/feature", intent: "feature", branch: "feature" },
-      transition: { kind: "enter-worktree", operationId: "owner-token", targetPath: "/home/.treehouse/alpha/feature" },
+      worktree: { path: "/home/.orchard/alpha/feature", intent: "feature", branch: "feature" },
+      transition: { kind: "enter-worktree", operationId: "owner-token", targetPath: "/home/.orchard/alpha/feature" },
     }),
   ]);
   await extension.tools[0].execute(
@@ -173,18 +173,18 @@ test("authenticated command forks persisted history and switches the same pi ses
     },
   };
 
-  await extension.commands.get("treehouse-continue").handler("authenticated-token", commandContext);
+  await extension.commands.get("orchard-continue").handler("authenticated-token", commandContext);
 
   expect(extension.forks).toEqual([{
     source: "/sessions/source.jsonl",
-    target: "/home/.treehouse/alpha/feature",
+    target: "/home/.orchard/alpha/feature",
   }]);
   expect(switched).toEqual(["/sessions/fork.jsonl"]);
   expect(continuations).toEqual(["Continue the approved slice."]);
   expect(notifications).toEqual([]);
 
-  await extension.commands.get("treehouse-continue").handler("authenticated-token", commandContext);
-  expect(notifications).toEqual(["Treehouse transition request is missing or expired"]);
+  await extension.commands.get("orchard-continue").handler("authenticated-token", commandContext);
+  expect(notifications).toEqual(["Orchard transition request is missing or expired"]);
 });
 
 test("expired pi transition tokens fail closed without switching", async () => {
@@ -193,8 +193,8 @@ test("expired pi transition tokens fail closed without switching", async () => {
     machineOutcome("enter", {
       project: { name: "alpha", root: "/projects/alpha", trunk: "main" },
       owner: { token: "owner-token", pid: 4242 },
-      worktree: { path: "/home/.treehouse/alpha/feature", intent: "feature", branch: "feature" },
-      transition: { kind: "enter-worktree", operationId: "owner-token", targetPath: "/home/.treehouse/alpha/feature" },
+      worktree: { path: "/home/.orchard/alpha/feature", intent: "feature", branch: "feature" },
+      transition: { kind: "enter-worktree", operationId: "owner-token", targetPath: "/home/.orchard/alpha/feature" },
     }),
   ], { now: () => now });
   await extension.tools[0].execute(
@@ -207,13 +207,13 @@ test("expired pi transition tokens fail closed without switching", async () => {
   now += 10 * 60 * 1_000 + 1;
   const notifications: string[] = [];
 
-  await extension.commands.get("treehouse-continue").handler("authenticated-token", {
+  await extension.commands.get("orchard-continue").handler("authenticated-token", {
     mode: "tui",
     sessionManager: { getSessionFile: () => "/sessions/source.jsonl" },
     ui: { notify: (message: string) => notifications.push(message) },
   });
 
-  expect(notifications).toEqual(["Treehouse transition request is missing or expired"]);
+  expect(notifications).toEqual(["Orchard transition request is missing or expired"]);
   expect(extension.forks).toEqual([]);
 });
 
@@ -223,30 +223,30 @@ test("pi merge return releases ownership and finalizes cleanup after switching t
       projects: [{
         name: "alpha",
         root: "/projects/alpha",
-        slots: [{ lifecycle: "task", path: "/home/.treehouse/alpha/feature", intent: "feature", branch: "feature" }],
+        slots: [{ lifecycle: "task", path: "/home/.orchard/alpha/feature", intent: "feature", branch: "feature" }],
       }],
     }),
     machineOutcome("enter", {
       owner: { token: "owner-token", pid: 4242 },
-      worktree: { path: "/home/.treehouse/alpha/feature", intent: "feature", branch: "feature" },
-      transition: { kind: "enter-worktree", operationId: "owner-token", targetPath: "/home/.treehouse/alpha/feature" },
+      worktree: { path: "/home/.orchard/alpha/feature", intent: "feature", branch: "feature" },
+      transition: { kind: "enter-worktree", operationId: "owner-token", targetPath: "/home/.orchard/alpha/feature" },
     }),
     machineOutcome("merge", {
       project: { name: "alpha", root: "/projects/alpha", trunk: "main" },
-      worktree: { path: "/home/.treehouse/alpha/feature", intent: "feature", branch: "feature" },
+      worktree: { path: "/home/.orchard/alpha/feature", intent: "feature", branch: "feature" },
       cleanup: { requested: true },
       transition: { kind: "return-main", operationId: "cleanup-operation", targetPath: "/projects/alpha" },
     }),
     machineOutcome("enter", { released: true }),
     machineOutcome("merge", { cleanup: { status: "completed", operationId: "cleanup-operation" } }),
   ]);
-  await extension.handlers.get("session_start")[0]({}, { cwd: "/home/.treehouse/alpha/feature" });
+  await extension.handlers.get("session_start")[0]({}, { cwd: "/home/.orchard/alpha/feature" });
   await extension.tools[0].execute(
     "tool-call",
     { command: "merge", args: [], continuation: "Continue from the main project directory." },
     undefined,
     undefined,
-    { cwd: "/home/.treehouse/alpha/feature" },
+    { cwd: "/home/.orchard/alpha/feature" },
   );
   const continuations: string[] = [];
   const commandContext = {
@@ -262,7 +262,7 @@ test("pi merge return releases ownership and finalizes cleanup after switching t
     },
   };
 
-  await extension.commands.get("treehouse-continue").handler("authenticated-token", commandContext);
+  await extension.commands.get("orchard-continue").handler("authenticated-token", commandContext);
 
   expect(extension.executions.map((execution) => execution.args)).toEqual([
     ["status", "--json"],
@@ -280,8 +280,8 @@ test("missing session persistence preserves the task and refuses transition", as
     machineOutcome("enter", {
       project: { name: "alpha", root: "/projects/alpha", trunk: "main" },
       owner: { token: "owner-token", pid: 4242 },
-      worktree: { path: "/home/.treehouse/alpha/feature", intent: "feature", branch: "feature" },
-      transition: { kind: "enter-worktree", operationId: "owner-token", targetPath: "/home/.treehouse/alpha/feature" },
+      worktree: { path: "/home/.orchard/alpha/feature", intent: "feature", branch: "feature" },
+      transition: { kind: "enter-worktree", operationId: "owner-token", targetPath: "/home/.orchard/alpha/feature" },
     }),
   ]);
   await extension.tools[0].execute(
@@ -293,13 +293,13 @@ test("missing session persistence preserves the task and refuses transition", as
   );
   const notifications: string[] = [];
 
-  await extension.commands.get("treehouse-continue").handler("authenticated-token", {
+  await extension.commands.get("orchard-continue").handler("authenticated-token", {
     mode: "tui",
     sessionManager: { getSessionFile: () => undefined },
     ui: { notify: (message: string) => notifications.push(message) },
   });
 
-  expect(notifications).toEqual(["Treehouse cannot transition an unpersisted pi session"]);
+  expect(notifications).toEqual(["Orchard cannot transition an unpersisted pi session"]);
   expect(extension.forks).toEqual([]);
   expect(extension.executions).toHaveLength(1);
 });
@@ -309,8 +309,8 @@ test("switch failure reports the preserved worktree without cleanup", async () =
     machineOutcome("enter", {
       project: { name: "alpha", root: "/projects/alpha", trunk: "main" },
       owner: { token: "owner-token", pid: 4242 },
-      worktree: { path: "/home/.treehouse/alpha/feature", intent: "feature", branch: "feature" },
-      transition: { kind: "enter-worktree", operationId: "owner-token", targetPath: "/home/.treehouse/alpha/feature" },
+      worktree: { path: "/home/.orchard/alpha/feature", intent: "feature", branch: "feature" },
+      transition: { kind: "enter-worktree", operationId: "owner-token", targetPath: "/home/.orchard/alpha/feature" },
     }),
   ]);
   await extension.tools[0].execute(
@@ -321,7 +321,7 @@ test("switch failure reports the preserved worktree without cleanup", async () =
     { cwd: "/projects/alpha" },
   );
   const notifications: string[] = [];
-  const transition = extension.commands.get("treehouse-continue").handler("authenticated-token", {
+  const transition = extension.commands.get("orchard-continue").handler("authenticated-token", {
     mode: "tui",
     sessionManager: { getSessionFile: () => "/sessions/source.jsonl" },
     ui: { notify: (message: string) => notifications.push(message) },
@@ -330,7 +330,7 @@ test("switch failure reports the preserved worktree without cleanup", async () =
 
   await expect(transition).rejects.toThrow("switch failed");
   expect(notifications).toEqual([
-    "Treehouse transition failed; work remains at /home/.treehouse/alpha/feature",
+    "Orchard transition failed; work remains at /home/.orchard/alpha/feature",
   ]);
   expect(extension.executions).toHaveLength(1);
 });
@@ -340,8 +340,8 @@ test("clearing the prefilled command preserves ownership until ordinary shutdown
     machineOutcome("enter", {
       project: { name: "alpha", root: "/projects/alpha", trunk: "main" },
       owner: { token: "owner-token", pid: 4242 },
-      worktree: { path: "/home/.treehouse/alpha/feature", intent: "feature", branch: "feature" },
-      transition: { kind: "enter-worktree", operationId: "owner-token", targetPath: "/home/.treehouse/alpha/feature" },
+      worktree: { path: "/home/.orchard/alpha/feature", intent: "feature", branch: "feature" },
+      transition: { kind: "enter-worktree", operationId: "owner-token", targetPath: "/home/.orchard/alpha/feature" },
     }),
     machineOutcome("enter", { released: true }),
   ]);
@@ -364,25 +364,25 @@ test("clearing the prefilled command preserves ownership until ordinary shutdown
   ]);
 });
 
-test("ordinary pi session shutdown releases its active Treehouse owner", async () => {
+test("ordinary pi session shutdown releases its active Orchard owner", async () => {
   const extension = registerExtension([
     machineOutcome("status", {
       projects: [{
         name: "alpha",
         root: "/projects/alpha",
-        slots: [{ lifecycle: "task", path: "/home/.treehouse/alpha/feature", intent: "feature", branch: "feature" }],
+        slots: [{ lifecycle: "task", path: "/home/.orchard/alpha/feature", intent: "feature", branch: "feature" }],
       }],
     }),
     machineOutcome("enter", {
       owner: { token: "owner-token", pid: 4242 },
-      worktree: { path: "/home/.treehouse/alpha/feature", intent: "feature", branch: "feature" },
-      transition: { kind: "enter-worktree", operationId: "owner-token", targetPath: "/home/.treehouse/alpha/feature" },
+      worktree: { path: "/home/.orchard/alpha/feature", intent: "feature", branch: "feature" },
+      transition: { kind: "enter-worktree", operationId: "owner-token", targetPath: "/home/.orchard/alpha/feature" },
     }),
     machineOutcome("enter", { released: true }),
   ]);
 
-  await extension.handlers.get("session_start")[0]({}, { cwd: "/home/.treehouse/alpha/feature" });
-  await extension.handlers.get("session_shutdown")[0]({}, { cwd: "/home/.treehouse/alpha/feature" });
+  await extension.handlers.get("session_start")[0]({}, { cwd: "/home/.orchard/alpha/feature" });
+  await extension.handlers.get("session_shutdown")[0]({}, { cwd: "/home/.orchard/alpha/feature" });
 
   expect(extension.executions.map((execution) => execution.args)).toEqual([
     ["status", "--json"],
@@ -396,8 +396,8 @@ test("cancelled pi switch keeps ownership and reports the safe task path", async
     machineOutcome("enter", {
       project: { name: "alpha", root: "/projects/alpha", trunk: "main" },
       owner: { token: "owner-token", pid: 4242 },
-      worktree: { path: "/home/.treehouse/alpha/feature", intent: "feature", branch: "feature" },
-      transition: { kind: "enter-worktree", operationId: "owner-token", targetPath: "/home/.treehouse/alpha/feature" },
+      worktree: { path: "/home/.orchard/alpha/feature", intent: "feature", branch: "feature" },
+      transition: { kind: "enter-worktree", operationId: "owner-token", targetPath: "/home/.orchard/alpha/feature" },
     }),
   ]);
   await extension.tools[0].execute(
@@ -409,7 +409,7 @@ test("cancelled pi switch keeps ownership and reports the safe task path", async
   );
   const notifications: string[] = [];
 
-  await extension.commands.get("treehouse-continue").handler("authenticated-token", {
+  await extension.commands.get("orchard-continue").handler("authenticated-token", {
     mode: "tui",
     sessionManager: { getSessionFile: () => "/sessions/source.jsonl" },
     ui: { notify: (message: string) => notifications.push(message) },
@@ -417,7 +417,7 @@ test("cancelled pi switch keeps ownership and reports the safe task path", async
   });
 
   expect(notifications).toEqual([
-    "Treehouse transition was cancelled; work remains at /home/.treehouse/alpha/feature",
+    "Orchard transition was cancelled; work remains at /home/.orchard/alpha/feature",
   ]);
   expect(extension.executions).toHaveLength(1);
 });

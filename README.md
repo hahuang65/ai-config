@@ -268,8 +268,8 @@ Agents read a subset relevant to their role.
 | Name | Model (rec.) | Role |
 |------|-------|------|
 | `review-artifact` | — | Review local HTML with exact annotations, durable polling, live reload, layout warnings, and explicit approval |
-| `treehouse` | — | Delegate reusable worktree lifecycle operations to the independently installed Git-owned CLI and native harness transitions |
-| `merge` | — | Thin fail-closed alias for Treehouse fast-forward integration, return, and cleanup |
+| `orchard` | — | Delegate reusable worktree lifecycle operations to the independently installed Git-owned CLI and native harness transitions |
+| `merge` | — | Thin fail-closed alias for Orchard fast-forward integration, return, and cleanup |
 | `commit` | — | Create one focused checkout-local commit without integration or lifecycle changes |
 | `visualize` | — | Generate self-contained HTML pages for visual explanations |
 | `visualize-diff` | — | Visual HTML diff review — before/after comparison + code-review analysis |

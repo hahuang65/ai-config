@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Treehouse Worktree Manager Spec</title>
+  <title>Orchard Worktree Manager Spec</title>
   <style>
     :root {
       color-scheme: light dark;
@@ -84,12 +84,12 @@
 <main data-artifact-kind="spec" data-artifact-version="1">
   <header id="overview">
     <div class="eyebrow">Feature specification · ADR-0019</div>
-    <h1>Treehouse Worktree Manager Spec</h1>
+    <h1>Orchard Worktree Manager Spec</h1>
     <p class="lede">A shared, conservative worktree manager that combines reusable environments with ordinary named branches, while letting terminal users, Claude Code, pi, and the build pipeline enter the same lifecycle safely.</p>
     <div class="meta">
       <span class="chip">macOS + Linux</span>
       <span class="chip">Node.js 22+</span>
-      <span class="chip">Fast-forward integration</span>
+      <span class="chip">Rebase + fast-forward integration</span>
       <span class="chip">No automatic push</span>
       <span class="chip">No configuration files</span>
     </div>
@@ -114,15 +114,15 @@
 
   <section id="solution">
     <h2>Solution</h2>
-    <p>Treehouse manages a bounded pool per project beneath <code>~/.treehouse/</code>. Available worktrees are clean detached slots aligned with trunk. Acquiring a slot attaches it to a named feature branch and exposes it at a readable intent-based path. Recycling reverses that transition only after the work is clean and proven landed.</p>
+    <p>Orchard manages a bounded pool per project beneath <code>~/.orchard/</code>. Available worktrees are clean detached slots aligned with trunk. Acquiring a slot attaches it to a named feature branch and exposes it at a readable intent-based path. Recycling reverses that transition only after the work is clean and proven landed.</p>
     <div class="state-flow" aria-label="Managed worktree lifecycle">
       <span class="state">Available</span><span class="arrow">→ acquire or convert →</span>
       <span class="state">Task worktree</span><span class="arrow">→ land + clean →</span>
       <span class="state">Available</span>
     </div>
-    <p>The Git dotfiles repository owns the sole lifecycle implementation and installs the Treehouse CLI as baseline Git tooling. AI skills and harness adapters contain no duplicate Git lifecycle logic: they invoke the installed CLI through its versioned structured protocol, then perform native same-window transitions that a child process cannot perform for its parent. Terminal callers use a managed shell, Claude Code uses its native existing-worktree operation, and pi preloads one authenticated transition command for the user to submit with a single Enter keypress before replacing its session in the same visible TUI with a cwd-bound fork. The build pipeline only requires worktree isolation and delegates to Treehouse when it starts outside any linked worktree.</p>
-    <p>Integration is explicit and local. Treehouse fast-forwards trunk from the main project directory, never pushes, returns the active caller to the main directory before default cleanup, and leaves landed work intact if that return transition cannot complete.</p>
-    <p>Treehouse workflows fail closed when the executable is absent or protocol-incompatible. Build is the sole degraded-mode exception: when it starts outside a linked worktree and preflight fails before acquisition, it warns and asks whether to continue on an ordinary local task branch. That fallback is never automatic or Treehouse-managed and cannot use the Treehouse merge workflow.</p>
+    <p>The Git dotfiles repository owns the sole lifecycle implementation and installs the Orchard CLI as baseline Git tooling. AI skills and harness adapters contain no duplicate Git lifecycle logic: they invoke the installed CLI through its versioned structured protocol, then perform native same-window transitions that a child process cannot perform for its parent. Terminal callers use a managed shell, Claude Code uses its native existing-worktree operation, and pi preloads one authenticated transition command for the user to submit with a single Enter keypress before replacing its session in the same visible TUI with a cwd-bound fork. The build pipeline only requires worktree isolation and delegates to Orchard when it starts outside any linked worktree.</p>
+    <p>Integration is explicit and local. Orchard rebases the clean task branch onto synchronized trunk, automatically aborts and restores the original task tip on failure, then fast-forwards trunk from the main project directory without creating merge commits or pushing. It returns the active caller to the main directory before default cleanup and leaves landed work intact if that return transition cannot complete.</p>
+    <p>Orchard workflows fail closed when the executable is absent or protocol-incompatible. Build is the sole degraded-mode exception: when it starts outside a linked worktree and preflight fails before acquisition, it warns and asks whether to continue on an ordinary local task branch. That fallback is never automatic or Orchard-managed and cannot use the Orchard merge workflow.</p>
   </section>
 
   <section id="stories">
@@ -130,11 +130,11 @@
     <ol class="stories">
       <li>As a developer, I want ordinary tasks to use a local task branch by default, so that worktrees appear only when I explicitly request isolation.</li>
       <li>As a build-pipeline user, I want a build started in the main project directory to acquire and enter a task worktree with at most one native pi confirmation, so that the required isolation creates no manual context handoff.</li>
-      <li>As a build-pipeline user already inside any linked worktree, I want the build to continue there uninterrupted, so that Treehouse does not adopt or relocate work managed elsewhere.</li>
+      <li>As a build-pipeline user already inside any linked worktree, I want the build to continue there uninterrupted, so that Orchard does not adopt or relocate work managed elsewhere.</li>
       <li>As a developer, I want each repository to have its own bounded project group, so that pools, locks, and lifecycle state cannot cross project boundaries.</li>
       <li>As a developer with repositories sharing a basename, I want only the newly discovered collision to receive a parent-qualified group name, so that established paths remain stable.</li>
       <li>As a developer, I want a new task worktree to use a normalized intent and named feature branch, so that its purpose and recovery path remain obvious.</li>
-      <li>As a developer, I want Treehouse to honor my trusted global branch-creation alias when present, so that branch naming follows my established convention.</li>
+      <li>As a developer, I want Orchard to honor my trusted global branch-creation alias when present, so that branch naming follows my established convention.</li>
       <li>As a security-conscious developer, I want repository-local shell aliases treated as untrusted, so that entering a repository never executes project-supplied shell code implicitly.</li>
       <li>As a developer, I want online acquisition to begin from clean synchronized trunk, so that new work does not silently branch from stale integration state.</li>
       <li>As an offline developer, I want an explicit offline mode that uses local trunk, so that lack of network access is intentional rather than mistaken for synchronization.</li>
@@ -142,21 +142,21 @@
       <li>As a developer converting a branch, I want ignored files left in the original working directory, so that large or machine-local artifacts are not copied unexpectedly.</li>
       <li>As a developer, I want an acquired or converted worktree to open in my current interaction, with pi requiring only one prefilled Enter confirmation, so that I do not start another visible agent or terminal.</li>
       <li>As a developer, I want a failed harness transition to leave the created worktree intact and report its path, so that continuation failure never becomes data loss.</li>
-      <li>As an automation caller, I want path and JSON output modes that do not open an interactive shell, so that scripts can compose Treehouse safely.</li>
-      <li>As a developer, I want bare <code>treehouse</code> to show relevant status, so that the common inspection path requires no subcommand.</li>
+      <li>As an automation caller, I want path and JSON output modes that do not open an interactive shell, so that scripts can compose Orchard safely.</li>
+      <li>As a developer, I want bare <code>orchard</code> to show relevant status, so that the common inspection path requires no subcommand.</li>
       <li>As a developer inside a repository, I want status scoped to that project unless I request all projects, so that routine output stays focused.</li>
-      <li>As a developer outside a repository, I want status to summarize every project group, so that I can audit Treehouse globally.</li>
+      <li>As a developer outside a repository, I want status to summarize every project group, so that I can audit Orchard globally.</li>
       <li>As a developer, I want to enter an existing task worktree without mutating its lifecycle, so that reopening work is distinct from creating or converting it.</li>
-      <li>As a developer, I want Treehouse to refuse concurrent entry by default and require explicit shared use, so that two callers do not unknowingly edit the same checkout.</li>
+      <li>As a developer, I want Orchard to refuse concurrent entry by default and require explicit shared use, so that two callers do not unknowingly edit the same checkout.</li>
       <li>As a developer, I want capacity to default to four total active-plus-available slots per project and be overridable by a positive environment value, so that resource use is bounded without configuration files.</li>
       <li>As a developer at capacity, I want acquisition to fail clearly rather than evict active or unlanded work, so that capacity pressure never discards work.</li>
-      <li>As a developer, I want merge to fast-forward trunk only when it can reach the exact feature tip directly, so that integration never creates an unexpected merge commit or rewrites history.</li>
-      <li>As a developer, I want a rejected fast-forward to leave both checkouts and my location unchanged, so that conflict resolution remains an explicit follow-up.</li>
+      <li>As a developer, I want merge to rebase my clean local task commits onto synchronized trunk before fast-forwarding it, so that integration produces linear history without merge commits.</li>
+      <li>As a developer, I want a failed or conflicted rebase automatically aborted and verified at the original task tip, so that trunk, both checkouts, and my location remain unchanged.</li>
       <li>As a developer, I want merge to remain local and never push, so that remote publication is always a separate decision.</li>
       <li>As a developer, I want successful default merge to return me to the main project directory before recycling, so that my current tools never point at a removed or repurposed checkout.</li>
       <li>As a developer, I want transition failure after a valid merge to leave the landed worktree and branch intact, so that cleanup can be retried without rolling trunk backward.</li>
       <li>As a developer, I want a keep option to preserve the landed task worktree, branch, and current location, so that cleanup remains optional.</li>
-      <li>As a harness user, I want <code>/merge</code> to be a thin alias for Treehouse merge, so that convenient integration cannot drift from the canonical safety rules.</li>
+      <li>As a harness user, I want <code>/merge</code> to be a thin alias for Orchard merge, so that convenient integration cannot drift from the canonical safety rules.</li>
       <li>As a developer, I want <code>/commit</code> to stop after creating a focused commit, so that committing never merges, rebases, pushes, switches branches, or changes worktree lifecycle.</li>
       <li>As a developer, I want recycling to require clean, landed work, so that an available slot never conceals uncommitted or unintegrated changes.</li>
       <li>As a maintainer, I want pruning to preview by default, recycle landed tasks first, and delete only excess available slots, so that pool reduction is conservative.</li>
@@ -165,9 +165,9 @@
       <li>As a developer after a crash, I want stale ownership recovered conservatively and ambiguous worktrees quarantined, so that uncertain state is never recycled automatically.</li>
       <li>As a developer using squash or rebase merges, I want read-only pull-request metadata consulted only after ancestry cannot prove landing, so that remote evidence supplements rather than overrides Git.</li>
       <li>As a new user, I want comprehensive top-level and per-command help, so that every behavior, safety gate, option, and exit outcome is discoverable without external documentation.</li>
-      <li>As an installer, I want Git dotfiles to install the standalone lifecycle CLI and AI dotfiles to install only thin harness integrations, so that Treehouse remains baseline Git functionality without cross-harness leakage or implementation duplication.</li>
-      <li>As a build-pipeline user without a compatible Treehouse executable, I want a clear warning and an explicit choice to use a normal local task branch, so that missing optional isolation tooling does not silently change or completely block my workflow.</li>
-      <li>As a harness user, I want approved Treehouse CLI and native transition operations to run without repeated permission prompts, so that lifecycle safety comes from Treehouse invariants rather than broad shell authorization.</li>
+      <li>As an installer, I want Git dotfiles to install the standalone lifecycle CLI and AI dotfiles to install only thin harness integrations, so that Orchard remains baseline Git functionality without cross-harness leakage or implementation duplication.</li>
+      <li>As a build-pipeline user without a compatible Orchard executable, I want a clear warning and an explicit choice to use a normal local task branch, so that missing optional isolation tooling does not silently change or completely block my workflow.</li>
+      <li>As a harness user, I want approved Orchard CLI and native transition operations to run without repeated permission prompts, so that lifecycle safety comes from Orchard invariants rather than broad shell authorization.</li>
     </ol>
   </section>
 
@@ -178,14 +178,14 @@
     <div class="decision-grid">
       <article>
         <h3>One lifecycle authority</h3>
-        <p>The Treehouse service in the Git dotfiles repository owns every Git and filesystem state transition. CLI commands submit structured requests, while AI skills and harness adapters consume versioned structured outcomes rather than importing or reimplementing lifecycle behavior.</p>
+        <p>The Orchard service in the Git dotfiles repository owns every Git and filesystem state transition. CLI commands submit structured requests, while AI skills and harness adapters consume versioned structured outcomes rather than importing or reimplementing lifecycle behavior.</p>
       </article>
       <article>
         <h3>Repository ownership follows responsibility</h3>
-        <p>The Git dotfiles repository owns the executable, runtime, CLI tests, and command installation. The AI dotfiles repository owns only Treehouse skills, workflow policy, and native harness-transition adapters.</p>
+        <p>The Git dotfiles repository owns the executable, runtime, CLI tests, and command installation. The AI dotfiles repository owns only Orchard skills, workflow policy, and native harness-transition adapters.</p>
       </article>
       <article>
-        <h3>Treehouse owns caller transition</h3>
+        <h3>Orchard owns caller transition</h3>
         <p>Creation, conversion, and entry include continuation into the selected task worktree for interactive callers. The CLI returns a validated transition outcome to AI callers, their adapter performs the native parent-session transition, and build never contains harness-switching logic. Pi alone preloads a one-time authenticated command and waits for one Enter keypress because its session-control API is restricted to user-submitted extension commands.</p>
       </article>
       <article>
@@ -199,17 +199,17 @@
     </div>
 
     <h3 id="decision-layout">Project groups and pool layout</h3>
-    <p>Each repository owns <code>~/.treehouse/&lt;project&gt;/</code>, containing readable active directories by normalized intent, hidden available slots beneath <code>.pool/</code>, durable state, and a project lock. Capacity counts both task and available worktrees and defaults to four through <code>TREEHOUSE_MAX_TREES</code>. The value must be a positive integer.</p>
+    <p>Each repository owns <code>~/.orchard/&lt;project&gt;/</code>, containing readable active directories by normalized intent, hidden available slots beneath <code>.pool/</code>, durable state, and a project lock. Capacity counts both task and available worktrees and defaults to four through <code>ORCHARD_MAX_TREES</code>. The value must be a positive integer.</p>
     <p>A project group normally uses the main project directory basename. When another repository already owns that name, the established group remains unchanged and only the newly discovered repository receives a parent-qualified name. Renaming an already registered project is not supported.</p>
 
     <h3 id="decision-commands">Command contract</h3>
-    <p>Bare <code>treehouse</code> is equivalent to <code>treehouse status</code>. The command set is <code>new</code>, <code>convert</code>, <code>status</code>, <code>enter</code>, <code>merge</code>, <code>recycle</code>, <code>prune</code>, and <code>destroy</code>. Every command provides comprehensive help, stable nonzero failures, human-readable output, and machine-readable output where automation needs it.</p>
+    <p>Bare <code>orchard</code> is equivalent to <code>orchard status</code>. The command set is <code>new</code>, <code>convert</code>, <code>status</code>, <code>enter</code>, <code>merge</code>, <code>recycle</code>, <code>prune</code>, and <code>destroy</code>. Every command provides comprehensive help, stable nonzero failures, human-readable output, and machine-readable output where automation needs it.</p>
     <ul>
       <li><strong>new</strong> synchronizes clean trunk, creates a normalized named branch, acquires a slot, and transitions the interactive caller. Explicit offline mode uses local trunk.</li>
       <li><strong>convert</strong> requires a local task branch and uses recoverable temporary Git state to preserve staged, unstaged, and untracked changes. Ignored files remain behind.</li>
       <li><strong>status</strong> scopes to the current project in a repository and all projects otherwise. It supports explicit all-project, refresh, and JSON modes.</li>
       <li><strong>enter</strong> opens an existing task worktree without lifecycle mutation. It refuses active sharing unless explicitly permitted.</li>
-      <li><strong>merge</strong> validates, fast-forwards trunk from the main project directory, transitions the default caller back, then recycles. It never pushes.</li>
+      <li><strong>merge</strong> validates both clean checkouts and synchronized trunk, rebases the task branch onto trunk with automatic abort on failure, fast-forwards trunk from the main project directory, transitions the default caller back, then recycles. It never creates a merge commit or pushes.</li>
       <li><strong>recycle</strong> accepts only clean, landed, unoccupied managed task worktrees and removes the completed local branch unless kept.</li>
       <li><strong>prune</strong> is preview-only by default, recycles eligible landed work first, and removes only excess available slots.</li>
       <li><strong>destroy</strong> is preview-only by default and has independent explicit gates for unlanded work, live use, unverifiable state, and branch deletion.</li>
@@ -217,27 +217,27 @@
     <p>Human <code>new</code>, <code>convert</code>, and <code>enter</code> use a managed child shell. Automation uses path or JSON modes and never receives an implicit shell. Bulk operations are always bounded to one named project group.</p>
 
     <h3 id="decision-git">Git and landing policy</h3>
-    <p>Treehouse resolves trunk from repository metadata and never assumes its name. Online acquisition requires a clean main project directory on trunk. If a trusted user-level <code>git sync</code> alias exists, Treehouse runs it and verifies the required postconditions; alias failure stops acquisition. Without the alias, Treehouse performs explicit fetch, fast-forward update, prune, and submodule synchronization. Repository-local shell aliases never execute automatically.</p>
-    <p>Branch creation prefers a trusted user-level <code>git new</code> alias and verifies the resulting branch and checkout. Without it, Treehouse creates an ordinary unprefixed branch. Inputs are passed as argument arrays rather than shell-concatenated commands.</p>
-    <p>Landing uses ancestry first. Read-only GitHub pull-request metadata is consulted only to recognize squash or rebase landing that cannot preserve exact-tip ancestry. Unknown forge state remains unverifiable rather than guessed.</p>
+    <p>Orchard resolves trunk from repository metadata and never assumes its name. Online acquisition requires a clean main project directory on trunk. If a trusted user-level <code>git sync</code> alias exists, Orchard runs it and verifies the required postconditions; alias failure stops acquisition. Without the alias, Orchard performs explicit fetch, fast-forward update, prune, and submodule synchronization. Repository-local shell aliases never execute automatically.</p>
+    <p>Branch creation prefers a trusted user-level <code>git new</code> alias and verifies the resulting branch and checkout. Without it, Orchard creates an ordinary unprefixed branch. Inputs are passed as argument arrays rather than shell-concatenated commands.</p>
+    <p>Merge rewrites only clean, unlanded local task commits by rebasing them onto synchronized trunk, then advances trunk by fast-forward only. A failed rebase is automatically aborted and its original tip is verified before Orchard reports failure. Landing uses ancestry first. Read-only GitHub pull-request metadata is consulted only to recognize squash or rebase landing that cannot preserve exact-tip ancestry. Unknown forge state remains unverifiable rather than guessed.</p>
 
     <h3 id="decision-transitions">Harness and shell transitions</h3>
-    <p>Claude Code claims Treehouse ownership for its live parent process, enters the existing registered task worktree through <code>EnterWorktree</code>, and keeps the current conversation. On default return it calls <code>ExitWorktree</code> with keep behavior, which restores the original main project directory without allowing Claude Code to remove the Treehouse-owned worktree; it then releases the exact owner token before Treehouse finalizes cleanup. Pi uses a user-level extension to fork the persisted conversation into the target cwd and switch the same TUI session. Cwd-bound tools, instructions, resources, and trust are rebuilt in both harnesses. Neither path depends on changing the process cwd as an implementation accident.</p>
+    <p>Claude Code claims Orchard ownership for its live parent process, enters the existing registered task worktree through <code>EnterWorktree</code>, and keeps the current conversation. On default return it calls <code>ExitWorktree</code> with keep behavior, which restores the original main project directory without allowing Claude Code to remove the Orchard-owned worktree; it then releases the exact owner token before Orchard finalizes cleanup. Pi uses a user-level extension to fork the persisted conversation into the target cwd and switch the same TUI session. Cwd-bound tools, instructions, resources, and trust are rebuilt in both harnesses. Neither path depends on changing the process cwd as an implementation accident.</p>
     <p>The pi adapter invokes the CLI in machine mode, validates the transition, stores a one-time authenticated request, preloads its internal slash command into an otherwise empty editor, and terminates the initiating tool turn. The user presses Enter once; pi then executes the command with its privileged command context, performs the session replacement, and resumes with a generic instruction to continue the requesting workflow. No command text must be typed or copied, and no additional model turn occurs before transition.</p>
     <p>If the editor already contains a draft, the adapter refuses to overwrite it and reports the preserved task path. Clearing or declining the prefilled command leaves the worktree and ownership intact for later entry. Invalid, replayed, or expired tokens fail closed. Native transition failure likewise reports the CLI-provided safe target and stops without launching another agent or creating a handoff artifact.</p>
     <p>A successful default merge performs the Git integration first from the main project directory, then preloads the same one-Enter return confirmation before cleanup. Cleanup runs only after the current pi interaction has returned to the main directory. If confirmation or return fails, trunk remains advanced and the landed task worktree remains attached and occupied for later recycling. A keep option skips both return and cleanup.</p>
 
     <h3 id="decision-workflows">Workflow boundaries</h3>
-    <p>The Treehouse skill is the harness-neutral AI workflow surface and delegates lifecycle requests to the installed CLI. <code>/merge</code> forwards unchanged arguments to its merge flow and refuses outside a managed task worktree. Neither skill has an independent Git integration implementation.</p>
-    <p>Build continues in any existing linked worktree without adoption and without requiring the Treehouse executable. When started from the main project directory or another non-worktree checkout, it first verifies executable availability and protocol compatibility, then delegates acquisition and entry to Treehouse and resumes its existing phase after transition.</p>
-    <p>If that preflight fails before Treehouse mutates state, build warns that isolation and the Treehouse merge workflow will be unavailable and asks whether to continue on an ordinary local task branch. Declining stops with Git dotfiles installation guidance. Acceptance authorizes only the established branch workflow, not duplicated worktree management. Missing executables never trigger an automatic fallback, and acquisition or native-transition failures preserve the task worktree and stop without offering branch fallback. The four existing approval gates remain unchanged.</p>
-    <p>The commit skill is checkout-local. It may inspect state, stage an unambiguous logical change, and create one commit. It never invokes Treehouse, changes branch or worktree lifecycle, merges, rebases, pushes, or chains into the merge skill. Integration is always a separate explicit action.</p>
+    <p>The Orchard skill is the harness-neutral AI workflow surface and delegates lifecycle requests to the installed CLI. <code>/merge</code> forwards unchanged arguments to its merge flow and refuses outside a managed task worktree. Neither skill has an independent Git integration implementation.</p>
+    <p>Build continues in any existing linked worktree without adoption and without requiring the Orchard executable. When started from the main project directory or another non-worktree checkout, it first verifies executable availability and protocol compatibility, then delegates acquisition and entry to Orchard and resumes its existing phase after transition.</p>
+    <p>If that preflight fails before Orchard mutates state, build warns that isolation and the Orchard merge workflow will be unavailable and asks whether to continue on an ordinary local task branch. Declining stops with Git dotfiles installation guidance. Acceptance authorizes only the established branch workflow, not duplicated worktree management. Missing executables never trigger an automatic fallback, and acquisition or native-transition failures preserve the task worktree and stop without offering branch fallback. The four existing approval gates remain unchanged.</p>
+    <p>The commit skill is checkout-local. It may inspect state, stage an unambiguous logical change, and create one commit. It never invokes Orchard, changes branch or worktree lifecycle, merges, rebases, pushes, or chains into the merge skill. Integration is always a separate explicit action.</p>
 
     <h3 id="decision-install">Shared delivery and compatibility</h3>
-    <p>The executable requires Node.js 22 or newer and initially supports macOS and Linux. The Git dotfiles installer exposes <code>treehouse/bin/treehouse.mjs</code> at <code>~/.local/bin/treehouse</code>. The AI installer never installs or vendors the executable; it installs the shared skills and pi transition adapter, while Claude uses its native worktree capability through the shared skill.</p>
-    <p>The CLI machine interface includes a protocol version so independently installed AI adapters can reject incompatible outcomes safely. Standalone Treehouse and merge workflows stop with actionable Git dotfiles installation guidance when the executable is absent and reject incompatible protocol versions before mutation. The AI installer may be used independently and does not fail merely because the separate executable has not yet been installed.</p>
-    <p>No Treehouse configuration file is introduced. The only configuration input is optional pool capacity through the environment. Both repository installers remain independently idempotent, and AI installation preserves harness-module isolation.</p>
-    <p>Claude Code permissions allow only executable discovery, direct <code>treehouse</code> invocations, and the native <code>EnterWorktree</code>/<code>ExitWorktree</code> tools. Pi invokes Treehouse through its registered extension tool and authenticated command without a separate shell permission prompt. Neither harness receives a broad Git or shell bypass, and mandatory guardrail hooks remain active.</p>
+    <p>The executable requires Node.js 22 or newer and initially supports macOS and Linux. The Git dotfiles installer exposes <code>orchard/bin/orchard.mjs</code> at <code>~/.local/bin/orchard</code>. The AI installer never installs or vendors the executable; it installs the shared skills and pi transition adapter, while Claude uses its native worktree capability through the shared skill.</p>
+    <p>The CLI machine interface includes a protocol version so independently installed AI adapters can reject incompatible outcomes safely. Standalone Orchard and merge workflows stop with actionable Git dotfiles installation guidance when the executable is absent and reject incompatible protocol versions before mutation. The AI installer may be used independently and does not fail merely because the separate executable has not yet been installed.</p>
+    <p>No Orchard configuration file is introduced. The only configuration input is optional pool capacity through the environment. Both repository installers remain independently idempotent, and AI installation preserves harness-module isolation.</p>
+    <p>Claude Code permissions allow only executable discovery, direct <code>orchard</code> invocations, and the native <code>EnterWorktree</code>/<code>ExitWorktree</code> tools. Pi invokes Orchard through its registered extension tool and authenticated command without a separate shell permission prompt. Neither harness receives a broad Git or shell bypass, and mandatory guardrail hooks remain active.</p>
 
     <div class="callout" id="decision-safety-summary">
       <strong>Safety invariant:</strong> uncertain state is preserved, not cleaned. No capacity, synchronization, merge, prune, destroy, transition, or recovery failure may discard staged, unstaged, untracked, unlanded, occupied, or unverifiable work.
@@ -248,29 +248,29 @@
     <h2>Testing Decisions</h2>
     <p>Behavior follows red-green-refactor TDD and is tested through stable public interfaces. Real temporary Git repositories are preferred over mocks for lifecycle behavior. Process, forge, and harness boundaries use controlled fakes where deterministic failure injection is required.</p>
 
-    <div class="module" id="test-treehouse-service">
-      <h3>Treehouse service</h3>
+    <div class="module" id="test-orchard-service">
+      <h3>Orchard service</h3>
       <p><strong>Test directly through its structured request interface.</strong> Cover lifecycle transitions, invariants, capacity, idempotence, safe partial success, and error classification independently of presentation.</p>
     </div>
     <div class="module" id="test-git-gateway">
       <h3>Git workspace gateway</h3>
-      <p><strong>Test directly through its public repository interface.</strong> Use real temporary repositories for trunk discovery, aliases, synchronization, conversion state, fast-forward checks, branch cleanup, ancestry, submodules, and failure recovery. Fake only network and forge responses.</p>
+      <p><strong>Test directly through its public repository interface.</strong> Use real temporary repositories for trunk discovery, aliases, synchronization, successful and conflicted rebases, fast-forward checks, branch cleanup, ancestry, submodules, and failure recovery. Fake only network and forge responses.</p>
     </div>
     <div class="module" id="test-project-registry">
       <h3>Project registry</h3>
       <p><strong>Test directly through its registry interface.</strong> Exercise naming collisions, capacity parsing, atomic writes, lock contention, ownership liveness, stale claims, reconstruction, quarantine, and concurrent acquisition.</p>
     </div>
     <div class="module" id="test-cli">
-      <h3>Treehouse CLI</h3>
+      <h3>Orchard CLI</h3>
       <p><strong>Test directly in the Git dotfiles repository as the highest user-facing command interface.</strong> Spawn the executable with isolated home directories and temporary repositories. Cover every command, default status behavior, complete help, exit codes, dry runs, path output, versioned JSON schemas, offline behavior, and noninteractive refusal paths.</p>
     </div>
     <div class="module" id="test-transition">
       <h3>Harness transition layer</h3>
-      <p><strong>Test in the AI dotfiles repository through the CLI protocol boundary and each registered harness contract.</strong> Drive a fake executable outcome and extension API for pi registration, empty-editor validation, authenticated command prefill, one-time token rejection, cancellation, session replacement, continuation, incompatibility, and failure cleanup, with targeted integration against session-manager behavior. <strong>Cover Claude through the Treehouse workflow contract</strong> because its cwd switch is a native harness interface rather than duplicated product code.</p>
+      <p><strong>Test in the AI dotfiles repository through the CLI protocol boundary and each registered harness contract.</strong> Drive a fake executable outcome and extension API for pi registration, empty-editor validation, authenticated command prefill, one-time token rejection, cancellation, session replacement, continuation, incompatibility, and failure cleanup, with targeted integration against session-manager behavior. <strong>Cover Claude through the Orchard workflow contract</strong> because its cwd switch is a native harness interface rather than duplicated product code.</p>
     </div>
     <div class="module" id="test-workflow-skills">
       <h3>Workflow skills</h3>
-      <p><strong>Cover through the authoring contract plus fake executable and transition seams.</strong> Content checks pin that Treehouse owns transitions, build delegates only when outside a linked worktree, missing or incompatible executables fail closed except for build's explicitly approved local-branch fallback, merge is a thin alias, commit cannot integrate, and no handoff-file workflow returns. Prompt files do not duplicate lifecycle tests.</p>
+      <p><strong>Cover through the authoring contract plus fake executable and transition seams.</strong> Content checks pin that Orchard owns transitions, build delegates only when outside a linked worktree, missing or incompatible executables fail closed except for build's explicitly approved local-branch fallback, merge is a thin alias, commit cannot integrate, and no handoff-file workflow returns. Prompt files do not duplicate lifecycle tests.</p>
     </div>
     <div class="module" id="test-installer">
       <h3>Installer projection</h3>
@@ -284,9 +284,9 @@
       <li>Windows support.</li>
       <li>Migration of pre-existing flat worktrees into project groups.</li>
       <li>Renaming or moving an established project group when the repository directory changes.</li>
-      <li>Treehouse configuration files or per-repository configuration.</li>
+      <li>Orchard configuration files or per-repository configuration.</li>
       <li>Setup hooks, setup command flags, ignored-file copying, or explicit cache warming.</li>
-      <li>Automatic pushes, pull-request creation, remote branch deletion, merge commits, rebases, or history rewriting.</li>
+      <li>Automatic pushes, pull-request creation, remote branch deletion, merge commits, or history rewriting outside Orchard's clean unlanded task-branch rebase.</li>
       <li>First Mate-style terminal backends, child-agent supervision, job scheduling, message injection, or parallel-agent orchestration.</li>
       <li>Automatic adoption, relocation, merge cleanup, or lifecycle tracking for unmanaged worktrees.</li>
       <li>Automatic integration from the commit skill or an implicit post-commit action.</li>
@@ -296,7 +296,7 @@
 
   <section id="further-notes">
     <h2>Further Notes</h2>
-    <p>ADR-0019 is the authoritative rationale for the hybrid pooled, branch-bound lifecycle and the boundary between Treehouse, build, merge, and commit workflows.</p>
+    <p>ADR-0019 is the authoritative rationale for the hybrid pooled, branch-bound lifecycle and the boundary between Orchard, build, merge, and commit workflows.</p>
     <p>Environment reuse is an optimization, not a safety argument. A worktree becomes reusable only after its task identity has been detached through verified recycling.</p>
     <p>The native same-window transition replaces the previously considered conversion handoff file and pickup behavior. Handoff and pickup remain independent tools for intentionally transferring work between separate sessions.</p>
   </section>

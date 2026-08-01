@@ -47,7 +47,7 @@ Do not rely on memory for the commit format. Do not invent a different format.
 
 ## Checkout-local boundary
 
-- Never invoke Treehouse.
+- Never invoke Orchard.
 - Never change branches or worktree lifecycle.
 - Never merge, rebase, or push.
 - Never chain a successful commit into another workflow.

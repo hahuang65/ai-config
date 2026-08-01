@@ -16,18 +16,18 @@ See [../shared/references/build-pipeline.md](../shared/references/build-pipeline
 ## Worktree Isolation Before Phase 1
 
 Inspect Git worktree metadata before starting the pipeline.
-If the current checkout is any existing linked worktree, continue there without Treehouse adoption or relocation.
-This includes linked worktrees that Treehouse does not manage.
+If the current checkout is any existing linked worktree, continue there without Orchard adoption or relocation.
+This includes linked worktrees that Orchard does not manage.
 Do not require the executable merely to continue in an existing linked worktree.
 
-Outside a linked worktree, run `command -v treehouse` and verify `treehouse status --json` reports the supported protocol.
-When preflight succeeds, load [../treehouse/SKILL.md](../treehouse/SKILL.md) and delegate the branch-state choice, acquisition, and same-window transition to Treehouse.
+Outside a linked worktree, run `command -v orchard` and verify `orchard status --json` reports the supported protocol.
+When preflight succeeds, load [../orchard/SKILL.md](../orchard/SKILL.md) and delegate the branch-state choice, acquisition, and same-window transition to Orchard.
 Build contains no native-transition implementation of its own.
 Resume the phase that requested the transition without restarting the pipeline.
 
-When preflight reports a missing or incompatible executable, warn that worktree isolation and Treehouse merge support will be unavailable.
+When preflight reports a missing or incompatible executable, warn that worktree isolation and Orchard merge support will be unavailable.
 Ask for explicit approval to continue on an ordinary local task branch through the established branch workflow.
-This degraded mode is never automatic and is not Treehouse-managed.
+This degraded mode is never automatic and is not Orchard-managed.
 If the user declines, stop with guidance to run `~/.dotfiles/git/install.sh`.
 Never offer the branch fallback after acquisition or native transition begins; preserve and report the task path instead.
 The degraded-mode choice is an environment safety decision, not an additional pipeline approval gate.
