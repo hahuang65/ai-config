@@ -161,7 +161,9 @@ Both modes follow the same TDD philosophy: **vertical, never horizontal. One tes
 When an HTML artifact asks for feedback, a decision, or approval, `review-artifact` serves it in a sandboxed local browser shell.
 The user can annotate an exact rendered element or selected text, queue several notes with a freeform message, and send one coherent batch.
 The foreground agent poll returns those targets with a compact DOM snapshot.
-The agent edits the same canonical HTML, the open browser live-reloads it, and polling resumes with an agent reply.
+A per-daemon capability protects agent-only event consumption, serialized startup gives concurrent callers the winning capability, and shared validation rejects malformed durable HTTP, frame, queue, and chat data before persistence or rendering.
+The versioned health handshake replaces incompatible daemon code before reuse while preserving durable session state.
+The agent edits the same canonical HTML, the open browser live-reloads it, and the sandboxed bridge restores scroll through bounded messages before polling resumes with an agent reply.
 
 Only the browser's explicit **Approve** action clears a gate.
 **End review**, browser close, disconnect, or poll interruption never implies approval.

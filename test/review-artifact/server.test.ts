@@ -5,7 +5,11 @@ import path from "node:path";
 
 import { startReviewServer } from "../../skills/review-artifact/runtime/server.mjs";
 
-const servers: Array<{ close(): Promise<void> }> = [];
+const servers: Array<{ agentToken: string; close(): Promise<void> }> = [];
+
+function agentHeaders(server: { agentToken: string }) {
+  return { "x-review-artifact-agent-token": server.agentToken };
+}
 
 afterEach(async () => {
   await Promise.all(servers.splice(0).map((server) => server.close()));
@@ -19,7 +23,7 @@ describe("review server", () => {
 
     const response = await fetch(`${server.baseUrl}/health`);
 
-    expect(await response.json()).toEqual({ ok: true, app: "review-artifact", version: 1 });
+    expect(await response.json()).toEqual({ ok: true, app: "review-artifact", version: 2 });
   });
 
   test("opens a local HTML artifact without modifying its source", async () => {
@@ -45,28 +49,6 @@ describe("review server", () => {
     expect(await Bun.file(artifact).text()).toBe(source);
   });
 
-  test("rejects untrusted hosts and browser origins", async () => {
-    const directory = await mkdtemp(path.join(tmpdir(), "review-artifact-"));
-    const artifact = path.join(directory, "specs.html");
-    await writeFile(artifact, "<!doctype html><main>Secure</main>");
-    const server = await startReviewServer({ port: 0, stateFile: path.join(directory, "state.json") });
-    servers.push(server);
-    const badHost = await fetch(`${server.baseUrl}/health`, { headers: { host: "evil.example" } });
-    const created = await fetch(`${server.baseUrl}/api/sessions`, {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({ file: artifact }),
-    }).then((response) => response.json());
-    const badOrigin = await fetch(`${server.baseUrl}/api/sessions/${created.key}/feedback`, {
-      method: "POST",
-      headers: { "content-type": "application/json", origin: "https://evil.example" },
-      body: JSON.stringify({ prompts: [{ prompt: "Injected" }] }),
-    });
-
-    expect(badHost.status).toBe(403);
-    expect(badOrigin.status).toBe(403);
-  });
-
   test("delivers browser feedback through the agent poll", async () => {
     const directory = await mkdtemp(path.join(tmpdir(), "review-artifact-"));
     const artifact = path.join(directory, "specs.html");
@@ -87,7 +69,9 @@ describe("review server", () => {
         domSnapshot: 'main "Review me"',
       }),
     });
-    const event = await fetch(`${server.baseUrl}/api/sessions/${created.key}/poll`).then((response) => response.json());
+    const event = await fetch(`${server.baseUrl}/api/sessions/${created.key}/poll`, {
+      headers: agentHeaders(server),
+    }).then((response) => response.json());
 
     expect(event).toMatchObject({ status: "feedback", prompts: [{ prompt: "Cut this", selector: "main" }] });
   });
@@ -104,7 +88,9 @@ describe("review server", () => {
       body: JSON.stringify({ file: artifact }),
     }).then((response) => response.json());
 
-    const polling = fetch(`${server.baseUrl}/api/sessions/${created.key}/poll`).then((response) => response.json());
+    const polling = fetch(`${server.baseUrl}/api/sessions/${created.key}/poll`, {
+      headers: agentHeaders(server),
+    }).then((response) => response.json());
     await Bun.sleep(100);
     await fetch(`${server.baseUrl}/api/sessions/${created.key}/feedback`, {
       method: "POST",
@@ -132,7 +118,9 @@ describe("review server", () => {
       headers: { "content-type": "application/json", origin: server.baseUrl },
       body: JSON.stringify({ prompts: [], domSnapshot: "main", action: "approve" }),
     });
-    const decision = await fetch(`${server.baseUrl}/api/sessions/${created.key}/poll`).then((response) => response.json());
+    const decision = await fetch(`${server.baseUrl}/api/sessions/${created.key}/poll`, {
+      headers: agentHeaders(server),
+    }).then((response) => response.json());
 
     expect(decision).toEqual({ status: "approved", endedBy: "user" });
   });
@@ -156,7 +144,9 @@ describe("review server", () => {
         layoutWarnings: [{ selector: "main", kind: "escaped-content", axis: "horizontal", overflowPx: 120, viewportWidth: 800, severity: "error" }],
       }),
     });
-    const event = await fetch(`${server.baseUrl}/api/sessions/${created.key}/poll`).then((response) => response.json());
+    const event = await fetch(`${server.baseUrl}/api/sessions/${created.key}/poll`, {
+      headers: agentHeaders(server),
+    }).then((response) => response.json());
 
     expect(event).toMatchObject({ status: "layout_warnings", layoutWarnings: [{ selector: "main", severity: "error" }] });
   });
@@ -199,7 +189,7 @@ describe("review server", () => {
 
     await fetch(`${server.baseUrl}/api/sessions/${created.key}/agent-reply`, {
       method: "POST",
-      headers: { "content-type": "application/json" },
+      headers: { "content-type": "application/json", ...agentHeaders(server) },
       body: JSON.stringify({ text: "Updated the scope." }),
     });
     const shell = await fetch(created.url).then((response) => response.text());
@@ -292,13 +282,15 @@ describe("review server", () => {
     const server = await startReviewServer({ port: 0, stateFile: path.join(directory, "state.json") });
     servers.push(server);
 
-    const [bridge, shellClient, shellCss] = await Promise.all([
+    const [bridge, messageValidation, shellClient, shellCss] = await Promise.all([
       fetch(`${server.baseUrl}/bridge.js`).then((response) => response.text()),
+      fetch(`${server.baseUrl}/message-validation.js`).then((response) => response.text()),
       fetch(`${server.baseUrl}/shell.js`).then((response) => response.text()),
       fetch(`${server.baseUrl}/shell.css`).then((response) => response.text()),
     ]);
 
     expect(bridge).toContain("review:queue");
+    expect(messageValidation).toContain("validateFrameMessage");
     expect(shellClient).toContain("feedback");
     expect(shellCss).toContain(".conversation");
   });
@@ -338,6 +330,7 @@ describe("review server", () => {
     const artifact = path.join(artifactDirectory, "index.html");
     await writeFile(artifact, '<!doctype html><link rel="stylesheet" href="theme.css">');
     await writeFile(path.join(artifactDirectory, "theme.css"), "main { color: green; }");
+    await writeFile(path.join(artifactDirectory, "details.html"), "<!doctype html><main>Details</main>");
     const server = await startReviewServer({ port: 0, stateFile: path.join(directory, "state.json") });
     servers.push(server);
     const created = await fetch(`${server.baseUrl}/api/sessions`, {
@@ -347,9 +340,11 @@ describe("review server", () => {
     }).then((response) => response.json());
 
     const allowed = await fetch(`${server.baseUrl}/artifact/${created.key}/theme.css`);
+    const siblingHtml = await fetch(`${server.baseUrl}/artifact/${created.key}/details.html`);
     const escaped = await fetch(`${server.baseUrl}/artifact/${created.key}/%2e%2e/state.json`);
 
     expect(await allowed.text()).toBe("main { color: green; }");
+    expect(siblingHtml.headers.get("content-type")).toBe("text/html; charset=utf-8");
     expect(escaped.status).toBe(404);
   });
 

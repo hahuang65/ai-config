@@ -71,6 +71,19 @@ describe("Review change CLI guard", () => {
     }
   });
 
+  test("blocks file output from nominally read-only Git commands", () => {
+    for (const command of [
+      "git diff --output=/repo/changed.patch HEAD",
+      "git show --output /source-repository/commit.txt HEAD",
+      "git log --output=/tmp/history.txt --oneline",
+    ]) {
+      expect(evaluateReviewChangeToolCall(
+        { toolName: "bash", input: { command } },
+        outerContext,
+      )?.reason).toContain("Git delivery mutation");
+    }
+  });
+
   test("blocks provider mutations while allowing read-only metadata", () => {
     for (const command of [
       "gh pr review 12 --approve",

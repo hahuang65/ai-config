@@ -156,6 +156,7 @@
             <li data-criterion-id="1.4" data-status="complete">The runtime binds to loopback, validates Host headers, and refuses to control an unrelated server.</li>
             <li data-criterion-id="1.5" data-status="complete">The artifact is served in a sandboxed iframe with the bridge injected only into the response; its source file remains byte-identical.</li>
             <li data-criterion-id="1.6" data-status="complete">The shell is usable at desktop and narrow widths and exposes an accessible artifact-frame title.</li>
+            <li data-criterion-id="1.7" data-status="complete">A versioned health handshake and serialized startup replace incompatible review daemons before reuse, preserve durable session state, and give concurrent callers the winning agent capability.</li>
           </ul></div>
         </div>
       </article>
@@ -175,7 +176,8 @@
             <li data-criterion-id="2.4" data-status="complete">Several annotations and one freeform message are sent as one ordered feedback batch.</li>
             <li data-criterion-id="2.5" data-status="complete">Poll waits in the foreground and returns prompts plus a bounded compact DOM snapshot.</li>
             <li data-criterion-id="2.6" data-status="complete">Queued feedback survives reloads, server restarts, and interrupted polls until successfully delivered.</li>
-            <li data-criterion-id="2.7" data-status="complete">Malformed, cross-origin, or oversized submissions are rejected without rendering unescaped content.</li>
+            <li data-criterion-id="2.7" data-status="complete">Malformed, cross-origin, individually oversized, or aggregate queue-overflow HTTP, frame, persisted-queue, and durable-chat submissions are rejected or discarded before persistence or reload rendering without rendering unescaped content.</li>
+            <li data-criterion-id="2.8" data-status="complete">A per-daemon capability with serialized startup prevents artifact-frame requests from consuming feedback, layout warnings, or terminal decisions intended for the foreground agent poll.</li>
           </ul></div>
         </div>
       </article>
@@ -210,7 +212,7 @@
           </div>
           <div class="criteria"><h4>Acceptance criteria</h4><ul>
             <li data-criterion-id="4.1" data-status="complete">Saving the artifact causes one in-place frame reload without opening another tab.</li>
-            <li data-criterion-id="4.2" data-status="complete">Reload preserves the frame’s useful vertical and horizontal review position where possible.</li>
+            <li data-criterion-id="4.2" data-status="complete">Reload preserves the frame’s useful vertical and horizontal review position through bounded bridge messages without weakening the artifact sandbox.</li>
             <li data-criterion-id="4.3" data-status="complete">The audit waits for fonts, samples browser geometry twice, and reports only findings stable across both samples.</li>
             <li data-criterion-id="4.4" data-status="complete">Proven severe failures return selector, kind, axis, overflow magnitude, viewport width, severity, and persistence.</li>
             <li data-criterion-id="4.5" data-status="complete">Intentional scrolling, truncation, masks, accessibility-hidden text, decorative overlap, tiny excursions, and uncertainty stay silent.</li>

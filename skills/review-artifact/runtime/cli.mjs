@@ -3,6 +3,7 @@ import { realpath } from "node:fs/promises";
 import { openBrowser as launchBrowser } from "./browser.mjs";
 import { ensureReviewServer, stopReviewServer } from "./daemon.mjs";
 import { sessionKey } from "./session-store.mjs";
+import { AGENT_TOKEN_HEADER } from "./protocol.mjs";
 
 export async function runReviewCommand(argv, dependencies = {}) {
   const normalized = normalizeArguments(argv);
@@ -12,10 +13,10 @@ export async function runReviewCommand(argv, dependencies = {}) {
   }
   if (command === "stop") return (dependencies.stopServer ?? stopReviewServer)();
   const ensureServer = dependencies.ensureServer ?? ensureReviewServer;
-  const baseUrl = await ensureServer();
-  if (command === "open") return openArtifact(normalized.slice(1), baseUrl, dependencies);
-  if (command === "poll") return pollArtifact(normalized.slice(1), baseUrl, dependencies);
-  if (command === "end") return endArtifact(normalized.slice(1), baseUrl);
+  const connection = normalizeConnection(await ensureServer(), dependencies.agentToken);
+  if (command === "open") return openArtifact(normalized.slice(1), connection.baseUrl, dependencies);
+  if (command === "poll") return pollArtifact(normalized.slice(1), connection, dependencies);
+  if (command === "end") return endArtifact(normalized.slice(1), connection);
   throw commandError(`Command is not implemented: ${command}`);
 }
 
@@ -38,22 +39,24 @@ async function openArtifact(args, baseUrl, dependencies) {
   };
 }
 
-async function endArtifact(args, baseUrl) {
+async function endArtifact(args, connection) {
   const file = firstPositional(args);
   if (!file) throw commandError("An HTML file path is required");
   const key = sessionKey(await realpath(file));
-  return postJson(`${baseUrl}/api/sessions/${key}/end`, {});
+  return postJson(`${connection.baseUrl}/api/sessions/${key}/end`, {}, connection.agentToken);
 }
 
-async function pollArtifact(args, baseUrl, dependencies) {
+async function pollArtifact(args, connection, dependencies) {
   const file = firstPositional(args);
   if (!file) throw commandError("An HTML file path is required");
   const key = sessionKey(await realpath(file));
   const reply = flagValue(args, "--agent-reply");
-  if (reply) await postJson(`${baseUrl}/api/sessions/${key}/agent-reply`, { text: reply });
+  if (reply) {
+    await postJson(`${connection.baseUrl}/api/sessions/${key}/agent-reply`, { text: reply }, connection.agentToken);
+  }
   const writeStatus = dependencies.writeStatus ?? ((message) => process.stderr.write(`${message}\n`));
   writeStatus(`[review-artifact] Waiting for feedback or approval on ${await realpath(file)}. Retry if interrupted.`);
-  return getJson(`${baseUrl}/api/sessions/${key}/poll`);
+  return getJson(`${connection.baseUrl}/api/sessions/${key}/poll`, connection.agentToken);
 }
 
 export function normalizeArguments(argv) {
@@ -79,22 +82,31 @@ function flagValue(args, flag) {
   return index === -1 ? null : args[index + 1] ?? null;
 }
 
-async function getJson(url) {
-  const response = await fetch(url);
+function normalizeConnection(connection, fallbackToken) {
+  if (typeof connection === "string") return { baseUrl: connection, agentToken: fallbackToken };
+  return connection;
+}
+
+async function getJson(url, agentToken) {
+  const response = await fetch(url, { headers: agentHeaders(agentToken) });
   const payload = await response.json();
   if (!response.ok) throw commandError(payload.error?.message ?? `Request failed: ${response.status}`);
   return payload;
 }
 
-async function postJson(url, body) {
+async function postJson(url, body, agentToken) {
   const response = await fetch(url, {
     method: "POST",
-    headers: { "content-type": "application/json" },
+    headers: { "content-type": "application/json", ...agentHeaders(agentToken) },
     body: JSON.stringify(body),
   });
   const payload = await response.json();
   if (!response.ok) throw commandError(payload.error?.message ?? `Request failed: ${response.status}`);
   return payload;
+}
+
+function agentHeaders(agentToken) {
+  return agentToken ? { [AGENT_TOKEN_HEADER]: agentToken } : {};
 }
 
 function commandError(message) {

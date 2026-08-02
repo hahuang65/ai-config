@@ -83,7 +83,7 @@
 <body>
 <main data-artifact-kind="spec" data-artifact-version="1">
   <header id="overview">
-    <div class="eyebrow">Feature specification · ADR-0019</div>
+    <div class="eyebrow">Feature specification · ADR-0023</div>
     <h1>Orchard Worktree Manager Spec</h1>
     <p class="lede">A shared, conservative worktree manager that combines reusable environments with ordinary named branches, while letting terminal users, Claude Code, pi, and the build pipeline enter the same lifecycle safely.</p>
     <div class="meta">
@@ -296,7 +296,7 @@
 
   <section id="further-notes">
     <h2>Further Notes</h2>
-    <p>ADR-0019 is the authoritative rationale for the hybrid pooled, branch-bound lifecycle and the boundary between Orchard, build, merge, and commit workflows.</p>
+    <p>ADR-0023 is the authoritative rationale for the hybrid pooled, branch-bound lifecycle and the boundary between Orchard, build, merge, and commit workflows.</p>
     <p>Environment reuse is an optimization, not a safety argument. A worktree becomes reusable only after its task identity has been detached through verified recycling.</p>
     <p>The native same-window transition replaces the previously considered conversion handoff file and pickup behavior. Handoff and pickup remain independent tools for intentionally transferring work between separate sessions.</p>
   </section>

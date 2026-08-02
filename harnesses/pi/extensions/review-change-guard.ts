@@ -83,7 +83,7 @@ function isGitMutation(args: string[]): boolean {
   const commandIndex = gitSubcommandIndex(args);
   const command = commandIndex === -1 ? "" : args[commandIndex].toLowerCase();
   const commandArgs = args.slice(commandIndex + 1);
-  if (READ_ONLY_GIT.has(command)) return false;
+  if (READ_ONLY_GIT.has(command)) return gitReadCommandWritesFile(commandArgs);
   if (command === "branch") {
     const first = commandArgs[0] ?? "";
     return !new Set(["", "--all", "--contains", "--format", "--list", "--show-current", "-a", "-l"]).has(first)
@@ -96,6 +96,10 @@ function isGitMutation(args: string[]): boolean {
   if (command === "remote") return !new Set(["", "-v", "get-url", "show"]).has(commandArgs[0] ?? "");
   if (command === "worktree") return !new Set(["add", "list", "remove"]).has(commandArgs[0] ?? "");
   return true;
+}
+
+function gitReadCommandWritesFile(args: string[]): boolean {
+  return args.some((token) => token === "--output" || token.startsWith("--output="));
 }
 
 function gitSubcommandIndex(args: string[]): number {

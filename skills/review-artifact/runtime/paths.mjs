@@ -23,6 +23,14 @@ export function serverLogFile(env = process.env) {
   return path.join(stateDirectory(env), "server.log");
 }
 
+export function serverLockDirectory(env = process.env) {
+  return path.join(stateDirectory(env), "startup.lock");
+}
+
+export function serverMetadataFile(env = process.env) {
+  return path.join(stateDirectory(env), "server.json");
+}
+
 export function serverBaseUrl(env = process.env) {
   return `http://127.0.0.1:${reviewPort(env)}`;
 }

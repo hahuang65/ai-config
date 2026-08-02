@@ -632,7 +632,7 @@ test_skill_review_artifact() {
   check_content_cached "$content" "$label" "Do not call .?lavish-axi"
 
   local runtime_file
-  for runtime_file in bin/review-artifact.mjs runtime/server.mjs runtime/session-store.mjs runtime/assets/bridge.js runtime/assets/shell.js runtime/assets/layout-audit.js ATTRIBUTION.md; do
+  for runtime_file in bin/review-artifact.mjs runtime/server.mjs runtime/session-store.mjs runtime/protocol.mjs runtime/assets/bridge.js runtime/assets/shell.js runtime/assets/layout-audit.js runtime/assets/message-validation.js ATTRIBUTION.md; do
     if [[ -f "$REPO_DIR/skills/review-artifact/$runtime_file" ]]; then
       pass "skills/review-artifact/$runtime_file exists"
     else
@@ -913,6 +913,25 @@ test_phase_orchestrator() {
   local bootstrap
   bootstrap="$(<"$REPO_DIR/harness-system-prompt.md")"
   check_content_cached "$bootstrap" "harness-system-prompt.md" "development Git worktrees.*~/[.]orchard/.*<project-basename>-<short-intent>.*Review change isolation.*~/[.]review-orchard/"
+}
+
+# ---------------------------------------------------------------------------
+# 7b. ADR identifiers
+# ---------------------------------------------------------------------------
+
+test_unique_adr_ids() {
+  section "ADR identifiers"
+  local duplicates
+  duplicates="$(
+    for adr_file in "$REPO_DIR"/docs/adr/[0-9][0-9][0-9][0-9]-*.md; do
+      [[ -f "$adr_file" ]] && basename "$adr_file" | cut -d- -f1
+    done | sort | uniq -d
+  )"
+  if [[ -z "$duplicates" ]]; then
+    pass "docs/adr uses unique numeric identifiers"
+  else
+    fail "docs/adr" "duplicate numeric identifiers: $(echo "$duplicates" | paste -sd, -)"
+  fi
 }
 
 # ---------------------------------------------------------------------------
@@ -1572,6 +1591,7 @@ run_content() {
   run test_retired_cleaners
   run test_skill_refactor
   run test_phase_orchestrator
+  run test_unique_adr_ids
   run test_cross_references
   run test_agent_rule_deps
   run test_symlink_targets
@@ -1598,6 +1618,7 @@ run_selected() {
     frontmatter-skills)        run test_frontmatter_skills ;;
     frontmatter-agents)        run test_frontmatter_agents ;;
     cross-references)          run test_cross_references ;;
+    unique-adr-ids)            run test_unique_adr_ids ;;
     agent-rule-deps)           run test_agent_rule_deps ;;
     stale-stubs)               run test_stale_stubs ;;
     forbidden-phrasing)        run test_no_forbidden_claude_centric_phrasing ;;

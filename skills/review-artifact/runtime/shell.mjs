@@ -1,6 +1,8 @@
+import { validateChatEntries } from "./assets/message-validation.js";
+
 export function renderReviewShell(session) {
   const sessionJson = escapeJsonScript(
-    JSON.stringify({ key: session.key, file: session.file, initialChat: session.chat ?? [] }),
+    JSON.stringify({ key: session.key, file: session.file, initialChat: validateChatEntries(session.chat) }),
   );
   return `<!doctype html>
 <html lang="en">
@@ -48,7 +50,7 @@ export function renderReviewShell(session) {
     <div><h2 id="layout-gate-title">Checking layout</h2><p id="layout-gate-copy">Waiting for stable browser geometry before review.</p><button id="show-anyway" type="button">Show anyway</button></div>
   </div>
   <script id="review-session" type="application/json">${sessionJson}</script>
-  <script src="/shell.js"></script>
+  <script type="module" src="/shell.js"></script>
 </body>
 </html>`;
 }

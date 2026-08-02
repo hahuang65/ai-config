@@ -1,3 +1,10 @@
+import {
+  appendPrompt,
+  validateChatEntries,
+  validateFrameMessage,
+  validateStoredQueue,
+} from "./message-validation.js";
+
 (() => {
   "use strict";
 
@@ -23,6 +30,8 @@
   let annotationMode = true;
   let queued = readQueue();
   let pendingAction = "feedback";
+  let queueLimitReported = false;
+  let artifactScroll = { x: 0, y: 0 };
   applyTheme(readTheme(), { persist: false });
 
   function readTheme() {
@@ -48,15 +57,20 @@
 
   function readQueue() {
     try {
-      return JSON.parse(sessionStorage.getItem(storageKey) || "[]");
+      const stored = JSON.parse(sessionStorage.getItem(storageKey) || "[]");
+      return validateStoredQueue(stored);
     } catch {
       return [];
     }
   }
 
   function persistQueue() {
-    if (queued.length) sessionStorage.setItem(storageKey, JSON.stringify(queued));
-    else sessionStorage.removeItem(storageKey);
+    try {
+      if (queued.length) sessionStorage.setItem(storageKey, JSON.stringify(queued));
+      else sessionStorage.removeItem(storageKey);
+    } catch {
+      // The in-memory queue remains usable when browser storage is unavailable.
+    }
   }
 
   function renderQueue() {
@@ -73,12 +87,28 @@
       remove.textContent = "×";
       remove.addEventListener("click", () => {
         queued = queued.filter((_, promptIndex) => promptIndex !== index);
+        queueLimitReported = false;
         persistQueue();
         renderQueue();
       });
       pill.append(text, remove);
       queuedContainer.append(pill);
     }
+  }
+
+  function queuePrompt(prompt) {
+    const nextQueue = appendPrompt(queued, prompt);
+    if (!nextQueue) {
+      if (!queueLimitReported) {
+        addMessage({ role: "agent", text: "Feedback queue is full. Send or remove feedback before adding more." });
+        queueLimitReported = true;
+      }
+      return false;
+    }
+    queued = nextQueue;
+    persistQueue();
+    renderQueue();
+    return true;
   }
 
   function addMessage(entry) {
@@ -155,7 +185,11 @@
   async function submit(snapshot) {
     const text = messageInput.value.trim();
     if (text) {
-      queued.push({ prompt: text, selector: "", tag: "message", text: "Freeform message" });
+      const accepted = queuePrompt({ prompt: text, selector: "", tag: "message", text: "Freeform message" });
+      if (!accepted) {
+        messageInput.focus();
+        return;
+      }
       messageInput.value = "";
     }
     if (pendingAction === "feedback" && queued.length === 0) {
@@ -175,6 +209,7 @@
       return;
     }
     queued = [];
+    queueLimitReported = false;
     persistQueue();
     renderQueue();
     for (const prompt of submitted) {
@@ -197,15 +232,14 @@
 
   window.addEventListener("message", (event) => {
     if (event.source !== artifact.contentWindow) return;
-    if (event.data?.type === "review:queue") {
-      queued.push(event.data.prompt);
-      persistQueue();
-      renderQueue();
-    }
-    if (event.data?.type === "review:snapshot") submit(event.data.snapshot || "");
-    if (event.data?.type === "review:layout") reportLayout(event.data.layoutWarnings || []);
-    if (event.data?.type === "review:locate-result") {
-      if (activeLocateBadge?.isConnected) activeLocateBadge.classList.toggle("missing", !event.data.ok);
+    const message = validateFrameMessage(event.data);
+    if (!message) return;
+    if (message.type === "review:queue") queuePrompt(message.prompt);
+    if (message.type === "review:snapshot") submit(message.snapshot);
+    if (message.type === "review:layout") reportLayout(message.layoutWarnings);
+    if (message.type === "review:scroll") artifactScroll = { x: message.x, y: message.y };
+    if (message.type === "review:locate-result" && activeLocateBadge?.isConnected) {
+      activeLocateBadge.classList.toggle("missing", !message.ok);
     }
   });
 
@@ -263,18 +297,9 @@
   }
 
   function reloadArtifact() {
-    let position = { x: 0, y: 0 };
-    try {
-      position = { x: artifact.contentWindow.scrollX, y: artifact.contentWindow.scrollY };
-    } catch {
-      // The sandbox may deny access for an artifact that changes its own origin.
-    }
+    const position = artifactScroll;
     artifact.addEventListener("load", () => {
-      try {
-        artifact.contentWindow.scrollTo(position.x, position.y);
-      } catch {
-        // Reload still succeeds when scroll restoration is unavailable.
-      }
+      artifact.contentWindow?.postMessage({ type: "review:restore-scroll", ...position }, "*");
       artifact.contentWindow?.postMessage({ type: "review:set-mode", enabled: annotationMode }, "*");
     }, { once: true });
     const source = new URL(artifact.src);
@@ -293,7 +318,7 @@
     if (layoutGateTitle.textContent === "Checking layout") layoutGate.hidden = true;
   }, 4_000);
 
-  for (const chat of session.initialChat || []) addMessage(chat);
+  for (const chat of validateChatEntries(session.initialChat)) addMessage(chat);
   renderQueue();
   setWorking(false);
 })();

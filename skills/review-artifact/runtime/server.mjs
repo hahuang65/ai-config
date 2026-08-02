@@ -24,13 +24,20 @@ import {
 } from "./http.mjs";
 import { SessionStore, sessionKey } from "./session-store.mjs";
 import { injectBridge, renderReviewShell } from "./shell.mjs";
+import {
+  AGENT_TOKEN_HEADER,
+  agentTokenMatches,
+  createAgentToken,
+  REVIEW_ARTIFACT_APP,
+  REVIEW_ARTIFACT_RUNTIME_VERSION,
+} from "./protocol.mjs";
 
-export async function startReviewServer({ port, stateFile }) {
+export async function startReviewServer({ port, stateFile, agentToken = createAgentToken() }) {
   const store = new SessionStore(stateFile);
   const events = new EventEmitter();
   const watchers = new Map();
   const server = createServer((request, response) => {
-    const context = { request, response, store, events, watchers, port: server.address()?.port };
+    const context = { request, response, store, events, watchers, agentToken, port: server.address()?.port };
     handleRequest(context).catch((error) => {
       sendJson(response, error.statusCode ?? 500, {
         error: { code: error.code ?? "internal_error", message: error.expose ? error.message : "Internal error" },
@@ -43,7 +50,7 @@ export async function startReviewServer({ port, stateFile }) {
   const baseUrl = `http://${LOOPBACK_HOST}:${address.port}`;
   const close = () => closeServer(server, watchers);
   events.once("server:shutdown", close);
-  return { baseUrl, close };
+  return { baseUrl, agentToken, close };
 }
 
 async function listen(server, port) {
@@ -73,12 +80,17 @@ async function handleRequest(context) {
 }
 
 async function handleSystemRoutes(context, url) {
-  const { request, response, events, store, watchers, port } = context;
+  const { request, response, events, store, watchers, agentToken, port } = context;
   if (request.method === "GET" && url.pathname === "/health") {
-    sendJson(response, 200, { ok: true, app: "review-artifact", version: 1 });
+    sendJson(response, 200, {
+      ok: true,
+      app: REVIEW_ARTIFACT_APP,
+      version: REVIEW_ARTIFACT_RUNTIME_VERSION,
+    });
     return true;
   }
   if (request.method === "POST" && url.pathname === "/shutdown") {
+    assertAgentToken(request, agentToken);
     assertOptionalOrigin(request.headers.origin, port);
     sendJson(response, 200, { status: "stopping" });
     setImmediate(() => events.emit("server:shutdown"));
@@ -97,9 +109,10 @@ async function handleSystemRoutes(context, url) {
 }
 
 async function handleAgentRoutes(context, url) {
-  const { request, response, store, events, port } = context;
+  const { request, response, store, events, agentToken, port } = context;
   const match = url.pathname.match(/^\/api\/sessions\/([0-9a-f]{16})\/(end|agent-reply|poll)$/);
   if (!match) return false;
+  assertAgentToken(request, agentToken);
   const [, key, action] = match;
   if (request.method === "GET" && action === "poll") {
     sendJson(response, 200, await takeOrWait({ request, store, events, key }));
@@ -219,7 +232,8 @@ function streamBrowserEvents({ request, response, events, key }) {
     "cache-control": "no-store",
     connection: "keep-alive",
   });
-  response.write(`data: ${JSON.stringify({ type: "presence", state: "waiting" })}\n\n`);
+  const initialPresence = events.agentListeningKeys?.has(key) ? "listening" : "waiting";
+  response.write(`data: ${JSON.stringify({ type: "presence", state: initialPresence })}\n\n`);
   const eventName = `browser:${key}`;
   const send = (event) => response.write(`data: ${JSON.stringify(event)}\n\n`);
   const cleanup = () => events.off(eventName, send);
@@ -234,20 +248,27 @@ async function requiredSession(store, key) {
 }
 
 async function takeOrWait({ request, store, events, key }) {
+  events.agentListeningKeys ??= new Set();
+  events.agentListeningKeys.add(key);
   events.emit(`browser:${key}`, { type: "presence", state: "listening" });
   const immediate = await store.takeEvent(key);
-  if (immediate.status !== "waiting") return immediate;
+  if (immediate.status !== "waiting") {
+    events.agentListeningKeys.delete(key);
+    return immediate;
+  }
   return new Promise((resolve) => {
     const finish = async () => {
       cleanup();
       resolve(await store.takeEvent(key));
     };
     const cleanup = () => {
+      events.agentListeningKeys.delete(key);
       events.off(key, finish);
       request.off("close", close);
     };
     const close = () => {
       cleanup();
+      events.emit(`browser:${key}`, { type: "presence", state: "waiting" });
       resolve({ status: "interrupted" });
     };
     events.once(key, finish);
@@ -259,6 +280,7 @@ function browserAsset(pathname) {
   return {
     "/bridge.js": { file: "bridge.js", type: "text/javascript; charset=utf-8" },
     "/layout-audit.js": { file: "layout-audit.js", type: "text/javascript; charset=utf-8" },
+    "/message-validation.js": { file: "message-validation.js", type: "text/javascript; charset=utf-8" },
     "/shell.js": { file: "shell.js", type: "text/javascript; charset=utf-8" },
     "/shell.css": { file: "shell.css", type: "text/css; charset=utf-8" },
   }[pathname] ?? null;
@@ -266,6 +288,12 @@ function browserAsset(pathname) {
 
 function assertOptionalOrigin(origin, port) {
   if (origin) assertSameOrigin(origin, port);
+}
+
+function assertAgentToken(request, expectedToken) {
+  if (!agentTokenMatches(request.headers[AGENT_TOKEN_HEADER], expectedToken)) {
+    throw publicError(401, "invalid_agent_token", "Agent authentication is required");
+  }
 }
 
 function missingSession() {

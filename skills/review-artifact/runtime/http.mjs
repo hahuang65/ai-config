@@ -1,3 +1,5 @@
+import { validatePrompt as validateReviewPrompt } from "./assets/message-validation.js";
+
 export const LOOPBACK_HOST = "127.0.0.1";
 
 const MAX_JSON_BYTES = 256 * 1024;
@@ -54,14 +56,9 @@ export function validateFeedback(payload) {
 }
 
 function validatePrompt(prompt) {
-  if (!prompt || typeof prompt !== "object") throw publicError(422, "invalid_feedback", "Prompt is invalid");
-  return {
-    prompt: boundedString(prompt.prompt, 10_000),
-    selector: boundedString(prompt.selector, 2_000),
-    tag: boundedString(prompt.tag, 100),
-    text: boundedString(prompt.text, 2_000),
-    ...(prompt.target && typeof prompt.target === "object" ? { target: structuredClone(prompt.target) } : {}),
-  };
+  const validated = validateReviewPrompt(prompt);
+  if (!validated) throw publicError(422, "invalid_feedback", "Prompt or annotation target is invalid");
+  return validated;
 }
 
 export function validateLayoutWarnings(payload) {

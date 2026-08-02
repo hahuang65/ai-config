@@ -15,3 +15,4 @@ This follows the core review loop demonstrated by `lavish-axi` without taking a 
 - `specs.html` and `tasks.html` replace their former Markdown counterparts and are consumed directly by later pipeline phases.
 - Review artifacts use ordinary semantic HTML, with only narrowly required pipeline metadata such as task status and dependencies.
 - The repository owns the security, accessibility, browser compatibility, persistence, and maintenance of the local review runtime.
+- Agent-only event consumption uses a per-daemon local capability with serialized startup, transient and durable review messages share validation before persistence or rendering, and runtime compatibility is enforced through a versioned health handshake.

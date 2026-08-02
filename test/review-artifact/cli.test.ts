@@ -22,7 +22,7 @@ describe("review command", () => {
     let openedUrl = "";
 
     const output = await runReviewCommand([artifact, "--no-open"], {
-      ensureServer: async () => server.baseUrl,
+      ensureServer: async () => server,
       openBrowser: async (url) => {
         openedUrl = url;
       },
@@ -39,7 +39,7 @@ describe("review command", () => {
     await writeFile(artifact, "<!doctype html><title>Tasks</title>");
     const server = await startReviewServer({ port: 0, stateFile: path.join(directory, "state.json") });
     servers.push(server);
-    const opened = await runReviewCommand([artifact, "--no-open"], { ensureServer: async () => server.baseUrl });
+    const opened = await runReviewCommand([artifact, "--no-open"], { ensureServer: async () => server });
     const key = opened.session.url.split("/").at(-1);
     await fetch(`${server.baseUrl}/api/sessions/${key}/feedback`, {
       method: "POST",
@@ -48,7 +48,7 @@ describe("review command", () => {
     });
 
     const output = await runReviewCommand(["poll", artifact], {
-      ensureServer: async () => server.baseUrl,
+      ensureServer: async () => server,
       writeStatus: () => {},
     });
 
@@ -61,9 +61,9 @@ describe("review command", () => {
     await writeFile(artifact, "<!doctype html><title>Review</title>");
     const server = await startReviewServer({ port: 0, stateFile: path.join(directory, "state.json") });
     servers.push(server);
-    await runReviewCommand([artifact, "--no-open"], { ensureServer: async () => server.baseUrl });
+    await runReviewCommand([artifact, "--no-open"], { ensureServer: async () => server });
 
-    const output = await runReviewCommand(["end", artifact], { ensureServer: async () => server.baseUrl });
+    const output = await runReviewCommand(["end", artifact], { ensureServer: async () => server });
 
     expect(output).toEqual({ status: "ended", endedBy: "agent" });
   });

@@ -19,11 +19,12 @@ modules), `test/guard` (the guard-core/conformance bun suite), and `test/meta`
 (the self-test that proves the checks catch planted errors). It runs
 automatically in the pre-commit hook (`.githooks/pre-commit`) and **must stay
 green**. `test/content` enforces: frontmatter (`name`/`description`/agent
-tools), that **every `references/…md` link in a SKILL.md resolves**, no
-Claude-centric phrasing, no stale stubs, and the required workflow phrases for
-each `/build` phase; `test/install` enforces the harness manifest contract and
-isolation. If you relocate content, update the gate in the same change — never
-weaken it to pass.
+tools), that **every `references/…md` link in a SKILL.md resolves**, ADR
+numeric identifiers are unique, no Claude-centric phrasing, no stale stubs,
+and the required workflow phrases for each `/build` phase; `test/install` enforces the harness manifest contract and
+isolation. Review-artifact browser evidence requires Firefox and must not be
+silently skipped. If you relocate content, update the gate in the same change —
+never weaken it to pass.
 
 ## Progressive disclosure — required for every skill
 

@@ -217,6 +217,24 @@
     textarea.focus();
   }
 
+  function reportScroll() {
+    parent.postMessage({ type: "review:scroll", x: scrollX, y: scrollY }, "*");
+  }
+
+  function restoreScroll(message) {
+    const x = boundedCoordinate(message.x);
+    const y = boundedCoordinate(message.y);
+    if (x === null || y === null) return;
+    scrollTo(x, y);
+    reportScroll();
+  }
+
+  function boundedCoordinate(value) {
+    return typeof value === "number" && Number.isFinite(value) && Math.abs(value) <= 10_000_000
+      ? value
+      : null;
+  }
+
   function snapshot() {
     const lines = [];
     function walk(element, depth) {
@@ -274,9 +292,20 @@
       clearHighlight(locateTarget);
       locateTarget = null;
     }
+    if (event.data?.type === "review:restore-scroll") restoreScroll(event.data);
   });
 
+  let scrollFrame = null;
+  window.addEventListener("scroll", () => {
+    if (scrollFrame !== null) return;
+    scrollFrame = requestAnimationFrame(() => {
+      scrollFrame = null;
+      reportScroll();
+    });
+  }, { passive: true });
+
   parent.postMessage({ type: "review:ready" }, "*");
+  reportScroll();
   rootLayoutAudit();
 
   async function rootLayoutAudit() {

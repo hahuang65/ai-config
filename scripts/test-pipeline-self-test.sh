@@ -24,6 +24,7 @@ remove_fixtures() {
   rm -rf "$REPO_DIR"/skills/test-self-test-* 2>/dev/null || true
   rm -f "$REPO_DIR"/commands/test-self-test-*.md 2>/dev/null || true
   rm -f "$REPO_DIR"/rules/test-self-test-*.md 2>/dev/null || true
+  rm -f "$REPO_DIR"/docs/adr/[0-9][0-9][0-9][0-9]-test-self-test-*.md 2>/dev/null || true
   rm -rf "$REPO_DIR"/harnesses/test-self-test-* 2>/dev/null || true
   # Restore any __real__ files left behind by an interrupted fixture_replace.
   # First remove the symlink that replaced the original (if still present),
@@ -435,6 +436,22 @@ test_build_missing_phase_loading_fails() {
 }
 
 # ---------------------------------------------------------------------------
+# Self-test 17: duplicate ADR identifiers
+# ---------------------------------------------------------------------------
+
+test_duplicate_adr_id_fails() {
+  local f
+  f="$(fixture_file "docs/adr/0019-test-self-test-duplicate.md")"
+  printf '%s\n' '# Duplicate ADR identifier' >"$f"
+
+  if run_pipeline content unique-adr-ids; then
+    self_fail "duplicate ADR id: test-pipeline.sh should exit non-zero"
+  else
+    self_pass "duplicate ADR id: test-pipeline.sh correctly exits non-zero"
+  fi
+}
+
+# ---------------------------------------------------------------------------
 # Main
 # ---------------------------------------------------------------------------
 
@@ -457,6 +474,7 @@ main() {
   test_skill_dir_missing_skill_md_fails
   test_implement_coach_missing_holding_line_fails
   test_build_missing_phase_loading_fails
+  test_duplicate_adr_id_fails
 
   echo ""
   echo "Results: $SELF_PASS passed, $SELF_FAIL failed"

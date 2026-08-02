@@ -171,6 +171,7 @@ _Avoid_: visual companion, Markdown artifact.
 
 **Review artifact workflow**:
 The local browser feedback loop provided by the `review-artifact` skill for a **review artifact**: the user annotates elements or text, sends feedback, or emits an explicit approval event while the agent polls and updates the same HTML document.
+The shell and HTTP boundary share validation for transient and durable review messages, and a serialized local per-daemon capability limits event consumption to agent commands.
 Closing or ending the session without approval does not clear a pipeline gate.
 _Avoid_: artifact review, annotation cycle, inline `//` review.
 
