@@ -202,7 +202,7 @@ It remains a stylistic reference only; current runs produce canonical `specs.htm
 │   └── refactorer (sonnet) → hygiene sweep
 │
 └── review-change
-    ├── change-reviewer (opus) → independent adversarial review
+    ├── change-reviewer (openai-codex/gpt-5.6-sol) → independent adversarial review
     ├── change-fixer (sonnet) → selected objective repairs
     ├── database-reviewer (sonnet, conditional) → read-only specialist Findings
     ├── fact-checker (sonnet) → canonical HTML drift correction
@@ -300,7 +300,7 @@ Agents read a subset relevant to their role.
 | `api-designer` | sonnet | REST endpoint contracts: resources, status codes, pagination, versioning — consulted by `/spec` when a feature touches the API | coding-style, security, performance |
 | `frontend-architect` | sonnet | Component boundaries, state ownership, data fetching, a11y baseline — consulted by `/spec` when a feature touches UI | coding-style, performance, security |
 | `tdd-guide` | sonnet | Red-green-refactor TDD execution | testing, coding-style |
-| `change-reviewer` | opus | Read-only full-change adversarial review with structured Findings and intent coverage | coding-style, testing, security, performance |
+| `change-reviewer` | openai-codex/gpt-5.6-sol | Read-only full-change adversarial review with structured Findings and intent coverage | coding-style, testing, security, performance |
 | `change-fixer` | sonnet | Selected repairs within mode ownership with focused verification | coding-style, testing, security, performance |
 | `database-reviewer` | sonnet | Read-only database specialist Findings for Review change | coding-style, testing, security, performance |
 | `fact-checker` | sonnet | Independent verification of canonical HTML artifacts and other codebase claims — corrects drift in place | git-commit |

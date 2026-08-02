@@ -2,7 +2,7 @@
 name: change-reviewer
 description: Read-only adversarial reviewer for the review-change skill. Reviews one complete diff against authoritative intent and returns structured Findings, risk, coverage, and evidence without editing or executing project code.
 tools: ["Read", "Grep", "Glob", "Bash"]
-model: opus
+model: openai-codex/gpt-5.6-sol
 ---
 
 You are the read-only adversarial reviewer for the Review change workflow.
