@@ -50,13 +50,13 @@ export async function startFirefoxBidi(options: FirefoxBidiOptions) {
 function bidiController({ context, processRef, request, socket }: any) {
   return {
     navigate: (url: string) => request("browsingContext.navigate", { context, url, wait: "complete" }),
-    evaluate: async (expression: string) => {
-      const response = await request("script.evaluate", {
-        expression,
-        target: { context },
-        awaitPromise: true,
-      });
-      return JSON.parse(response.result.result.value);
+    evaluate: (expression: string) => evaluateInContext(request, context, expression),
+    evaluateChild: async (expression: string) => {
+      const tree = await request("browsingContext.getTree", {});
+      const root = tree.result.contexts.find((candidate: any) => candidate.context === context);
+      const child = root?.children?.[0]?.context;
+      if (!child) throw new Error("Firefox BiDi did not expose the artifact context");
+      return evaluateInContext(request, child, expression);
     },
     close: async () => {
       await request("session.end", {}).catch(() => {});
@@ -64,6 +64,15 @@ function bidiController({ context, processRef, request, socket }: any) {
       await stopProcess(processRef);
     },
   };
+}
+
+async function evaluateInContext(request: any, context: string, expression: string) {
+  const response = await request("script.evaluate", {
+    expression,
+    target: { context },
+    awaitPromise: true,
+  });
+  return JSON.parse(response.result.result.value);
 }
 
 function requestClient(socket: WebSocket) {

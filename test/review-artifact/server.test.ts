@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, test } from "bun:test";
-import { mkdir, mkdtemp, realpath, writeFile } from "node:fs/promises";
+import { mkdir, mkdtemp, realpath, rename, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 
@@ -198,33 +198,19 @@ describe("review server", () => {
   });
 
   test("streams a reload event when the reviewed artifact changes", async () => {
-    const directory = await mkdtemp(path.join(tmpdir(), "review-artifact-"));
-    const artifact = path.join(directory, "tasks.html");
-    await writeFile(artifact, "<!doctype html><main>Pending</main>");
-    const server = await startReviewServer({ port: 0, stateFile: path.join(directory, "state.json") });
-    servers.push(server);
-    const created = await fetch(`${server.baseUrl}/api/sessions`, {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({ file: artifact }),
-    }).then((response) => response.json());
-    const controller = new AbortController();
-    const stream = await fetch(`${server.baseUrl}/api/sessions/${created.key}/events`, { signal: controller.signal });
-    const reader = stream.body!.getReader();
+    const received = await observeReloadAfter(async (artifact) => {
+      await writeFile(artifact, "<!doctype html><main>Complete</main>");
+    });
 
-    await Bun.sleep(100);
-    await writeFile(artifact, "<!doctype html><main>Complete</main>");
-    let received = "";
-    const deadline = Date.now() + 2_000;
-    while (!received.includes('"type":"reload"') && Date.now() < deadline) {
-      const chunk = await Promise.race([
-        reader.read(),
-        Bun.sleep(2_000).then(() => ({ done: true, value: undefined })),
-      ]);
-      if (chunk.done) break;
-      received += new TextDecoder().decode(chunk.value);
-    }
-    controller.abort();
+    expect(received).toContain('"type":"reload"');
+  });
+
+  test("streams a reload event when the artifact is atomically replaced", async () => {
+    const received = await observeReloadAfter(async (artifact) => {
+      const replacement = `${artifact}.replacement`;
+      await writeFile(replacement, "<!doctype html><main>Replaced</main>");
+      await rename(replacement, artifact);
+    });
 
     expect(received).toContain('"type":"reload"');
   });
@@ -373,3 +359,37 @@ describe("review server", () => {
     expect(await Bun.file(artifact).text()).toBe(source);
   });
 });
+
+async function observeReloadAfter(changeArtifact: (artifact: string) => Promise<void>) {
+  const directory = await mkdtemp(path.join(tmpdir(), "review-artifact-"));
+  const artifact = path.join(directory, "tasks.html");
+  await writeFile(artifact, "<!doctype html><main>Pending</main>");
+  const server = await startReviewServer({ port: 0, stateFile: path.join(directory, "state.json") });
+  servers.push(server);
+  const created = await fetch(`${server.baseUrl}/api/sessions`, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ file: artifact }),
+  }).then((response) => response.json());
+  const controller = new AbortController();
+  const stream = await fetch(`${server.baseUrl}/api/sessions/${created.key}/events`, { signal: controller.signal });
+  const reader = stream.body!.getReader();
+
+  try {
+    await Bun.sleep(100);
+    await changeArtifact(artifact);
+    let received = "";
+    const deadline = Date.now() + 2_000;
+    while (!received.includes('"type":"reload"') && Date.now() < deadline) {
+      const chunk = await Promise.race([
+        reader.read(),
+        Bun.sleep(2_000).then(() => ({ done: true, value: undefined })),
+      ]);
+      if (chunk.done) break;
+      received += new TextDecoder().decode(chunk.value);
+    }
+    return received;
+  } finally {
+    controller.abort();
+  }
+}

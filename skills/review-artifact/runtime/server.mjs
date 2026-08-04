@@ -1,5 +1,5 @@
 import { EventEmitter } from "node:events";
-import { watch } from "node:fs";
+import { unwatchFile, watchFile } from "node:fs";
 import { createServer } from "node:http";
 import { readFile } from "node:fs/promises";
 
@@ -31,6 +31,9 @@ import {
   REVIEW_ARTIFACT_APP,
   REVIEW_ARTIFACT_RUNTIME_VERSION,
 } from "./protocol.mjs";
+
+const ARTIFACT_WATCH_INTERVAL_MS = 100;
+const RELOAD_DEBOUNCE_MS = 60;
 
 export async function startReviewServer({ port, stateFile, agentToken = createAgentToken() }) {
   const store = new SessionStore(stateFile);
@@ -218,12 +221,29 @@ async function serveArtifact(response, session, encodedPath) {
 function watchArtifact(session, watchers, events) {
   if (watchers.has(session.key)) return;
   let timer;
-  const watcher = watch(session.file, () => {
+  const onChange = (current, previous) => {
+    if (sameFileState(current, previous)) return;
     clearTimeout(timer);
-    timer = setTimeout(() => events.emit(`browser:${session.key}`, { type: "reload" }), 60);
+    timer = setTimeout(
+      () => events.emit(`browser:${session.key}`, { type: "reload" }),
+      RELOAD_DEBOUNCE_MS,
+    );
+  };
+  watchFile(session.file, { interval: ARTIFACT_WATCH_INTERVAL_MS, persistent: false }, onChange);
+  watchers.set(session.key, {
+    close() {
+      clearTimeout(timer);
+      unwatchFile(session.file, onChange);
+    },
   });
-  watcher.on("error", () => watcher.close());
-  watchers.set(session.key, watcher);
+}
+
+function sameFileState(current, previous) {
+  return current.mtimeMs === previous.mtimeMs
+    && current.ctimeMs === previous.ctimeMs
+    && current.size === previous.size
+    && current.ino === previous.ino
+    && current.nlink === previous.nlink;
 }
 
 function streamBrowserEvents({ request, response, events, key }) {

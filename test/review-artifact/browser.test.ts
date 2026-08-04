@@ -12,6 +12,8 @@ const macFirefox = "/Applications/Firefox.app/Contents/MacOS/firefox";
 const firefox = Bun.which("firefox") ?? (existsSync(macFirefox) ? macFirefox : null);
 if (!firefox) throw new Error("Firefox is required for review-artifact browser evidence");
 const browserTest = test;
+const SHELL_READY_TIMEOUT_MS = 5_000;
+const SHELL_READY_POLL_MS = 50;
 
 browserTest("completes annotations through the rendered browser surface", async () => {
   const review = await startBrowserReview({ artifactContent: annotationArtifact() });
@@ -55,7 +57,6 @@ browserTest("drives actual narrow shell controls through keyboard feedback", asy
     width: 480,
   });
   try {
-    await Bun.sleep(300);
     const controls = await review.browser.evaluate(`JSON.stringify((() => {
       window.dispatchEvent(new KeyboardEvent("keydown", { key: "i", ctrlKey: true, bubbles: true }));
       const theme = document.querySelector("#theme");
@@ -92,7 +93,7 @@ browserTest("drives actual narrow shell controls through keyboard feedback", asy
 browserTest("renders replies safely and restores scroll after actual shell reload", async () => {
   const review = await startInteractiveReview({ artifactContent: scrollArtifact("Before reload") });
   try {
-    await Bun.sleep(800);
+    await waitForArtifactScroll(review.browser);
     await sendAgentReply(review, '<img src=x onerror="alert(1)">Safe reply');
     await writeFile(review.artifact, scrollArtifact("After reload"));
     const event = await review.polling;
@@ -214,7 +215,31 @@ async function startInteractiveReview({
     height: 900,
   });
   await browser.navigate(created.url);
+  await waitForShellListening(browser);
   return { artifact, browser, directory, key: created.key, polling, server };
+}
+
+async function waitForShellListening(browser: Awaited<ReturnType<typeof startFirefoxBidi>>) {
+  await waitForBrowserCondition(
+    () => browser.evaluate(`JSON.stringify(document.body.dataset.presence === "listening")`),
+    "Review shell event stream did not become ready",
+  );
+}
+
+async function waitForArtifactScroll(browser: Awaited<ReturnType<typeof startFirefoxBidi>>) {
+  await waitForBrowserCondition(
+    () => browser.evaluateChild(`JSON.stringify(scrollY >= 350)`),
+    "Reviewed artifact did not reach its initial scroll position",
+  );
+}
+
+async function waitForBrowserCondition(check: () => Promise<boolean>, failure: string) {
+  const deadline = Date.now() + SHELL_READY_TIMEOUT_MS;
+  while (Date.now() < deadline) {
+    if (await check()) return;
+    await Bun.sleep(SHELL_READY_POLL_MS);
+  }
+  throw new Error(failure);
 }
 
 async function createSession(server: { baseUrl: string }, artifact: string) {
