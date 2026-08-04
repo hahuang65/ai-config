@@ -6,9 +6,9 @@
 # manifest.sh declaring its config root, the shared categories it consumes, and
 # an install_module hook for its own runtime files. This script is a GENERIC
 # LOOP over those modules (ADR-0010): adding a harness is dropping in a module,
-# removing one is deleting its directory. Shared primitives (skills, commands,
-# agents, rules) stay flat at the repo root and are mirrored into each config
-# root. Run from the repo root: ./install.sh
+# removing one is deleting its directory. Shared primitives (skills, agents,
+# rules) stay flat at the repo root and are mirrored into each config root.
+# Run from the repo root: ./install.sh
 #
 set -euo pipefail
 
@@ -23,7 +23,7 @@ if [ "${1:-}" = "--force" ] || [ "${1:-}" = "-f" ]; then
 fi
 
 # Remove dangling symlinks (target no longer exists) from a managed dir, so
-# re-running install.sh self-heals after a skill/command/rule is deleted or
+# re-running install.sh self-heals after a skill, agent, or rule is deleted or
 # renamed — `ln -sf` refreshes live links but never removes orphaned ones.
 prune_dangling() {
   local d="$1" link
@@ -56,11 +56,26 @@ prune_repo_rule_links() {
   rmdir "$d" 2>/dev/null || true
 }
 
+# Remove obsolete command-wrapper links created by earlier versions without
+# touching commands owned by the user or another package. Raw targets remain
+# identifiable even after the tracked commands/ directory is removed.
+prune_repo_command_links() {
+  local d="$1" link raw
+  [ -d "$d" ] || return 0
+  for link in "$d"/*.md; do
+    [ -L "$link" ] || continue
+    raw="$(readlink "$link" 2>/dev/null || true)"
+    case "$raw" in
+      "$REPO_DIR"/commands/*) rm -f "$link" ;;
+    esac
+  done
+  rmdir "$d" 2>/dev/null || true
+}
+
 # Mirror one shared category from the repo root into a config root. Skills are
-# directories (symlinked with -n); commands/agents/rules are .md files. When
-# `dedupe` is true, a command sharing a name with a skill dir is skipped.
+# directories (symlinked with -n); agents and rules are .md files.
 mirror_category() {
-  local cat="$1" config_root="$2" dedupe="$3" entry name
+  local cat="$1" config_root="$2" entry name
   case "$cat" in
     skills)
       for entry in "$REPO_DIR"/skills/*/; do
@@ -70,15 +85,10 @@ mirror_category() {
         dim "  $config_root/skills/$name"
       done
       ;;
-    commands|agents|rules)
+    agents|rules)
       for entry in "$REPO_DIR/$cat"/*.md; do
         [ -f "$entry" ] || continue
         name="$(basename "$entry")"
-        if [ "$cat" = commands ] && [ "$dedupe" = true ] && [ -d "$REPO_DIR/skills/${name%.md}" ]; then
-          rm -f "$config_root/commands/$name"
-          dim "  $config_root/commands/$name — skipped (registered as skill)"
-          continue
-        fi
         ln -sf "$entry" "$config_root/$cat/$name"
         dim "  $config_root/$cat/$name"
       done
@@ -101,7 +111,6 @@ install_harness() {
     # Manifest contract (defaults; the manifest overrides what it needs).
     config_root=""
     consumed_categories=()
-    dedupe_commands_with_skills=false
     harness_pending=false
     instruction_target=""
     install_module() { :; }
@@ -123,7 +132,7 @@ install_harness() {
     for cat in "${consumed_categories[@]}"; do
       mkdir -p "$config_root/$cat"
       prune_dangling "$config_root/$cat"
-      mirror_category "$cat" "$config_root" "$dedupe_commands_with_skills"
+      mirror_category "$cat" "$config_root"
     done
 
     install_module
@@ -195,7 +204,6 @@ dim "  core.hooksPath → .githooks"
 echo ""
 green "Done!"
 skill_count=$(ls -1d "$REPO_DIR"/skills/*/ 2>/dev/null | wc -l | tr -d ' ')
-cmd_count=$(ls -1 "$REPO_DIR"/commands/*.md 2>/dev/null | wc -l | tr -d ' ')
 rule_count=$(ls -1 "$REPO_DIR"/rules/*.md 2>/dev/null | wc -l | tr -d ' ')
-echo "  $harness_count harness module(s); $skill_count skills, $cmd_count commands, $rule_count rules available to consume."
+echo "  $harness_count harness module(s); $skill_count skills and $rule_count rules available to consume."
 echo ""

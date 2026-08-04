@@ -1,8 +1,8 @@
 # ai-config
 
-Centralized configuration for Claude Code and pi. Skills, commands, agents, and rules are authored once and installed into each harness by `install.sh`.
+Centralized configuration for Claude Code and pi. Skills, agents, and rules are authored once and installed into each harness by `install.sh`.
 
-> **Editing or adding skills / commands / agents / rules?** Read [`AGENTS.md`](AGENTS.md) — the authoring contract: progressive disclosure, the per-primitive harness matrix (what each is and which harnesses consume it), and how advisory rules differ from guardrails (enforced once in the shared guard core). `make test` is the pre-commit gate that enforces it (run `make` to list targets).
+> **Editing or adding skills / agents / rules?** Read [`AGENTS.md`](AGENTS.md) — the authoring contract: progressive disclosure, the per-primitive harness matrix (what each is and which harnesses consume it), and how advisory rules differ from guardrails (enforced once in the shared guard core). `make test` is the pre-commit gate that enforces it (run `make` to list targets).
 
 ## Quick Start
 
@@ -219,7 +219,6 @@ Agents read a subset relevant to their role.
 ```text
 .
 ├── skills/           Shared workflow skills (build, review-change, review-artifact, ...)
-├── commands/         Claude Code command wrappers
 ├── agents/           Shared specialist agents (change-reviewer, tdd-guide, refactorer, ...)
 ├── harness-system-prompt.md  Small always-on critical baseline + rule routing
 ├── rules/            6 on-demand advisory rules (all enforcement is in shared/)
@@ -275,24 +274,6 @@ Agents read a subset relevant to their role.
 | `commit` | — | Create one focused checkout-local commit without integration or lifecycle changes |
 | `visualize` | — | Generate self-contained HTML pages for visual explanations |
 | `visualize-diff` | — | Visual HTML diff review — before/after comparison + code-review analysis |
-
-### Commands
-
-| Command | Description |
-|---------|-------------|
-| `/build` | Full feature workflow — grill, spec, tasks, implement, final Review change |
-| `/grill` | Interactive domain-modeling session (updates `CONTEXT.md` + ADRs) |
-| `/spec` | Synthesize and browser-review canonical specs.html |
-| `/todo` | Break a spec into canonical vertical-slice tasks.html |
-| `/code` | Execute approved tasks via vertical-slice TDD (AI implements) |
-| `/coach` | Coach-guided implementation (AI writes one test, you write the code) |
-| `/review-change` | Validate a branch, local Git range, or GitHub pull request; final `/build` gate in pipeline mode |
-| `/review-code` | Architectural review — no args: entire codebase; args: that area; browser-reviewed HTML report |
-| `/review-artifact` | Review an existing local HTML artifact with annotations and explicit approval |
-| `/prototype` | Throwaway prototype (logic TUI or UI variants) to flesh out a design |
-| `/handoff` | Write a handoff doc to OS temp dir for another agent session |
-| `/pickup` | Resume from a handoff doc (most recent by default, or matched from an argument) |
-| `/visualize-diff` | Visual HTML diff review — before/after architecture comparison |
 
 ### Agents
 
@@ -351,8 +332,7 @@ This repository serves two AI coding harnesses with different runtime models. `i
 | Aspect | Claude Code | pi |
 |--------|-------------|----|
 | Config root | `~/.claude/` | `~/.pi/agent/` |
-| Skills | `~/.claude/skills/` (symlinked) | `~/.pi/agent/skills/` (symlinked) |
-| Commands | `~/.claude/commands/` (symlinked, dedup against skills) | Not supported; pi uses skills and prompt templates |
+| Skills | `~/.claude/skills/` (registered as `/<name>`) | `~/.pi/agent/skills/` (registered as `/skill:<name>`) |
 | Agents | `~/.claude/agents/` (symlinked) | `~/.pi/agent/agents/` (symlinked) |
 | Rules | `~/.dotfiles/ai/rules/` (canonical source) | `~/.dotfiles/ai/rules/` (canonical source) |
 | Guardrail adapter | Tier B command-hook shim + static denylist | Tier A in-process extension |
@@ -364,7 +344,7 @@ Cross-harness guardrails live once in `shared/` and project into both harnesses 
 `install.sh` is a **generic loop over harness modules** (`harnesses/*/manifest.sh`, per [ADR-0010](docs/adr/0010-modular-harness-modules-and-isolation.md)) — adding a harness is dropping in a module, removing one is deleting its directory. For each module it:
 
 1. Reads the module's `manifest.sh` (its `config_root`, the shared categories it consumes, and an `install_module` hook).
-2. **Mirrors each module's consumed shared set** into its config root. Skills and agents reach both harnesses; commands reach Claude; rules remain at their canonical source path.
+2. **Mirrors each module's consumed shared set** into its config root. Skills and agents reach both harnesses; rules remain at their canonical source path.
 3. **Installs module files and global instructions** via each manifest (Claude: `CLAUDE.md`, `settings.json`, `statusline.sh`, `hooks.json`; pi: `AGENTS.md`, settings, extensions).
 4. **Prunes dangling links** so the install self-heals after a rename/delete.
 5. Links the standalone `review-change` executable into `~/.local/bin/` independently of either harness.
@@ -372,7 +352,8 @@ Cross-harness guardrails live once in `shared/` and project into both harnesses 
 
 Finally it sets `core.hooksPath` to `.githooks`. The guard core in `shared/` is resolved by the adapters via symlink realpath, so it is not separately mirrored.
 
-Commands sharing a name with a skill (`build`, `grill`, `spec`, `todo`, `code`, `coach`, `review-change`, `refactor`) are skipped for Claude Code because skills take precedence.
+Claude and pi consume the same skill source directly ([ADR-0024](docs/adr/0024-retire-duplicate-command-wrappers.md)).
+Claude exposes each skill as `/<name>`, while pi exposes it as `/skill:<name>`.
 
 ## Infrastructure
 
@@ -383,12 +364,12 @@ Commands sharing a name with a skill (`build`, `grill`, `spec`, `todo`, `code`, 
 shows every individual check). The `test/content` + `test/install` categories
 (`scripts/test-pipeline.sh`) validate the repository's internal consistency:
 
-- **Frontmatter**: Skills need name/description, agents need name/description/tools, commands need description
+- **Frontmatter**: Skills need name/description, and agents need name/description/tools
 - **Phase content**: Grill skill must mention `CONTEXT.md`, spec must mention "User Stories", tasks must mention "vertical slice", implement must mention vertical-slice TDD, etc.
 - **Cross-references**: Agent files referenced from skills must exist
 - **Agent rule dependencies**: Rule files referenced in agent bodies must exist
 - **Symlink targets**: All files that `install.sh` would symlink must exist
-- **Guide/skill sync**: HTML guide files must reference same agents and commands as SKILL.md
+- **Guide/skill sync**: HTML guide files must reference the same agents as SKILL.md
 - **Stale stubs**: Short files with redirect language are flagged
 
 `scripts/test-pipeline-self-test.sh` is a meta-test that creates intentionally broken files to verify the test pipeline catches each error class.

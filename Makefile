@@ -18,7 +18,7 @@ bundle: ## Rebuild pi's self-contained guard extension bundle (pi can't resolve 
 
 test: test/content test/install test/guard test/meta ## Run every check (all test/* targets)
 
-test/content: ## Validate the shared authoring contract (skills, commands, agents, rules)
+test/content: ## Validate the shared authoring contract (skills, agents, rules)
 	@bash scripts/test-pipeline.sh content
 
 test/install: ## Validate the install system + harness modules (manifests, isolation)

@@ -12,17 +12,13 @@
 config_root="$HOME/.pi/agent"
 consumed_categories=(skills agents)
 
-# pi does not have a native commands/ resource type — its only /-triggered
-# resources are prompt templates (prompts/), skills (/skill:name), built-in
-# commands, and extension-registered commands. Commands are a Claude Code
-# concept not used here.
-
 # Small always-on bootstrap: critical baseline plus lazy-rule load triggers.
 instruction_target="AGENTS.md"
 
 install_module() {
-  # Remove the former per-harness rule mirror; preserve unrelated user files.
+  # Remove former per-harness resources; preserve unrelated user files.
   prune_repo_rule_links "$config_root/rules"
+  prune_repo_command_links "$config_root/commands"
 
   # Copy base settings once (regular file, not symlink) so pi can write
   # runtime fields (lastChangelogVersion, etc.) without dirtying git.
@@ -130,18 +126,4 @@ install_module() {
     fi
   fi
 
-  # Clean up directories no longer consumed or managed by pi.
-  # commands/ was previously mirrored but pi doesn't use it.
-  # prompts/ is consumed by pi for prompt templates (e.g. /implement, /scout-and-plan)
-  # so we keep it.
-  for stale in commands; do
-    if [ -d "$config_root/$stale" ]; then
-      # Remove all symlinked .md files placed by this repo or the user
-      find "$config_root/$stale" -maxdepth 1 -type l -name "*.md" -delete 2>/dev/null || true
-      # Remove the directory itself if now empty
-      rmdir "$config_root/$stale" 2>/dev/null && \
-        dim "  $config_root/$stale — removed (not used by pi)" || \
-        dim "  $config_root/$stale — cleaned symlinks (dir kept, has non-repo content)"
-    fi
-  done
 }

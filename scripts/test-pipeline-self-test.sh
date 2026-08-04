@@ -23,6 +23,7 @@ remove_fixtures() {
   rm -f "$REPO_DIR"/agents/test-self-test-*.md 2>/dev/null || true
   rm -rf "$REPO_DIR"/skills/test-self-test-* 2>/dev/null || true
   rm -f "$REPO_DIR"/commands/test-self-test-*.md 2>/dev/null || true
+  rmdir "$REPO_DIR/commands" 2>/dev/null || true
   rm -f "$REPO_DIR"/rules/test-self-test-*.md 2>/dev/null || true
   rm -f "$REPO_DIR"/docs/adr/[0-9][0-9][0-9][0-9]-test-self-test-*.md 2>/dev/null || true
   rm -rf "$REPO_DIR"/harnesses/test-self-test-* 2>/dev/null || true
@@ -197,24 +198,47 @@ EOF
 }
 
 # ---------------------------------------------------------------------------
-# Self-test 5: Broken cross-reference to visualize references
+# Self-test 5: Broken skill reference
 # ---------------------------------------------------------------------------
 
-test_broken_ve_reference_fails() {
-  local f
-  f="$(fixture_file "commands/test-self-test-cmd.md")"
-  cat >"$f" <<'EOF'
+test_broken_skill_reference_fails() {
+  local skill_dir
+  skill_dir="$(fixture_skill_dir "test-self-test-broken-reference")"
+  cat >"$skill_dir/SKILL.md" <<'EOF'
 ---
-description: test command with broken reference
+name: test-self-test-broken-reference
+description: A fixture skill with a broken progressive-disclosure reference.
 ---
 
-See ~/.claude/skills/visualize/references/nonexistent-file.md for details.
+Read [missing details](references/nonexistent-file.md).
 EOF
 
   if run_pipeline content cross-references; then
-    self_fail "broken VE reference: test-pipeline.sh should exit non-zero"
+    self_fail "broken skill reference: test-pipeline.sh should exit non-zero"
   else
-    self_pass "broken VE reference: test-pipeline.sh correctly exits non-zero"
+    self_pass "broken skill reference: test-pipeline.sh correctly exits non-zero"
+  fi
+}
+
+# ---------------------------------------------------------------------------
+# Self-test 5b: a reintroduced command wrapper fails the gate
+# ---------------------------------------------------------------------------
+
+test_reintroduced_command_wrapper_fails() {
+  local f
+  f="$(fixture_file "commands/test-self-test-command.md")"
+  cat >"$f" <<'EOF'
+---
+description: A redundant command wrapper.
+---
+
+Load the matching skill.
+EOF
+
+  if run_pipeline content no-command-wrappers; then
+    self_fail "reintroduced command wrapper: test-pipeline.sh should exit non-zero"
+  else
+    self_pass "reintroduced command wrapper: test-pipeline.sh correctly exits non-zero"
   fi
 }
 
@@ -463,7 +487,8 @@ main() {
   test_skill_missing_name_fails
   test_agent_missing_tools_fails
   test_agent_unknown_tool_fails
-  test_broken_ve_reference_fails
+  test_broken_skill_reference_fails
+  test_reintroduced_command_wrapper_fails
   test_agent_missing_rule_fails
   test_stale_stub_fails
   test_forbidden_already_loaded_in_context_fails

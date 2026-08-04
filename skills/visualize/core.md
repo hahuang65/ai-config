@@ -2,7 +2,7 @@
 
 <!-- Extracted from SKILL.md — review when SKILL.md changes -->
 
-Compact reference for VE-based commands. For the full skill (general-purpose diagram generation), load the visualize skill directly.
+Compact reference for visual explanation workflows. For general-purpose diagram generation, load the visualize skill directly.
 
 ## Aesthetic Direction
 

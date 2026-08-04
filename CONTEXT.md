@@ -1,6 +1,6 @@
 # ai-config
 
-A single configuration source that powers Claude Code and pi. Skills, commands, agents, and rules are authored once and installed into each via `install.sh`.
+A single configuration source that powers Claude Code and pi. Skills, agents, and rules are authored once and installed into each via `install.sh`.
 
 ## Language
 
@@ -17,9 +17,6 @@ _Avoid_: Capability, primitive in user-facing copy.
 **Skill**:
 A file-backed capability pack discoverable by name, defined by `<root>/skills/<name>/SKILL.md`. Loaded as lightweight metadata in the system prompt and read on demand. Shared across all harnesses without per-harness translation.
 
-**Command** (slash command):
-A `<root>/commands/<name>.md` file invoked by the user as `/<name>`. Frontmatter is parsed; body is rendered as a prompt template with `$ARGUMENTS` / `$1` substitutions.
-
 **Agent** (subagent):
 A specialized sub-runtime invoked by the main session through its subagent tool. Defined in `<root>/agents/<name>.md` with a tool allowlist in frontmatter.
 _Avoid_: Worker, child session.
@@ -30,7 +27,7 @@ A `<root>/rules/<name>.md` file holding guidance the harness pulls into context 
 ### Harness-specific terms
 
 **`.claude` / `~/.claude/`**:
-Claude Code's config root. This repo's `harnesses/claude/` module contains `settings.json`, `statusline.sh`, `hooks.json`, the tier-B guard shim `hooks/guard.ts`, and a `manifest.sh`, all symlinked into `~/.claude/` by `install.sh`. Skills, commands, and agents use their conventional directories; detailed rules remain at the canonical `~/.dotfiles/ai/rules/` path so Claude does not auto-inject them, and `~/.claude/CLAUDE.md` supplies the small global bootstrap.
+Claude Code's config root. This repo's `harnesses/claude/` module contains `settings.json`, `statusline.sh`, `hooks.json`, the tier-B guard shim `hooks/guard.ts`, and a `manifest.sh`, all symlinked into `~/.claude/` by `install.sh`. Skills and agents use their conventional directories; Claude registers each skill directly as `/<name>`. Detailed rules remain at the canonical `~/.dotfiles/ai/rules/` path so Claude does not auto-inject them, and `~/.claude/CLAUDE.md` supplies the small global bootstrap.
 
 **`.pi` / `~/.pi/agent/`**:
 pi's config root. This repo's `harnesses/pi/` module contains settings, extensions, a bundled tier-A guard adapter, and a `manifest.sh`. Skills and agents use their conventional directories; detailed rules remain at the canonical `~/.dotfiles/ai/rules/` path, and `~/.pi/agent/AGENTS.md` supplies the small global bootstrap.
@@ -262,7 +259,7 @@ _Avoid_: refactoring (unqualified — hides the directed-vs-hygiene split).
 ## Example dialogue
 
 > **Dev**: I want to add `/refactor` so it works in both harnesses.
-> **Expert**: Claude exposes slash commands, while pi uses skills and prompt templates. Put reusable behavior in `skills/refactor/SKILL.md`; add `commands/refactor.md` only when Claude needs a command-shaped entry point. The installer projects each resource only into harnesses that consume that category.
+> **Expert**: Put the reusable workflow in `skills/refactor/SKILL.md`. Claude registers that skill as `/refactor`, while pi registers it as `/skill:refactor`; no wrapper is needed.
 >
 > **Dev**: And `security.md` — I never want any harness reading my `.env`. Same deal, just share the rule?
 > **Expert**: No — that's the split. `security.md` as *guidance* is an **advisory rule** and shares fine. But "never read secrets" as an *enforced* constraint is a **guardrail policy**: it gets an ID in the **policy registry**, the detection lives once in the **guard core** (`isSecretPath`), and each **harness module** wires that core in via its **enforcement tier** — pi runs it in-process (tier A), while Claude runs it through a stdin/stdout shim (tier B). The **conformance test** proves both harnesses cover it because `no-secret-access` is in the **mandatory policy floor**.

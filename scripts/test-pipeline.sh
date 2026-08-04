@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# Validates internal consistency of markdown/YAML configuration files
-# for the /build pipeline.
+# Validates internal consistency of the shared skills, agents, rules, and
+# harness configuration.
 set -euo pipefail
 
 REPO_DIR="$(cd "$(dirname "$0")/.." && pwd)"
@@ -156,20 +156,23 @@ test_frontmatter_agents() {
 }
 
 # ---------------------------------------------------------------------------
-# 3. Frontmatter: commands
+# 3. Retired command wrappers
 # ---------------------------------------------------------------------------
 
-test_frontmatter_commands() {
-  section "Frontmatter: commands"
-  local cmd_file
-  for cmd_file in "$REPO_DIR"/commands/*.md; do
-    local label="commands/$(basename "$cmd_file")"
-    local fm
-    fm="$(extract_frontmatter "$cmd_file")"
-    if [[ "$fm" =~ (^|$'\n')description: ]]; then
-      pass "$label has description:"
+test_no_command_wrappers() {
+  section "Retired command wrappers"
+  if [[ -d "$REPO_DIR/commands" ]]; then
+    fail "commands/" "redundant command wrappers must stay retired; skills provide Claude and pi entry points"
+  else
+    pass "commands/ is absent"
+  fi
+
+  local manifest
+  for manifest in "$REPO_DIR"/harnesses/*/manifest.sh; do
+    if grep -Eq '^consumed_categories=\([^)]*commands' "$manifest"; then
+      fail "${manifest#"$REPO_DIR/"}" "still consumes the retired commands category"
     else
-      fail "$label" "missing 'description:' in frontmatter"
+      pass "${manifest#"$REPO_DIR/"} does not consume commands"
     fi
   done
 }
@@ -356,10 +359,7 @@ test_phase_coach_holding_line() {
   section "Phase: coach holding-line discipline"
   local skill_file="$REPO_DIR/skills/coach/SKILL.md"
   local skill_label="skills/coach/SKILL.md"
-  local cmd_file="$REPO_DIR/commands/coach.md"
-  local cmd_label="commands/coach.md"
   [[ -f "$skill_file" ]] || { fail "$skill_label" "file not found"; return; }
-  [[ -f "$cmd_file" ]] || { fail "$cmd_label" "file not found"; return; }
 
   local skill_content
   skill_content="$(gather_skill_content coach)"
@@ -375,12 +375,6 @@ test_phase_coach_holding_line() {
   check_content_cached "$skill_content" "$skill_label" "switch to .?/code"
   check_content_cached "$skill_content" "$skill_label" "Todo hygiene"
   check_content_cached "$skill_content" "$skill_label" "coach actions"
-
-  # Commands are intentionally thin wrappers; the load-bearing discipline lives
-  # once in the skill and the command routes to that source of truth.
-  local cmd_content
-  cmd_content="$(cat "$cmd_file")"
-  check_content_cached "$cmd_content" "$cmd_label" "Load the .?coach.? skill"
 }
 
 # ---------------------------------------------------------------------------
@@ -703,7 +697,6 @@ test_retired_review_change_agents() {
     "$REPO_DIR"/skills/*/SKILL.md \
     "$REPO_DIR"/skills/*/references/*.md \
     "$REPO_DIR"/skills/*/guide.html \
-    "$REPO_DIR"/commands/*.md \
     "$REPO_DIR"/README.md \
     "$REPO_DIR"/AGENTS.md \
     "$REPO_DIR"/example/README.md \
@@ -720,7 +713,7 @@ test_retired_review_change_agents() {
 #
 # The code-cleaner skill and refactor-cleaner agent were absorbed into the
 # refactorer engine's hygiene mode. The component files must not return, and
-# no live authoring surface (skills, agents, commands, rules, harness modules,
+# no live authoring surface (skills, agents, rules, harness modules,
 # README/AGENTS/example) may instruct the model to invoke either retired name.
 # Deliberately exempt: docs/features/ and docs/adr/ (historical records),
 # CONTEXT.md (its glossary _Avoid_ lists must name the retired vocabulary),
@@ -743,24 +736,24 @@ test_retired_cleaners() {
   fi
 
   # The prd skill was renamed to spec; its canonical artifact is specs.html.
-  if [[ -e "$REPO_DIR/skills/prd" || -e "$REPO_DIR/commands/prd.md" ]]; then
-    fail "retired" "skills/prd or commands/prd.md still exists (renamed to specs)"
+  if [[ -e "$REPO_DIR/skills/prd" ]]; then
+    fail "retired" "skills/prd still exists (renamed to spec)"
   else
-    pass "skills/prd and commands/prd.md absent (renamed to specs)"
+    pass "skills/prd is absent (renamed to spec)"
   fi
 
   # The improve-codebase skill was renamed to review-code and remains the
   # optional standalone architectural workflow (whole-codebase or area scope).
   # Review change owns the final /build gate.
-  if [[ -e "$REPO_DIR/skills/improve-codebase" || -e "$REPO_DIR/commands/improve-codebase.md" ]]; then
-    fail "retired" "skills/improve-codebase or commands/improve-codebase.md still exists (renamed to review-code)"
+  if [[ -e "$REPO_DIR/skills/improve-codebase" ]]; then
+    fail "retired" "skills/improve-codebase still exists (renamed to review-code)"
   else
-    pass "skills/improve-codebase and commands/improve-codebase.md absent (renamed to review-code)"
+    pass "skills/improve-codebase is absent (renamed to review-code)"
   fi
-  if [[ -f "$REPO_DIR/skills/review-code/SKILL.md" && -f "$REPO_DIR/commands/review-code.md" ]]; then
-    pass "skills/review-code and commands/review-code.md exist"
+  if [[ -f "$REPO_DIR/skills/review-code/SKILL.md" ]]; then
+    pass "skills/review-code/SKILL.md exists"
   else
-    fail "retired" "skills/review-code/SKILL.md or commands/review-code.md missing (replacement for improve-codebase)"
+    fail "retired" "skills/review-code/SKILL.md missing (replacement for improve-codebase)"
   fi
 
   # The 2026-07 naming pass: short imperative verbs. specs->spec,
@@ -770,10 +763,10 @@ test_retired_cleaners() {
   # visualize-diff still uses diff-review.html when invoked standalone.
   local old_name
   for old_name in specs tasks implement implement-coach visual-explainer diff-review; do
-    if [[ -e "$REPO_DIR/skills/$old_name" || -e "$REPO_DIR/commands/$old_name.md" ]]; then
-      fail "retired" "skills/$old_name or commands/$old_name.md still exists (renamed in the verb naming pass)"
+    if [[ -e "$REPO_DIR/skills/$old_name" ]]; then
+      fail "retired" "skills/$old_name still exists (renamed in the verb naming pass)"
     else
-      pass "skills/$old_name and commands/$old_name.md absent (renamed)"
+      pass "skills/$old_name is absent (renamed)"
     fi
   done
   local new_name
@@ -788,10 +781,10 @@ test_retired_cleaners() {
   # plan-review and project-recap were standalone visualize companions the
   # user never invoked — removed rather than renamed into the verb scheme.
   for old_name in plan-review project-recap; do
-    if [[ -e "$REPO_DIR/commands/$old_name.md" || -e "$REPO_DIR/skills/$old_name" ]]; then
-      fail "retired" "commands/$old_name.md or skills/$old_name still exists (removed as unused)"
+    if [[ -e "$REPO_DIR/skills/$old_name" ]]; then
+      fail "retired" "skills/$old_name still exists (removed as unused)"
     else
-      pass "commands/$old_name.md and skills/$old_name absent (removed as unused)"
+      pass "skills/$old_name is absent (removed as unused)"
     fi
   done
 
@@ -828,8 +821,7 @@ test_retired_cleaners() {
 
   local hits
   hits="$(grep -rlE 'code-cleaner|refactor-cleaner' \
-    "$REPO_DIR/skills" "$REPO_DIR/agents" "$REPO_DIR/commands" "$REPO_DIR/rules" \
-    "$REPO_DIR/harnesses" \
+    "$REPO_DIR/skills" "$REPO_DIR/agents" "$REPO_DIR/rules" "$REPO_DIR/harnesses" \
     "$REPO_DIR/AGENTS.md" "$REPO_DIR/README.md" "$REPO_DIR/example" 2>/dev/null || true)"
   if [[ -n "$hits" ]]; then
     local f
@@ -970,36 +962,6 @@ check_agent_files_exist() {
   done
 }
 
-check_ve_paths() {
-  local ve_dir="$REPO_DIR/skills/visualize"
-  local cmd_file
-  for cmd_file in "$REPO_DIR"/commands/*.md; do
-    local cmd_label="commands/$(basename "$cmd_file")"
-    local content
-    content="$(<"$cmd_file")"
-    # Check references/ and templates/ — strip "visual-explainer/" prefix since ve_dir already includes it
-    local ve_subpath
-    while read -r ve_subpath; do
-      [[ -z "$ve_subpath" ]] && continue
-      local rel_path="${ve_subpath#visualize/}"
-      local target="$ve_dir/$rel_path"
-      if [[ -f "$target" ]]; then
-        pass "skills/visualize/$rel_path exists"
-      else
-        fail "cross-ref" "$target not found (referenced from $cmd_label)"
-      fi
-    done < <(echo "$content" | grep -oE "visualize/(references|templates)/[a-z._-]+" | sort -u || true)
-    # Check core.md
-    if [[ "$content" =~ visualize/core\.md ]]; then
-      if [[ -f "$ve_dir/core.md" ]]; then
-        pass "skills/visualize/core.md exists (referenced from $cmd_label)"
-      else
-        fail "cross-ref" "skills/visualize/core.md not found"
-      fi
-    fi
-  done
-}
-
 # Every `references/...md` link inside a SKILL.md must resolve to a real file —
 # generalizes check_ve_paths to all skills. Guards progressive-disclosure
 # imports (a skill's own references/ and ../shared/references/).
@@ -1027,7 +989,6 @@ test_cross_references() {
   section "Cross-references"
   check_skill_references_phases
   check_agent_files_exist
-  check_ve_paths
   check_skill_reference_links
 }
 
@@ -1092,7 +1053,7 @@ test_symlink_targets() {
     fi
   done
 
-  for dir in rules commands agents; do
+  for dir in rules agents; do
     local f
     for f in "$REPO_DIR/$dir"/*.md; do
       if [[ -f "$f" ]]; then
@@ -1138,26 +1099,6 @@ check_guide_contains_skill_agents() {
   done < <(grep -oE '`[a-z][a-z0-9-]+`' "$skill_file" | tr -d '`' | grep -Ff <(echo "$agent_names_str") | sort -u || true)
 }
 
-check_guide_contains_skill_commands() {
-  local guide_file="$1"
-  local skill_file="$2"
-  local skill_name="$3"
-  while read -r cmd_path; do
-    [[ -z "$cmd_path" ]] && continue
-    # Skip absolute and home-relative paths (not local command references)
-    [[ "$cmd_path" =~ ^(/|~) ]] && continue
-    local cmd_name
-    cmd_name="$(basename "$cmd_path" .md)"
-    local local_cmd="$REPO_DIR/commands/${cmd_name}.md"
-    [[ -f "$local_cmd" ]] || continue
-    if grep -q "$cmd_name" "$guide_file"; then
-      pass "guide $skill_name: command '$cmd_name' from SKILL.md appears in guide"
-    else
-      fail "guide $skill_name" "command '$cmd_name' from SKILL.md not found in guide"
-    fi
-  done < <(grep -oE '[a-z][a-z0-9/_-]+\.md' "$skill_file" | sort -u || true)
-}
-
 test_guide_skill_sync() {
   section "Guide/skill sync"
   local skill_dir
@@ -1169,7 +1110,6 @@ test_guide_skill_sync() {
     [[ -f "$guide_file" && -f "$skill_file" ]] || continue
     check_guide_agents_exist "$guide_file" "$skill_name"
     check_guide_contains_skill_agents "$guide_file" "$skill_file" "$skill_name"
-    check_guide_contains_skill_commands "$guide_file" "$skill_file" "$skill_name"
   done
 }
 
@@ -1295,7 +1235,6 @@ test_no_forbidden_claude_centric_phrasing() {
   local matches
   matches="$(grep -ilE "$pattern" \
     "$REPO_DIR"/skills/*/SKILL.md \
-    "$REPO_DIR"/commands/*.md \
     "$REPO_DIR"/agents/*.md \
     "$REPO_DIR"/rules/*.md \
     2>/dev/null || true)"
@@ -1338,7 +1277,6 @@ check_stale_in_dir() {
 test_stale_stubs() {
   section "Stale stubs"
   check_stale_in_dir "$REPO_DIR/agents" "agents"
-  check_stale_in_dir "$REPO_DIR/commands" "commands"
   check_stale_in_dir "$REPO_DIR/rules" "rules"
   check_stale_in_dir "$REPO_DIR/skills/visualize/references" "skills/visualize/references"
   check_stale_in_dir "$REPO_DIR/skills/shared/references" "skills/shared/references"
@@ -1457,6 +1395,10 @@ test_install_behavior() {
 
   [[ -f "$tmphome/.claude/CLAUDE.md" ]] && pass "Claude global bootstrap installed as CLAUDE.md" \
     || fail "install-behavior" "Claude CLAUDE.md bootstrap missing"
+  [[ ! -d "$tmphome/.claude/commands" ]] && pass "Claude uses skills directly without command wrappers" \
+    || fail "install-behavior" "Claude commands/ should not be installed"
+  [[ ! -d "$tmphome/.pi/agent/commands" ]] && pass "pi uses skills directly without command wrappers" \
+    || fail "install-behavior" "pi commands/ should not be installed"
 
   for target in \
     "$tmphome/.claude/skills/review-change/SKILL.md" \
@@ -1492,11 +1434,17 @@ test_install_behavior() {
     || fail "install-behavior" "pi subagent tool/model adapter missing"
 
   # Migration + idempotency: remove old repo-managed Claude/pi rule mirrors
-  # without touching unrelated user rules, then verify a second run succeeds.
-  mkdir -p "$tmphome/.claude/rules" "$tmphome/.claude/rulebook" "$tmphome/.pi/agent/rules"
+  # and command wrappers without touching unrelated user files, then verify a
+  # second run succeeds.
+  mkdir -p "$tmphome/.claude/rules" "$tmphome/.claude/rulebook" "$tmphome/.pi/agent/rules" \
+    "$tmphome/.claude/commands" "$tmphome/.pi/agent/commands" "$tmphome/user-commands"
   ln -sf "$REPO_DIR/rules/git-commit.md" "$tmphome/.claude/rules/git-commit.md"
   ln -sf "$REPO_DIR/rules/testing.md" "$tmphome/.claude/rulebook/testing.md"
   ln -sf "$REPO_DIR/rules/mise.md" "$tmphome/.pi/agent/rules/mise.md"
+  ln -s "$REPO_DIR/commands/commit.md" "$tmphome/.claude/commands/commit.md"
+  ln -s "$REPO_DIR/commands/commit.md" "$tmphome/.pi/agent/commands/commit.md"
+  printf '%s\n' '# User command' >"$tmphome/user-commands/custom.md"
+  ln -s "$tmphome/user-commands/custom.md" "$tmphome/.claude/commands/custom.md"
   printf '%s\n' '# User rule' >"$tmphome/.claude/rules/custom.md"
   rm -f "$tmphome/.local/bin/review-change"
   printf '%s\n' '#!/bin/sh' 'echo user-owned' >"$tmphome/.local/bin/review-change"
@@ -1513,6 +1461,12 @@ test_install_behavior() {
     || fail "install-behavior" "legacy Claude rulebook/testing.md was not removed"
   [[ ! -e "$tmphome/.pi/agent/rules/mise.md" ]] && pass "re-install removes a legacy pi rule mirror" \
     || fail "install-behavior" "legacy pi rules/mise.md was not removed"
+  [[ ! -L "$tmphome/.claude/commands/commit.md" ]] && pass "re-install removes a legacy Claude command wrapper" \
+    || fail "install-behavior" "legacy Claude commands/commit.md was not removed"
+  [[ ! -L "$tmphome/.pi/agent/commands/commit.md" ]] && pass "re-install removes a legacy pi command wrapper" \
+    || fail "install-behavior" "legacy pi commands/commit.md was not removed"
+  [[ -L "$tmphome/.claude/commands/custom.md" ]] && pass "re-install preserves unrelated Claude commands" \
+    || fail "install-behavior" "unrelated Claude commands/custom.md was removed"
   [[ -f "$tmphome/.claude/rules/custom.md" ]] && pass "re-install preserves unrelated Claude rules" \
     || fail "install-behavior" "unrelated Claude rules/custom.md was removed"
   grep -q "user-owned" "$tmphome/.local/bin/review-change" \
@@ -1570,12 +1524,12 @@ EOF
 # Main
 # ---------------------------------------------------------------------------
 
-# content: the shared authoring contract — skills/commands/agents/rules markdown
-# is well-formed and internally consistent.
+# content: the shared authoring contract — skills/agents/rules markdown is
+# well-formed and internally consistent.
 run_content() {
   run test_frontmatter_skills
   run test_frontmatter_agents
-  run test_frontmatter_commands
+  run test_no_command_wrappers
   run test_phase_grill
   run test_phase_spec
   run test_phase_todo
@@ -1621,6 +1575,7 @@ run_selected() {
   case "$1" in
     frontmatter-skills)        run test_frontmatter_skills ;;
     frontmatter-agents)        run test_frontmatter_agents ;;
+    no-command-wrappers)       run test_no_command_wrappers ;;
     cross-references)          run test_cross_references ;;
     unique-adr-ids)            run test_unique_adr_ids ;;
     agent-rule-deps)           run test_agent_rule_deps ;;
