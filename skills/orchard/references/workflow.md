@@ -43,5 +43,5 @@ Never clean the preserved worktree merely because continuation failed.
 
 ## Non-transition commands
 
-Status, path-only output, dry runs, explicit keep behavior, and maintenance commands may run directly through the executable.
+Status, rebase, path-only output, dry runs, explicit keep behavior, and maintenance commands may run directly through the executable.
 A merge requested outside a managed task worktree must fail through Orchard rather than falling back to raw Git merge or rebase commands.

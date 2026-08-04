@@ -3,7 +3,7 @@
 *(This is `AGENTS.md` — read at the repo root by Claude Code and pi. It is force-tracked past the global `AGENTS.md` gitignore because defining cross-harness agent config is this repo's whole purpose.)*
 
 This repo is one source of truth for two AI coding harnesses — Claude Code and pi.
-Primitives are authored **once** under `skills/`, `agents/`, and `rules/`, and `install.sh` fans them out to each harness.
+Primitives are authored **once** under `commands/`, `skills/`, `agents/`, and `rules/`, and `install.sh` fans them out to each harness.
 `CONTEXT.md` is the glossary; `docs/adr/` records *why* each decision was made; **this file is the prescriptive "how to add or edit things" contract.**
 Follow it for every edit or addition.
 
@@ -20,8 +20,8 @@ modules), `test/guard` (the guard-core/conformance bun suite), and `test/meta`
 automatically in the pre-commit hook (`.githooks/pre-commit`) and **must stay
 green**. `test/content` enforces: frontmatter (`name`/`description`/agent
 tools), that **every `references/…md` link in a SKILL.md resolves**, ADR
-numeric identifiers are unique, duplicate command wrappers stay retired, no
-Claude-centric phrasing, no stale stubs, and the required workflow phrases for
+numeric identifiers are unique, commands never duplicate same-named skills and
+remain aliases or compositions, no Claude-centric phrasing, no stale stubs, and the required workflow phrases for
 each `/build` phase; `test/install` enforces the harness manifest contract and
 isolation. Review-artifact browser evidence requires Firefox and must not be
 silently skipped. If you relocate content, update the gate in the same change —
@@ -61,6 +61,7 @@ activates, so keep it thin and defer detail to references read on demand
 | Primitive | Authored at | Claude Code | pi |
 |---|---|---|---|
 | **Skill** | `skills/<name>/SKILL.md` | `~/.claude/skills` | `~/.pi/agent/skills` |
+| **Command** | `commands/<name>.md` | `~/.claude/commands` | `~/.pi/agent/prompts` |
 | **Agent** | `agents/<name>.md` | `~/.claude/agents` | `~/.pi/agent/agents` |
 | **Rule** | `rules/<name>.md` | canonical source (on demand) | canonical source (on demand) |
 | **Standalone CLI** | `skills/<name>/bin/` | harness-independent | harness-independent |
@@ -69,9 +70,12 @@ Implications:
 
 - **Skills** and **agents** reach both harnesses, so choose by *nature*, not coverage: a **skill** is a workflow the main session follows; an **agent** is a spawned sub-task invoked via the harness's subagent tool.
   Change review separates the read-only `change-reviewer` from the mutating `change-fixer`, consults `database-reviewer` conditionally, and uses `fact-checker` for build artifacts; implementation owns only the `refactorer` hygiene sweep.
-- Skills are the only file-backed user workflow primitive.
-  Claude registers each skill directly as `/<name>`, while pi registers it as `/skill:<name>` and can also select it from its description.
-  Do not duplicate skills as prompt or command wrappers.
+- **Skills** own discoverable capabilities and progressively disclosed workflow behavior.
+  **Commands** own explicit slash entry points and must never have a same-named skill.
+  A command is either a thin alias to a differently named skill, such as `/rebase` delegating to `orchard`, or a concise composition of multiple skills when that composition adds behavior beyond one skill.
+  Never copy a delegated skill's behavior into a command.
+  Do not add a prompt solely to reproduce a skill's Claude slash spelling in pi; pi advertises skill metadata for automatic matching and provides `/skill:<name>` for forced invocation.
+  Claude registers commands directly as `/<name>`, while pi loads the same files as prompt templates with the same names.
 - **Do not shadow a Claude built-in.** `/simplify` and `/fact-check` are
   Claude Code built-ins, so our own equivalents carry different names — the
   `refactorer` hygiene sweep (not `simplify`) and the `fact-checker` agent
@@ -108,7 +112,9 @@ A conformance test enforces the mandatory floor on every harness; an isolation t
 
 - **New skill** → copy the shape of a thin existing one; `SKILL.md` plus a
   `references/` only for genuine bulk; shared detail goes in
-  `skills/shared/references/`. Run the gate.
+  `skills/shared/references/`. Do not add a same-named command. Run the gate.
+- **New command** → use it only as a thin alias to a differently named skill or as an explicit composition of existing skills.
+  Keep delegated behavior in those skills and reject any same-named skill.
 - **New rule** → it's advisory metadata: add `description:` frontmatter, no
   `condition:`. To *enforce* (block) something, add a guardrail policy +
   detector to the guard core instead — not a rule.

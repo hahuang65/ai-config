@@ -6,8 +6,8 @@
 # manifest.sh declaring its config root, the shared categories it consumes, and
 # an install_module hook for its own runtime files. This script is a GENERIC
 # LOOP over those modules (ADR-0010): adding a harness is dropping in a module,
-# removing one is deleting its directory. Shared primitives (skills, agents,
-# rules) stay flat at the repo root and are mirrored into each config root.
+# removing one is deleting its directory. Shared primitives (commands, skills,
+# agents, rules) stay flat at the repo root and project into each config root.
 # Run from the repo root: ./install.sh
 #
 set -euo pipefail
@@ -56,9 +56,8 @@ prune_repo_rule_links() {
   rmdir "$d" 2>/dev/null || true
 }
 
-# Remove obsolete command-wrapper links created by earlier versions without
-# touching commands owned by the user or another package. Raw targets remain
-# identifiable even after the tracked commands/ directory is removed.
+# Remove repo-managed command links from a retired harness location without
+# touching commands owned by the user or another package.
 prune_repo_command_links() {
   local d="$1" link raw
   [ -d "$d" ] || return 0
@@ -70,6 +69,18 @@ prune_repo_command_links() {
     esac
   done
   rmdir "$d" 2>/dev/null || true
+}
+
+# Mirror canonical commands into the harness-native directory selected by its
+# manifest: commands/ for Claude Code and prompts/ for pi.
+mirror_commands() {
+  local target_dir="$1" entry name
+  for entry in "$REPO_DIR"/commands/*.md; do
+    [ -f "$entry" ] || continue
+    name="$(basename "$entry")"
+    ln -sf "$entry" "$target_dir/$name"
+    dim "  $target_dir/$name"
+  done
 }
 
 # Mirror one shared category from the repo root into a config root. Skills are
@@ -111,6 +122,7 @@ install_harness() {
     # Manifest contract (defaults; the manifest overrides what it needs).
     config_root=""
     consumed_categories=()
+    command_target=""
     harness_pending=false
     instruction_target=""
     install_module() { :; }
@@ -134,6 +146,12 @@ install_harness() {
       prune_dangling "$config_root/$cat"
       mirror_category "$cat" "$config_root"
     done
+
+    if [ -n "$command_target" ]; then
+      mkdir -p "$config_root/$command_target"
+      prune_dangling "$config_root/$command_target"
+      mirror_commands "$config_root/$command_target"
+    fi
 
     install_module
 
@@ -203,7 +221,8 @@ dim "  core.hooksPath → .githooks"
 
 echo ""
 green "Done!"
-skill_count=$(ls -1d "$REPO_DIR"/skills/*/ 2>/dev/null | wc -l | tr -d ' ')
+command_count=$(ls -1 "$REPO_DIR"/commands/*.md 2>/dev/null | wc -l | tr -d ' ')
+skill_count=$(find "$REPO_DIR/skills" -mindepth 2 -maxdepth 2 -name SKILL.md 2>/dev/null | wc -l | tr -d ' ')
 rule_count=$(ls -1 "$REPO_DIR"/rules/*.md 2>/dev/null | wc -l | tr -d ' ')
-echo "  $harness_count harness module(s); $skill_count skills and $rule_count rules available to consume."
+echo "  $harness_count harness module(s); $command_count commands, $skill_count skills, and $rule_count rules available to consume."
 echo ""

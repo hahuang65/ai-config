@@ -40,10 +40,10 @@ Remote pull requests must not execute local tests, linters, hooks, package scrip
 
 - the user explicitly marks this pull request trusted;
 - the project documents a sandbox that contains project execution; or
-- the originating repository's primary working tree is under `~/Projects/a5/`.
+- the originating repository is an A5 project.
 
-Determine the A5 exception from the originating repository's primary worktree, not from the detached review path under `~/.review-orchard/`.
-If the invocation starts without an originating local repository, the A5 exception does not apply automatically.
+Use the harness baseline's A5 project classification for the originating repository, not the detached review path under `~/.review-orchard/`.
+If the invocation starts without an originating local repository, A5 project trust does not apply automatically.
 Same-repository status and author identity alone do not establish trust.
 
 For an Untrusted pull request, run only static source inspection of immutable Git objects plus read-only Git and provider metadata commands.

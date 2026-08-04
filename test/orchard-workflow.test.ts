@@ -18,7 +18,6 @@ test("harness baseline keeps ordinary work local and reserves Orchard for explic
   expect(prompt).toContain("Pass Orchard the same concise `<short-intent>` used in the branch name");
   expect(prompt).not.toContain("short-description");
   expect(prompt).not.toContain("<project-basename>-<short-intent>");
-  expect(prompt).not.toContain("linked worktree");
   expect(prompt).not.toContain("~/.orchard/");
   expect(prompt).not.toContain("Review change isolation");
 });
@@ -63,18 +62,26 @@ test("build delegates isolation while preserving an explicit local-branch fallba
   expect(build.match(/exactly \*\*four\*\* approval gates/g)).toHaveLength(1);
 });
 
-test("merge is a thin fail-closed alias for the Orchard merge flow", async () => {
-  const merge = await source("skills/merge/SKILL.md");
+test("deliver commits when needed and routes delivery without duplicating Orchard", async () => {
+  const delivery = await source("skills/deliver/SKILL.md");
 
-  expect(merge).toContain("$ARGUMENTS");
-  expect(merge).toContain("../orchard/references/workflow.md");
-  expect(merge).toContain("managed task worktree");
-  expect(merge).toContain("stop with Git dotfiles installation guidance");
-  expect(merge).toContain("rebase-first");
-  expect(merge).toContain("never creates a merge commit");
-  expect(merge).toContain("Never fall back to raw Git integration");
-  expect(merge).not.toContain("git merge");
-  expect(merge).not.toContain("git push");
+  expect(delivery).toContain("$ARGUMENTS");
+  expect(delivery).toContain("managed task worktree");
+  expect(delivery).toContain("stop with Git dotfiles installation guidance");
+  expect(delivery).toContain("If the checkout has changes");
+  expect(delivery).toContain("If the checkout is already clean, skip committing");
+  expect(delivery).toContain("Orchard merge itself synchronizes trunk and rebases");
+  expect(delivery).toContain("never create merge commits");
+  expect(delivery).toContain("Never fall back to raw Git integration");
+  expect(delivery).toContain("A5 project");
+  expect(delivery).toContain("configured upstream");
+  expect(delivery).toContain("same-named remote head");
+  expect(delivery).toContain("publication status is ambiguous");
+  expect(delivery).toContain("record its tip before rebasing");
+  expect(delivery).toContain("not an ancestor of the rebased feature tip");
+  expect(delivery).toContain("git pr create --web --fill");
+  expect(delivery).not.toContain("~/Projects/a5/");
+  expect(delivery).not.toContain("git push");
 });
 
 test("commit remains checkout-local and never chains into Orchard integration", async () => {
@@ -84,7 +91,8 @@ test("commit remains checkout-local and never chains into Orchard integration", 
   expect(commit).toContain("Never invoke Orchard");
   expect(commit).toContain("Never change branches or worktree lifecycle");
   expect(commit).toContain("Never merge, rebase, or push");
-  expect(commit).toContain("Integration is a separate explicit `/merge` action");
+  expect(commit).toContain("Never choose or invoke a follow-on workflow from inside this skill");
+  expect(commit).toContain("return control to that caller after the successful commit");
 });
 
 test("Git policy rebases feature branches and forbids merge commits", async () => {

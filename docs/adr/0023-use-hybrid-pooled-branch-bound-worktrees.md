@@ -16,7 +16,7 @@ If the executable is missing or protocol-incompatible before acquisition, `/buil
 That degraded mode is never automatic, does not duplicate worktree lifecycle logic, and remains subject to the build pipeline's four approval gates.
 Declining the fallback stops with Git dotfiles installation guidance.
 Acquisition or native-transition failure after Orchard mutates state preserves the task worktree and stops without offering branch fallback.
-Standalone Orchard and `/merge` workflows fail closed when the executable is unavailable or incompatible.
+Standalone Orchard and `deliver` workflows fail closed when the executable is unavailable or incompatible.
 Orchard never adopts or relocates an unmanaged worktree and contains no build-phase knowledge.
 This native continuation avoids conversion handoff files, `/pickup` coupling, user-started replacement sessions, terminal-backend orchestration, and a maintained pi fork.
 Dirty or unmerged task worktrees are never recycled.
@@ -35,9 +35,12 @@ After proving the branch landed on trunk, the default merge flow transitions the
 Pi uses the same prefilled one-Enter confirmation for this return, and cleanup cannot begin until the privileged command has switched the current interaction to the main directory.
 If that return transition fails, the trunk advance remains valid while the landed task worktree and branch stay intact for later recycling; the manager never removes a worktree still occupied by its caller.
 An explicit keep option skips both the return transition and automatic cleanup.
-The harness-neutral `/merge` skill is a thin alias that forwards its arguments to the Orchard merge flow; it never implements Git integration independently, falls back to raw `git merge`, or pushes.
-It refuses outside a managed task worktree rather than guessing at a target.
-The `/commit` skill remains checkout-local: it may inspect state, stage the selected change, and create one commit, but never invokes Orchard, changes worktree or branch lifecycle, merges, rebases, pushes, or chains into `/merge`.
-Integration remains a separate, explicit `/merge` action even when a commit succeeds.
+The harness-neutral `deliver` skill owns one explicit commit-if-needed and delivery workflow.
+It reuses the checkout-local `commit` skill for a dirty task, then forwards ordinary-project integration to Orchard or opens the A5 pull-request flow after Orchard rebasing.
+For an A5 branch, delivery resolves the pull-request target remote through read-only metadata, checks both the configured upstream and a same-named remote head, and stops when publication status is ambiguous.
+It records any published tip before rebasing and stops for user direction if rewriting makes that tip no longer ancestral, because neither an implicit non-fast-forward publication nor a force-push is permitted.
+It never implements Git integration independently, falls back to raw `git merge`, or pushes, and it refuses outside a managed task worktree rather than guessing at a target.
+The `commit` skill remains independently usable and checkout-local: it may inspect state, stage the selected change, and create one commit, but never invokes Orchard, changes worktree or branch lifecycle, merges, rebases, pushes, or selects a follow-on action.
+A standalone commit still requires a separate explicit delivery action.
 Remote landing detection checks Git ancestry first and consults read-only GitHub PR metadata only when ancestry cannot prove an exact-tip squash or rebase merge.
 This combines Orchard-style environment reuse with ordinary Git branch recoverability and avoids the orphaned-commit risk of a purely detached pool.

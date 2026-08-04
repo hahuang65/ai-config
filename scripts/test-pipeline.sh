@@ -156,25 +156,73 @@ test_frontmatter_agents() {
 }
 
 # ---------------------------------------------------------------------------
-# 3. Retired command wrappers
+# 3. Shared command prompts
 # ---------------------------------------------------------------------------
 
-test_no_command_wrappers() {
-  section "Retired command wrappers"
-  if [[ -d "$REPO_DIR/commands" ]]; then
-    fail "commands/" "redundant command wrappers must stay retired; skills provide Claude and pi entry points"
+test_command_prompts() {
+  section "Shared command prompts"
+  [[ -d "$REPO_DIR/commands" ]] || { fail "commands/" "shared command source is missing"; return; }
+
+  local command_file name fm link
+  local names=()
+  for command_file in "$REPO_DIR"/commands/*.md; do
+    [[ -f "$command_file" ]] || continue
+    name="$(basename "$command_file" .md)"
+    names+=("$name")
+    fm="$(extract_frontmatter "$command_file")"
+    if grep -q '^description:' <<<"$fm"; then
+      pass "commands/$name.md has description:"
+    else
+      fail "commands/$name.md" "missing description frontmatter"
+    fi
+    if [[ -f "$REPO_DIR/skills/$name/SKILL.md" ]]; then
+      fail "commands/$name.md" "duplicates a same-named skill"
+    else
+      pass "commands/$name.md has no same-named skill"
+    fi
+    while read -r link; do
+      [[ -z "$link" || "$link" =~ ^https?: ]] && continue
+      fail "commands/$name.md" "local Markdown link '$link' is unsafe after prompt expansion; load skills through advertised locations"
+    done < <(grep -oE '\]\([^)]+[.]md\)' "$command_file" 2>/dev/null | sed -E 's/^\]\(//; s/\)$//' || true)
+  done
+
+  if grep -Eqi 'by relative path|command-relative' "$REPO_DIR"/commands/*.md; then
+    fail "commands/" "prompt templates must not depend on their source-file path"
   else
-    pass "commands/ is absent"
+    pass "commands do not depend on prompt source-file paths"
   fi
 
-  local manifest
-  for manifest in "$REPO_DIR"/harnesses/*/manifest.sh; do
-    if grep -Eq '^consumed_categories=\([^)]*commands' "$manifest"; then
-      fail "${manifest#"$REPO_DIR/"}" "still consumes the retired commands category"
-    else
-      pass "${manifest#"$REPO_DIR/"} does not consume commands"
-    fi
-  done
+  local actual_names
+  actual_names="$(printf '%s\n' "${names[@]}" | sort | paste -sd' ' -)"
+  [[ "$actual_names" == "rebase" ]] \
+    && pass "commands/ contains the curated alias set" \
+    || fail "commands/" "expected only: rebase; found: $actual_names"
+  grep -Eq '`orchard` skill.*rebase operation' "$REPO_DIR/commands/rebase.md" \
+    && pass "rebase remains a thin Orchard alias" \
+    || fail "commands/rebase.md" "rebase must delegate to the Orchard skill"
+  if [[ -f "$REPO_DIR/skills/deliver/SKILL.md" ]] \
+     && [[ ! -e "$REPO_DIR/skills/merge/SKILL.md" ]] \
+     && grep -Fq '[the commit skill](../commit/SKILL.md)' "$REPO_DIR/skills/deliver/SKILL.md"; then
+    pass "deliver owns commit-if-needed and delivery as one skill"
+  else
+    fail "skills/deliver/SKILL.md" "must replace merge and reuse the commit skill"
+  fi
+
+  grep -q '^command_target="commands"' "$REPO_DIR/harnesses/claude/manifest.sh" \
+    && pass "Claude projects commands into commands/" \
+    || fail "harnesses/claude/manifest.sh" "must set command_target=commands"
+  grep -q '^command_target="prompts"' "$REPO_DIR/harnesses/pi/manifest.sh" \
+    && pass "pi projects commands into prompts/" \
+    || fail "harnesses/pi/manifest.sh" "must set command_target=prompts"
+
+  check_content_cached "$(cat "$REPO_DIR/harness-system-prompt.md")" "harness-system-prompt.md" "An [*][*]A5 project[*][*].*main project directory.*~/Projects/a5/"
+  local duplicate_a5_paths
+  duplicate_a5_paths="$(grep -RFl '~/Projects/a5/' "$REPO_DIR/skills" "$REPO_DIR/commands" "$REPO_DIR/agents" "$REPO_DIR/rules" 2>/dev/null || true)"
+  if [[ -z "$duplicate_a5_paths" ]]; then
+    pass "A5 filesystem classification lives only in the harness baseline"
+  else
+    fail "A5 project classification" "filesystem convention duplicated in: $(echo "$duplicate_a5_paths" | sed "s|$REPO_DIR/||" | paste -sd, -)"
+  fi
 }
 
 # ---------------------------------------------------------------------------
@@ -401,7 +449,7 @@ test_phase_review_change() {
   check_content_cached "$content" "$label" "GitHub.*(URL|number).*title and body.*Authoritative intent.*immutable.*detached review worktree.*~/[.]review-orchard"
   check_content_cached "$content" "$label" "[Nn]o explicit target.*current branch.*pull request.*branch point"
   check_content_cached "$content" "$label" "[Cc]lassify execution trust before materializing.*Untrusted.*--no-checkout.*never.*materialize.*checkout hooks.*content filters"
-  check_content_cached "$content" "$label" "not a sandbox.*must not execute.*~/Projects/a5/.*provider CI.*ask-user"
+  check_content_cached "$content" "$label" "not a sandbox.*must not execute.*A5 project.*provider CI.*ask-user"
   check_content_cached "$content" "$label" "Untrusted.*[Dd]o not run checkout.*submodule.*hooks.*content filters.*archive extraction"
   check_content_cached "$content" "$label" "path-scoped.*git worktree remove.*[Nn]ever force removal.*repository-wide worktree pruning.*cleanup fails"
   check_content_cached "$content" "$label" "Pull-request.*never.*Change fixer.*copyable review Markdown.*never post"
@@ -1395,10 +1443,21 @@ test_install_behavior() {
 
   [[ -f "$tmphome/.claude/CLAUDE.md" ]] && pass "Claude global bootstrap installed as CLAUDE.md" \
     || fail "install-behavior" "Claude CLAUDE.md bootstrap missing"
-  [[ ! -d "$tmphome/.claude/commands" ]] && pass "Claude uses skills directly without command wrappers" \
-    || fail "install-behavior" "Claude commands/ should not be installed"
-  [[ ! -d "$tmphome/.pi/agent/commands" ]] && pass "pi uses skills directly without command wrappers" \
-    || fail "install-behavior" "pi commands/ should not be installed"
+  [[ -f "$tmphome/.claude/commands/rebase.md" ]] && pass "Claude command prompts installed into commands/" \
+    || fail "install-behavior" "Claude commands/rebase.md missing"
+  [[ -f "$tmphome/.pi/agent/prompts/rebase.md" ]] \
+    && pass "pi command prompts installed into prompts/" \
+    || fail "install-behavior" "pi prompts/rebase.md missing"
+  [[ -f "$tmphome/.claude/skills/deliver/SKILL.md" ]] \
+    && [[ -f "$tmphome/.pi/agent/skills/deliver/SKILL.md" ]] \
+    && pass "deliver skill installed into both harnesses" \
+    || fail "install-behavior" "deliver skill missing"
+  [[ ! -e "$tmphome/.claude/commands/deliver.md" ]] \
+    && [[ ! -e "$tmphome/.pi/agent/prompts/deliver.md" ]] \
+    && pass "deliver has no redundant prompt" \
+    || fail "install-behavior" "deliver prompt should stay retired"
+  [[ ! -d "$tmphome/.pi/agent/commands" ]] && pass "pi legacy commands/ location stays retired" \
+    || fail "install-behavior" "pi legacy commands/ should not be installed"
 
   for target in \
     "$tmphome/.claude/skills/review-change/SKILL.md" \
@@ -1433,16 +1492,17 @@ test_install_behavior() {
     && pass "pi subagent adapter accepts shared tools and CLI model inheritance" \
     || fail "install-behavior" "pi subagent tool/model adapter missing"
 
-  # Migration + idempotency: remove old repo-managed Claude/pi rule mirrors
-  # and command wrappers without touching unrelated user files, then verify a
-  # second run succeeds.
+  # Migration + idempotency: remove old repo-managed rule mirrors and pi's
+  # retired commands/ location without touching unrelated user files, then
+  # verify a second run succeeds.
   mkdir -p "$tmphome/.claude/rules" "$tmphome/.claude/rulebook" "$tmphome/.pi/agent/rules" \
     "$tmphome/.claude/commands" "$tmphome/.pi/agent/commands" "$tmphome/user-commands"
   ln -sf "$REPO_DIR/rules/git-commit.md" "$tmphome/.claude/rules/git-commit.md"
   ln -sf "$REPO_DIR/rules/testing.md" "$tmphome/.claude/rulebook/testing.md"
   ln -sf "$REPO_DIR/rules/mise.md" "$tmphome/.pi/agent/rules/mise.md"
-  ln -s "$REPO_DIR/commands/commit.md" "$tmphome/.claude/commands/commit.md"
   ln -s "$REPO_DIR/commands/commit.md" "$tmphome/.pi/agent/commands/commit.md"
+  ln -s "$REPO_DIR/commands/deliver.md" "$tmphome/.claude/commands/deliver.md"
+  ln -s "$REPO_DIR/commands/deliver.md" "$tmphome/.pi/agent/prompts/deliver.md"
   printf '%s\n' '# User command' >"$tmphome/user-commands/custom.md"
   ln -s "$tmphome/user-commands/custom.md" "$tmphome/.claude/commands/custom.md"
   printf '%s\n' '# User rule' >"$tmphome/.claude/rules/custom.md"
@@ -1461,9 +1521,13 @@ test_install_behavior() {
     || fail "install-behavior" "legacy Claude rulebook/testing.md was not removed"
   [[ ! -e "$tmphome/.pi/agent/rules/mise.md" ]] && pass "re-install removes a legacy pi rule mirror" \
     || fail "install-behavior" "legacy pi rules/mise.md was not removed"
-  [[ ! -L "$tmphome/.claude/commands/commit.md" ]] && pass "re-install removes a legacy Claude command wrapper" \
-    || fail "install-behavior" "legacy Claude commands/commit.md was not removed"
-  [[ ! -L "$tmphome/.pi/agent/commands/commit.md" ]] && pass "re-install removes a legacy pi command wrapper" \
+  [[ -L "$tmphome/.claude/commands/rebase.md" ]] && pass "re-install preserves the canonical Claude command prompt" \
+    || fail "install-behavior" "canonical Claude commands/rebase.md missing"
+  [[ ! -L "$tmphome/.claude/commands/deliver.md" ]] \
+    && [[ ! -L "$tmphome/.pi/agent/prompts/deliver.md" ]] \
+    && pass "re-install removes the retired deliver prompt" \
+    || fail "install-behavior" "retired deliver prompt was not pruned"
+  [[ ! -L "$tmphome/.pi/agent/commands/commit.md" ]] && pass "re-install removes the legacy pi command wrapper" \
     || fail "install-behavior" "legacy pi commands/commit.md was not removed"
   [[ -L "$tmphome/.claude/commands/custom.md" ]] && pass "re-install preserves unrelated Claude commands" \
     || fail "install-behavior" "unrelated Claude commands/custom.md was removed"
@@ -1529,7 +1593,7 @@ EOF
 run_content() {
   run test_frontmatter_skills
   run test_frontmatter_agents
-  run test_no_command_wrappers
+  run test_command_prompts
   run test_phase_grill
   run test_phase_spec
   run test_phase_todo
@@ -1575,7 +1639,7 @@ run_selected() {
   case "$1" in
     frontmatter-skills)        run test_frontmatter_skills ;;
     frontmatter-agents)        run test_frontmatter_agents ;;
-    no-command-wrappers)       run test_no_command_wrappers ;;
+    command-prompts)           run test_command_prompts ;;
     cross-references)          run test_cross_references ;;
     unique-adr-ids)            run test_unique_adr_ids ;;
     agent-rule-deps)           run test_agent_rule_deps ;;

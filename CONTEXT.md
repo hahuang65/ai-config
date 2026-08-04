@@ -1,6 +1,6 @@
 # ai-config
 
-A single configuration source that powers Claude Code and pi. Skills, agents, and rules are authored once and installed into each via `install.sh`.
+A single configuration source that powers Claude Code and pi. Skills, commands, agents, and rules are authored once and installed into each via `install.sh`.
 
 ## Language
 
@@ -15,7 +15,16 @@ A primitive the harness exposes to the model — `Bash`, `Read`, `Edit`, `Write`
 _Avoid_: Capability, primitive in user-facing copy.
 
 **Skill**:
-A file-backed capability pack discoverable by name, defined by `<root>/skills/<name>/SKILL.md`. Loaded as lightweight metadata in the system prompt and read on demand. Shared across all harnesses without per-harness translation.
+A file-backed capability pack discoverable by name, defined by `<root>/skills/<name>/SKILL.md`.
+It is loaded as lightweight metadata in the system prompt and read on demand, and it is shared across all harnesses without per-harness translation.
+Pi can resolve a matching request to a skill from its advertised name and description, while `/skill:<name>` remains available to force explicit invocation.
+Therefore a shared skill does not need a same-purpose prompt merely to reproduce Claude Code's `/<name>` spelling in pi.
+
+**Command**:
+An explicit slash-workflow prompt authored at `<root>/commands/<name>.md`.
+A command either aliases a differently named skill or composes multiple skills, and may not duplicate a same-named skill.
+It exists only when the shortcut or composition adds value beyond automatic skill discovery.
+Claude Code consumes commands from `~/.claude/commands/`, while pi consumes the same files as prompt templates from `~/.pi/agent/prompts/`.
 
 **Agent** (subagent):
 A specialized sub-runtime invoked by the main session through its subagent tool. Defined in `<root>/agents/<name>.md` with a tool allowlist in frontmatter.
@@ -27,21 +36,25 @@ A `<root>/rules/<name>.md` file holding guidance the harness pulls into context 
 ### Harness-specific terms
 
 **`.claude` / `~/.claude/`**:
-Claude Code's config root. This repo's `harnesses/claude/` module contains `settings.json`, `statusline.sh`, `hooks.json`, the tier-B guard shim `hooks/guard.ts`, and a `manifest.sh`, all symlinked into `~/.claude/` by `install.sh`. Skills and agents use their conventional directories; Claude registers each skill directly as `/<name>`. Detailed rules remain at the canonical `~/.dotfiles/ai/rules/` path so Claude does not auto-inject them, and `~/.claude/CLAUDE.md` supplies the small global bootstrap.
+Claude Code's config root. This repo's `harnesses/claude/` module contains `settings.json`, `statusline.sh`, `hooks.json`, the tier-B guard shim `hooks/guard.ts`, and a `manifest.sh`, all symlinked into `~/.claude/` by `install.sh`. Skills and agents use their conventional directories; shared commands install into `~/.claude/commands/` and expose `/<name>`. Detailed rules remain at the canonical `~/.dotfiles/ai/rules/` path so Claude does not auto-inject them, and `~/.claude/CLAUDE.md` supplies the small global bootstrap.
 
 **`.pi` / `~/.pi/agent/`**:
-pi's config root. This repo's `harnesses/pi/` module contains settings, extensions, a bundled tier-A guard adapter, and a `manifest.sh`. Skills and agents use their conventional directories; detailed rules remain at the canonical `~/.dotfiles/ai/rules/` path, and `~/.pi/agent/AGENTS.md` supplies the small global bootstrap.
+pi's config root. This repo's `harnesses/pi/` module contains settings, extensions, a bundled tier-A guard adapter, and a `manifest.sh`. Skills and agents use their conventional directories; shared commands install as prompt templates in `~/.pi/agent/prompts/` and expose `/<name>`. Detailed rules remain at the canonical `~/.dotfiles/ai/rules/` path, and `~/.pi/agent/AGENTS.md` supplies the small global bootstrap.
 
 ### Lifecycle terms
 
 **Always-on context**:
-Content the harness injects into every conversation's system prompt without the model having to ask for it. This repo keeps that surface to `harness-system-prompt.md` for Claude and pi: a critical baseline plus the shared rule location and load triggers. Claude Code would also auto-load `~/.claude/rules/*.md`, so this repo deliberately leaves detailed rules only at the canonical source path.
+Content the harness injects into every conversation's system prompt without the model having to ask for it. This repo keeps that surface to `harness-system-prompt.md` for Claude and pi: a critical baseline plus shared project classification and rule-loading triggers. Claude Code would also auto-load `~/.claude/rules/*.md`, so this repo deliberately leaves detailed rules only at the canonical source path.
+
+**A5 project**:
+A repository classified by the global harness baseline from its originating main project directory.
+Linked worktrees and disposable review copies retain that originating classification rather than using their current paths.
 
 ### Worktree lifecycle terms
 
 **Main project directory**:
 The primary repository checkout from which changes are integrated onto **trunk**.
-A merge never runs from another linked worktree.
+Delivery integration never runs from another linked worktree.
 _Avoid_: Main worktree, root repo, original clone.
 
 **Trunk**:
@@ -173,7 +186,7 @@ Closing or ending the session without approval does not clear a pipeline gate.
 _Avoid_: artifact review, annotation cycle, inline `//` review.
 
 **Pipeline skill**:
-A skill the `/build` orchestrator drives through its five phases and supporting review workflow — `build`, `grill`, `spec`, `todo`, `code`, `coach`, **Review change**, and `review-artifact`.
+A skill the `/build` skill orchestrator drives through its five phases and supporting review workflow — `build`, `grill`, `spec`, `todo`, `code`, `coach`, **Review change**, and `review-artifact`.
 Some pipeline skills also run standalone, including `grill`, `spec`, `todo`, and **Review change**.
 Distinct from a **standalone skill** (`refactor`, `review-code`, `handoff`, `pickup`, `prototype`) that `/build` never invokes automatically.
 _Avoid_: phase (a phase is a stage of the pipeline; a pipeline skill is the unit that runs it).
@@ -197,7 +210,7 @@ If focused evidence cannot establish an intent criterion, the **Review change** 
 _Avoid_: Test suite, CI result, confidence.
 
 **Trusted change**:
-A build or local-range change, a remote pull request explicitly trusted by the user or isolated by a documented sandbox, or a pull request whose originating repository has its primary working tree under `~/Projects/a5/`.
+A build or local-range change, a remote pull request explicitly trusted by the user or isolated by a documented sandbox, or a pull request whose originating repository is an A5 project.
 Only a Trusted change may execute local tests, linters, hooks, or package scripts; other remote pull requests remain unmaterialized and use static inspection of immutable Git objects plus provider CI as **Validation evidence**.
 _Avoid_: Same-repository change, disposable worktree, trusted author.
 

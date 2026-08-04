@@ -1,5 +1,5 @@
 ---
-description: Git commit and branch-integration conventions — message format, staging, rebasing, and the ~/Projects/a5 exception. Read before any git add, git commit, or branch integration.
+description: Git commit and branch-integration conventions — message format, staging, rebasing, and the A5 project exception. Read before any git add, git commit, or branch integration.
 ---
 
 # Git Commit
@@ -33,11 +33,11 @@ Fallback summary (used only when `~/.gitmessage` is absent):
 - Never commit secrets, credentials, or `.env` files.
 - When committing changes, always check for corresponding files in `docs/features/` (research documents, plans, architecture diagrams) that were created or modified as part of the work. Include them in the commit unless they are ignored by any git mechanism (`.gitignore`, `.git/info/exclude`, or `core.excludesFile`). These artifacts are part of the feature's history.
 
-### Exception: ~/Projects/a5/**
+### A5 project exception
 
-For any repo whose working tree lives under `~/Projects/a5/`:
+For any A5 project identified by the harness baseline:
 
 - NEVER explicitly stage `CONTEXT.md`, `docs/adr/**`, or `docs/features/**`, even by exact path. Explicit `git add <path>` bypasses excludes — the directive is what stops the agent from working around the git layer.
 - NEVER propose adding these to a tracked `.gitignore`; teammates have not opted in.
 - If `git status` lists them as untracked, leave them untracked.
-- They are already excluded by `~/.config/git/a5.gitignore`, loaded via an `includeIf "gitdir:~/Projects/a5/"` rule in `~/.gitconfig`. The git layer is the safety net; this rule is the agent-side enforcement.
+- They are already excluded by the A5-specific global Git configuration. The Git layer is the safety net; this rule is the agent-side enforcement.

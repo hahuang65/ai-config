@@ -11,6 +11,7 @@
 
 config_root="$HOME/.pi/agent"
 consumed_categories=(skills agents)
+command_target="prompts"
 
 # Small always-on bootstrap: critical baseline plus lazy-rule load triggers.
 instruction_target="AGENTS.md"

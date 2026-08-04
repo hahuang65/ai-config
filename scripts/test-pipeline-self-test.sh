@@ -22,6 +22,7 @@ TMPDIR="$(mktemp -d)"
 remove_fixtures() {
   rm -f "$REPO_DIR"/agents/test-self-test-*.md 2>/dev/null || true
   rm -rf "$REPO_DIR"/skills/test-self-test-* 2>/dev/null || true
+  [[ -L "$REPO_DIR/skills/rebase" ]] && rm "$REPO_DIR/skills/rebase"
   rm -f "$REPO_DIR"/commands/test-self-test-*.md 2>/dev/null || true
   rmdir "$REPO_DIR/commands" 2>/dev/null || true
   rm -f "$REPO_DIR"/rules/test-self-test-*.md 2>/dev/null || true
@@ -221,24 +222,25 @@ EOF
 }
 
 # ---------------------------------------------------------------------------
-# Self-test 5b: a reintroduced command wrapper fails the gate
+# Self-test 5b: a same-named command and skill fail the gate
 # ---------------------------------------------------------------------------
 
-test_reintroduced_command_wrapper_fails() {
-  local f
-  f="$(fixture_file "commands/test-self-test-command.md")"
-  cat >"$f" <<'EOF'
+test_command_skill_overlap_fails() {
+  local skill_dir
+  skill_dir="$(fixture_skill_dir "rebase")"
+  cat >"$skill_dir/SKILL.md" <<'EOF'
 ---
-description: A redundant command wrapper.
+name: rebase
+description: A planted skill that overlaps the curated rebase command.
 ---
 
-Load the matching skill.
+This fixture must fail the command and skill overlap invariant.
 EOF
 
-  if run_pipeline content no-command-wrappers; then
-    self_fail "reintroduced command wrapper: test-pipeline.sh should exit non-zero"
+  if run_pipeline content command-prompts; then
+    self_fail "command/skill overlap: test-pipeline.sh should exit non-zero"
   else
-    self_pass "reintroduced command wrapper: test-pipeline.sh correctly exits non-zero"
+    self_pass "command/skill overlap: test-pipeline.sh correctly exits non-zero"
   fi
 }
 
@@ -436,7 +438,7 @@ test_implement_coach_missing_holding_line_fails() {
 }
 
 # ---------------------------------------------------------------------------
-# Self-test 16: build SKILL.md missing the mandatory phase-loading section —
+# Self-test 16: build skill missing the mandatory phase-loading section —
 # proves the gate catches regressions that let /build reason about sub-skills
 # from availability lists instead of loading each phase by path.
 # ---------------------------------------------------------------------------
@@ -488,7 +490,7 @@ main() {
   test_agent_missing_tools_fails
   test_agent_unknown_tool_fails
   test_broken_skill_reference_fails
-  test_reintroduced_command_wrapper_fails
+  test_command_skill_overlap_fails
   test_agent_missing_rule_fails
   test_stale_stub_fails
   test_forbidden_already_loaded_in_context_fails

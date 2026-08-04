@@ -12,7 +12,7 @@ Create one focused git commit that follows the user's commit-message template an
 
 Before staging or writing a commit message, read both:
 
-1. `~/.dotfiles/ai/rules/git-commit.md` — staging policy, docs/features handling, and the `~/Projects/a5/**` exception.
+1. `~/.dotfiles/ai/rules/git-commit.md` — staging policy, docs/features handling, and the A5 project exception.
 2. `~/.gitmessage` — authoritative commit-message format. If it is absent, use the fallback format in the Git rule.
 
 Do not rely on memory for the commit format. Do not invent a different format.
@@ -30,7 +30,7 @@ Do not rely on memory for the commit format. Do not invent a different format.
    - If there are already staged files, treat them as intentional but still verify they form one logical change.
 
 3. **Stage safely**
-   - Follow the resolved Git rule exactly, including the `docs/features/` policy and the `~/Projects/a5/**` exception.
+   - Follow the resolved Git rule exactly, including the `docs/features/` policy and the A5 project exception.
    - Prefer explicit paths. Do not use broad staging commands like `git add .` unless the user explicitly asked for every changed file and the status confirms that is safe.
    - Never stage secrets, credentials, `.env` files, or files blocked by the rule.
 
@@ -50,10 +50,11 @@ Do not rely on memory for the commit format. Do not invent a different format.
 - Never invoke Orchard.
 - Never change branches or worktree lifecycle.
 - Never merge, rebase, or push.
-- Never chain a successful commit into another workflow.
+- Never choose or invoke a follow-on workflow from inside this skill.
 
-Integration is a separate explicit `/merge` action requested by the user.
-A completed commit ends this skill.
+A standalone commit ends after the commit and requires a separate explicit delivery action.
+When an already-active workflow such as the deliver skill loaded this skill as its commit step, return control to that caller after the successful commit so it can continue delivery.
+The commit skill itself remains checkout-local and owns no integration behavior.
 
 ## Hard stops
 

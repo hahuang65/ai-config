@@ -1,8 +1,8 @@
 # ai-config
 
-Centralized configuration for Claude Code and pi. Skills, agents, and rules are authored once and installed into each harness by `install.sh`.
+Centralized configuration for Claude Code and pi. Skills, commands, agents, and rules are authored once and installed into each harness by `install.sh`.
 
-> **Editing or adding skills / agents / rules?** Read [`AGENTS.md`](AGENTS.md) — the authoring contract: progressive disclosure, the per-primitive harness matrix (what each is and which harnesses consume it), and how advisory rules differ from guardrails (enforced once in the shared guard core). `make test` is the pre-commit gate that enforces it (run `make` to list targets).
+> **Editing or adding commands / skills / agents / rules?** Read [`AGENTS.md`](AGENTS.md) — the authoring contract: progressive disclosure, the per-primitive harness matrix (what each is and which harnesses consume it), and how advisory rules differ from guardrails (enforced once in the shared guard core). `make test` is the pre-commit gate that enforces it (run `make` to list targets).
 
 ## Quick Start
 
@@ -177,7 +177,7 @@ If browser review cannot start, the phase uses chat while preserving the same ap
 | `docs/adr/*.md` | repo root | Long-lived — historical record |
 | `docs/features/<slug>/` | per-feature | Optional — keep, delete, or `.gitignore` |
 
-The `git-commit` rule covers what to include: `CONTEXT.md` and `docs/adr/` ship with the commits they relate to, and per-feature `docs/features/` directories ship alongside their feature. See the rule for the `~/Projects/a5/**` exception that keeps these artifacts local in repos teammates haven't opted into.
+The `git-commit` rule covers what to include: `CONTEXT.md` and `docs/adr/` ship with the commits they relate to, and per-feature `docs/features/` directories ship alongside their feature. See the rule for the A5 project exception that keeps these artifacts local in repositories where teammates have not opted in.
 
 ### Legacy Example
 
@@ -218,7 +218,8 @@ Agents read a subset relevant to their role.
 
 ```text
 .
-├── skills/           Shared workflow skills (build, review-change, review-artifact, ...)
+├── commands/         Shared explicit aliases (rebase)
+├── skills/           Shared discoverable workflow capabilities (review-change, review-artifact, ...)
 ├── agents/           Shared specialist agents (change-reviewer, tdd-guide, refactorer, ...)
 ├── harness-system-prompt.md  Small always-on critical baseline + rule routing
 ├── rules/            6 on-demand advisory rules (all enforcement is in shared/)
@@ -237,6 +238,14 @@ Agents read a subset relevant to their role.
 ```
 
 ## Components
+
+### Commands
+
+Commands and skills have no same-name overlap.
+A command is either a thin alias to a differently named skill or a composition of multiple skills.
+`rebase` aliases `orchard`.
+Delivery is a single discoverable skill rather than a prompt composition.
+Claude installs commands under `~/.claude/commands/`; pi installs the same Markdown under `~/.pi/agent/prompts/`.
 
 ### Skills
 
@@ -270,7 +279,7 @@ Agents read a subset relevant to their role.
 |------|-------|------|
 | `review-artifact` | — | Review local HTML with exact annotations, durable polling, live reload, layout warnings, and explicit approval |
 | `orchard` | — | Delegate reusable worktree lifecycle operations to the independently installed Git-owned CLI and native harness transitions |
-| `merge` | — | Thin fail-closed alias for Orchard fast-forward integration, return, and cleanup |
+| `deliver` | — | Commit outstanding changes when needed, then rebase and integrate locally or open an A5 pull request |
 | `commit` | — | Create one focused checkout-local commit without integration or lifecycle changes |
 | `visualize` | — | Generate self-contained HTML pages for visual explanations |
 | `visualize-diff` | — | Visual HTML diff review — before/after comparison + code-review analysis |
@@ -333,27 +342,31 @@ This repository serves two AI coding harnesses with different runtime models. `i
 |--------|-------------|----|
 | Config root | `~/.claude/` | `~/.pi/agent/` |
 | Skills | `~/.claude/skills/` (registered as `/<name>`) | `~/.pi/agent/skills/` (registered as `/skill:<name>`) |
+| Commands | `~/.claude/commands/` (registered as `/<name>`) | `~/.pi/agent/prompts/` (registered as `/<name>`) |
 | Agents | `~/.claude/agents/` (symlinked) | `~/.pi/agent/agents/` (symlinked) |
 | Rules | `~/.dotfiles/ai/rules/` (canonical source) | `~/.dotfiles/ai/rules/` (canonical source) |
 | Guardrail adapter | Tier B command-hook shim + static denylist | Tier A in-process extension |
 
-Cross-harness guardrails live once in `shared/` and project into both harnesses through their adapters. The conformance test enforces the mandatory policy floor everywhere.
+Cross-harness guardrails live once in `shared/` and project into both harnesses through their adapters.
+The conformance test enforces the mandatory policy floor everywhere.
+Pi advertises skill names and descriptions to the model so matching requests resolve to skills automatically; `/skill:<name>` remains the explicit forced form, so a duplicate prompt is unnecessary merely to match Claude Code's `/<name>` spelling.
 
 ## Installation Details
 
 `install.sh` is a **generic loop over harness modules** (`harnesses/*/manifest.sh`, per [ADR-0010](docs/adr/0010-modular-harness-modules-and-isolation.md)) — adding a harness is dropping in a module, removing one is deleting its directory. For each module it:
 
-1. Reads the module's `manifest.sh` (its `config_root`, the shared categories it consumes, and an `install_module` hook).
+1. Reads the module's `manifest.sh` (its `config_root`, shared categories, native `command_target`, and `install_module` hook).
 2. **Mirrors each module's consumed shared set** into its config root. Skills and agents reach both harnesses; rules remain at their canonical source path.
-3. **Installs module files and global instructions** via each manifest (Claude: `CLAUDE.md`, `settings.json`, `statusline.sh`, `hooks.json`; pi: `AGENTS.md`, settings, extensions).
-4. **Prunes dangling links** so the install self-heals after a rename/delete.
-5. Links the standalone `review-change` executable into `~/.local/bin/` independently of either harness.
-6. Skips any `harness_pending` modules.
+3. **Projects shared commands** into Claude's `commands/` or pi's `prompts/` directory according to the manifest.
+4. **Installs module files and global instructions** via each manifest (Claude: `CLAUDE.md`, `settings.json`, `statusline.sh`, `hooks.json`; pi: `AGENTS.md`, settings, extensions).
+5. **Prunes dangling links** so the install self-heals after a rename/delete.
+6. Links the standalone `review-change` executable into `~/.local/bin/` independently of either harness.
+7. Skips any `harness_pending` modules.
 
 Finally it sets `core.hooksPath` to `.githooks`. The guard core in `shared/` is resolved by the adapters via symlink realpath, so it is not separately mirrored.
 
-Claude and pi consume the same skill source directly ([ADR-0024](docs/adr/0024-retire-duplicate-command-wrappers.md)).
-Claude exposes each skill as `/<name>`, while pi exposes it as `/skill:<name>`.
+Claude and pi consume the same skill and command sources directly ([ADR-0025](docs/adr/0025-project-shared-commands-as-native-prompts.md)).
+Skills remain discoverable capabilities, while curated commands exist only for aliases or compositions that add value beyond skill discovery.
 
 ## Infrastructure
 
