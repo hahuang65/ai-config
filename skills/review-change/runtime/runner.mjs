@@ -13,6 +13,7 @@ import { createReviewWorkspace } from "./workspace.mjs";
 
 const runtimeDirectory = path.dirname(fileURLToPath(import.meta.url));
 const defaultSkillDirectory = path.resolve(runtimeDirectory, "..");
+const viewerErrorLimit = 4_096;
 
 export async function runReviewChange(options, dependencies = {}) {
   const environment = dependencies.environment ?? process.env;
@@ -304,31 +305,46 @@ export async function openReportArtifact(reportRoot, dependencies = {}) {
   }
   const reportPath = reports[0];
   const { command, args, waitForExit } = viewerCommand(platform, reportPath);
+  const stdio = waitForExit ? ["ignore", "ignore", "pipe"] : "ignore";
   const processOptions = dependencies.signal
-    ? { stdio: "ignore", signal: dependencies.signal }
-    : { stdio: "ignore" };
+    ? { stdio, signal: dependencies.signal }
+    : { stdio };
   try {
-    await new Promise((resolve, reject) => {
-      const child = spawnProcess(command, args, processOptions);
-      child.once("error", reject);
-      if (waitForExit) {
-        child.once("close", (code) => {
-          if (code === 0) resolve();
-          else reject(new Error(`${command} exited with status ${code ?? "unknown"}`));
-        });
-      } else {
-        child.once("spawn", () => {
-          child.unref?.();
-          resolve();
-        });
-      }
-    });
+    await waitForViewer({ command, args, processOptions, spawnProcess, waitForExit });
     return reportPath;
   } catch (error) {
     const failure = error instanceof Error ? error : new Error(String(error));
     failure.reportPath = reportPath;
     throw failure;
   }
+}
+
+function waitForViewer({ command, args, processOptions, spawnProcess, waitForExit }) {
+  return new Promise((resolve, reject) => {
+    const child = spawnProcess(command, args, processOptions);
+    let stderr = "";
+    child.stderr?.setEncoding?.("utf8");
+    child.stderr?.on?.("data", (chunk) => {
+      stderr = `${stderr}${chunk}`.slice(0, viewerErrorLimit);
+    });
+    child.once("error", reject);
+    if (!waitForExit) {
+      child.once("spawn", () => {
+        child.unref?.();
+        resolve();
+      });
+      return;
+    }
+    child.once("close", (code) => {
+      if (code === 0) {
+        resolve();
+        return;
+      }
+      const detail = stderr.replace(/\s+/g, " ").trim();
+      const suffix = detail ? `: ${detail}` : "";
+      reject(new Error(`${command} exited with status ${code ?? "unknown"}${suffix}`));
+    });
+  });
 }
 
 function viewerCommand(platform, reportPath) {
@@ -338,11 +354,13 @@ function viewerCommand(platform, reportPath) {
       command: "osascript",
       args: [
         "-e",
-        'tell application "Firefox"',
+        'set firefoxApp to application "Firefox"',
+        "-e",
+        "tell firefoxApp",
         "-e",
         "activate",
         "-e",
-        `open location "${reportUrl}"`,
+        `«event GURLGURL» "${reportUrl}"`,
         "-e",
         "end tell",
       ],

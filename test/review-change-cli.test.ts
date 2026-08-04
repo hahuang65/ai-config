@@ -1087,7 +1087,8 @@ describe("review-change CLI runner", () => {
     await writeFile(reportPath, "<!doctype html><title>Review change</title>");
     let invocation: { command: string; args: string[]; options: Record<string, any> } | null = null;
     let unrefCalled = false;
-    const child = new EventEmitter() as EventEmitter & { unref(): void };
+    const child = new EventEmitter() as EventEmitter & { stderr: PassThrough; unref(): void };
+    child.stderr = new PassThrough();
     child.unref = () => { unrefCalled = true; };
 
     try {
@@ -1105,27 +1106,35 @@ describe("review-change CLI runner", () => {
         command: "osascript",
         args: [
           "-e",
-          'tell application "Firefox"',
+          'set firefoxApp to application "Firefox"',
+          "-e",
+          "tell firefoxApp",
           "-e",
           "activate",
           "-e",
-          `open location "${pathToFileURL(reportPath).href}"`,
+          `«event GURLGURL» "${pathToFileURL(reportPath).href}"`,
           "-e",
           "end tell",
         ],
-        options: { stdio: "ignore" },
+        options: { stdio: ["ignore", "ignore", "pipe"] },
       });
       expect(unrefCalled).toBe(false);
 
-      const failedChild = new EventEmitter();
+      const failedChild = new EventEmitter() as EventEmitter & { stderr: PassThrough };
+      failedChild.stderr = new PassThrough();
       const openFailure: any = await openReportArtifact(reportRoot, {
         platform: "darwin",
         spawnProcess: () => {
-          queueMicrotask(() => failedChild.emit("close", 1));
+          queueMicrotask(() => {
+            failedChild.stderr.end("Firefox got an error: Application isn't running. (-600)\n");
+            failedChild.emit("close", 1);
+          });
           return failedChild;
         },
       }).catch((error) => error);
-      expect(openFailure.message).toContain("osascript exited with status 1");
+      expect(openFailure.message).toContain(
+        "osascript exited with status 1: Firefox got an error: Application isn't running. (-600)",
+      );
       expect(openFailure.reportPath).toBe(reportPath);
 
       await writeFile(path.join(reportRoot, "unexpected.html"), "<!doctype html>");
