@@ -1,5 +1,8 @@
 # Keep development worktrees in one shared orchard
 
+> **Flat-layout naming superseded by [ADR-0023](0023-use-hybrid-pooled-branch-bound-worktrees.md):** Orchard now supplies the enclosing project group and receives the same concise `<short-intent>` used as the branch suffix.
+> The decision below remains the historical rationale for making worktree naming predictable.
+
 Agent-created worktrees were previously placed ad hoc, which made them difficult to discover, distinguish from primary checkouts, and clean up safely.
 A worktree convention must be available before the first worktree is created, so loading it only with detailed Git rules is too late.
 

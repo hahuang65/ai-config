@@ -8,6 +8,21 @@ async function source(relativePath: string) {
   return readFile(path.join(REPOSITORY, relativePath), "utf8");
 }
 
+test("harness baseline keeps ordinary work local and reserves Orchard for explicit isolation", async () => {
+  const prompt = await source("harness-system-prompt.md");
+
+  expect(prompt).toContain("Ordinary work defaults to the current checkout on a local task branch");
+  expect(prompt).toContain("Do not invoke Orchard for an ordinary request");
+  expect(prompt).toContain("Name branches `user-initials/short-intent`");
+  expect(prompt).toContain("Use Orchard for `/build` and explicit lifecycle requests");
+  expect(prompt).toContain("Pass Orchard the same concise `<short-intent>` used in the branch name");
+  expect(prompt).not.toContain("short-description");
+  expect(prompt).not.toContain("<project-basename>-<short-intent>");
+  expect(prompt).not.toContain("linked worktree");
+  expect(prompt).not.toContain("~/.orchard/");
+  expect(prompt).not.toContain("Review change isolation");
+});
+
 test("Orchard skill delegates the installed CLI and native harness transitions", async () => {
   const skill = await source("skills/orchard/SKILL.md");
   const workflow = await source("skills/orchard/references/workflow.md");

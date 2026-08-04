@@ -5,11 +5,13 @@ read only the rule needed for the current action, before taking that action.
 
 ## Critical baseline
 
-- Work on a feature branch, not `main`. Name branches
-  `user-initials/short-description` (for example, `hh/auth-redirect`).
-- Create development Git worktrees under `~/.orchard/`. Name each worktree
-  `<project-basename>-<short-intent>` (for example, `billing-auth-redirect`).
-  Review change isolation uses `~/.review-orchard/` instead.
+- Work on a feature branch, not `main`.
+  Name branches `user-initials/short-intent` (for example, `hh/auth-redirect`).
+- Ordinary work defaults to the current checkout on a local task branch.
+  If the current branch is `main`, create the task branch in that checkout.
+  Do not invoke Orchard for an ordinary request.
+  Use Orchard for `/build` and explicit lifecycle requests.
+  Pass Orchard the same concise `<short-intent>` used in the branch name (for example, `auth-redirect`).
 - Language toolchains are managed by mise. Invoke tools by bare name; do not
   activate or recommend rbenv, rvm, chruby, asdf, nvm, or pyenv.
 - When making technical decisions, give low weight to development cost. Give

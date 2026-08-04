@@ -912,7 +912,11 @@ test_phase_orchestrator() {
 
   local bootstrap
   bootstrap="$(<"$REPO_DIR/harness-system-prompt.md")"
-  check_content_cached "$bootstrap" "harness-system-prompt.md" "development Git worktrees.*~/[.]orchard/.*<project-basename>-<short-intent>.*Review change isolation.*~/[.]review-orchard/"
+  check_content_cached "$bootstrap" "harness-system-prompt.md" "Name branches .user-initials/short-intent."
+  check_content_cached "$bootstrap" "harness-system-prompt.md" "Ordinary work defaults to the current checkout on a local task branch"
+  check_content_cached "$bootstrap" "harness-system-prompt.md" "Do not invoke Orchard for an ordinary request"
+  check_content_cached "$bootstrap" "harness-system-prompt.md" "Use Orchard for .[/]build. and explicit lifecycle requests"
+  check_content_cached "$bootstrap" "harness-system-prompt.md" "Pass Orchard the same concise .<short-intent>. used in the branch name"
 }
 
 # ---------------------------------------------------------------------------
