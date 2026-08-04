@@ -73,6 +73,7 @@ Implications:
 - **Skills** own discoverable capabilities and progressively disclosed workflow behavior.
   **Commands** own explicit slash entry points and must never have a same-named skill.
   A command is either a thin alias to a differently named skill, such as `/rebase` delegating to `orchard`, or a concise composition of multiple skills when that composition adds behavior beyond one skill.
+  `/deliver` delegates policy to Orchard and composes the commit skill only when Orchard reports `needs-commit`.
   Never copy a delegated skill's behavior into a command.
   Do not add a prompt solely to reproduce a skill's Claude slash spelling in pi; pi advertises skill metadata for automatic matching and provides `/skill:<name>` for forced invocation.
   Claude registers commands directly as `/<name>`, while pi loads the same files as prompt templates with the same names.

@@ -1,5 +1,7 @@
 # Use hybrid pooled branch-bound worktrees
 
+ADR-0027 supersedes this ADR's public merge and harness-owned delivery decisions while retaining the pooled worktree lifecycle.
+
 The worktree manager gives each repository a project group beneath `~/.orchard/`, with readable active task directories by intent and detached available slots under that group's hidden `.pool/` directory.
 A project group normally uses the project basename; if that name is already owned by another repository, the new group prepends its main project directory's parent name while the existing group remains unchanged.
 Moving a slot between active and available paths preserves dependencies and caches without exposing pool machinery as task names.

@@ -25,7 +25,7 @@ When preflight succeeds, load [../orchard/SKILL.md](../orchard/SKILL.md) and del
 Build contains no native-transition implementation of its own.
 Resume the phase that requested the transition without restarting the pipeline.
 
-When preflight reports a missing or incompatible executable, warn that worktree isolation and Orchard merge support will be unavailable.
+When preflight reports a missing or incompatible executable, warn that worktree isolation and Orchard delivery support will be unavailable.
 Ask for explicit approval to continue on an ordinary local task branch through the established branch workflow.
 This degraded mode is never automatic and is not Orchard-managed.
 If the user declines, stop with guidance to run `~/.dotfiles/git/install.sh`.

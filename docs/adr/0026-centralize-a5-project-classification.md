@@ -1,5 +1,7 @@
 # Centralize A5 project classification
 
+ADR-0027 retains centralized classification but moves its machine-readable source from a harness filesystem convention to trusted effective Git configuration.
+
 Commit staging, pull-request trust, and delivery policy all need to recognize the same private project family.
 Repeating its filesystem convention in each skill and rule risks classification drift, especially when the active checkout is an Orchard worktree or disposable review copy outside the originating project directory.
 

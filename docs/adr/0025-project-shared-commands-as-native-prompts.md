@@ -1,5 +1,7 @@
 # Project shared commands as harness-native prompts
 
+ADR-0027 supersedes this ADR's decision to keep delivery in a skill and restores `deliver` as an Orchard-oriented prompt composition.
+
 Some explicit slash workflows benefit from concise harness-native prompt shortcuts.
 Skills remain discoverable capability packages, while prompt templates are explicit parameterized user-message shortcuts.
 A prompt is not required solely to make a skill's Claude Code slash spelling available in pi because pi can resolve matching requests from advertised skill metadata and provides `/skill:<name>` for forced invocation.

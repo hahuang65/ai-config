@@ -17,11 +17,19 @@ Before staging or writing a commit message, read both:
 
 Do not rely on memory for the commit format. Do not invent a different format.
 
+## Checkout selection
+
+Use the current checkout by default.
+An already-active Orchard delivery caller may supply an already-validated managed worktree path from a supported, versioned `needs-commit` outcome.
+Require the caller to state that it validated the path as the exact Git root of the named active managed task before loading this skill.
+Use path-scoped Git commands against that checkout without invoking Orchard or changing the current session directory, branch, or worktree lifecycle.
+Reject every other externally supplied checkout path.
+
 ## Process
 
 1. **Inspect state**
-   - Run `git status --short --branch`.
-   - Review `git diff --cached` and `git diff`.
+   - Run `git status --short --branch` against the selected checkout.
+   - Review its `git diff --cached` and `git diff`.
    - If `$ARGUMENTS` specifies a scope, limit the commit to that scope.
 
 2. **Choose one logical change**
@@ -53,8 +61,8 @@ Do not rely on memory for the commit format. Do not invent a different format.
 - Never choose or invoke a follow-on workflow from inside this skill.
 
 A standalone commit ends after the commit and requires a separate explicit delivery action.
-When an already-active workflow such as the deliver skill loaded this skill as its commit step, return control to that caller after the successful commit so it can continue delivery.
-The commit skill itself remains checkout-local and owns no integration behavior.
+When an already-active workflow such as the deliver prompt loaded this skill as its commit step, return control to that caller after the successful commit so it can retry Orchard delivery.
+The commit skill itself remains local to the selected checkout and owns no integration behavior.
 
 ## Hard stops
 

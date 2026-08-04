@@ -47,8 +47,9 @@ pi's config root. This repo's `harnesses/pi/` module contains settings, extensio
 Content the harness injects into every conversation's system prompt without the model having to ask for it. This repo keeps that surface to `harness-system-prompt.md` for Claude and pi: a critical baseline plus shared project classification and rule-loading triggers. Claude Code would also auto-load `~/.claude/rules/*.md`, so this repo deliberately leaves detailed rules only at the canonical source path.
 
 **A5 project**:
-A repository classified by the global harness baseline from its originating main project directory.
-Linked worktrees and disposable review copies retain that originating classification rather than using their current paths.
+A repository whose originating repository has effective global or system Git configuration `ai.projectFamily=a5`.
+Repository-local configuration cannot grant this classification.
+The Git dotfiles A5 include is the machine-readable source, so linked worktrees, disposable review copies, Orchard, and harness workflows share one classification.
 
 ### Worktree lifecycle terms
 
@@ -91,7 +92,8 @@ _Avoid_: Move (ambiguous about branch and working state), migrate (implies a per
 **Orchard CLI**:
 The standalone lifecycle authority installed by the Git dotfiles repository at `~/.local/bin/orchard`.
 It owns Git and filesystem transitions without depending on an AI harness and exposes a versioned structured protocol for automation.
-AI skills and adapters invoke it as an external command rather than importing or duplicating its implementation.
+AI skills, prompts, and adapters invoke it as an external command rather than importing or duplicating its implementation.
+Orchard owns delivery strategy selection from trusted Git configuration, interactive commit prompting, synchronization, rebasing, local fast-forward integration, pull-request form opening, and cleanup state.
 _Avoid_: Orchard skill (the AI workflow surface), harness adapter (the native parent-session transition layer).
 
 **Worktree transition**:
@@ -280,5 +282,5 @@ _Avoid_: refactoring (unqualified — hides the directed-vs-hygiene split).
 > **Dev**: Should this small fix get a worktree now, in case it grows?
 > **Expert**: No. Start with a **local task branch** unless you explicitly want isolation; `/build` is the exception and must run in a linked worktree. It continues inside an existing linked worktree without adopting it, or acquires a **task worktree** through Orchard when started from the **main project directory**. If an ordinary task grows, convert its branch without changing its identity.
 >
-> **Dev**: The feature is merged. Can I remove its task worktree now?
-> **Expert**: Integrate the branch onto **trunk** from the **main project directory**. Once the branch is proven merged and the worktree is clean, **recycle** the **task worktree** into an **available worktree**; never clean or merge through a different linked worktree.
+> **Dev**: The feature is delivered. Can I remove its task worktree now?
+> **Expert**: Let Orchard apply the configured delivery strategy. Local delivery from the **main project directory** recycles immediately when safe; pull-request delivery retains the task until landing is proven and explicit recycling is safe.

@@ -95,6 +95,54 @@ test("Orchard tool preloads one authenticated transition command and terminates 
   ]);
 });
 
+test("Orchard deliver returns needs-commit without forcing a session transition", async () => {
+  const extension = registerExtension([
+    machineOutcome("deliver", {
+      worktree: { path: "/home/.orchard/alpha/feature", intent: "feature", branch: "feature" },
+      commit: { status: " M feature.ts" },
+      delivery: { status: "needs-commit" },
+      transition: { kind: "none", targetPath: "/home/.orchard/alpha/feature" },
+    }),
+  ]);
+
+  const result = await extension.tools[0].execute(
+    "tool-call",
+    { command: "deliver", args: [], continuation: "Continue delivery." },
+    undefined,
+    undefined,
+    extension.context("/home/.orchard/alpha/feature"),
+  );
+
+  expect(result.terminate).toBe(false);
+  expect(result.details.deliveryStatus).toBe("needs-commit");
+  expect(extension.editorText).toBe("");
+  expect(extension.executions.map((execution) => execution.args)).toEqual([["deliver", "--json"]]);
+});
+
+test("non-transition delivery keeps internal operation IDs out of model-visible output", async () => {
+  const extension = registerExtension([
+    machineOutcome("deliver", {
+      worktree: { path: "/home/.orchard/alpha/feature", intent: "feature", branch: "feature" },
+      cleanup: { status: "completed", operationId: "internal-operation-id" },
+      delivery: { status: "integrated", strategy: "local" },
+      transition: { kind: "none", targetPath: "/projects/alpha" },
+    }),
+  ]);
+
+  const result = await extension.tools[0].execute(
+    "tool-call",
+    { command: "deliver", args: ["feature"], continuation: "Continue." },
+    undefined,
+    undefined,
+    extension.context("/projects/alpha"),
+  );
+
+  expect(result.content[0].text).toContain("integrated");
+  expect(result.content[0].text).toContain("/home/.orchard/alpha/feature");
+  expect(result.content[0].text).not.toContain("internal-operation-id");
+  expect(JSON.stringify(result.details)).not.toContain("internal-operation-id");
+});
+
 test("Orchard refuses to overwrite an existing pi editor draft", async () => {
   const extension = registerExtension([]);
   const context = extension.context("/projects/alpha");
@@ -217,7 +265,7 @@ test("expired pi transition tokens fail closed without switching", async () => {
   expect(extension.forks).toEqual([]);
 });
 
-test("pi merge return releases ownership and finalizes cleanup after switching to main", async () => {
+test("pi delivery return releases ownership and finalizes cleanup after switching to main", async () => {
   const extension = registerExtension([
     machineOutcome("status", {
       projects: [{
@@ -231,23 +279,24 @@ test("pi merge return releases ownership and finalizes cleanup after switching t
       worktree: { path: "/home/.orchard/alpha/feature", intent: "feature", branch: "feature" },
       transition: { kind: "enter-worktree", operationId: "owner-token", targetPath: "/home/.orchard/alpha/feature" },
     }),
-    machineOutcome("merge", {
+    machineOutcome("deliver", {
       project: { name: "alpha", root: "/projects/alpha", trunk: "main" },
       worktree: { path: "/home/.orchard/alpha/feature", intent: "feature", branch: "feature" },
       cleanup: { requested: true },
       transition: { kind: "return-main", operationId: "cleanup-operation", targetPath: "/projects/alpha" },
     }),
     machineOutcome("enter", { released: true }),
-    machineOutcome("merge", { cleanup: { status: "completed", operationId: "cleanup-operation" } }),
+    machineOutcome("deliver", { cleanup: { status: "completed", operationId: "cleanup-operation" } }),
   ]);
   await extension.handlers.get("session_start")[0]({}, { cwd: "/home/.orchard/alpha/feature" });
-  await extension.tools[0].execute(
+  const queued = await extension.tools[0].execute(
     "tool-call",
-    { command: "merge", args: [], continuation: "Continue from the main project directory." },
+    { command: "deliver", args: [], continuation: "Continue from the main project directory." },
     undefined,
     undefined,
     { cwd: "/home/.orchard/alpha/feature" },
   );
+  expect(JSON.stringify(queued)).not.toContain("cleanup-operation");
   const continuations: string[] = [];
   const commandContext = {
     mode: "tui",
@@ -267,9 +316,9 @@ test("pi merge return releases ownership and finalizes cleanup after switching t
   expect(extension.executions.map((execution) => execution.args)).toEqual([
     ["status", "--json"],
     ["enter", "feature", "--owner-pid", "4242", "--json"],
-    ["merge", "--json"],
+    ["deliver", "--json"],
     ["enter", "feature", "--release-owner", "owner-token", "--json"],
-    ["merge", "--finalize", "cleanup-operation", "--json"],
+    ["deliver", "--finalize-operation", "cleanup-operation", "--json"],
   ]);
   expect(extension.forks.at(-1)).toEqual({ source: "/sessions/task.jsonl", target: "/projects/alpha" });
   expect(continuations).toEqual(["Continue from the main project directory."]);

@@ -12,9 +12,9 @@ read only the rule needed for the current action, before taking that action.
   Do not invoke Orchard for an ordinary request.
   Use Orchard for `/build` and explicit lifecycle requests.
   Pass Orchard the same concise `<short-intent>` used in the branch name (for example, `auth-redirect`).
-- An **A5 project** is a repository whose main project directory's canonical physical path is beneath `~/Projects/a5/`.
-  Resolve the main project directory from Git worktree metadata so linked worktrees retain the originating repository's classification.
-  For disposable review copies, retain the originating repository's classification rather than classifying the copy's temporary path.
+- An **A5 project** has effective trusted Git configuration `ai.projectFamily=a5` for its originating repository.
+  Accept only global or system Git scope; repository-local configuration cannot grant A5 classification.
+  Resolve classification from the originating repository so linked worktrees and disposable review copies retain the same project family.
 - Language toolchains are managed by mise. Invoke tools by bare name; do not
   activate or recommend rbenv, rvm, chruby, asdf, nvm, or pyenv.
 - When making technical decisions, give low weight to development cost. Give

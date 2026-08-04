@@ -194,18 +194,20 @@ test_command_prompts() {
 
   local actual_names
   actual_names="$(printf '%s\n' "${names[@]}" | sort | paste -sd' ' -)"
-  [[ "$actual_names" == "rebase" ]] \
-    && pass "commands/ contains the curated alias set" \
-    || fail "commands/" "expected only: rebase; found: $actual_names"
+  [[ "$actual_names" == "deliver rebase" ]] \
+    && pass "commands/ contains the curated alias and composition set" \
+    || fail "commands/" "expected only: deliver rebase; found: $actual_names"
   grep -Eq '`orchard` skill.*rebase operation' "$REPO_DIR/commands/rebase.md" \
     && pass "rebase remains a thin Orchard alias" \
     || fail "commands/rebase.md" "rebase must delegate to the Orchard skill"
-  if [[ -f "$REPO_DIR/skills/deliver/SKILL.md" ]] \
+  if [[ ! -e "$REPO_DIR/skills/deliver/SKILL.md" ]] \
      && [[ ! -e "$REPO_DIR/skills/merge/SKILL.md" ]] \
-     && grep -Fq '[the commit skill](../commit/SKILL.md)' "$REPO_DIR/skills/deliver/SKILL.md"; then
-    pass "deliver owns commit-if-needed and delivery as one skill"
+     && grep -Fq '`orchard` skill for its deliver operation' "$REPO_DIR/commands/deliver.md" \
+     && grep -Fq '`needs-commit`' "$REPO_DIR/commands/deliver.md" \
+     && grep -Fq '`commit` skill' "$REPO_DIR/commands/deliver.md"; then
+    pass "deliver delegates policy to Orchard with commit fallback"
   else
-    fail "skills/deliver/SKILL.md" "must replace merge and reuse the commit skill"
+    fail "commands/deliver.md" "must delegate Orchard delivery and compose commit only for needs-commit"
   fi
 
   grep -q '^command_target="commands"' "$REPO_DIR/harnesses/claude/manifest.sh" \
@@ -215,13 +217,13 @@ test_command_prompts() {
     && pass "pi projects commands into prompts/" \
     || fail "harnesses/pi/manifest.sh" "must set command_target=prompts"
 
-  check_content_cached "$(cat "$REPO_DIR/harness-system-prompt.md")" "harness-system-prompt.md" "An [*][*]A5 project[*][*].*main project directory.*~/Projects/a5/"
-  local duplicate_a5_paths
-  duplicate_a5_paths="$(grep -RFl '~/Projects/a5/' "$REPO_DIR/skills" "$REPO_DIR/commands" "$REPO_DIR/agents" "$REPO_DIR/rules" 2>/dev/null || true)"
-  if [[ -z "$duplicate_a5_paths" ]]; then
-    pass "A5 filesystem classification lives only in the harness baseline"
+  check_content_cached "$(cat "$REPO_DIR/harness-system-prompt.md")" "harness-system-prompt.md" "An [*][*]A5 project[*][*].*ai[.]projectFamily=a5.*originating repository"
+  local stale_a5_paths
+  stale_a5_paths="$(grep -RFl '~/Projects/a5/' "$REPO_DIR/harness-system-prompt.md" "$REPO_DIR/skills" "$REPO_DIR/commands" "$REPO_DIR/agents" "$REPO_DIR/rules" 2>/dev/null || true)"
+  if [[ -z "$stale_a5_paths" ]]; then
+    pass "A5 classification uses trusted Git metadata without path duplication"
   else
-    fail "A5 project classification" "filesystem convention duplicated in: $(echo "$duplicate_a5_paths" | sed "s|$REPO_DIR/||" | paste -sd, -)"
+    fail "A5 project classification" "stale filesystem convention found in: $(echo "$stale_a5_paths" | sed "s|$REPO_DIR/||" | paste -sd, -)"
   fi
 }
 
@@ -1443,19 +1445,18 @@ test_install_behavior() {
 
   [[ -f "$tmphome/.claude/CLAUDE.md" ]] && pass "Claude global bootstrap installed as CLAUDE.md" \
     || fail "install-behavior" "Claude CLAUDE.md bootstrap missing"
-  [[ -f "$tmphome/.claude/commands/rebase.md" ]] && pass "Claude command prompts installed into commands/" \
-    || fail "install-behavior" "Claude commands/rebase.md missing"
-  [[ -f "$tmphome/.pi/agent/prompts/rebase.md" ]] \
+  [[ -f "$tmphome/.claude/commands/deliver.md" ]] \
+    && [[ -f "$tmphome/.claude/commands/rebase.md" ]] \
+    && pass "Claude command prompts installed into commands/" \
+    || fail "install-behavior" "Claude deliver or rebase command missing"
+  [[ -f "$tmphome/.pi/agent/prompts/deliver.md" ]] \
+    && [[ -f "$tmphome/.pi/agent/prompts/rebase.md" ]] \
     && pass "pi command prompts installed into prompts/" \
-    || fail "install-behavior" "pi prompts/rebase.md missing"
-  [[ -f "$tmphome/.claude/skills/deliver/SKILL.md" ]] \
-    && [[ -f "$tmphome/.pi/agent/skills/deliver/SKILL.md" ]] \
-    && pass "deliver skill installed into both harnesses" \
-    || fail "install-behavior" "deliver skill missing"
-  [[ ! -e "$tmphome/.claude/commands/deliver.md" ]] \
-    && [[ ! -e "$tmphome/.pi/agent/prompts/deliver.md" ]] \
-    && pass "deliver has no redundant prompt" \
-    || fail "install-behavior" "deliver prompt should stay retired"
+    || fail "install-behavior" "pi deliver or rebase prompt missing"
+  [[ ! -e "$tmphome/.claude/skills/deliver/SKILL.md" ]] \
+    && [[ ! -e "$tmphome/.pi/agent/skills/deliver/SKILL.md" ]] \
+    && pass "deliver has no duplicate skill" \
+    || fail "install-behavior" "deliver skill should stay retired"
   [[ ! -d "$tmphome/.pi/agent/commands" ]] && pass "pi legacy commands/ location stays retired" \
     || fail "install-behavior" "pi legacy commands/ should not be installed"
 
@@ -1492,17 +1493,21 @@ test_install_behavior() {
     && pass "pi subagent adapter accepts shared tools and CLI model inheritance" \
     || fail "install-behavior" "pi subagent tool/model adapter missing"
 
-  # Migration + idempotency: remove old repo-managed rule mirrors and pi's
-  # retired commands/ location without touching unrelated user files, then
-  # verify a second run succeeds.
+  # Migration + idempotency: remove old repo-managed rule mirrors, retired
+  # delivery skills/prompts, and pi's commands/ location without touching
+  # unrelated user files, then verify a second run succeeds.
   mkdir -p "$tmphome/.claude/rules" "$tmphome/.claude/rulebook" "$tmphome/.pi/agent/rules" \
     "$tmphome/.claude/commands" "$tmphome/.pi/agent/commands" "$tmphome/user-commands"
   ln -sf "$REPO_DIR/rules/git-commit.md" "$tmphome/.claude/rules/git-commit.md"
   ln -sf "$REPO_DIR/rules/testing.md" "$tmphome/.claude/rulebook/testing.md"
   ln -sf "$REPO_DIR/rules/mise.md" "$tmphome/.pi/agent/rules/mise.md"
   ln -s "$REPO_DIR/commands/commit.md" "$tmphome/.pi/agent/commands/commit.md"
-  ln -s "$REPO_DIR/commands/deliver.md" "$tmphome/.claude/commands/deliver.md"
-  ln -s "$REPO_DIR/commands/deliver.md" "$tmphome/.pi/agent/prompts/deliver.md"
+  ln -s "$REPO_DIR/commands/merge.md" "$tmphome/.claude/commands/merge.md"
+  ln -s "$REPO_DIR/commands/merge.md" "$tmphome/.pi/agent/prompts/merge.md"
+  ln -s "$REPO_DIR/skills/deliver" "$tmphome/.claude/skills/deliver"
+  ln -s "$REPO_DIR/skills/deliver" "$tmphome/.pi/agent/skills/deliver"
+  ln -s "$REPO_DIR/skills/merge" "$tmphome/.claude/skills/merge"
+  ln -s "$REPO_DIR/skills/merge" "$tmphome/.pi/agent/skills/merge"
   printf '%s\n' '# User command' >"$tmphome/user-commands/custom.md"
   ln -s "$tmphome/user-commands/custom.md" "$tmphome/.claude/commands/custom.md"
   printf '%s\n' '# User rule' >"$tmphome/.claude/rules/custom.md"
@@ -1521,12 +1526,20 @@ test_install_behavior() {
     || fail "install-behavior" "legacy Claude rulebook/testing.md was not removed"
   [[ ! -e "$tmphome/.pi/agent/rules/mise.md" ]] && pass "re-install removes a legacy pi rule mirror" \
     || fail "install-behavior" "legacy pi rules/mise.md was not removed"
-  [[ -L "$tmphome/.claude/commands/rebase.md" ]] && pass "re-install preserves the canonical Claude command prompt" \
-    || fail "install-behavior" "canonical Claude commands/rebase.md missing"
-  [[ ! -L "$tmphome/.claude/commands/deliver.md" ]] \
-    && [[ ! -L "$tmphome/.pi/agent/prompts/deliver.md" ]] \
-    && pass "re-install removes the retired deliver prompt" \
-    || fail "install-behavior" "retired deliver prompt was not pruned"
+  [[ -L "$tmphome/.claude/commands/deliver.md" ]] \
+    && [[ -L "$tmphome/.claude/commands/rebase.md" ]] \
+    && pass "re-install preserves canonical Claude command prompts" \
+    || fail "install-behavior" "canonical Claude command prompt missing"
+  [[ ! -L "$tmphome/.claude/commands/merge.md" ]] \
+    && [[ ! -L "$tmphome/.pi/agent/prompts/merge.md" ]] \
+    && pass "re-install removes the retired merge prompt" \
+    || fail "install-behavior" "retired merge prompt was not pruned"
+  [[ ! -L "$tmphome/.claude/skills/deliver" ]] \
+    && [[ ! -L "$tmphome/.pi/agent/skills/deliver" ]] \
+    && [[ ! -L "$tmphome/.claude/skills/merge" ]] \
+    && [[ ! -L "$tmphome/.pi/agent/skills/merge" ]] \
+    && pass "re-install removes retired delivery skills" \
+    || fail "install-behavior" "retired deliver or merge skill was not pruned"
   [[ ! -L "$tmphome/.pi/agent/commands/commit.md" ]] && pass "re-install removes the legacy pi command wrapper" \
     || fail "install-behavior" "legacy pi commands/commit.md was not removed"
   [[ -L "$tmphome/.claude/commands/custom.md" ]] && pass "re-install preserves unrelated Claude commands" \

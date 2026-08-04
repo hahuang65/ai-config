@@ -1,7 +1,7 @@
 ---
 name: orchard
-description: Manage reusable branch-bound Git worktrees through the independently installed Orchard CLI and the current harness's native same-window transition. Use for explicit worktree acquisition, conversion, entry, rebasing, merging, recycling, pruning, destruction, or status.
-argument-hint: "[new|convert|status|enter|rebase|merge|recycle|prune|destroy] [options]"
+description: Manage reusable branch-bound Git worktrees through the independently installed Orchard CLI and the current harness's native same-window transition. Use for explicit worktree acquisition, conversion, entry, rebasing, delivery, recycling, pruning, destruction, or status.
+argument-hint: "[new|convert|status|enter|rebase|deliver|recycle|prune|destroy] [options]"
 ---
 
 # Orchard

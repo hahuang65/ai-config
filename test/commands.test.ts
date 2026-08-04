@@ -23,22 +23,24 @@ test("the curated command set does not duplicate same-named skills", async () =>
     .filter((entry) => entry.isDirectory() && entry.name !== "shared")
     .map((entry) => entry.name);
 
-  expect(commandNames).toEqual(["rebase"]);
+  expect(commandNames).toEqual(["deliver", "rebase"]);
   expect(skillNames).toContain("build");
-  expect(skillNames).toContain("deliver");
+  expect(skillNames).not.toContain("deliver");
   expect(skillNames).not.toContain("merge");
   for (const commandName of commandNames) expect(skillNames).not.toContain(commandName);
 });
 
-test("deliver is a skill because pi resolves matching requests from skill metadata", async () => {
-  const context = await source("CONTEXT.md");
-  const delivery = await source("skills/deliver/SKILL.md");
+test("deliver delegates policy to Orchard and uses commit only for a needs-commit outcome", async () => {
+  const delivery = await source("commands/deliver.md");
 
-  expect(context).toContain("Pi can resolve a matching request to a skill from its advertised name and description");
-  expect(context).toContain("`/skill:<name>`");
-  expect(delivery).toContain("[the commit skill](../commit/SKILL.md)");
-  expect(delivery).toContain("If the checkout has changes");
-  expect(delivery).toContain("If the checkout is already clean, skip committing");
+  expect(delivery).toContain("`orchard` skill for its deliver operation");
+  expect(delivery).toContain("`needs-commit`");
+  expect(delivery).toContain("`commit` skill");
+  expect(delivery).toContain("validate the exact worktree path as the named active managed task");
+  expect(delivery).toContain("Do not treat the worktree intent as commit scope");
+  expect(delivery).toContain("retry Orchard deliver");
+  expect(delivery).not.toContain("A5 project");
+  expect(delivery).not.toContain("git pr create --web --fill");
 });
 
 test("rebase is a thin Orchard alias", async () => {
@@ -49,23 +51,22 @@ test("rebase is a thin Orchard alias", async () => {
   expect(rebase).not.toContain("orchard rebase $ARGUMENTS");
 });
 
-test("the active README inventory lists rebase as the command and deliver as the skill", async () => {
+test("the active README inventory lists deliver and rebase as commands", async () => {
   const readme = await source("README.md");
 
-  expect(readme).toContain("Shared explicit aliases (rebase)");
-  expect(readme).toContain("`deliver` | — | Commit outstanding changes when needed");
-  expect(readme).not.toContain("skill compositions (deliver, rebase)");
-  expect(readme).not.toContain("`deliver` composes `commit` with `merge`");
+  expect(readme).toContain("Shared explicit aliases and compositions (deliver, rebase)");
+  expect(readme).toContain("`deliver` delegates delivery policy to Orchard");
+  expect(readme).not.toContain("`deliver` | — | Commit outstanding changes when needed");
   expect(readme).not.toContain("`merge` | — | Rebase and fast-forward ordinary Orchard tasks");
 });
 
 test("the harness baseline identifies A5 projects once", async () => {
   const baseline = await source("harness-system-prompt.md");
-  const delivery = await source("skills/deliver/SKILL.md");
+  const delivery = await source("commands/deliver.md");
 
-  expect(baseline).toContain("An **A5 project** is a repository whose main project directory's canonical physical path is beneath `~/Projects/a5/`");
-  expect(baseline).toContain("Git worktree metadata");
-  expect(delivery).toContain("A5 project");
-  expect(delivery).toContain("git pr create --web --fill");
-  expect(delivery).not.toContain("~/Projects/a5/");
+  expect(baseline).toContain("An **A5 project** has effective trusted Git configuration `ai.projectFamily=a5`");
+  expect(baseline).toContain("Accept only global or system Git scope");
+  expect(baseline).toContain("originating repository");
+  expect(baseline).not.toContain("~/Projects/a5/");
+  expect(delivery).not.toContain("A5 project");
 });

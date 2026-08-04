@@ -15,7 +15,7 @@ const ORCHARD_PARAMETERS = {
   required: ["command", "args", "continuation"],
   properties: {
     command: {
-      anyOf: ["new", "convert", "enter", "merge"].map((command) => ({
+      anyOf: ["new", "convert", "enter", "deliver"].map((command) => ({
         type: "string",
         const: command,
         "~kind": "Literal",
@@ -28,7 +28,7 @@ const ORCHARD_PARAMETERS = {
   "~kind": "Object",
 };
 
-type OrchardCommand = "new" | "convert" | "enter" | "merge" | "status";
+type OrchardCommand = "new" | "convert" | "enter" | "deliver" | "status";
 
 interface WorktreeOutcome {
   path: string;
@@ -44,6 +44,8 @@ interface MachineOutcome {
   worktree?: WorktreeOutcome;
   owner?: { token: string; pid: number };
   transition?: { kind: "enter-worktree" | "return-main" | "none"; operationId?: string; targetPath: string };
+  delivery?: { status: "needs-commit" | "integrated" | "pr-form-opened" | "finalized"; strategy?: string };
+  commit?: { status: string };
 }
 
 interface ActiveOwner {
@@ -158,7 +160,7 @@ export function createOrchardExtension(
       name: "orchard_transition",
       label: "Orchard Transition",
       description: "Run an interactive Orchard lifecycle command and continue this pi conversation in its target worktree.",
-      promptSnippet: "Acquire, convert, enter, or return through Orchard in the same pi session",
+      promptSnippet: "Acquire, convert, enter, deliver, or return through Orchard in the same pi session",
       promptGuidelines: [
         "Use orchard_transition as the final action in a turn when an Orchard command must move the current pi conversation.",
         "After calling orchard_transition, do not emit another assistant response in the same turn.",
@@ -178,7 +180,15 @@ export function createOrchardExtension(
           : [command, ...params.args, "--json"];
         const outcome = await runOrchard(dependencies, commandArgs, ctx.cwd, signal, true);
         if (outcome.transition?.kind === "none") {
-          throw new Error("Orchard command completed without requiring a session transition");
+          return {
+            content: [{ type: "text", text: formatNonTransitionOutcome(outcome) }],
+            details: {
+              targetPath: outcome.transition.targetPath,
+              deliveryStatus: outcome.delivery?.status,
+              commitStatus: outcome.commit?.status,
+            },
+            terminate: false,
+          };
         }
         const claimed = await claimAcquiredWorktree(dependencies, outcome, command, signal);
         if (claimed) activeOwner = claimed;
@@ -193,7 +203,7 @@ export function createOrchardExtension(
         ctx.ui.notify("Press Enter to continue the Orchard transition", "info");
         return {
           content: [{ type: "text", text: `Queued Orchard transition to ${outcome.transition?.targetPath}.` }],
-          details: { targetPath: outcome.transition?.targetPath, operationId: outcome.transition?.operationId },
+          details: { targetPath: outcome.transition?.targetPath },
           terminate: true,
         };
       },
@@ -254,8 +264,13 @@ async function completeReturnCleanup(
   if (request.outcome.transition?.kind !== "return-main") return;
   if (request.owner) await releaseOwner(dependencies, request.owner, targetPath);
   const operationId = request.outcome.transition.operationId;
-  if (!operationId) throw new Error("Orchard merge did not return a cleanup operation");
-  await runOrchard(dependencies, ["merge", "--finalize", operationId, "--json"], targetPath, undefined, false);
+  if (!operationId) throw new Error("Orchard delivery did not return a cleanup operation");
+  await runOrchard(dependencies, [
+    "deliver",
+    "--finalize-operation",
+    operationId,
+    "--json",
+  ], targetPath, undefined, false);
 }
 
 async function releaseOwner(
@@ -319,6 +334,13 @@ async function defaultExecuteCli(
       killed: Boolean(error?.killed),
     };
   }
+}
+
+function formatNonTransitionOutcome(outcome: MachineOutcome): string {
+  const status = outcome.delivery?.status ?? "completed";
+  const worktree = outcome.worktree?.path ?? outcome.transition?.targetPath ?? "unknown worktree";
+  const commit = outcome.commit?.status ? `\n${outcome.commit.status}` : "";
+  return `Orchard ${outcome.command} ${status} for ${worktree}.${commit}`;
 }
 
 async function defaultForkSession(sourceSession: string, targetCwd: string): Promise<string> {

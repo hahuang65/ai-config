@@ -53,7 +53,7 @@ test("build delegates isolation while preserving an explicit local-branch fallba
   expect(build).toContain("load [../orchard/SKILL.md]");
   expect(build).toContain("explicit approval");
   expect(build).toContain("ordinary local task branch");
-  expect(build).toContain("Orchard merge support will be unavailable");
+  expect(build).toContain("Orchard delivery support will be unavailable");
   expect(build).toContain("Never offer the branch fallback after acquisition or native transition begins");
   expect(build).not.toContain("EnterWorktree");
   expect(build).not.toContain("switchSession");
@@ -62,26 +62,21 @@ test("build delegates isolation while preserving an explicit local-branch fallba
   expect(build.match(/exactly \*\*four\*\* approval gates/g)).toHaveLength(1);
 });
 
-test("deliver commits when needed and routes delivery without duplicating Orchard", async () => {
-  const delivery = await source("skills/deliver/SKILL.md");
+test("deliver is a thin Orchard prompt with commit fallback", async () => {
+  const delivery = await source("commands/deliver.md");
+  const orchard = await source("skills/orchard/references/workflow.md");
 
-  expect(delivery).toContain("$ARGUMENTS");
-  expect(delivery).toContain("managed task worktree");
-  expect(delivery).toContain("stop with Git dotfiles installation guidance");
-  expect(delivery).toContain("If the checkout has changes");
-  expect(delivery).toContain("If the checkout is already clean, skip committing");
-  expect(delivery).toContain("Orchard merge itself synchronizes trunk and rebases");
-  expect(delivery).toContain("never create merge commits");
-  expect(delivery).toContain("Never fall back to raw Git integration");
-  expect(delivery).toContain("A5 project");
-  expect(delivery).toContain("configured upstream");
-  expect(delivery).toContain("same-named remote head");
-  expect(delivery).toContain("publication status is ambiguous");
-  expect(delivery).toContain("record its tip before rebasing");
-  expect(delivery).toContain("not an ancestor of the rebased feature tip");
-  expect(delivery).toContain("git pr create --web --fill");
-  expect(delivery).not.toContain("~/Projects/a5/");
-  expect(delivery).not.toContain("git push");
+  expect(delivery).toContain("`orchard` skill for its deliver operation");
+  expect(delivery).toContain("`needs-commit`");
+  expect(delivery).toContain("`commit` skill");
+  expect(delivery).toContain("validate the exact worktree path as the named active managed task");
+  expect(delivery).toContain("retry Orchard deliver");
+  expect(delivery).not.toContain("A5 project");
+  expect(delivery).not.toContain("git pr create --web --fill");
+  expect(orchard).toContain("delivery policy");
+  expect(orchard).toContain("--finalize-operation");
+  expect(orchard).toContain("worktree intent");
+  expect(orchard).not.toContain("Orchard merge");
 });
 
 test("commit remains checkout-local and never chains into Orchard integration", async () => {
@@ -92,6 +87,8 @@ test("commit remains checkout-local and never chains into Orchard integration", 
   expect(commit).toContain("Never change branches or worktree lifecycle");
   expect(commit).toContain("Never merge, rebase, or push");
   expect(commit).toContain("Never choose or invoke a follow-on workflow from inside this skill");
+  expect(commit).toContain("already-validated managed worktree path");
+  expect(commit).toContain("Never invoke Orchard");
   expect(commit).toContain("return control to that caller after the successful commit");
 });
 

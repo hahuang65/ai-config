@@ -218,7 +218,7 @@ Agents read a subset relevant to their role.
 
 ```text
 .
-├── commands/         Shared explicit aliases (rebase)
+├── commands/         Shared explicit aliases and compositions (deliver, rebase)
 ├── skills/           Shared discoverable workflow capabilities (review-change, review-artifact, ...)
 ├── agents/           Shared specialist agents (change-reviewer, tdd-guide, refactorer, ...)
 ├── harness-system-prompt.md  Small always-on critical baseline + rule routing
@@ -244,7 +244,8 @@ Agents read a subset relevant to their role.
 Commands and skills have no same-name overlap.
 A command is either a thin alias to a differently named skill or a composition of multiple skills.
 `rebase` aliases `orchard`.
-Delivery is a single discoverable skill rather than a prompt composition.
+`deliver` delegates delivery policy to Orchard and invokes the commit skill only when Orchard reports `needs-commit`.
+Orchard reads trusted effective Git configuration, accepts worktree intents from primary trunk, and keeps cleanup operation IDs internal while human fallback uses `orchard deliver --finalize <intent>`.
 Claude installs commands under `~/.claude/commands/`; pi installs the same Markdown under `~/.pi/agent/prompts/`.
 
 ### Skills
@@ -278,8 +279,7 @@ Claude installs commands under `~/.claude/commands/`; pi installs the same Markd
 | Name | Model (rec.) | Role |
 |------|-------|------|
 | `review-artifact` | — | Review local HTML with exact annotations, durable polling, live reload, layout warnings, and explicit approval |
-| `orchard` | — | Delegate reusable worktree lifecycle operations to the independently installed Git-owned CLI and native harness transitions |
-| `deliver` | — | Commit outstanding changes when needed, then rebase and integrate locally or open an A5 pull request |
+| `orchard` | — | Delegate reusable worktree lifecycle and policy-aware delivery to the independently installed Git-owned CLI and native harness transitions |
 | `commit` | — | Create one focused checkout-local commit without integration or lifecycle changes |
 | `visualize` | — | Generate self-contained HTML pages for visual explanations |
 | `visualize-diff` | — | Visual HTML diff review — before/after comparison + code-review analysis |
