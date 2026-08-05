@@ -228,7 +228,7 @@ Agents read a subset relevant to their role.
 
 ```text
 .
-├── commands/         Shared explicit aliases and compositions (deliver, rebase, resolve-conflicts)
+├── commands/         Shared explicit aliases and compositions (deliver, rebase)
 ├── skills/           Shared discoverable workflow capabilities (review-change, review-artifact, ...)
 ├── agents/           Shared specialist agents (change-reviewer, tdd-guide, refactorer, ...)
 ├── harness-system-prompt.md  Small always-on critical baseline + rule routing
@@ -254,7 +254,6 @@ Agents read a subset relevant to their role.
 Commands and skills have no same-name overlap.
 A command is either a thin alias to a differently named skill or a composition of multiple skills.
 `rebase` aliases `orchard`.
-`resolve-conflicts` aliases the `resolve-conflicts` skill for an in-progress Git operation.
 `deliver` routes managed worktrees through Orchard and ordinary branches directly through Git.
 Managed delivery invokes the commit skill only when Orchard reports `needs-commit`; ordinary delivery commits when needed, then rebases and fast-forwards local trunk or opens the trusted A5 pull-request form.
 Orchard keeps managed cleanup operation IDs internal while human fallback uses `orchard deliver --finalize <intent>`.
@@ -415,7 +414,7 @@ This project stands on the shoulders of others:
 
 - **[Boris Tane's Claude Code workflow](https://boristane.com/blog/how-i-use-claude-code/)** — The review-cycle discipline and think-before-you-code guardrails originated in Boris's research → plan → implement method. This project's first pipeline was a direct port before review artifacts became HTML-native.
 - **[Matt Pocock's skills-TDD pipeline](https://www.aihero.dev/skills-tdd)** and the broader [skills repo](https://github.com/mattpocock/skills) — the core pipeline (`grill-with-docs → to-prd → to-issues → tdd`) and Matt's stance on vertical-slice TDD ("write one test, one implementation, repeat — batched tests describe imagined behavior, not actual behavior") drive the design of `/grill`, `/spec`, `/todo`, and the vertical-slice rewrites of `/code` and `/coach`. The standalone tools `/handoff` ([article](https://www.aihero.dev/skills-handoff)), `/prototype`, and `/review-code` (renamed from `improve-codebase-architecture`) are also ports of Matt's skills, with internal references rewritten to match this repo's naming. The `model-domain` skill adapts his `domain-modeling` skill with this repository's ubiquitous-language, standalone-audit, context-map, and ADR conventions.
-The `/resolve-conflicts` command adapts Matt's [`resolving-merge-conflicts`](https://github.com/mattpocock/skills/blob/main/skills/engineering/resolving-merge-conflicts/SKILL.md) workflow with an HTML decision artifact for incompatible hunks.
+The `resolve-conflicts` skill adapts Matt's [`resolving-merge-conflicts`](https://github.com/mattpocock/skills/blob/main/skills/engineering/resolving-merge-conflicts/SKILL.md) workflow with an HTML decision artifact for incompatible hunks.
 The format files (CONTEXT-FORMAT.md, ADR-FORMAT.md) and the LANGUAGE/DEEPENING/HTML-REPORT/INTERFACE-DESIGN supporting docs are taken directly from his repo.
 - **[nicobailon/visual-explainer](https://github.com/nicobailon/visual-explainer)** — The `visualize` skill (renamed from `visual-explainer`) is taken wholesale from this repository, with only minor modifications. HTML visual generation is powered by this work.
 - **[kunchenguid/no-mistakes](https://github.com/kunchenguid/no-mistakes)** — Review change adapts its independent reviewer/fixer roles, intent-aware Findings, evidence-first validation, bounded repair loops, and human-owned decisions without reproducing its push gate, daemon, TUI, or delivery automation.

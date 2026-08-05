@@ -27,6 +27,9 @@ Never interpolate dynamic content into scripts, styles, event handlers, selector
 
 Use one semantic HTML `<form>` with one required choice per incompatible hunk.
 Each hunk must offer selectable, plain-language resolution options that map to workflow-owned values, including the applicable side-specific choices and a custom-instructions choice.
+Integrate each side-specific choice into that side's evidence card so the decision control, intent, evidence, excerpt, proposed result, and trade-off form one visual option.
+Keep the custom-instructions choice as a full-width third section below the side-specific evidence cards.
+It must share the parent decision container's boundary and must not appear as a nested card or box.
 Show the proposed result and trade-off beside each option so the human reviews code behavior rather than an internal value.
 A custom-instructions option requires bounded text instructions for that hunk.
 

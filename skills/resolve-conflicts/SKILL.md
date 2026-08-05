@@ -11,6 +11,7 @@ Resolve a supported Git conflict context without inventing behavior or discardin
 Read [the resolution workflow](references/workflow.md) before changing a conflicted file.
 When incompatible hunks remain, also read [the conflict decision review](references/conflict-review.md).
 
+Treat a supplied operation goal or intent as context for recovering the competing changes' intent.
 Require unresolved entries from either an in-progress rebase or merge, or a working-state restoration conflict owned by a trusted active workflow with durable recovery metadata.
 Do not accept a user-supplied stash identifier or path as proof of restoration ownership.
 If no supported context is active, report the current Git state and stop without starting one.

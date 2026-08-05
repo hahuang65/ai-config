@@ -175,9 +175,7 @@ test_command_prompts() {
     else
       fail "commands/$name.md" "missing description frontmatter"
     fi
-    if [[ "$name" == "resolve-conflicts" ]]; then
-      pass "commands/resolve-conflicts.md intentionally pairs a command and skill"
-    elif [[ -f "$REPO_DIR/skills/$name/SKILL.md" ]]; then
+    if [[ -f "$REPO_DIR/skills/$name/SKILL.md" ]]; then
       fail "commands/$name.md" "duplicates a same-named skill"
     else
       pass "commands/$name.md has no same-named skill"
@@ -196,15 +194,12 @@ test_command_prompts() {
 
   local actual_names
   actual_names="$(printf '%s\n' "${names[@]}" | sort | paste -sd' ' -)"
-  [[ "$actual_names" == "deliver rebase resolve-conflicts" ]] \
+  [[ "$actual_names" == "deliver rebase" ]] \
     && pass "commands/ contains the curated alias and composition set" \
-    || fail "commands/" "expected only: deliver rebase resolve-conflicts; found: $actual_names"
+    || fail "commands/" "expected only: deliver rebase; found: $actual_names"
   grep -Eq '`orchard` skill.*rebase operation' "$REPO_DIR/commands/rebase.md" \
     && pass "rebase remains a thin Orchard alias" \
     || fail "commands/rebase.md" "rebase must delegate to the Orchard skill"
-  grep -Eq '`resolve-conflicts` skill' "$REPO_DIR/commands/resolve-conflicts.md" \
-    && pass "resolve-conflicts remains a thin conflict-resolution alias" \
-    || fail "commands/resolve-conflicts.md" "resolve-conflicts must delegate to the resolve-conflicts skill"
   if [[ ! -e "$REPO_DIR/skills/deliver/SKILL.md" ]] \
      && [[ ! -e "$REPO_DIR/skills/merge/SKILL.md" ]] \
      && grep -Fq 'classify the checkout using Git only' "$REPO_DIR/commands/deliver.md" \
@@ -1521,14 +1516,14 @@ test_install_behavior() {
     || fail "install-behavior" "Claude CLAUDE.md bootstrap missing"
   [[ -f "$tmphome/.claude/commands/deliver.md" ]] \
     && [[ -f "$tmphome/.claude/commands/rebase.md" ]] \
-    && [[ -f "$tmphome/.claude/commands/resolve-conflicts.md" ]] \
-    && pass "Claude command prompts installed into commands/" \
-    || fail "install-behavior" "Claude deliver, rebase, or resolve-conflicts command missing"
+    && [[ ! -e "$tmphome/.claude/commands/resolve-conflicts.md" ]] \
+    && pass "Claude command prompts installed into commands/ without skill duplicates" \
+    || fail "install-behavior" "Claude command prompt set is incorrect"
   [[ -f "$tmphome/.pi/agent/prompts/deliver.md" ]] \
     && [[ -f "$tmphome/.pi/agent/prompts/rebase.md" ]] \
-    && [[ -f "$tmphome/.pi/agent/prompts/resolve-conflicts.md" ]] \
-    && pass "pi command prompts installed into prompts/" \
-    || fail "install-behavior" "pi deliver, rebase, or resolve-conflicts prompt missing"
+    && [[ ! -e "$tmphome/.pi/agent/prompts/resolve-conflicts.md" ]] \
+    && pass "pi command prompts installed into prompts/ without skill duplicates" \
+    || fail "install-behavior" "pi command prompt set is incorrect"
   [[ ! -e "$tmphome/.claude/skills/deliver/SKILL.md" ]] \
     && [[ ! -e "$tmphome/.pi/agent/skills/deliver/SKILL.md" ]] \
     && pass "deliver has no duplicate skill" \
@@ -1580,6 +1575,8 @@ test_install_behavior() {
   ln -s "$REPO_DIR/commands/commit.md" "$tmphome/.pi/agent/commands/commit.md"
   ln -s "$REPO_DIR/commands/merge.md" "$tmphome/.claude/commands/merge.md"
   ln -s "$REPO_DIR/commands/merge.md" "$tmphome/.pi/agent/prompts/merge.md"
+  ln -s "$REPO_DIR/commands/resolve-conflicts.md" "$tmphome/.claude/commands/resolve-conflicts.md"
+  ln -s "$REPO_DIR/commands/resolve-conflicts.md" "$tmphome/.pi/agent/prompts/resolve-conflicts.md"
   ln -s "$REPO_DIR/skills/deliver" "$tmphome/.claude/skills/deliver"
   ln -s "$REPO_DIR/skills/deliver" "$tmphome/.pi/agent/skills/deliver"
   ln -s "$REPO_DIR/skills/merge" "$tmphome/.claude/skills/merge"
@@ -1604,13 +1601,14 @@ test_install_behavior() {
     || fail "install-behavior" "legacy pi rules/mise.md was not removed"
   [[ -L "$tmphome/.claude/commands/deliver.md" ]] \
     && [[ -L "$tmphome/.claude/commands/rebase.md" ]] \
-    && [[ -L "$tmphome/.claude/commands/resolve-conflicts.md" ]] \
     && pass "re-install preserves canonical Claude command prompts" \
     || fail "install-behavior" "canonical Claude command prompt missing"
   [[ ! -L "$tmphome/.claude/commands/merge.md" ]] \
     && [[ ! -L "$tmphome/.pi/agent/prompts/merge.md" ]] \
-    && pass "re-install removes the retired merge prompt" \
-    || fail "install-behavior" "retired merge prompt was not pruned"
+    && [[ ! -L "$tmphome/.claude/commands/resolve-conflicts.md" ]] \
+    && [[ ! -L "$tmphome/.pi/agent/prompts/resolve-conflicts.md" ]] \
+    && pass "re-install removes retired command prompts" \
+    || fail "install-behavior" "retired command prompt was not pruned"
   [[ ! -L "$tmphome/.claude/skills/deliver" ]] \
     && [[ ! -L "$tmphome/.pi/agent/skills/deliver" ]] \
     && [[ ! -L "$tmphome/.claude/skills/merge" ]] \

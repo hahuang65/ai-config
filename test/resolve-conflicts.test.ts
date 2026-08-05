@@ -8,11 +8,11 @@ async function source(relativePath: string) {
   return readFile(path.join(REPOSITORY, relativePath), "utf8");
 }
 
-test("resolve-conflicts is a thin alias to the conflict-resolution skill", async () => {
-  const command = await source("commands/resolve-conflicts.md");
+test("resolve-conflicts accepts operation intent as a direct skill argument", async () => {
+  const skill = await source("skills/resolve-conflicts/SKILL.md");
 
-  expect(command).toContain("Load and follow the `resolve-conflicts` skill");
-  expect(command).toContain("forwarding `$ARGUMENTS` unchanged");
+  expect(skill).toContain('argument-hint: "[operation-goal-or-intent]"');
+  expect(skill).toContain("Treat a supplied operation goal or intent as context");
 });
 
 test("conflict resolution preserves both intents when they are compatible", async () => {
@@ -33,6 +33,9 @@ test("incompatible hunks require one submitted human decision per hunk", async (
   expect(workflow).toContain("only incompatible hunks remain");
   expect(workflow).toContain("continue to automated checks");
   expect(review).toContain("one required choice per incompatible hunk");
+  expect(review).toContain("Integrate each side-specific choice into that side's evidence card");
+  expect(review).toContain("custom-instructions choice as a full-width third section below the side-specific evidence cards");
+  expect(review).toContain("must not appear as a nested card or box");
   expect(review).toContain("Submit resolutions");
   expect(review).toContain("`review:submit`");
   expect(review).toContain("decision review");
