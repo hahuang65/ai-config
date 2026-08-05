@@ -1,10 +1,8 @@
 import { expect, test } from "bun:test";
-import { readFileSync } from "node:fs";
+import { readdirSync, readFileSync } from "node:fs";
 
 import { resolveAgentModel } from "../harnesses/pi/extensions/subagent/model-selection";
 import { parseAgentTools } from "../harnesses/pi/extensions/subagent/tool-names";
-
-const DEFAULT_CHANGE_REVIEWER_MODEL = "openai-codex/gpt-5.6-sol";
 
 test("normalizes shared YAML agent tool arrays for pi subagents", () => {
   expect(parseAgentTools(["Read", "Write", "Bash", "Glob"])).toEqual(["read", "write", "bash", "find"]);
@@ -25,20 +23,23 @@ test("inherits the CLI-selected model for Review change subagents", () => {
     REVIEW_CHANGE_SUBAGENT_MODEL: "openai/gpt-5",
   };
 
-  expect(resolveAgentModel("change-reviewer", DEFAULT_CHANGE_REVIEWER_MODEL, environment)).toBe("openai/gpt-5");
-  expect(resolveAgentModel("database-reviewer", "sonnet", environment)).toBe("openai/gpt-5");
+  expect(resolveAgentModel("change-reviewer", undefined, environment)).toBe("openai/gpt-5");
+  expect(resolveAgentModel("database-reviewer", undefined, environment)).toBe("openai/gpt-5");
   expect(resolveAgentModel("change-fixer", "sonnet", environment)).toBe("sonnet");
 });
 
-test("uses the pi default model for CLI subagents without an override", () => {
-  expect(resolveAgentModel("change-reviewer", DEFAULT_CHANGE_REVIEWER_MODEL, { REVIEW_CHANGE_GATE: "1" })).toBeUndefined();
-  expect(resolveAgentModel("change-reviewer", DEFAULT_CHANGE_REVIEWER_MODEL, {})).toBe(DEFAULT_CHANGE_REVIEWER_MODEL);
+test("uses the pi default model for Review change subagents without an override", () => {
+  expect(resolveAgentModel("change-reviewer", undefined, { REVIEW_CHANGE_GATE: "1" })).toBeUndefined();
+  expect(resolveAgentModel("change-reviewer", undefined, {})).toBeUndefined();
 });
 
-test("change-reviewer defaults to the fully qualified OpenAI Codex model", () => {
-  const agent = readFileSync(new URL("../agents/change-reviewer.md", import.meta.url), "utf8");
+test("all shared agents use the harness default model", () => {
+  const agentsDirectory = new URL("../agents/", import.meta.url);
+  const agentsWithModels = readdirSync(agentsDirectory)
+    .filter((fileName) => fileName.endsWith(".md"))
+    .filter((fileName) => /^model:/m.test(readFileSync(new URL(fileName, agentsDirectory), "utf8")));
 
-  expect(agent).toContain(`model: ${DEFAULT_CHANGE_REVIEWER_MODEL}`);
+  expect(agentsWithModels).toEqual([]);
 });
 
 test("the runtime adapter imports the installed TypeScript helper", () => {

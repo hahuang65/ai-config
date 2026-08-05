@@ -188,7 +188,7 @@ It remains a stylistic reference only; current runs produce canonical `specs.htm
 
 ```text
 /build (orchestrator)
-├── grill (opus)
+├── grill
 │   ├── CONTEXT.md     ← repo root
 │   └── docs/adr/      ← repo root
 │
@@ -200,14 +200,14 @@ It remains a stylistic reference only; current runs produce canonical `specs.htm
 │   └── review-artifact → canonical tasks.html feedback + approval
 │
 ├── code / coach
-│   ├── tdd-guide (sonnet) → vertical-slice TDD
-│   └── refactorer (sonnet) → hygiene sweep
+│   ├── tdd-guide → vertical-slice TDD
+│   └── refactorer → hygiene sweep
 │
 └── review-change
-    ├── change-reviewer (openai-codex/gpt-5.6-sol) → independent adversarial review
-    ├── change-fixer (sonnet) → selected objective repairs
-    ├── database-reviewer (sonnet, conditional) → read-only specialist Findings
-    ├── fact-checker (sonnet) → canonical HTML drift correction
+    ├── change-reviewer → independent adversarial review
+    ├── change-fixer → selected objective repairs
+    ├── database-reviewer (conditional) → read-only specialist Findings
+    ├── fact-checker → canonical HTML drift correction
     └── review-artifact → interactive final gate
 
 Rules (6 advisory files) load on demand in every harness. Claude Code and pi read the common `~/.dotfiles/ai/rules/` sources directly and always load only the small `harness-system-prompt.md` bootstrap containing critical constraints, the shared location, and load triggers. All *enforcement* lives in the shared guard core (per ADR-0012), not in rules — see Guardrails below.
@@ -250,7 +250,9 @@ Claude installs commands under `~/.claude/commands/`; pi installs the same Markd
 
 ### Skills
 
-> Model tiers in the skill tables are **recommendations, not enforced per-phase routing.** A skill runs in whatever model the session is using. Only **agents** pin a model via `model:` frontmatter, so the Agents table's tiers are enforced. Pick the suggested tier manually, or set your harness default accordingly.
+> Model tiers in the skill tables are **recommendations, not enforced per-phase routing.**
+> Skills and agents use the harness default unless the invoking CLI supplies an override.
+> Pick a suggested tier manually, or set your harness default accordingly.
 
 #### Core `/build` pipeline
 
@@ -286,17 +288,19 @@ Claude installs commands under `~/.claude/commands/`; pi installs the same Markd
 
 ### Agents
 
-| Name | Model | Role | Rules Read |
-|------|-------|------|------------|
-| `architecture-reviewer` | opus | Discovery engine for `/review-code` — walks a scope, returns deepening candidates (deletion test, depth/seams/locality) | coding-style, performance |
-| `api-designer` | sonnet | REST endpoint contracts: resources, status codes, pagination, versioning — consulted by `/spec` when a feature touches the API | coding-style, security, performance |
-| `frontend-architect` | sonnet | Component boundaries, state ownership, data fetching, a11y baseline — consulted by `/spec` when a feature touches UI | coding-style, performance, security |
-| `tdd-guide` | sonnet | Red-green-refactor TDD execution | testing, coding-style |
-| `change-reviewer` | openai-codex/gpt-5.6-sol | Read-only full-change adversarial review with structured Findings and intent coverage | coding-style, testing, security, performance |
-| `change-fixer` | sonnet | Selected repairs within mode ownership with focused verification | coding-style, testing, security, performance |
-| `database-reviewer` | sonnet | Read-only database specialist Findings for Review change | coding-style, testing, security, performance |
-| `fact-checker` | sonnet | Independent verification of canonical HTML artifacts and other codebase claims — corrects drift in place | git-commit |
-| `refactorer` | sonnet | Behavior-preserving directed refactors plus post-implementation hygiene | coding-style, performance, security, testing |
+Every agent uses the harness default unless the invoking CLI supplies an override.
+
+| Name | Role | Rules Read |
+|------|------|------------|
+| `architecture-reviewer` | Discovery engine for `/review-code` — walks a scope, returns deepening candidates (deletion test, depth/seams/locality) | coding-style, performance |
+| `api-designer` | REST endpoint contracts: resources, status codes, pagination, versioning — consulted by `/spec` when a feature touches the API | coding-style, security, performance |
+| `frontend-architect` | Component boundaries, state ownership, data fetching, a11y baseline — consulted by `/spec` when a feature touches UI | coding-style, performance, security |
+| `tdd-guide` | Red-green-refactor TDD execution | testing, coding-style |
+| `change-reviewer` | Read-only full-change adversarial review with structured Findings and intent coverage | coding-style, testing, security, performance |
+| `change-fixer` | Selected repairs within mode ownership with focused verification | coding-style, testing, security, performance |
+| `database-reviewer` | Read-only database specialist Findings for Review change | coding-style, testing, security, performance |
+| `fact-checker` | Independent verification of canonical HTML artifacts and other codebase claims — corrects drift in place | git-commit |
+| `refactorer` | Behavior-preserving directed refactors plus post-implementation hygiene | coding-style, performance, security, testing |
 
 ### Rules
 
