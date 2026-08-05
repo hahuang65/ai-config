@@ -1,7 +1,7 @@
 ---
 name: model-domain
 description: Build, augment, or audit a project's domain model and ubiquitous language. Use to bootstrap missing context files, condense bloated context, resolve domain terminology, record an architectural decision, or support another skill that needs to change the model.
-argument-hint: [build|augment|audit] [scope-or-topic]
+argument-hint: "[build|augment|audit] [scope-or-topic]"
 ---
 
 # Model Domain
