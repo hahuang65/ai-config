@@ -36,7 +36,7 @@ The degraded-mode choice is an environment safety decision, not an additional pi
 
 `/build` is an orchestrator, not a replacement for the phase skills. At the start of each phase, **read that phase's `SKILL.md` by relative path and follow it**:
 
-- Phase 1: [../grill/SKILL.md](../grill/SKILL.md)
+- Phase 1: [../grill/SKILL.md](../grill/SKILL.md), which invokes [../model-domain/SKILL.md](../model-domain/SKILL.md) for active domain modeling
 - Phase 2: [../spec/SKILL.md](../spec/SKILL.md)
 - Phase 3: [../todo/SKILL.md](../todo/SKILL.md)
 - Phase 4a: [../code/SKILL.md](../code/SKILL.md)
@@ -48,7 +48,8 @@ Do **not** decide whether a phase exists from the `available_skills` list or by 
 
 Each phase also runs standalone:
 
-- `/grill [topic]` — Phase 1: interview, refine `CONTEXT.md`, write ADRs
+- `/grill [topic]` — Phase 1: interview and invoke `model-domain` to refine `CONTEXT.md` and write qualifying ADRs
+- `/model-domain [build|augment|audit] [scope-or-topic]` — standalone domain-modeling session without the full feature interview or pipeline
 - `/spec [topic]` — Phase 2: synthesize canonical HTML from grilling and review it through `review-artifact`
 - `/todo [spec-dir]` — Phase 3: vertical-slice tracer-bullet breakdown
 - `/code [tasks-dir]` — Phase 4a: AI implements via TDD, slice by slice
@@ -68,7 +69,9 @@ Derive a short slug from `$ARGUMENTS` (lowercase, hyphens, max ~5 words). Run ea
 
 ### Phase 1: Grill
 
-Load [../grill/SKILL.md](../grill/SKILL.md), then run `grill` with the feature description. It updates `CONTEXT.md` / `docs/adr/` project-wide and does NOT create the feature directory yet. After it completes, tell the user what was updated and:
+Load [../grill/SKILL.md](../grill/SKILL.md), then run `grill` with the feature description.
+Grill invokes `model-domain` to maintain the ubiquitous language and qualifying ADRs.
+It updates `CONTEXT.md` / `docs/adr/` project-wide and does NOT create the feature directory yet. After it completes, tell the user what was updated and:
 
 > Ready to move on? Confirm and I'll synthesize what we discussed into the spec.
 
@@ -112,13 +115,14 @@ Approval ends the pipeline. The user decides whether and when to commit; you nev
 
 ## Key Principles
 
-1. **Grill before drafting.** Pin terminology in `CONTEXT.md` first; codify decisions in ADRs.
+1. **Grill before drafting.** Use `model-domain` to establish the **ubiquitous language**: the shared canonical vocabulary used by domain experts, users, documentation, tests, and code.
+Record it in `CONTEXT.md` and codify qualifying decisions in ADRs.
 2. **Never write code before tasks are approved.** Phases 1–3 are gated.
 3. **Canonical semantic HTML files are the feature deliverables.** Do not create Markdown companions.
 4. **Vertical slices, never horizontal.** Each slice cuts through every layer.
 5. **Test stable public interfaces.** Use [../shared/references/testable-interfaces.md](../shared/references/testable-interfaces.md): Spec proposes module test surfaces, tasks carry them forward, implementation writes one behavior test at a time through the seam.
 6. **One test, one implementation, repeat.** No batched tests upfront.
-7. **`CONTEXT.md` vocabulary everywhere** — spec, tasks, test names, code identifiers.
+7. **Ubiquitous language everywhere** — use the canonical terms from `CONTEXT.md` in the spec, tasks, test names, and code identifiers.
 
 ## Visual-Explainer Integration
 

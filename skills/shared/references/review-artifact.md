@@ -22,7 +22,7 @@ It never rewrites the saved artifact merely to add review controls.
 ## Plain-language contract
 
 Write every reviewer-facing heading, label, explanation, and instruction in plain language.
-Prefer terms already used in the current project and `CONTEXT.md`, followed by common technical terms the user is likely to know.
+Prefer the project's ubiquitous language recorded in `CONTEXT.md`, followed by common technical terms the user is likely to know.
 Do not expose internal workflow names, machine values, payload fields, or specialist jargon as the main label when a familiar phrase says the same thing.
 When an uncommon technical term is unavoidable, define it beside its first use in one short sentence.
 Keep exact machine values in safe metadata or generated submissions rather than making the reviewer translate them.

@@ -1,6 +1,12 @@
 # CONTEXT.md Format
 
-Shared reference. Used by `grill` (Phase 1 of `/build`) and `review-code`.
+Shared reference used by `model-domain`.
+
+## Ubiquitous Language
+
+The **ubiquitous language** is the shared, canonical vocabulary that domain experts, users, documentation, tests, and code use to describe the project's domain.
+`CONTEXT.md` records this language but does not contain it by itself.
+A term becomes ubiquitous only when people and artifacts use it consistently with the same meaning.
 
 ## Structure
 

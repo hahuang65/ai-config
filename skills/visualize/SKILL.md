@@ -29,7 +29,8 @@ Commit to a direction. Pick an aesthetic and vary from recent generations. See [
 ### 2. Structure
 
 Write visible content in plain language.
-Prefer project wording from `CONTEXT.md`, then common technical terms the user is likely to know.
+Prefer the project's **ubiquitous language** from the root `CONTEXT.md`, or from relevant subordinate context files selected through `CONTEXT-MAP.md`: the shared canonical vocabulary used by domain experts, users, documentation, tests, and code.
+Then use common technical terms the user is likely to know.
 Define an unavoidable unfamiliar term beside its first use, and never make internal workflow values or unexplained source identifiers the main explanation.
 
 Choose a rendering approach based on content type. See the approach table in [references/diagram-types.md](references/diagram-types.md).

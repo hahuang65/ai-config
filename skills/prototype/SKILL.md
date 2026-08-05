@@ -36,4 +36,5 @@ Pair with `/handoff` when the prototype needs its own focused session: hand off 
 
 The _answer_ is the only thing worth keeping from a prototype. Capture it somewhere durable (commit message, ADR, issue, or a `NOTES.md` next to the prototype) along with the question it was answering. If the user is around, that capture is a quick conversation; if not, leave the placeholder so they (or you, on the next pass) can fill in the verdict before deleting the prototype.
 
-If the answer crystallises an ADR-worthy decision (hard to reverse, surprising, real trade-off), invoke `/grill` or write the ADR directly using the format in [adr-format.md](../shared/references/adr-format.md).
+If the answer changes the project's **ubiquitous language** (the shared canonical vocabulary used by domain experts, users, documentation, tests, and code) or crystallises a durable decision, load and follow [model-domain](../model-domain/SKILL.md).
+Use it to update the applicable context artifacts or offer an ADR under its qualification bar; do not write either directly from the prototype workflow.

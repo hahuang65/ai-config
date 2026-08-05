@@ -7,7 +7,7 @@ It defines the approval gates, file conventions, session management, and canonic
 
 The pipeline has exactly **four** approval gates. These are the only points where you wait for user confirmation:
 
-1. **Grill → Spec** — after grilling updates `CONTEXT.md` / `docs/adr/`
+1. **Grill → Spec** — after grilling invokes `model-domain` to update the ubiquitous language in `CONTEXT.md` and qualifying decisions in `docs/adr/`
 2. **Spec → Tasks** — after the canonical `specs.html` receives explicit approval through `review-artifact` or its chat fallback
 3. **Tasks → Implement** — after the canonical `tasks.html` receives explicit approval through the same workflow
 4. **Review → Done** — after all slices are complete and verified, implementation flows gate-less into Phase 5 Review change; its report is where the user explicitly disposes every `ask-user` Finding and approves as-is or selects repairs
@@ -20,7 +20,7 @@ Within an active phase, all routine operations proceed **without per-call approv
 
 ```
 /
-├── CONTEXT.md                      # shared glossary (refined by /grill)
+├── CONTEXT.md                      # ubiquitous-language record (maintained by /model-domain)
 └── docs/
     └── adr/                        # Architectural Decision Records (added by /grill)
         ├── 0001-event-sourced-orders.md
@@ -58,7 +58,8 @@ The workflow is designed to run in a **single long session**.
 By the time implementation starts, shared understanding has accumulated through grilling and HTML-native spec refinement.
 Canonical HTML artifacts survive context compaction and can be re-read at any point.
 
-`CONTEXT.md` and `docs/adr/` are the durable spine that successive `/build` runs sharpen.
+`CONTEXT.md` records the project's **ubiquitous language**: the shared canonical vocabulary used by domain experts, users, documentation, tests, and code.
+It and `docs/adr/` are the durable spine that successive `/build` runs sharpen.
 
 ## Review Artifact Sync
 

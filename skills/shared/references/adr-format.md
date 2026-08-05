@@ -1,6 +1,6 @@
 # ADR Format
 
-Shared reference. Used by `grill` (Phase 1 of `/build`), `review-code`, and `prototype`.
+Shared reference used by `model-domain` and `prototype`.
 
 ADRs live in `docs/adr/` and use sequential numbering: `0001-slug.md`, `0002-slug.md`, etc.
 

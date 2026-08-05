@@ -37,7 +37,9 @@ Key principles (see [language.md](references/language.md) for the full list):
 - **The interface is the test surface.**
 - **One adapter = hypothetical seam. Two adapters = real seam.**
 
-This skill is _informed_ by the project's domain model. The domain language gives names to good seams; ADRs record decisions the skill should not re-litigate.
+This skill is _informed_ by the project's domain model.
+The **ubiquitous language** is the shared, canonical vocabulary used by domain experts, users, documentation, tests, and code.
+Its terms give names to good seams, and ADRs record decisions the skill should not re-litigate.
 
 ## Standalone Use
 
@@ -53,7 +55,8 @@ For surface-level cleanup right after implementation (dead code, unused imports,
 
 ### 1. Discover via the agent
 
-Read the project's domain glossary (`CONTEXT.md`) and any ADRs in the area first — their vocabulary and recorded decisions frame the review.
+Read the root `CONTEXT.md`, or use `CONTEXT-MAP.md` to find the applicable subordinate context files, and read any ADRs in the area first.
+Use the ubiquitous language they record because its vocabulary and decisions frame the review.
 
 Resolve the scope per the rules above, then run the `architecture-reviewer` agent (via the Agent tool) with: the scope (area files or "entire codebase"), the relevant `CONTEXT.md` terms, and any ADR numbers in the area. The agent walks the code, applies the **deletion test**, and returns structured candidates (files, problem, solution, benefits, before/after sketch, strength, ADR conflicts). It never edits and never proposes final interfaces — that's the grilling loop's job.
 
@@ -77,7 +80,7 @@ Each of the agent's candidates renders as a card:
 
 End the report with a **Top recommendation** section: which candidate you'd tackle first and why.
 
-**Use `CONTEXT.md` vocabulary and common technical terms in the visible report.**
+**Use the ubiquitous language from `CONTEXT.md` and common technical terms in the visible report.**
 Use [language.md](references/language.md) to reason precisely, then describe the concrete problem and suggested change without requiring the user to learn that glossary.
 If `CONTEXT.md` defines “Order,” write “Order intake”; use a code name such as `FooBarHandler` only when the exact source anchor helps.
 
@@ -92,13 +95,17 @@ Ending the review without approval is not a decision; fall back to chat rather t
 
 ### 3. Grilling Loop
 
-Once the user picks a candidate, drop into a grilling conversation. Walk the design tree with them — constraints, dependencies, the shape of the deepened module, what sits behind the seam, what tests survive.
+Once the user picks a candidate, drop into a grilling conversation.
+Walk the design tree with them: constraints, dependencies, the shape of the deepened module, what sits behind the seam, and what tests survive.
 
-Side effects happen inline as decisions crystallize:
+When this loop needs to add or change a domain concept, relationship, context boundary, or durable decision, load and follow [model-domain](../model-domain/SKILL.md).
+Do not invoke it merely to read and use the existing ubiquitous language.
 
-- **Naming a deepened module after a concept not in `CONTEXT.md`?** Add the term to `CONTEXT.md` — same discipline as `/grill` (see [context-format.md](../shared/references/context-format.md)). Create the file lazily if it doesn't exist.
-- **Sharpening a fuzzy term during the conversation?** Update `CONTEXT.md` right there.
-- **User rejects the candidate with a load-bearing reason?** Offer an ADR, framed as: _"Want me to record this as an ADR so future architecture reviews don't re-suggest it?"_ Only offer when the reason would actually be needed by a future explorer to avoid re-suggesting the same thing — skip ephemeral reasons ("not worth it right now") and self-evident ones. See [adr-format.md](../shared/references/adr-format.md).
+Apply it to review-specific side effects:
+
+- **Naming a deepened module after an unmodeled domain concept?** Invoke `model-domain` and resolve the term before using it as a module name.
+- **Sharpening a fuzzy term during the conversation?** Invoke `model-domain` and update the applicable `CONTEXT.md` immediately.
+- **User rejects the candidate with a load-bearing reason?** If the decision meets the `model-domain` ADR bar, offer: _"Want me to record this as an ADR so future architecture reviews don't re-suggest it?"_ Skip ephemeral or self-evident reasons.
 - **Want to explore alternative interfaces for the deepened module?** See [interface-design.md](references/interface-design.md).
 
 ### 4. Execute (handoff)

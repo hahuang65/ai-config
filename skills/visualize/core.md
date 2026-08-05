@@ -85,7 +85,7 @@ The reference CSS snippets below show *minimum* structural patterns. When using 
 ## Plain language
 
 Write reviewer-facing prose and labels in plain language.
-Prefer terms from the project's `CONTEXT.md`, then common technical terms the user is likely to know.
+Prefer the project's ubiquitous language from the root `CONTEXT.md` or applicable mapped context files, then common technical terms the user is likely to know.
 Do not turn source identifiers, internal workflow values, acronyms, or specialist jargon into the main explanation when familiar wording is available.
 When an uncommon term is necessary for accuracy, define it beside its first use.
 

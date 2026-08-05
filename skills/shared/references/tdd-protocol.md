@@ -32,7 +32,7 @@ Tests written in bulk test *imagined* behavior, not *actual* behavior. They chec
 - **One test at a time.** Only enough code to pass the current test.
 - **Don't anticipate future tests.** Write code for what the current test needs, nothing more.
 - **Tests exercise the public interface**, never internal state.
-- **Tests use `CONTEXT.md` vocabulary** — `it("cancels an Order", ...)`, not `it("calls cancelOrder()", ...)`.
+- **Tests use the ubiquitous language from `CONTEXT.md`** — `it("cancels an Order", ...)`, not `it("calls cancelOrder()", ...)`.
 - **Refactor only while GREEN.** Get to GREEN first, then extract duplication, deepen modules, apply SOLID where natural. Run tests after every refactor step.
 
 ## Deep modules

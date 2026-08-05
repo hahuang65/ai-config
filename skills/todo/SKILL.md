@@ -20,13 +20,16 @@ Fetch a referenced issue body via `gh issue view` and treat it as the source.
 
 ## Rules Adherence
 
-Comply with the project rules in `rules/`. Read detailed rules from `~/.dotfiles/ai/rules/`. Task titles and descriptions use the domain vocabulary from `CONTEXT.md` and respect ADRs in the area being touched.
+Comply with the project rules in `rules/`.
+Read detailed rules from `~/.dotfiles/ai/rules/`.
+Task titles and descriptions use the **ubiquitous language** from the root `CONTEXT.md`, or from the relevant subordinate context files selected through `CONTEXT-MAP.md`: the shared canonical vocabulary used by domain experts, users, documentation, tests, and code.
+Respect ADRs in the area being touched.
 
 ## Process
 
 ### Step 1: Gather context
 
-Read canonical `specs.html` thoroughly (or the GitHub issue body if that was passed), `CONTEXT.md`, and relevant ADRs.
+Read canonical `specs.html` thoroughly (or the GitHub issue body if that was passed), the root `CONTEXT.md` or `CONTEXT-MAP.md` plus relevant subordinate context files, and relevant ADRs.
 If you have not explored the relevant code areas yet, do so now; titles and descriptions should be grounded in real modules.
 
 ### Step 2: Draft vertical slices
@@ -69,7 +72,8 @@ On explicit browser approval or chat-fallback confirmation, report the slice cou
 - **Each slice is demoable on its own.** If finishing slice N leaves the system broken or invisible, the slice is wrong.
 - **No file paths or code snippets in task bodies.** They go stale before a slice is picked up.
 - **The visible semantic HTML is canonical.** Later phases read it directly and update its status metadata.
-- **Use `CONTEXT.md` vocabulary** in titles and descriptions.
+- **Use the ubiquitous language from the applicable context files** in titles and descriptions.
+- **Do not coin competing domain terms.** If the spec or issue needs a missing or conflicting domain concept to be resolved, invoke [model-domain](../model-domain/SKILL.md) before drafting slices.
 - **Many thin slices beat few thick ones.** If a slice looks fat, split it.
 
 Ultrathink.

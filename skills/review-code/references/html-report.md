@@ -40,7 +40,7 @@ Repo name, date, and a compact legend: solid box = module, dashed line = seam, r
 ## Candidate Card
 
 The diagrams carry the weight.
-Keep prose sparse and in plain language, using `CONTEXT.md` project wording first and common technical terms the user is likely to know second.
+Keep prose sparse and in plain language, using the ubiquitous language from the root `CONTEXT.md` or applicable mapped context files first and common technical terms the user is likely to know second.
 Translate the analysis vocabulary in [language.md](language.md) into familiar labels unless the project already uses that term.
 
 Each candidate is one `<article>`:
@@ -108,7 +108,7 @@ One larger card. Candidate name, one sentence on why, anchor link to its card. T
 ## Tone
 
 Use concise plain language throughout the visible report.
-Prefer names and phrases from `CONTEXT.md`, then common technical terms the user is likely to know.
+Prefer names and phrases from the ubiquitous language in the applicable context files, then common technical terms the user is likely to know.
 The specialist vocabulary in [language.md](language.md) guides the analysis, but it is not automatically reviewer-facing vocabulary.
 If an uncommon term is essential, define it in a short phrase beside its first use and use a familiar heading such as “Current problem,” “Suggested change,” or “Why this helps.”
 

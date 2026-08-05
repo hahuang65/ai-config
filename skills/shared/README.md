@@ -17,7 +17,7 @@ Skills import these by relative path, e.g. from `skills/spec/SKILL.md`:
 | `references/tooling.md` | code, coach, refactor |
 | `references/implementation-hygiene.md` | code, coach |
 | `references/implementation-completion.md` | code, coach |
-| `references/context-format.md` | grill, review-code |
-| `references/adr-format.md` | grill, review-code, prototype |
+| `references/context-format.md` | model-domain |
+| `references/adr-format.md` | model-domain |
 
 `install.sh` symlinks every `skills/*/` directory (including this one), so `../shared/references/...` resolves both in-repo and after install. `scripts/test-pipeline.sh` skips `shared` in its per-skill `SKILL.md` checks.

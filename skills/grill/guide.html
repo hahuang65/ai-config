@@ -71,7 +71,7 @@ code { font-family: var(--font-mono); font-size: 0.85em; background: var(--accen
 
 <div class="header">
   <h1><span>/</span>grill</h1>
-  <p class="subtitle">Interactive domain-modeling session. Interview the user in dependency-aware rounds, sharpen terminology, capture decisions inline — updating <code>CONTEXT.md</code> and <code>docs/adr/</code> as the conversation progresses. Based on Matt Pocock's <code>grilling</code> and <code>grill-with-docs</code>.</p>
+  <p class="subtitle">Interactive feature interview in dependency-aware rounds. <code>/grill</code> owns the decision frontier and invokes <code>/model-domain</code> to maintain the ubiquitous language and qualifying decisions.</p>
 </div>
 
 <div class="section">
@@ -88,8 +88,8 @@ code { font-family: var(--font-mono); font-size: 0.85em; background: var(--accen
   <div class="section-title"><span class="num">02</span>What It Produces</div>
   <div class="card-grid">
     <div class="card">
-      <h3>CONTEXT.md (repo root)</h3>
-      <p>Shared domain glossary. Long-lived; accretes across every <code>/build</code> run. Definitions are tight (1-2 sentences), opinionated (aliases listed under <code>Avoid</code>), and devoid of implementation detail.</p>
+      <h3>model-domain → CONTEXT.md</h3>
+      <p>The durable record of the ubiquitous language: the shared canonical vocabulary used by domain experts, users, documentation, tests, and code. Long-lived; accretes across every <code>/build</code> run. Definitions are tight (1-2 sentences), opinionated (aliases listed under <code>Avoid</code>), and devoid of implementation detail.</p>
       <ul>
         <li>Updated <em>inline</em> as terms resolve — never batched</li>
         <li>If absent, created lazily when the first term is resolved</li>
@@ -97,7 +97,7 @@ code { font-family: var(--font-mono); font-size: 0.85em; background: var(--accen
       </ul>
     </div>
     <div class="card">
-      <h3>docs/adr/*.md (repo root)</h3>
+      <h3>model-domain → docs/adr/*.md</h3>
       <p>Architectural Decision Records. Numbered sequentially. Each captures <em>what was decided</em> and <em>why</em> in 1-3 sentences.</p>
       <ul>
         <li>Offered <strong>sparingly</strong>: only when hard-to-reverse AND surprising AND result of a real trade-off</li>
@@ -112,32 +112,17 @@ code { font-family: var(--font-mono); font-size: 0.85em; background: var(--accen
 </div>
 
 <div class="section">
-  <div class="section-title"><span class="num">03</span>Conversation Tactics</div>
+  <div class="section-title"><span class="num">03</span>Two Skills, One Session</div>
   <div class="card-grid">
     <div class="card">
-      <h3>Work the decision frontier</h3>
+      <h3>grill owns the interview</h3>
       <p>Map decisions as a tree. In each round, ask every question whose prerequisites are settled, then recompute the frontier from the user's answers.</p>
       <div class="quote">Batch independent decisions; defer any question that depends on another answer still open in the round.</div>
     </div>
     <div class="card">
-      <h3>Challenge the glossary</h3>
-      <p>When a user term conflicts with existing language in <code>CONTEXT.md</code>, call it out.</p>
-      <div class="quote">"Your glossary defines 'cancellation' as X, but you seem to mean Y — which is it?"</div>
-    </div>
-    <div class="card">
-      <h3>Sharpen fuzzy language</h3>
-      <p>When the user uses overloaded terms, propose a precise canonical term.</p>
-      <div class="quote">"You're saying 'account' — do you mean the Customer or the User? Those are different things."</div>
-    </div>
-    <div class="card">
-      <h3>Stress-test with scenarios</h3>
-      <p>Invent concrete scenarios that probe edge cases and force precision about boundaries between concepts.</p>
-      <div class="quote">"If a Customer has two pending Orders and one ships, does the OrderPlaced event for the other still fire?"</div>
-    </div>
-    <div class="card">
-      <h3>Cross-reference with code</h3>
-      <p>When the user describes how something works, check whether the code agrees. Surface contradictions.</p>
-      <div class="quote">"Your code cancels entire Orders, but you just said partial cancellation is possible — which is right?"</div>
+      <h3>model-domain owns the model</h3>
+      <p>It challenges glossary conflicts, sharpens fuzzy terms, tests scenarios, checks the code, updates the applicable context file inline, and applies the ADR bar.</p>
+      <div class="quote">Invoking it from <code>/grill</code> embeds its discipline in the same interview; it does not start a second session.</div>
     </div>
   </div>
 </div>
@@ -161,33 +146,21 @@ code { font-family: var(--font-mono); font-size: 0.85em; background: var(--accen
 </div>
 
 <div class="section">
-  <div class="section-title"><span class="num">05</span>ADR Bar (all three required)</div>
-  <div class="card-grid">
-    <div class="card">
-      <h3>1. Hard to reverse</h3>
-      <p>The cost of changing your mind later is meaningful. If you can swap it out next sprint, skip.</p>
-    </div>
-    <div class="card">
-      <h3>2. Surprising without context</h3>
-      <p>A future reader will look at the code and wonder "why on earth did they do it this way?" If it's the obvious choice, no one will ask.</p>
-    </div>
-    <div class="card">
-      <h3>3. Real trade-off</h3>
-      <p>There were genuine alternatives and you picked one for specific reasons. If there was no real alternative, there's nothing to document beyond "we did the obvious thing."</p>
-    </div>
-  </div>
+  <div class="section-title"><span class="num">05</span>Domain-Modeling Delegation</div>
+  <p style="font-size: 0.95rem; margin-bottom: 14px;"><code>/grill</code> loads <code>../model-domain/SKILL.md</code> at the start and follows it throughout the interview.</p>
   <div class="callout warn">
-    <strong>If any of the three is missing, skip the ADR.</strong> The point of an ADR isn't to document everything — it's to stop the next engineer from "fixing" something that was deliberate.
+    <strong>Do not duplicate the discipline here.</strong> <code>/model-domain</code> is the source of truth for context topology, ubiquitous-language updates, audit and condensation, and the ADR qualification bar.
   </div>
 </div>
 
 <div class="section">
-  <div class="section-title"><span class="num">06</span>Format References</div>
+  <div class="section-title"><span class="num">06</span>Standalone Model Sessions</div>
   <table>
-    <thead><tr><th>File</th><th>Purpose</th></tr></thead>
+    <thead><tr><th>Mode</th><th>Purpose</th></tr></thead>
     <tbody>
-      <tr><td><code>../shared/references/context-format.md</code></td><td>How <code>CONTEXT.md</code> is structured — bold term names, tight definitions, aliases to avoid, optional example dialogue</td></tr>
-      <tr><td><code>../shared/references/adr-format.md</code></td><td>How ADRs are structured — title, 1-3 sentences, sequential numbering, optional status/considered/consequences sections</td></tr>
+      <tr><td><code>/model-domain build</code></td><td>Bootstrap context files for an existing project that has none</td></tr>
+      <tr><td><code>/model-domain augment</code></td><td>Add missing concepts or sharpen a named area</td></tr>
+      <tr><td><code>/model-domain audit</code></td><td>Condense bloat and resolve ambiguity, duplication, drift, or misplaced terms</td></tr>
     </tbody>
   </table>
 </div>

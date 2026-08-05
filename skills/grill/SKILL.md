@@ -1,6 +1,6 @@
 ---
 name: grill
-description: Interactive grilling session that interviews the user about a feature in dependency-aware rounds, sharpens domain terminology, and updates project documentation (CONTEXT.md, ADRs) inline as decisions crystallise. Use when the user wants to stress-test an idea against their project's language and documented decisions before drafting a spec. Based on Matt Pocock's grilling and grill-with-docs skills.
+description: Interactive grilling session that interviews the user about a feature in dependency-aware rounds and invokes model-domain to sharpen the ubiquitous language and record durable decisions. Use when the user wants to stress-test an idea before drafting a spec. Based on Matt Pocock's grilling and grill-with-docs skills.
 argument-hint: [feature-description]
 ---
 
@@ -11,11 +11,11 @@ Map the interview as a **design tree**: every decision branches into the decisio
 
 ## Work in Rounds
 
-The **frontier** is every decision whose prerequisites are settled — the questions that can be answered now without guessing at an unresolved answer.
+The **frontier** is every decision whose prerequisites are settled: the questions that can be answered now without guessing at an unresolved answer.
 Ask the whole frontier in one round, then wait for the user's answers before asking another round.
 Number each question and give your recommended answer using this format:
 
-```
+```text
 ❓ **Q1** - **<question title>**: <question body, which may include multiple paragraphs or choices>
 
 ➡️ <your recommended answer>
@@ -28,43 +28,37 @@ Batch only independent questions; never bundle a chain of dependent decisions in
 
 Finding *facts* is your job, never the user's.
 When a frontier question needs a fact from the codebase or environment, investigate it with tools or dispatch independent exploration to a subagent rather than asking the user.
-Do not block the rest of the frontier on that exploration: treat the unknown fact as an unsettled prerequisite, defer only its downstream questions, and ask the other ready questions now.
-The *decisions* are the user's — put each one to them and wait for their answers.
+Do not block the rest of the frontier on that exploration.
+Treat the unknown fact as an unsettled prerequisite, defer only its downstream questions, and ask the other ready questions now.
+The *decisions* are the user's: put each one to them and wait for their answers.
+
+## Invoke Model Domain
+
+At the start, load and follow [model-domain](../model-domain/SKILL.md) throughout the interview.
+Grill owns the dependency-aware interview; `model-domain` owns active domain modeling and its documentation discipline.
+
+The **ubiquitous language** is the shared, canonical vocabulary used by domain experts, users, documentation, tests, and code.
+`CONTEXT.md` records it, and consistent use gives the design one stable meaning from conversation through implementation.
+Apply its full active-modeling and ADR workflow to every domain decision that the interview exposes.
 
 ## Place in the /build Pipeline
 
-This is **Phase 1** of the `/build` pipeline (see [../shared/references/build-pipeline.md](../shared/references/build-pipeline.md)). The output is not a feature-specific artifact — it is updates to **project-wide** documentation that accrue across many `/build` runs:
+This is **Phase 1** of the `/build` pipeline.
+See [the shared build pipeline](../shared/references/build-pipeline.md).
+The output is not a feature-specific artifact.
+It is project-wide domain documentation that accrues across many `/build` runs:
 
-- **`CONTEXT.md`** at the repo root — the shared domain glossary
-- **`docs/adr/`** at the repo root — Architectural Decision Records
+- The applicable **`CONTEXT.md`** files record the ubiquitous language.
+- The root **`docs/adr/`** directory records qualifying project-wide Architectural Decision Records.
 
-Do not put these inside the feature directory; they outlive any single feature. When invoked standalone, `$ARGUMENTS` is the topic to grill on; when invoked from `/build`, the orchestrator passes the feature description (this phase does not write into the feature directory).
-
-## Context Files
-
-At the start, read existing documentation: `CONTEXT.md` at the repo root (and any subordinate `CONTEXT.md` files via `CONTEXT-MAP.md`), plus recent/relevant ADRs in `docs/adr/`. Create files lazily — only when you have something to write.
-
-- **CONTEXT.md format** → [../shared/references/context-format.md](../shared/references/context-format.md)
-- **ADR format** → [../shared/references/adr-format.md](../shared/references/adr-format.md)
-
-## During the Session
-
-Drive the interview with these moves. Update `CONTEXT.md` **inline** as terms resolve — don't batch.
-
-- **Challenge against the glossary.** When the user uses a term that conflicts with `CONTEXT.md`, call it out: "Your glossary defines 'cancellation' as X, but you seem to mean Y — which is it?"
-- **Sharpen fuzzy language.** When a word is vague or overloaded, propose a precise canonical term: "You're saying 'account' — do you mean the Customer or the User?"
-- **Discuss concrete scenarios.** Stress-test domain relationships with edge-case scenarios that force precision about boundaries between concepts.
-- **Cross-reference with code.** When the user states how something works, check whether the code agrees. Surface contradictions: "Your code cancels entire Orders, but you just said partial cancellation is possible — which is right?"
-
-`CONTEXT.md` is a glossary and nothing else — totally devoid of implementation details, specs, or scratch-pad content.
-
-## Offer ADRs sparingly
-
-Only offer to create an ADR when all three are true: **hard to reverse**, **surprising without context**, and **the result of a real trade-off**. If any is missing, skip it. Use the format and qualifying criteria in [../shared/references/adr-format.md](../shared/references/adr-format.md).
+Do not put these inside the feature directory because they outlive any single feature.
+When invoked standalone, `$ARGUMENTS` is the topic to grill on.
+When invoked from `/build`, the orchestrator passes the feature description and this phase does not create the feature directory.
 
 ## Completion
 
-The grill phase is done when the frontier is empty and the user is satisfied with the shared understanding — every branch visited, nothing silently assumed, ambiguous terms pinned down, cardinality/lifecycle answered, and ADR-worthy decisions recorded.
+The grill phase is done when the frontier is empty and the user is satisfied with the shared understanding.
+Every branch has been visited, nothing is silently assumed, ambiguous terms are pinned down, cardinality and lifecycle are answered, and ADR-worthy decisions are recorded.
 Then tell the user:
 
 > **Grill phase complete.** I've updated:
@@ -75,6 +69,8 @@ Then tell the user:
 >
 > When you're ready, just confirm and I'll draft the spec, synthesizing what we discussed via `/spec`.
 
-Do NOT start drafting the spec until the user confirms. Any response that signals approval counts — there's no exact phrase to wait for. The grilling conversation IS the design phase — the spec just transcribes its outcome.
+Do not start drafting the spec until the user confirms.
+Any response that signals approval counts; there is no exact phrase to wait for.
+The grilling conversation is the design phase, and the spec transcribes its outcome.
 
 Ultrathink.

@@ -132,7 +132,7 @@ code { font-family: var(--font-mono); font-size: 0.85em; background: var(--accen
 
 <div class="header">
   <h1><span>/</span>build pipeline</h1>
-  <p class="subtitle">Five-phase workflow combining domain modeling, canonical HTML artifacts, vertical-slice TDD, and intent-aware Review change.</p>
+  <p class="subtitle">Five-phase workflow combining ubiquitous-language domain modeling, canonical HTML artifacts, vertical-slice TDD, and intent-aware Review change.</p>
   <div class="phase-flow">
     <span class="phase-pill grill"><span class="phase-num"><span>1</span></span> grill</span>
     <span class="phase-arrow">→</span>
@@ -152,22 +152,22 @@ code { font-family: var(--font-mono); font-size: 0.85em; background: var(--accen
 
     <div class="card grill">
       <h3>grill <span class="badge">opus · interactive</span></h3>
-      <p>Interview-driven domain modeling. Sharpens terminology, resolves cardinality, captures hard-to-reverse decisions.</p>
+      <p>Dependency-aware interview that invokes <code>model-domain</code> to sharpen the ubiquitous language, resolve cardinality, and capture qualifying decisions.</p>
       <ul>
-        <li>Reads <code>CONTEXT.md</code> + <code>docs/adr/</code></li>
-        <li>Asks one question at a time, recommends an answer</li>
+        <li>Reads <code>CONTEXT.md</code> + <code>docs/adr/</code> through <code>model-domain</code></li>
+        <li>Asks the whole ready decision frontier in each round and recommends answers</li>
         <li>Challenges fuzzy language; cross-references with code</li>
         <li>Updates <code>CONTEXT.md</code> inline as terms resolve</li>
         <li>Offers ADRs sparingly (hard-to-reverse + surprising + real trade-off)</li>
       </ul>
-      <div class="out"><strong>Output:</strong> <code>./CONTEXT.md</code> (glossary)<br><strong>Output:</strong> <code>./docs/adr/*.md</code> (decisions)</div>
+      <div class="out"><strong>Output:</strong> <code>./CONTEXT.md</code> (ubiquitous-language record)<br><strong>Output:</strong> <code>./docs/adr/*.md</code> (qualifying decisions)</div>
     </div>
 
     <div class="card specs">
       <h3>spec <span class="badge">synthesis</span></h3>
       <p>Synthesizes a feature spec from the grilling outcome. Does NOT re-interview.</p>
       <ul>
-        <li>Reads <code>CONTEXT.md</code>, recent ADRs, conversation</li>
+        <li>Reads root or mapped context files, recent ADRs, conversation</li>
         <li>Sketches major modules (deep-modules philosophy)</li>
         <li>Proposes module test surfaces; user corrects boundaries/seams only</li>
         <li>Writes spec: problem, solution, user stories, decisions, testing</li>
@@ -182,7 +182,7 @@ code { font-family: var(--font-mono); font-size: 0.85em; background: var(--accen
       <h3>todo <span class="badge">vertical slices</span></h3>
       <p>Breaks the approved spec into vertical-slice tracer bullets. Each slice cuts through every layer end-to-end.</p>
       <ul>
-        <li>Reads canonical <code>specs.html</code>, <code>CONTEXT.md</code>, ADRs</li>
+        <li>Reads canonical <code>specs.html</code>, applicable context files, ADRs</li>
         <li>Each slice = thin path through schema, API, UI, tests</li>
         <li>Marked HITL (human-in-loop) or AFK (away-from-keyboard)</li>
         <li>Dependency order: blockers first</li>
@@ -224,7 +224,7 @@ code { font-family: var(--font-mono); font-size: 0.85em; background: var(--accen
 <div class="section">
   <div class="section-title"><span class="num">02</span>Where the Artifacts Live</div>
   <div class="pre">/
-├── CONTEXT.md              project-wide glossary (built up by /grill)
+├── CONTEXT.md              project-wide ubiquitous language (maintained by /model-domain)
 ├── docs/
 │   ├── adr/                project-wide ADRs (added by /grill)
 │   │   ├── 0001-event-sourced-orders.md
@@ -258,7 +258,7 @@ code { font-family: var(--font-mono); font-size: 0.85em; background: var(--accen
   <div class="pre">generate canonical HTML → annotate exact element or text
           ↑                          ↓
           └──── live reload ← agent applies feedback</div>
-  <p style="margin-top:14px; font-size:0.9rem; color: var(--text-dim);">Artifacts use plain project language from <code>CONTEXT.md</code>. The foreground poll returns durable feedback batches, severe layout warnings, and an explicit approval event. In the final report, each issue card contains its own decision controls and one bottom button submits all decisions without copy and paste. Ending or closing review is not approval.</p>
+  <p style="margin-top:14px; font-size:0.9rem; color: var(--text-dim);">Artifacts use the ubiquitous language recorded in the applicable root or mapped context files. The foreground poll returns durable feedback batches, severe layout warnings, and an explicit approval event. In the final report, each issue card contains its own decision controls and one bottom button submits all decisions without copy and paste. Ending or closing review is not approval.</p>
 </div>
 
 <div class="section">
@@ -272,7 +272,8 @@ code { font-family: var(--font-mono); font-size: 0.85em; background: var(--accen
   <table>
     <thead><tr><th>Command</th><th>Standalone use</th><th>Inside /build</th></tr></thead>
     <tbody>
-      <tr><td><span class="cmd-tag">/grill</span></td><td>Refine domain language without committing to a spec</td><td>Phase 1</td></tr>
+      <tr><td><span class="cmd-tag">/grill</span></td><td>Interview a feature and invoke <code>model-domain</code></td><td>Phase 1</td></tr>
+      <tr><td><span class="cmd-tag">/model-domain</span></td><td>Build, augment, or audit context files</td><td>Invoked by Phase 1</td></tr>
       <tr><td><span class="cmd-tag">/spec</span></td><td>Turn an existing conversation into a spec</td><td>Phase 2</td></tr>
       <tr><td><span class="cmd-tag">/todo</span></td><td>Break an existing spec into vertical slices</td><td>Phase 3</td></tr>
       <tr><td><span class="cmd-tag">/code</span></td><td>Execute existing canonical tasks.html (AI)</td><td>Phase 4a</td></tr>
@@ -295,8 +296,8 @@ code { font-family: var(--font-mono); font-size: 0.85em; background: var(--accen
       <p>TDD is strictly vertical: write one test, write minimal code to pass, refactor when GREEN, move on. Batched tests describe imagined behavior, not actual behavior.</p>
     </div>
     <div class="card">
-      <h3>CONTEXT.md vocabulary everywhere</h3>
-      <p>Terms resolved during grill appear unchanged in the spec, tasks, test names, and code identifiers. Inconsistency triggers rework.</p>
+      <h3>Ubiquitous language everywhere</h3>
+      <p>The shared canonical terms recorded in the applicable context files appear unchanged in conversation, specs, tasks, test names, and code identifiers. Inconsistency triggers rework.</p>
     </div>
     <div class="card">
       <h3>Semantic HTML is the deliverable</h3>

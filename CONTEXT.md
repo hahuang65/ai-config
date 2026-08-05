@@ -33,6 +33,11 @@ _Avoid_: Worker, child session.
 **Rule**:
 A `<root>/rules/<name>.md` file holding guidance the harness pulls into context on demand. Claude and pi read the canonical `~/.dotfiles/ai/rules/` files directly. See [`small-always-on-bootstrap-lazy-rulebooks`](docs/adr/0016-small-always-on-bootstrap-lazy-rulebooks.md).
 
+**Ubiquitous language**:
+The shared, canonical vocabulary that domain experts, users, documentation, tests, and code use with one consistent meaning to describe a project's domain.
+`CONTEXT.md` records this language, while the `model-domain` skill actively builds, augments, and audits it.
+_Avoid_: Domain language, project vocabulary, `CONTEXT.md` vocabulary.
+
 ### Harness-specific terms
 
 **`.claude` / `~/.claude/`**:

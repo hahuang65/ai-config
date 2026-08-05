@@ -24,7 +24,9 @@ Comply with the project rules in `rules/` (coding-style, testing, security, perf
 
 ### Step 1: Read context
 
-- Read `CONTEXT.md` at the repo root (and subordinate `CONTEXT.md` files via `CONTEXT-MAP.md`). Use this vocabulary throughout.
+- Read `CONTEXT.md` at the repo root and subordinate `CONTEXT.md` files through `CONTEXT-MAP.md`.
+  They record the **ubiquitous language**: the shared canonical vocabulary used by domain experts, users, documentation, tests, and code.
+  Use it throughout.
 - Read recent ADRs in `docs/adr/` — especially any added this session — and respect them.
 - Skim the codebase area the feature touches. The spec is grounded in the actual codebase, not assumptions.
 
@@ -48,7 +50,7 @@ Wait for the answer before continuing. If they simply confirm, use the proposed 
 ### Step 3: Write the canonical spec
 
 Synthesize `specs.html` using the semantic structure in [references/spec-template.md](references/spec-template.md).
-Use `CONTEXT.md` vocabulary and reference ADRs by number.
+Use the ubiquitous language from `CONTEXT.md` and reference ADRs by number.
 The file itself is the durable spec; do not create `specs.md` or a hidden duplicate model.
 The HTML must use "Spec" in its `<title>` and `<h1>` and emphasize user stories, decisions, and module sketches rather than file maps or code.
 Use `visualize` guidance for presentation when available, but the semantic HTML deliverable is mandatory.
@@ -69,7 +71,8 @@ Then proceed to `/todo`.
 ## Important Guidelines
 
 - **Synthesize, don't interview.** If essential information is genuinely missing, ask one targeted question — don't re-run the grill.
-- **Use `CONTEXT.md` vocabulary.** If the glossary says "Customer", don't write "User" or "Account".
+- **Use the ubiquitous language from `CONTEXT.md`.** If the glossary says "Customer", do not write "User" or "Account".
+- **Do not silently change the domain model.** If feedback or synthesis exposes a missing or conflicting domain concept, invoke [model-domain](../model-domain/SKILL.md) to resolve and record it before continuing.
 - **No code snippets, no file paths** in the body (except the narrow exception in the template).
 - **Write canonical `specs.html` directly and keep it live.** Apply every feedback batch to that same file before polling again.
 - Keep the spec focused — suggest cutting scope if it grows too large.

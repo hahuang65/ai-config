@@ -29,7 +29,9 @@ Use these terms exactly in every finding — don't drift into "component," "serv
 - **Adapter** — a concrete thing satisfying an interface at a seam. One adapter = hypothetical seam; two = real seam.
 - **Leverage** — what callers get from depth. **Locality** — what maintainers get: change, bugs, and knowledge concentrated in one place.
 
-Read the repo's `CONTEXT.md` (if present) and use its domain vocabulary for module names; read ADRs in `docs/adr/` for the area and do not re-litigate recorded decisions — flag a conflict instead.
+Read the root `CONTEXT.md`, or use `CONTEXT-MAP.md` to find the relevant subordinate context files.
+Use their **ubiquitous language**: the shared canonical vocabulary used by domain experts, users, documentation, tests, and code.
+Read ADRs in `docs/adr/` for the area and do not re-litigate recorded decisions; flag a conflict instead.
 
 ## Discovery Heuristics
 

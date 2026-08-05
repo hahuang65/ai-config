@@ -478,6 +478,49 @@ test_duplicate_adr_id_fails() {
 }
 
 # ---------------------------------------------------------------------------
+# Self-test 18: standalone review mode omits mapped-context loading
+# ---------------------------------------------------------------------------
+
+test_context_consumer_missing_context_map_fails() {
+  local rel="skills/review-change/references/workflow.md"
+  fixture_replace "$rel"
+  sed 's/CONTEXT-MAP\.md/context index/g' "$TMPDIR/$rel" >"$TMPDIR/$rel.tmp"
+  mv "$TMPDIR/$rel.tmp" "$TMPDIR/$rel"
+
+  if run_pipeline content ubiquitous-language; then
+    self_fail "missing context map: test-pipeline.sh should exit non-zero"
+  else
+    self_pass "missing context map: test-pipeline.sh correctly exits non-zero"
+  fi
+
+  rm -f "$REPO_DIR/$rel"
+  mv "$REPO_DIR/$rel.__real__" "$REPO_DIR/$rel"
+}
+
+# ---------------------------------------------------------------------------
+# Self-test 19: context-consuming skill omits ubiquitous language
+# ---------------------------------------------------------------------------
+
+test_context_consumer_missing_ubiquitous_language_fails() {
+  local skill_dir
+  skill_dir="$(fixture_skill_dir "test-self-test-context-language")"
+  cat >"$skill_dir/SKILL.md" <<'EOF'
+---
+name: test-self-test-context-language
+description: A planted context consumer with stale terminology.
+---
+
+Read `CONTEXT.md` and use its project terms.
+EOF
+
+  if run_pipeline content ubiquitous-language; then
+    self_fail "missing ubiquitous language: test-pipeline.sh should exit non-zero"
+  else
+    self_pass "missing ubiquitous language: test-pipeline.sh correctly exits non-zero"
+  fi
+}
+
+# ---------------------------------------------------------------------------
 # Main
 # ---------------------------------------------------------------------------
 
@@ -502,6 +545,8 @@ main() {
   test_implement_coach_missing_holding_line_fails
   test_build_missing_phase_loading_fails
   test_duplicate_adr_id_fails
+  test_context_consumer_missing_context_map_fails
+  test_context_consumer_missing_ubiquitous_language_fails
 
   echo ""
   echo "Results: $SELF_PASS passed, $SELF_FAIL failed"

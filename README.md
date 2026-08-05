@@ -16,7 +16,7 @@ cd ~/.dotfiles/ai
 
 The centerpiece of this repository is `/build` — a disciplined 5-phase workflow for building software features with AI assistance. It enforces a "think before you code" discipline:
 
-1. **Grill** the idea against the project's domain language (interactive Q&A; updates `CONTEXT.md` and ADRs inline)
+1. **Grill** the idea in dependency-aware rounds and invoke `model-domain` to sharpen the project's **ubiquitous language**: the shared canonical vocabulary used by domain experts, users, documentation, tests, and code.
 2. **Draft a spec** synthesizing the grilling outcome (user stories + decisions, no code snippets)
 3. **Break it into tasks** as vertical-slice tracer bullets (each slice cuts through every layer end-to-end)
 4. **Implement** via vertical-slice TDD — AI does it, or AI coaches you through it one test at a time
@@ -88,16 +88,25 @@ Structured writes are allowed only inside a dedicated report directory whose res
 
 **Entry**: `/build [description]` or `/grill [topic]`
 
-1. Reads existing `CONTEXT.md` (or `CONTEXT-MAP.md` for multi-context repos) and `docs/adr/`
-2. Interviews the user **one question at a time**, recommending an answer for each
-3. Challenges new ideas against the existing glossary; flags terminology collisions
-4. Sharpens fuzzy language ("you said 'account' — Customer or User?")
-5. Stress-tests with concrete scenarios; cross-references with code
-6. **Updates `CONTEXT.md` inline** as terms get resolved — no batching
-7. **Offers ADRs sparingly** — only when hard-to-reverse, surprising, and the result of a real trade-off
-8. **STOPS — waits for user to say "draft the spec"**
+1. Loads `model-domain`, existing `CONTEXT.md` files (through `CONTEXT-MAP.md` when present), and applicable ADRs.
+2. Interviews the user in dependency-aware rounds, asking the whole ready decision frontier and recommending an answer for each question.
+3. Uses `model-domain` to challenge terminology collisions, sharpen fuzzy language, stress-test scenarios, and cross-reference with code.
+4. **Updates `CONTEXT.md` inline** as terms resolve and uses the resulting ubiquitous language consistently.
+5. **Offers ADRs sparingly** — only when hard-to-reverse, surprising, and the result of a real trade-off.
+6. **STOPS — waits for user confirmation before drafting the spec.**
 
 If a question can be answered by exploring the codebase, grill does so instead of asking.
+
+### Standalone Domain Modeling
+
+**Entry**: `/model-domain [build|augment|audit] [scope-or-topic]`
+
+- **Build from scratch** bootstraps context files in an existing project that has none.
+- **Augment** adds missing concepts or sharpens a named area in an existing model.
+- **Audit and condense** finds bloat, ambiguity, duplication, drift, and misplaced terms across `CONTEXT.md` or files mapped by `CONTEXT-MAP.md`.
+
+The session investigates facts from code, documentation, and ADRs, then asks the user only for domain decisions.
+It updates resolved terms inline and preserves the distinction between the ubiquitous language and the glossary that records it.
 
 ### Phase 2: Spec
 
@@ -173,7 +182,7 @@ If browser review cannot start, the phase uses chat while preserving the same ap
 
 | Artifact | Location | Lifetime |
 |---|---|---|
-| `CONTEXT.md` | repo root | Long-lived — accretes across all features |
+| `CONTEXT.md`, or `CONTEXT-MAP.md` plus mapped context files | repo root and mapped contexts | Long-lived — accretes across all features |
 | `docs/adr/*.md` | repo root | Long-lived — historical record |
 | `docs/features/<slug>/` | per-feature | Optional — keep, delete, or `.gitignore` |
 
@@ -189,8 +198,9 @@ It remains a stylistic reference only; current runs produce canonical `specs.htm
 ```text
 /build (orchestrator)
 ├── grill
-│   ├── CONTEXT.md     ← repo root
-│   └── docs/adr/      ← repo root
+│   └── model-domain
+│       ├── CONTEXT.md / CONTEXT-MAP.md
+│       └── docs/adr/
 │
 ├── spec
 │   ├── api-designer / frontend-architect (conditional) → domain consult
@@ -260,7 +270,8 @@ Claude installs commands under `~/.claude/commands/`; pi installs the same Markd
 | Name | Model (rec.) | Role |
 |------|-------|------|
 | `build` | — | Orchestrator: coordinates grill → spec → todo → code/coach → review-change |
-| `grill` | opus | Interview-driven domain modeling; updates `CONTEXT.md` + ADRs inline |
+| `grill` | opus | Dependency-aware feature interview; invokes model-domain during Phase 1 |
+| `model-domain` | opus | Build, augment, or audit the ubiquitous language in context files; record qualifying ADRs |
 | `spec` | opus | Synthesize canonical specs.html and review it through review-artifact |
 | `todo` | opus | Break the approved spec into canonical HTML vertical slices |
 | `code` | sonnet | Execute approved tasks via vertical-slice TDD + multi-agent verification |
@@ -401,7 +412,8 @@ shows every individual check). The `test/content` + `test/install` categories
 This project stands on the shoulders of others:
 
 - **[Boris Tane's Claude Code workflow](https://boristane.com/blog/how-i-use-claude-code/)** — The review-cycle discipline and think-before-you-code guardrails originated in Boris's research → plan → implement method. This project's first pipeline was a direct port before review artifacts became HTML-native.
-- **[Matt Pocock's skills-TDD pipeline](https://www.aihero.dev/skills-tdd)** and the broader [skills repo](https://github.com/mattpocock/skills) — the core pipeline (`grill-with-docs → to-prd → to-issues → tdd`) and Matt's stance on vertical-slice TDD ("write one test, one implementation, repeat — batched tests describe imagined behavior, not actual behavior") drive the design of `/grill`, `/spec`, `/todo`, and the vertical-slice rewrites of `/code` and `/coach`. The standalone tools `/handoff` ([article](https://www.aihero.dev/skills-handoff)), `/prototype`, and `/review-code` (renamed from `improve-codebase-architecture`) are also ports of Matt's skills, with internal references rewritten to match this repo's naming. The format files (CONTEXT-FORMAT.md, ADR-FORMAT.md) and the LANGUAGE/DEEPENING/HTML-REPORT/INTERFACE-DESIGN supporting docs are taken directly from his repo.
+- **[Matt Pocock's skills-TDD pipeline](https://www.aihero.dev/skills-tdd)** and the broader [skills repo](https://github.com/mattpocock/skills) — the core pipeline (`grill-with-docs → to-prd → to-issues → tdd`) and Matt's stance on vertical-slice TDD ("write one test, one implementation, repeat — batched tests describe imagined behavior, not actual behavior") drive the design of `/grill`, `/spec`, `/todo`, and the vertical-slice rewrites of `/code` and `/coach`. The standalone tools `/handoff` ([article](https://www.aihero.dev/skills-handoff)), `/prototype`, and `/review-code` (renamed from `improve-codebase-architecture`) are also ports of Matt's skills, with internal references rewritten to match this repo's naming. The `model-domain` skill adapts his `domain-modeling` skill with this repository's ubiquitous-language, standalone-audit, context-map, and ADR conventions.
+The format files (CONTEXT-FORMAT.md, ADR-FORMAT.md) and the LANGUAGE/DEEPENING/HTML-REPORT/INTERFACE-DESIGN supporting docs are taken directly from his repo.
 - **[nicobailon/visual-explainer](https://github.com/nicobailon/visual-explainer)** — The `visualize` skill (renamed from `visual-explainer`) is taken wholesale from this repository, with only minor modifications. HTML visual generation is powered by this work.
 - **[kunchenguid/no-mistakes](https://github.com/kunchenguid/no-mistakes)** — Review change adapts its independent reviewer/fixer roles, intent-aware Findings, evidence-first validation, bounded repair loops, and human-owned decisions without reproducing its push gate, daemon, TUI, or delivery automation.
 - **[kunchenguid/lavish-axi](https://github.com/kunchenguid/lavish-axi)** — The local browser review loop, path-keyed sessions, element and text annotations, foreground polling, live reload, and evidence-based layout warnings inspired `review-artifact`. Relevant MIT-licensed core concepts and code were adapted into the narrower locally owned runtime; see [`skills/review-artifact/ATTRIBUTION.md`](skills/review-artifact/ATTRIBUTION.md).

@@ -13,7 +13,7 @@ Coach the user through approved vertical-slice tasks **one slice at a time, one 
 - An approved canonical `tasks.html` in a feature directory under `docs/features/`.
 Resolve it from `$ARGUMENTS` (a path or slug), or with no argument find the most recent `docs/features/*/tasks.html` and confirm it.
 - The user has explicitly approved the tasks (do not assume approval).
-- `CONTEXT.md` and relevant ADRs have been read so test names use the project's vocabulary.
+- The root `CONTEXT.md`, or `CONTEXT-MAP.md` and relevant subordinate context files, plus relevant ADRs have been read so test names use the project's **ubiquitous language**: the shared canonical vocabulary used by domain experts, users, documentation, tests, and code.
 
 See [../shared/references/build-pipeline.md](../shared/references/build-pipeline.md) for file conventions and visual-sync rules. See [../shared/references/testable-interfaces.md](../shared/references/testable-interfaces.md) for how spec Testing Decisions and task Test surfaces determine where tests attach.
 
@@ -63,12 +63,13 @@ For each acceptance criterion:
 
 ## Process
 
-1. **Read context** — canonical `tasks.html`, its linked `specs.html`, `CONTEXT.md`, and ADRs.
+1. **Read context** — canonical `tasks.html`, its linked `specs.html`, the root `CONTEXT.md` or mapped context files, and ADRs.
+Use the ubiquitous language from the applicable context files throughout tests and guidance.
 Announce the plan: one slice at a time, one test at a time; confirm Slice 1's interface before writing any test.
 
 2. **For each slice (dependency order):**
    - **Confirm interface** — present the proposed public interface from the slice's Test surface and the spec's Testing Decisions (deep, not shallow). This is a seam check, not a request for the user to decide whether tests are needed. Wait for the user's confirmation before writing any test.
-   - **Tracer bullet** — write ONE failing test (end-to-end happy path) through that interface using `CONTEXT.md` vocabulary. Run it to confirm it fails for the right reason. Show the user the test and failure output; wait for them to implement.
+   - **Tracer bullet** — write ONE failing test (end-to-end happy path) through that interface using the ubiquitous language. Run it to confirm it fails for the right reason. Show the user the test and failure output; wait for them to implement.
    - **Verify** — when the user signals they're done (any "ready to check" sentiment, not a specific keyword), run the test. If GREEN, move to the next criterion. If RED, show the failure and guide debugging — **do not write the fix**.
    - **Incremental loop** — for each remaining criterion: write ONE next test → wait for the user → verify. **One test at a time. NEVER queue up multiple tests. Do NOT preview future tests.**
    - **Refactor together** (only while GREEN) — offer refactor candidates; guide one step at a time, re-running tests after each.
@@ -88,7 +89,7 @@ Wrap up per [../shared/references/implementation-completion.md](../shared/refere
 2. **Guide, don't implement.** During the slice loop you write tests; the user writes code. Provide hints, explain APIs, point at examples — but do not write the fix.
 3. **Test through the interface.** Behavior, not implementation.
 4. **Be patient — silently.** Wait for the user. Do not write the next test, do not poll their files for hidden progress, do not switch to `/code` because reminders fire or the room goes quiet. The only exit from the waiting state is an explicit user signal (see *Holding the line*).
-5. **`CONTEXT.md` vocabulary everywhere** — test names, helper names, error messages.
+5. **Ubiquitous language everywhere** — use the canonical terms from `CONTEXT.md` in test names, helper names, and error messages.
 6. **Post-completion hygiene is AI-driven** — once tests pass and verification is clean, the AI applies SAFE mechanical cleanup; Review change later handles final Findings, documentation, and visuals while preserving coached ownership of source and tests.
 7. **NEVER commit to version control** — no `git add`, `git commit`, or `git push`.
 

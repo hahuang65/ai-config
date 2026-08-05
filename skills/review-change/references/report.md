@@ -28,7 +28,8 @@ Generate control IDs from workflow-owned safe identifiers rather than user text.
 Render an Untrusted URL as text unless the workflow validates it as an expected `https:` provider URL or a report-owned local artifact URL before assigning it to a link target.
 Keep resolved Findings in history but separate them visually from current Findings.
 Write all visible report content in plain language.
-Prefer wording from `CONTEXT.md`, Authoritative intent, source, tests, and project documentation, then common technical terms the user is likely to know.
+Prefer the ubiquitous language from the root `CONTEXT.md`, or from relevant subordinate context files selected through `CONTEXT-MAP.md`.
+Then prefer wording from Authoritative intent, source, tests, and project documentation, followed by common technical terms the user is likely to know.
 Define any unavoidable unfamiliar term beside its first use.
 Show human-readable labels as the primary text for machine values such as severity, action, disposition, and stage status; keep exact machine values in secondary metadata only when they help diagnose or submit the review.
 Render each Finding card's primary anchor in the card header using the same compact treatment: a right-aligned, high-contrast, monospaced badge with a visible border, rounded corners, and semibold text.

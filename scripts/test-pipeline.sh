@@ -230,8 +230,64 @@ test_command_prompts() {
 }
 
 # ---------------------------------------------------------------------------
-# 4. Phase: grill
+# 4. Domain modeling and grill
 # ---------------------------------------------------------------------------
+
+test_skill_model_domain() {
+  section "Skill: model-domain"
+  local file="$REPO_DIR/skills/model-domain/SKILL.md"
+  local label="skills/model-domain/SKILL.md"
+  [[ -f "$file" ]] || { fail "$label" "file not found"; return; }
+  local content
+  content="$(gather_skill_content model-domain)"
+
+  check_content_cached "$content" "$label" "[Uu]biquitous language"
+  check_content_cached "$content" "$label" "domain experts.*documentation.*tests.*code"
+  check_content_cached "$content" "$label" "[Bb]uild [Ff]rom [Ss]cratch"
+  check_content_cached "$content" "$label" "[Aa]ugment"
+  check_content_cached "$content" "$label" "[Aa]udit and [Cc]ondense"
+  check_content_cached "$content" "$label" "CONTEXT-MAP\.md"
+  check_content_cached "$content" "$label" "[Cc]hallenge [Aa]gainst the [Gg]lossary"
+  check_content_cached "$content" "$label" "[Ss]harpen [Ff]uzzy [Ll]anguage"
+  check_content_cached "$content" "$label" "[Cc]ross-[Rr]eference [Ww]ith [Cc]ode"
+  check_content_cached "$content" "$label" "[Uu]pdate [Cc]ontext [Aa]rtifacts [Ii]nline"
+  check_content_cached "$content" "$label" "[Hh]ard to reverse"
+  check_content_cached "$content" "$label" "real trade-off"
+}
+
+test_ubiquitous_language_contract() {
+  section "Ubiquitous language contract"
+  local content context_file label skill_file skill_name stale_aliases
+  while read -r context_file; do
+    [[ -z "$context_file" ]] && continue
+    label="${context_file#"$REPO_DIR/"}"
+    check_content_cached "$(cat "$context_file")" "$label" "[Uu]biquitous language"
+  done < <(grep -RIl 'CONTEXT\.md' "$REPO_DIR/skills" "$REPO_DIR/agents" --include='*.md' | sort)
+
+  for skill_name in build grill prototype review-code spec todo; do
+    skill_file="$REPO_DIR/skills/$skill_name/SKILL.md"
+    content="$(cat "$skill_file")"
+    check_content_cached "$content" "skills/$skill_name/SKILL.md" "../model-domain/SKILL\.md"
+    check_content_cached "$content" "skills/$skill_name/SKILL.md" "[Uu]biquitous language"
+  done
+
+  for context_file in \
+    skills/coach/SKILL.md \
+    skills/code/SKILL.md \
+    skills/model-domain/SKILL.md \
+    skills/review-change/references/workflow.md \
+    skills/review-code/SKILL.md \
+    skills/spec/SKILL.md \
+    skills/todo/SKILL.md \
+    skills/visualize/SKILL.md; do
+    check_content_cached "$(cat "$REPO_DIR/$context_file")" "$context_file" "CONTEXT-MAP\.md"
+  done
+
+  stale_aliases="$(grep -REil 'CONTEXT\.md.{0,15}vocabular|domain language|project vocabulary' "$REPO_DIR/skills" "$REPO_DIR/agents" --include='*.md' || true)"
+  [[ -z "$stale_aliases" ]] \
+    && pass "skills and agents use ubiquitous language instead of glossary aliases" \
+    || fail "ubiquitous language" "stale aliases found in: $(echo "$stale_aliases" | sed "s|$REPO_DIR/||" | paste -sd, -)"
+}
 
 test_phase_grill() {
   section "Phase: grill"
@@ -246,13 +302,10 @@ test_phase_grill() {
   check_content_cached "$content" "$label" "wait for the user's answers"
   check_content_cached "$content" "$label" "[Dd]efer.*dependent question"
   check_content_cached "$content" "$label" "recommended answer"
+  check_content_cached "$content" "$label" "../model-domain/SKILL\.md"
+  check_content_cached "$content" "$label" "[Uu]biquitous language"
   check_content_cached "$content" "$label" "CONTEXT\.md"
   check_content_cached "$content" "$label" "docs/adr/"
-  check_content_cached "$content" "$label" "[Cc]hallenge against the glossary"
-  check_content_cached "$content" "$label" "[Ss]harpen fuzzy language"
-  check_content_cached "$content" "$label" "[Cc]ross-reference with code"
-  check_content_cached "$content" "$label" "[Hh]ard to reverse"
-  check_content_cached "$content" "$label" "real trade-off"
   check_content_cached "$content" "$label" "draft the spec"
 }
 
@@ -470,7 +523,7 @@ test_phase_review_change() {
   check_content_cached "$content" "$label" "hidden text node.*textContent.*event-handler attribute.*persistently mark"
   check_content_cached "$content" "$label" "pull-request copy section.*severity.*path:line.*outside.*Markdown text.*copy-icon button.*general review.*every Finding comment.*recolor or collapse"
   check_content_cached "$content" "$label" "legend.*severity.*error.*warning.*info.*action.*auto-fix.*ask-user.*no-op.*standalone tags never trigger a mutation"
-  check_content_cached "$content" "$label" "plain language.*CONTEXT[.]md.*Authoritative intent.*source.*tests.*project documentation.*common technical terms"
+  check_content_cached "$content" "$label" "plain language.*ubiquitous language.*Authoritative intent.*source.*tests.*project documentation.*common technical terms"
   check_content_cached "$content" "$label" "[Dd]efine.*(new|unfamiliar) term.*(first use|beside)"
   check_content_cached "$content" "$label" "self-contained.*HTML.*(OS|operating system).*temp.*review-artifact.*one HTML.*form.*[Cc]hat fallback"
   check_content_cached "$content" "$label" "dynamic value.*Untrusted.*Encode.*HTML text or attribute context.*textContent.*value.*never.*innerHTML"
@@ -1619,6 +1672,8 @@ run_content() {
   run test_frontmatter_skills
   run test_frontmatter_agents
   run test_command_prompts
+  run test_skill_model_domain
+  run test_ubiquitous_language_contract
   run test_phase_grill
   run test_phase_spec
   run test_phase_todo
@@ -1665,6 +1720,7 @@ run_selected() {
     frontmatter-skills)        run test_frontmatter_skills ;;
     frontmatter-agents)        run test_frontmatter_agents ;;
     command-prompts)           run test_command_prompts ;;
+    ubiquitous-language)       run test_ubiquitous_language_contract ;;
     cross-references)          run test_cross_references ;;
     unique-adr-ids)            run test_unique_adr_ids ;;
     agent-rule-deps)           run test_agent_rule_deps ;;
