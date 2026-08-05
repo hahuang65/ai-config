@@ -1,0 +1,363 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Orchard Quarantine Repair Tasks</title>
+  <style>
+    :root {
+      color-scheme: light dark;
+      --font-body: "Avenir Next", Avenir, "Segoe UI", sans-serif;
+      --font-display: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+      --font-mono: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+      --paper: #f3efe4;
+      --surface: #fffaf0;
+      --surface-raised: #fffdf7;
+      --surface-recessed: #ebe5d7;
+      --ink: #20251f;
+      --ink-dim: #657065;
+      --rule: #d5ccbb;
+      --rule-strong: #b9ad99;
+      --pine: #275d46;
+      --pine-soft: #dce9df;
+      --rust: #a34e2d;
+      --rust-soft: #f3ded2;
+      --amber: #926514;
+      --amber-soft: #f5e9c9;
+      --shadow: 0 18px 45px rgba(56, 47, 30, .09);
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --paper: #171a17;
+        --surface: #20241f;
+        --surface-raised: #262b25;
+        --surface-recessed: #191d19;
+        --ink: #eef0e8;
+        --ink-dim: #a6aea3;
+        --rule: #3b443b;
+        --rule-strong: #596358;
+        --pine: #82c5a2;
+        --pine-soft: #263e31;
+        --rust: #e79773;
+        --rust-soft: #4a2d23;
+        --amber: #e1bd69;
+        --amber-soft: #43371f;
+        --shadow: 0 18px 45px rgba(0, 0, 0, .24);
+      }
+    }
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      padding: 28px 36px 80px;
+      overflow-wrap: break-word;
+      color: var(--ink);
+      background-color: var(--paper);
+      background-image: repeating-linear-gradient(0deg, transparent, transparent 31px, color-mix(in srgb, var(--rule) 24%, transparent) 32px);
+      font: 16px/1.65 var(--font-body);
+    }
+    a { color: var(--pine); text-decoration-thickness: 1px; text-underline-offset: 3px; }
+    code { padding: .12rem .38rem; border-radius: 4px; background: var(--surface-recessed); color: var(--ink); font: .88em var(--font-mono); }
+    .wrap { max-width: 1360px; margin: 0 auto; display: grid; grid-template-columns: 188px minmax(0, 1fr); gap: 0 44px; }
+    .main { min-width: 0; }
+    .toc { position: sticky; top: 24px; align-self: start; grid-row: 1 / -1; max-height: calc(100dvh - 48px); padding: 16px 0; overflow-y: auto; }
+    .toc-title { margin-bottom: 9px; padding-bottom: 10px; border-bottom: 1px solid var(--rule); color: var(--ink-dim); font: 700 9px var(--font-mono); letter-spacing: 2px; text-transform: uppercase; }
+    .toc a { display: block; margin: 2px 0; padding: 6px 9px; border-left: 2px solid transparent; border-radius: 4px; color: var(--ink-dim); font-size: 11px; line-height: 1.35; text-decoration: none; }
+    .toc a:hover { color: var(--ink); background: var(--surface-recessed); }
+    .toc a.active { border-left-color: var(--rust); color: var(--ink); background: var(--surface); }
+    header { position: relative; padding: clamp(42px, 7vw, 78px) clamp(26px, 6vw, 72px) 48px; overflow: hidden; border: 1px solid var(--rule); border-radius: 2px 2px 24px 2px; background: var(--surface-raised); box-shadow: var(--shadow); }
+    header::after { content: "06"; position: absolute; right: 24px; bottom: -34px; color: color-mix(in srgb, var(--pine) 13%, transparent); font: 800 12rem/.8 var(--font-display); }
+    .kicker { color: var(--rust); font: 750 11px var(--font-mono); letter-spacing: 2.2px; text-transform: uppercase; }
+    h1 { position: relative; z-index: 1; max-width: 900px; margin: 12px 0 18px; font: 700 clamp(3rem, 7vw, 6rem)/.94 var(--font-display); letter-spacing: -.055em; }
+    .lede { position: relative; z-index: 1; max-width: 760px; margin: 0; color: var(--ink-dim); font-size: clamp(1.08rem, 2vw, 1.28rem); }
+    .summary { position: relative; z-index: 1; display: flex; flex-wrap: wrap; gap: 8px; margin-top: 25px; }
+    .badge { display: inline-block; padding: 4px 8px; border: 1px solid var(--rule); border-radius: 3px; background: var(--paper); color: var(--ink-dim); font: 10px var(--font-mono); letter-spacing: .05em; }
+    .badge--afk { border-color: var(--pine); background: var(--pine-soft); color: var(--pine); }
+    .badge--pending { border-color: var(--amber); background: var(--amber-soft); color: var(--amber); }
+    section { margin-top: 28px; padding: clamp(24px, 4vw, 42px); border: 1px solid var(--rule); border-radius: 2px 18px 2px 2px; background: color-mix(in srgb, var(--surface) 96%, transparent); }
+    .sec-head { display: grid; grid-template-columns: 44px minmax(0, 1fr); align-items: end; gap: 14px; margin-bottom: 22px; }
+    .sec-num { color: var(--rust); font: 700 12px var(--font-mono); letter-spacing: 1px; }
+    h2 { margin: 0; font: 680 clamp(1.8rem, 4vw, 2.8rem)/1.05 var(--font-display); letter-spacing: -.025em; }
+    h3 { margin: 0; font: 680 1.35rem/1.15 var(--font-display); }
+    p { max-width: 80ch; }
+    .source { margin-top: 18px; font-size: .9rem; }
+    .graph { display: grid; grid-template-columns: repeat(5, minmax(125px, 1fr)); gap: 12px; align-items: stretch; }
+    .track { display: contents; }
+    .graph-card { min-width: 0; padding: 15px; border: 1px solid var(--rule); background: var(--surface-raised); }
+    .graph-card strong { display: block; color: var(--pine); font: 650 1rem var(--font-display); }
+    .graph-card small { color: var(--ink-dim); }
+    .graph-arrow { display: grid; place-items: center; color: var(--rust); font: 14px var(--font-mono); }
+    .graph-card--s1 { grid-column: 1 / 3; }
+    .graph-card--s2 { grid-column: 4 / 6; }
+    .arrow--guard { grid-column: 3; grid-row: 1; }
+    .graph-card--s3 { grid-column: 1; grid-row: 2; }
+    .arrow--s3 { grid-column: 2; grid-row: 2; }
+    .graph-card--s4 { grid-column: 3; grid-row: 2; }
+    .arrow--s4 { grid-column: 4; grid-row: 2; }
+    .parallel { grid-column: 5; grid-row: 2; display: grid; gap: 8px; }
+    .slice-list { display: grid; gap: 20px; }
+    .slice { min-width: 0; padding: clamp(22px, 4vw, 34px); border: 1px solid var(--rule); border-left: 5px solid var(--pine); background: var(--surface-raised); box-shadow: 0 5px 18px rgba(56, 47, 30, .05); }
+    .slice-head { display: grid; grid-template-columns: 52px minmax(0, 1fr) auto; gap: 14px; align-items: start; }
+    .slice-id { display: grid; width: 42px; height: 42px; place-items: center; border: 1px solid var(--rust); color: var(--rust); font: 750 11px var(--font-mono); }
+    .slice-subtitle { margin: 5px 0 0; color: var(--ink-dim); font-size: .92rem; }
+    .meta-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; margin: 20px 0; }
+    .meta-item { min-width: 0; padding: 10px 12px; background: var(--surface-recessed); }
+    .meta-label { display: block; margin-bottom: 4px; color: var(--ink-dim); font: 700 9px var(--font-mono); letter-spacing: 1px; text-transform: uppercase; }
+    .meta-value { font-size: .9rem; }
+    .build { margin: 18px 0; padding: 15px 18px; border-left: 3px solid var(--rust); background: var(--rust-soft); }
+    .build strong { color: var(--rust); }
+    .criteria-title { margin: 20px 0 8px; color: var(--pine); font: 700 10px var(--font-mono); letter-spacing: 1.4px; text-transform: uppercase; }
+    .criteria { margin: 0; padding: 0; list-style: none; }
+    .criteria li { position: relative; margin: 0; padding: 9px 82px 9px 34px; border-top: 1px solid var(--rule); }
+    .criteria li::before { content: ""; position: absolute; top: 14px; left: 10px; width: 9px; height: 9px; border: 1px solid var(--amber); background: var(--amber-soft); }
+    .criteria li::after { content: attr(data-status); position: absolute; top: 10px; right: 8px; color: var(--amber); font: 700 9px var(--font-mono); letter-spacing: .7px; text-transform: uppercase; }
+    .criteria li[data-status="complete"]::before { border-color: var(--pine); background: var(--pine); }
+    .criteria li[data-status="complete"]::after { color: var(--pine); }
+    footer { padding: 30px 8px 10px; color: var(--ink-dim); font: 10px var(--font-mono); letter-spacing: 1px; text-align: center; text-transform: uppercase; }
+    @media (max-width: 1000px) {
+      body { padding-top: 0; }
+      .wrap { grid-template-columns: 1fr; }
+      .toc { position: sticky; top: 0; z-index: 20; grid-row: auto; display: flex; gap: 4px; align-items: center; max-height: none; margin: 0 -36px 20px; padding: 10px 36px; overflow-x: auto; border-bottom: 1px solid var(--rule); background: var(--paper); }
+      .toc-title { display: none; }
+      .toc a { flex-shrink: 0; margin: 0; border-left: 0; border-bottom: 2px solid transparent; white-space: nowrap; }
+      .toc a.active { border-left: 0; border-bottom-color: var(--rust); }
+      .sec-head, .slice { scroll-margin-top: 58px; }
+      .meta-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
+    @media (max-width: 760px) {
+      body { padding-right: 16px; padding-left: 16px; }
+      .toc { margin-right: -16px; margin-left: -16px; padding-right: 16px; padding-left: 16px; }
+      .graph { grid-template-columns: 1fr; }
+      .graph-card, .graph-card--s1, .graph-card--s2, .graph-card--s3, .graph-card--s4, .parallel, .graph-arrow { grid-column: 1; grid-row: auto; }
+      .graph-arrow { min-height: 16px; transform: rotate(90deg); }
+      .slice-head { grid-template-columns: 46px minmax(0, 1fr); }
+      .slice-head > .badge { grid-column: 2; justify-self: start; }
+      .meta-grid { grid-template-columns: 1fr; }
+      header::after { opacity: .4; }
+    }
+  </style>
+</head>
+<body>
+<div class="wrap">
+  <nav class="toc" id="toc" aria-label="Task slices">
+    <div class="toc-title">Task slices</div>
+    <a href="#overview">Overview</a>
+    <a href="#dependency-graph">Dependencies</a>
+    <a href="#S1">S1 · Common switch guard</a>
+    <a href="#S2">S2 · Full binding guard</a>
+    <a href="#S3">S3 · Visible quarantine</a>
+    <a href="#S4">S4 · Explicit repair</a>
+    <a href="#S5">S5 · Identity failures</a>
+    <a href="#S6">S6 · Stable ownership</a>
+  </nav>
+
+  <main class="main" data-artifact-kind="tasks" data-artifact-version="1">
+    <header id="overview">
+      <div class="kicker">Approved spec → tracer-bullet plan</div>
+      <h1>Orchard Quarantine Repair Tasks</h1>
+      <p class="lede">Six independently verifiable slices: two prevent harness mistakes, then four make quarantine visible and explicitly repairable without weakening fail-closed recovery.</p>
+      <div class="summary">
+        <span class="badge badge--afk">6 AFK</span>
+        <span class="badge">0 HITL</span>
+        <span class="badge badge--afk">6 complete · 0 pending</span>
+        <span class="badge">24 stories covered</span>
+      </div>
+      <p class="source">Source: <a href="specs.html">Orchard Quarantine Repair Spec</a></p>
+    </header>
+
+    <section id="dependency-graph">
+      <div class="sec-head"><span class="sec-num">01</span><h2>Dependency Graph</h2></div>
+      <div class="graph" aria-label="Task dependency graph">
+        <div class="graph-card graph-card--s1"><strong>S1 · Common switch guard</strong><small>Immediate incident prevention across harnesses.</small></div>
+        <div class="graph-arrow arrow--guard" aria-hidden="true">→</div>
+        <div class="graph-card graph-card--s2"><strong>S2 · Full binding guard</strong><small>Equivalent commands and effective targets.</small></div>
+        <div class="graph-card graph-card--s3"><strong>S3 · Visible quarantine</strong><small>Structured durable evidence.</small></div>
+        <div class="graph-arrow arrow--s3" aria-hidden="true">→</div>
+        <div class="graph-card graph-card--s4"><strong>S4 · Explicit repair</strong><small>Verified happy path and discovery.</small></div>
+        <div class="graph-arrow arrow--s4" aria-hidden="true">→</div>
+        <div class="parallel">
+          <div class="graph-card"><strong>S5 · Identity failures</strong><small>Ambiguity remains quarantined.</small></div>
+          <div class="graph-card"><strong>S6 · Stable ownership</strong><small>Operations and owners are safe.</small></div>
+        </div>
+      </div>
+      <p>The prevention track and Orchard recovery track can proceed independently. S5 and S6 can be grabbed in parallel after S4 establishes the repair interface.</p>
+    </section>
+
+    <section id="slices">
+      <div class="sec-head"><span class="sec-num">02</span><h2>Vertical Slices</h2></div>
+      <div class="slice-list">
+
+        <article class="slice" id="S1" data-slice-id="S1" data-status="complete" data-mode="AFK" data-dependencies="" data-stories="1,5,6">
+          <div class="slice-head">
+            <span class="slice-id">S1</span>
+            <div><h3>Block the common harness branch switch</h3><p class="slice-subtitle">Close the exact incident path end to end without changing manual Git.</p></div>
+            <span class="badge badge--afk">AFK · complete</span>
+          </div>
+          <div class="meta-grid">
+            <div class="meta-item"><span class="meta-label">Dependencies</span><span class="meta-value">None</span></div>
+            <div class="meta-item"><span class="meta-label">Stories</span><span class="meta-value">1, 5, 6</span></div>
+            <div class="meta-item"><span class="meta-label">Mode</span><span class="meta-value">AFK — deterministic guard behavior</span></div>
+            <div class="meta-item"><span class="meta-label">Test surface</span><span class="meta-value">Shared policy evaluator and harness adapters</span></div>
+          </div>
+          <div class="build"><strong>What to build.</strong> Add a mandatory branch-binding policy that receives caller location, blocks an unscoped <code>git switch</code> when the harness is inside Orchard, permits the same command in an ordinary checkout, and projects the decision through both harness adapters and the generated pi guard.</div>
+          <div class="criteria-title">Acceptance criteria</div>
+          <ul class="criteria">
+            <li data-criterion-id="S1-C1" data-status="complete">An unscoped <code>git switch</code> from any directory beneath Orchard is blocked before execution with a branch-binding-specific refusal.</li>
+            <li data-criterion-id="S1-C2" data-status="complete">The same command from an ordinary checkout remains allowed by this policy.</li>
+            <li data-criterion-id="S1-C3" data-status="complete">Pi forwards its tool-call context directory and Claude forwards its hook payload directory into the shared policy input.</li>
+            <li data-criterion-id="S1-C4" data-status="complete">The policy registry pins violating and benign boundary examples and marks the guarantee mandatory for every harness.</li>
+            <li data-criterion-id="S1-C5" data-status="complete">Conformance proves both harnesses block the violating example, and the committed pi projection rebuilds without drift.</li>
+            <li data-criterion-id="S1-C6" data-status="complete">No terminal command interception, Git hook, or manual-Git restriction is introduced.</li>
+          </ul>
+        </article>
+
+        <article class="slice" id="S2" data-slice-id="S2" data-status="complete" data-mode="AFK" data-dependencies="S1" data-stories="2,3,4,5">
+          <div class="slice-head">
+            <span class="slice-id">S2</span>
+            <div><h3>Guard every recognizable branch-binding change</h3><p class="slice-subtitle">Resolve explicit targets accurately and avoid blocking file restoration.</p></div>
+            <span class="badge badge--afk">AFK · complete</span>
+          </div>
+          <div class="meta-grid">
+            <div class="meta-item"><span class="meta-label">Dependencies</span><span class="meta-value">S1</span></div>
+            <div class="meta-item"><span class="meta-label">Stories</span><span class="meta-value">2, 3, 4, 5</span></div>
+            <div class="meta-item"><span class="meta-label">Mode</span><span class="meta-value">AFK — parser boundary is specified</span></div>
+            <div class="meta-item"><span class="meta-label">Test surface</span><span class="meta-value">Shared policy evaluator</span></div>
+          </div>
+          <div class="build"><strong>What to build.</strong> Extend the guard to resolve unscoped, explicit Git-target, and literal directory-change contexts; recognize all agreed direct branch-binding mutations; allow explicit checkout path mode and restore; and guide cross-repository harness work toward an absolute Git target.</div>
+          <div class="criteria-title">Acceptance criteria</div>
+          <ul class="criteria">
+            <li data-criterion-id="S2-C1" data-status="complete">Switch, branch-mode checkout, branch rename flags, symbolic <code>HEAD</code> reassignment, and direct <code>HEAD</code> update are blocked when their effective target is beneath Orchard.</li>
+            <li data-criterion-id="S2-C2" data-status="complete">Explicit checkout path mode, restore, help, and read-only Git commands remain allowed.</li>
+            <li data-criterion-id="S2-C3" data-status="complete">An explicit Git target outside Orchard is allowed even when the harness caller directory is managed.</li>
+            <li data-criterion-id="S2-C4" data-status="complete">An explicit Git target into Orchard is blocked from an ordinary caller directory.</li>
+            <li data-criterion-id="S2-C5" data-status="complete">Literal directory changes, relative paths, home-relative paths, command chains, and absolute Git executable names receive deterministic target resolution.</li>
+            <li data-criterion-id="S2-C6" data-status="complete">The refusal recommends explicit absolute Git scoping and does not claim to evaluate dynamic variables, aliases, scripts, or nested programs.</li>
+          </ul>
+        </article>
+
+        <article class="slice" id="S3" data-slice-id="S3" data-status="complete" data-mode="AFK" data-dependencies="" data-stories="7,8,9,10">
+          <div class="slice-head">
+            <span class="slice-id">S3</span>
+            <div><h3>Make durable quarantine visible and structured</h3><p class="slice-subtitle">Turn a hidden dead end into inspectable evidence without enabling repair yet.</p></div>
+            <span class="badge badge--afk">AFK · complete</span>
+          </div>
+          <div class="meta-grid">
+            <div class="meta-item"><span class="meta-label">Dependencies</span><span class="meta-value">None</span></div>
+            <div class="meta-item"><span class="meta-label">Stories</span><span class="meta-value">7, 8, 9, 10</span></div>
+            <div class="meta-item"><span class="meta-label">Mode</span><span class="meta-value">AFK — additive state and output contract</span></div>
+            <div class="meta-item"><span class="meta-label">Test surface</span><span class="meta-value">Branch-binding verifier and spawned status command</span></div>
+          </div>
+          <div class="build"><strong>What to build.</strong> Introduce reusable branch-binding inspection, record stable evidence for every quarantine cause, and render quarantined task worktrees in scoped and global human status while preserving the existing versioned machine envelope.</div>
+          <div class="criteria-title">Acceptance criteria</div>
+          <ul class="criteria">
+            <li data-criterion-id="S3-C1" data-status="complete">A branch mismatch records a stable code, human reason, expected branch, observed branch or detached state, observed commit, and detection time.</li>
+            <li data-criterion-id="S3-C2" data-status="complete">Missing metadata, available-slot branch conflict, duplicate registration, and reconstructed role conflict receive distinct stable codes.</li>
+            <li data-criterion-id="S3-C3" data-status="complete">Human status shows quarantine intent, exact path, expected and observed branch state, reason, and detection time with distinct color and no-color presentation.</li>
+            <li data-criterion-id="S3-C4" data-status="complete">JSON status exposes structured evidence without requiring consumers to parse human reason text.</li>
+            <li data-criterion-id="S3-C5" data-status="complete">Restoring the expected branch and refreshing status leaves quarantine intact and visible.</li>
+            <li data-criterion-id="S3-C6" data-status="complete">Recovery inspection and state writes run under the project lock, and ordinary lifecycle commands continue excluding quarantined slots.</li>
+          </ul>
+        </article>
+
+        <article class="slice" id="S4" data-slice-id="S4" data-status="complete" data-mode="AFK" data-dependencies="S3" data-stories="10,11,12,13,16,20,21,22,23,24">
+          <div class="slice-head">
+            <span class="slice-id">S4</span>
+            <div><h3>Repair a proven branch binding explicitly</h3><p class="slice-subtitle">Deliver the complete happy path from discovery through audited metadata restoration.</p></div>
+            <span class="badge badge--afk">AFK · complete</span>
+          </div>
+          <div class="meta-grid">
+            <div class="meta-item"><span class="meta-label">Dependencies</span><span class="meta-value">S3</span></div>
+            <div class="meta-item"><span class="meta-label">Stories</span><span class="meta-value">10–13, 16, 20–24</span></div>
+            <div class="meta-item"><span class="meta-label">Mode</span><span class="meta-value">AFK — explicit command with fixed proof</span></div>
+            <div class="meta-item"><span class="meta-label">Test surface</span><span class="meta-value">Repair service and spawned Orchard command</span></div>
+          </div>
+          <div class="build"><strong>What to build.</strong> Add the repair command, infer the quarantined slot from its exact worktree or require intent from the main project directory, validate the restored branch binding through shared Git metadata inspection, permit ordinary dirty work, atomically restore task lifecycle, retain an audit, and expose human, JSON, help, and completion behavior.</div>
+          <div class="criteria-title">Acceptance criteria</div>
+          <ul class="criteria">
+            <li data-criterion-id="S4-C1" data-status="complete">Repair succeeds from the exact quarantined worktree without intent and from the main project directory with explicit intent.</li>
+            <li data-criterion-id="S4-C2" data-status="complete">A supplied intent inside the quarantined worktree must match that exact slot.</li>
+            <li data-criterion-id="S4-C3" data-status="complete">The assigned branch must be checked out at the registered canonical path and uniquely agree with Git worktree metadata.</li>
+            <li data-criterion-id="S4-C4" data-status="complete">Staged, unstaged, and untracked task changes are allowed and reported.</li>
+            <li data-criterion-id="S4-C5" data-status="complete">Success restores lifecycle <code>task</code>, clears active quarantine, and records the prior evidence plus repair time in <code>lastRepair</code>.</li>
+            <li data-criterion-id="S4-C6" data-status="complete">Human and JSON outcomes report the non-mutated accidental branch, dirty indicator, and verification evidence.</li>
+            <li data-criterion-id="S4-C7" data-status="complete">Snapshots prove repair changes no file, index entry, <code>HEAD</code>, ref, branch tip, or Git worktree metadata.</li>
+            <li data-criterion-id="S4-C8" data-status="complete">Top-level and command help describe repair safety, and completion lists only eligible branch-mismatch quarantine intents in the current project.</li>
+            <li data-criterion-id="S4-C9" data-status="complete">A second repair attempt fails unchanged because the slot is no longer quarantined.</li>
+          </ul>
+        </article>
+
+        <article class="slice" id="S5" data-slice-id="S5" data-status="complete" data-mode="AFK" data-dependencies="S4" data-stories="14,15,20">
+          <div class="slice-head">
+            <span class="slice-id">S5</span>
+            <div><h3>Keep ambiguous identity quarantined</h3><p class="slice-subtitle">Prove that repair cannot claim the wrong path, branch, project, or quarantine cause.</p></div>
+            <span class="badge badge--afk">AFK · complete</span>
+          </div>
+          <div class="meta-grid">
+            <div class="meta-item"><span class="meta-label">Dependencies</span><span class="meta-value">S4</span></div>
+            <div class="meta-item"><span class="meta-label">Stories</span><span class="meta-value">14, 15, 20</span></div>
+            <div class="meta-item"><span class="meta-label">Mode</span><span class="meta-value">AFK — fail-closed identity matrix</span></div>
+            <div class="meta-item"><span class="meta-label">Test surface</span><span class="meta-value">Repair service with real temporary repositories</span></div>
+          </div>
+          <div class="build"><strong>What to build.</strong> Complete repair’s identity boundary so unsupported caller locations, unstructured or non-branch quarantine, wrong project or task role, missing metadata, and duplicate durable or Git registrations all fail without changing any durable or Git state.</div>
+          <div class="criteria-title">Acceptance criteria</div>
+          <ul class="criteria">
+            <li data-criterion-id="S5-C1" data-status="complete">Repair is rejected from unrelated repositories and from linked worktrees other than the exact quarantined path.</li>
+            <li data-criterion-id="S5-C2" data-status="complete">Legacy unstructured quarantine and every structured non-branch quarantine code remain ineligible without parsing reason text.</li>
+            <li data-criterion-id="S5-C3" data-status="complete">The registered project, Git common directory, task-path role, and intent-path association must all agree.</li>
+            <li data-criterion-id="S5-C4" data-status="complete">Missing path metadata, wrong current branch, detached <code>HEAD</code>, duplicate path ownership, duplicate branch ownership, and duplicate durable registration each fail distinctly.</li>
+            <li data-criterion-id="S5-C5" data-status="complete">Canonical path aliases cannot make another worktree appear to be the registered slot.</li>
+            <li data-criterion-id="S5-C6" data-status="complete">Every failed identity check preserves quarantine, audit absence, owners, timestamps, files, refs, and Git worktree metadata exactly.</li>
+          </ul>
+        </article>
+
+        <article class="slice" id="S6" data-slice-id="S6" data-status="complete" data-mode="AFK" data-dependencies="S4" data-stories="17,18,19,20,23">
+          <div class="slice-head">
+            <span class="slice-id">S6</span>
+            <div><h3>Require stable Git state and non-conflicting ownership</h3><p class="slice-subtitle">Close the concurrency and operation-state gaps around an otherwise valid identity.</p></div>
+            <span class="badge badge--afk">AFK · complete</span>
+          </div>
+          <div class="meta-grid">
+            <div class="meta-item"><span class="meta-label">Dependencies</span><span class="meta-value">S4</span></div>
+            <div class="meta-item"><span class="meta-label">Stories</span><span class="meta-value">17–20, 23</span></div>
+            <div class="meta-item"><span class="meta-label">Mode</span><span class="meta-value">AFK — deterministic liveness and Git state</span></div>
+            <div class="meta-item"><span class="meta-label">Test surface</span><span class="meta-value">Repair service and concurrent command behavior</span></div>
+          </div>
+          <div class="build"><strong>What to build.</strong> Refresh owner liveness under the project lock, permit zero or one live owner, reject conflicting owners and unresolved lifecycle recovery, detect every agreed in-progress Git operation, and preserve fail-closed atomic behavior under concurrent repair attempts.</div>
+          <div class="criteria-title">Acceptance criteria</div>
+          <ul class="criteria">
+            <li data-criterion-id="S6-C1" data-status="complete">Dead ownership claims are discarded before eligibility is evaluated.</li>
+            <li data-criterion-id="S6-C2" data-status="complete">Repair succeeds with zero or one live owner and preserves the surviving owner claim.</li>
+            <li data-criterion-id="S6-C3" data-status="complete">Repair fails with multiple live owners and reports conflicting ownership without changing state.</li>
+            <li data-criterion-id="S6-C4" data-status="complete">Merge, rebase, cherry-pick, revert, and bisect state each block repair even when the expected branch is checked out.</li>
+            <li data-criterion-id="S6-C5" data-status="complete">Unresolved conversion or pending cleanup recovery blocks repair.</li>
+            <li data-criterion-id="S6-C6" data-status="complete">Concurrent repair attempts serialize under the project lock; at most one succeeds and the other observes the completed lifecycle without corrupting state.</li>
+            <li data-criterion-id="S6-C7" data-status="complete">Every operation-state or ownership failure preserves quarantine and all Git facts exactly.</li>
+          </ul>
+        </article>
+
+      </div>
+    </section>
+
+    <footer>Canonical Phase 3 artifact · Status metadata is updated in place during implementation</footer>
+  </main>
+</div>
+<script>
+(function () {
+  const toc = document.getElementById("toc");
+  const links = [...toc.querySelectorAll("a")];
+  const sections = links.map((link) => ({ link, target: document.querySelector(link.getAttribute("href")) })).filter((entry) => entry.target);
+  const observer = new IntersectionObserver((entries) => {
+    for (const entry of entries) {
+      if (!entry.isIntersecting) continue;
+      links.forEach((link) => link.classList.remove("active"));
+      const current = sections.find((section) => section.target === entry.target);
+      if (!current) continue;
+      current.link.classList.add("active");
+      if (window.innerWidth <= 1000) current.link.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "center" });
+    }
+  }, { rootMargin: "-10% 0px -80% 0px" });
+  sections.forEach((section) => observer.observe(section.target));
+})();
+</script>
+</body>
+</html>

@@ -14,7 +14,7 @@ import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
 import { evaluate } from "../../../shared/guard-core";
 
 export default function (pi: ExtensionAPI): void {
-  pi.on("tool_call", (event) => {
+  pi.on("tool_call", (event, ctx) => {
     const input = (event.input ?? {}) as Record<string, unknown>;
     const rawPath = input.path ?? input.file_path;
     const rawContent = input.content ?? input.new_string;
@@ -23,6 +23,8 @@ export default function (pi: ExtensionAPI): void {
       command: input.command != null ? String(input.command) : undefined,
       path: rawPath != null ? String(rawPath) : undefined,
       content: rawContent != null ? String(rawContent) : undefined,
+      cwd: ctx?.cwd,
+      home: process.env.HOME,
     });
     if (verdict) return { block: true, reason: verdict.reason };
   });

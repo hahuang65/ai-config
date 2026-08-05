@@ -34,6 +34,22 @@ var POLICIES = [
     counterExample: { tool: "bash", command: "git push origin main" }
   },
   {
+    id: "no-orchard-branch-binding-change",
+    intent: "No harness may directly change a managed Orchard worktree's branch binding.",
+    kind: "command",
+    floor: true,
+    example: {
+      tool: "bash",
+      command: "git switch accidental-branch",
+      cwd: "/home/example/.orchard/alpha/task"
+    },
+    counterExample: {
+      tool: "bash",
+      command: "git switch feature-branch",
+      cwd: "/home/example/projects/alpha"
+    }
+  },
+  {
     id: "no-curl-pipe-shell",
     intent: "No harness may pipe a remote download into an interpreter.",
     kind: "command",
@@ -149,9 +165,11 @@ function extractSubstitutions(command) {
     /`([^`]+)`/g
   ];
   for (const re of patterns) {
-    let m;
-    while ((m = re.exec(command)) !== null)
-      found.push(m[1]);
+    let match = re.exec(command);
+    while (match !== null) {
+      found.push(match[1]);
+      match = re.exec(command);
+    }
   }
   return found;
 }
@@ -299,6 +317,68 @@ function anyPipeline(command, predicate) {
   return false;
 }
 
+// shared/orchard-branch-guard.ts
+import path from "path";
+function detectOrchardBranchBindingChange(call) {
+  if (!call.command || !call.cwd)
+    return null;
+  let currentDirectory = call.cwd;
+  for (const statement of splitStatements(call.command)) {
+    const changedDirectory = readDirectoryChange(statement, currentDirectory, call.home);
+    if (changedDirectory) {
+      currentDirectory = changedDirectory;
+      continue;
+    }
+    if (anyPipeline(statement, (stages) => stages.some((stage) => changesBranchInOrchard(tokenize(stage), currentDirectory, call.home)))) {
+      return "Refused \u2014 changing a branch binding beneath Orchard can quarantine the managed worktree. For cross-repository branch changes, use git -C <absolute-repository-path>.";
+    }
+  }
+  return null;
+}
+function changesBranchInOrchard(tokens, callerDirectory, homeDirectory) {
+  const gitIndex = tokens.findIndex((token) => token === "git" || token.endsWith("/git"));
+  if (gitIndex === -1)
+    return false;
+  const gitArguments = tokens.slice(gitIndex + 1);
+  const hasExplicitDirectory = gitArguments[0] === "-C" && Boolean(gitArguments[1]);
+  const targetDirectory = hasExplicitDirectory ? resolveTargetDirectory(callerDirectory, gitArguments[1], homeDirectory) : callerDirectory;
+  const commandIndex = hasExplicitDirectory ? 2 : 0;
+  if (!isOrchardPath(targetDirectory))
+    return false;
+  const gitCommand = gitArguments[commandIndex];
+  const commandArguments = gitArguments.slice(commandIndex + 1);
+  if (commandArguments.includes("--help"))
+    return false;
+  if (gitCommand === "switch")
+    return true;
+  if (gitCommand === "branch") {
+    return commandArguments.includes("-m") || commandArguments.includes("-M");
+  }
+  if (gitCommand === "symbolic-ref") {
+    return commandArguments[0] === "HEAD" && Boolean(commandArguments[1]);
+  }
+  if (gitCommand === "update-ref") {
+    const headIndex = commandArguments.indexOf("HEAD");
+    return headIndex >= 0 && Boolean(commandArguments[headIndex + 1]);
+  }
+  return gitCommand === "checkout" && !commandArguments.includes("--");
+}
+function resolveTargetDirectory(callerDirectory, target, homeDirectory) {
+  if (homeDirectory && (target === "~" || target.startsWith("~/"))) {
+    return path.resolve(homeDirectory, target.slice(2));
+  }
+  return path.resolve(callerDirectory, target);
+}
+function readDirectoryChange(statement, currentDirectory, homeDirectory) {
+  const tokens = tokenize(statement);
+  if (tokens[0] !== "cd" || !tokens[1])
+    return;
+  return resolveTargetDirectory(currentDirectory, tokens[1], homeDirectory);
+}
+function isOrchardPath(candidate) {
+  return /(^|[/\\])\.orchard(?:[/\\]|$)/.test(candidate);
+}
+
 // shared/guard-core.ts
 function truncate(s, max = 80) {
   return s.length > max ? `${s.slice(0, max)}\u2026` : s;
@@ -308,7 +388,8 @@ var SHELL_WRITE_PATTERNS = [
   /\btee\s+(?:-\S+\s+)*(?!\/dev\/(?:null|stderr|stdout|fd)\b)[^\s|&>-]/
 ];
 function detectShellWrite(call) {
-  if (call.command && SHELL_WRITE_PATTERNS.some((p) => p.test(call.command))) {
+  const command = call.command;
+  if (command && SHELL_WRITE_PATTERNS.some((p) => p.test(command))) {
     return "Refused \u2014 writing a file via shell redirection bypasses per-file approval. Use the write/edit tool instead.";
   }
   return null;
@@ -321,7 +402,8 @@ var SECRET_LITERAL_PATTERNS = [
   /-----BEGIN (?:[A-Z0-9]+ )*PRIVATE KEY-----/
 ];
 function detectHardcodedSecret(call) {
-  if (call.content && SECRET_LITERAL_PATTERNS.some((p) => p.test(call.content))) {
+  const content = call.content;
+  if (content && SECRET_LITERAL_PATTERNS.some((p) => p.test(content))) {
     return "Refused \u2014 hardcoded secret literal in written content. Use an environment variable or a secrets manager; never commit a key. If one was staged, rotate it.";
   }
   return null;
@@ -336,8 +418,8 @@ var CREDENTIAL_PATTERNS = [
   /\.secrets([./]|$)/,
   /(^|[/\\"'])credentials(\.|$|[/\\"'])/
 ];
-function isCredentialPath(path) {
-  return CREDENTIAL_PATTERNS.some((p) => p.test(path));
+function isCredentialPath(path2) {
+  return CREDENTIAL_PATTERNS.some((p) => p.test(path2));
 }
 var CREDENTIAL_READERS = new Set([
   "cat",
@@ -446,10 +528,11 @@ function interpreterProcessSubstitutesCurl(stage) {
   if (!isInterpreter(stage))
     return false;
   const procSub = /<\(([^()]*(?:\([^()]*\)[^()]*)*)\)/g;
-  let m;
-  while ((m = procSub.exec(stage)) !== null) {
-    if (isCurlOrWget(m[1]))
+  let match = procSub.exec(stage);
+  while (match !== null) {
+    if (isCurlOrWget(match[1]))
       return true;
+    match = procSub.exec(stage);
   }
   return false;
 }
@@ -522,8 +605,10 @@ function detectSudo(call) {
   }
   return null;
 }
-function commandMatches(call, patterns) {
-  return !!call.command && patterns.some((p) => p.test(call.command));
+function commandMatches(command, patterns) {
+  if (!command)
+    return false;
+  return patterns.some((pattern) => pattern.test(command));
 }
 var CLOUD_DESTROY_PATTERNS = [
   /aws\s+\S+\s+(?:delete|terminate)-[a-z-]+/,
@@ -532,7 +617,8 @@ var CLOUD_DESTROY_PATTERNS = [
   /kubectl\s+delete\b/
 ];
 function detectCloudDestroy(call) {
-  return commandMatches(call, CLOUD_DESTROY_PATTERNS) ? `Refused \u2014 destroys shared infrastructure; hand the command to the user (or produce a plan to review): ${truncate(call.command)}` : null;
+  const command = call.command;
+  return commandMatches(command, CLOUD_DESTROY_PATTERNS) ? `Refused \u2014 destroys shared infrastructure; hand the command to the user (or produce a plan to review): ${truncate(command)}` : null;
 }
 var DEPLOY_PATTERNS = [
   /make\s+(?:apply|deploy[a-z-]*|push-(?:to-prod|staging|live|release)[a-z-]*)\b/,
@@ -547,7 +633,8 @@ var DEPLOY_PATTERNS = [
   /helm\s+(?:install|upgrade)\b/
 ];
 function detectDeploy(call) {
-  return commandMatches(call, DEPLOY_PATTERNS) ? `Refused \u2014 changes a production/shared environment; the user should run the deploy: ${truncate(call.command)}` : null;
+  const command = call.command;
+  return commandMatches(command, DEPLOY_PATTERNS) ? `Refused \u2014 changes a production/shared environment; the user should run the deploy: ${truncate(command)}` : null;
 }
 var DB_MUTATION_PATTERNS = [
   /\b(?:psql|mysql|mariadb|sqlite3?|mongo(?:sh)?|redis-cli)\b[^|;&\n]*\b(?:DROP|TRUNCATE|ALTER\s+TABLE|DELETE\s+FROM)\b/i,
@@ -555,27 +642,31 @@ var DB_MUTATION_PATTERNS = [
   /\b(?:psql|mysql|mariadb)\b[^|;&\n]*\s<\s*\S+\.sql/
 ];
 function detectDbMutation(call) {
-  return commandMatches(call, DB_MUTATION_PATTERNS) ? `Refused \u2014 mutates shared database state via a CLI; use a migration tool or hand the statement to the user: ${truncate(call.command)}` : null;
+  const command = call.command;
+  return commandMatches(command, DB_MUTATION_PATTERNS) ? `Refused \u2014 mutates shared database state via a CLI; use a migration tool or hand the statement to the user: ${truncate(command)}` : null;
 }
 var DD_DISK_PATTERNS = [
   /\bdd\s[^|;&\n]*\bof=\/dev\//,
   /\bdd\s[^|;&\n]*\bif=\/dev\//
 ];
 function detectDdDisk(call) {
-  return commandMatches(call, DD_DISK_PATTERNS) ? `Refused \u2014 dd against a raw device can overwrite a disk irreversibly; the user should run it after checking the device name: ${truncate(call.command)}` : null;
+  const command = call.command;
+  return commandMatches(command, DD_DISK_PATTERNS) ? `Refused \u2014 dd against a raw device can overwrite a disk irreversibly; the user should run it after checking the device name: ${truncate(command)}` : null;
 }
 var BROAD_CHMOD_PATTERNS = [
   /\bchmod\s+-[a-zA-Z]*[Rr][a-zA-Z]*\s+\S+\s+(?:\/|~|\$HOME|\/etc|\/usr|\/var|\/opt|\/Users|\/home)\/?(?:\s|$)/,
   /\bchmod\s+-[a-zA-Z]*[Rr][a-zA-Z]*\s+\S+\s+\*(?:\s|$)/
 ];
 function detectBroadChmod(call) {
-  return commandMatches(call, BROAD_CHMOD_PATTERNS) ? `Refused \u2014 recursive chmod against a broad target can brick the system; name the exact path(s) instead: ${truncate(call.command)}` : null;
+  const command = call.command;
+  return commandMatches(command, BROAD_CHMOD_PATTERNS) ? `Refused \u2014 recursive chmod against a broad target can brick the system; name the exact path(s) instead: ${truncate(command)}` : null;
 }
 var DETECTORS = {
   "no-secret-access": detectSecretAccess,
   "no-hardcoded-secret": detectHardcodedSecret,
   "no-shell-write": detectShellWrite,
   "no-git-destructive": detectGitDestructive,
+  "no-orchard-branch-binding-change": detectOrchardBranchBindingChange,
   "no-curl-pipe-shell": detectCurlPipeShell,
   "no-broad-rm": detectBroadRm,
   "no-sudo": detectSudo,
@@ -599,7 +690,7 @@ function evaluate(call) {
 
 // harnesses/pi/extensions/guard-policies.ts
 function guard_policies_default(pi) {
-  pi.on("tool_call", (event) => {
+  pi.on("tool_call", (event, ctx) => {
     const input = event.input ?? {};
     const rawPath = input.path ?? input.file_path;
     const rawContent = input.content ?? input.new_string;
@@ -607,7 +698,9 @@ function guard_policies_default(pi) {
       tool: String(event.toolName ?? ""),
       command: input.command != null ? String(input.command) : undefined,
       path: rawPath != null ? String(rawPath) : undefined,
-      content: rawContent != null ? String(rawContent) : undefined
+      content: rawContent != null ? String(rawContent) : undefined,
+      cwd: ctx?.cwd,
+      home: process.env.HOME
     });
     if (verdict)
       return { block: true, reason: verdict.reason };

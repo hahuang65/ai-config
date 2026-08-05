@@ -53,6 +53,10 @@ The Git dotfiles A5 include is the machine-readable source, so linked worktrees,
 
 ### Worktree lifecycle terms
 
+**Worktree intent**:
+The concise normalized task identifier Orchard uses to name and select a worktree independently of its assigned branch name.
+_Avoid_: Branch name, worktree path.
+
 **Main project directory**:
 The primary repository checkout from which changes are integrated onto **trunk**.
 Delivery integration never runs from another linked worktree.
@@ -83,6 +87,18 @@ _Avoid_: Empty worktree, spare clone.
 A **worktree pool** member exclusively assigned to one task and attached to that task's named feature branch.
 It remains task-owned while dirty or unmerged.
 _Avoid_: Leased worktree (a lease is ownership metadata, not the worktree's lifecycle role), feature clone.
+
+**Branch binding**:
+The invariant that a **task worktree**'s registered path remains attached to its assigned branch throughout the task lifecycle.
+_Avoid_: Current branch (describes an observation rather than the durable path-to-branch association).
+
+**Quarantine**:
+The durable fail-closed state that excludes a worktree from ordinary lifecycle operations when its identity or integrity is uncertain.
+_Avoid_: Error state, disabled worktree.
+
+**Repair**:
+The explicit verified restoration of a quarantined **task worktree** after its recorded **branch binding** has been re-established.
+_Avoid_: Refresh, unquarantine (each implies that current appearance alone is sufficient).
 
 **Convert**:
 The recoverable transition of a **local task branch** into a **task worktree** without changing branch identity.

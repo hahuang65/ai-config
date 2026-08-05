@@ -14,7 +14,7 @@ import { evaluate } from "../../../shared/guard-core";
 
 const raw = await Bun.stdin.text();
 
-let input: { tool_name?: string; tool_input?: Record<string, unknown> };
+let input: { cwd?: string; tool_name?: string; tool_input?: Record<string, unknown> };
 try {
   input = JSON.parse(raw);
 } catch {
@@ -30,6 +30,8 @@ const verdict = evaluate({
   command: toolInput.command != null ? String(toolInput.command) : undefined,
   path: rawPath != null ? String(rawPath) : undefined,
   content: rawContent != null ? String(rawContent) : undefined,
+  cwd: input.cwd,
+  home: process.env.HOME,
 });
 
 if (verdict) {

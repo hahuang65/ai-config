@@ -1,0 +1,371 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Orchard Quarantine Repair Spec</title>
+  <style>
+    :root {
+      color-scheme: light dark;
+      --font-body: "Avenir Next", Avenir, "Segoe UI", sans-serif;
+      --font-display: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+      --font-mono: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+      --paper: #f3efe4;
+      --surface: #fffaf0;
+      --surface-raised: #fffdf7;
+      --surface-recessed: #ebe5d7;
+      --ink: #20251f;
+      --ink-dim: #657065;
+      --rule: #d5ccbb;
+      --rule-strong: #b9ad99;
+      --pine: #275d46;
+      --pine-soft: #dce9df;
+      --rust: #a34e2d;
+      --rust-soft: #f3ded2;
+      --amber: #926514;
+      --amber-soft: #f5e9c9;
+      --shadow: 0 18px 45px rgba(56, 47, 30, .09);
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --paper: #171a17;
+        --surface: #20241f;
+        --surface-raised: #262b25;
+        --surface-recessed: #191d19;
+        --ink: #eef0e8;
+        --ink-dim: #a6aea3;
+        --rule: #3b443b;
+        --rule-strong: #596358;
+        --pine: #82c5a2;
+        --pine-soft: #263e31;
+        --rust: #e79773;
+        --rust-soft: #4a2d23;
+        --amber: #e1bd69;
+        --amber-soft: #43371f;
+        --shadow: 0 18px 45px rgba(0, 0, 0, .24);
+      }
+    }
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      padding: 28px 36px 80px;
+      overflow-wrap: break-word;
+      color: var(--ink);
+      background-color: var(--paper);
+      background-image: repeating-linear-gradient(0deg, transparent, transparent 31px, color-mix(in srgb, var(--rule) 24%, transparent) 32px);
+      font: 16px/1.68 var(--font-body);
+    }
+    a { color: var(--pine); text-decoration-thickness: 1px; text-underline-offset: 3px; }
+    code { padding: .12rem .38rem; border-radius: 4px; background: var(--surface-recessed); color: var(--ink); font: .88em var(--font-mono); }
+    .wrap { max-width: 1360px; margin: 0 auto; display: grid; grid-template-columns: 190px minmax(0, 1fr); gap: 0 44px; }
+    .main { min-width: 0; }
+    .toc {
+      position: sticky;
+      top: 24px;
+      align-self: start;
+      grid-row: 1 / -1;
+      max-height: calc(100dvh - 48px);
+      padding: 16px 0;
+      overflow-y: auto;
+    }
+    .toc-title { margin-bottom: 9px; padding-bottom: 10px; border-bottom: 1px solid var(--rule); color: var(--ink-dim); font: 700 9px var(--font-mono); letter-spacing: 2px; text-transform: uppercase; }
+    .toc a { display: block; margin: 2px 0; padding: 6px 9px; border-left: 2px solid transparent; border-radius: 4px; color: var(--ink-dim); font-size: 11px; line-height: 1.35; text-decoration: none; }
+    .toc a:hover { color: var(--ink); background: var(--surface-recessed); }
+    .toc a.active { border-left-color: var(--rust); color: var(--ink); background: var(--surface); }
+    header { position: relative; padding: clamp(42px, 7vw, 86px) clamp(26px, 6vw, 78px) 52px; overflow: hidden; border: 1px solid var(--rule); border-radius: 2px 2px 24px 2px; background: var(--surface-raised); box-shadow: var(--shadow); }
+    header::after { content: ""; position: absolute; right: -50px; bottom: -80px; width: 250px; height: 250px; border: 42px double color-mix(in srgb, var(--pine) 24%, transparent); border-radius: 50%; }
+    .kicker { color: var(--rust); font: 750 11px var(--font-mono); letter-spacing: 2.2px; text-transform: uppercase; }
+    h1 { position: relative; z-index: 1; max-width: 900px; margin: 12px 0 18px; font: 700 clamp(3rem, 7vw, 6.3rem)/.94 var(--font-display); letter-spacing: -.055em; }
+    .lede { position: relative; z-index: 1; max-width: 760px; margin: 0; color: var(--ink-dim); font-size: clamp(1.08rem, 2vw, 1.3rem); }
+    .meta { position: relative; z-index: 1; display: flex; flex-wrap: wrap; gap: 8px; margin-top: 28px; }
+    .tag { padding: 4px 8px; border: 1px solid var(--rule); border-radius: 3px; background: var(--paper); color: var(--ink-dim); font: 10px var(--font-mono); letter-spacing: .04em; }
+    section { margin-top: 28px; padding: clamp(24px, 4vw, 44px); border: 1px solid var(--rule); background: color-mix(in srgb, var(--surface) 96%, transparent); }
+    section:nth-of-type(odd) { border-radius: 2px 18px 2px 2px; }
+    section:nth-of-type(even) { border-radius: 18px 2px 2px 2px; }
+    .sec-head { display: grid; grid-template-columns: 44px minmax(0, 1fr); align-items: end; gap: 14px; margin-bottom: 22px; }
+    .sec-num { color: var(--rust); font: 700 12px var(--font-mono); letter-spacing: 1px; }
+    h2 { margin: 0; font: 680 clamp(1.8rem, 4vw, 2.9rem)/1.05 var(--font-display); letter-spacing: -.025em; }
+    h3 { margin: 28px 0 10px; color: var(--pine); font-size: 1rem; letter-spacing: .02em; }
+    p { max-width: 78ch; }
+    ul, ol { padding-left: 2em; }
+    li + li { margin-top: .55rem; }
+    .problem-grid { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(230px, .65fr); gap: 22px; align-items: start; }
+    .pullquote { margin: 0; padding: 22px; border-top: 4px solid var(--rust); background: var(--rust-soft); font: italic 1.18rem/1.5 var(--font-display); }
+    .state-strip { display: grid; grid-template-columns: 1fr auto 1fr auto 1fr; gap: 10px; align-items: stretch; margin: 26px 0; }
+    .state { min-width: 0; padding: 18px; border: 1px solid var(--rule); background: var(--surface-raised); }
+    .state strong { display: block; color: var(--pine); font-family: var(--font-display); font-size: 1.18rem; }
+    .state small { color: var(--ink-dim); }
+    .state--danger { border-color: var(--rust); background: var(--rust-soft); }
+    .state--danger strong { color: var(--rust); }
+    .arrow { display: grid; place-items: center; color: var(--ink-dim); font: 14px var(--font-mono); }
+    .stories { counter-reset: story; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px 18px; padding: 0; list-style: none; }
+    .stories li { position: relative; min-width: 0; margin: 0; padding: 14px 14px 14px 46px; border-bottom: 1px solid var(--rule); background: color-mix(in srgb, var(--surface-raised) 72%, transparent); }
+    .stories li::before { counter-increment: story; content: counter(story, decimal-leading-zero); position: absolute; top: 16px; left: 12px; color: var(--rust); font: 700 10px var(--font-mono); }
+    .decision-grid { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); gap: 14px; }
+    article { min-width: 0; padding: 20px; border: 1px solid var(--rule); background: var(--surface-raised); }
+    article:nth-child(1), article:nth-child(4) { grid-column: span 7; }
+    article:nth-child(2), article:nth-child(3) { grid-column: span 5; }
+    article h3 { margin-top: 0; }
+    article p:last-child { margin-bottom: 0; }
+    .callout { margin: 24px 0; padding: 17px 20px; border-left: 4px solid var(--amber); background: var(--amber-soft); }
+    .callout strong { color: var(--amber); }
+    .table-wrap { overflow: hidden; border: 1px solid var(--rule); background: var(--surface); }
+    .table-scroll { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    th { padding: 11px 14px; border-bottom: 2px solid var(--rule-strong); background: var(--surface-recessed); color: var(--ink-dim); font: 700 10px var(--font-mono); letter-spacing: 1px; text-align: left; text-transform: uppercase; white-space: nowrap; }
+    td { padding: 13px 14px; border-bottom: 1px solid var(--rule); vertical-align: top; }
+    tbody tr:last-child td { border-bottom: 0; }
+    tbody tr:nth-child(even) { background: color-mix(in srgb, var(--pine-soft) 45%, transparent); }
+    .modules { display: grid; gap: 14px; }
+    .module { padding: 20px; border: 1px solid var(--rule); border-left: 4px solid var(--pine); background: var(--surface-raised); }
+    .module h3 { margin-top: 0; }
+    .test-seam { color: var(--ink-dim); }
+    .scope-list { columns: 2; column-gap: 46px; }
+    .scope-list li { break-inside: avoid; }
+    footer { padding: 30px 8px 10px; color: var(--ink-dim); font: 10px var(--font-mono); letter-spacing: 1px; text-align: center; text-transform: uppercase; }
+    @media (max-width: 1000px) {
+      body { padding-top: 0; }
+      .wrap { grid-template-columns: 1fr; }
+      .toc { position: sticky; top: 0; z-index: 20; grid-row: auto; display: flex; gap: 4px; align-items: center; max-height: none; margin: 0 -36px 20px; padding: 10px 36px; overflow-x: auto; border-bottom: 1px solid var(--rule); background: var(--paper); }
+      .toc-title { display: none; }
+      .toc a { flex-shrink: 0; margin: 0; border-left: 0; border-bottom: 2px solid transparent; white-space: nowrap; }
+      .toc a.active { border-left: 0; border-bottom-color: var(--rust); }
+      .sec-head { scroll-margin-top: 58px; }
+    }
+    @media (max-width: 760px) {
+      body { padding-right: 16px; padding-left: 16px; }
+      .toc { margin-right: -16px; margin-left: -16px; padding-right: 16px; padding-left: 16px; }
+      .problem-grid, .stories { grid-template-columns: 1fr; }
+      .state-strip { grid-template-columns: 1fr; }
+      .arrow { min-height: 18px; transform: rotate(90deg); }
+      article:nth-child(n) { grid-column: 1 / -1; }
+      .scope-list { columns: 1; }
+      header::after { opacity: .4; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; }
+    }
+  </style>
+</head>
+<body>
+<div class="wrap">
+  <nav class="toc" id="toc" aria-label="Spec sections">
+    <div class="toc-title">Spec contents</div>
+    <a href="#problem">1. Problem</a>
+    <a href="#solution">2. Solution</a>
+    <a href="#stories">3. User stories</a>
+    <a href="#implementation">4. Decisions</a>
+    <a href="#testing">5. Testing</a>
+    <a href="#scope">6. Out of scope</a>
+    <a href="#notes">7. Notes</a>
+  </nav>
+
+  <main class="main" data-artifact-kind="spec" data-artifact-version="1">
+    <header id="overview">
+      <div class="kicker">Feature specification · ADR-0028</div>
+      <h1>Orchard Quarantine Repair Spec</h1>
+      <p class="lede">Prevent harnesses from breaking a task worktree’s branch binding, preserve quarantine as a durable safety boundary, and provide one explicit, independently verified path back to work.</p>
+      <div class="meta">
+        <span class="tag">fail closed</span>
+        <span class="tag">explicit repair</span>
+        <span class="tag">manual Git escape hatch</span>
+        <span class="tag">structured evidence</span>
+      </div>
+    </header>
+
+    <section id="problem">
+      <div class="sec-head"><span class="sec-num">01</span><h2>Problem Statement</h2></div>
+      <div class="problem-grid">
+        <div>
+          <p>A direct branch switch inside a task worktree breaks its branch binding: Orchard still registers one assigned branch at the exact managed path while Git reports another.</p>
+          <p>Orchard correctly quarantines that uncertainty and excludes the slot from ordinary lifecycle operations. However, restoring the expected branch does not make the task usable again because quarantine is intentionally durable, entry cannot target quarantined work, and current human status output hides the path and reason needed for recovery.</p>
+          <p>The result is an avoidable dead end. Valid task work may remain dirty or untracked, yet delivery, entry, and other normal operations cannot select it. Destruction becomes the only available escape even when the branch binding has been restored and can be independently proven.</p>
+        </div>
+        <blockquote class="pullquote">Current appearance is evidence, not authorization. Recovery must be explicit without weakening quarantine into an automatic retry.</blockquote>
+      </div>
+    </section>
+
+    <section id="solution">
+      <div class="sec-head"><span class="sec-num">02</span><h2>Solution</h2></div>
+      <p>Add two complementary controls. First, the shared harness guard blocks recognizable direct branch-binding changes when their effective Git target is beneath <code>~/.orchard/</code>. Manual Git remains available as the deliberate escape hatch because Git has no portable pre-switch hook and Orchard must not install a fragile post-checkout reversal.</p>
+      <p>Second, Orchard records structured branch-mismatch evidence and adds <code>orchard repair [intent]</code>. Repair accepts only a recorded branch-binding mismatch and restores the slot only after proving the exact registered project, path, assigned branch, Git worktree metadata, uniqueness, stable Git operation state, and non-conflicting ownership.</p>
+      <div class="state-strip" aria-label="Branch-binding mismatch lifecycle">
+        <div class="state"><strong>Task worktree</strong><small>Registered path and assigned branch agree.</small></div>
+        <div class="arrow" aria-hidden="true">→</div>
+        <div class="state state--danger"><strong>Quarantine</strong><small>Mismatch evidence is durable and visible.</small></div>
+        <div class="arrow" aria-hidden="true">→</div>
+        <div class="state"><strong>Repaired task</strong><small>Explicit verification restores ordinary lifecycle eligibility.</small></div>
+      </div>
+      <div class="callout"><strong>Non-negotiable boundary.</strong> Refresh may create or enrich quarantine, but it never clears quarantine merely because the expected branch is currently checked out.</div>
+    </section>
+
+    <section id="stories">
+      <div class="sec-head"><span class="sec-num">03</span><h2>User Stories</h2></div>
+      <ol class="stories">
+        <li>As a harness user, I want direct branch changes under Orchard blocked before execution, so that an accidental unscoped command cannot break a task worktree’s branch binding.</li>
+        <li>As a harness user, I want branch switching, branch-mode checkout, current-branch renaming, and direct <code>HEAD</code> reassignment covered consistently, so that equivalent commands cannot bypass the guard.</li>
+        <li>As a developer restoring files, I want explicit path checkout and restore operations allowed, so that the guard does not confuse content restoration with branch switching.</li>
+        <li>As a developer working across repositories, I want an explicit Git target outside Orchard honored even when my session is inside a task worktree, so that safe cross-repository work remains possible.</li>
+        <li>As a developer outside Orchard, I want branch operations to behave normally, so that this safety policy does not become a global branch prohibition.</li>
+        <li>As a terminal user, I want manual Git to remain available, so that the harness guard does not pretend to be an operating-system sandbox.</li>
+        <li>As a developer after a mismatch, I want quarantine to retain expected and observed branch evidence, so that I can understand what happened before attempting repair.</li>
+        <li>As a developer, I want restored current state alone to remain insufficient for automatic recovery, so that quarantine keeps its fail-closed meaning.</li>
+        <li>As a developer, I want normal status output to show quarantined worktrees, their exact paths, expected and observed branches, and reasons, so that recovery is discoverable.</li>
+        <li>As an automation caller, I want status and repair JSON to expose stable reason codes and timestamps, so that tooling does not parse prose.</li>
+        <li>As a developer in a quarantined worktree, I want repair to infer that exact slot when no intent is supplied, so that recovery is direct.</li>
+        <li>As a developer in the main project directory, I want to repair by worktree intent, so that quarantine does not make navigation to the managed path a prerequisite.</li>
+        <li>As a developer, I want repair intent tab completion to list eligible quarantined worktrees, so that selection works like Orchard entry.</li>
+        <li>As a safety-conscious developer, I want repair rejected from unrelated linked worktrees and unrelated repositories, so that caller location cannot ambiguously select another task.</li>
+        <li>As a developer, I want repair limited to a structured branch-mismatch quarantine, so that missing metadata, duplicate registrations, path-role conflicts, and damaged state remain quarantined.</li>
+        <li>As a developer with legitimate uncommitted task work, I want dirty files allowed during repair, so that recovery does not require discarding or committing unrelated work.</li>
+        <li>As a developer, I want repair blocked during merge, rebase, cherry-pick, revert, or bisect state, so that Orchard does not certify an unstable Git operation.</li>
+        <li>As a single active owner, I want repair to remain possible, so that the harness session that restored the branch can continue.</li>
+        <li>As a shared-worktree user, I want repair blocked when multiple owners remain live, so that another session cannot concurrently invalidate the proof.</li>
+        <li>As a developer, I want successful repair to change only Orchard metadata, so that the command never modifies files, <code>HEAD</code>, refs, or branches.</li>
+        <li>As a developer, I want an accidentally created branch reported but never deleted by repair, so that potentially valuable commits remain recoverable.</li>
+        <li>As a maintainer, I want repair to preserve a durable audit record, so that the original mismatch and recovery time remain explainable after quarantine clears.</li>
+        <li>As an automation caller, I want noninteractive repair to apply the same checks and return structured evidence, so that machine mode is not a weaker safety path.</li>
+        <li>As a developer, I want a second repair attempt to fail unchanged once the slot is no longer quarantined, so that repair never masquerades as an idempotent refresh.</li>
+      </ol>
+    </section>
+
+    <section id="implementation">
+      <div class="sec-head"><span class="sec-num">04</span><h2>Implementation Decisions</h2></div>
+
+      <h3 id="guard-decisions">Harness prevention</h3>
+      <div class="decision-grid">
+        <article>
+          <h3>One shared policy</h3>
+          <p>The branch-binding guard is a mandatory shared guardrail projected through both harness adapters. The normalized tool call carries the command and caller working directory so the policy core, not an adapter, owns target resolution and command classification.</p>
+        </article>
+        <article>
+          <h3>Resolve the effective target</h3>
+          <p>An unscoped Git command targets the caller directory. An explicit <code>git -C</code> target or preceding literal directory change replaces that target. Relative paths and home-relative Orchard paths are normalized before deciding whether the target is managed.</p>
+        </article>
+        <article>
+          <h3>Recognize binding changes</h3>
+          <p>The guard blocks switch, any checkout not explicitly in path mode, branch rename flags, symbolic <code>HEAD</code> reassignment, and direct <code>HEAD</code> update. Explicit checkout path mode and restore remain allowed.</p>
+        </article>
+        <article>
+          <h3>Stay intentionally bounded</h3>
+          <p>The detector covers recognizable direct Git commands, including ordinary command chains. It does not evaluate arbitrary shell variables, custom aliases, scripts, or programs that later invoke Git. The refusal directs harnesses to scope cross-repository mutations with an explicit absolute Git target.</p>
+        </article>
+      </div>
+
+      <h3 id="quarantine-decisions">Structured quarantine</h3>
+      <p>A branch mismatch records a stable reason code, human reason, expected branch, observed branch or detached state, observed commit, and detection time. Other quarantine causes receive their own stable codes but are not repairable by this feature. Existing unstructured quarantine remains durable and ineligible rather than being inferred from reason text.</p>
+      <div class="table-wrap">
+        <div class="table-scroll">
+          <table aria-label="Quarantine and repair evidence">
+            <thead><tr><th>Evidence</th><th>Recorded at quarantine</th><th>Verified at repair</th><th>Retained after repair</th></tr></thead>
+            <tbody>
+              <tr><td>Reason code and reason</td><td>Required</td><td>Must identify branch mismatch</td><td>Copied into audit</td></tr>
+              <tr><td>Expected branch</td><td>Required</td><td>Must be checked out at exact path</td><td>Copied into audit</td></tr>
+              <tr><td>Observed branch and commit</td><td>Required</td><td>Reported, never deleted</td><td>Copied into audit</td></tr>
+              <tr><td>Detection and repair times</td><td>Detection time</td><td>Repair time added</td><td>Required</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <h3 id="repair-decisions">Repair contract</h3>
+      <p><code>orchard repair [intent] [--json]</code> is an explicit immediate mutation with no preview flag. From the exact quarantined worktree, Orchard infers the slot when intent is omitted and requires any supplied intent to match. From the main project directory, intent is required. Every other caller location is rejected.</p>
+      <p>Under the project lock, repair refreshes owner liveness and requires no more than one live owner. It rejects unresolved conversion or cleanup recovery and any in-progress Git operation. It then verifies that the registered project root identifies the same Git common directory, the slot path and intent retain the task-worktree role, exactly one Git worktree metadata entry owns that canonical path, exactly one entry owns the assigned branch, both entries are the same, and no durable slot duplicates either identity.</p>
+      <p>Ordinary staged, unstaged, and untracked task changes are permitted and reported without affecting eligibility. On success Orchard restores lifecycle <code>task</code>, removes active quarantine, writes <code>lastRepair</code> audit evidence, and returns the project, worktree, prior quarantine, repair proof, dirty indicator, and non-mutated accidental branch in the existing versioned machine envelope.</p>
+      <p>Repair never invokes Git mutation. A failed check leaves lifecycle, evidence, files, <code>HEAD</code>, refs, branches, owners, and timestamps unchanged. Re-running repair after success fails because the selected slot is no longer quarantined.</p>
+
+      <h3 id="status-decisions">Status, help, and completion</h3>
+      <p>Human status treats task and quarantined worktrees as visible managed work. Quarantine lines are visually distinct and include intent, exact path, expected branch, observed branch or detached state, reason, and detection time. Project scoping, global status, all-project mode, refresh, color behavior, and JSON envelopes remain consistent with existing status behavior.</p>
+      <p>Top-level and command help document repair eligibility, caller-location rules, dirty-work allowance, unstable-operation and ownership failures, metadata-only mutation, and the non-deletion guarantee. Completion exposes <code>repair</code> as a top-level command and returns only structured branch-mismatch quarantine intents in the current project.</p>
+
+      <h3 id="modules">Production modules</h3>
+      <div class="modules">
+        <div class="module">
+          <h3>Managed branch-binding guard</h3>
+          <p>Extends the shared policy input with caller location, resolves the effective Git target, classifies branch-binding changes, and returns one stable refusal. Harness adapters remain transport-only and the pi bundle remains a generated projection of the shared source.</p>
+        </div>
+        <div class="module">
+          <h3>Branch-binding verifier and repair service</h3>
+          <p>Owns structured mismatch evidence, shared identity inspection, repair eligibility, caller targeting, ownership checks, stable-operation checks, audit construction, and the locked metadata transition. Recovery and repair reuse one verifier so detection and clearance cannot drift.</p>
+        </div>
+        <div class="module">
+          <h3>Orchard CLI status and completion surface</h3>
+          <p>Wires the repair command, help, human and machine output, quarantine visibility, and eligible-intent completion onto the service without duplicating verification rules.</p>
+        </div>
+      </div>
+    </section>
+
+    <section id="testing">
+      <div class="sec-head"><span class="sec-num">05</span><h2>Testing Decisions</h2></div>
+      <p>All behavioral changes follow red-green-refactor TDD. Orchard tests use real temporary Git repositories and isolated home directories; harness tests use the adapters’ public event boundaries and shared policy interface. Tests assert user-observable state and Git facts rather than private helper calls.</p>
+
+      <div class="module">
+        <h3>Managed branch-binding guard</h3>
+        <p><strong>Test directly through the shared policy evaluator.</strong> Cover every blocked command family, absolute Git executables, command chains, managed and ordinary caller directories, explicit targets into and out of Orchard, literal directory changes, relative and home-relative paths, checkout path mode, restore, benign help and status commands, and refusal guidance.</p>
+        <p class="test-seam"><strong>Adapter evidence:</strong> conformance tests prove pi forwards its extension context directory and Claude forwards the hook payload directory. The committed pi projection must rebuild without drift.</p>
+      </div>
+      <div class="module">
+        <h3>Branch-binding verifier and repair service</h3>
+        <p><strong>Test directly through its public service interface with real temporary repositories.</strong> Cover exact-path and main-project callers, inferred and explicit intent, expected branch restoration, detached state, missing and duplicate metadata, duplicate durable registrations, wrong project identity, role mismatch, unstructured and non-branch quarantine, unresolved recovery, ordinary dirty work, each in-progress Git operation, dead owners, one live owner, multiple live owners, successful audit, second invocation, and atomic failure preservation.</p>
+        <p class="test-seam"><strong>Non-mutation proof:</strong> snapshot files, index, <code>HEAD</code>, refs, worktree metadata, and accidental branch tips before repair and assert they remain identical afterward.</p>
+      </div>
+      <div class="module">
+        <h3>Orchard CLI status and completion surface</h3>
+        <p><strong>Test through the spawned executable as the highest stable user interface.</strong> Cover top-level and repair help, exit behavior, human and JSON repair outcomes, project and global quarantine status, color and no-color output, refresh durability after branch restoration, eligible-intent completion, shell prefix filtering, and regression that ordinary lifecycle commands continue excluding quarantined slots.</p>
+      </div>
+    </section>
+
+    <section id="scope">
+      <div class="sec-head"><span class="sec-num">06</span><h2>Out of Scope</h2></div>
+      <ul class="scope-list">
+        <li>Intercepting or confirming branch changes typed manually by a human.</li>
+        <li>Installing Git hooks, filesystem flags, shell wrappers, or automatic post-checkout branch reversal.</li>
+        <li>Automatic unquarantine during refresh or any ordinary lifecycle command.</li>
+        <li>Repairing missing metadata, duplicate registration, path-role conflict, corrupted state, conversion recovery, or other quarantine causes.</li>
+        <li>Inferring repair eligibility from legacy human reason text.</li>
+        <li>Automatically restoring the assigned branch, resetting files, cleaning changes, or aborting Git operations.</li>
+        <li>Deleting, renaming, moving, or otherwise changing the accidentally observed branch.</li>
+        <li>Evaluating arbitrary shell variables, user-defined aliases, scripts, or nested programs as a complete shell sandbox.</li>
+        <li>Changing entry, delivery, recycling, pruning, destruction, landing, or capacity policy beyond quarantine visibility and selection.</li>
+        <li>Repairing while multiple live owners share a task worktree.</li>
+      </ul>
+    </section>
+
+    <section id="notes">
+      <div class="sec-head"><span class="sec-num">07</span><h2>Further Notes</h2></div>
+      <p>ADR-0028 is authoritative for durable quarantine, harness-only prevention, and explicit repair. ADR-0023 remains authoritative for the hybrid pooled branch-bound lifecycle and conservative recovery principle.</p>
+      <p>Repair certifies identity, not content provenance. Allowing dirty work preserves legitimate task changes, while the audit record and accidental-branch report keep the branch round trip visible to the developer.</p>
+      <p>The guard is preventive ergonomics; quarantine remains the safety authority. If prevention is bypassed or unavailable, Orchard still detects disagreement and fails closed.</p>
+    </section>
+
+    <footer>Canonical Phase 2 artifact · Review annotations attach to stable semantic sections</footer>
+  </main>
+</div>
+<script>
+(function () {
+  const toc = document.getElementById("toc");
+  const links = [...toc.querySelectorAll("a")];
+  const sections = links.map((link) => ({ link, target: document.querySelector(link.getAttribute("href")) })).filter((entry) => entry.target);
+  const observer = new IntersectionObserver((entries) => {
+    for (const entry of entries) {
+      if (!entry.isIntersecting) continue;
+      links.forEach((link) => link.classList.remove("active"));
+      const current = sections.find((section) => section.target === entry.target);
+      if (!current) continue;
+      current.link.classList.add("active");
+      if (window.innerWidth <= 1000) current.link.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "center" });
+    }
+  }, { rootMargin: "-10% 0px -80% 0px" });
+  sections.forEach((section) => observer.observe(section.target));
+  links.forEach((link) => link.addEventListener("click", (event) => {
+    event.preventDefault();
+    const target = document.querySelector(link.getAttribute("href"));
+    if (!target) return;
+    target.scrollIntoView({ behavior: "smooth", block: "start" });
+    history.replaceState(null, "", link.getAttribute("href"));
+  }));
+})();
+</script>
+</body>
+</html>

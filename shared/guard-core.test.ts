@@ -198,3 +198,165 @@ test("blocks writing a GitHub Actions token or fine-grained PAT", () => {
   expect(evaluate({ tool: "write", content: "token = 'gha_1234567890abcdefghijklmnopqrstuv'" })?.policy).toBe("no-hardcoded-secret");
   expect(evaluate({ tool: "write", content: "t = 'github_pat_11ABCDE0000aaaaaaaaaa_bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb'" })?.policy).toBe("no-hardcoded-secret");
 });
+
+test("blocks a branch switch explicitly targeted into Orchard", () => {
+  const verdict = evaluate({
+    tool: "bash",
+    command: "git -C /home/example/.orchard/alpha/task switch accidental-branch",
+    cwd: "/home/example/projects/alpha",
+  });
+
+  expect(verdict?.policy).toBe("no-orchard-branch-binding-change");
+});
+
+test("blocks a branch switch after a literal directory change into Orchard", () => {
+  const verdict = evaluate({
+    tool: "bash",
+    command: "cd /home/example/.orchard/alpha/task && git switch accidental-branch",
+    cwd: "/home/example/projects/alpha",
+  });
+
+  expect(verdict?.policy).toBe("no-orchard-branch-binding-change");
+});
+
+test("blocks branch-mode checkout beneath Orchard", () => {
+  const verdict = evaluate({
+    tool: "bash",
+    command: "git checkout accidental-branch",
+    cwd: "/home/example/.orchard/alpha/task",
+  });
+
+  expect(verdict?.policy).toBe("no-orchard-branch-binding-change");
+});
+
+test("blocks a branch rename beneath Orchard", () => {
+  const verdict = evaluate({
+    tool: "bash",
+    command: "git branch -m renamed-branch",
+    cwd: "/home/example/.orchard/alpha/task",
+  });
+
+  expect(verdict?.policy).toBe("no-orchard-branch-binding-change");
+});
+
+test("blocks a forced branch rename beneath Orchard", () => {
+  const verdict = evaluate({
+    tool: "bash",
+    command: "git branch -M renamed-branch",
+    cwd: "/home/example/.orchard/alpha/task",
+  });
+
+  expect(verdict?.policy).toBe("no-orchard-branch-binding-change");
+});
+
+test("blocks symbolic HEAD reassignment beneath Orchard", () => {
+  const verdict = evaluate({
+    tool: "bash",
+    command: "git symbolic-ref HEAD refs/heads/accidental-branch",
+    cwd: "/home/example/.orchard/alpha/task",
+  });
+
+  expect(verdict?.policy).toBe("no-orchard-branch-binding-change");
+});
+
+test("blocks direct HEAD updates beneath Orchard", () => {
+  const verdict = evaluate({
+    tool: "bash",
+    command: "git update-ref HEAD refs/heads/accidental-branch",
+    cwd: "/home/example/.orchard/alpha/task",
+  });
+
+  expect(verdict?.policy).toBe("no-orchard-branch-binding-change");
+});
+
+test("resolves a relative Git target from the caller directory", () => {
+  const verdict = evaluate({
+    tool: "bash",
+    command: "git -C task switch accidental-branch",
+    cwd: "/home/example/.orchard/alpha",
+  });
+
+  expect(verdict?.policy).toBe("no-orchard-branch-binding-change");
+});
+
+test("allows a home-relative Git target outside Orchard", () => {
+  const verdict = evaluate({
+    tool: "bash",
+    command: "git -C ~/projects/beta switch feature-branch",
+    cwd: "/home/example/.orchard/alpha/task",
+    home: "/home/example",
+  });
+
+  expect(verdict).toBeNull();
+});
+
+test("allows branch command help beneath Orchard", () => {
+  const verdict = evaluate({
+    tool: "bash",
+    command: "git switch --help",
+    cwd: "/home/example/.orchard/alpha/task",
+  });
+
+  expect(verdict).toBeNull();
+});
+
+test("guides cross-repository branch changes toward an explicit target", () => {
+  const verdict = evaluate({
+    tool: "bash",
+    command: "git switch accidental-branch",
+    cwd: "/home/example/.orchard/alpha/task",
+  });
+
+  expect(verdict?.reason).toContain("git -C <absolute-repository-path>");
+});
+
+test("allows explicit checkout path mode beneath Orchard", () => {
+  const verdict = evaluate({
+    tool: "bash",
+    command: "git checkout -- tracked-file.txt",
+    cwd: "/home/example/.orchard/alpha/task",
+  });
+
+  expect(verdict).toBeNull();
+});
+
+test("allows file restoration beneath Orchard", () => {
+  const verdict = evaluate({
+    tool: "bash",
+    command: "git restore tracked-file.txt",
+    cwd: "/home/example/.orchard/alpha/task",
+  });
+
+  expect(verdict).toBeNull();
+});
+
+test("allows an explicit Git target outside Orchard", () => {
+  const verdict = evaluate({
+    tool: "bash",
+    command: "git -C /home/example/projects/beta switch feature-branch",
+    cwd: "/home/example/.orchard/alpha/task",
+  });
+
+  expect(verdict).toBeNull();
+});
+
+test("resolves a home-relative literal directory change", () => {
+  const verdict = evaluate({
+    tool: "bash",
+    command: "cd ~/projects/beta && git switch feature-branch",
+    cwd: "/home/example/.orchard/alpha/task",
+    home: "/home/example",
+  });
+
+  expect(verdict).toBeNull();
+});
+
+test("blocks a direct HEAD update with an update-ref option", () => {
+  const verdict = evaluate({
+    tool: "bash",
+    command: "git update-ref --no-deref HEAD refs/heads/accidental-branch",
+    cwd: "/home/example/.orchard/alpha/task",
+  });
+
+  expect(verdict?.policy).toBe("no-orchard-branch-binding-change");
+});

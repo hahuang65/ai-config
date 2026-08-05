@@ -11,15 +11,22 @@ const HARNESSES = ["pi", "Claude Code"];
 
 // Drive pi's in-process default export through its tool_call adapter shape.
 function inProcessBlocks(guard: (pi: unknown) => void, call: ToolCall): boolean {
-  let handler: ((e: unknown) => any) | undefined;
+  let handler: ((e: unknown, ctx: unknown) => any) | undefined;
   guard({ on: (n: string, f: any) => { if (n === "tool_call") handler = f; } });
-  const verdict = handler!({ toolName: call.tool, input: { command: call.command, path: call.path, content: call.content } });
+  const verdict = handler!(
+    { toolName: call.tool, input: { command: call.command, path: call.path, content: call.content } },
+    { cwd: call.cwd },
+  );
   return !!(verdict && verdict.block);
 }
 
 // Claude Code (tier B): drive the command-hook shim over stdin/stdout.
 async function claudeBlocks(call: ToolCall): Promise<boolean> {
-  const payload = { tool_name: call.tool, tool_input: { command: call.command, file_path: call.path, content: call.content } };
+  const payload = {
+    cwd: call.cwd,
+    tool_name: call.tool,
+    tool_input: { command: call.command, file_path: call.path, content: call.content },
+  };
   const proc = Bun.spawn(["bun", `${import.meta.dir}/../harnesses/claude/hooks/guard.ts`], {
     stdin: Buffer.from(JSON.stringify(payload)),
     stdout: "pipe",
@@ -44,6 +51,19 @@ async function liveCoverage(): Promise<Coverage> {
   }
   return coverage;
 }
+
+test("every harness blocks an unscoped branch switch beneath Orchard", async () => {
+  const call: ToolCall = {
+    tool: "bash",
+    command: "git switch accidental-branch",
+    cwd: "/home/example/.orchard/alpha/task",
+  };
+
+  expect(evaluate(call)?.policy).toBe("no-orchard-branch-binding-change");
+  for (const adapter of ADAPTERS) {
+    expect(await adapter.blocks(call), `${adapter.name} should block the branch switch`).toBe(true);
+  }
+});
 
 test("every policy's example violates it and its counter-example does not", () => {
   // The registry pins both sides of each policy's boundary; the core agrees.

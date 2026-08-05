@@ -69,6 +69,22 @@ export const POLICIES: Policy[] = [
     counterExample: { tool: "bash", command: "git push origin main" },
   },
   {
+    id: "no-orchard-branch-binding-change",
+    intent: "No harness may directly change a managed Orchard worktree's branch binding.",
+    kind: "command",
+    floor: true,
+    example: {
+      tool: "bash",
+      command: "git switch accidental-branch",
+      cwd: "/home/example/.orchard/alpha/task",
+    },
+    counterExample: {
+      tool: "bash",
+      command: "git switch feature-branch",
+      cwd: "/home/example/projects/alpha",
+    },
+  },
+  {
     id: "no-curl-pipe-shell",
     intent: "No harness may pipe a remote download into an interpreter.",
     kind: "command",

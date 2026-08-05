@@ -10,6 +10,7 @@
 
 import { POLICIES } from "./policy-registry";
 import { anyPipeline, tokenize, leadingWord } from "./bash-command";
+import { detectOrchardBranchBindingChange } from "./orchard-branch-guard";
 
 /** Harness-neutral shape every adapter normalizes its tool call into. */
 export interface ToolCall {
@@ -21,6 +22,10 @@ export interface ToolCall {
   path?: string;
   /** The payload being written, for write/edit tools. */
   content?: string;
+  /** The caller's working directory, for location-sensitive command policies. */
+  cwd?: string;
+  /** The caller's home directory, for expanding home-relative command paths. */
+  home?: string;
 }
 
 /** A refusal: which policy fired and why. */
@@ -47,7 +52,8 @@ const SHELL_WRITE_PATTERNS: RegExp[] = [
 ];
 
 function detectShellWrite(call: ToolCall): string | null {
-  if (call.command && SHELL_WRITE_PATTERNS.some((p) => p.test(call.command!))) {
+  const command = call.command;
+  if (command && SHELL_WRITE_PATTERNS.some((p) => p.test(command))) {
     return "Refused — writing a file via shell redirection bypasses per-file approval. Use the write/edit tool instead.";
   }
   return null;
@@ -67,7 +73,8 @@ const SECRET_LITERAL_PATTERNS: RegExp[] = [
 ];
 
 function detectHardcodedSecret(call: ToolCall): string | null {
-  if (call.content && SECRET_LITERAL_PATTERNS.some((p) => p.test(call.content!))) {
+  const content = call.content;
+  if (content && SECRET_LITERAL_PATTERNS.some((p) => p.test(content))) {
     return "Refused — hardcoded secret literal in written content. Use an environment variable or a secrets manager; never commit a key. If one was staged, rotate it.";
   }
   return null;
@@ -182,9 +189,10 @@ function curlPipedToInterpreter(stages: string[]): boolean {
 function interpreterProcessSubstitutesCurl(stage: string): boolean {
   if (!isInterpreter(stage)) return false;
   const procSub = /<\(([^()]*(?:\([^()]*\)[^()]*)*)\)/g;
-  let m: RegExpExecArray | null;
-  while ((m = procSub.exec(stage)) !== null) {
-    if (isCurlOrWget(m[1])) return true;
+  let match = procSub.exec(stage);
+  while (match !== null) {
+    if (isCurlOrWget(match[1])) return true;
+    match = procSub.exec(stage);
   }
   return false;
 }
@@ -276,8 +284,9 @@ function detectSudo(call: ToolCall): string | null {
 // Each is a faithful migration of a former TTSR rule: a set of command
 // patterns and a refusal reason carrying the rule's "right approach". The
 // `[^|;&\n]*` segments keep a match inside one command.
-function commandMatches(call: ToolCall, patterns: RegExp[]): boolean {
-  return !!call.command && patterns.some((p) => p.test(call.command!));
+function commandMatches(command: string | undefined, patterns: RegExp[]): command is string {
+  if (!command) return false;
+  return patterns.some((pattern) => pattern.test(command));
 }
 
 const CLOUD_DESTROY_PATTERNS = [
@@ -287,8 +296,9 @@ const CLOUD_DESTROY_PATTERNS = [
   /kubectl\s+delete\b/,
 ];
 function detectCloudDestroy(call: ToolCall): string | null {
-  return commandMatches(call, CLOUD_DESTROY_PATTERNS)
-    ? `Refused — destroys shared infrastructure; hand the command to the user (or produce a plan to review): ${truncate(call.command!)}`
+  const command = call.command;
+  return commandMatches(command, CLOUD_DESTROY_PATTERNS)
+    ? `Refused — destroys shared infrastructure; hand the command to the user (or produce a plan to review): ${truncate(command)}`
     : null;
 }
 
@@ -305,8 +315,9 @@ const DEPLOY_PATTERNS = [
   /helm\s+(?:install|upgrade)\b/,
 ];
 function detectDeploy(call: ToolCall): string | null {
-  return commandMatches(call, DEPLOY_PATTERNS)
-    ? `Refused — changes a production/shared environment; the user should run the deploy: ${truncate(call.command!)}`
+  const command = call.command;
+  return commandMatches(command, DEPLOY_PATTERNS)
+    ? `Refused — changes a production/shared environment; the user should run the deploy: ${truncate(command)}`
     : null;
 }
 
@@ -316,8 +327,9 @@ const DB_MUTATION_PATTERNS = [
   /\b(?:psql|mysql|mariadb)\b[^|;&\n]*\s<\s*\S+\.sql/,
 ];
 function detectDbMutation(call: ToolCall): string | null {
-  return commandMatches(call, DB_MUTATION_PATTERNS)
-    ? `Refused — mutates shared database state via a CLI; use a migration tool or hand the statement to the user: ${truncate(call.command!)}`
+  const command = call.command;
+  return commandMatches(command, DB_MUTATION_PATTERNS)
+    ? `Refused — mutates shared database state via a CLI; use a migration tool or hand the statement to the user: ${truncate(command)}`
     : null;
 }
 
@@ -326,8 +338,9 @@ const DD_DISK_PATTERNS = [
   /\bdd\s[^|;&\n]*\bif=\/dev\//,
 ];
 function detectDdDisk(call: ToolCall): string | null {
-  return commandMatches(call, DD_DISK_PATTERNS)
-    ? `Refused — dd against a raw device can overwrite a disk irreversibly; the user should run it after checking the device name: ${truncate(call.command!)}`
+  const command = call.command;
+  return commandMatches(command, DD_DISK_PATTERNS)
+    ? `Refused — dd against a raw device can overwrite a disk irreversibly; the user should run it after checking the device name: ${truncate(command)}`
     : null;
 }
 
@@ -338,8 +351,9 @@ const BROAD_CHMOD_PATTERNS = [
   /\bchmod\s+-[a-zA-Z]*[Rr][a-zA-Z]*\s+\S+\s+\*(?:\s|$)/,
 ];
 function detectBroadChmod(call: ToolCall): string | null {
-  return commandMatches(call, BROAD_CHMOD_PATTERNS)
-    ? `Refused — recursive chmod against a broad target can brick the system; name the exact path(s) instead: ${truncate(call.command!)}`
+  const command = call.command;
+  return commandMatches(command, BROAD_CHMOD_PATTERNS)
+    ? `Refused — recursive chmod against a broad target can brick the system; name the exact path(s) instead: ${truncate(command)}`
     : null;
 }
 
@@ -350,6 +364,7 @@ const DETECTORS: Record<string, Detector> = {
   "no-hardcoded-secret": detectHardcodedSecret,
   "no-shell-write": detectShellWrite,
   "no-git-destructive": detectGitDestructive,
+  "no-orchard-branch-binding-change": detectOrchardBranchBindingChange,
   "no-curl-pipe-shell": detectCurlPipeShell,
   "no-broad-rm": detectBroadRm,
   "no-sudo": detectSudo,

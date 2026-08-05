@@ -55,14 +55,17 @@ function extractSubstitutions(command: string): string[] {
     /`([^`]+)`/g,                               // `…`
   ];
   for (const re of patterns) {
-    let m: RegExpExecArray | null;
-    while ((m = re.exec(command)) !== null) found.push(m[1]);
+    let match = re.exec(command);
+    while (match !== null) {
+      found.push(match[1]);
+      match = re.exec(command);
+    }
   }
   return found;
 }
 
 /** Split a command into statements on `;`, `&&`/`&`, `||` outside quotes/parens. A single `|` is a pipe and stays within the statement. */
-function splitStatements(command: string): string[] {
+export function splitStatements(command: string): string[] {
   const out: string[] = [];
   let cur = "";
   let parens = 0, sq = false, dq = false, bt = false;
