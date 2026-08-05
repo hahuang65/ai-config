@@ -5,26 +5,20 @@ read only the rule needed for the current action, before taking that action.
 
 ## Critical baseline
 
-- Work on a feature branch, not `main`.
-  Name branches `user-initials/short-intent` (for example, `hh/auth-redirect`).
-- Ordinary work defaults to the current checkout on a local task branch.
-  If the current branch is `main`, create the task branch in that checkout.
-  Do not invoke Orchard for an ordinary request.
-  Use Orchard for `/build` and explicit lifecycle requests.
-  Pass Orchard the same concise `<short-intent>` used in the branch name (for example, `auth-redirect`).
-- An **A5 project** has effective trusted Git configuration `ai.projectFamily=a5` for its originating repository.
-  Accept only global or system Git scope; repository-local configuration cannot grant A5 classification.
-  Resolve classification from the originating repository so linked worktrees and disposable review copies retain the same project family.
-- Language toolchains are managed by mise. Invoke tools by bare name; do not
-  activate or recommend rbenv, rvm, chruby, asdf, nvm, or pyenv.
-- When making technical decisions, give low weight to development cost. Give
-  high weight to quality, simplicity, robustness, scalability, and long-term
-  maintainability.
-- Keep all written communication and visual artifacts easy to understand and concise.
-  Give enough context for the subject to stand on its own, use ASD-STE100 Simplified Technical English, and prefer the ubiquitous language from applicable `CONTEXT.md` files.
-  Define unavoidable unfamiliar terms at first use.
-- When writing Markdown, put each full sentence on its own line. Preserve
-  normal Markdown structure, but do not wrap multiple sentences onto one line.
+- **Use a named feature branch, never trunk.**
+  - Name it `user-initials/short-intent`.
+  - Ordinary work stays in the current checkout on a local task branch.
+  - If currently on trunk, create the task branch there.
+  - Use Orchard only for `/build` or explicit lifecycle requests, passing the same `short-intent`.
+- **Treat a project as A5 only when its originating repository has effective `ai.projectFamily=a5` from global or system Git configuration.**
+  Repository-local configuration cannot grant A5 status.
+- **Use mise-managed toolchains:** invoke tools directly, and never activate or recommend rbenv, rvm, chruby, asdf, nvm, or pyenv.
+- **Favor quality, simplicity, robustness, scalability, and maintainability over development cost.**
+- **Communicate clearly and concisely.**
+  - Give written communication and visual artifacts enough context to stand alone.
+  - Use ASD-STE100 Simplified Technical English and the ubiquitous language from applicable `CONTEXT.md` files.
+  - Define unfamiliar terms at first use.
+  - In Markdown, put each complete sentence on its own line while preserving normal structure.
 
 ## Shared rulebook
 

@@ -11,11 +11,12 @@ async function source(relativePath: string) {
 test("harness baseline keeps ordinary work local and reserves Orchard for explicit isolation", async () => {
   const prompt = await source("harness-system-prompt.md");
 
-  expect(prompt).toContain("Ordinary work defaults to the current checkout on a local task branch");
-  expect(prompt).toContain("Do not invoke Orchard for an ordinary request");
-  expect(prompt).toContain("Name branches `user-initials/short-intent`");
-  expect(prompt).toContain("Use Orchard for `/build` and explicit lifecycle requests");
-  expect(prompt).toContain("Pass Orchard the same concise `<short-intent>` used in the branch name");
+  expect(prompt).toContain("Use a named feature branch, never trunk");
+  expect(prompt).toContain("Name it `user-initials/short-intent`");
+  expect(prompt).toContain("Ordinary work stays in the current checkout on a local task branch");
+  expect(prompt).toContain("If currently on trunk, create the task branch there");
+  expect(prompt).toContain("Use Orchard only for `/build` or explicit lifecycle requests");
+  expect(prompt).toContain("passing the same `short-intent`");
   expect(prompt).not.toContain("short-description");
   expect(prompt).not.toContain("<project-basename>-<short-intent>");
   expect(prompt).not.toContain("~/.orchard/");

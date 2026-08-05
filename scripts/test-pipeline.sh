@@ -219,7 +219,7 @@ test_command_prompts() {
     && pass "pi projects commands into prompts/" \
     || fail "harnesses/pi/manifest.sh" "must set command_target=prompts"
 
-  check_content_cached "$(cat "$REPO_DIR/harness-system-prompt.md")" "harness-system-prompt.md" "An [*][*]A5 project[*][*].*ai[.]projectFamily=a5.*originating repository"
+  check_content_cached "$(cat "$REPO_DIR/harness-system-prompt.md")" "harness-system-prompt.md" "Treat a project as A5 only when its originating repository has effective .ai[.]projectFamily=a5. from global or system Git configuration"
   local stale_a5_paths
   stale_a5_paths="$(grep -RFl '~/Projects/a5/' "$REPO_DIR/harness-system-prompt.md" "$REPO_DIR/skills" "$REPO_DIR/commands" "$REPO_DIR/agents" "$REPO_DIR/rules" 2>/dev/null || true)"
   if [[ -z "$stale_a5_paths" ]]; then
@@ -961,11 +961,16 @@ test_phase_orchestrator() {
 
   local bootstrap
   bootstrap="$(<"$REPO_DIR/harness-system-prompt.md")"
-  check_content_cached "$bootstrap" "harness-system-prompt.md" "Name branches .user-initials/short-intent."
-  check_content_cached "$bootstrap" "harness-system-prompt.md" "Ordinary work defaults to the current checkout on a local task branch"
-  check_content_cached "$bootstrap" "harness-system-prompt.md" "Do not invoke Orchard for an ordinary request"
-  check_content_cached "$bootstrap" "harness-system-prompt.md" "Use Orchard for .[/]build. and explicit lifecycle requests"
-  check_content_cached "$bootstrap" "harness-system-prompt.md" "Pass Orchard the same concise .<short-intent>. used in the branch name"
+  check_content_cached "$bootstrap" "harness-system-prompt.md" "Use a named feature branch, never trunk"
+  check_content_cached "$bootstrap" "harness-system-prompt.md" "Name it .user-initials/short-intent."
+  check_content_cached "$bootstrap" "harness-system-prompt.md" "Ordinary work stays in the current checkout on a local task branch"
+  check_content_cached "$bootstrap" "harness-system-prompt.md" "If currently on trunk, create the task branch there"
+  check_content_cached "$bootstrap" "harness-system-prompt.md" "Use Orchard only for .[/]build. or explicit lifecycle requests"
+  check_content_cached "$bootstrap" "harness-system-prompt.md" "passing the same .short-intent."
+  check_content_cached "$bootstrap" "harness-system-prompt.md" "Treat a project as A5 only when its originating repository has effective .ai[.]projectFamily=a5. from global or system Git configuration"
+  check_content_cached "$bootstrap" "harness-system-prompt.md" "Use mise-managed toolchains.*invoke tools directly.*never activate or recommend rbenv, rvm, chruby, asdf, nvm, or pyenv"
+  check_content_cached "$bootstrap" "harness-system-prompt.md" "Favor quality, simplicity, robustness, scalability, and maintainability over development cost"
+  check_content_cached "$bootstrap" "harness-system-prompt.md" "Communicate clearly and concisely"
 }
 
 # ---------------------------------------------------------------------------

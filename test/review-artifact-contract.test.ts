@@ -27,12 +27,13 @@ test("review artifacts use language the reviewer already knows", async () => {
 test("the harness baseline standardizes understandable communication", async () => {
   const baseline = await source("harness-system-prompt.md");
 
-  expect(baseline).toContain("all written communication and visual artifacts");
-  expect(baseline).toContain("easy to understand and concise");
+  expect(baseline).toContain("Communicate clearly and concisely");
+  expect(baseline).toContain("written communication and visual artifacts enough context to stand alone");
   expect(baseline).toContain("ASD-STE100 Simplified Technical English");
+  expect(baseline).toContain("ubiquitous language");
   expect(baseline).toContain("CONTEXT.md");
-  expect(baseline).toContain("subject to stand on its own");
-  expect(baseline).toContain("Define unavoidable unfamiliar terms at first use");
+  expect(baseline).toContain("Define unfamiliar terms at first use");
+  expect(baseline).toContain("In Markdown, put each complete sentence on its own line");
 });
 
 test("build review decisions are completed in each issue card and submitted once", async () => {

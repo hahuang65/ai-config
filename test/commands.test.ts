@@ -77,8 +77,8 @@ test("the harness baseline identifies A5 projects once", async () => {
   const baseline = await source("harness-system-prompt.md");
   const delivery = await source("commands/deliver.md");
 
-  expect(baseline).toContain("An **A5 project** has effective trusted Git configuration `ai.projectFamily=a5`");
-  expect(baseline).toContain("Accept only global or system Git scope");
+  expect(baseline).toContain("Treat a project as A5 only when its originating repository has effective `ai.projectFamily=a5` from global or system Git configuration");
+  expect(baseline).toContain("Repository-local configuration cannot grant A5 status");
   expect(baseline).toContain("originating repository");
   expect(baseline).not.toContain("~/Projects/a5/");
   expect(delivery).toContain("A5 project");
