@@ -15,8 +15,11 @@ Stop if commit fails or leaves changes behind, and follow every other Orchard tr
 For every other checkout, deliver the current ordinary local feature branch directly through Git as follows.
 Never invoke Orchard for an ordinary local branch, including Orchard status, discovery, rebase, delivery, or cleanup.
 
-1. Resolve and canonicalize the current Git root and the first path from `git worktree list --porcelain`.
-Require them to match so ordinary delivery runs only in the primary checkout.
+1. Resolve and canonicalize the current Git root, the absolute Git directory from `git rev-parse --absolute-git-dir`, the common Git directory from `git rev-parse --git-common-dir`, and the first path from `git worktree list --porcelain`.
+Require the absolute Git directory and common Git directory to match; otherwise this is a linked worktree rather than the primary checkout, so stop.
+Normally require the current Git root and first worktree path to match.
+Allow a mismatch only for a primary absorbed Git submodule: `git rev-parse --show-superproject-working-tree` must return a non-empty superproject, the first worktree path must equal the common Git directory, and `core.worktree` resolved relative to that common Git directory must resolve to the current Git root.
+If any part of that submodule proof fails, stop.
 Require a named feature branch.
 2. Resolve trunk from the local branch named by `refs/remotes/origin/HEAD`.
 If that is unavailable, accept exactly one existing local candidate from `main` or `master`; stop if trunk is ambiguous or already checked out.

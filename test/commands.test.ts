@@ -43,6 +43,18 @@ test("deliver routes only managed tasks through Orchard", async () => {
   expect(delivery).toContain("git pr create --web --fill");
 });
 
+test("deliver accepts a primary absorbed submodule without accepting linked worktrees", async () => {
+  const delivery = await source("commands/deliver.md");
+
+  expect(delivery).toContain("absorbed Git submodule");
+  expect(delivery).toContain("git rev-parse --absolute-git-dir");
+  expect(delivery).toContain("git rev-parse --git-common-dir");
+  expect(delivery).toContain("git rev-parse --show-superproject-working-tree");
+  expect(delivery).toContain("core.worktree");
+  expect(delivery).toContain("absolute Git directory and common Git directory to match");
+  expect(delivery).toContain("resolve to the current Git root");
+});
+
 test("rebase is a thin Orchard alias", async () => {
   const rebase = await source("commands/rebase.md");
 
