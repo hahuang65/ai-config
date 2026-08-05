@@ -37,13 +37,14 @@ test("build review decisions are completed in each issue card and submitted once
   expect(report).not.toContain("copy and paste");
 });
 
-test("deliver accepts a managed worktree or the current ordinary branch", async () => {
+test("deliver keeps ordinary branches out of Orchard", async () => {
   const delivery = await source("commands/deliver.md");
   const orchard = await source("skills/orchard/references/workflow.md");
 
-  expect(delivery).toContain("managed task or ordinary local branch");
-  expect(delivery).toContain("exact checkout path and branch");
-  expect(orchard).toContain("ordinary local branch");
-  expect(orchard).toContain("returns on trunk");
-  expect(orchard).not.toContain("Delivery outside a managed task worktree");
+  expect(delivery).toContain("classify the checkout using Git only");
+  expect(delivery).toContain("Never invoke Orchard");
+  expect(delivery).toContain("ordinary local feature branch");
+  expect(delivery).toContain("returns on trunk");
+  expect(delivery).toContain("git merge --ff-only");
+  expect(orchard).not.toContain("ordinary local branch");
 });

@@ -62,23 +62,19 @@ test("build delegates isolation while preserving an explicit local-branch fallba
   expect(build.match(/exactly \*\*four\*\* approval gates/g)).toHaveLength(1);
 });
 
-test("deliver is a thin Orchard prompt with commit fallback", async () => {
+test("deliver reserves Orchard for managed worktrees", async () => {
   const delivery = await source("commands/deliver.md");
   const orchard = await source("skills/orchard/references/workflow.md");
 
-  expect(delivery).toContain("`orchard` skill for its deliver operation");
-  expect(delivery).toContain("`needs-commit`");
-  expect(delivery).toContain("`commit` skill");
-  expect(delivery).toContain("managed task or ordinary local branch");
-  expect(delivery).toContain("exact checkout path and branch");
-  expect(delivery).toContain("retry Orchard deliver");
-  expect(delivery).not.toContain("A5 project");
-  expect(delivery).not.toContain("git pr create --web --fill");
+  expect(delivery).toContain("classify the checkout using Git only");
+  expect(delivery).toContain("load the `orchard` skill");
+  expect(delivery).toContain("Never invoke Orchard");
+  expect(delivery).toContain("git merge --ff-only");
+  expect(delivery).toContain("git pr create --web --fill");
   expect(orchard).toContain("delivery policy");
   expect(orchard).toContain("--finalize-operation");
   expect(orchard).toContain("worktree intent");
-  expect(orchard).toContain("ordinary local branch");
-  expect(orchard).not.toContain("Orchard merge");
+  expect(orchard).not.toContain("ordinary local branch");
 });
 
 test("commit remains checkout-local and never chains into Orchard integration", async () => {

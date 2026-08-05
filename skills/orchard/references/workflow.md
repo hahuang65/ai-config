@@ -10,8 +10,7 @@ Standalone Orchard operations fail closed; never substitute raw worktree, rebase
 ## Command ownership
 
 Pass the user's lifecycle request to the CLI without reproducing its Git, commit-interaction, delivery policy, or filesystem behavior.
-Rebase infers the current task inside its worktree or accepts a worktree intent when invoked from primary trunk.
-Deliver does the same for managed tasks and also accepts the current ordinary local branch in the primary checkout without requiring Orchard registration.
+Rebase and deliver infer the current task inside its worktree or accept a worktree intent when invoked from primary trunk.
 Use ordinary human output only when no harness transition is needed.
 A deliver `needs-commit` outcome returns to the calling prompt so it can run the commit skill and retry; pull-request delivery is terminal and requires no transition.
 Use `--json` for native harness transitions and require an absolute target path in the versioned outcome.
@@ -47,8 +46,6 @@ Never clean the preserved worktree merely because continuation failed.
 
 ## Non-transition commands
 
-Status, rebase, path-only output, dry runs, explicit keep behavior, pull-request delivery, needs-commit delivery, ordinary-branch delivery, and maintenance commands may complete without a harness transition.
+Status, rebase, path-only output, dry runs, explicit keep behavior, pull-request delivery, needs-commit delivery, and maintenance commands may complete without a harness transition.
 Local delivery invoked from primary trunk finalizes immediately when safe.
-Successful local delivery of an ordinary local branch rebases it, fast-forwards trunk, returns on trunk in the same checkout, and removes the delivered branch unless `--keep` was requested.
-Pull-request delivery retains the working branch because opening the browser form does not prove that the pull request was created or merged.
-Delivery from an unmanaged linked worktree or from primary trunk without either an ordinary feature branch or explicit managed worktree intent must fail through Orchard rather than falling back to raw Git commands.
+Delivery outside a managed task worktree or without an explicit worktree intent from primary trunk must fail through Orchard rather than falling back to raw Git commands.

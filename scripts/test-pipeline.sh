@@ -202,12 +202,14 @@ test_command_prompts() {
     || fail "commands/rebase.md" "rebase must delegate to the Orchard skill"
   if [[ ! -e "$REPO_DIR/skills/deliver/SKILL.md" ]] \
      && [[ ! -e "$REPO_DIR/skills/merge/SKILL.md" ]] \
-     && grep -Fq '`orchard` skill for its deliver operation' "$REPO_DIR/commands/deliver.md" \
-     && grep -Fq '`needs-commit`' "$REPO_DIR/commands/deliver.md" \
+     && grep -Fq 'classify the checkout using Git only' "$REPO_DIR/commands/deliver.md" \
+     && grep -Fq 'load the `orchard` skill' "$REPO_DIR/commands/deliver.md" \
+     && grep -Fq 'Never invoke Orchard for an ordinary local branch' "$REPO_DIR/commands/deliver.md" \
+     && grep -Fq 'git merge --ff-only' "$REPO_DIR/commands/deliver.md" \
      && grep -Fq '`commit` skill' "$REPO_DIR/commands/deliver.md"; then
-    pass "deliver delegates policy to Orchard with commit fallback"
+    pass "deliver routes only managed worktrees through Orchard"
   else
-    fail "commands/deliver.md" "must delegate Orchard delivery and compose commit only for needs-commit"
+    fail "commands/deliver.md" "must separate managed Orchard delivery from ordinary Git delivery"
   fi
 
   grep -q '^command_target="commands"' "$REPO_DIR/harnesses/claude/manifest.sh" \
