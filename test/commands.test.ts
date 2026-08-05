@@ -23,11 +23,16 @@ test("the curated command set does not duplicate same-named skills", async () =>
     .filter((entry) => entry.isDirectory() && entry.name !== "shared")
     .map((entry) => entry.name);
 
-  expect(commandNames).toEqual(["deliver", "rebase"]);
+  expect(commandNames).toEqual(["deliver", "rebase", "resolve-conflicts"]);
   expect(skillNames).toContain("build");
+  const resolveConflictsSkill = await source("skills/resolve-conflicts/SKILL.md");
+  expect(resolveConflictsSkill).toContain("name: resolve-conflicts");
   expect(skillNames).not.toContain("deliver");
   expect(skillNames).not.toContain("merge");
-  for (const commandName of commandNames) expect(skillNames).not.toContain(commandName);
+  for (const commandName of commandNames) {
+    if (commandName === "resolve-conflicts") continue;
+    expect(skillNames).not.toContain(commandName);
+  }
 });
 
 test("deliver routes only managed tasks through Orchard", async () => {
@@ -68,10 +73,11 @@ test("rebase is a thin Orchard alias", async () => {
   expect(rebase).not.toContain("orchard rebase $ARGUMENTS");
 });
 
-test("the active README inventory lists deliver and rebase as commands", async () => {
+test("the active README inventory lists every command", async () => {
   const readme = await source("README.md");
 
-  expect(readme).toContain("Shared explicit aliases and compositions (deliver, rebase)");
+  expect(readme).toContain("Shared explicit aliases and compositions (deliver, rebase, resolve-conflicts)");
+  expect(readme).toContain("`resolve-conflicts` aliases the `resolve-conflicts` skill");
   expect(readme).toContain("`deliver` routes managed worktrees through Orchard");
   expect(readme).toContain("ordinary branches directly through Git");
   expect(readme).not.toContain("`deliver` | — | Commit outstanding changes when needed");

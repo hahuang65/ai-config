@@ -26,6 +26,16 @@ Fallback summary (used only when `~/.gitmessage` is absent):
 - Advance the target branch by fast-forward only.
 - If a rebase fails, abort it and preserve both branches unless the user explicitly asks to resolve the conflicts.
 
+### Conflict resolution
+
+- Mutate an in-progress conflict only when the user explicitly asks to resolve it, including by invoking `/resolve-conflicts`, or when the active user-requested workflow already owns conflict resolution.
+- Once resolution is explicit, follow the `resolve-conflicts` skill instead of aborting as a substitute for investigating the competing intents.
+- Preserve the no-merge-commit policy.
+  If an in-progress merge can finish only by creating a merge commit, report that incompatibility before changing conflicted files.
+- Before staging resolved paths or continuing a Git operation, apply this rule's normal staging and commit-message policy.
+- A workflow-owned working-state restoration conflict does not authorize a commit or rebase continuation.
+  Return its resolved paths to the owning workflow so it can reconstruct and verify the captured staged, unstaged, and untracked state.
+
 ## Staging policy
 
 - Commit early and often. Small, focused commits are easier to review and revert.
