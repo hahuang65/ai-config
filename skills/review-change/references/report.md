@@ -27,7 +27,10 @@ Encode each value for its exact HTML text or attribute context, use `textContent
 Generate control IDs from workflow-owned safe identifiers rather than user text.
 Render an Untrusted URL as text unless the workflow validates it as an expected `https:` provider URL or a report-owned local artifact URL before assigning it to a link target.
 Keep resolved Findings in history but separate them visually from current Findings.
-Write Finding titles and descriptions with terms found in Authoritative intent, source, tests, or project documentation; define any unavoidable new term at first use.
+Write all visible report content in plain language.
+Prefer wording from `CONTEXT.md`, Authoritative intent, source, tests, and project documentation, then common technical terms the user is likely to know.
+Define any unavoidable unfamiliar term beside its first use.
+Show human-readable labels as the primary text for machine values such as severity, action, disposition, and stage status; keep exact machine values in secondary metadata only when they help diagnose or submit the review.
 Render each Finding card's primary anchor in the card header using the same compact treatment: a right-aligned, high-contrast, monospaced badge with a visible border, rounded corners, and semibold text.
 Display the repository-relative `path:line`, with the complete relative path rather than only the basename; on narrow layouts move the intact badge to its own line rather than dropping the path or line number.
 Place a compact, accessible copy button directly beside every primary anchor.
@@ -39,22 +42,32 @@ Keep a disposable review root alive while its review presentation is active so c
 Store the copy value in a hidden text node, copy it through a static report-owned handler that reads `textContent`, never interpolate it into script or an event-handler attribute, and persistently mark the anchor copied after success.
 In the pull-request copy section, keep each Finding's severity and `path:line` metadata outside its Markdown text so the user knows where to create the inline comment without copying that metadata into the comment.
 Provide a compact copy-icon button inside each Markdown panel for the general review and every Finding comment; reserve enough panel padding that Markdown text never runs beneath or against the button, give it an accessible label, copy only the associated Markdown text through a static report-owned handler that reads `textContent`, never dynamic HTML, and persistently recolor or collapse the panel after a successful copy so completed actions remain visible.
-Before the Finding cards, render a concise legend for every severity (`error`, `warning`, `info`) and action (`auto-fix`, `ask-user`, `no-op`), explaining impact, who decides next, and that standalone tags never trigger a mutation.
+Before the Finding cards, render a concise legend with human-readable labels for every severity (`error`, `warning`, `info`) and action (`auto-fix`, `ask-user`, `no-op`), explaining impact, who decides next, and that standalone tags never trigger a mutation.
 Never replace a line anchor with only a symbol, block name, filename, or commit reference.
 
 ## Build-mode interaction
 
-In mutating build modes, the user can select or add Findings, attach instructions, fix selected Findings, or approve as-is after every `ask-user` Finding has an explicit disposition; the report updates in place after any repair round.
-Use ordinary portable HTML and native controls: checkboxes for eligible selection, radio buttons or selects for explicit disposition, textareas for per-Finding instructions, and buttons for add Finding, fix selected, and approve as-is.
+In mutating build modes, the user can select or add Findings, attach instructions, request fixes, or approve as-is after every `ask-user` Finding has an explicit disposition; the report updates in place after any repair round.
+Wrap all build decisions in one HTML `<form>` with a stable safe ID such as `review-decisions`.
+Place every control for an existing Finding inside that Finding's card: its selection checkbox when eligible, plain-language disposition choices, and its instruction textarea.
+Keep the stable Finding ID in the control value or safe metadata, not as a label the user must interpret.
+Provide a clearly labelled section inside the form for a user-authored Finding.
+Near the end of the form, present one plain-language “What should happen next?” choice for fixing selected issues or approving the change as-is.
+At the bottom render one primary `Submit decisions` button rather than separate payload, copy, fix, or approve buttons.
 Give every Finding control a stable Finding ID and every question a stable queue key.
-Do not require presenter CSS, JavaScript, or network access for the report to render.
+The form and its controls must remain readable without CSS, JavaScript, or network access.
 
-An `ask-user` Finding must have an explicit disposition before approve-as-is can be queued in build mode.
-Client-side validation may explain missing dispositions, but the invoking skill must enforce the same rule after receiving feedback.
+An `ask-user` Finding must have an explicit disposition before approve-as-is can be submitted in build mode.
+The static report-owned form handler validates this in the browser, and the invoking skill enforces the same rule after receiving feedback.
 
-Render one copyable structured decision payload containing action, selected Finding IDs, added Findings, instructions, and dispositions.
-The user submits it through the `review-artifact` message or annotation surface; chat fallback accepts the same payload.
-Never assume that clicking a report control by itself authorizes a mutation; only feedback returned by the foreground review poll or explicitly submitted in chat does.
+The form handler builds the structured decision payload in the background from current form controls, containing action, selected Finding IDs, added Findings, instructions, and dispositions.
+It must not display the structured payload or ask the user to build, copy, or paste it.
+On valid submission, send exactly one bounded frame message with type: `review:submit` and one prompt whose text is the JSON-stringified payload, whose selector identifies the form, and whose workflow-owned tag identifies Review change decisions.
+Build the object from form-control values and `JSON.stringify` it at submit time; never interpolate Finding text, instructions, or other dynamic values into executable script.
+The `review-artifact` shell submits that message through the foreground review poll.
+Chat fallback accepts the same decisions in plain conversation and does not require payload syntax.
+Never assume that changing a report control by itself authorizes a mutation; only the submitted feedback returned by the foreground review poll or explicitly stated in chat does.
+An approve-as-is form submission records the dispositions but does not manufacture browser approval; after the invoking skill validates it, the user clears the gate with the review shell's Approve control.
 
 Load `review-artifact` and follow the [shared review protocol](../../shared/references/review-artifact.md) for build-mode opening, foreground polling, feedback, live reload, and explicit approval.
 Do not duplicate or guess its CLI commands in Review change.

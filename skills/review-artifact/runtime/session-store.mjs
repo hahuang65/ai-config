@@ -51,8 +51,9 @@ export class SessionStore {
       const at = new Date().toISOString();
       const userMessages = event.prompts
         .map((prompt) => {
-          const text = String(prompt.prompt ?? "").trim();
-          if (!text) return null;
+          const submittedText = String(prompt.prompt ?? "").trim();
+          const text = String(prompt.displayText ?? submittedText).trim();
+          if (!submittedText || !text) return null;
           const metadata = {
             tag: String(prompt.tag ?? "message"),
             selector: String(prompt.selector ?? ""),

@@ -2,6 +2,7 @@
 
 const LIMITS = Object.freeze({
   chatEntries: 500,
+  displayText: 2_000,
   prompt: 10_000,
   queueBytes: 120_000,
   queuePrompts: 100,
@@ -16,9 +17,16 @@ const LIMITS = Object.freeze({
 
 export function validateFrameMessage(message) {
   if (!plainObject(message) || typeof message.type !== "string") return null;
-  if (message.type === "review:queue") {
+  if (message.type === "review:queue" || message.type === "review:submit") {
     const prompt = validatePrompt(message.prompt);
-    return prompt ? { type: message.type, prompt } : null;
+    if (!prompt) return null;
+    if (message.type === "review:submit") {
+      return {
+        type: message.type,
+        prompt: { ...prompt, displayText: prompt.text.trim() || "Form submitted" },
+      };
+    }
+    return { type: message.type, prompt };
   }
   if (message.type === "review:snapshot") {
     const snapshot = boundedString(message.snapshot, LIMITS.snapshot);
@@ -63,10 +71,20 @@ export function validatePrompt(prompt) {
   const selector = boundedString(prompt.selector ?? "", LIMITS.selector);
   const tag = boundedString(prompt.tag ?? "", LIMITS.tag);
   const context = boundedString(prompt.text ?? "", LIMITS.text);
-  if (!text?.trim() || selector === null || tag === null || context === null) return null;
+  const displayText = prompt.displayText === undefined
+    ? undefined
+    : boundedString(prompt.displayText, LIMITS.displayText);
+  if (!text?.trim() || selector === null || tag === null || context === null || displayText === null) return null;
   const target = prompt.target === undefined ? undefined : validateTextTarget(prompt.target);
   if (prompt.target !== undefined && !target) return null;
-  return { prompt: text, selector, tag, text: context, ...(target ? { target } : {}) };
+  return {
+    prompt: text,
+    selector,
+    tag,
+    text: context,
+    ...(displayText === undefined ? {} : { displayText }),
+    ...(target ? { target } : {}),
+  };
 }
 
 export function validateChatEntries(chat) {

@@ -82,6 +82,13 @@ The reference CSS snippets below show *minimum* structural patterns. When using 
 - Use `overflow-wrap: break-word` on all text containers.
 - Never use `display: flex` on `<li>` for marker characters — use absolute positioning.
 
+## Plain language
+
+Write reviewer-facing prose and labels in plain language.
+Prefer terms from the project's `CONTEXT.md`, then common technical terms the user is likely to know.
+Do not turn source identifiers, internal workflow values, acronyms, or specialist jargon into the main explanation when familiar wording is available.
+When an uncommon term is necessary for accuracy, define it beside its first use.
+
 ## Output
 
 Write to the current feature directory under `docs/features/` if one exists.

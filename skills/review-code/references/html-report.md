@@ -39,7 +39,9 @@ Repo name, date, and a compact legend: solid box = module, dashed line = seam, r
 
 ## Candidate Card
 
-The diagrams carry the weight. Prose is sparse, plain, and uses the glossary terms ([language.md](language.md)) without ceremony.
+The diagrams carry the weight.
+Keep prose sparse and in plain language, using `CONTEXT.md` project wording first and common technical terms the user is likely to know second.
+Translate the analysis vocabulary in [language.md](language.md) into familiar labels unless the project already uses that term.
 
 Each candidate is one `<article>`:
 
@@ -105,19 +107,21 @@ One larger card. Candidate name, one sentence on why, anchor link to its card. T
 
 ## Tone
 
-Plain English, concise — but the architectural nouns and verbs come straight from [language.md](language.md). Concision is not an excuse to drift.
-
-**Use exactly:** module, interface, implementation, depth, deep, shallow, seam, adapter, leverage, locality.
-
-**Never substitute:** component, service, unit (for module) · API, signature (for interface) · boundary (for seam) · layer, wrapper (for module, when you mean module).
+Use concise plain language throughout the visible report.
+Prefer names and phrases from `CONTEXT.md`, then common technical terms the user is likely to know.
+The specialist vocabulary in [language.md](language.md) guides the analysis, but it is not automatically reviewer-facing vocabulary.
+If an uncommon term is essential, define it in a short phrase beside its first use and use a familiar heading such as “Current problem,” “Suggested change,” or “Why this helps.”
 
 **Phrasings that fit the style:**
 
-- "Order intake module is shallow — interface nearly matches the implementation."
-- "Pricing leaks across the seam."
-- "Deepen: one interface, one place to test."
-- "Two adapters justify the seam: HTTP in prod, in-memory in tests."
+- “Order intake makes callers repeat the same rules.”
+- “Pricing rules are spread across three files.”
+- “Suggested change: put the rules behind one small entry point.”
+- “Production uses HTTP; tests use an in-memory replacement.”
 
-**Wins bullets** name the gain in glossary terms: *"locality: bugs concentrate in one module"*, *"leverage: one interface, N call sites"*, *"interface shrinks; implementation absorbs the wrappers"*. Don't write *"easier to maintain"* or *"cleaner code"* — those terms aren't in the glossary and don't earn their place.
+**Wins bullets** state the concrete benefit: “bugs concentrate in one place,” “tests use one entry point,” or “callers no longer repeat validation.”
+Avoid abstract labels when the report can state what becomes easier, safer, or simpler.
 
-No hedging, no throat-clearing, no "it's worth noting that…". If a sentence could be a bullet, make it a bullet. If a bullet could be cut, cut it. If a term isn't in [language.md](language.md), reach for one that is before inventing a new one.
+No hedging, no throat-clearing, and no “it's worth noting that…”.
+If a sentence could be a bullet, make it a bullet.
+If a bullet could be cut, cut it.

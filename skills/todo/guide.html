@@ -154,7 +154,7 @@ code { font-family: var(--font-mono); font-size: 0.85em; background: var(--accen
     <tbody>
       <tr><td>1. Gather context</td><td>Read canonical <code>specs.html</code>, <code>CONTEXT.md</code>, relevant ADRs. Explore code if not yet done.</td></tr>
       <tr><td>2. Draft slices</td><td>Vertical only. Each slice cuts through every layer. Carry forward the spec's public-interface test surface. Mark HITL/AFK. Order by dependency.</td></tr>
-      <tr><td>3. Write <code>tasks.html</code></td><td>Use semantic slice containers with stable identity, status, dependency, mode, story, test-surface, and acceptance-criterion metadata.</td></tr>
+      <tr><td>3. Write <code>tasks.html</code></td><td>Use plain project language for visible content and semantic slice containers with stable identity, status, dependency, mode, story, test-surface, and acceptance-criterion metadata. Show “can run unattended” / “needs you present” as the main labels and AFK/HITL as secondary metadata.</td></tr>
       <tr><td>4. Review</td><td>Open through <span class="cmd-tag">review-artifact</span>. Ask about granularity, dependencies, HITL/AFK, and coverage.</td></tr>
       <tr><td>5. Iterate</td><td>Address every browser annotation or message in the same HTML and let the open review live-reload.</td></tr>
       <tr><td>6. Finalize</td><td>Explicit approval finalizes the artifact; report counts and advance to implementation.</td></tr>

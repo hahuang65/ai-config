@@ -50,6 +50,26 @@ describe("review session store", () => {
     ]);
   });
 
+  test("keeps a form payload in feedback while showing only its plain summary", async () => {
+    const directory = await mkdtemp(path.join(tmpdir(), "review-artifact-store-"));
+    const store = new SessionStore(path.join(directory, "state.json"));
+    const session = await store.upsert("/project/review.html", "http://127.0.0.1/session/review");
+    const payload = '{"action":"fix-selected","selectedFindingIds":["review-1"]}';
+
+    await store.queueFeedback(session.key, {
+      prompts: [{ prompt: payload, displayText: "Review decisions", tag: "review-decisions" }],
+    });
+
+    expect(await store.takeEvent(session.key)).toMatchObject({
+      prompts: [{ prompt: payload, displayText: "Review decisions" }],
+    });
+    expect((await store.find(session.key)).chat).toMatchObject([{
+      role: "user",
+      text: "Review decisions",
+      prompt: { tag: "review-decisions" },
+    }]);
+  });
+
   test("keeps element and text-range targets in the conversation history", async () => {
     const directory = await mkdtemp(path.join(tmpdir(), "review-artifact-store-"));
     const store = new SessionStore(path.join(directory, "state.json"));

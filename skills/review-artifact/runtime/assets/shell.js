@@ -80,7 +80,7 @@ import {
       pill.className = "queued-prompt";
       const text = document.createElement("span");
       const prefix = prompt.tag && prompt.tag !== "message" ? `[${prompt.tag}] ` : "";
-      text.textContent = prefix + prompt.prompt;
+      text.textContent = prefix + (prompt.displayText || prompt.prompt);
       const remove = document.createElement("button");
       remove.type = "button";
       remove.setAttribute("aria-label", "Remove queued feedback");
@@ -213,7 +213,7 @@ import {
     persistQueue();
     renderQueue();
     for (const prompt of submitted) {
-      addMessage({ role: "user", text: prompt.prompt, prompt });
+      addMessage({ role: "user", text: prompt.displayText || prompt.prompt, prompt });
     }
     if (pendingAction !== "feedback") markEnded(pendingAction);
   }
@@ -235,6 +235,7 @@ import {
     const message = validateFrameMessage(event.data);
     if (!message) return;
     if (message.type === "review:queue") queuePrompt(message.prompt);
+    if (message.type === "review:submit" && queuePrompt(message.prompt)) requestSnapshot("feedback");
     if (message.type === "review:snapshot") submit(message.snapshot);
     if (message.type === "review:layout") reportLayout(message.layoutWarnings);
     if (message.type === "review:scroll") artifactScroll = { x: message.x, y: message.y };

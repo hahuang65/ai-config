@@ -30,6 +30,27 @@ test("rejects malformed and oversized frame messages", () => {
   ]).toEqual([null, null, null]);
 });
 
+test("accepts a bounded artifact form submission", () => {
+  expect(validateFrameMessage({
+    type: "review:submit",
+    prompt: {
+      prompt: '{"action":"fix-selected","selectedFindingIds":["review-1"]}',
+      selector: "#review-decisions",
+      tag: "review-decisions",
+      text: "Review decisions",
+    },
+  })).toEqual({
+    type: "review:submit",
+    prompt: {
+      prompt: '{"action":"fix-selected","selectedFindingIds":["review-1"]}',
+      selector: "#review-decisions",
+      tag: "review-decisions",
+      text: "Review decisions",
+      displayText: "Review decisions",
+    },
+  });
+});
+
 test("preserves a bounded text-range annotation", () => {
   expect(validateFrameMessage({
     type: "review:queue",

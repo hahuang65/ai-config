@@ -16,9 +16,11 @@ Surface architectural friction and propose **deepening opportunities** — refac
 This workflow is optional standalone architectural exploration.
 It is never invoked automatically by `/build`; Review change owns that pipeline's final validation gate.
 
-## Glossary
+## Analysis glossary
 
-Use these terms exactly in every suggestion. Consistent language is the point — don't drift into "component," "service," "API," or "boundary." Full definitions in [language.md](references/language.md).
+Use these terms consistently while analyzing the code.
+Full definitions are in [language.md](references/language.md).
+Translate them into plain project language in the reviewer-facing report unless `CONTEXT.md` or the codebase already uses the term.
 
 - **Module** — anything with an interface and an implementation (function, class, package, slice).
 - **Interface** — everything a caller must know to use the module: types, invariants, error modes, ordering, config. Not just the type signature.
@@ -69,13 +71,15 @@ Each of the agent's candidates renders as a card:
 - **Files** — which files/modules are involved
 - **Problem** — why the current architecture is causing friction
 - **Solution** — plain English description of what would change
-- **Benefits** — explained in terms of locality and leverage, and how tests would improve
+- **Benefits** — a plain-language explanation of what becomes easier to change or test
 - **Before / After diagram** — side-by-side, custom-drawn, illustrating the shallowness and the deepening
 - **Recommendation strength** — one of `Strong`, `Worth exploring`, `Speculative`, rendered as a badge
 
 End the report with a **Top recommendation** section: which candidate you'd tackle first and why.
 
-**Use CONTEXT.md vocabulary for the domain, and [language.md](references/language.md) vocabulary for the architecture.** If `CONTEXT.md` defines "Order," talk about "the Order intake module" — not "the FooBarHandler," and not "the Order service."
+**Use `CONTEXT.md` vocabulary and common technical terms in the visible report.**
+Use [language.md](references/language.md) to reason precisely, then describe the concrete problem and suggested change without requiring the user to learn that glossary.
+If `CONTEXT.md` defines “Order,” write “Order intake”; use a code name such as `FooBarHandler` only when the exact source anchor helps.
 
 **ADR conflicts**: if a candidate contradicts an existing ADR, only surface it when the friction is real enough to warrant revisiting the ADR. Mark it clearly in the card (e.g. a warning callout: _"contradicts ADR-0007 — but worth reopening because…"_). Don't list every theoretical refactor an ADR forbids.
 

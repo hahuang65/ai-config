@@ -23,7 +23,7 @@ describe("review server", () => {
 
     const response = await fetch(`${server.baseUrl}/health`);
 
-    expect(await response.json()).toEqual({ ok: true, app: "review-artifact", version: 2 });
+    expect(await response.json()).toEqual({ ok: true, app: "review-artifact", version: 3 });
   });
 
   test("opens a local HTML artifact without modifying its source", async () => {

@@ -19,6 +19,14 @@ For task artifacts, identify each slice and acceptance criterion with stable `da
 The review runtime injects its browser bridge only into the served response.
 It never rewrites the saved artifact merely to add review controls.
 
+## Plain-language contract
+
+Write every reviewer-facing heading, label, explanation, and instruction in plain language.
+Prefer terms already used in the current project and `CONTEXT.md`, followed by common technical terms the user is likely to know.
+Do not expose internal workflow names, machine values, payload fields, or specialist jargon as the main label when a familiar phrase says the same thing.
+When an uncommon technical term is unavoidable, define it beside its first use in one short sentence.
+Keep exact machine values in safe metadata or generated submissions rather than making the reviewer translate them.
+
 ## Review loop
 
 1. Generate the canonical HTML file.
@@ -32,6 +40,13 @@ It never rewrites the saved artifact merely to add review controls.
 
 Feedback targets include a selector, nearby text, and text-range anchors when the user selected text.
 Use the compact DOM snapshot only as supporting context; the canonical HTML remains authoritative.
+
+## Artifact-owned forms
+
+When an invoking workflow defines a decision form inside its artifact, a static artifact script may send one validated `review:submit` frame message containing a bounded prompt.
+The review shell queues that prompt and immediately sends it through the normal foreground feedback path, so the user never copies an internal payload into chat.
+Treat all artifact form values as untrusted input and build submissions from current native form controls without dynamic code interpolation.
+An artifact form can submit feedback but cannot approve or end its own review.
 
 ## Decision semantics
 

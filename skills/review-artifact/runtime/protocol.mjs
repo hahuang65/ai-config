@@ -1,7 +1,7 @@
 import { randomBytes, timingSafeEqual } from "node:crypto";
 
 export const REVIEW_ARTIFACT_APP = "review-artifact";
-export const REVIEW_ARTIFACT_RUNTIME_VERSION = 2;
+export const REVIEW_ARTIFACT_RUNTIME_VERSION = 3;
 export const AGENT_TOKEN_HEADER = "x-review-artifact-agent-token";
 
 const AGENT_TOKEN_BYTES = 32;

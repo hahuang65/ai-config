@@ -11,6 +11,8 @@ The visible semantic HTML is both the review surface and the durable input to la
 - Use stable section IDs so feedback remains understandable after live reload.
 - Keep styling and scripts self-contained except for optional visualization CDNs.
 - Use semantic headings, lists, tables, sections, articles, and native controls.
+- Write visible content in plain language, preferring `CONTEXT.md` terms and common technical terms the reviewer is likely to know.
+- Define an unavoidable unfamiliar term beside its first use rather than assuming the reviewer knows it.
 
 ## Required visible sections
 

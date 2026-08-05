@@ -38,6 +38,30 @@ browserTest("completes annotations through the rendered browser surface", async 
   }
 }, 15_000);
 
+browserTest("submits an artifact-owned decision form through the review session", async () => {
+  const review = await startInteractiveReview({ artifactContent: decisionFormArtifact() });
+  try {
+    await review.browser.evaluateChild(`JSON.stringify(document.querySelector("#submit-decisions").click() ?? true)`);
+    expect(await review.polling).toMatchObject({
+      status: "feedback",
+      prompts: [{
+        prompt: '{"action":"fix-selected","selectedFindingIds":["review-1"]}',
+        selector: "#review-decisions",
+        tag: "review-decisions",
+      }],
+    });
+    await waitForBrowserCondition(
+      () => review.browser.evaluate(`JSON.stringify((() => {
+        const messages = document.querySelector("#messages").textContent;
+        return messages.includes("Review decisions") && !messages.includes("fix-selected");
+      })())`),
+      "Decision payload remained visible in the review conversation",
+    );
+  } finally {
+    await closeInteractiveReview(review);
+  }
+}, 15_000);
+
 browserTest("bounds a live artifact feedback queue", async () => {
   const review = await startBrowserReview({ artifactContent: queueFloodArtifact() });
   try {
@@ -360,6 +384,24 @@ function selectText(target) {
   }, 150);
 }
 </script></body></html>`;
+}
+
+function decisionFormArtifact() {
+  return `<!doctype html><form id="review-decisions">
+<button id="submit-decisions" type="submit">Submit decisions</button></form><script>
+document.querySelector("#review-decisions").addEventListener("submit", (event) => {
+  event.preventDefault();
+  parent.postMessage({
+    type: "review:submit",
+    prompt: {
+      prompt: '{"action":"fix-selected","selectedFindingIds":["review-1"]}',
+      selector: "#review-decisions",
+      tag: "review-decisions",
+      text: "Review decisions",
+    },
+  }, "*");
+});
+</script>`;
 }
 
 function queueFloodArtifact() {
