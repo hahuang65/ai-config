@@ -36,8 +36,9 @@ test("deliver delegates policy to Orchard and uses commit only for a needs-commi
   expect(delivery).toContain("`orchard` skill for its deliver operation");
   expect(delivery).toContain("`needs-commit`");
   expect(delivery).toContain("`commit` skill");
-  expect(delivery).toContain("validate the exact worktree path as the named active managed task");
-  expect(delivery).toContain("Do not treat the worktree intent as commit scope");
+  expect(delivery).toContain("managed task or ordinary local branch");
+  expect(delivery).toContain("exact checkout path and branch");
+  expect(delivery).toContain("Do not treat the delivery argument as commit scope");
   expect(delivery).toContain("retry Orchard deliver");
   expect(delivery).not.toContain("A5 project");
   expect(delivery).not.toContain("git pr create --web --fill");

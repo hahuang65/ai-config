@@ -69,13 +69,15 @@ test("deliver is a thin Orchard prompt with commit fallback", async () => {
   expect(delivery).toContain("`orchard` skill for its deliver operation");
   expect(delivery).toContain("`needs-commit`");
   expect(delivery).toContain("`commit` skill");
-  expect(delivery).toContain("validate the exact worktree path as the named active managed task");
+  expect(delivery).toContain("managed task or ordinary local branch");
+  expect(delivery).toContain("exact checkout path and branch");
   expect(delivery).toContain("retry Orchard deliver");
   expect(delivery).not.toContain("A5 project");
   expect(delivery).not.toContain("git pr create --web --fill");
   expect(orchard).toContain("delivery policy");
   expect(orchard).toContain("--finalize-operation");
   expect(orchard).toContain("worktree intent");
+  expect(orchard).toContain("ordinary local branch");
   expect(orchard).not.toContain("Orchard merge");
 });
 

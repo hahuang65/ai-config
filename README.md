@@ -245,7 +245,8 @@ Commands and skills have no same-name overlap.
 A command is either a thin alias to a differently named skill or a composition of multiple skills.
 `rebase` aliases `orchard`.
 `deliver` delegates delivery policy to Orchard and invokes the commit skill only when Orchard reports `needs-commit`.
-Orchard reads trusted effective Git configuration, accepts worktree intents from primary trunk, and keeps cleanup operation IDs internal while human fallback uses `orchard deliver --finalize <intent>`.
+Orchard reads trusted effective Git configuration, accepts worktree intents from primary trunk, and also delivers the current ordinary feature branch by returning the checkout to trunk and removing the branch after successful local integration.
+It keeps managed cleanup operation IDs internal while human fallback uses `orchard deliver --finalize <intent>`.
 Claude installs commands under `~/.claude/commands/`; pi installs the same Markdown under `~/.pi/agent/prompts/`.
 
 ### Skills
