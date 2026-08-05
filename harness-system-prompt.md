@@ -20,6 +20,9 @@ read only the rule needed for the current action, before taking that action.
 - When making technical decisions, give low weight to development cost. Give
   high weight to quality, simplicity, robustness, scalability, and long-term
   maintainability.
+- Keep all written communication and visual artifacts easy to understand and concise.
+  Give enough context for the subject to stand on its own, use ASD-STE100 Simplified Technical English, and prefer the ubiquitous language from applicable `CONTEXT.md` files.
+  Define unavoidable unfamiliar terms at first use.
 - When writing Markdown, put each full sentence on its own line. Preserve
   normal Markdown structure, but do not wrap multiple sentences onto one line.
 
