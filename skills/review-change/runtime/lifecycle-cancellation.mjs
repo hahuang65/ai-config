@@ -1,3 +1,5 @@
+import { signalExitCode } from "./signal-status.mjs";
+
 export function createLifecycleCancellation({ processRef = process, status }) {
   let interruptedSignal = null;
   let childAbort = null;
@@ -28,7 +30,7 @@ export function createLifecycleCancellation({ processRef = process, status }) {
       if (interruptedSignal) throw interruption(interruptedSignal);
     },
     exitCode() {
-      return interruptedSignal ? signalExitCode(interruptedSignal) : null;
+      return interruptedSignal ? signalExitCode(interruptedSignal, 143) : null;
     },
     cleanup() {
       processRef.removeListener("SIGINT", onSigint);
@@ -42,10 +44,6 @@ export function createLifecycleCancellation({ processRef = process, status }) {
 function interruption(signal) {
   return Object.assign(new Error(`interrupted by ${signal}`), {
     code: "REVIEW_CHANGE_INTERRUPTED",
-    exitCode: signalExitCode(signal),
+    exitCode: signalExitCode(signal, 143),
   });
-}
-
-function signalExitCode(signal) {
-  return signal === "SIGINT" ? 130 : 143;
 }

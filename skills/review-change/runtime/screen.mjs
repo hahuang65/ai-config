@@ -1,9 +1,17 @@
 import { sliceLogWindow } from "./log-window.mjs";
+import {
+  renderedLogLineCount,
+  renderedLogLines,
+  renderedSummaryLineCount,
+  renderedSummaryLines,
+} from "./screen-content.mjs";
+import { statusScreenLayout } from "./screen-layout.mjs";
+import { graphemes, terminalDisplayWidth } from "./terminal-width.mjs";
+
+export { renderedLogLineCount, renderedSummaryLineCount, statusScreenLayout };
+
 const ESCAPE = "\u001b";
 const RESET = `${ESCAPE}[0m`;
-const GRAPHEME_SEGMENTER = typeof Intl.Segmenter === "function"
-  ? new Intl.Segmenter(undefined, { granularity: "grapheme" })
-  : null;
 const MAX_SUBSTAGE_WORDS = 6;
 const STYLE = {
   bold: `${ESCAPE}[1m`,
@@ -16,44 +24,56 @@ const STYLE = {
   magenta: `${ESCAPE}[35m`,
   cyan: `${ESCAPE}[36m`,
 };
+const STAGE_MARK = { pending: "○", running: "●", passed: "✓", failed: "×", waiting: "Ⅱ" };
+const STAGE_STYLE = {
+  pending: STYLE.dim,
+  running: STYLE.cyan,
+  passed: STYLE.green,
+  failed: STYLE.red,
+  waiting: STYLE.yellow,
+};
 
 export function renderStatusScreen({ state, stream, timestamp, view, stages, formatDuration, color = true }) {
   const width = Math.max(1, stream.columns ?? 100);
   const height = Math.max(1, stream.rows ?? 30);
-  if (width < 32 || height < 12) {
-    return renderTinyStatusScreen({ state, width, height, timestamp, view, formatDuration, color });
+  const selected = state.stages.get(view.selectedStage ?? state.currentStage ?? "target");
+  const summary = selected?.id === "summary" && state.finalSummary.length > 0;
+  const layout = statusScreenLayout({
+    width, height, fullLog: Boolean(state.context.fullLog), stageCount: stages.length, summary,
+  });
+  if (layout.mode === "tiny") {
+    return renderTinyStatusScreen({ state, width, height, timestamp, view, formatDuration, color, layout });
   }
-  if (width >= 88) {
-    return renderSplitStatusScreen({ state, width, height, timestamp, view, stages, formatDuration, color });
+  if (layout.mode === "split") {
+    return renderSplitStatusScreen({ state, width, height, timestamp, view, stages, formatDuration, color, layout });
   }
   const lines = [
     headerLine(state, width, timestamp, formatDuration, color),
     contextLine(state, width, color),
     worktreeLine(state, width, color),
+    ...(state.context.fullLog ? [fullLogLine(state, width, color)] : []),
     paint(rule(width), [STYLE.dim], color),
     paint("PIPELINE · READ-ONLY", [STYLE.bold, STYLE.cyan], color),
   ];
-  for (const definition of visibleStageDefinitions(stages, view.selectedStage, height)) {
+  for (const definition of visibleStageDefinitions(stages, view.selectedStage, layout.stageRows)) {
     lines.push(renderStage(
       state.stages.get(definition.id), timestamp, width,
       definition.id === view.selectedStage, formatDuration, color,
     ));
   }
   lines.push(paint(rule(width), [STYLE.dim], color));
-  const selected = state.stages.get(view.selectedStage ?? state.currentStage ?? "target");
-  lines.push(paint(`LOG · ${(selected?.label ?? "Waiting").toUpperCase()}`, [STYLE.bold, STYLE.magenta], color));
+  lines.push(paint(logHeading(selected), [STYLE.bold, STYLE.magenta], color));
   lines.push(paint(clip(`DESCRIPTION · ${selected?.description ?? "Waiting"}`, width), [STYLE.dim], color));
-  const available = Math.max(1, height - lines.length - 3);
-  const isSummary = selected?.id === "summary" && state.finalSummary.length > 0;
+  const available = layout.contentCapacity;
   const logLines = view.showHelp
     ? helpLines(color, width, state.finalSummary.length > 0)
-    : isSummary
+    : summary
       ? renderSummary(state.finalSummary, width, color, state.finalSummaryRendered)
-      : renderLogs(selected?.logs ?? [], state.startedAt, width, view.expanded, formatDuration, color);
+      : renderLogs(selected, state.startedAt, width, view.expanded, formatDuration, color);
   if (logLines.length === 0) logLines.push(paint("  waiting for activity…", [STYLE.dim], color));
   if (view.showHelp) {
     lines.push(...logLines.slice(0, available));
-  } else if (isSummary) {
+  } else if (summary) {
     const maximumOffset = Math.max(0, logLines.length - available);
     const summaryOffset = Math.min(view.summaryOffset ?? 0, maximumOffset);
     lines.push(...logLines.slice(summaryOffset, summaryOffset + available));
@@ -68,26 +88,29 @@ export function renderStatusScreen({ state, stream, timestamp, view, stages, for
   lines.push(paint(clip(footer, width), [STYLE.dim], color));
   return `${ESCAPE}[H${ESCAPE}[2J${lines.slice(0, height).join("\n")}`;
 }
-function renderTinyStatusScreen({ state, width, height, timestamp, view, formatDuration, color }) {
+function renderTinyStatusScreen({ state, width, height, timestamp, view, formatDuration, color, layout }) {
   const selected = state.stages.get(view.selectedStage ?? state.currentStage ?? "target");
   const finalSummary = state.finalSummary.length > 0 && view.selectedStage === "summary";
   const content = view.showHelp
     ? helpLines(color, width, state.finalSummary.length > 0)
     : finalSummary
       ? renderSummary(state.finalSummary, width, color, state.finalSummaryRendered)
-      : renderLogs(selected?.logs ?? [], state.startedAt, width, false, formatDuration, color);
+      : renderLogs(selected, state.startedAt, width, view.expanded, formatDuration, color);
   const compactHeader = height < 5;
   const lines = [compactHeader
     ? worktreeLine(state, width, color)
     : headerLine(state, width, timestamp, formatDuration, color)];
   if (!compactHeader && height >= 4) lines.push(contextLine(state, width, color));
   if (!compactHeader && height >= 5) lines.push(worktreeLine(state, width, color));
+  if (!compactHeader && height >= 6 && state.context.fullLog) {
+    lines.push(fullLogLine(state, width, color));
+  }
   if (!finalSummary) {
-    lines.push(renderStage(selected, timestamp, width, true, formatDuration, color));
-    if (height >= 7) lines.push(paint(clip(selected?.description ?? "Waiting", width), [STYLE.dim], color));
+    lines.push(renderStage(selected, timestamp, width, true, formatDuration, color, { compactOmission: true }));
+    if (height >= 8) lines.push(paint(clip(selected?.description ?? "Waiting", width), [STYLE.dim], color));
   }
   const footer = finalSummary ? "Ctrl-C exit · Ctrl-U/D" : "Ctrl-C abort · j/k nav · Ctrl-U/D";
-  const available = Math.max(0, height - lines.length - 1);
+  const available = layout.contentCapacity;
   if (view.showHelp) {
     lines.push(...content.slice(0, available));
   } else if (finalSummary) {
@@ -101,11 +124,10 @@ function renderTinyStatusScreen({ state, width, height, timestamp, view, formatD
   if (height > 1) lines.push(paint(clip(footer, width), [STYLE.dim], color));
   return `${ESCAPE}[H${ESCAPE}[2J${lines.slice(0, height).join("\n")}`;
 }
-function renderSplitStatusScreen({ state, width, height, timestamp, view, stages, formatDuration, color }) {
-  const leftWidth = Math.max(40, Math.min(58, Math.floor(width * 0.52)));
-  const rightWidth = width - leftWidth - 1;
-  const bodyHeight = height - 6;
-  const contentHeight = bodyHeight - 1;
+function renderSplitStatusScreen({ state, width, height, timestamp, view, stages, formatDuration, color, layout }) {
+  const leftWidth = layout.leftWidth;
+  const rightWidth = layout.paneWidth;
+  const contentHeight = layout.contentCapacity;
   const selected = state.stages.get(view.selectedStage ?? state.currentStage ?? "target");
   const pipeline = cropPipelineLines(
     pipelineDetailLines(state, stages, view.selectedStage, timestamp, formatDuration, leftWidth),
@@ -116,7 +138,7 @@ function renderSplitStatusScreen({ state, width, height, timestamp, view, stages
     ? helpLines(color, rightWidth, state.finalSummary.length > 0)
     : isSummary
       ? renderSummary(state.finalSummary, rightWidth, color, state.finalSummaryRendered)
-      : renderLogs(selected?.logs ?? [], state.startedAt, rightWidth, view.expanded, formatDuration, color);
+      : renderLogs(selected, state.startedAt, rightWidth, view.expanded, formatDuration, color);
   if (logs.length === 0) logs.push(paint("  waiting for activity…", [STYLE.dim], color));
   const visibleLogs = view.showHelp
     ? logs.slice(0, contentHeight)
@@ -125,7 +147,7 @@ function renderSplitStatusScreen({ state, width, height, timestamp, view, stages
       : sliceLogWindow(logs, contentHeight, view.logOffset);
   const divider = paint("│", [STYLE.dim], color);
   const body = [
-    `${paint(fitCell("PIPELINE · READ-ONLY", leftWidth), [STYLE.bold, STYLE.cyan], color)}${divider}${paint(fitCell(`LOG · ${(selected?.label ?? "Waiting").toUpperCase()}`, rightWidth), [STYLE.bold, STYLE.magenta], color)}`,
+    `${paint(fitCell("PIPELINE · READ-ONLY", leftWidth), [STYLE.bold, STYLE.cyan], color)}${divider}${paint(fitCell(logHeading(selected), rightWidth), [STYLE.bold, STYLE.magenta], color)}`,
   ];
   for (let index = 0; index < contentHeight; index += 1) {
     const pipelineLine = pipeline[index] ?? { text: "", styles: [] };
@@ -140,6 +162,7 @@ function renderSplitStatusScreen({ state, width, height, timestamp, view, stages
     headerLine(state, width, timestamp, formatDuration, color),
     contextLine(state, width, color),
     worktreeLine(state, width, color),
+    ...(state.context.fullLog ? [fullLogLine(state, width, color)] : []),
     paint(rule(width), [STYLE.dim], color),
     ...body,
     paint(rule(width), [STYLE.dim], color),
@@ -148,22 +171,21 @@ function renderSplitStatusScreen({ state, width, height, timestamp, view, stages
   return `${ESCAPE}[H${ESCAPE}[2J${lines.slice(0, height).join("\n")}`;
 }
 
+function logHeading(stage) {
+  const count = stage?.omittedLogEntries ?? 0;
+  const omitted = count > 0 ? ` · ${count} ENTRIES OMITTED` : "";
+  return `LOG · ${(stage?.label ?? "Waiting").toUpperCase()}${omitted}`;
+}
+
 function pipelineDetailLines(state, stages, selectedStage, timestamp, formatDuration, width) {
   const lines = [];
   for (const definition of stages) {
     const stage = state.stages.get(definition.id);
     const selected = definition.id === selectedStage;
-    const marks = { pending: "○", running: "●", passed: "✓", failed: "×", waiting: "Ⅱ" };
-    const stageColor = {
-      pending: STYLE.dim,
-      running: STYLE.cyan,
-      passed: STYLE.green,
-      failed: STYLE.red,
-      waiting: STYLE.yellow,
-    }[stage.status];
+    const stageColor = STAGE_STYLE[stage.status];
     const duration = stage.startedAt === undefined ? "" : ` · ${formatDuration(stage.startedAt, stage.finishedAt ?? timestamp)}`;
     lines.push({
-      text: `${selected ? ">" : " "} ${marks[stage.status]} ${stage.label}${duration}`,
+      text: `${selected ? ">" : " "} ${STAGE_MARK[stage.status]} ${stage.label}${duration}`,
       styles: selected ? [STYLE.bold, STYLE.inverse, stageColor] : [stageColor],
       selected,
     });
@@ -173,7 +195,7 @@ function pipelineDetailLines(state, stages, selectedStage, timestamp, formatDura
     for (const log of stage.logs) {
       if (log.kind === "step") {
         currentStep += 1;
-        const active = new Set(["running", "waiting"]).has(stage.status) && currentStep === steps.length - 1;
+        const active = ["running", "waiting"].includes(stage.status) && currentStep === steps.length - 1;
         const stepFinishedAt = steps[currentStep + 1]?.timestamp ?? stage.finishedAt ?? timestamp;
         const stepDuration = formatDuration(log.timestamp, stepFinishedAt);
         lines.push({
@@ -187,7 +209,7 @@ function pipelineDetailLines(state, stages, selectedStage, timestamp, formatDura
     }
     if (steps.length === 0 && stage.status === "running") {
       lines.push({ text: `    › ${conciseSubstage(stage.substage || "in progress")}`, styles: [STYLE.yellow], selected });
-    } else if (stage.detail && (new Set(["failed", "waiting"]).has(stage.status)
+    } else if (stage.detail && (["failed", "waiting"].includes(stage.status)
       || stage.status === "passed" && steps.length === 0)) {
       lines.push({ text: `    ${stage.status === "failed" ? "×" : "↳"} ${stage.detail}`, styles: [stageColor], selected });
     }
@@ -234,6 +256,10 @@ function worktreeLine(state, width, color) {
   return paint(clip(`WORKTREE ${workspace}`, width), [STYLE.dim], color);
 }
 
+function fullLogLine(state, width, color) {
+  return paint(clip(`FULL LOG ${state.context.fullLog}`, width), [STYLE.dim], color);
+}
+
 function headerLine(state, width, timestamp, formatDuration, color) {
   const status = state.exitCode === null ? "RUNNING" : state.exitCode === 0 ? "COMPLETE" : "FAILED";
   const duration = formatDuration(state.startedAt, state.finishedAt ?? timestamp);
@@ -242,43 +268,29 @@ function headerLine(state, width, timestamp, formatDuration, color) {
   return paint(line, [STYLE.bold, statusColor], color);
 }
 
-function renderStage(stage, timestamp, width, selected, formatDuration, color) {
-  const marks = { pending: "○", running: "●", passed: "✓", failed: "×", waiting: "Ⅱ" };
+function renderStage(stage, timestamp, width, selected, formatDuration, color, options = {}) {
   const duration = stage.startedAt === undefined ? "" : formatDuration(stage.startedAt, stage.finishedAt ?? timestamp);
   const detail = stage.detail || (stage.status === "running"
     ? conciseSubstage(stage.substage || "in progress")
     : stage.status);
+  const omitted = options.compactOmission && stage.omittedLogEntries > 0
+    ? `${stage.omittedLogEntries} OMIT · `
+    : "";
   const line = width < 64
-    ? clip(`${selected ? ">" : " "} ${marks[stage.status]} ${stage.label} · ${detail}`, width)
-    : clip(`${selected ? ">" : " "} ${marks[stage.status]} ${stage.label.padEnd(22)} ${duration.padStart(7)}  ${detail}`, width);
-  const stageColor = {
-    pending: STYLE.dim,
-    running: STYLE.cyan,
-    passed: STYLE.green,
-    failed: STYLE.red,
-    waiting: STYLE.yellow,
-  }[stage.status];
+    ? clip(`${selected ? ">" : " "} ${STAGE_MARK[stage.status]} ${omitted}${stage.label} · ${detail}`, width)
+    : clip(`${selected ? ">" : " "} ${STAGE_MARK[stage.status]} ${stage.label.padEnd(22)} ${duration.padStart(7)}  ${detail}`, width);
+  const stageColor = STAGE_STYLE[stage.status];
   const styles = selected ? [STYLE.bold, STYLE.inverse, stageColor] : [stageColor];
   return paint(line, styles, color);
 }
 
-function renderLogs(logs, runStartedAt, width, expanded, formatDuration, color) {
-  return logs.flatMap((log) => {
-    const relative = formatDuration(runStartedAt, log.timestamp).padStart(7);
-    const prefix = `${relative}  ${log.kind.toUpperCase().padEnd(9)} `;
-    const logColor = colorForLog(log.kind);
-    if (!expanded) return [paint(clip(`${prefix}${log.message}`, width), [logColor], color)];
-    const wrapped = wrapLine(log.message, Math.max(20, width - prefix.length));
-    return wrapped.map((line, index) => paint(
-      clip(`${index === 0 ? prefix : " ".repeat(prefix.length)}${line}`, width),
-      [logColor],
-      color,
-    ));
-  });
+function renderLogs(stage, runStartedAt, width, expanded, formatDuration, color) {
+  return renderedLogLines(stage, runStartedAt, width, expanded, formatDuration).map(({ text, kind }) => (
+    paint(clip(text, width), [colorForLog(kind)], color)
+  ));
 }
 
-function visibleStageDefinitions(stages, selectedStage, height) {
-  const maximumRows = Math.max(1, height - 12);
+function visibleStageDefinitions(stages, selectedStage, maximumRows) {
   if (stages.length <= maximumRows) return stages;
   const selectedIndex = Math.max(0, stages.findIndex(({ id }) => id === selectedStage));
   const start = Math.max(0, Math.min(stages.length - maximumRows, selectedIndex - Math.floor(maximumRows / 2)));
@@ -286,17 +298,16 @@ function visibleStageDefinitions(stages, selectedStage, height) {
 }
 
 function renderSummary(summaryLines, width, color, preRendered = false) {
-  if (preRendered) return summaryLines;
-  return summaryLines.flatMap((line, index) => {
-    const wrapped = wrapLine(line, width);
-    const styles = index === 0
-      ? [STYLE.bold, line.includes("completed") ? STYLE.green : STYLE.red]
-      : line.startsWith("Report:")
+  return renderedSummaryLines(summaryLines, width, preRendered).map((line) => {
+    if (line.preRendered) return line.text;
+    const styles = line.sourceIndex === 0
+      ? [STYLE.bold, line.source.includes("completed") ? STYLE.green : STYLE.red]
+      : line.source.startsWith("Report:")
         ? [STYLE.cyan]
-        : line === "Stages:" || line === "Assistant summary:"
+        : line.source === "Stages:" || line.source === "Assistant summary:"
           ? [STYLE.bold, STYLE.magenta]
           : [STYLE.blue];
-    return wrapped.map((part) => paint(part, styles, color));
+    return paint(line.text, styles, color);
   });
 }
 function conciseSubstage(message) {
@@ -338,24 +349,6 @@ function paint(value, styles, color) {
   return `${styles.join("")}${value}${RESET}`;
 }
 
-function wrapLine(value, width) {
-  const lines = [];
-  let line = "";
-  let cells = 0;
-  for (const grapheme of graphemes(value)) {
-    const graphemeWidth = terminalDisplayWidth(grapheme);
-    if (cells > 0 && cells + graphemeWidth > width) {
-      lines.push(line);
-      line = "";
-      cells = 0;
-    }
-    line += grapheme;
-    cells += graphemeWidth;
-  }
-  if (line || lines.length === 0) lines.push(line);
-  return lines;
-}
-
 function clip(value, width) {
   if (terminalDisplayWidth(value) <= width) return value;
   if (width <= 0) return "";
@@ -371,30 +364,6 @@ function clip(value, width) {
   return `${clipped}…`;
 }
 
-export function terminalDisplayWidth(value) {
-  let width = 0;
-  for (const grapheme of graphemes(value)) {
-    if (/^\p{Mark}+$/u.test(grapheme)) continue;
-    const codePoint = grapheme.codePointAt(0) ?? 0;
-    const wide = /\p{Extended_Pictographic}/u.test(grapheme)
-      || codePoint >= 0x1100 && (
-        codePoint <= 0x115f
-        || codePoint >= 0x2e80 && codePoint <= 0xa4cf
-        || codePoint >= 0xac00 && codePoint <= 0xd7a3
-        || codePoint >= 0xf900 && codePoint <= 0xfaff
-        || codePoint >= 0xfe10 && codePoint <= 0xfe6f
-        || codePoint >= 0xff00 && codePoint <= 0xff60
-        || codePoint >= 0xffe0 && codePoint <= 0xffe6
-      );
-    width += wide ? 2 : 1;
-  }
-  return width;
-}
-
-function graphemes(value) {
-  if (!GRAPHEME_SEGMENTER) return Array.from(String(value));
-  return Array.from(GRAPHEME_SEGMENTER.segment(String(value)), ({ segment }) => segment);
-}
 function rule(width) {
   return "─".repeat(width);
 }

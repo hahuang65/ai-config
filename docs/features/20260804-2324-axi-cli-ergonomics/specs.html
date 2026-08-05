@@ -1,0 +1,296 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Agent-facing CLI Ergonomics Spec</title>
+  <style>
+    :root {
+      color-scheme: light dark;
+      --bg: #f4f1e8;
+      --paper: #fffdf7;
+      --ink: #27231d;
+      --muted: #6d655a;
+      --line: #d8d0c2;
+      --accent: #0f6b62;
+      --accent-soft: #dcece7;
+      --shadow: 0 18px 60px rgba(57, 47, 34, 0.12);
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background:
+        linear-gradient(90deg, transparent 31px, rgba(15, 107, 98, 0.08) 32px, transparent 33px),
+        var(--bg);
+      color: var(--ink);
+      font-family: Georgia, "Times New Roman", serif;
+      line-height: 1.62;
+    }
+    main {
+      width: min(920px, calc(100% - 32px));
+      margin: 40px auto;
+      padding: clamp(28px, 6vw, 72px);
+      background: var(--paper);
+      border: 1px solid var(--line);
+      box-shadow: var(--shadow);
+    }
+    header { border-bottom: 3px double var(--line); padding-bottom: 28px; }
+    h1, h2, h3 { line-height: 1.15; text-wrap: balance; }
+    h1 { margin: 0; font-size: clamp(2.2rem, 6vw, 4.4rem); letter-spacing: -0.04em; }
+    h2 { margin-top: 0; font-size: clamp(1.45rem, 3vw, 2rem); }
+    h3 { font-size: 1.08rem; }
+    p, li { max-width: 76ch; }
+    section { padding: 34px 0; border-bottom: 1px solid var(--line); }
+    section:last-child { border-bottom: 0; padding-bottom: 0; }
+    .eyebrow {
+      margin: 0 0 10px;
+      color: var(--accent);
+      font: 700 0.76rem/1.2 ui-monospace, SFMono-Regular, Menlo, monospace;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+    }
+    .lede { color: var(--muted); font-size: 1.16rem; }
+    .decision, .module {
+      margin: 18px 0;
+      padding: 18px 20px;
+      border-left: 4px solid var(--accent);
+      background: var(--accent-soft);
+    }
+    .decision h3, .module h3 { margin: 0 0 8px; }
+    ol.stories { counter-reset: story; padding: 0; list-style: none; }
+    ol.stories li {
+      counter-increment: story;
+      display: grid;
+      grid-template-columns: 2.5rem minmax(0, 1fr);
+      gap: 12px;
+      margin: 18px 0;
+    }
+    ol.stories li::before {
+      content: counter(story, decimal-leading-zero);
+      color: var(--accent);
+      font: 700 0.82rem/1.8 ui-monospace, SFMono-Regular, Menlo, monospace;
+    }
+    code {
+      padding: 0.08em 0.3em;
+      border: 1px solid var(--line);
+      border-radius: 3px;
+      background: rgba(109, 101, 90, 0.08);
+      font: 0.9em ui-monospace, SFMono-Regular, Menlo, monospace;
+    }
+    ul { padding-left: 1.25rem; }
+    .meta { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 20px; }
+    .meta span {
+      padding: 5px 9px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      color: var(--muted);
+      font: 0.74rem ui-monospace, SFMono-Regular, Menlo, monospace;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #171a18;
+        --paper: #202522;
+        --ink: #edf1e9;
+        --muted: #b7beb3;
+        --line: #465048;
+        --accent: #79d6c7;
+        --accent-soft: #263c37;
+        --shadow: 0 18px 60px rgba(0, 0, 0, 0.3);
+      }
+    }
+    @media (max-width: 560px) {
+      main { width: min(100% - 18px, 920px); margin: 9px auto; padding: 24px 20px; }
+      ol.stories li { grid-template-columns: 2rem minmax(0, 1fr); gap: 8px; }
+    }
+  </style>
+</head>
+<body>
+  <main data-artifact-kind="spec" data-artifact-version="1">
+    <header>
+      <p class="eyebrow">Build intent · Advisory guidance and CLI contracts</p>
+      <h1>Agent-facing CLI Ergonomics Spec</h1>
+      <p class="lede">Adopt the durable lessons from AXI without importing its runtime, universal format choices, or lifecycle integrations.</p>
+      <div class="meta" aria-label="Spec summary">
+        <span>Project-owned guidance</span>
+        <span>Three CLI audits</span>
+        <span>No runtime dependency</span>
+      </div>
+    </header>
+
+    <section id="problem-statement">
+      <p class="eyebrow">01 · Problem Statement</p>
+      <h2>Agent-consumed command lines lack one shared contract</h2>
+      <p>The repository has strong conventions for source quality, tests, security, performance, and guardrails, but no focused guidance for an <strong>Agent-facing CLI</strong>.</p>
+      <p>Useful practices are consequently distributed across individual executables and can drift: output may be too large or ambiguous, usage mistakes may be silently accepted, and agents may need avoidable discovery calls.</p>
+      <p>AXI demonstrates promising ergonomics for selected read-only tasks, but its published benchmarks do not isolate all ten principles or establish universal superiority across models and domains.</p>
+      <p>Importing AXI wholesale would also conflict with existing decisions about lazy guidance, harness ownership, purpose-specific output, and locally owned runtimes.</p>
+    </section>
+
+    <section id="solution">
+      <p class="eyebrow">02 · Solution</p>
+      <h2>Own an outcome-based CLI ergonomics rule</h2>
+      <p>Add one lazy advisory rule for designing and reviewing Agent-facing CLIs.</p>
+      <p>The rule will require compact and bounded defaults, explicit truncation, useful cheap aggregates, definitive empty states, strict invocation validation, meaningful exit codes, deterministic automation paths, and concise corrective or next-step help.</p>
+      <p>The guidance will remain format-neutral and will preserve purpose-specific JSON, text, and human terminal interfaces.</p>
+      <p>Audit <code>review-artifact</code>, <code>review-change</code>, and Orchard against that contract.</p>
+      <p>Repair objective gaps in the two executables owned by this repository without redesigning their established behavior, and report Orchard findings for its originating repository.</p>
+    </section>
+
+    <section id="user-stories">
+      <p class="eyebrow">03 · User Stories</p>
+      <h2>Observable outcomes</h2>
+      <ol class="stories">
+        <li>As a developer building an Agent-facing CLI, I want one focused rule, so that I do not have to reconstruct agent ergonomics from unrelated guidance.</li>
+        <li>As a model invoking a CLI, I want the smallest useful default response, so that repeated or collection output does not waste context.</li>
+        <li>As a model receiving long content, I want an explicit truncation notice, total size, and full-content escape, so that I can decide whether another call is justified.</li>
+        <li>As a model inspecting a collection, I want cheap totals or derived summaries when they prevent a likely follow-up call, so that I can answer complete questions efficiently.</li>
+        <li>As a model receiving no matches, I want a definitive successful empty state, so that I do not confuse absence with silent failure.</li>
+        <li>As a model making an invocation mistake, I want unknown input and missing values rejected before work begins, so that plausible output cannot conceal an ignored constraint.</li>
+        <li>As a model recovering from a usage error, I want a meaningful exit code and concise corrective help, so that I can self-correct in one turn.</li>
+        <li>As a user of an automation path, I want deterministic non-interactive behavior, so that a command never stalls waiting for terminal input.</li>
+        <li>As a human CLI user, I want rich terminal presentation to remain available, so that agent ergonomics do not flatten useful interactive experiences.</li>
+        <li>As a maintainer, I want the guidance loaded only when CLI work is relevant, so that unrelated sessions retain the repository’s small always-on context.</li>
+        <li>As a maintainer, I want AXI acknowledged at a pinned revision without automatic synchronization, so that upstream evolution cannot silently change local contracts.</li>
+        <li>As a caller of <code>review-artifact</code>, I want the existing direct-path shorthand preserved, so that stricter parsing does not make the common operation more cumbersome.</li>
+        <li>As a caller of <code>review-artifact</code>, I want command-specific help and strict flag validation, so that typos, extra arguments, misplaced flags, and missing values fail clearly.</li>
+        <li>As a caller of <code>review-change</code>, I want its existing read-only TUI and non-interactive summaries preserved, so that an ergonomics audit does not disrupt its human-controlled workflow.</li>
+        <li>As an Orchard user, I want its human and structured automation interfaces audited against the same outcome-based guidance, so that lifecycle authority remains discoverable and deterministic.</li>
+        <li>As a maintainer, I want all three executable audits grounded in stable public boundaries, so that conclusions reflect caller-visible behavior rather than implementation preference.</li>
+      </ol>
+    </section>
+
+    <section id="implementation-decisions">
+      <p class="eyebrow">04 · Implementation Decisions</p>
+      <h2>Modules and contracts</h2>
+
+      <article class="module" id="module-advisory-rule">
+        <h3>CLI ergonomics advisory rule and routing</h3>
+        <p>A project-owned advisory rule will describe observable outcomes rather than mandate AXI mechanisms.</p>
+        <p>Its metadata and the global instruction bootstrap will use the same relevance trigger so both supported harnesses load it on demand.</p>
+        <p>The rule remains guidance only; no new guardrail policy or enforcement detector is introduced.</p>
+      </article>
+
+      <article class="module" id="module-review-artifact-contract">
+        <h3>Review artifact invocation contract</h3>
+        <p>One argument boundary will own recognized commands, the direct-path shorthand, command-specific flags, required values, positional cardinality, help text, and usage errors.</p>
+        <p>Usage failures will exit with status 2 and concise correction, while runtime failures remain status 1.</p>
+        <p>Successful automation output remains JSON and operational waiting status remains diagnostic output.</p>
+      </article>
+
+      <article class="module" id="module-review-change-contract">
+        <h3>Review change invocation contract</h3>
+        <p>The existing argument parser, help, exit semantics, bounded logs, human TUI, and redirected summary behavior will be assessed against the new rule.</p>
+        <p>Only substantiated contract gaps will be repaired; the audit is not permission to replace its presentation or introduce a new serialization format.</p>
+      </article>
+
+      <article class="module" id="module-orchard-contract">
+        <h3>Orchard invocation contract</h3>
+        <p>Orchard’s human help and versioned structured protocol will be audited as public lifecycle interfaces.</p>
+        <p>The audit will assess discoverability, deterministic automation, bounded output, explicit state, input rejection, exit semantics, and corrective guidance while respecting Orchard as the sole lifecycle authority.</p>
+        <p>Because Orchard belongs to its originating repository, this branch records substantiated findings but does not duplicate or patch its implementation.</p>
+      </article>
+
+      <div class="decision" id="decision-format-neutral">
+        <h3>Purpose-specific formats remain valid</h3>
+        <p>TOON is not mandatory.</p>
+        <p>Each CLI may use compact JSON, JSONL, tailored text, or a human TUI according to its caller contract.</p>
+        <p>Errors are not universally moved to standard output, and no-argument live data is required only where it is a safe and meaningful default.</p>
+      </div>
+
+      <div class="decision" id="decision-local-ownership">
+        <h3>Local ownership over upstream synchronization</h3>
+        <p>The guidance is an adapted snapshot attributed to AXI at a pinned source revision.</p>
+        <p>There is no imported AXI skill, SDK, hook installer, self-update behavior, runtime executable, or automatic upstream synchronization.</p>
+      </div>
+
+      <div class="decision" id="decision-scope">
+        <h3>Audit and repair scope</h3>
+        <p>The audit covers the two standalone executables owned by this repository plus Orchard.</p>
+        <p>Objective repairs remain limited to repository-owned code.</p>
+        <p>Orchard findings stay read-only and identify the originating interface that would need a separate change.</p>
+      </div>
+
+      <div class="decision" id="decision-cli-inventory">
+        <h3>No additional current CLI candidates</h3>
+        <p>The repository’s executable inventory contains installation and test scripts plus two skill-owned entry points.</p>
+        <p>Installation and test scripts are developer tooling, while status lines, hooks, extensions, and guard adapters are harness integration surfaces rather than Agent-facing CLIs.</p>
+        <p>Review artifact, Review change, and Orchard therefore form the complete current audit set.</p>
+      </div>
+    </section>
+
+    <section id="testing-decisions">
+      <p class="eyebrow">05 · Testing Decisions</p>
+      <h2>Test stable executable and installation seams</h2>
+      <article class="module" id="test-advisory-rule">
+        <h3>CLI ergonomics advisory rule and routing</h3>
+        <p><strong>Test directly through the repository gates.</strong></p>
+        <p>Content checks will establish valid advisory metadata, paired lazy-load routing, documentation inventory accuracy, and successful projection through installation behavior.</p>
+      </article>
+      <article class="module" id="test-review-artifact">
+        <h3>Review artifact invocation contract</h3>
+        <p><strong>Test directly through the executable process boundary.</strong></p>
+        <p>Behavior tests will cover help, shorthand preservation, accepted command-specific flags, unknown and misplaced flags, missing values, extra positionals, usage exit status 2, runtime exit status 1, and unchanged JSON success output.</p>
+        <p>Focused runtime tests may cover parser decisions that require exhaustive combinations, but the process boundary remains authoritative.</p>
+      </article>
+      <article class="module" id="test-review-change">
+        <h3>Review change invocation contract</h3>
+        <p><strong>Test through its existing public CLI and parser seams.</strong></p>
+        <p>The audit will reuse current behavior evidence for default invocation, strict options, help, usage status, redirected summaries, bounded output, and TUI behavior.</p>
+        <p>New tests are added only where a substantiated gap requires a repair.</p>
+      </article>
+      <article class="module" id="test-orchard">
+        <h3>Orchard invocation contract</h3>
+        <p><strong>Audit through its installed public CLI, versioned structured protocol, and originating source evidence.</strong></p>
+        <p>Safe read-only invocations will establish help, status, protocol, invalid-input, empty-state, and exit behavior without performing lifecycle transitions.</p>
+        <p>No test or implementation artifact is added to this repository for Orchard itself.</p>
+      </article>
+      <p>All repository-owned implementation follows one-test, one-implementation red-green-refactor cycles, and the repository-wide gate remains the final verification authority.</p>
+    </section>
+
+    <section id="out-of-scope">
+      <p class="eyebrow">06 · Out of Scope</p>
+      <h2>Deliberate exclusions</h2>
+      <ul>
+        <li>Installing or copying the upstream AXI skill.</li>
+        <li>Adopting the AXI SDK or adding a TOON dependency.</li>
+        <li>Mandating TOON, errors on standard output, executable-path disclosure, or live no-argument data.</li>
+        <li>Adding session-start hooks, session-end capture, built-in self-update, or another harness configuration writer.</li>
+        <li>Installing <code>gh-axi</code>, <code>chrome-devtools-axi</code>, or other catalog executables.</li>
+        <li>Changing guardrail coverage for external wrapper commands.</li>
+        <li>Redesigning the Review change TUI, report, isolation lifecycle, or approval behavior.</li>
+        <li>Modifying Orchard or its originating repository as part of this branch.</li>
+        <li>Auditing external executables other than Orchard.</li>
+        <li>Claiming that AXI’s benchmarks prove all ten principles or generalize to every model and domain.</li>
+      </ul>
+    </section>
+
+    <section id="further-notes">
+      <p class="eyebrow">07 · Further Notes</p>
+      <h2>Provenance and compatibility</h2>
+      <p>The adapted guidance is informed by the MIT-licensed AXI project at revision <code>93c5f334d6ec074c29ca8d74fa629530dd298a43</code>.</p>
+      <p>This follows the repository’s existing precedent of adapting useful upstream concepts into a narrower locally owned interface rather than adding an unnecessary runtime dependency.</p>
+      <p>The term <strong>Agent-facing CLI</strong> is canonical for this work and remains distinct from a harness <strong>Tool</strong>.</p>
+    </section>
+
+    <section id="verification-summary" data-verification-owner="fact-checker">
+      <p class="eyebrow">Verification Summary</p>
+      <h2>Verification provenance records the resolved final-gate Findings</h2>
+      <div class="module">
+        <p><strong>Final cold pass:</strong> 79 claims checked across this Spec and the canonical Tasks; 74 confirmed, 4 corrected, and 1 historical-process claim remains unverifiable.</p>
+        <p><strong>Findings ledger:</strong> <code>AXI-001</code> through <code>AXI-020</code> and <code>AXI-022</code> through <code>AXI-026</code> are resolved; <code>AXI-021</code> is dispositioned as no-op because the approved shorthand is <code>&lt;html-file&gt;</code> and canonical artifact resolution requires a <code>.html</code> or <code>.htm</code> suffix.</p>
+        <p><strong>Final focused evidence:</strong> 100 tests passed across <code>test/shared/safe-preview.test.ts</code>, <code>test/review-artifact/cli.test.ts</code>, <code>test/review-artifact/process-cli.test.ts</code>, and <code>test/review-change-cli.test.ts</code>, with 434 assertions. The CLI ergonomics content selectors passed 15 checks, all four planted-error self-tests passed, and Node and Bash syntax checks plus <code>git diff --check</code> passed.</p>
+        <p><strong>Lifecycle contract:</strong> ADR-0022, <code>CONTEXT.md</code>, README, the Review change skill, and its CLI mode reference define Summary-before-cleanup: Summary remains visible while the isolated workspace and full log exist; only after dismissal does the parent restore the terminal, close telemetry, remove the exact workspace, and report final cleanup status outside the full-screen Summary.</p>
+        <p><strong>Corrections made:</strong> Extended the final ledger through <code>AXI-026</code>; replaced the stale 64-test final result with the 100-test, 434-assertion focused result and its content, self-test, syntax, and diff evidence; made every retained earlier test count explicitly historical; and synchronized the Tasks final-gate statement without changing stable IDs, statuses, dependencies, modes, or stories.</p>
+        <p><strong>Historical cold-pass provenance:</strong> An earlier cold pass checked 70 claims across this Spec and the canonical Tasks; 65 were confirmed, 4 corrected, and 1 historical-process claim was unverifiable.</p>
+        <p><strong>Historical maintenance-cleanup provenance:</strong> 64 Review change tests passed with 0 failures. The focused runner and lifecycle path covered external SIGINT and SIGTERM forwarding, termination-timer cancellation, grace-period SIGKILL escalation, original signal-derived status 130 or 143, terminal restoration, one telemetry close, and exact isolated-workspace cleanup. A narrow source assertion recorded <code>createForegroundLifecycle</code> at 38 lines with its affected functions below the mandatory 50-line limit; a focused cross-artifact ledger assertion and <code>git diff --check</code> also passed.</p>
+        <p><strong>Historical cycle 3 continuation provenance:</strong> 99 tests passed with 0 failures across <code>test/shared/safe-preview.test.ts</code>, <code>test/review-artifact/cli.test.ts</code>, <code>test/review-artifact/process-cli.test.ts</code>, and <code>test/review-change-cli.test.ts</code>.</p>
+        <p><strong>Historical cycle 2 repair provenance:</strong> 75 tests passed with 0 failures across <code>test/shared/safe-preview.test.ts</code>, <code>test/review-artifact/process-cli.test.ts</code>, and <code>test/review-change-cli.test.ts</code>.</p>
+        <p><strong>Historical focused provenance:</strong> The 68-test cycle 3, 89-test final user-gate, and 91-test directed repair results passed before later repairs.</p>
+        <p><strong>Historical full-gate provenance:</strong> The full <code>make test</code> gate passed with 617 content checks, 52 install checks, 247 Bun tests, and 21 meta-tests before the later repair cycles; it is not represented as final-state verification.</p>
+        <p><strong>Unverifiable provenance:</strong> The exact one-test, one-implementation chronology cannot be reconstructed from the final uncommitted snapshot; the repository’s normative TDD workflow and resulting behavior tests are present.</p>
+        <p><strong>External provenance:</strong> AXI was checked at <code>93c5f334d6ec074c29ca8d74fa629530dd298a43</code>, and Orchard claims were checked read-only at <code>341f7ea6273ba6d43f1f2dd455d26a6f9015e60d</code>.</p>
+      </div>
+    </section>
+  </main>
+</body>
+</html>

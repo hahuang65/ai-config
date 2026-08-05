@@ -49,3 +49,4 @@ Load rules when their domain becomes relevant:
   SQL, shells, eval, file APIs, authentication, authorization, rendering, or logging
 - `performance.md` — before designing or implementing optimization, caching,
   pagination, or external-call timeouts
+- `cli-ergonomics.md` — before designing, implementing, or reviewing an Agent-facing CLI

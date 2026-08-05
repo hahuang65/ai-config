@@ -1,43 +1,27 @@
 import { realpath } from "node:fs/promises";
 
+import { parseReviewInvocation } from "./arguments.mjs";
 import { openBrowser as launchBrowser } from "./browser.mjs";
 import { ensureReviewServer, stopReviewServer } from "./daemon.mjs";
 import { sessionKey } from "./session-store.mjs";
-import { AGENT_TOKEN_HEADER, REVIEW_PURPOSES } from "./protocol.mjs";
-
-const REVIEW_PURPOSE_SET = new Set(REVIEW_PURPOSES);
-const VALUE_FLAGS = new Set(["--agent-reply", "--purpose"]);
+import { AGENT_TOKEN_HEADER } from "./protocol.mjs";
+import { credentialRedactedPreview } from "../../shared/runtime/safe-preview.mjs";
 
 export async function runReviewCommand(argv, dependencies = {}) {
-  const normalized = normalizeArguments(argv);
-  const command = normalized[0];
-  if (!new Set(["open", "poll", "end", "stop"]).has(command)) {
-    throw commandError(`Unknown command: ${command ?? ""}`);
-  }
+  const invocation = parseReviewInvocation(argv);
+  if (invocation.type === "help") return invocation;
+  const { command } = invocation;
   if (command === "stop") return (dependencies.stopServer ?? stopReviewServer)();
   const ensureServer = dependencies.ensureServer ?? ensureReviewServer;
   const connection = normalizeConnection(await ensureServer(), dependencies.agentToken);
-  if (command === "open") return openArtifact(normalized.slice(1), connection.baseUrl, dependencies);
-  if (command === "poll") return pollArtifact(normalized.slice(1), connection, dependencies);
-  if (command === "end") return endArtifact(normalized.slice(1), connection);
-  throw commandError(`Command is not implemented: ${command}`);
+  if (command === "open") return openArtifact(invocation, connection.baseUrl, dependencies);
+  if (command === "poll") return pollArtifact(invocation, connection, dependencies);
+  return endArtifact(invocation.file, connection);
 }
 
-async function openArtifact(args, baseUrl, dependencies) {
-  const file = firstPositional(args);
-  if (!file) throw commandError("An HTML file path is required");
-  const requestedPurpose = flagValue(args, "--purpose");
-  if (args.includes("--purpose") && requestedPurpose === null) {
-    throw commandError("Review purpose is required after --purpose");
-  }
-  const purpose = requestedPurpose ?? "feedback";
-  if (!REVIEW_PURPOSE_SET.has(purpose)) throw commandError(`Unknown review purpose: ${purpose}`);
-  const session = await postJson(`${baseUrl}/api/sessions`, {
-    file,
-    purpose,
-    reopen: args.includes("--reopen"),
-  });
-  const shouldOpen = !args.includes("--no-open") && process.env.REVIEW_ARTIFACT_NO_OPEN !== "1";
+async function openArtifact({ file, purpose, reopen, noOpen }, baseUrl, dependencies) {
+  const session = await postJson(`${baseUrl}/api/sessions`, { file, purpose, reopen });
+  const shouldOpen = !noOpen && process.env.REVIEW_ARTIFACT_NO_OPEN !== "1";
   if (shouldOpen && session.reopened !== false) await (dependencies.openBrowser ?? launchBrowser)(session.url);
   return {
     session: {
@@ -54,47 +38,21 @@ async function openArtifact(args, baseUrl, dependencies) {
   };
 }
 
-async function endArtifact(args, connection) {
-  const file = firstPositional(args);
-  if (!file) throw commandError("An HTML file path is required");
+async function endArtifact(file, connection) {
   const key = sessionKey(await realpath(file));
   return postJson(`${connection.baseUrl}/api/sessions/${key}/end`, {}, connection.agentToken);
 }
 
-async function pollArtifact(args, connection, dependencies) {
-  const file = firstPositional(args);
-  if (!file) throw commandError("An HTML file path is required");
-  const key = sessionKey(await realpath(file));
-  const reply = flagValue(args, "--agent-reply");
+async function pollArtifact({ file, reply }, connection, dependencies) {
+  const resolvedFile = await realpath(file);
+  const key = sessionKey(resolvedFile);
   if (reply) {
     await postJson(`${connection.baseUrl}/api/sessions/${key}/agent-reply`, { text: reply }, connection.agentToken);
   }
   const writeStatus = dependencies.writeStatus ?? ((message) => process.stderr.write(`${message}\n`));
-  writeStatus(`[review-artifact] Waiting for feedback or approval on ${await realpath(file)}. Retry if interrupted.`);
+  const status = `[review-artifact] Waiting for feedback or approval on ${resolvedFile}. Retry if interrupted.`;
+  writeStatus(credentialRedactedPreview(status, 300).text);
   return getJson(`${connection.baseUrl}/api/sessions/${key}/poll`, connection.agentToken);
-}
-
-export function normalizeArguments(argv) {
-  const first = argv[0];
-  if (!first || first === "open" || first === "poll" || first === "end" || first === "stop") return argv;
-  if (first.startsWith("-")) return argv;
-  return ["open", ...argv];
-}
-
-function firstPositional(args) {
-  for (let index = 0; index < args.length; index += 1) {
-    if (VALUE_FLAGS.has(args[index])) {
-      index += 1;
-      continue;
-    }
-    if (!args[index].startsWith("-")) return args[index];
-  }
-  return null;
-}
-
-function flagValue(args, flag) {
-  const index = args.indexOf(flag);
-  return index === -1 ? null : args[index + 1] ?? null;
 }
 
 function normalizeConnection(connection, fallbackToken) {

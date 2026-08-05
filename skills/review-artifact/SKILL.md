@@ -21,6 +21,7 @@ node <skill-directory>/bin/review-artifact.mjs <html-file> --purpose <feedback|a
 node <skill-directory>/bin/review-artifact.mjs poll <html-file> --agent-reply "<brief reply>"
 node <skill-directory>/bin/review-artifact.mjs end <html-file>
 node <skill-directory>/bin/review-artifact.mjs stop
+node <skill-directory>/bin/review-artifact.mjs --help
 ```
 
 Omitting `--purpose` defaults to `feedback` for backward compatibility.
@@ -29,20 +30,12 @@ The implementation and its attribution ship inside this skill.
 
 ## Workflow
 
-1. Confirm the input is an existing HTML artifact that is asking for feedback, a decision, or approval and that its `<title>` follows `<document title> - <document intent>`.
-2. Open it with the matching `--purpose`: `feedback` or `approval` starts in Annotate mode; `decision` starts in Explore mode.
-3. Immediately run `poll` in the foreground and leave it attached to the active turn.
-4. If severe `layout_warnings` arrive, repair the artifact and let live reload re-audit it before asking the user to review.
-5. Apply every feedback item to the canonical HTML, then poll again with a concise `--agent-reply`.
-6. Repeat until the runtime returns `approved` or `ended`.
-7. Treat only `approved` as approval; `ended`, browser close, disconnect, and timeout never clear a gate.
+1. Open the existing artifact with the matching `--purpose`.
+2. Immediately run `poll` in the foreground and leave it attached to the active turn.
+3. If severe `layout_warnings` arrive, repair the artifact and let live reload re-audit it before asking the user to review.
+4. Apply every feedback item to the canonical HTML, then poll again with a concise `--agent-reply`.
+5. Repeat until the runtime returns `approved` or `ended`.
 
 Never use shell backgrounding, `nohup`, `disown`, or an untracked detached terminal for polling.
 If polling is interrupted, run it again; queued events remain durable.
 Do not reopen a user-approved or user-ended session unless the user requests another review or the artifact materially changed and requires renewed attention.
-
-## Fallback
-
-If the runtime or browser cannot start, report the failure briefly and use the invoking workflow's chat review path.
-Preserve the same explicit-approval semantics in chat.
-Do not silently skip review.

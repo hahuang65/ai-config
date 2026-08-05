@@ -570,10 +570,11 @@ test_review_change_cli() {
     || fail "$label" "standalone entry point missing or not executable"
   check_content_cached "$(cat "$bin")" "$label" "Usage: review-change.*target.*--intent"
   check_content_cached "$(cat "$bin")" "$label" "assertSupportedNode.*process[.]versions[.]node"
-  local runner prompt status_runtime markdown_summary workspace report_directory target_resolution
+  local runner prompt status_runtime status_state markdown_summary workspace report_directory target_resolution
   runner="$(cat "$runtime/runner.mjs")"
   prompt="$(cat "$runtime/prompt.mjs")"
   status_runtime="$(cat "$runtime/status.mjs")"
+  status_state="$(cat "$runtime/status-state.mjs")"
   markdown_summary="$(cat "$runtime/markdown-summary.mjs")"
   workspace="$(cat "$runtime/workspace.mjs")"
   report_directory="$(cat "$runtime/report-directory.mjs")"
@@ -592,11 +593,10 @@ test_review_change_cli() {
   check_content_cached "$prompt" "skills/review-change/runtime/prompt.mjs" "action step.*six words or fewer.*action log once per item.*never combine multiple items.*completion message.*Establish scope and intent.*Dispatch the fresh change-reviewer.*Validate anchors and project terminology.*Normalize Findings and risk"
   check_content_cached "$prompt" "skills/review-change/runtime/prompt.mjs" "every Finding card.*exact reviewed path:line anchor.*repository-relative path:line.*copy button.*absolute reviewed file path.*hidden text node.*textContent.*escapes reviewRoot"
   check_content_cached "$runner" "skills/review-change/runtime/runner.mjs" "reviewRoot: workspace[.]cwd"
-  check_content_cached "$runner" "skills/review-change/runtime/runner.mjs" "reportOpened.*status[.]finish.*captureCleanupFailure"
   check_content_cached "$prompt" "skills/review-change/runtime/prompt.mjs" "one copyable general-review Markdown block.*one copyable Markdown block per Finding.*severity and path:line outside the copied text.*copy-icon button.*persistently mark"
   check_content_cached "$prompt" "skills/review-change/runtime/prompt.mjs" "every severity and action tag.*legend.*who decides next.*standalone tags never trigger mutation"
-  check_content_cached "$status_runtime" "skills/review-change/runtime/status.mjs" "recordProgressStep.*substage.*telemetryStepped"
-  check_content_cached "$status_runtime" "skills/review-change/runtime/status.mjs" "Review the complete change against intent.*Run smallest checks that prove intent.*Check changed documentation and claims"
+  check_content_cached "$status_state" "skills/review-change/runtime/status-state.mjs" "recordProgressStep.*substage.*telemetryStepped"
+  check_content_cached "$status_state" "skills/review-change/runtime/status-state.mjs" "Review the complete change against intent.*Run smallest checks that prove intent.*Check changed documentation and claims"
   check_content_cached "$(cat "$runtime/screen.mjs")" "skills/review-change/runtime/screen.mjs" "MAX_SUBSTAGE_WORDS.*renderSplitStatusScreen.*PIPELINE.*LOG.*pipelineDetailLines.*stepFinishedAt.*stepDuration.*conciseSubstage.*earlier pipeline stages.*later pipeline stages"
   check_content_cached "$(cat "$runtime/screen.mjs")" "skills/review-change/runtime/screen.mjs" "renderTinyStatusScreen.*DESCRIPTION.*helpLines.*clip"
   check_content_cached "$(cat "$runtime/screen.mjs")" "skills/review-change/runtime/screen.mjs" "worktreeLine.*WORKTREE"
@@ -1246,7 +1246,58 @@ test_guide_skill_sync() {
 }
 
 # ---------------------------------------------------------------------------
-# 11a. Rules are advisory-only — TTSR is retired (ADR-0012)
+# 11a. Agent-facing CLI guidance stays paired with its lazy-load route
+# ---------------------------------------------------------------------------
+
+test_cli_ergonomics_rule_routing() {
+  section "Agent-facing CLI advisory routing"
+  local rule_file="$REPO_DIR/rules/cli-ergonomics.md"
+  local trigger="before designing, implementing, or reviewing an Agent-facing CLI"
+  local description="description: Read $trigger."
+  local route="- \`cli-ergonomics.md\` — $trigger"
+
+  if [[ -f "$rule_file" ]] \
+     && extract_frontmatter "$rule_file" | grep -Fqx "$description" \
+     && grep -Fqx -- "$route" "$REPO_DIR/harness-system-prompt.md"; then
+    pass "CLI ergonomics guidance and its lazy-load trigger are paired"
+  else
+    fail "Agent-facing CLI advisory routing" "rules/cli-ergonomics.md and its bootstrap trigger must use the same relevance boundary"
+  fi
+}
+
+test_cli_ergonomics_rule_content() {
+  section "Agent-facing CLI advisory outcomes"
+  local content
+  content="$(<"$REPO_DIR/rules/cli-ergonomics.md")"
+  local marker
+  for marker in \
+    "Minimal bounded defaults" \
+    "Explicit truncation" \
+    "Cheap aggregates" \
+    "Definitive empty states" \
+    "Strict invocation validation" \
+    "Meaningful exit codes" \
+    "Deterministic automation paths" \
+    "Concise corrective and contextual help" \
+    "Purpose-specific formats"; do
+    check_content_cached "$content" "rules/cli-ergonomics.md" "$marker"
+  done
+}
+
+test_cli_ergonomics_rule_inventory() {
+  section "Agent-facing CLI advisory inventory"
+  local readme context
+  readme="$(<"$REPO_DIR/README.md")"
+  context="$(<"$REPO_DIR/CONTEXT.md")"
+  check_content_cached "$readme" "README.md" "Rules [(]7 advisory files[)]"
+  check_content_cached "$readme" "README.md" "rules/.*7 on-demand advisory rules"
+  check_content_cached "$readme" "README.md" '[|] `cli-ergonomics` [|]'
+  check_content_cached "$readme" "README.md" "kunchenguid/axi/tree/93c5f334d6ec074c29ca8d74fa629530dd298a43"
+  check_content_cached "$context" "CONTEXT.md" "cli-ergonomics"
+}
+
+# ---------------------------------------------------------------------------
+# 11b. Rules are advisory-only — TTSR is retired (ADR-0012)
 #
 # Every command/content guardrail enforcement now lives in the guard core, so
 # no rule should carry stream-rule frontmatter (`condition:`/`scope:`). This
@@ -1775,6 +1826,9 @@ run_content_references() {
 }
 
 run_content_contracts() {
+  run test_cli_ergonomics_rule_routing
+  run test_cli_ergonomics_rule_content
+  run test_cli_ergonomics_rule_inventory
   run test_no_ttsr_frontmatter
   run test_advisory_rule_frontmatter
   run test_pi_bundle_current
@@ -1818,6 +1872,9 @@ run_selected() {
     no-ttsr-frontmatter)       run test_no_ttsr_frontmatter ;;
     pi-bundle-current)         run test_pi_bundle_current ;;
     advisory-frontmatter)      run test_advisory_rule_frontmatter ;;
+    cli-ergonomics-routing)    run test_cli_ergonomics_rule_routing ;;
+    cli-ergonomics-outcomes)   run test_cli_ergonomics_rule_content ;;
+    cli-ergonomics-inventory)  run test_cli_ergonomics_rule_inventory ;;
     symlink-targets)           run test_symlink_targets ;;
     coach-holding-line)        run test_phase_coach_holding_line ;;
     phase-orchestrator)        run test_phase_orchestrator ;;

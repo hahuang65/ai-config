@@ -4,6 +4,7 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
+import { spawnInForeground } from "./foreground-process.mjs";
 import { createLifecycleCancellation } from "./lifecycle-cancellation.mjs";
 import { buildReviewChangePrompt } from "./prompt.mjs";
 import { createReportDirectory } from "./report-directory.mjs";
@@ -26,7 +27,6 @@ export async function runReviewChange(options, dependencies = {}) {
     workspace: null,
     exitCode: 1,
     failure: null,
-    reportOpened: false,
     summaryPrinted: false,
     failureAfterSummary: false,
   };
@@ -36,7 +36,6 @@ export async function runReviewChange(options, dependencies = {}) {
   } catch (error) {
     if (cancellation.exitCode() === null) state.failure = error;
   }
-  if (!state.reportOpened) await captureCleanupFailure(state, status);
   const interruptedBeforeSummary = cancellation.exitCode();
   if (interruptedBeforeSummary !== null) state.exitCode = interruptedBeforeSummary;
   try {
@@ -47,8 +46,8 @@ export async function runReviewChange(options, dependencies = {}) {
       state.failure ??= error;
       state.exitCode = 1;
     }
-    if (state.reportOpened) {
-      const cleanupFailed = await captureCleanupFailure(state, status, { deferred: true });
+    if (state.workspace) {
+      const cleanupFailed = await captureCleanupFailure(state, status);
       state.failureAfterSummary = state.summaryPrinted && cleanupFailed;
     }
   } finally {
@@ -86,9 +85,9 @@ async function executeReviewLifecycle({ options, dependencies, environment, stat
   const openReport = dependencies.openReport ?? openReportArtifact;
   try {
     const reportPath = await openReport(state.workspace.reportRoot, { signal: cancellation.signal });
-    state.reportOpened = true;
     status.setReportPath?.(reportPath);
     status.activity?.("report", "open", `Opened report at ${reportPath}`);
+    status.throwIfFailed?.();
     return exitCode;
   } catch (error) {
     if (error?.reportPath) {
@@ -96,6 +95,7 @@ async function executeReviewLifecycle({ options, dependencies, environment, stat
       status.activity?.("report", "error", `Report retained at ${error.reportPath}`);
     }
     status.fail("report", error);
+    status.throwIfFailed?.();
     throw error;
   }
 }
@@ -110,6 +110,7 @@ async function createIsolatedWorkspace({ sourceDirectory, dependencies, status, 
       onActivity: (kind, message) => status.activity?.("workspace", kind, message),
     });
     status.setWorkspacePath?.(state.workspace.cwd);
+    status.attachTelemetryLog?.(state.workspace.cwd);
     status.activity?.("workspace", "path", "Validate a dedicated report root outside both checkouts");
     state.workspace.reportRoot = await createReportRoot({
       sourceRoot: state.workspace.sourceRoot,
@@ -122,58 +123,78 @@ async function createIsolatedWorkspace({ sourceDirectory, dependencies, status, 
   }, () => "Snapshot ready · push disabled");
 }
 
-async function captureCleanupFailure(state, status, options = {}) {
+async function captureCleanupFailure(state, status) {
   try {
-    await cleanupReviewWorkspace(state.workspace, status, options);
+    await cleanupReviewWorkspace(state.workspace, status);
     return false;
   } catch (error) {
-    state.failure ??= error;
+    state.failure = combineFailures(state.failure, error, "review lifecycle and cleanup failed");
     state.exitCode = 1;
     return true;
   }
 }
 
-async function cleanupReviewWorkspace(workspace, status, { deferred = false } = {}) {
+async function cleanupReviewWorkspace(workspace, status) {
   if (!workspace) return;
-  if (!deferred) {
-    await runStatusStage(status, "cleanup", "Cleanup", () => workspace.cleanup(), () => "Removed");
-    return;
+  const failures = [];
+  try {
+    status.detachTelemetryLog?.();
+  } catch (error) {
+    failures.push(error);
   }
   try {
     await workspace.cleanup();
-    status.succeed("cleanup", "Removed");
   } catch (error) {
-    status.fail("cleanup", error);
-    throw error;
+    failures.push(error);
   }
+  if (failures.length === 0) {
+    status.succeed("cleanup", "Removed");
+    return;
+  }
+  const failure = failures.length === 1
+    ? failures[0]
+    : new AggregateError(failures, "telemetry close and workspace cleanup failed");
+  status.fail("cleanup", failure);
+  throw failure;
+}
+
+function combineFailures(primary, secondary, message) {
+  if (!primary) return secondary;
+  return new AggregateError([primary, secondary], message);
 }
 
 async function runReviewStage(status, options, workspace, skillDirectory, environment, dependencies, cancellation) {
   const supportsPipeline = typeof status.processStarted === "function";
   if (supportsPipeline) status.processStarted();
   else status.begin("review", "Run Review change");
+  status.throwIfFailed?.();
   try {
     const exitCode = await runInWorkspace(
       options, workspace, skillDirectory, environment, dependencies, status, cancellation,
     );
-    if (supportsPipeline) return status.processExit(exitCode);
-    if (exitCode === 0) status.succeed("review", "validation complete");
-    else status.fail("review", `pi exited with status ${exitCode}`);
-    return exitCode;
+    const outcome = supportsPipeline ? status.processExit(exitCode) : exitCode;
+    if (!supportsPipeline && exitCode === 0) status.succeed("review", "validation complete");
+    if (!supportsPipeline && exitCode !== 0) status.fail("review", `pi exited with status ${exitCode}`);
+    status.throwIfFailed?.();
+    return outcome;
   } catch (error) {
     status.fail("review", error);
+    status.throwIfFailed?.();
     throw error;
   }
 }
 
 async function runStatusStage(status, stage, label, operation, detail = () => "") {
   status.begin(stage, label);
+  status.throwIfFailed?.();
   try {
     const value = await operation();
     status.succeed(stage, detail(value));
+    status.throwIfFailed?.();
     return value;
   } catch (error) {
     status.fail(stage, error);
+    status.throwIfFailed?.();
     throw error;
   }
 }
@@ -200,8 +221,14 @@ async function runInWorkspace(options, workspace, skillDirectory, environment, d
     REVIEW_CHANGE_REPORT_ROOT: reportRoot,
     ...(subagentModel ? { REVIEW_CHANGE_SUBAGENT_MODEL: subagentModel } : {}),
   };
-  const spawnProcess = dependencies.spawnProcess ?? ((command, processArgs, processOptions) => (
-    spawnInForeground(command, processArgs, processOptions, { status, cancellation })
+  const spawnProcess = dependencies.spawnProcess ?? ((command, args, options) => (
+    spawnInForeground(command, args, options, {
+      status,
+      cancellation,
+      spawnChild: dependencies.spawnChild,
+      setTimeoutFn: dependencies.setTimeoutFn,
+      clearTimeoutFn: dependencies.clearTimeoutFn,
+    })
   ));
   return spawnProcess("pi", args, { cwd: workspace.cwd, stdio: ["ignore", "pipe", "pipe"], env: gateEnvironment });
 }
@@ -218,79 +245,7 @@ function optionValue(options, name) {
   return index === -1 ? null : options[index + 1] ?? null;
 }
 
-export function spawnInForeground(command, args, options, dependencies = {}) {
-  const processRef = dependencies.processRef ?? process;
-  const spawnChild = dependencies.spawnChild ?? spawn;
-  const status = dependencies.status;
-  const cancellation = dependencies.cancellation;
-  return new Promise((resolve, reject) => {
-    const child = spawnChild(command, args, options);
-    const stdoutDecoder = createLineDecoder(parsePiEvent(status));
-    const stderrDecoder = createLineDecoder((line) => status?.childError?.(line));
-    child.stdout?.setEncoding?.("utf8");
-    child.stderr?.setEncoding?.("utf8");
-    child.stdout?.on?.("data", stdoutDecoder.write);
-    child.stderr?.on?.("data", stderrDecoder.write);
-    let interruptedSignal = null;
-    const interrupt = (signal) => { interruptedSignal = signal; child.kill(signal); };
-    if (cancellation) cancellation.attachChild(interrupt);
-    else status?.setAbortHandler?.(interrupt);
-    const onSigint = () => interrupt("SIGINT");
-    const onSigterm = () => interrupt("SIGTERM");
-    const cleanup = () => {
-      if (cancellation) cancellation.detachChild();
-      else {
-        processRef.removeListener("SIGINT", onSigint);
-        processRef.removeListener("SIGTERM", onSigterm);
-        status?.setAbortHandler?.(null);
-      }
-    };
-    if (!cancellation) {
-      processRef.once("SIGINT", onSigint);
-      processRef.once("SIGTERM", onSigterm);
-    }
-    child.once("error", (error) => { cleanup(); reject(error); });
-    child.once("close", (code, signal) => {
-      stdoutDecoder.end();
-      stderrDecoder.end();
-      cleanup();
-      resolve(code ?? signalExitCode(interruptedSignal ?? signal));
-    });
-  });
-}
-
-function parsePiEvent(status) {
-  return (line) => {
-    if (!line) return;
-    try {
-      status?.piEvent?.(JSON.parse(line));
-    } catch {
-      status?.childError?.("Ignored malformed pi event");
-    }
-  };
-}
-
-function createLineDecoder(onLine) {
-  const maximumBuffer = 2 * 1024 * 1024;
-  let buffer = "";
-  return {
-    write(chunk) {
-      buffer += String(chunk);
-      if (buffer.length > maximumBuffer) {
-        buffer = "";
-        onLine("Ignored oversized pi event");
-        return;
-      }
-      const lines = buffer.split("\n");
-      buffer = lines.pop() ?? "";
-      for (const line of lines) onLine(line.replace(/\r$/, ""));
-    },
-    end() {
-      if (buffer) onLine(buffer.replace(/\r$/, ""));
-      buffer = "";
-    },
-  };
-}
+export { spawnInForeground };
 
 export async function openReportArtifact(reportRoot, dependencies = {}) {
   const readDirectory = dependencies.readDirectory ?? readdir;
@@ -371,10 +326,4 @@ function viewerCommand(platform, reportPath) {
     return { command: "explorer.exe", args: [reportPath], waitForExit: false };
   }
   return { command: "xdg-open", args: [reportPath], waitForExit: false };
-}
-
-function signalExitCode(signal) {
-  if (signal === "SIGINT") return 130;
-  if (signal === "SIGTERM") return 143;
-  return 1;
 }

@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import { EventEmitter } from "node:events";
-import { mkdtemp, rm, writeFile } from "node:fs/promises";
+import { mkdir, mkdtemp, readFile, readdir, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { PassThrough } from "node:stream";
 import { pathToFileURL } from "node:url";
@@ -13,6 +13,7 @@ import { renderMarkdownWithGlow } from "../skills/review-change/runtime/markdown
 import { openReportArtifact, runReviewChange, spawnInForeground } from "../skills/review-change/runtime/runner.mjs";
 import { createTerminalStatus } from "../skills/review-change/runtime/status.mjs";
 import { renderBoundaryFailureSummary } from "../skills/review-change/runtime/summary.mjs";
+import { createTelemetryLog } from "../skills/review-change/runtime/telemetry-log.mjs";
 import { assertSupportedNode } from "../skills/review-change/runtime/version.mjs";
 
 const silentStatus = {
@@ -177,6 +178,242 @@ describe("review-change CLI runtime", () => {
     expect(stdout).toContain("a Review change gate is already active");
   });
 
+  test("rejects an unknown option even when help is requested", async () => {
+    const executable = path.resolve(import.meta.dir, "../skills/review-change/bin/review-change.mjs");
+    const child = Bun.spawn([process.execPath, executable, "--help", "--definitely-unknown"], {
+      stdout: "pipe",
+      stderr: "pipe",
+    });
+    const [exitCode, stdout, stderr] = await Promise.all([
+      child.exited,
+      new Response(child.stdout).text(),
+      new Response(child.stderr).text(),
+    ]);
+
+    expect({ exitCode, stdout, stderr }).toEqual({
+      exitCode: 2,
+      stdout: "Review change failed with exit 2\nFailure: Unknown option: --definitely-unknown\n",
+      stderr: "review-change: Unknown option: --definitely-unknown\nRun review-change --help for usage.\n",
+    });
+  });
+
+  test("bounds and redacts rejected option tokens", async () => {
+    const executable = path.resolve(import.meta.dir, "../skills/review-change/bin/review-change.mjs");
+    const invoke = async (option: string) => {
+      const child = Bun.spawn([process.execPath, executable, option], {
+        stdout: "pipe",
+        stderr: "pipe",
+      });
+      const [exitCode, stdout, stderr] = await Promise.all([
+        child.exited,
+        new Response(child.stdout).text(),
+        new Response(child.stderr).text(),
+      ]);
+      return { exitCode, stdout, stderr };
+    };
+
+    const oversized = await invoke(`--${"x".repeat(4_000)}`);
+    const credentialLike = await invoke("--token=do-not-disclose-this-value");
+    const whitespaceFlag = await invoke("--token whitespace-separated-secret");
+    const quotedFlag = await invoke("--password=\"quoted secret with spaces\"");
+    const affixedAssignment = await invoke("--GITHUB_TOKEN=p@ss/word:.+!?[]{}() continue");
+    const affixedFlag = await invoke("--db-password whitespace-secret --dry-run");
+    const punctuationAssignment = await invoke("--DB_PASSWORD=db,value;with-punctuation migrate");
+    const prefixedAssignments = await invoke(
+      "--PROD_API_KEY='prod key with spaces' CLIENT_SECRET=\"client secret with spaces\" continue",
+    );
+    const followingOption = await invoke("--token --dry-run");
+    const metric = await invoke("--token_count=42 metrics");
+    const credentialUri = await invoke("--endpoint=postgresql://alice:uri-secret@example.com/database");
+    const authorization = await invoke(
+      "--header=Authorization: Digest username=\"fixture-user\", nonce=\"fixture-nonce\", response=\"fixture-response\"\n--dry-run",
+    );
+    const basicAuthorization = await invoke(
+      `--command=curl -H "Authorization: Basic fixture-basic==" https://example.test/basic; printf kept`,
+    );
+    const bearerAuthorization = await invoke(
+      `--command=curl -H 'Authorization: Bearer fixture-bearer' https://example.test/bearer; printf kept`,
+    );
+    const quotedAuthorization = await invoke(
+      `--command=curl -H "Authorization: Custom fixture-custom" https://example.test/header; printf kept`,
+    );
+    const objectAuthorization = await invoke(
+      `--value={"Authorization":"Token fixture-token","url":"https://example.test/object"}`,
+    );
+    const objectCredentials = await invoke(
+      `--value={"access_token":"fixture-access-value","client_secret":"fixture-client-value","status":"kept"}`,
+    );
+    const compoundKeys = await invoke(
+      `--values=${["AWS", "SECRET", "ACCESS", "KEY"].join("_")}=fixture-aws-value SSH_PRIVATE_KEY='fixture private key' private_key_count=7`,
+    );
+    const knownTokenValue = `gh${"p"}_${"fixtureKnownToken123"}`;
+    const knownToken = await invoke(`--value=${knownTokenValue}`);
+
+    expect(oversized.exitCode).toBe(2);
+    expect(oversized.stdout).toContain("characters omitted");
+    expect(oversized.stderr).toContain("characters omitted");
+    expect(oversized.stderr.length).toBeLessThan(600);
+    expect(credentialLike).toEqual({
+      exitCode: 2,
+      stdout: "Review change failed with exit 2\nFailure: Unknown option: --token=[REDACTED]\n",
+      stderr: "review-change: Unknown option: --token=[REDACTED]\nRun review-change --help for usage.\n",
+    });
+    expect(credentialLike.stdout).not.toContain("do-not-disclose-this-value");
+    expect(credentialLike.stderr).not.toContain("do-not-disclose-this-value");
+    expect(whitespaceFlag.stderr).toContain("Unknown option: --token [REDACTED]");
+    expect(quotedFlag.stderr).toContain("Unknown option: --password=[REDACTED]");
+    expect(affixedAssignment.stderr).toContain("Unknown option: --GITHUB_TOKEN=[REDACTED] continue");
+    expect(affixedFlag.stderr).toContain("Unknown option: --db-password [REDACTED] --dry-run");
+    expect(punctuationAssignment.stderr).toContain("Unknown option: --DB_PASSWORD=[REDACTED] migrate");
+    expect(prefixedAssignments.stderr).toContain(
+      "Unknown option: --PROD_API_KEY=[REDACTED] CLIENT_SECRET=[REDACTED] continue",
+    );
+    expect(followingOption.stderr).toContain("Unknown option: --token --dry-run");
+    expect(metric.stderr).toContain("Unknown option: --token_count=42 metrics");
+    expect(credentialUri.stderr).toContain("Unknown option: --endpoint=postgresql://[REDACTED]@example.com/database");
+    expect(authorization.stderr).toContain("Unknown option: --header=Authorization: [REDACTED] --dry-run");
+    expect(basicAuthorization.stderr).toContain(
+      `Unknown option: --command=curl -H "Authorization: [REDACTED]" https://example.test/basic; printf kept`,
+    );
+    expect(bearerAuthorization.stderr).toContain(
+      `Unknown option: --command=curl -H 'Authorization: [REDACTED]' https://example.test/bearer; printf kept`,
+    );
+    expect(quotedAuthorization.stderr).toContain(
+      `Unknown option: --command=curl -H "Authorization: [REDACTED]" https://example.test/header; printf kept`,
+    );
+    expect(objectAuthorization.stderr).toContain(
+      `Unknown option: --value={"Authorization":"[REDACTED]","url":"https://example.test/object"}`,
+    );
+    expect(objectCredentials.stderr).toContain(
+      `Unknown option: --value={"access_token":"[REDACTED]","client_secret":"[REDACTED]","status":"kept"}`,
+    );
+    expect(compoundKeys.stderr).toContain("AWS_SECRET_ACCESS_KEY=[REDACTED] SSH_PRIVATE_KEY=[REDACTED] private_key_count=7");
+    expect(knownToken.stderr).toContain("Unknown option: --value=[REDACTED]");
+    expect([
+      whitespaceFlag.stderr,
+      quotedFlag.stderr,
+      affixedAssignment.stderr,
+      affixedFlag.stderr,
+      punctuationAssignment.stderr,
+      prefixedAssignments.stderr,
+      credentialUri.stderr,
+      authorization.stderr,
+      basicAuthorization.stderr,
+      bearerAuthorization.stderr,
+      quotedAuthorization.stderr,
+      objectAuthorization.stderr,
+      objectCredentials.stderr,
+      compoundKeys.stderr,
+      knownToken.stderr,
+    ].join("\n")).not.toMatch(
+      /whitespace-separated-secret|quoted secret with spaces|p@ss\/word|whitespace-secret|db,value|prod key|client secret|uri-secret|fixture-nonce|fixture-response|fixture-basic|fixture-bearer|fixture-custom|fixture-token|fixture-access-value|fixture-client-value|fixture-aws-value|fixture private key|fixtureKnownToken123/,
+    );
+  });
+
+  test("rejects duplicate single-use options before target resolution", async () => {
+    const executable = path.resolve(import.meta.dir, "../skills/review-change/bin/review-change.mjs");
+    const duplicateOptions = ["--intent", "--provider", "--model", "--thinking"];
+
+    for (const option of duplicateOptions) {
+      const child = Bun.spawn([process.execPath, executable, option, "first", option, "second", "main...HEAD"], {
+        env: { ...process.env, REVIEW_CHANGE_GATE: "1" },
+        stdout: "pipe",
+        stderr: "pipe",
+      });
+      const [exitCode, stdout, stderr] = await Promise.all([
+        child.exited,
+        new Response(child.stdout).text(),
+        new Response(child.stderr).text(),
+      ]);
+
+      expect(exitCode).toBe(2);
+      expect(stdout).toContain(`Failure: ${option} may be provided only once`);
+      expect(stderr).toBe(
+        `review-change: ${option} may be provided only once\nRun review-change --help for usage.\n`,
+      );
+    }
+  });
+
+  test("does not let help occupy a required option value", async () => {
+    const executable = path.resolve(import.meta.dir, "../skills/review-change/bin/review-change.mjs");
+    const child = Bun.spawn([process.execPath, executable, "--intent", "--help", "main...HEAD"], {
+      env: { ...process.env, REVIEW_CHANGE_GATE: "1" },
+      stdout: "pipe",
+      stderr: "pipe",
+    });
+    const [exitCode, stdout, stderr] = await Promise.all([
+      child.exited,
+      new Response(child.stdout).text(),
+      new Response(child.stderr).text(),
+    ]);
+
+    expect({ exitCode, stdout, stderr }).toEqual({
+      exitCode: 2,
+      stdout: "Review change failed with exit 2\nFailure: --intent requires a value\n",
+      stderr: "review-change: --intent requires a value\nRun review-change --help for usage.\n",
+    });
+  });
+
+  test("preserves exact help and help with complete arguments", async () => {
+    const executable = path.resolve(import.meta.dir, "../skills/review-change/bin/review-change.mjs");
+    const invokeHelp = async (args: string[]) => {
+      const child = Bun.spawn([process.execPath, executable, ...args], {
+        env: { ...process.env, REVIEW_CHANGE_GATE: "1" },
+        stdout: "pipe",
+        stderr: "pipe",
+      });
+      const [exitCode, stdout, stderr] = await Promise.all([
+        child.exited,
+        new Response(child.stdout).text(),
+        new Response(child.stderr).text(),
+      ]);
+      return { exitCode, stdout, stderr };
+    };
+
+    const exactHelp = await invokeHelp(["--help"]);
+    const completeHelp = await invokeHelp([
+      "--intent",
+      "Preserve the public API",
+      "--help",
+      "main...HEAD",
+    ]);
+
+    expect({
+      exactExitCode: exactHelp.exitCode,
+      completeExitCode: completeHelp.exitCode,
+      exactStderr: exactHelp.stderr,
+      completeStderr: completeHelp.stderr,
+      outputsMatch: completeHelp.stdout === exactHelp.stdout,
+      showsUsage: exactHelp.stdout.startsWith("Usage: review-change"),
+    }).toEqual({
+      exactExitCode: 0,
+      completeExitCode: 0,
+      exactStderr: "",
+      completeStderr: "",
+      outputsMatch: true,
+      showsUsage: true,
+    });
+  });
+
+  test("rejects a missing option value before starting a review", async () => {
+    const executable = path.resolve(import.meta.dir, "../skills/review-change/bin/review-change.mjs");
+    const child = Bun.spawn([process.execPath, executable, "--intent"], {
+      stdout: "pipe",
+      stderr: "pipe",
+    });
+    const [exitCode, stdout, stderr] = await Promise.all([
+      child.exited,
+      new Response(child.stdout).text(),
+      new Response(child.stderr).text(),
+    ]);
+
+    expect({ exitCode, stdout, stderr }).toEqual({
+      exitCode: 2,
+      stdout: "Review change failed with exit 2\nFailure: --intent requires a value\n",
+      stderr: "review-change: --intent requires a value\nRun review-change --help for usage.\n",
+    });
+  });
+
   test("renders readable lifecycle and sub-stage logs without terminal control sequences", () => {
     let output = "";
     let summary = "";
@@ -214,6 +451,69 @@ describe("review-change CLI runtime", () => {
     expect(summary).toContain("Review change completed");
     expect(summary).toContain("Report: /tmp/review-change.html");
     expect(summary).toContain("Review summary");
+  });
+
+  test("bounds every plain telemetry emission while persisting complete redacted values", async () => {
+    const workspace = await mkdtemp(path.join(tmpdir(), "review-change-plain-telemetry-"));
+    await mkdir(path.join(workspace, ".git"));
+    let output = "";
+    const status = createTerminalStatus({
+      stream: { isTTY: false, write: (chunk: string) => { output += chunk; } },
+      summaryStream: { write() {} },
+    });
+    const oversized = "x".repeat(600);
+
+    try {
+      status.start();
+      status.attachTelemetryLog(workspace);
+      emitProgress(status, "plain-review-start", "review", "start", `progress ${oversized} progress-tail`);
+      emitProgress(status, "plain-review-step", "review", "step", `substage ${oversized} substage-tail`);
+      status.piEvent({
+        type: "tool_execution_start",
+        toolCallId: "plain-tool",
+        toolName: "bash",
+        args: { command: `deploy ${oversized} GITHUB_TOKEN=p@ss/word:.+!?[]{}() command-tail` },
+      });
+      status.piEvent({
+        type: "tool_execution_end",
+        toolCallId: "plain-tool",
+        toolName: "bash",
+        isError: true,
+        result: { content: [{
+          type: "text",
+          text: `${oversized} DB_PASSWORD:'quoted result secret' result-tail`,
+        }] },
+      });
+
+      const persisted = await readFile(path.join(workspace, ".git", "review-change", "telemetry.log"), "utf8");
+      expect(output).toContain("characters omitted");
+      expect(output.split("\n").every((line) => Array.from(line).length <= 300)).toBe(true);
+      expect(output).not.toMatch(/progress-tail|substage-tail|command-tail|result-tail/);
+      expect(persisted).toMatch(/progress-tail|substage-tail|command-tail|result-tail/);
+      expect(persisted).toContain("GITHUB_TOKEN=[REDACTED] command-tail");
+      expect(persisted).toContain("DB_PASSWORD:[REDACTED] result-tail");
+      expect(`${output}${persisted}`).not.toMatch(/p@ss\/word|quoted result secret/);
+    } finally {
+      status.detachTelemetryLog();
+      await rm(workspace, { recursive: true, force: true });
+    }
+  });
+
+  test("keeps the complete full-log path in redirected summaries", async () => {
+    let summary = "";
+    const fullLog = `/tmp/${"deep-segment/".repeat(40)}telemetry.log`;
+    const status = createTerminalStatus({
+      stream: { isTTY: false, write() {} },
+      summaryStream: { write: (chunk: string) => { summary += chunk; } },
+      createTelemetryLog: () => ({ path: fullLog, append() {}, close() {} }),
+    });
+
+    status.start();
+    status.attachTelemetryLog("/unused");
+    await status.finish(0);
+
+    expect(summary).toContain(`Full log: ${fullLog}`);
+    expect(summary).not.toContain("characters omitted");
   });
 
   test("fails closed with a parent summary when pi omits required sub-stage telemetry", () => {
@@ -450,6 +750,140 @@ describe("review-change CLI runtime", () => {
 
     const frame = output.split("\u001b[H\u001b[2J").at(-1) ?? "";
     expect(frame).toContain("marker08-long");
+  });
+
+  test("discloses bounded telemetry and preserves its complete redacted log", async () => {
+    const workspace = await mkdtemp(path.join(tmpdir(), "review-change-telemetry-"));
+    await mkdir(path.join(workspace, ".git"));
+    let output = "";
+    const status = createTerminalStatus({
+      stream: { isTTY: true, columns: 180, rows: 30, write: (chunk: string) => { output += chunk; } },
+      summaryStream: { write() {} },
+      color: false,
+      setIntervalFn: () => 1,
+      clearIntervalFn: () => {},
+    });
+
+    try {
+      status.start();
+      status.setWorkspacePath(workspace);
+      status.attachTelemetryLog(workspace);
+      emitProgress(status, "retained-review-start", "review", "start", "Review started");
+      emitProgress(status, "retained-review-step", "review", "step", "Inspect complete telemetry");
+      for (let index = 1; index <= 204; index += 1) {
+        emitProgress(status, `retained-review-log-${index}`, "review", "log", `entry-${String(index).padStart(3, "0")}`);
+      }
+      const longMessage = `final ${"x".repeat(400)} token=do-not-persist tail-marker`;
+      const knownTokenValue = `gh${"p"}_${"fixturePersistedToken123"}`;
+      const awsSecretAccessKey = ["AWS", "SECRET", "ACCESS", "KEY"].join("_");
+      output = "";
+      emitProgress(status, "retained-review-log-long", "review", "log", longMessage);
+      status.piEvent({
+        type: "tool_execution_start",
+        toolCallId: "credential-command",
+        toolName: "bash",
+        args: {
+          command: `deploy --github-token whitespace-secret --db-password="quoted secret with spaces" GITHUB_TOKEN=github,value;with-punctuation continue PROD_API_KEY='prod key with spaces' deploy CLIENT_SECRET=client,value;with-punctuation finish ${awsSecretAccessKey}=fixture-aws-value SSH_PRIVATE_KEY='fixture private key' private_key_count=7 --token --dry-run token_count=42 postgresql://alice:uri-secret@example.com/db ${knownTokenValue} Authorization: Digest nonce="fixture-nonce", response="fixture-response"\nnext-command --dry-run; curl -H "Authorization: Basic fixture-basic==" https://example.test/basic; curl -H 'Authorization: Bearer fixture-bearer' https://example.test/bearer; curl -H "Authorization: Custom fixture-custom" https://example.test/header; payload={"Authorization":"Token fixture-token","access_token":"fixture-access-value","client_secret":"fixture-client-value","url":"https://example.test/object"}`,
+        },
+      });
+      status.piEvent({
+        type: "tool_execution_end",
+        toolCallId: "credential-command",
+        toolName: "bash",
+        isError: true,
+        result: { content: [{ type: "text", text: "DB_PASSWORD: result,secret;with-punctuation result-tail" }] },
+      });
+
+      const telemetryPath = path.join(workspace, ".git", "review-change", "telemetry.log");
+      const frame = output.split("\u001b[H\u001b[2J").at(-1) ?? "";
+      const persisted = await readFile(telemetryPath, "utf8");
+      expect(frame).toContain(`FULL LOG ${telemetryPath}`);
+      expect(frame).toContain("9 ENTRIES OMITTED");
+      expect(frame).toContain("characters omitted");
+      expect(persisted).toContain("entry-001");
+      expect(persisted).toContain("tail-marker");
+      expect(frame).toContain("--github-token [REDACTED]");
+      expect(persisted).toContain("GITHUB_TOKEN=[REDACTED] continue");
+      expect(persisted).toContain("PROD_API_KEY=[REDACTED] deploy");
+      expect(persisted).toContain("CLIENT_SECRET=[REDACTED] finish");
+      expect(persisted).toContain("AWS_SECRET_ACCESS_KEY=[REDACTED] SSH_PRIVATE_KEY=[REDACTED] private_key_count=7");
+      expect(persisted).toContain("Authorization: [REDACTED] next-command --dry-run; curl -H \\\"Authorization: [REDACTED]\\\" https://example.test/basic; curl -H 'Authorization: [REDACTED]' https://example.test/bearer; curl -H \\\"Authorization: [REDACTED]\\\" https://example.test/header; payload={\\\"Authorization\\\":\\\"[REDACTED]\\\",\\\"access_token\\\":\\\"[REDACTED]\\\",\\\"client_secret\\\":\\\"[REDACTED]\\\",\\\"url\\\":\\\"https://example.test/object\\\"}");
+      expect(persisted).toContain("--token --dry-run token_count=42");
+      expect(persisted).toContain("DB_PASSWORD: [REDACTED] result-tail");
+      expect(persisted).toContain("postgresql://[REDACTED]@example.com/db");
+      expect(persisted).toContain("[REDACTED]");
+      expect(`${frame}${persisted}`).not.toMatch(
+        /do-not-persist|whitespace-secret|quoted secret with spaces|github,value|prod key|client,value|uri-secret|result,secret|fixture-aws-value|fixture private key|fixture-nonce|fixture-response|fixture-basic|fixture-bearer|fixture-custom|fixture-token|fixture-access-value|fixture-client-value|fixturePersistedToken123/,
+      );
+    } finally {
+      status.detachTelemetryLog();
+      await rm(workspace, { recursive: true, force: true });
+    }
+  });
+
+  test("discloses omitted entries in tiny terminal frames", () => {
+    let frame = "";
+    const status = createTerminalStatus({
+      stream: { isTTY: true, columns: 24, rows: 6, write: (chunk: string) => { frame = chunk; } },
+      summaryStream: { write() {} },
+      color: false,
+      setIntervalFn: () => 1,
+      clearIntervalFn: () => {},
+    });
+
+    status.start();
+    status.begin("review", "Adversarial review");
+    for (let index = 1; index <= 201; index += 1) {
+      status.activity("review", "log", `entry-${index}`);
+    }
+
+    expect(frame).toContain("2 OMIT");
+  });
+
+  test("scrolls overflowing expanded logs with telemetry attached in every layout", async () => {
+    const layouts = [
+      { name: "split", columns: 100, rows: 14 },
+      { name: "stacked", columns: 60, rows: 16 },
+      { name: "tiny", columns: 24, rows: 8 },
+    ];
+
+    for (const layout of layouts) {
+      const workspace = await mkdtemp(path.join(tmpdir(), `review-change-${layout.name}-log-`));
+      await mkdir(path.join(workspace, ".git"));
+      let frame = "";
+      const input = new EventEmitter() as any;
+      input.isTTY = true;
+      input.isRaw = false;
+      input.setRawMode = (value: boolean) => { input.isRaw = value; };
+      input.pause = () => {};
+      const status = createTerminalStatus({
+        input,
+        stream: {
+          isTTY: true,
+          columns: layout.columns,
+          rows: layout.rows,
+          write: (chunk: string) => { frame = chunk; },
+        },
+        summaryStream: { write() {} },
+        color: false,
+        setIntervalFn: () => 1,
+        clearIntervalFn: () => {},
+      });
+
+      try {
+        status.start();
+        status.attachTelemetryLog(workspace);
+        status.activity("target", "log", `⟪ ${layout.name} ${"x".repeat(250)} ${layout.name} ⟫`);
+        input.emit("data", "\r");
+        for (let index = 0; index < 100; index += 1) input.emit("data", "\u0015");
+        expect(frame).toContain("⟪");
+        for (let index = 0; index < 100; index += 1) input.emit("data", "\u0004");
+        expect(frame).toContain("⟫");
+      } finally {
+        status.detachTelemetryLog();
+        await rm(workspace, { recursive: true, force: true });
+      }
+    }
   });
 
   test("keeps the worktree in headers below five rows", () => {
@@ -790,6 +1224,62 @@ describe("review-change CLI runtime", () => {
     await finishing;
   });
 
+  test("paginates the final Summary with telemetry attached in every layout", async () => {
+    const layouts = [
+      { name: "split", columns: 100, rows: 14 },
+      { name: "stacked", columns: 60, rows: 16 },
+      { name: "tiny", columns: 24, rows: 8 },
+    ];
+
+    for (const layout of layouts) {
+      const workspace = await mkdtemp(path.join(tmpdir(), `review-change-${layout.name}-summary-`));
+      await mkdir(path.join(workspace, ".git"));
+      let frame = "";
+      const input = new EventEmitter() as any;
+      input.isTTY = true;
+      input.isRaw = false;
+      input.setRawMode = (value: boolean) => { input.isRaw = value; };
+      input.pause = () => {};
+      const status = createTerminalStatus({
+        input,
+        stream: {
+          isTTY: true,
+          columns: layout.columns,
+          rows: layout.rows,
+          write: (chunk: string) => { frame = chunk; },
+        },
+        summaryStream: { write() {} },
+        renderSummaryMarkdown: null,
+        color: false,
+        setIntervalFn: () => 1,
+        clearIntervalFn: () => {},
+      });
+
+      try {
+        status.start();
+        status.attachTelemetryLog(workspace);
+        status.piEvent({ type: "message_end", message: {
+          role: "assistant",
+          content: [{
+            type: "text",
+            text: Array.from({ length: 30 }, (_, index) => (
+              index === 29 ? `summary-tail-${layout.name}` : `summary-${layout.name}-${index + 1}`
+            )).join("\n"),
+          }],
+        } });
+        const finishing = status.finish(0);
+        for (let index = 0; index < 100; index += 1) input.emit("data", "\u0004");
+        expect(frame).toContain(`summary-tail-${layout.name}`);
+        expect(frame).toContain("Ctrl-C exit");
+        input.emit("data", "\u0003");
+        await finishing;
+      } finally {
+        status.detachTelemetryLog();
+        await rm(workspace, { recursive: true, force: true });
+      }
+    }
+  });
+
   test("restores the final TTY when an external signal dismisses the Summary", async () => {
     let output = "";
     const rawModes: boolean[] = [];
@@ -817,6 +1307,48 @@ describe("review-change CLI runtime", () => {
 
     expect(rawModes).toEqual([true, false]);
     expect(output).toContain("\u001b[?1049l");
+    expect(processRef.listenerCount("SIGTERM")).toBe(0);
+  });
+
+  test("latches interruption while initial Glow rendering is pending", async () => {
+    let output = "";
+    let pauseCount = 0;
+    let clearCount = 0;
+    const rawModes: boolean[] = [];
+    const input = new EventEmitter() as any;
+    input.isTTY = true;
+    input.isRaw = false;
+    input.setRawMode = (value: boolean) => { rawModes.push(value); input.isRaw = value; };
+    input.resume = () => {};
+    input.pause = () => { pauseCount += 1; };
+    const processRef = new EventEmitter();
+    const renderStarted = Promise.withResolvers<void>();
+    const status = createTerminalStatus({
+      input,
+      stream: { isTTY: true, columns: 80, rows: 20, write: (chunk: string) => { output += chunk; } },
+      summaryStream: { write() {} },
+      renderSummaryMarkdown: (_markdown: string, { signal }: { signal: AbortSignal }) => new Promise((resolve) => {
+        renderStarted.resolve();
+        signal.addEventListener("abort", () => resolve(null), { once: true });
+      }),
+      color: false,
+      setIntervalFn: () => 1,
+      clearIntervalFn: () => { clearCount += 1; },
+    });
+    const cancellation = createLifecycleCancellation({ processRef, status });
+
+    status.start();
+    const finishing = status.finish(0);
+    await renderStarted.promise;
+    processRef.emit("SIGTERM");
+    await finishing;
+    cancellation.cleanup();
+
+    expect(rawModes).toEqual([true, false]);
+    expect(pauseCount).toBe(1);
+    expect(clearCount).toBe(1);
+    expect(input.listenerCount("data")).toBe(0);
+    expect((output.match(/\u001b\[\?1049l/g) ?? [])).toHaveLength(1);
     expect(processRef.listenerCount("SIGTERM")).toBe(0);
   });
 
@@ -1029,6 +1561,14 @@ describe("review-change CLI arguments", () => {
     expect(() => parseArguments(["-y"])).toThrow("Unknown option: -y");
     expect(() => parseArguments(["--provider", "openai"])).toThrow("--provider requires --model");
   });
+
+  test("rejects every duplicate single-use option", () => {
+    for (const option of ["--intent", "--provider", "--model", "--thinking"]) {
+      expect(() => parseArguments([option, "first", option, "second"])).toThrow(
+        `${option} may be provided only once`,
+      );
+    }
+  });
 });
 
 describe("review-change CLI prompt", () => {
@@ -1209,40 +1749,88 @@ describe("review-change CLI runner", () => {
     });
   });
 
-  test("retains the reviewed snapshot until the final Summary is dismissed", async () => {
-    let dismissSummary: (() => void) | null = null;
-    let summaryStarted: (() => void) | null = null;
+  test("closes real telemetry before workspace removal and keeps its full path in Summary", async () => {
+    const root = await mkdtemp(path.join(tmpdir(), "review-change-retention-"));
+    const workspace = path.join(root, ...Array.from({ length: 5 }, (_, index) => `${index}-${"nested".repeat(11)}`));
+    const telemetryPath = path.join(workspace, ".git", "review-change", "telemetry.log");
+    await mkdir(path.join(workspace, ".git"), { recursive: true });
+    let output = "";
+    let summaryVisible: (() => void) | null = null;
+    let persistenceDetached = false;
     let cleaned = false;
-    const summaryIsVisible = new Promise<void>((resolve) => { summaryStarted = resolve; });
-    const summaryDismissed = new Promise<void>((resolve) => { dismissSummary = resolve; });
+    const input = new EventEmitter() as any;
+    input.isTTY = true;
+    input.isRaw = false;
+    input.setRawMode = (value: boolean) => { input.isRaw = value; };
+    input.resume = () => {};
+    input.pause = () => {};
+    const summaryIsVisible = new Promise<void>((resolve) => { summaryVisible = resolve; });
+    const status = createTerminalStatus({
+      input,
+      stream: {
+        isTTY: true,
+        columns: 100,
+        rows: 40,
+        write: (chunk: string) => {
+          output += chunk;
+          if (chunk.includes("Ctrl-C exit")) summaryVisible?.();
+        },
+      },
+      summaryStream: { write() {} },
+      renderSummaryMarkdown: null,
+      color: false,
+      setIntervalFn: () => 1,
+      clearIntervalFn: () => {},
+    });
+    const detachTelemetryLog = status.detachTelemetryLog.bind(status);
+    status.detachTelemetryLog = () => {
+      persistenceDetached = true;
+      detachTelemetryLog();
+    };
     const review = runReviewChange(
       { target: "main...HEAD", intent: null, piOptions: [] },
       {
         environment: {},
-        status: {
-          ...silentStatus,
-          finish: async () => {
-            summaryStarted?.();
-            await summaryDismissed;
-          },
-        },
+        status,
         resolveTarget: async ({ target }) => ({ kind: "local-range", target }),
         createWorkspace: async () => ({
-          cwd: "/isolated",
+          cwd: workspace,
           sourceRoot: "/repo",
-          cleanup: async () => { cleaned = true; },
+          cleanup: async () => {
+            expect(persistenceDetached).toBe(true);
+            cleaned = true;
+            await rm(workspace, { recursive: true, force: true });
+          },
         }),
         createReportDirectory: async () => "/reports/session",
         openReport: async () => "/reports/session/review-change.html",
-        spawnProcess: () => Promise.resolve(0),
+        spawnProcess: async () => {
+          for (const stage of ["review", "evidence", "documentation", "lint", "report"]) {
+            emitProgress(status, `${stage}-start`, stage, "start", `${stage} started`);
+            emitProgress(status, `${stage}-step`, stage, "step", `${stage} evidence`);
+            emitProgress(status, `${stage}-complete`, stage, "complete", `${stage} complete`);
+          }
+          return 0;
+        },
       },
     );
 
-    await summaryIsVisible;
-    expect(cleaned).toBe(false);
-    dismissSummary?.();
-    expect(await review).toBe(0);
-    expect(cleaned).toBe(true);
+    try {
+      await summaryIsVisible;
+      expect(await readFile(telemetryPath, "utf8")).toContain("report complete");
+      expect(output).toContain("telemetry.log");
+      expect(output).not.toContain("characters omitted] telemetry.log");
+      expect(output).toContain("Cleanup on exit: pending");
+      expect(cleaned).toBe(false);
+      input.emit("data", "\u0003");
+      expect(await review).toBe(0);
+      expect(cleaned).toBe(true);
+      expect(output.indexOf("\u001b[?1049l")).toBeLessThan(output.indexOf("✓ Cleanup on exit — Removed"));
+      await expect(readFile(telemetryPath, "utf8")).rejects.toThrow();
+    } finally {
+      input.emit("data", "\u0003");
+      await rm(root, { recursive: true, force: true });
+    }
   });
 
   test("reports lifecycle status while keeping setup outcomes concise", async () => {
@@ -1459,15 +2047,278 @@ describe("review-change CLI runner", () => {
   test("forwards interruption and returns its signal exit status", async () => {
     const processRef = new EventEmitter();
     const child = new EventEmitter() as EventEmitter & { kill(signal: string): void };
+    const clearedTimers: number[] = [];
     child.kill = (signal) => { queueMicrotask(() => child.emit("close", null, signal)); };
     const completion = spawnInForeground("pi", [], {}, {
       processRef,
       spawnChild: () => child,
+      setTimeoutFn: (_callback: () => void, delay: number) => {
+        expect(delay).toBe(1_000);
+        return 17;
+      },
+      clearTimeoutFn: (timer: number) => { clearedTimers.push(timer); },
     });
 
     processRef.emit("SIGINT");
 
     expect(await completion).toBe(130);
+    expect(clearedTimers).toEqual([17]);
+  });
+
+  test("escalates ignored external cancellation before restoring terminal and cleaning workspace", async () => {
+    const root = await mkdtemp(path.join(tmpdir(), "review-change-cancellation-"));
+    const workspace = path.join(root, "isolated-review");
+    await mkdir(workspace);
+    const processRef = new EventEmitter();
+    const input = new EventEmitter() as any;
+    const rawModes: boolean[] = [];
+    input.isTTY = true;
+    input.isRaw = false;
+    input.setRawMode = (value: boolean) => { rawModes.push(value); input.isRaw = value; };
+    input.resume = () => {};
+    input.pause = () => {};
+    let output = "";
+    let telemetryCloses = 0;
+    const status = createTerminalStatus({
+      input,
+      stream: { isTTY: true, columns: 100, rows: 30, write: (chunk: string) => { output += chunk; } },
+      summaryStream: { write() {} },
+      renderSummaryMarkdown: null,
+      setIntervalFn: () => 1,
+      clearIntervalFn() {},
+      createTelemetryLog: () => ({
+        path: path.join(workspace, ".git", "review-change", "telemetry.log"),
+        append() {},
+        close() { telemetryCloses += 1; },
+      }),
+    });
+    const child = new EventEmitter() as EventEmitter & { kill(signal: string): void };
+    const killedSignals: string[] = [];
+    child.kill = (signal) => {
+      killedSignals.push(signal);
+      if (signal === "SIGKILL") queueMicrotask(() => child.emit("close", null, signal));
+    };
+    let escalation: (() => void) | null = null;
+    let cleanupCalls = 0;
+    const spawned = Promise.withResolvers<void>();
+    const review = runReviewChange(
+      { target: "main...HEAD", intent: null, piOptions: [] },
+      {
+        environment: {}, processRef, status,
+        resolveTarget: async ({ target }) => ({ kind: "local-range", target }),
+        createWorkspace: async () => ({
+          cwd: workspace,
+          sourceRoot: root,
+          cleanup: async () => { cleanupCalls += 1; await rm(workspace, { recursive: true }); },
+        }),
+        createReportDirectory: async () => path.join(root, "report"),
+        spawnChild: () => { spawned.resolve(); return child; },
+        setTimeoutFn: (callback: () => void, delay: number) => {
+          expect(delay).toBe(1_000);
+          escalation = callback;
+          return 17;
+        },
+        clearTimeoutFn() {},
+      },
+    );
+
+    try {
+      await spawned.promise;
+      processRef.emit("SIGTERM");
+      expect(killedSignals).toEqual(["SIGTERM"]);
+      expect(escalation).not.toBeNull();
+      escalation?.();
+
+      expect(await review).toBe(143);
+      expect(killedSignals).toEqual(["SIGTERM", "SIGKILL"]);
+      expect(rawModes).toEqual([true, false]);
+      expect(output).toContain("\u001b[?1049l");
+      expect(telemetryCloses).toBe(1);
+      expect(cleanupCalls).toBe(1);
+      expect(output.indexOf("\u001b[?1049l")).toBeLessThan(output.indexOf("✓ Cleanup on exit — Removed"));
+      expect(await readdir(root)).toEqual([]);
+    } finally {
+      await rm(root, { recursive: true, force: true });
+    }
+  });
+
+  test("escalates an ignored telemetry-failure SIGTERM and settles the foreground failure", async () => {
+    const child = new EventEmitter() as EventEmitter & { kill(signal: string): void };
+    const killedSignals: string[] = [];
+    const clearedTimers: number[] = [];
+    let failureHandler: ((error: Error) => void) | null = null;
+    let escalation: (() => void) | null = null;
+    child.kill = (signal) => { killedSignals.push(signal); };
+    const completion = spawnInForeground("pi", [], {}, {
+      spawnChild: () => child,
+      status: {
+        setLifecycleFailureHandler(handler: ((error: Error) => void) | null) { failureHandler = handler; },
+        throwIfFailed() {},
+      },
+      setTimeoutFn: (callback: () => void, delay: number) => {
+        expect(delay).toBe(1_000);
+        escalation = callback;
+        return 17;
+      },
+      clearTimeoutFn: (timer: number) => { clearedTimers.push(timer); },
+    });
+
+    failureHandler?.(new Error("telemetry persistence failed"));
+    expect(killedSignals).toEqual(["SIGTERM"]);
+    escalation?.();
+
+    await expect(completion).rejects.toThrow("telemetry persistence failed");
+    expect(killedSignals).toEqual(["SIGTERM", "SIGKILL"]);
+    expect(clearedTimers).toEqual([]);
+    expect(failureHandler).toBeNull();
+  });
+
+  test("preserves telemetry append and immediate-close failures through escalation and exact cleanup", async () => {
+    const root = await mkdtemp(path.join(tmpdir(), "review-change-telemetry-failure-"));
+    const workspace = path.join(root, "isolated-review");
+    await mkdir(path.join(workspace, ".git"), { recursive: true });
+    const child = new EventEmitter() as EventEmitter & {
+      kill(signal: string): void;
+      stdout: EventEmitter & { setEncoding(encoding: string): void };
+      stderr: EventEmitter & { setEncoding(encoding: string): void };
+    };
+    child.stdout = Object.assign(new EventEmitter(), { setEncoding() {} });
+    child.stderr = Object.assign(new EventEmitter(), { setEncoding() {} });
+    const killedSignals: string[] = [];
+    child.kill = (signal) => { killedSignals.push(signal); };
+    let failedAppends = 0;
+    let closes = 0;
+    let cleanupCalls = 0;
+    const lifecycleEvents: string[] = [];
+    const status = createTerminalStatus({
+      stream: { isTTY: false, write() {} },
+      summaryStream: { write: () => lifecycleEvents.push("summary") },
+      createTelemetryLog: (workspacePath: string, initialEntries: any[]) => {
+        const telemetryLog = createTelemetryLog(workspacePath, initialEntries);
+        return {
+          path: telemetryLog.path,
+          append(entry: any) {
+            if (entry.kind === "bash") {
+              failedAppends += 1;
+              throw new Error("injected telemetry write failure");
+            }
+            telemetryLog.append(entry);
+          },
+          close() {
+            closes += 1;
+            telemetryLog.close();
+            throw new Error("injected telemetry close failure");
+          },
+        };
+      },
+    });
+
+    const review = runReviewChange(
+      { target: "main...HEAD", intent: null, piOptions: [] },
+      {
+        environment: {},
+        status,
+        resolveTarget: async ({ target }) => ({ kind: "local-range", target }),
+        createWorkspace: async () => ({
+          cwd: workspace,
+          sourceRoot: root,
+          cleanup: async () => {
+            cleanupCalls += 1;
+            lifecycleEvents.push("cleanup");
+            await rm(workspace, { recursive: true });
+          },
+        }),
+        createReportDirectory: async () => path.join(root, "report"),
+        spawnChild: () => {
+          queueMicrotask(() => child.stdout.emit("data", `${JSON.stringify({
+            type: "tool_execution_start",
+            toolCallId: "write-failure",
+            toolName: "bash",
+            args: { command: "printf fixture" },
+          })}\n`));
+          return child;
+        },
+        setTimeoutFn: (callback: () => void, delay: number) => {
+          expect(delay).toBe(1_000);
+          queueMicrotask(callback);
+          return 17;
+        },
+        clearTimeoutFn() {},
+      },
+    );
+
+    try {
+      let failure: any = null;
+      try {
+        await review;
+      } catch (error) {
+        failure = error;
+      }
+      expect(failure).toBeInstanceOf(AggregateError);
+      expect(failure.errors.map((error: Error) => error.message)).toEqual([
+        "telemetry persistence failed: injected telemetry write failure",
+        "injected telemetry close failure",
+      ]);
+      expect(killedSignals).toEqual(["SIGTERM", "SIGKILL"]);
+      expect(failedAppends).toBe(1);
+      expect(closes).toBe(1);
+      expect(cleanupCalls).toBe(1);
+      expect(lifecycleEvents).toEqual(["summary", "cleanup"]);
+      await expect(readFile(workspace, "utf8")).rejects.toThrow();
+    } finally {
+      await rm(root, { recursive: true, force: true });
+    }
+  });
+
+  test("attempts workspace cleanup and preserves telemetry-close and cleanup failures", async () => {
+    let cleanupCalls = 0;
+    let closeCalls = 0;
+    const status = createTerminalStatus({
+      stream: { isTTY: false, write() {} },
+      summaryStream: { write() {} },
+      createTelemetryLog: () => ({
+        path: "/isolated/.git/review-change/telemetry.log",
+        append() {},
+        close() { closeCalls += 1; throw new Error("telemetry close failed"); },
+      }),
+    });
+
+    let failure: any = null;
+    try {
+      await runReviewChange(
+        { target: "main...HEAD", intent: null, piOptions: [] },
+        {
+          environment: {},
+          status,
+          resolveTarget: async ({ target }) => ({ kind: "local-range", target }),
+          createWorkspace: async () => ({
+            cwd: "/isolated",
+            sourceRoot: "/repo",
+            cleanup: async () => { cleanupCalls += 1; throw new Error("workspace cleanup failed"); },
+          }),
+          createReportDirectory: async () => "/reports/session",
+          spawnProcess: async () => {
+            for (const stage of ["review", "evidence", "documentation", "lint", "report"]) {
+              emitProgress(status, `${stage}-close-start`, stage, "start", `${stage} started`);
+              emitProgress(status, `${stage}-close-step`, stage, "step", `${stage} evidence`);
+              emitProgress(status, `${stage}-close-complete`, stage, "complete", `${stage} complete`);
+            }
+            return 0;
+          },
+          openReport: async () => "/reports/session/review-change.html",
+        },
+      );
+    } catch (error) {
+      failure = error;
+    }
+
+    expect(closeCalls).toBe(1);
+    expect(cleanupCalls).toBe(1);
+    expect(failure).toBeInstanceOf(AggregateError);
+    expect(failure.errors.map((error: Error) => error.message)).toEqual([
+      "telemetry close failed",
+      "workspace cleanup failed",
+    ]);
   });
 
   test("rejects nested gate execution before creating a workspace", async () => {

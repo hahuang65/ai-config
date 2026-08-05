@@ -10,10 +10,12 @@ const MAX_INTENT_LENGTH = 20_000;
 
 export function parseArguments(argv) {
   const parsed = { target: null, intent: null, piOptions: [] };
+  const seenOptions = new Set();
   for (let index = 0; index < argv.length; index += 1) {
     const argument = argv[index];
+    if (argument === "--help") continue;
     if (argument.startsWith("-")) {
-      index = consumeOption(argv, index, parsed);
+      index = consumeOption(argv, index, parsed, seenOptions);
       continue;
     }
     if (parsed.target !== null) throw usageError("Only one review target may be provided");
@@ -29,10 +31,12 @@ function validatePiSelection(piOptions) {
   }
 }
 
-function consumeOption(argv, index, parsed) {
+function consumeOption(argv, index, parsed, seenOptions) {
   const option = argv[index];
   const optionName = VALUE_OPTIONS.get(option);
   if (!optionName) throw usageError(`Unknown option: ${option}`);
+  if (seenOptions.has(option)) throw usageError(`${option} may be provided only once`);
+  seenOptions.add(option);
   const value = argv[index + 1];
   if (value === undefined || value.startsWith("--")) throw usageError(`${option} requires a value`);
   if (optionName === "intent") {

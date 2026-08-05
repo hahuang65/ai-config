@@ -73,11 +73,13 @@ Each pipeline stage lists its purpose and recorded sub-stages vertically beneath
 Collected Findings, missing evidence, documentation issues, and similar results appear as one concise line per item beneath their sub-stage; successful completion text is not repeated in the sidebar.
 The header keeps the isolated review worktree path, immutable scope, risk, and open Findings visible.
 Resolve target and Create isolation use concise pipeline outcomes rather than repeating the GitHub URL, workspace path, report path, or untracked-file details already available in the header and selected-stage log.
-Cleanup reports only `Removed` because the header already identifies the review worktree.
-The parent validates ordered stage telemetry, shows each active sub-stage as the current operational intent, retains prior sub-stages as `STEP` log entries, owns cancellation through final Summary dismissal, restores terminal state after interruption, and uses plain status lines when output is redirected.
+Cleanup remains pending while the full-screen Summary keeps the isolated review worktree and full log available.
+After dismissal, the parent restores the terminal, closes telemetry, removes exactly that worktree, and reports the final Cleanup outcome outside the Summary as `Removed` on success.
+The parent validates ordered stage telemetry, shows each active sub-stage as the current operational intent, retains prior sub-stages as `STEP` log entries, owns cancellation through final Summary dismissal, latches interruption while initial Glow rendering is pending, restores terminal state after interruption, and uses plain status lines when output is redirected.
 Vim-style `j`/`k` navigates stages, Ctrl-D/Ctrl-U scrolls the selected log, Enter expands or collapses lines, `f` resumes following the active stage, and Ctrl-C aborts an active run; no single-character key aborts or closes the review.
 After validation, it opens the disposable HTML report in a new Firefox window on macOS (or the platform HTML viewer elsewhere) without waiting for browser closure and includes a copyable general review comment plus separately copyable inline Finding comments inside pull-request reports, with exact locations, a severity/action legend, inset copy icons, and persistent copied-state styling.
-After cleanup, an interactive run renders the parent and assistant Markdown through non-interactive Glow when available, forces color when terminal color is enabled, selects a final Summary stage within the existing pipeline/log layout rather than replacing it with a full-screen summary, and rerenders it when terminal width changes.
+On a successful interactive run, the parent renders its own and the assistant’s Markdown through non-interactive Glow when available, forces color when terminal color is enabled, and selects a final Summary stage within the existing pipeline/log layout rather than replacing it with a full-screen summary.
+That Summary rerenders after terminal-width changes.
 Glow failure or a Summary pane narrower than 20 columns falls back to the built-in renderer, Ctrl-U and Ctrl-D scroll the final log, and Ctrl-C exits once the review is no longer running; `q`, `x`, and Escape do not dismiss it.
 Redirected output prints the same summary normally.
 Standalone Review change does not invoke `review-artifact`, poll for feedback, or require approval.
@@ -220,7 +222,7 @@ It remains a stylistic reference only; current runs produce canonical `specs.htm
     ├── fact-checker → canonical HTML drift correction
     └── review-artifact → interactive final gate
 
-Rules (6 advisory files) load on demand in every harness. Claude Code and pi read the common `~/.dotfiles/ai/rules/` sources directly and always load only the small `harness-system-prompt.md` bootstrap containing critical constraints, the shared location, and load triggers. All *enforcement* lives in the shared guard core (per ADR-0012), not in rules — see Guardrails below.
+Rules (7 advisory files) load on demand in every harness. Claude Code and pi read the common `~/.dotfiles/ai/rules/` sources directly and always load only the small `harness-system-prompt.md` bootstrap containing critical constraints, the shared location, and load triggers. All *enforcement* lives in the shared guard core (per ADR-0012), not in rules — see Guardrails below.
 Agents read a subset relevant to their role.
 ```
 
@@ -232,7 +234,7 @@ Agents read a subset relevant to their role.
 ├── skills/           Shared discoverable workflow capabilities (review-change, review-artifact, ...)
 ├── agents/           Shared specialist agents (change-reviewer, tdd-guide, refactorer, ...)
 ├── harness-system-prompt.md  Small always-on critical baseline + rule routing
-├── rules/            6 on-demand advisory rules (all enforcement is in shared/)
+├── rules/            7 on-demand advisory rules (all enforcement is in shared/)
 ├── harnesses/        Pluggable per-harness modules, each with a manifest.sh (ADR-0010)
 │   ├── claude/         Claude Code module (settings.json, hooks.json, statusline.sh, hooks/guard.ts)
 │   └── pi/             pi module (settings.json, extensions/) — @earendil-works/pi-coding-agent
@@ -324,6 +326,7 @@ Every agent uses the harness default unless the invoking CLI supplies an overrid
 | `coding-style` | Immutability, file size limits, naming, nesting, magic numbers |
 | `testing` | TDD, behavior testing, no shared state, shared setup |
 | `performance` | Profiling before optimizing, caching, pagination, timeouts |
+| `cli-ergonomics` | Outcome-based guidance for bounded, deterministic, self-correcting Agent-facing CLIs |
 | `git-commit` | Commit format (`@~/.gitmessage`) and staging policy |
 | `mise` | Toolchain managed by mise; ignore other version managers |
 | `security` | Security anti-patterns that are *guidance* (string-concat SQL, `eval`, `exec`-concat, input→file API) + always-on input/output/authz/logging rules. The hard-blockable part (hardcoded secret literals) is the `no-hardcoded-secret` guardrail. |
@@ -419,6 +422,7 @@ The format files (CONTEXT-FORMAT.md, ADR-FORMAT.md) and the LANGUAGE/DEEPENING/H
 - **[nicobailon/visual-explainer](https://github.com/nicobailon/visual-explainer)** — The `visualize` skill (renamed from `visual-explainer`) is taken wholesale from this repository, with only minor modifications. HTML visual generation is powered by this work.
 - **[kunchenguid/no-mistakes](https://github.com/kunchenguid/no-mistakes)** — Review change adapts its independent reviewer/fixer roles, intent-aware Findings, evidence-first validation, bounded repair loops, and human-owned decisions without reproducing its push gate, daemon, TUI, or delivery automation.
 - **[kunchenguid/lavish-axi](https://github.com/kunchenguid/lavish-axi)** — The local browser review loop, path-keyed sessions, element and text annotations, foreground polling, live reload, and evidence-based layout warnings inspired `review-artifact`. Relevant MIT-licensed core concepts and code were adapted into the narrower locally owned runtime; see [`skills/review-artifact/ATTRIBUTION.md`](skills/review-artifact/ATTRIBUTION.md).
+- **[kunchenguid/axi at revision 93c5f334](https://github.com/kunchenguid/axi/tree/93c5f334d6ec074c29ca8d74fa629530dd298a43)** — The `cli-ergonomics` advisory rule adapts AXI’s outcome-oriented guidance for compact output, explicit state, strict invocations, and contextual discovery while retaining this repository’s purpose-specific formats, stream conventions, and lazy rulebook.
 - **[affaan-m/everything-claude-code](https://github.com/affaan-m/everything-claude-code)** — The rules and agent definitions in this repo are borrowed and adapted from this collection. The coding-style, testing, security, and performance rules, as well as several retained specialist-agent configurations, draw heavily from this source.
 - **[can1357/oh-my-pi](https://github.com/can1357/oh-my-pi)** — Its TTSR and hook models informed the guardrail architecture before the harness was retired by [ADR-0017](docs/adr/0017-retire-oh-my-pi.md).
 - **[pi (badlogic/earendil-works)](https://pi.dev)** — The second harness this repo configures (`@earendil-works/pi-coding-agent`, config root `~/.pi/agent`). Its `tool_call` extension routes the shared guard core, while its global `AGENTS.md` carries only the small shared bootstrap and detailed rules remain on demand ([ADR-0016](docs/adr/0016-small-always-on-bootstrap-lazy-rulebooks.md)).

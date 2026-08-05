@@ -9,7 +9,6 @@ Every stage retains a navigable, bounded, credential-redacted activity log conta
 The header retains the isolated review worktree path, immutable scope, risk, and open-Finding count.
 Finding copy controls resolve absolute reviewed file paths beneath that isolated worktree rather than the originating source checkout.
 Resolve target and Create isolation keep their left-pane outcomes concise instead of repeating the GitHub URL, workspace path, report path, or untracked-file details retained in the header and selected-stage log.
-Cleanup displays only `Removed` because its worktree path is already in the header.
 The parent accepts progress only after a successful status-tool result, enforces the fixed stage order, requires an observable sub-stage before successful stage completion, preserves explicit failures, and fails closed on missing or invalid telemetry.
 Every left-pane pipeline stage shows its purpose and recorded sub-stages vertically beneath its status with a live or completed elapsed timer beside every sub-stage; sub-stage messages strive for six words or fewer and are display-bounded to six words in that pane, while the selected right-pane log retains each bounded original telemetry message as a `STEP` entry.
 Findings, missing evidence, documentation issues, and other collections use one concise `log` event and one sidebar line per item beneath their parent sub-stage; successful completion messages stay in the selected-stage log instead of repeating parent text in the sidebar.
@@ -43,9 +42,10 @@ Pull-request reports include a copyable general review plus separately copyable 
 No standalone CLI path offers approval, disposition, or repair actions.
 
 Cleanup removes only the exact isolated-clone path recorded by the runner.
-On a successful interactive review, the runner keeps that clone available while the final Summary is visible so copied Finding paths resolve to the reviewed snapshot, then cleans it after Ctrl-C dismisses the review.
-On failure, or when no report opened, cleanup still runs before the final Summary.
-One lifecycle cancellation owner propagates interruption into target and isolation subprocesses, forwards it to pi, and remains installed through final Summary dismissal and cleanup so external signals restore terminal state.
+For every outcome after an isolated clone exists, including failure and a missing report, the runner presents the final Summary while retaining that clone and its telemetry, with Cleanup shown as pending.
+After Summary dismissal it restores the terminal, closes telemetry, removes the exact clone, and emits final cleanup status outside the full-screen Summary; non-interactive rendering completes before the same close-and-cleanup sequence.
+This ordering keeps copied Finding paths available for successful interactive reviews and keeps failure evidence available through the same Summary boundary.
+One lifecycle cancellation owner propagates interruption into target and isolation subprocesses, forwards it to pi, latches interruption received while initial Glow rendering is pending, and remains installed through final Summary dismissal and cleanup so external signals restore terminal state.
 In a TTY, the final Summary renders the parent and assistant Markdown through bounded non-interactive `glow` when it is available, using the panel width, forced color when terminal color is enabled, and `notty` style under `NO_COLOR`; a pane narrower than 20 columns or missing, failed, oversized, or timed-out output falls back to the built-in renderer.
 The final Summary stage keeps the existing split or stacked pipeline/log layout, contains that output and the report path in the log pane, rerenders after terminal-width changes, lets Ctrl-U scroll up and Ctrl-D scroll down, and remains open until Ctrl-C exits the completed review; `q`, `x`, and Escape are ignored in the final stage.
 Dismissal removes the input listener, restores raw mode and the alternate screen, and pauses stdin so the process can exit; no duplicate summary is printed into the restored shell.

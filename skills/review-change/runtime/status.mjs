@@ -1,27 +1,30 @@
 import { renderMarkdownWithGlow } from "./markdown-summary.mjs";
-import { renderStatusScreen, terminalDisplayWidth } from "./screen.mjs";
-import { renderTerminalSummary } from "./summary.mjs";
 import {
+  renderedLogLineCount,
+  renderedSummaryLineCount,
+  renderStatusScreen,
+  statusScreenLayout,
+} from "./screen.mjs";
+import {
+  addLog,
+  applyPiEvent,
+  beginStage,
+  createState,
+  elapsed,
+  elapsedPlain,
+  finishStage,
+  labelFor,
+  STAGES,
+  VALIDATION_STAGES,
+} from "./status-state.mjs";
+import { renderTerminalSummary } from "./summary.mjs";
+import { createTelemetryLog } from "./telemetry-log.mjs";
+import {
+  sanitizeTelemetryLine,
   sanitizeTerminalLine as safeLine,
-  sanitizeTerminalSummary as safeMultiline,
 } from "./terminal-text.mjs";
-import { describeToolCall, summarizeToolResult } from "./tool-activity.mjs";
 
 const ESCAPE = "\u001b";
-const STAGES = [
-  { id: "target", label: "Resolve target", description: "Freeze immutable review scope" },
-  { id: "workspace", label: "Create isolation", description: "Snapshot source in a disposable clone" },
-  { id: "review", label: "Adversarial review", description: "Review the complete change against intent" },
-  { id: "evidence", label: "Targeted evidence", description: "Run smallest checks that prove intent" },
-  { id: "documentation", label: "Documentation", description: "Check changed documentation and claims" },
-  { id: "lint", label: "Lint", description: "Run focused deterministic quality checks" },
-  { id: "report", label: "Build report", description: "Assemble the retained results-only HTML" },
-  { id: "cleanup", label: "Cleanup on exit", description: "Remove the isolated workspace after review" },
-  { id: "summary", label: "Summary", description: "Present retained results and stage outcomes" },
-];
-const STAGE_IDS = new Set(STAGES.map(({ id }) => id));
-const VALIDATION_STAGES = ["review", "evidence", "documentation", "lint", "report"];
-const MAX_LOG_LINES = 200;
 const SCROLL_LINES = 5;
 const REDRAW_INTERVAL_MS = 250;
 
@@ -40,6 +43,7 @@ class TerminalStatus {
     this.fullScreen = Boolean(this.stream.isTTY);
     this.renderSummaryMarkdown = options.renderSummaryMarkdown
       ?? (this.stream === process.stderr ? renderMarkdownWithGlow : null);
+    this.createTelemetryLog = options.createTelemetryLog ?? createTelemetryLog;
     this.color = options.color ?? process.env.NO_COLOR === undefined;
     this.state = createState();
     this.redrawTimer = null;
@@ -52,6 +56,8 @@ class TerminalStatus {
     this.abortHandler = null;
     this.abortRequested = false;
     this.finalView = false;
+    this.finalSetupPending = false;
+    this.finalDismissRequested = false;
     this.dismissFinal = null;
     this.previousRawMode = false;
     this.summaryRenderGeneration = 0;
@@ -61,11 +67,13 @@ class TerminalStatus {
   }
 
   start(context = {}) {
+    this.finalDismissRequested = false;
     this.state.startedAt = this.now();
     this.state.context = {
       target: safeLine(context.target ?? ""),
       intent: safeLine(context.intent ?? ""),
       workspace: "",
+      fullLog: "",
     };
     if (!this.fullScreen) return this.emitLine("Review change");
     this.stream.write(`${ESCAPE}[?1049h${ESCAPE}[?25l`);
@@ -83,6 +91,32 @@ class TerminalStatus {
   setWorkspacePath(workspacePath) {
     this.state.context.workspace = safeLine(workspacePath);
     this.redraw();
+  }
+
+  attachTelemetryLog(workspacePath) {
+    const telemetryLog = this.createTelemetryLog(workspacePath, this.state.pendingTelemetry);
+    this.state.telemetryLog = telemetryLog;
+    this.state.telemetryDetached = false;
+    this.state.pendingTelemetry = [];
+    this.state.context.fullLog = sanitizeTelemetryLine(telemetryLog.path);
+    this.redraw();
+    return telemetryLog.path;
+  }
+
+  detachTelemetryLog() {
+    const telemetryLog = this.state.telemetryLog;
+    this.state.telemetryLog = null;
+    this.state.telemetryDetached = true;
+    telemetryLog?.close();
+  }
+
+  setLifecycleFailureHandler(handler) {
+    this.state.lifecycleFailureHandler = handler;
+    if (handler && this.state.lifecycleFailure) handler(this.state.lifecycleFailure);
+  }
+
+  throwIfFailed() {
+    if (this.state.lifecycleFailure) throw this.state.lifecycleFailure;
   }
 
   setReportPath(reportPath) {
@@ -136,9 +170,8 @@ class TerminalStatus {
     addLog(this.state, stage, "process", `pi exited with status ${exitCode}`, this.now());
     this.emitLine(`  · pi exited with status ${exitCode}`);
     if (exitCode !== 0) {
-      const activeStage = this.state.currentStage ?? "review";
-      if (this.state.stages.get(activeStage)?.status !== "failed") {
-        finishStage(this.state, activeStage, "failed", `pi exited with status ${exitCode}`, this.now());
+      if (this.state.stages.get(stage)?.status !== "failed") {
+        finishStage(this.state, stage, "failed", `pi exited with status ${exitCode}`, this.now());
       }
       this.redraw();
       return exitCode;
@@ -195,18 +228,22 @@ class TerminalStatus {
     this.state.finalSummaryPlain = plainSummary.split("\n");
     this.state.finalSummaryMarkdown = summaryMarkdown(parentSummary, this.state.summary);
     this.state.finalSummary = this.state.finalSummaryPlain;
+    this.finalSetupPending = true;
     if (this.renderSummaryMarkdown) await this.refreshRenderedSummary();
+    this.finalSetupPending = false;
     this.selectedStage = "summary";
     this.summaryOffset = 0;
     this.logOffset = 0;
     this.followActive = false;
     this.finalView = true;
     const canWait = this.input?.isTTY && typeof this.input.setRawMode === "function";
-    if (!canWait) {
+    if (!canWait || this.finalDismissRequested) {
       this.redraw();
       this.restoreTerminal();
-      this.summaryStream.write(parentSummary);
-      if (assistantSummary) this.summaryStream.write(assistantSummary);
+      if (!canWait) {
+        this.summaryStream.write(parentSummary);
+        if (assistantSummary) this.summaryStream.write(assistantSummary);
+      }
       return;
     }
     const dismissal = new Promise((resolve) => { this.dismissFinal = resolve; });
@@ -221,6 +258,8 @@ class TerminalStatus {
   }
 
   interrupt() {
+    this.finalDismissRequested = true;
+    if (this.finalSetupPending) this.summaryRenderAbort?.abort();
     if (!this.finalView) return;
     const dismiss = this.dismissFinal;
     this.dismissFinal = null;
@@ -228,7 +267,7 @@ class TerminalStatus {
   }
 
   emitLine(text) {
-    if (!this.fullScreen) this.stream.write(`${text}\n`);
+    if (!this.fullScreen) this.stream.write(`${safeLine(text)}\n`);
   }
 
   redraw() {
@@ -256,10 +295,7 @@ class TerminalStatus {
   }
 
   summaryPaneWidth() {
-    const width = Math.max(1, this.stream.columns ?? 100);
-    const height = Math.max(1, this.stream.rows ?? 30);
-    if (width < 88 || height < 12) return width;
-    return width - Math.max(40, Math.min(58, Math.floor(width * 0.52))) - 1;
+    return this.currentLayout(true).paneWidth;
   }
 
   async refreshRenderedSummary(width = this.summaryPaneWidth()) {
@@ -302,15 +338,13 @@ class TerminalStatus {
   }
 
   maximumSummaryOffset() {
-    const width = Math.max(1, this.stream.columns ?? 100);
-    const height = Math.max(1, this.stream.rows ?? 30);
-    const summaryWidth = this.summaryPaneWidth();
-    const lineCount = this.state.finalSummaryRendered
-      ? this.state.finalSummary.length
-      : this.state.finalSummary.reduce((count, line) => (
-        count + Math.max(1, Math.ceil(terminalDisplayWidth(line) / summaryWidth))
-      ), 0);
-    return Math.max(0, lineCount - this.summaryViewportCapacity(width, height));
+    const layout = this.currentLayout(true);
+    const lineCount = renderedSummaryLineCount(
+      this.state.finalSummary,
+      layout.paneWidth,
+      this.state.finalSummaryRendered,
+    );
+    return Math.max(0, lineCount - layout.contentCapacity);
   }
 
   clampSummaryOffset() {
@@ -320,33 +354,25 @@ class TerminalStatus {
   maximumLogOffset() {
     const selected = this.state.stages.get(this.selectedStage ?? this.state.currentStage ?? "target");
     if (!selected || selected.logs.length === 0) return 0;
-    const width = Math.max(1, this.stream.columns ?? 100);
-    const height = Math.max(1, this.stream.rows ?? 30);
-    const paneWidth = width >= 88 && height >= 12
-      ? width - Math.max(40, Math.min(58, Math.floor(width * 0.52))) - 1
-      : width;
-    const messageWidth = Math.max(20, paneWidth - 19);
-    const lineCount = this.expanded
-      ? selected.logs.reduce((count, log) => (
-        count + Math.max(1, Math.ceil(terminalDisplayWidth(log.message) / messageWidth))
-      ), 0)
-      : selected.logs.length;
-    return Math.max(0, lineCount - this.logViewportCapacity(width, height));
+    const layout = this.currentLayout(false);
+    const lineCount = renderedLogLineCount(
+      selected,
+      this.state.startedAt,
+      layout.paneWidth,
+      this.expanded,
+      elapsedPlain,
+    );
+    return Math.max(0, lineCount - layout.contentCapacity);
   }
 
-  summaryViewportCapacity(width, height) {
-    if (width < 32 || height < 12) return Math.max(0, height - (height < 5 ? 2 : 4));
-    return this.logViewportCapacity(width, height);
-  }
-
-  logViewportCapacity(width, height) {
-    if (width >= 88 && height >= 12) return Math.max(1, height - 7);
-    if (width < 32 || height < 12) {
-      if (height < 5) return Math.max(0, height - 3);
-      return Math.max(0, height - (height >= 7 ? 6 : 5));
-    }
-    const stageRows = Math.min(STAGES.length, Math.max(1, height - 12));
-    return Math.max(1, height - stageRows - 11);
+  currentLayout(summary) {
+    return statusScreenLayout({
+      width: Math.max(1, this.stream.columns ?? 100),
+      height: Math.max(1, this.stream.rows ?? 30),
+      fullLog: Boolean(this.state.context.fullLog),
+      stageCount: STAGES.length,
+      summary,
+    });
   }
 
   clampLogOffset() {
@@ -397,12 +423,12 @@ class TerminalStatus {
       dismiss?.();
       return;
     }
-    if (this.finalView && new Set(["q", "x", "\u001b"]).has(key)) return;
+    if (this.finalView && ["q", "x", "\u001b"].includes(key)) return;
     const viewingSummary = this.finalView && this.selectedStage === "summary";
-    if (viewingSummary && new Set(["\u0015", "\u001b[5~"]).has(key)) {
+    if (viewingSummary && ["\u0015", "\u001b[5~"].includes(key)) {
       this.clampSummaryOffset();
       this.summaryOffset = Math.max(0, this.summaryOffset - SCROLL_LINES);
-    } else if (viewingSummary && new Set(["\u0004", "\u001b[6~"]).has(key)) {
+    } else if (viewingSummary && ["\u0004", "\u001b[6~"].includes(key)) {
       this.summaryOffset = Math.min(this.maximumSummaryOffset(), this.summaryOffset + SCROLL_LINES);
     } else if (key === "\u0015") {
       this.logOffset = Math.min(this.maximumLogOffset(), this.logOffset + SCROLL_LINES);
@@ -448,172 +474,6 @@ class TerminalStatus {
   }
 }
 
-function createState() {
-  return {
-    stages: new Map(STAGES.map((stage) => [stage.id, {
-      ...stage, status: "pending", detail: "", substage: "", logs: [], telemetryStarted: false, telemetryStepped: false,
-    }])),
-    currentStage: null,
-    startedAt: null,
-    finishedAt: null,
-    exitCode: null,
-    summary: "",
-    finalSummary: [],
-    finalSummaryPlain: [],
-    finalSummaryMarkdown: "",
-    finalSummaryRendered: false,
-    summaryRenderWidth: null,
-    context: { target: "", intent: "", scope: "", workspace: "", report: "" },
-    findingCount: 0,
-    risk: "unknown",
-    toolRuns: new Map(),
-    pendingProgress: new Map(),
-    telemetryInvalid: false,
-  };
-}
-
-function beginStage(state, stage, label, timestamp) {
-  if (!STAGE_IDS.has(stage)) return;
-  const current = state.stages.get(stage);
-  state.stages.set(stage, { ...current, label: safeLine(label), status: "running", startedAt: timestamp });
-  state.currentStage = stage;
-}
-
-function finishStage(state, stage, status, detail, timestamp) {
-  if (!STAGE_IDS.has(stage)) return;
-  const current = state.stages.get(stage);
-  state.stages.set(stage, { ...current, status, detail: safeLine(detail), finishedAt: timestamp });
-}
-
-function applyPiEvent(state, event, timestamp, line) {
-  if (!event || typeof event !== "object") return;
-  if (event.type === "tool_execution_start" && event.toolName === "review_change_status") {
-    if (event.toolCallId) state.pendingProgress.set(event.toolCallId, event.args);
-    return;
-  }
-  if (event.type === "tool_execution_start") {
-    const activity = describeToolCall(event.toolName, event.args);
-    if (!activity) return;
-    const stage = state.currentStage ?? "review";
-    addLog(state, stage, event.toolName, activity, timestamp);
-    if (event.toolCallId) state.toolRuns.set(event.toolCallId, { stage, toolName: event.toolName, startedAt: timestamp });
-    line(`  · ${activity}`);
-    return;
-  }
-  if (event.type === "tool_execution_end") {
-    const progress = state.pendingProgress.get(event.toolCallId);
-    if (progress) {
-      state.pendingProgress.delete(event.toolCallId);
-      if (!event.isError) applyProgressEvent(state, progress, timestamp, line);
-      else rejectProgressEvent(state, progress.stage, "status tool failed", timestamp, line);
-      return;
-    }
-    completeToolCall(state, event, timestamp, line);
-    return;
-  }
-  if (event.type === "message_end" && event.message?.role === "assistant") {
-    state.summary = assistantText(event.message);
-  }
-}
-
-function completeToolCall(state, event, timestamp, line) {
-  const run = state.toolRuns.get(event.toolCallId);
-  if (!run) return;
-  state.toolRuns.delete(event.toolCallId);
-  const outcome = event.isError ? "failed" : "completed";
-  const evidence = summarizeToolResult(run.toolName, event.result);
-  const message = safeLine(`${run.toolName} ${outcome} ${elapsed(run.startedAt, timestamp)}${evidence ? ` — ${evidence}` : ""}`);
-  addLog(state, run.stage, event.isError ? "error" : "result", message, timestamp);
-  line(`  · ${message}`);
-}
-
-function applyProgressEvent(state, args, timestamp, line) {
-  const stage = typeof args?.stage === "string" ? args.stage : "";
-  const action = typeof args?.action === "string" ? args.action : "";
-  const message = safeLine(args?.message ?? "");
-  if (!VALIDATION_STAGES.includes(stage)) return rejectProgressEvent(state, stage, "unknown stage", timestamp, line);
-  const current = state.stages.get(stage);
-  if (action === "start") return startTelemetryStage(state, stage, message, args, timestamp, line);
-  if (!current.telemetryStarted || !new Set(["running", "waiting"]).has(current.status)) {
-    return rejectProgressEvent(state, stage, `${action} without an active stage`, timestamp, line);
-  }
-  if (action === "complete" && !current.telemetryStepped) {
-    return rejectProgressEvent(state, stage, "complete without an observable sub-stage", timestamp, line);
-  }
-  if (action === "wait" && current.status !== "running") {
-    return rejectProgressEvent(state, stage, "unsupported wait transition", timestamp, line);
-  }
-  applyProgressMetrics(state, args);
-  if (action === "step") return recordProgressStep(state, stage, message, timestamp, line);
-  if (action === "log") return recordProgressLog(state, stage, message, timestamp, line, "  ·", "log");
-  if (action === "complete") return completeProgressStage(state, stage, "passed", "result", "✓", message, timestamp, line);
-  if (action === "fail") return completeProgressStage(state, stage, "failed", "error", "✗", message, timestamp, line);
-  if (action === "wait") {
-    return completeProgressStage(state, stage, "waiting", "status", "Ⅱ", message, timestamp, line);
-  }
-  return rejectProgressEvent(state, stage, `unsupported ${action} transition`, timestamp, line);
-}
-
-function startTelemetryStage(state, stage, message, args, timestamp, line) {
-  const index = VALIDATION_STAGES.indexOf(stage);
-  const previousPassed = index === 0 || state.stages.get(VALIDATION_STAGES[index - 1])?.status === "passed";
-  const current = state.stages.get(stage);
-  if (!previousPassed || current.telemetryStarted || new Set(["passed", "failed"]).has(current.status)) {
-    return rejectProgressEvent(state, stage, "start is out of order or repeated", timestamp, line);
-  }
-  applyProgressMetrics(state, args);
-  beginStage(state, stage, labelFor(state, stage), timestamp);
-  state.stages.set(stage, { ...state.stages.get(stage), telemetryStarted: true });
-  recordProgressLog(state, stage, message, timestamp, line, `  ◐ ${labelFor(state, stage)}`);
-}
-
-function completeProgressStage(state, stage, status, kind, mark, message, timestamp, line) {
-  finishStage(state, stage, status, message, timestamp);
-  addLog(state, stage, kind, message, timestamp);
-  line(`  ${mark} ${labelFor(state, stage)}${message ? ` — ${message}` : ""}`);
-}
-
-function recordProgressStep(state, stage, message, timestamp, line) {
-  const current = state.stages.get(stage);
-  const resumed = current.status === "waiting";
-  state.stages.set(stage, {
-    ...current,
-    status: "running",
-    detail: resumed ? "" : current.detail,
-    finishedAt: resumed ? undefined : current.finishedAt,
-    substage: message,
-    telemetryStepped: true,
-  });
-  addLog(state, stage, "step", message, timestamp);
-  line(`  ↳ ${labelFor(state, stage)} — ${message}`);
-}
-
-function recordProgressLog(state, stage, message, timestamp, line, prefix = "  ·", kind = "status") {
-  addLog(state, stage, kind, message, timestamp);
-  const separator = prefix === "  ·" ? " " : " — ";
-  line(`${prefix}${message ? `${separator}${message}` : ""}`);
-}
-
-function applyProgressMetrics(state, args) {
-  if (Number.isInteger(args?.findings) && args.findings >= 0) state.findingCount = args.findings;
-  if (new Set(["low", "medium", "high"]).has(args?.risk)) state.risk = args.risk;
-}
-
-function rejectProgressEvent(state, stage, reason, timestamp, line) {
-  state.telemetryInvalid = true;
-  const owner = STAGE_IDS.has(stage) ? stage : state.currentStage ?? "review";
-  const message = `invalid stage transition: ${safeLine(reason)}`;
-  addLog(state, owner, "error", message, timestamp);
-  line(`  ✗ ${message}`);
-}
-
-function addLog(state, stage, kind, message, timestamp) {
-  const current = state.stages.get(stage);
-  if (!current) return;
-  const logs = [...current.logs, { kind: safeLine(kind), message: safeLine(message), timestamp }].slice(-MAX_LOG_LINES);
-  state.stages.set(stage, { ...current, logs });
-}
-
 function summaryMarkdown(parentSummary, assistantSummary) {
   const lines = parentSummary.trimEnd().split("\n");
   const outcome = lines.shift() ?? "Review change";
@@ -628,26 +488,4 @@ function summaryMarkdown(parentSummary, assistantSummary) {
   if (stages.length > 0) markdown.push("", "## Stages", "", ...stages);
   if (assistantSummary?.trim()) markdown.push("", "## Assistant summary", "", assistantSummary.trimEnd());
   return markdown.join("\n");
-}
-
-function assistantText(message) {
-  const text = Array.isArray(message.content)
-    ? message.content.filter((part) => part?.type === "text").map((part) => part.text).join("")
-    : "";
-  return safeMultiline(text);
-}
-
-function labelFor(state, stage) {
-  return state.stages.get(stage)?.label ?? stage;
-}
-
-function elapsed(startedAt, finishedAt) {
-  return startedAt === null || startedAt === undefined ? "" : `(${elapsedPlain(startedAt, finishedAt)})`;
-}
-
-function elapsedPlain(startedAt, finishedAt) {
-  if (startedAt === null || startedAt === undefined) return "0.0s";
-  const seconds = Math.max(0, finishedAt - startedAt) / 1_000;
-  if (seconds < 60) return `${seconds.toFixed(1)}s`;
-  return `${Math.floor(seconds / 60)}m ${(seconds % 60).toFixed(0)}s`;
 }

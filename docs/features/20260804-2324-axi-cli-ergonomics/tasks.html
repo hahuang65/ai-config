@@ -1,0 +1,342 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Agent-facing CLI Ergonomics Tasks</title>
+  <style>
+    :root {
+      color-scheme: light dark;
+      --bg: #eef2ed;
+      --paper: #fbfdf9;
+      --ink: #202720;
+      --muted: #687368;
+      --line: #ccd5cb;
+      --accent: #1e6a44;
+      --accent-soft: #e0eee4;
+      --pending: #9b6516;
+      --pending-soft: #f7ead5;
+      --shadow: 0 18px 55px rgba(30, 58, 39, 0.12);
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background:
+        linear-gradient(rgba(30, 106, 68, 0.035) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(30, 106, 68, 0.035) 1px, transparent 1px),
+        var(--bg);
+      background-size: 24px 24px;
+      color: var(--ink);
+      font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      line-height: 1.55;
+    }
+    main { width: min(1040px, calc(100% - 32px)); margin: 38px auto; }
+    header, .slice, .summary-card {
+      background: var(--paper);
+      border: 1px solid var(--line);
+      box-shadow: var(--shadow);
+    }
+    header { padding: clamp(26px, 5vw, 52px); }
+    h1, h2, h3 { line-height: 1.16; text-wrap: balance; }
+    h1 { margin: 0; font-size: clamp(2.1rem, 6vw, 4rem); letter-spacing: -0.045em; }
+    h2 { margin: 0; font-size: clamp(1.35rem, 3vw, 2rem); }
+    h3 { margin: 22px 0 8px; font-size: 1rem; }
+    p { max-width: 76ch; }
+    a { color: var(--accent); text-decoration-thickness: 0.1em; text-underline-offset: 0.2em; }
+    .eyebrow {
+      margin: 0 0 10px;
+      color: var(--accent);
+      font: 700 0.76rem/1.2 ui-monospace, SFMono-Regular, Menlo, monospace;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+    }
+    .lede { color: var(--muted); font-size: 1.08rem; }
+    .summary {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 14px;
+      margin: 18px 0 28px;
+    }
+    .summary-card { padding: 18px; box-shadow: none; }
+    .summary-card strong { display: block; margin-top: 4px; font-size: 1.65rem; }
+    .summary-card span { color: var(--muted); font-size: 0.82rem; }
+    .graph {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 8px;
+      margin-top: 24px;
+      color: var(--muted);
+      font: 0.82rem ui-monospace, SFMono-Regular, Menlo, monospace;
+    }
+    .node { padding: 8px 10px; border: 1px solid var(--line); background: var(--accent-soft); color: var(--ink); }
+    .arrow { color: var(--accent); font-weight: 800; }
+    .branch { display: flex; flex-wrap: wrap; gap: 8px; }
+    .slices { display: grid; gap: 20px; margin-top: 24px; }
+    .slice { padding: clamp(22px, 4vw, 36px); }
+    .slice-head { display: flex; gap: 18px; align-items: flex-start; justify-content: space-between; }
+    .slice-id {
+      color: var(--accent);
+      font: 800 0.8rem ui-monospace, SFMono-Regular, Menlo, monospace;
+      letter-spacing: 0.1em;
+    }
+    .badges { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 7px; }
+    .badge {
+      padding: 5px 8px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      color: var(--muted);
+      font: 700 0.7rem ui-monospace, SFMono-Regular, Menlo, monospace;
+      text-transform: uppercase;
+    }
+    .badge.status { border-color: #d5ae73; background: var(--pending-soft); color: var(--pending); }
+    dl { display: grid; grid-template-columns: 10rem minmax(0, 1fr); gap: 7px 18px; margin: 20px 0; }
+    dt { color: var(--muted); font-weight: 700; }
+    dd { margin: 0; }
+    .build { padding: 16px 18px; border-left: 4px solid var(--accent); background: var(--accent-soft); }
+    ol.criteria { padding: 0; list-style: none; counter-reset: criterion; }
+    ol.criteria li {
+      counter-increment: criterion;
+      position: relative;
+      margin: 12px 0;
+      padding: 12px 14px 12px 45px;
+      border: 1px solid var(--line);
+      background: rgba(104, 115, 104, 0.035);
+    }
+    ol.criteria li::before {
+      content: counter(criterion);
+      position: absolute;
+      left: 13px;
+      top: 11px;
+      width: 22px;
+      height: 22px;
+      border: 2px solid var(--pending);
+      border-radius: 50%;
+      color: var(--pending);
+      text-align: center;
+      font: 800 0.72rem/18px ui-monospace, SFMono-Regular, Menlo, monospace;
+    }
+    .criterion-status { display: block; margin-top: 5px; color: var(--pending); font-size: 0.76rem; font-weight: 700; text-transform: uppercase; }
+    footer { padding: 28px 4px 48px; color: var(--muted); }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #151a16;
+        --paper: #202721;
+        --ink: #edf3ed;
+        --muted: #aab7aa;
+        --line: #435045;
+        --accent: #77d79f;
+        --accent-soft: #263d2f;
+        --pending: #f0bb68;
+        --pending-soft: #44351f;
+        --shadow: 0 18px 55px rgba(0, 0, 0, 0.32);
+      }
+    }
+    @media (max-width: 680px) {
+      main { width: min(100% - 18px, 1040px); margin: 9px auto; }
+      .summary { grid-template-columns: 1fr; }
+      .slice-head { display: block; }
+      .badges { justify-content: flex-start; margin-top: 12px; }
+      dl { grid-template-columns: 1fr; gap: 2px; }
+      dd { margin-bottom: 8px; }
+    }
+  </style>
+</head>
+<body>
+  <main data-artifact-kind="tasks" data-artifact-version="1">
+    <header>
+      <p class="eyebrow">Approved intent · <a href="specs.html">View source Spec</a></p>
+      <h1>Agent-facing CLI Ergonomics Tasks</h1>
+      <p class="lede">Four independently verifiable tracer bullets establish shared guidance, harden the model-facing review command, and audit the remaining CLI contracts.</p>
+      <div class="summary" aria-label="Task summary">
+        <div class="summary-card"><span>Total slices</span><strong>4</strong></div>
+        <div class="summary-card"><span>AFK</span><strong>4</strong></div>
+        <div class="summary-card"><span>HITL</span><strong>0</strong></div>
+      </div>
+      <div class="graph" aria-label="Dependency graph">
+        <span class="node">S1 · Guidance</span>
+        <span class="arrow" aria-hidden="true">→</span>
+        <span class="branch">
+          <span class="node">S2 · Review artifact</span>
+          <span class="node">S3 · Review change</span>
+          <span class="node">S4 · Orchard</span>
+        </span>
+      </div>
+    </header>
+
+    <div class="slices">
+      <article class="slice" data-slice-id="S1" data-status="complete" data-mode="AFK" data-dependencies="" data-stories="1,2,3,4,5,6,7,8,9,10,11">
+        <div class="slice-head">
+          <div>
+            <span class="slice-id">S1</span>
+            <h2>Publish outcome-based Agent-facing CLI guidance</h2>
+          </div>
+          <div class="badges">
+            <span class="badge">AFK</span>
+            <span class="badge status">Complete</span>
+          </div>
+        </div>
+        <dl>
+          <dt>Blocking slices</dt><dd>None.</dd>
+          <dt>Stories</dt><dd>1–11.</dd>
+          <dt>Test surface</dt><dd>The repository content and installation gates.</dd>
+        </dl>
+        <div class="build">
+          <h3>What to build</h3>
+          <p>Add one project-owned advisory rule and a paired lazy-load trigger for both harnesses.</p>
+          <p>Keep the contract focused on observable outcomes, update the public rule inventory and project language, and attribute the adapted guidance to the pinned AXI source without creating an upstream synchronization mechanism.</p>
+        </div>
+        <h3>Acceptance criteria</h3>
+        <ol class="criteria">
+          <li data-criterion-id="S1-C1" data-status="complete">The advisory rule covers minimal bounded defaults, explicit truncation, useful cheap aggregates, definitive empty states, strict invocation validation, meaningful exit codes, deterministic automation, and concise corrective or next-step help without mandating a serialization format.<span class="criterion-status">Complete</span></li>
+          <li data-criterion-id="S1-C2" data-status="complete">The global instruction bootstrap advertises the rule only for Agent-facing CLI work, and a content check prevents the rule and trigger from drifting apart.<span class="criterion-status">Complete</span></li>
+          <li data-criterion-id="S1-C3" data-status="complete">The rule and repository documentation distinguish advisory guidance from guardrail enforcement and preserve purpose-specific JSON, text, and human TUI contracts.<span class="criterion-status">Complete</span></li>
+          <li data-criterion-id="S1-C4" data-status="complete">Public inventories and attribution identify seven advisory rules and the pinned AXI revision, with no imported skill, SDK, hook, runtime, TOON dependency, or automatic synchronization.<span class="criterion-status">Complete</span></li>
+          <li data-criterion-id="S1-C5" data-status="complete">Focused content and installation evidence proves the new rule remains available to both supported harnesses without adding always-on rule content.<span class="criterion-status">Complete</span></li>
+        </ol>
+      </article>
+
+      <article class="slice" data-slice-id="S2" data-status="complete" data-mode="AFK" data-dependencies="S1" data-stories="5,6,7,8,12,13,16">
+        <div class="slice-head">
+          <div>
+            <span class="slice-id">S2</span>
+            <h2>Make Review artifact invocations self-correcting</h2>
+          </div>
+          <div class="badges">
+            <span class="badge">AFK</span>
+            <span class="badge status">Complete</span>
+          </div>
+        </div>
+        <dl>
+          <dt>Blocking slices</dt><dd>S1.</dd>
+          <dt>Stories</dt><dd>5–8, 12–13, and 16.</dd>
+          <dt>Test surface</dt><dd>The spawned Review artifact executable process.</dd>
+        </dl>
+        <div class="build">
+          <h3>What to build</h3>
+          <p>Deepen the existing invocation boundary so it validates the complete command before starting runtime work.</p>
+          <p>Preserve direct-path shorthand and successful JSON output while adding concise help, command-specific accepted input, and distinct usage and runtime failures.</p>
+        </div>
+        <p><strong>Repair-cycle evidence for resolved AXI-007 and AXI-009:</strong> Review artifact and Review change preserve ordinary short diagnostics while their shared lexical redactor classifies normalized names such as <code>GITHUB_TOKEN</code>, <code>DB_PASSWORD</code>, <code>PROD_API_KEY</code>, <code>CLIENT_SECRET</code>, <code>AWS_SECRET_ACCESS_KEY</code>, and private or secret key forms. Separate assignment and flag handling redacts complete quoted and punctuation-bearing values without consuming a following option; quoted object keys such as <code>access_token</code> and <code>client_secret</code> retain their key, quote, comma, and brace delimiters while their values are redacted; quote-aware Authorization handling redacts Basic, Bearer, Token, and custom schemes in JSON, object, shell, and header forms while preserving closing quotes, URLs, command separators, and other non-secret text; benign metrics such as <code>token_count</code> and <code>private_key_count</code>, URI userinfo, and known-token coverage remain protected across CLI diagnostics, tool activity, and persisted telemetry.</p>
+        <h3>Acceptance criteria</h3>
+        <ol class="criteria">
+          <li data-criterion-id="S2-C1" data-status="complete">Direct-path shorthand and every documented valid operational command continue to produce the established structured success responses.<span class="criterion-status">Complete</span></li>
+          <li data-criterion-id="S2-C2" data-status="complete">Top-level and command-specific help describe required positionals, accepted flags, defaults, and representative usage without starting the review server.<span class="criterion-status">Complete</span></li>
+          <li data-criterion-id="S2-C3" data-status="complete">Unknown or misplaced flags, missing flag values, extra positionals, and unsupported commands fail before runtime work with concise corrective guidance and exit status 2.<span class="criterion-status">Complete</span></li>
+          <li data-criterion-id="S2-C4" data-status="complete">Operational failures retain exit status 1, errors remain diagnostic output, successful results remain JSON, and waiting status does not contaminate structured output.<span class="criterion-status">Complete</span></li>
+          <li data-criterion-id="S2-C5" data-status="complete">Public-process behavior tests establish the complete invocation contract, with lower-level tests used only for deep parser behavior not adequately exercised at the executable boundary.<span class="criterion-status">Complete</span></li>
+        </ol>
+      </article>
+
+      <article class="slice" data-slice-id="S3" data-status="complete" data-mode="AFK" data-dependencies="S1" data-stories="6,7,8,9,10,14,16">
+        <div class="slice-head">
+          <div>
+            <span class="slice-id">S3</span>
+            <h2>Verify the Review change invocation contract</h2>
+          </div>
+          <div class="badges">
+            <span class="badge">AFK</span>
+            <span class="badge status">Complete</span>
+          </div>
+        </div>
+        <dl>
+          <dt>Blocking slices</dt><dd>S1.</dd>
+          <dt>Stories</dt><dd>6–10, 14, and 16.</dd>
+          <dt>Test surface</dt><dd>The Review change executable and its public argument contract.</dd>
+        </dl>
+        <div class="build">
+          <h3>What to build</h3>
+          <p>Audit default invocation, help, strict options, usage status, redirected summaries, bounded output, and the human TUI against the new advisory outcomes.</p>
+          <p>Add a behavior test and repair only when caller-visible evidence establishes a concrete gap.</p>
+        </div>
+        <p><strong>Audit result:</strong> The Review change help validation gap was repaired: requesting help now validates every other argument instead of masking an unknown option.</p>
+        <p>The completed audit records conformance for the no-target default, strict values, human TUI, redirected summaries, output channels, and runtime statuses.</p>
+        <p><strong>Resolved Findings AXI-003, AXI-008 through AXI-012, AXI-014, AXI-015, AXI-017 through AXI-020, and AXI-022 through AXI-023:</strong> Review change keeps its bounded TUI while disclosing omitted counts, writes complete credential-redacted telemetry, bounds plain-terminal telemetry previews, escalates ignored foreground termination to bounded SIGKILL, attempts exact workspace cleanup even when telemetry close fails, and rejects duplicate single-use selection options before target resolution.</p>
+        <p>The complete redacted full-log path remains unabridged in redirected summaries and wraps in the final Summary, while fixed-width TUI headers clip only their rendered copy.</p>
+        <p><strong>Resolved AXI-016:</strong> ADR-0022, <code>CONTEXT.md</code>, README, the Review change skill, and its CLI mode reference now show Summary while the isolated workspace and full log exist; after dismissal the terminal is restored, telemetry closes, exact cleanup runs, and final cleanup status appears outside the full-screen Summary.</p>
+        <p><strong>Resolved AXI-017 through AXI-019:</strong> Foreground telemetry failure uses bounded TERM-to-KILL escalation and controlled rejection, interruption during initial Glow rendering is latched through terminal restoration, and the lifecycle preserves both an emergency telemetry append failure and an immediate close failure while still escalating the child and removing the exact workspace.</p>
+        <p><strong>Resolved AXI-022:</strong> Duplicate <code>--intent</code>, <code>--provider</code>, <code>--model</code>, and <code>--thinking</code> options fail with usage status 2 at parser and executable boundaries before target resolution.</p>
+        <p><strong>Resolved AXI-023:</strong> External SIGINT and SIGTERM cancellation forwards the original signal to pi, escalates to SIGKILL after the existing grace period when pi remains open, clears pending termination timers on settlement, preserves the original signal-derived status, restores the terminal, closes telemetry, and removes the exact isolated workspace.</p>
+        <p><strong>Dispositioned AXI-021:</strong> No product behavior changed because the approved shorthand is <code>&lt;html-file&gt;</code> and canonical artifact resolution has always required <code>.html</code> or <code>.htm</code>; help now names that positional and both accepted suffixes while unknown-command parsing remains strict.</p>
+        <p>Focused tests cover quoted object credentials and prior redaction boundaries across shared and public processes, real persisted telemetry, combined append and immediate-close failure with ignored-SIGTERM escalation, external cancellation escalation with terminal and telemetry restoration, exact workspace cleanup, duplicate single-use options, and the strict HTML shorthand help contract.</p>
+        <p><strong>Final-gate Findings:</strong> <code>AXI-001</code> through <code>AXI-020</code> and <code>AXI-022</code> through <code>AXI-026</code> are resolved; <code>AXI-021</code> is dispositioned as no-op. S3 remains complete.</p>
+        <h3>Acceptance criteria</h3>
+        <ol class="criteria">
+          <li data-criterion-id="S3-C1" data-status="complete">The no-target default remains a meaningful read-only operation, and help remains available without beginning the review lifecycle.<span class="criterion-status">Complete</span></li>
+          <li data-criterion-id="S3-C2" data-status="complete">Unknown options, missing values, ambiguous targets, and invalid provider selection fail with corrective usage guidance and status 2 before isolation or provider work begins.<span class="criterion-status">Complete</span></li>
+          <li data-criterion-id="S3-C3" data-status="complete">Human TUI presentation, redirected summaries, diagnostic streams, bounded logs, and existing runtime failure status remain purpose-specific and deterministic.<span class="criterion-status">Complete</span></li>
+          <li data-criterion-id="S3-C4" data-status="complete">Any substantiated gap is repaired through a public behavior test; when no gap exists, the audit records conformance without source churn.<span class="criterion-status">Complete</span></li>
+        </ol>
+      </article>
+
+      <article class="slice" data-slice-id="S4" data-status="complete" data-mode="AFK" data-dependencies="S1" data-stories="5,6,7,8,9,10,11,15,16">
+        <div class="slice-head">
+          <div>
+            <span class="slice-id">S4</span>
+            <h2>Audit Orchard’s lifecycle interfaces</h2>
+          </div>
+          <div class="badges">
+            <span class="badge">AFK</span>
+            <span class="badge status">Complete</span>
+          </div>
+        </div>
+        <dl>
+          <dt>Blocking slices</dt><dd>S1.</dd>
+          <dt>Stories</dt><dd>5–11 and 15–16.</dd>
+          <dt>Test surface</dt><dd>The installed Orchard CLI, versioned structured protocol, and originating source evidence.</dd>
+        </dl>
+        <div class="build">
+          <h3>What to build</h3>
+          <p>Perform a non-mutating audit of Orchard’s human help and structured automation surfaces.</p>
+          <p>Use safe public invocations and source evidence to assess discoverability, bounded and explicit state, strict input handling, exit semantics, and non-interactivity without initiating a lifecycle transition.</p>
+        </div>
+        <p><strong>Audit result at originating revision <code>341f7ea6</code>:</strong> Top-level and all nine command help surfaces were comprehensive and side-effect free.</p>
+        <p>Bare status and versioned JSON status provided useful, explicit empty states without prompting, while project scoping kept routine output bounded.</p>
+        <p><strong>Originating Finding 1:</strong> The CLI dispatcher does not validate a complete command grammar.</p>
+        <p>Safe evidence showed unknown status flags and extra positionals being silently accepted with status 0, and source evidence showed the same flag-presence dispatch pattern across command families, including recovery before validation on lifecycle commands.</p>
+        <p><strong>Originating Finding 2:</strong> Option-value errors thrown by the CLI and delivery dispatchers are classified as operational status 1 and omit command-specific corrective help rather than using a distinct usage status.</p>
+        <p>Both findings belong in Orchard’s originating repository; this branch made no Orchard change.</p>
+        <h3>Acceptance criteria</h3>
+        <ol class="criteria">
+          <li data-criterion-id="S4-C1" data-status="complete">Top-level and command-specific help make the complete lifecycle surface and automation alternatives discoverable.<span class="criterion-status">Complete</span></li>
+          <li data-criterion-id="S4-C2" data-status="complete">The structured status path is versioned, explicit for empty and populated state, bounded enough for routine agent use, and free of interactive prompting.<span class="criterion-status">Complete</span></li>
+          <li data-criterion-id="S4-C3" data-status="complete">Unknown commands fail correctly, while the completed audit records the originating gaps for flags, extra positionals, pre-recovery validation, usage status, and corrective guidance.<span class="criterion-status">Complete with originating findings</span></li>
+          <li data-criterion-id="S4-C4" data-status="complete">The audit checks all command families through help and source evidence while executing only safe read-only behavior.<span class="criterion-status">Complete</span></li>
+          <li data-criterion-id="S4-C5" data-status="complete">The completed slice visibly records substantiated findings or an explicit conformance result, names any originating interface needing follow-up, and makes no change to Orchard or its repository.<span class="criterion-status">Complete</span></li>
+        </ol>
+      </article>
+    </div>
+
+    <section class="summary-card" id="verification-summary" data-verification-owner="fact-checker">
+      <p class="eyebrow">Verification Summary</p>
+      <h2>Completion metadata records the resolved final-gate Findings</h2>
+      <p><strong>Final cold pass:</strong> 79 claims checked across the canonical Spec and Tasks; 74 confirmed, 4 corrected, and 1 historical-process claim remains unverifiable.</p>
+      <p><strong>Findings ledger:</strong> <code>AXI-001</code> through <code>AXI-020</code> and <code>AXI-022</code> through <code>AXI-026</code> are resolved; <code>AXI-021</code> is dispositioned as no-op. S1 through S4 and all stable criteria are complete.</p>
+      <p><strong>Final focused evidence:</strong> 100 tests passed across <code>test/shared/safe-preview.test.ts</code>, <code>test/review-artifact/cli.test.ts</code>, <code>test/review-artifact/process-cli.test.ts</code>, and <code>test/review-change-cli.test.ts</code>, with 434 assertions. The CLI ergonomics content selectors passed 15 checks, all four planted-error self-tests passed, and Node and Bash syntax checks plus <code>git diff --check</code> passed.</p>
+      <p><strong>Lifecycle contract:</strong> Summary is presented while the isolated workspace and full log remain available and Cleanup is pending. Only after Summary dismissal does the parent restore the terminal, close telemetry, remove the exact workspace, and report final Cleanup status outside the full-screen Summary.</p>
+      <ul>
+        <li>Extended the final ledger and S3 final-gate statement through <code>AXI-026</code>.</li>
+        <li>Replaced the stale 64-test final result with the 100-test, 434-assertion focused result and its content, planted-error, syntax, and diff evidence.</li>
+        <li>Made every retained earlier test count explicitly historical while preserving its provenance.</li>
+        <li>Preserved all semantic and stable IDs, completion statuses, dependencies, modes, stories, acceptance criteria, and the Orchard audit.</li>
+      </ul>
+      <p><strong>Historical cold-pass provenance:</strong> An earlier cold pass checked 70 claims; 65 were confirmed, 4 corrected, and 1 historical-process claim was unverifiable. An earlier fact-checker baseline checked 59 claims; 57 were confirmed, 2 corrected, and none were unverifiable.</p>
+      <p><strong>Historical cycle 1 repair provenance:</strong> 86 focused shared and public-interface tests passed for AXI-008 through AXI-012.</p>
+      <p><strong>Historical cycle 2 focused provenance:</strong> 67 tests passed with 0 failures before the cycle 3 repair.</p>
+      <p><strong>Historical cycle 3 focused provenance:</strong> 68 tests passed with 0 failures across <code>test/shared/safe-preview.test.ts</code>, <code>test/review-artifact/process-cli.test.ts</code>, and <code>test/review-change-cli.test.ts</code> before the final user-gate cycle.</p>
+      <p><strong>Historical final user-gate provenance:</strong> 89 tests passed with 0 failures before the directed repair.</p>
+      <p><strong>Historical directed-repair provenance:</strong> 91 tests passed with 0 failures before cycle 2.</p>
+      <p><strong>Historical cycle 2 repair provenance:</strong> 75 tests passed with 0 failures across <code>test/shared/safe-preview.test.ts</code>, <code>test/review-artifact/process-cli.test.ts</code>, and <code>test/review-change-cli.test.ts</code>.</p>
+      <p><strong>Historical cycle 3 continuation provenance:</strong> 99 tests passed with 0 failures across <code>test/shared/safe-preview.test.ts</code>, <code>test/review-artifact/cli.test.ts</code>, <code>test/review-artifact/process-cli.test.ts</code>, and <code>test/review-change-cli.test.ts</code>.</p>
+      <p><strong>Historical maintenance-cleanup provenance:</strong> 64 Review change tests passed with 0 failures. A narrow source assertion recorded <code>createForegroundLifecycle</code> at 38 lines with its affected functions below the mandatory 50-line limit; a focused content assertion and <code>git diff --check</code> also passed.</p>
+      <p><strong>Historical correction provenance:</strong> Earlier passes clarified <code>S2-C1</code> by distinguishing operational commands’ JSON responses from textual help; corrected <code>AXI-003</code> so the 300-character limit applies to terminal log text and the 200-entry retention limit applies per stage; continued <code>AXI-009</code>; resolved the combined-failure path in <code>AXI-019</code>, duplicate options in <code>AXI-022</code>, external cancellation coverage in <code>AXI-023</code>, and foreground lifecycle function size in <code>AXI-024</code>; and dispositioned <code>AXI-021</code> as no-op without relaxing strict unknown-command parsing.</p>
+      <p><strong>Evidence provenance:</strong> Source evidence confirms quoted object credential redaction in the shared helper and both public CLI process boundaries; duplicate single-use Review change options at parser and executable boundaries; explicit <code>&lt;html-file&gt;</code>, <code>.html</code>, and <code>.htm</code> help; signal forwarding and bounded TERM-to-KILL escalation; terminal restoration; telemetry closure; exact workspace cleanup; and Summary-before-cleanup ordering. Orchard’s top-level plus nine command help surfaces, status empty states, protocol version, permissive argument dispatch, and usage-status gaps were reproduced from the exact originating revision <code>341f7ea6273ba6d43f1f2dd455d26a6f9015e60d</code> using only read-only invocations; this branch contains no Orchard implementation change.</p>
+      <p><strong>Unverifiable provenance:</strong> The exact one-test, one-implementation chronology cannot be reconstructed from the final uncommitted snapshot.</p>
+    </section>
+
+    <footer>
+      <p><strong>Implementation rule:</strong> complete slices in dependency order, using one public behavior test followed by one minimal implementation at a time.</p>
+    </footer>
+  </main>
+</body>
+</html>

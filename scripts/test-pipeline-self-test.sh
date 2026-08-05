@@ -103,6 +103,12 @@ fixture_replace() {
   ln -sf "$tmp" "$repo"
 }
 
+fixture_restore() {
+  local repo="$REPO_DIR/$1"
+  rm -f "$repo"
+  mv "$repo.__real__" "$repo"
+}
+
 # ---------------------------------------------------------------------------
 # Cleanup (trap + explicit call from main)
 # ---------------------------------------------------------------------------
@@ -509,9 +515,7 @@ test_context_consumer_missing_context_map_fails() {
   else
     self_pass "missing context files: test-pipeline.sh correctly exits non-zero"
   fi
-
-  rm -f "$REPO_DIR/$rel"
-  mv "$REPO_DIR/$rel.__real__" "$REPO_DIR/$rel"
+  fixture_restore "$rel"
 }
 
 # ---------------------------------------------------------------------------
@@ -538,6 +542,70 @@ EOF
 }
 
 # ---------------------------------------------------------------------------
+# Self-tests 20–23: Agent-facing CLI guidance drift
+# ---------------------------------------------------------------------------
+
+test_cli_ergonomics_routing_drift_fails() {
+  local rel="harness-system-prompt.md"
+  fixture_replace "$rel"
+  awk '{ sub(/before designing, implementing, or reviewing an Agent-facing CLI/, "before reviewing any CLI"); print }' \
+    "$TMPDIR/$rel" >"$TMPDIR/$rel.tmp"
+  mv "$TMPDIR/$rel.tmp" "$TMPDIR/$rel"
+
+  if run_pipeline content cli-ergonomics-routing; then
+    self_fail "CLI ergonomics routing drift: test-pipeline.sh should exit non-zero"
+  else
+    self_pass "CLI ergonomics routing drift: test-pipeline.sh correctly exits non-zero"
+  fi
+  fixture_restore "$rel"
+}
+
+test_cli_ergonomics_missing_outcome_fails() {
+  local rel="rules/cli-ergonomics.md"
+  fixture_replace "$rel"
+  awk '{ sub(/^## Explicit truncation$/, "## Overflow handling"); print }' \
+    "$TMPDIR/$rel" >"$TMPDIR/$rel.tmp"
+  mv "$TMPDIR/$rel.tmp" "$TMPDIR/$rel"
+
+  if run_pipeline content cli-ergonomics-outcomes; then
+    self_fail "CLI ergonomics missing outcome: test-pipeline.sh should exit non-zero"
+  else
+    self_pass "CLI ergonomics missing outcome: test-pipeline.sh correctly exits non-zero"
+  fi
+  fixture_restore "$rel"
+}
+
+test_cli_ergonomics_readme_inventory_drift_fails() {
+  local rel="README.md"
+  fixture_replace "$rel"
+  awk '{ sub(/Rules \(7 advisory files\)/, "Rules (6 advisory files)"); print }' \
+    "$TMPDIR/$rel" >"$TMPDIR/$rel.tmp"
+  mv "$TMPDIR/$rel.tmp" "$TMPDIR/$rel"
+
+  if run_pipeline content cli-ergonomics-inventory; then
+    self_fail "CLI ergonomics README inventory drift: test-pipeline.sh should exit non-zero"
+  else
+    self_pass "CLI ergonomics README inventory drift: test-pipeline.sh correctly exits non-zero"
+  fi
+  fixture_restore "$rel"
+}
+
+test_cli_ergonomics_readme_attribution_drift_fails() {
+  local rel="README.md"
+  fixture_replace "$rel"
+  awk '{ sub(/93c5f334d6ec074c29ca8d74fa629530dd298a43/, "unversioned"); print }' \
+    "$TMPDIR/$rel" >"$TMPDIR/$rel.tmp"
+  mv "$TMPDIR/$rel.tmp" "$TMPDIR/$rel"
+
+  if run_pipeline content cli-ergonomics-inventory; then
+    self_fail "CLI ergonomics README attribution drift: test-pipeline.sh should exit non-zero"
+  else
+    self_pass "CLI ergonomics README attribution drift: test-pipeline.sh correctly exits non-zero"
+  fi
+  fixture_restore "$rel"
+}
+
+# ---------------------------------------------------------------------------
 # Main
 # ---------------------------------------------------------------------------
 
@@ -561,6 +629,10 @@ run_planted_case() {
     duplicate-adr) test_duplicate_adr_id_fails ;;
     missing-context-files) test_context_consumer_missing_context_map_fails ;;
     missing-ubiquitous-language) test_context_consumer_missing_ubiquitous_language_fails ;;
+    cli-ergonomics-routing) test_cli_ergonomics_routing_drift_fails ;;
+    cli-ergonomics-outcomes) test_cli_ergonomics_missing_outcome_fails ;;
+    cli-ergonomics-readme-inventory) test_cli_ergonomics_readme_inventory_drift_fails ;;
+    cli-ergonomics-readme-attribution) test_cli_ergonomics_readme_attribution_drift_fails ;;
     *) printf 'unknown planted case %q\n' "$1" >&2; exit 2 ;;
   esac
 }
@@ -572,7 +644,9 @@ run_all_planted_cases() {
     command-skill-overlap agent-missing-rule stale-stub forbidden-phrase \
     retired-rule-frontmatter stale-pi-bundle rule-missing-description bad-manifest \
     skill-missing-file coach-discipline build-phase-loading duplicate-adr \
-    missing-context-files missing-ubiquitous-language; do
+    missing-context-files missing-ubiquitous-language cli-ergonomics-routing \
+    cli-ergonomics-outcomes cli-ergonomics-readme-inventory \
+    cli-ergonomics-readme-attribution; do
     run_planted_case "$planted_case"
   done
 }

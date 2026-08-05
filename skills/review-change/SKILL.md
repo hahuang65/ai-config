@@ -37,28 +37,9 @@ When `REVIEW_CHANGE_GATE=1`, do not open the file from the child process because
 
 ## Standalone CLI
 
-`review-change` runs this same workflow outside an existing agent session by launching an isolated foreground `pi` process.
+`review-change` runs this same workflow outside an existing agent session through an isolated foreground `pi` process.
 The repository installer links the executable into `~/.local/bin/review-change`.
 It accepts one branch name, local range, or GitHub pull-request target plus optional `--intent`, `--provider`, `--model`, and `--thinking` overrides.
-Every CLI invocation is read-only and snapshots tracked plus untracked working state into a disposable isolated clone under `~/.review-orchard/` before launching pi, keeping review isolation separate from development worktrees under `~/.orchard/`.
-A selected CLI model is inherited by mandatory Review change subagents, while the CLI-specific pi guard blocks structured repository writes, direct shell mutation, staging, commits, pushes, and provider mutations.
-The only writable tool path is a dedicated report directory validated not to overlap either checkout.
-The CLI shows a color-coded full-screen TTY with `NO_COLOR` support: wide terminals place the pipeline on the left and the selected log on the right, while narrow terminals use a stacked fallback.
-Use `j`/`k` to navigate stages, Ctrl-D/Ctrl-U to scroll the selected log, Enter to expand or collapse lines, and `f` to resume following the active stage.
-Ctrl-C is the only active-run abort key; no single-character key aborts or closes the review.
-Every pipeline stage lists its purpose and recorded sub-stages vertically beneath its status with a live or completed elapsed timer beside every sub-stage.
-Keep sub-stage and collected-item messages to six words or fewer; emit one `log` event per Finding, missing-evidence item, documentation issue, or similar result so the left pane lists each beneath its parent sub-stage without repeating successful completion text.
-The left pane enforces the sub-stage display bound while the selected right-pane log retains the bounded original telemetry message as a `STEP` entry.
-The header shows the isolated review worktree path alongside immutable scope, risk, and open Findings.
-Finding copy controls use absolute paths beneath that isolated worktree, and the parent retains it until the final Summary is dismissed.
-Each active stage shows its current sub-stage as operational intent alongside bounded, credential-redacted lifecycle operations, tool calls, durations, and outcomes without exposing hidden model reasoning; non-interactive output falls back to plain status lines.
-Adversarial review separately announces scope and intent setup, fresh reviewer dispatch, coverage checking, and Finding/risk normalization.
-The parent validates ordered successful telemetry, requires an observable sub-stage before successful stage completion, and owns interruption through cleanup.
-In a TTY it renders parent and assistant Markdown through bounded non-interactive Glow when available, forces Glow color when terminal color is enabled, rerenders after terminal-width changes, and falls back to the built-in renderer on missing, failed, oversized, or timed-out Glow output.
-It keeps that summary plus the report path in the scrollable final stage within the existing pipeline/log layout until Ctrl-C exits the completed review, then restores the terminal without duplicate shell output; Ctrl-D remains dedicated to downward scrolling, and non-interactive runs print the summaries normally.
-It opens the completed disposable HTML report in a new Firefox window on macOS, or the platform HTML viewer elsewhere, without waiting for browser closure, starting `review-artifact`, or waiting for approval, and includes one copyable general comment and separately copyable inline Finding comments inside pull-request reports, with exact locations, a severity/action legend, and persistent copied-state styling.
-After the final Summary is dismissed, it removes the exact isolated review worktree.
-When `REVIEW_CHANGE_GATE=1`, an outer CLI gate already owns orchestration: execute only the assigned workflow and never invoke the `review-change` executable recursively.
 
 ## Boundaries
 
