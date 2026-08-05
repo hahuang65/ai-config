@@ -1,18 +1,35 @@
 ---
 name: grill
-description: Interactive grilling session that interviews the user about a feature, sharpens domain terminology, and updates project documentation (CONTEXT.md, ADRs) inline as decisions crystallise. Use when the user wants to stress-test an idea against their project's language and documented decisions before drafting a spec. Based on Matt Pocock's grill-with-docs skill.
+description: Interactive grilling session that interviews the user about a feature in dependency-aware rounds, sharpens domain terminology, and updates project documentation (CONTEXT.md, ADRs) inline as decisions crystallise. Use when the user wants to stress-test an idea against their project's language and documented decisions before drafting a spec. Based on Matt Pocock's grilling and grill-with-docs skills.
 argument-hint: [feature-description]
 ---
 
 # Grill Phase
 
-Interview the user relentlessly about every aspect of the feature idea until you reach a shared understanding. Walk down each branch of the design tree, resolving dependencies between decisions one-by-one. For each question, propose your recommended answer.
+Interview the user relentlessly about every aspect of the feature idea until you reach a shared understanding.
+Map the interview as a **design tree**: every decision branches into the decisions that depend on it.
 
-**Ask the user questions one at a time, waiting for feedback before posing the next.** This applies to the user-facing interview questions — NOT to your own codebase exploration. Reads, searches, and other tool calls used to ground a question (or to avoid a question the code already answers) proceed without per-call confirmation.
-Asking multiple questions are once is bewildering and overwhelming.
+## Work in Rounds
 
-If a *fact* can be found by exploring the codebase, look it up rather than asking me — do not bother the user with something the code already answers.
-The *decisions*, though, are mine — put each one to me and wait for my answer.
+The **frontier** is every decision whose prerequisites are settled — the questions that can be answered now without guessing at an unresolved answer.
+Ask the whole frontier in one round, then wait for the user's answers before asking another round.
+Number each question and give your recommended answer using this format:
+
+```
+❓ **Q1** - **<question title>**: <question body, which may include multiple paragraphs or choices>
+
+➡️ <your recommended answer>
+```
+
+Each round reshapes the design tree.
+After the user answers, update resolved terms and decisions inline, recompute the frontier, and ask the next round.
+If one question depends on another question that remains open in the same round, defer the dependent question to a later round.
+Batch only independent questions; never bundle a chain of dependent decisions into one round.
+
+Finding *facts* is your job, never the user's.
+When a frontier question needs a fact from the codebase or environment, investigate it with tools or dispatch independent exploration to a subagent rather than asking the user.
+Do not block the rest of the frontier on that exploration: treat the unknown fact as an unsettled prerequisite, defer only its downstream questions, and ask the other ready questions now.
+The *decisions* are the user's — put each one to them and wait for their answers.
 
 ## Place in the /build Pipeline
 
@@ -47,7 +64,8 @@ Only offer to create an ADR when all three are true: **hard to reverse**, **surp
 
 ## Completion
 
-The grill phase is done when the user is satisfied with the shared understanding — ambiguous terms pinned down, cardinality/lifecycle answered, ADR-worthy decisions recorded. Then tell the user:
+The grill phase is done when the frontier is empty and the user is satisfied with the shared understanding — every branch visited, nothing silently assumed, ambiguous terms pinned down, cardinality/lifecycle answered, and ADR-worthy decisions recorded.
+Then tell the user:
 
 > **Grill phase complete.** I've updated:
 >

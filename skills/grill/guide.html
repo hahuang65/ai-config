@@ -71,7 +71,7 @@ code { font-family: var(--font-mono); font-size: 0.85em; background: var(--accen
 
 <div class="header">
   <h1><span>/</span>grill</h1>
-  <p class="subtitle">Interactive domain-modeling session. Interview the user one question at a time, sharpen terminology, capture decisions inline — updating <code>CONTEXT.md</code> and <code>docs/adr/</code> as the conversation progresses. Based on Matt Pocock's <code>grill-with-docs</code>.</p>
+  <p class="subtitle">Interactive domain-modeling session. Interview the user in dependency-aware rounds, sharpen terminology, capture decisions inline — updating <code>CONTEXT.md</code> and <code>docs/adr/</code> as the conversation progresses. Based on Matt Pocock's <code>grilling</code> and <code>grill-with-docs</code>.</p>
 </div>
 
 <div class="section">
@@ -115,6 +115,11 @@ code { font-family: var(--font-mono); font-size: 0.85em; background: var(--accen
   <div class="section-title"><span class="num">03</span>Conversation Tactics</div>
   <div class="card-grid">
     <div class="card">
+      <h3>Work the decision frontier</h3>
+      <p>Map decisions as a tree. In each round, ask every question whose prerequisites are settled, then recompute the frontier from the user's answers.</p>
+      <div class="quote">Batch independent decisions; defer any question that depends on another answer still open in the round.</div>
+    </div>
+    <div class="card">
       <h3>Challenge the glossary</h3>
       <p>When a user term conflicts with existing language in <code>CONTEXT.md</code>, call it out.</p>
       <div class="quote">"Your glossary defines 'cancellation' as X, but you seem to mean Y — which is it?"</div>
@@ -142,13 +147,17 @@ code { font-family: var(--font-mono); font-size: 0.85em; background: var(--accen
   <table>
     <thead><tr><th>Rule</th><th>Why</th></tr></thead>
     <tbody>
-      <tr><td><strong>One question at a time</strong></td><td>Batched questions are overwhelming and the user's later answers usually depend on earlier ones</td></tr>
-      <tr><td><strong>Recommend an answer</strong> for each question</td><td>"What do you think?" wastes turns; users push back faster against a concrete proposal</td></tr>
-      <tr><td><strong>Walk down branches sequentially</strong></td><td>Resolve dependencies between decisions one-by-one — don't ask questions whose answer is blocked on another decision</td></tr>
-      <tr><td><strong>Explore code instead of asking</strong> when possible</td><td>If the codebase already answers a question, don't bother the user</td></tr>
-      <tr><td><strong>Update inline</strong>, never batch</td><td>Capture decisions as they happen — batched updates lose nuance and risk drift</td></tr>
+      <tr><td><strong>Ask the whole frontier</strong> in each round</td><td>Batch every independent decision that is ready now, then wait for the user's answers before the next round</td></tr>
+      <tr><td><strong>Number and recommend</strong> for each question</td><td>Consistent labels make batch replies easy to map; concrete recommendations let users push back quickly</td></tr>
+      <tr><td><strong>Defer dependent questions</strong></td><td>A question blocked on another open answer belongs to a later round, even when both were initially visible</td></tr>
+      <tr><td><strong>Recompute after every round</strong></td><td>Answers reshape the design tree and expose a new frontier rather than a predetermined questionnaire</td></tr>
+      <tr><td><strong>Explore facts instead of asking</strong></td><td>Use tools or independent subagent exploration, deferring only downstream questions while the rest of the frontier proceeds</td></tr>
+      <tr><td><strong>Update documentation inline</strong>, never batch</td><td>Question delivery is batched; durable glossary and ADR updates still happen as decisions resolve</td></tr>
     </tbody>
   </table>
+  <div class="callout">
+    <strong>Question format:</strong> <code>❓ Q1 - &lt;question title&gt;: &lt;body or choices&gt;</code>, followed by <code>➡️ &lt;recommended answer&gt;</code>.
+  </div>
 </div>
 
 <div class="section">
@@ -185,12 +194,13 @@ code { font-family: var(--font-mono); font-size: 0.85em; background: var(--accen
 
 <div class="section">
   <div class="section-title"><span class="num">07</span>Completion</div>
-  <p style="font-size: 0.95rem; margin-bottom: 14px;">The grill phase ends when all three are true:</p>
+  <p style="font-size: 0.95rem; margin-bottom: 14px;">The grill phase ends when all are true:</p>
   <ul style="font-size: 0.9rem; list-style: none; padding: 0;">
+    <li style="padding: 6px 0 6px 22px; position: relative;"><span style="position: absolute; left: 0; color: var(--gold); font-weight: 700;">→</span> The decision frontier is empty: every branch was visited and nothing remains silently assumed</li>
     <li style="padding: 6px 0 6px 22px; position: relative;"><span style="position: absolute; left: 0; color: var(--gold); font-weight: 700;">→</span> All ambiguous terms have been pinned down</li>
     <li style="padding: 6px 0 6px 22px; position: relative;"><span style="position: absolute; left: 0; color: var(--gold); font-weight: 700;">→</span> Cardinality and lifecycle questions are answered</li>
     <li style="padding: 6px 0 6px 22px; position: relative;"><span style="position: absolute; left: 0; color: var(--gold); font-weight: 700;">→</span> ADR-worthy decisions are recorded</li>
-    <li style="padding: 6px 0 6px 22px; position: relative;"><span style="position: absolute; left: 0; color: var(--gold); font-weight: 700;">→</span> User has no questions you can't answer from the codebase</li>
+    <li style="padding: 6px 0 6px 22px; position: relative;"><span style="position: absolute; left: 0; color: var(--gold); font-weight: 700;">→</span> The user is satisfied with the shared understanding</li>
   </ul>
   <div class="callout">
     <strong>Then:</strong> tell the user what changed (terms added, ADRs created), say <em>"say 'draft the spec' when ready"</em>, and <span class="must-tag">STOP</span>. The orchestrator does not advance autonomously.

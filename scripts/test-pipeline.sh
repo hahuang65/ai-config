@@ -241,7 +241,11 @@ test_phase_grill() {
   local content
   content="$(gather_skill_content grill)"
 
-  check_content_cached "$content" "$label" "one at a time"
+  check_content_cached "$content" "$label" "design tree"
+  check_content_cached "$content" "$label" "whole frontier in one round"
+  check_content_cached "$content" "$label" "wait for the user's answers"
+  check_content_cached "$content" "$label" "[Dd]efer.*dependent question"
+  check_content_cached "$content" "$label" "recommended answer"
   check_content_cached "$content" "$label" "CONTEXT\.md"
   check_content_cached "$content" "$label" "docs/adr/"
   check_content_cached "$content" "$label" "[Cc]hallenge against the glossary"
