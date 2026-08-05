@@ -6,7 +6,7 @@ The visible semantic HTML is both the review surface and the durable input to la
 
 ## Document metadata
 
-- Use `Spec` in both `<title>` and `<h1>`.
+- Use `<feature title> - Spec` in `<title>` and use `Spec` in `<h1>`.
 - Put `data-artifact-kind="spec"` and `data-artifact-version="1"` on the document's main content element.
 - Use stable section IDs so feedback remains understandable after live reload.
 - Keep styling and scripts self-contained except for optional visualization CDNs.

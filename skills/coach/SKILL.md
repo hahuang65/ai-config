@@ -13,7 +13,7 @@ Coach the user through approved vertical-slice tasks **one slice at a time, one 
 - An approved canonical `tasks.html` in a feature directory under `docs/features/`.
 Resolve it from `$ARGUMENTS` (a path or slug), or with no argument find the most recent `docs/features/*/tasks.html` and confirm it.
 - The user has explicitly approved the tasks (do not assume approval).
-- The root `CONTEXT.md`, or `CONTEXT-MAP.md` and relevant subordinate context files, plus relevant ADRs have been read so test names use the project's **ubiquitous language**: the shared canonical vocabulary used by domain experts, users, documentation, tests, and code.
+- The applicable context files and relevant ADRs have been read.
 
 See [../shared/references/build-pipeline.md](../shared/references/build-pipeline.md) for file conventions and visual-sync rules. See [../shared/references/testable-interfaces.md](../shared/references/testable-interfaces.md) for how spec Testing Decisions and task Test surfaces determine where tests attach.
 
@@ -43,10 +43,6 @@ Use one in-progress todo per slice, phrased as the coach loop you are currently 
 
 Mark each done as you finish *your* half of the cycle. The user's pending implementation is **not** a todo on your list.
 
-## Rules Adherence
-
-Comply with the project rules in `rules/`. Read detailed rules from `~/.dotfiles/ai/rules/`. Guide the user to follow them while implementing.
-
 ## TDD Protocol
 
 Run strict vertical-slice TDD — see [../shared/references/tdd-protocol.md](../shared/references/tdd-protocol.md) for the philosophy and per-cycle rules, and [../shared/references/testable-interfaces.md](../shared/references/testable-interfaces.md) for deep-module test-surface decisions. The coaching variant of the loop:
@@ -63,8 +59,7 @@ For each acceptance criterion:
 
 ## Process
 
-1. **Read context** — canonical `tasks.html`, its linked `specs.html`, the root `CONTEXT.md` or mapped context files, and ADRs.
-Use the ubiquitous language from the applicable context files throughout tests and guidance.
+1. **Read context** — canonical `tasks.html`, its linked `specs.html`, applicable context files, and ADRs.
 Announce the plan: one slice at a time, one test at a time; confirm Slice 1's interface before writing any test.
 
 2. **For each slice (dependency order):**
@@ -81,7 +76,7 @@ Announce the plan: one slice at a time, one test at a time; confirm Slice 1's in
 
 ## Completion
 
-Wrap up per [../shared/references/implementation-completion.md](../shared/references/implementation-completion.md) — report what was accomplished, surface the `/refactor` and `/review-code` pointers, and never commit.
+Wrap up per [../shared/references/implementation-completion.md](../shared/references/implementation-completion.md) — report what was accomplished and surface the `/refactor` and `/review-code` pointers.
 
 ## Key Principles
 
@@ -89,8 +84,4 @@ Wrap up per [../shared/references/implementation-completion.md](../shared/refere
 2. **Guide, don't implement.** During the slice loop you write tests; the user writes code. Provide hints, explain APIs, point at examples — but do not write the fix.
 3. **Test through the interface.** Behavior, not implementation.
 4. **Be patient — silently.** Wait for the user. Do not write the next test, do not poll their files for hidden progress, do not switch to `/code` because reminders fire or the room goes quiet. The only exit from the waiting state is an explicit user signal (see *Holding the line*).
-5. **Ubiquitous language everywhere** — use the canonical terms from `CONTEXT.md` in test names, helper names, and error messages.
-6. **Post-completion hygiene is AI-driven** — once tests pass and verification is clean, the AI applies SAFE mechanical cleanup; Review change later handles final Findings, documentation, and visuals while preserving coached ownership of source and tests.
-7. **NEVER commit to version control** — no `git add`, `git commit`, or `git push`.
-
-Ultrathink.
+5. **Post-completion hygiene is AI-driven** — once tests pass and verification is clean, the AI applies SAFE mechanical cleanup; Review change later handles final Findings, documentation, and visuals while preserving coached ownership of source and tests.

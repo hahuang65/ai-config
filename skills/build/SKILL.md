@@ -61,8 +61,6 @@ Each phase also runs standalone:
 
 This skill has exactly **four** approval gates — Grill→Spec, Spec→Tasks, Tasks→Implement, Review→done — the only phase-boundary confirmations. (Implementation flows into the Phase 5 review without a gate; the final gate is Review change's approve-as-is or fix-selected decision.) The one pre-pipeline degraded-mode consent described above is a safety choice, not an artifact-approval gate. Within an active phase, all routine operations (reads, writes, edits, bash, tests, environment bootstrap) proceed without per-call approval. Asking "OK to proceed?" before each tool batch is not how this skill works.
 
-A gate clears on **any response that expresses confirmation or approval** — there is no required phrase or keyword. The prompts below say what comes next; the user may confirm however they like ("yes", "go", "sounds good", "ship it", a thumbs-up). If a response is ambiguous or raises a concern, resolve it instead of advancing.
-
 ## Process
 
 Derive a short slug from `$ARGUMENTS` (lowercase, hyphens, max ~5 words). Run each phase skill in order, passing the feature directory once it is created (start of Phase 2).
@@ -111,26 +109,23 @@ Review change runs the fixed validation kernel: fresh adversarial full-change re
 
 Open the self-contained Review change report through `review-artifact`; its explicit approval is the Review→done gate. The user may add or disposition Findings, attach instructions, fix selected Findings, or approve as-is. Every `ask-user` Finding needs an explicit disposition before approval.
 
-Approval ends the pipeline. The user decides whether and when to commit; you never commit. `/review-code` remains available afterward when the user explicitly wants optional architectural deepening.
+Approval ends the pipeline. `/review-code` remains available afterward when the user explicitly wants optional architectural deepening.
 
 ## Key Principles
 
-1. **Grill before drafting.** Use `model-domain` to establish the **ubiquitous language**: the shared canonical vocabulary used by domain experts, users, documentation, tests, and code.
-Record it in `CONTEXT.md` and codify qualifying decisions in ADRs.
+1. **Grill before drafting.** Use `model-domain` to establish the ubiquitous language in the applicable context files and codify qualifying decisions in ADRs.
 2. **Never write code before tasks are approved.** Phases 1–3 are gated.
 3. **Canonical semantic HTML files are the feature deliverables.** Do not create Markdown companions.
 4. **Vertical slices, never horizontal.** Each slice cuts through every layer.
 5. **Test stable public interfaces.** Use [../shared/references/testable-interfaces.md](../shared/references/testable-interfaces.md): Spec proposes module test surfaces, tasks carry them forward, implementation writes one behavior test at a time through the seam.
 6. **One test, one implementation, repeat.** No batched tests upfront.
-7. **Ubiquitous language everywhere** — use the canonical terms from `CONTEXT.md` in the spec, tasks, test names, and code identifiers.
+7. **Ubiquitous language everywhere** — use the canonical terms from applicable context files in the spec, tasks, test names, and code identifiers.
 
 ## Visual-Explainer Integration
 
 The `visualize` skill is optional for informational visuals, but Phase 2 and Phase 3 always produce their required canonical semantic HTML artifacts.
 When available it provides presentation guidance and the standalone `/visualize-diff` command.
 Review change fact-checks and updates the canonical `specs.html` and `tasks.html` directly rather than generating Markdown companions or an automatic diff review.
-Whenever an HTML file asks the user for feedback or approval, open it through `review-artifact` rather than directly.
-
 ## Cleanup
 
 After the feature is complete, the user decides whether to keep, delete, or commit the feature directory under `docs/features/`. `CONTEXT.md` and `docs/adr/` are project-wide and should be committed.

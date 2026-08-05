@@ -13,13 +13,9 @@ Execute approved vertical-slice tasks **one slice at a time** using strict red-g
 - An approved canonical `tasks.html` in a feature directory under `docs/features/`.
 Resolve it from `$ARGUMENTS` (a path or slug), or with no argument find the most recent `docs/features/*/tasks.html` and confirm it is the right one.
 - The user has explicitly approved the tasks (do not assume approval).
-- The root `CONTEXT.md`, or `CONTEXT-MAP.md` and relevant subordinate context files, plus relevant ADRs have been read so test and module names use the project's **ubiquitous language**: the shared canonical vocabulary used by domain experts, users, documentation, tests, and code.
+- The applicable context files and relevant ADRs have been read.
 
 See [../shared/references/build-pipeline.md](../shared/references/build-pipeline.md) for file conventions and visual-sync rules. See [../shared/references/testable-interfaces.md](../shared/references/testable-interfaces.md) for how spec Testing Decisions and task Test surfaces determine where tests attach.
-
-## Rules Adherence
-
-Comply with the project rules in `rules/` (coding-style, testing, security, performance, git-commit). Read detailed rules from `~/.dotfiles/ai/rules/`. The skill itself — not just the agents it invokes — must follow them.
 
 ## Standing Authorization
 
@@ -46,8 +42,7 @@ Use the `tdd-guide` agent (via the Agent tool) to guide each slice's cycle.
 
 ## Process
 
-1. **Read context** — canonical `tasks.html`, its linked `specs.html`, the root `CONTEXT.md` or mapped context files, and relevant ADRs.
-Use the ubiquitous language from the applicable context files throughout tests and implementation.
+1. **Read context** — canonical `tasks.html`, its linked `specs.html`, applicable context files, and relevant ADRs.
 2. **For each slice (dependency order)** — work one slice at a time; do NOT batch slices:
    - **Confirm the public interface** from the slice's Test surface and the spec's Testing Decisions (deep module: small interface, deep implementation). Do not ask whether tests are needed; derive the test seam from the shared testable-interface protocol.
    - **Tracer bullet** — write ONE end-to-end test through that interface → it fails (RED) → minimal code → it passes (GREEN).
@@ -60,7 +55,7 @@ Stop only if a slice cannot be implemented as written.
 
 ## Completion
 
-Wrap up per [../shared/references/implementation-completion.md](../shared/references/implementation-completion.md) — report what was accomplished, surface the `/refactor` and `/review-code` pointers, and never commit.
+Wrap up per [../shared/references/implementation-completion.md](../shared/references/implementation-completion.md) — report what was accomplished and surface the `/refactor` and `/review-code` pointers.
 
 ## Handling Issues
 
@@ -70,5 +65,3 @@ Wrap up per [../shared/references/implementation-completion.md](../shared/refere
 - **Test failures during refactor:** revert the refactor step — refactoring must not change behavior.
 - **Terse corrections after implementation** ("wider", "still cropped", "move this to the admin app"): act immediately — you have full context from the spec and tasks. When the user reverts, start fresh with the narrowed scope rather than patching a bad approach.
 - **References to existing code** ("make it look like the users table"): read that reference and match it precisely. Most features are variations on existing patterns.
-
-Ultrathink.

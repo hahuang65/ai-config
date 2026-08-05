@@ -9,11 +9,11 @@ argument-hint: [build|augment|audit] [scope-or-topic]
 Actively build and sharpen the project's domain model as you design.
 Challenge terms, invent edge-case scenarios, and write the glossary and decisions down when they crystallize.
 
-The **ubiquitous language** is the shared, canonical vocabulary that domain experts, users, documentation, tests, and code use for the project's domain.
-It is important because one concept must keep one meaning across conversation and implementation.
-`CONTEXT.md` records this language, but the glossary is not the language itself: the words become ubiquitous only when everyone and every artifact use them consistently.
+**Context files** are `CONTEXT.md` and `CONTEXT-MAP.md` files collectively.
+They record or locate the project's **ubiquitous language**: the shared, canonical vocabulary that domain experts, users, documentation, tests, and code use for the project's domain.
+The files are the durable record of that language, not the language itself; the words become ubiquitous only when everyone and every artifact use them consistently.
 
-Merely reading `CONTEXT.md` to consume the ubiquitous language is a one-line habit that any skill can follow.
+Merely reading the applicable context files to consume the ubiquitous language is a one-line habit that any skill can follow.
 Invoke this skill when terms, relationships, context boundaries, or durable decisions need to be added, challenged, or changed.
 
 When another skill invokes `model-domain`, embed this discipline in that skill's active workflow rather than starting a second interview.
@@ -50,15 +50,15 @@ The map points to each context and its local documentation:
         └── CONTEXT.md
 ```
 
-Read the root `CONTEXT.md`, or read `CONTEXT-MAP.md` and the relevant subordinate `CONTEXT.md` files.
+Read the applicable context files: the root `CONTEXT.md`, or `CONTEXT-MAP.md` and the relevant subordinate `CONTEXT.md` files.
 Read recent and relevant project-wide ADRs from the root `docs/adr/`.
-Create files lazily: create a context file when the first term resolves, `CONTEXT-MAP.md` when the first multi-context structure resolves, and root `docs/adr/` when the first ADR qualifies.
+Create context files lazily: create `CONTEXT.md` when the first term resolves, `CONTEXT-MAP.md` when the first multi-context structure resolves, and root `docs/adr/` when the first ADR qualifies.
 Use the [CONTEXT.md format](../shared/references/context-format.md) and [ADR format](../shared/references/adr-format.md).
 
 ## Standalone Session
 
 When invoked standalone, read and follow the [standalone session workflow](references/standalone-session.md).
-It selects **build from scratch**, **augment**, or **audit and condense** from `$ARGUMENTS` and the existing context artifacts.
+It selects **build from scratch**, **augment**, or **audit and condense** from `$ARGUMENTS` and the existing context files.
 Investigate facts from code, documentation, and ADRs, and ask the user only for domain decisions.
 
 ## During the Session
@@ -83,7 +83,7 @@ Force precision about concept boundaries, context ownership, cardinality, identi
 When the user states how something works, check whether the code agrees.
 Surface contradictions, for example: "Your code cancels entire Orders, but you just said partial cancellation is possible — which is right?"
 
-### Update Context Artifacts Inline
+### Update Context Files Inline
 
 When a term or an intra-context relationship resolves, update the applicable `CONTEXT.md` immediately.
 When context membership, ownership, a context boundary, or an inter-context relationship resolves, update `CONTEXT-MAP.md` immediately.

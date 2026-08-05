@@ -276,8 +276,13 @@
     showCard({ ...context(event.target), element: event.target });
   }, true);
 
+  function reportReady() {
+    parent.postMessage({ type: "review:ready", title: document.title }, "*");
+  }
+
   window.addEventListener("message", (event) => {
     if (event.source !== parent) return;
+    if (event.data?.type === "review:get-ready") reportReady();
     if (event.data?.type === "review:set-mode") {
       annotationMode = Boolean(event.data.enabled);
       if (!annotationMode) closeCard();
@@ -304,7 +309,7 @@
     });
   }, { passive: true });
 
-  parent.postMessage({ type: "review:ready" }, "*");
+  reportReady();
   reportScroll();
   rootLayoutAudit();
 

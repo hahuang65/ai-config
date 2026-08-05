@@ -85,7 +85,7 @@ The reference CSS snippets below show *minimum* structural patterns. When using 
 ## Plain language
 
 Write reviewer-facing prose and labels in plain language.
-Prefer the project's ubiquitous language from the root `CONTEXT.md` or applicable mapped context files, then common technical terms the user is likely to know.
+Prefer the project's ubiquitous language from the applicable context files, then common technical terms the user is likely to know.
 Do not turn source identifiers, internal workflow values, acronyms, or specialist jargon into the main explanation when familiar wording is available.
 When an uncommon term is necessary for accuracy, define it beside its first use.
 
@@ -94,7 +94,6 @@ When an uncommon term is necessary for accuracy, define it beside its first use.
 Write to the current feature directory under `docs/features/` if one exists.
 Otherwise create `docs/features/<YYYYMMDD-HHMM>-<slug>/`.
 Do NOT write to `~/.agent/diagrams/`.
-Open informational HTML directly; when asking for feedback, a decision, or approval, open it through `review-artifact`.
 Tell the user the file path.
 
 ## AI Illustrations (Optional)

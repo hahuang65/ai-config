@@ -25,6 +25,18 @@ describe("review server security", () => {
     expect([badHost.status, badOrigin.status]).toEqual([403, 403]);
   });
 
+  test("rejects an invalid review purpose at the server boundary", async () => {
+    const { artifact, server } = await reviewServer("<!doctype html><main>Secure purpose</main>");
+    const response = await fetch(`${server.baseUrl}/api/sessions`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ file: artifact, purpose: "execute" }),
+    });
+
+    expect(response.status).toBe(422);
+    expect(await response.json()).toMatchObject({ error: { code: "invalid_review_purpose" } });
+  });
+
   test("rejects malformed durable annotation targets", async () => {
     const { artifact, server } = await reviewServer("<!doctype html><main>Secure target</main>");
     const created = await createSession(server, artifact);

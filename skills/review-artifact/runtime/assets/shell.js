@@ -27,7 +27,7 @@ import {
   const storageKey = `review-artifact:${session.key}:queued`;
   const themeStorageKey = "review-artifact:theme";
   const supportedThemes = new Set([...themeSelect.options].map((option) => option.value));
-  let annotationMode = true;
+  let annotationMode = session.mode !== "explore";
   let queued = readQueue();
   let pendingAction = "feedback";
   let queueLimitReported = false;
@@ -230,10 +230,20 @@ import {
     setWorking(true);
   }
 
+  function synchronizeArtifact() {
+    artifact.contentWindow?.postMessage({ type: "review:get-ready" }, "*");
+    artifact.contentWindow?.postMessage({ type: "review:set-mode", enabled: annotationMode }, "*");
+  }
+
+  artifact.addEventListener("load", synchronizeArtifact);
   window.addEventListener("message", (event) => {
     if (event.source !== artifact.contentWindow) return;
     const message = validateFrameMessage(event.data);
     if (!message) return;
+    if (message.type === "review:ready") {
+      if (message.title) document.title = message.title;
+      artifact.contentWindow?.postMessage({ type: "review:set-mode", enabled: annotationMode }, "*");
+    }
     if (message.type === "review:queue") queuePrompt(message.prompt);
     if (message.type === "review:submit" && queuePrompt(message.prompt)) requestSnapshot("feedback");
     if (message.type === "review:snapshot") submit(message.snapshot);
@@ -243,6 +253,7 @@ import {
       activeLocateBadge.classList.toggle("missing", !message.ok);
     }
   });
+  synchronizeArtifact();
 
   async function reportLayout(layoutWarnings) {
     await fetch(`/api/sessions/${session.key}/layout-warnings`, {

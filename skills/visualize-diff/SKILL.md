@@ -81,5 +81,3 @@ The page should include:
 Include responsive section navigation. Use diff-style visual language throughout: red for removed/before, green for added/after, yellow for modified, blue for neutral context. Follow the output and AI-illustration rules from `core.md`.
 
 Write the page into the current feature directory under `docs/features/` if one exists (as `diff-review.html`); otherwise write to the OS temp directory. Open it in the browser and tell the user the path.
-
-Ultrathink.

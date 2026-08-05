@@ -9,7 +9,7 @@ The architectural review is rendered as a single self-contained HTML file in the
 <html lang="en">
   <head>
     <meta charset="utf-8" />
-    <title>Architecture review — {{repo name}}</title>
+    <title>{{repo name}} - Architecture Review</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script type="module">
       import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs";
@@ -40,7 +40,7 @@ Repo name, date, and a compact legend: solid box = module, dashed line = seam, r
 ## Candidate Card
 
 The diagrams carry the weight.
-Keep prose sparse and in plain language, using the ubiquitous language from the root `CONTEXT.md` or applicable mapped context files first and common technical terms the user is likely to know second.
+Keep prose sparse and in plain language, using the ubiquitous language from the applicable context files first and common technical terms the user is likely to know second.
 Translate the analysis vocabulary in [language.md](language.md) into familiar labels unless the project already uses that term.
 
 Each candidate is one `<article>`:

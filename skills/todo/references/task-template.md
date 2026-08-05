@@ -6,7 +6,7 @@ The visible semantic HTML is the approved task source consumed and updated by im
 
 ## Document metadata
 
-- Use `Tasks` in both `<title>` and `<h1>`.
+- Use `<feature title> - Tasks` in `<title>` and use `Tasks` in `<h1>`.
 - Put `data-artifact-kind="tasks"` and `data-artifact-version="1"` on the main content element.
 - Link visibly to the source `specs.html`.
 - Show the dependency graph and the “can run unattended” / “needs you present” split near the top, with `AFK` / `HITL` only as secondary workflow metadata.

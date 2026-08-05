@@ -21,6 +21,7 @@ import {
   sendJson,
   validateFeedback,
   validateLayoutWarnings,
+  validateReviewPurpose,
 } from "./http.mjs";
 import { SessionStore, sessionKey } from "./session-store.mjs";
 import { injectBridge, renderReviewShell } from "./shell.mjs";
@@ -103,9 +104,14 @@ async function handleSystemRoutes(context, url) {
   assertOptionalOrigin(request.headers.origin, port);
   const payload = await readJson(request);
   const file = await canonicalHtmlFile(payload.file);
+  const purpose = validateReviewPurpose(payload.purpose);
   const key = sessionKey(file);
   const sessionUrl = `http://${LOOPBACK_HOST}:${port}/session/${key}`;
-  const session = await store.upsert(file, sessionUrl, { reopen: Boolean(payload.reopen) });
+  const session = await store.upsert(file, sessionUrl, {
+    purpose,
+    mode: purpose === "decision" ? "explore" : "annotate",
+    reopen: Boolean(payload.reopen),
+  });
   if (session.reopened !== false) watchArtifact(session, watchers, events);
   sendJson(response, 201, session);
   return true;

@@ -9,6 +9,17 @@ Use `review-artifact` whenever the next user action is to inspect an HTML file a
 Examples include approving a spec, refining tasks, or choosing whether to act on an architectural review finding.
 Do not start a review session for HTML that is only being displayed for information with no response requested.
 
+## Review purpose and document title
+
+Declare the purpose when opening the review:
+
+- Feedback and approval reviews start in **Annotate** mode so element and selected-text annotation is immediately available.
+- Decision reviews start in **Explore** mode so forms, links, and other artifact controls work immediately.
+
+The user can switch modes at any time.
+Use `<document title> - <document intent>` for the HTML `<title>` so the browser tab identifies both the subject and why the document exists, such as `Overnight Runner - Spec`, `Overnight Runner - Tasks`, or `Overnight Runner - Review Findings`.
+Use the actual document intent rather than copying an example label.
+
 ## Canonical artifact contract
 
 The HTML file itself is the durable source consumed and updated by later phases.
@@ -22,15 +33,14 @@ It never rewrites the saved artifact merely to add review controls.
 ## Plain-language contract
 
 Write every reviewer-facing heading, label, explanation, and instruction in plain language.
-Prefer the project's ubiquitous language recorded in `CONTEXT.md`, followed by common technical terms the user is likely to know.
+Prefer the project's ubiquitous language from the applicable context files, followed by common technical terms the user is likely to know.
 Do not expose internal workflow names, machine values, payload fields, or specialist jargon as the main label when a familiar phrase says the same thing.
-When an uncommon technical term is unavoidable, define it beside its first use in one short sentence.
 Keep exact machine values in safe metadata or generated submissions rather than making the reviewer translate them.
 
 ## Review loop
 
-1. Generate the canonical HTML file.
-2. Load the `review-artifact` skill and open that file with its runtime.
+1. Generate the canonical HTML file with the required document title.
+2. Load the `review-artifact` skill and open that file with its declared `feedback`, `approval`, or `decision` purpose.
 3. Run its foreground poll immediately.
 4. Repair every returned severe layout warning before inviting human review.
 5. When feedback arrives, address every annotation and message in the canonical HTML.

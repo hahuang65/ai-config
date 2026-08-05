@@ -1,6 +1,7 @@
 # Review Change Report
 
 Write one self-contained HTML Review change report to the operating system temp directory.
+Use `<change title> - Review Findings` in its `<title>` so the browser tab identifies the reviewed change and the document intent.
 Resolve the temp directory from `$TMPDIR`, then the platform temp convention, and name the file with a stable scope identity so build repair rounds update the same path.
 Never write this disposable report into the repository or feature directory.
 Build mode presents the report through `review-artifact` for its interactive decision loop.
@@ -28,7 +29,7 @@ Generate control IDs from workflow-owned safe identifiers rather than user text.
 Render an Untrusted URL as text unless the workflow validates it as an expected `https:` provider URL or a report-owned local artifact URL before assigning it to a link target.
 Keep resolved Findings in history but separate them visually from current Findings.
 Write all visible report content in plain language.
-Prefer the ubiquitous language from the root `CONTEXT.md`, or from relevant subordinate context files selected through `CONTEXT-MAP.md`.
+Prefer the ubiquitous language from the applicable context files.
 Then prefer wording from Authoritative intent, source, tests, and project documentation, followed by common technical terms the user is likely to know.
 Define any unavoidable unfamiliar term beside its first use.
 Show human-readable labels as the primary text for machine values such as severity, action, disposition, and stage status; keep exact machine values in secondary metadata only when they help diagnose or submit the review.
@@ -70,7 +71,7 @@ Chat fallback accepts the same decisions in plain conversation and does not requ
 Never assume that changing a report control by itself authorizes a mutation; only the submitted feedback returned by the foreground review poll or explicitly stated in chat does.
 An approve-as-is form submission records the dispositions but does not manufacture browser approval; after the invoking skill validates it, the user clears the gate with the review shell's Approve control.
 
-Load `review-artifact` and follow the [shared review protocol](../../shared/references/review-artifact.md) for build-mode opening, foreground polling, feedback, live reload, and explicit approval.
+Load `review-artifact` and follow the [shared review protocol](../../shared/references/review-artifact.md) for build-mode opening as a decision review, foreground polling, feedback, live reload, and explicit approval.
 Do not duplicate or guess its CLI commands in Review change.
 Treat only its `approved` event as browser approval; `ended`, disconnect, browser close, and timeout never clear the build gate.
 If the runtime fails to start, present the complete report in chat and preserve identical explicit-disposition and approval semantics.

@@ -478,19 +478,19 @@ test_duplicate_adr_id_fails() {
 }
 
 # ---------------------------------------------------------------------------
-# Self-test 18: standalone review mode omits mapped-context loading
+# Self-test 18: standalone review mode omits context-file loading
 # ---------------------------------------------------------------------------
 
 test_context_consumer_missing_context_map_fails() {
   local rel="skills/review-change/references/workflow.md"
   fixture_replace "$rel"
-  sed 's/CONTEXT-MAP\.md/context index/g' "$TMPDIR/$rel" >"$TMPDIR/$rel.tmp"
+  sed 's/applicable context files/context index/g' "$TMPDIR/$rel" >"$TMPDIR/$rel.tmp"
   mv "$TMPDIR/$rel.tmp" "$TMPDIR/$rel"
 
   if run_pipeline content ubiquitous-language; then
-    self_fail "missing context map: test-pipeline.sh should exit non-zero"
+    self_fail "missing context files: test-pipeline.sh should exit non-zero"
   else
-    self_pass "missing context map: test-pipeline.sh correctly exits non-zero"
+    self_pass "missing context files: test-pipeline.sh correctly exits non-zero"
   fi
 
   rm -f "$REPO_DIR/$rel"
@@ -510,7 +510,7 @@ name: test-self-test-context-language
 description: A planted context consumer with stale terminology.
 ---
 
-Read `CONTEXT.md` and use its project terms.
+Use Ubiquitous language for the project's domain terms.
 EOF
 
   if run_pipeline content ubiquitous-language; then

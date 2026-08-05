@@ -2,10 +2,11 @@
 
 Shared reference used by `model-domain`.
 
-## Ubiquitous Language
+## Context Files and Ubiquitous Language
 
-The **ubiquitous language** is the shared, canonical vocabulary that domain experts, users, documentation, tests, and code use to describe the project's domain.
-`CONTEXT.md` records this language but does not contain it by itself.
+**Context files** are `CONTEXT.md` and `CONTEXT-MAP.md` files collectively.
+They record or locate the project's **ubiquitous language**: the shared, canonical vocabulary that domain experts, users, documentation, tests, and code use to describe the project's domain.
+The files are the durable record of that language, not the language itself.
 A term becomes ubiquitous only when people and artifacts use it consistently with the same meaning.
 
 ## Structure

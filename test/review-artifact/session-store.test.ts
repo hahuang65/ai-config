@@ -6,6 +6,18 @@ import path from "node:path";
 import { SessionStore } from "../../skills/review-artifact/runtime/session-store.mjs";
 
 describe("review session store", () => {
+  test("records the declared review purpose and initial mode", async () => {
+    const directory = await mkdtemp(path.join(tmpdir(), "review-artifact-store-"));
+    const store = new SessionStore(path.join(directory, "state.json"));
+
+    const session = await store.upsert("/project/review.html", "http://127.0.0.1/session/review", {
+      purpose: "decision",
+      mode: "explore",
+    });
+
+    expect(session).toMatchObject({ purpose: "decision", mode: "explore" });
+  });
+
   test("delivers a queued feedback batch exactly once", async () => {
     const directory = await mkdtemp(path.join(tmpdir(), "review-artifact-store-"));
     const store = new SessionStore(path.join(directory, "state.json"));

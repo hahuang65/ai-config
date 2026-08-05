@@ -37,9 +37,7 @@ The *decisions* are the user's: put each one to them and wait for their answers.
 At the start, load and follow [model-domain](../model-domain/SKILL.md) throughout the interview.
 Grill owns the dependency-aware interview; `model-domain` owns active domain modeling and its documentation discipline.
 
-The **ubiquitous language** is the shared, canonical vocabulary used by domain experts, users, documentation, tests, and code.
-`CONTEXT.md` records it, and consistent use gives the design one stable meaning from conversation through implementation.
-Apply its full active-modeling and ADR workflow to every domain decision that the interview exposes.
+Apply its full active-modeling, context files, and ADR workflow to every domain decision that the interview exposes.
 
 ## Place in the /build Pipeline
 
@@ -70,7 +68,4 @@ Then tell the user:
 > When you're ready, just confirm and I'll draft the spec, synthesizing what we discussed via `/spec`.
 
 Do not start drafting the spec until the user confirms.
-Any response that signals approval counts; there is no exact phrase to wait for.
 The grilling conversation is the design phase, and the spec transcribes its outcome.
-
-Ultrathink.

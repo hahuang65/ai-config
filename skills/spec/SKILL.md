@@ -11,22 +11,16 @@ Synthesize a feature spec from the grill session and codebase. **Do NOT intervie
 ## Place in the /build Pipeline
 
 This is **Phase 2** of the `/build` pipeline.
-It assumes `/grill` already happened in this conversation or is recorded in `CONTEXT.md` / `docs/adr/`.
+It assumes `/grill` already happened in this conversation or is recorded in the applicable context files and `docs/adr/`.
 If invoked standalone and the context feels thin, point the user at `/grill` instead.
 See [../shared/references/build-pipeline.md](../shared/references/build-pipeline.md) for file conventions; write the canonical `specs.html` into the feature directory.
 Read [../shared/references/testable-interfaces.md](../shared/references/testable-interfaces.md) before sketching modules so the testing plan is derived from public interfaces, not delegated back to the user.
-
-## Rules Adherence
-
-Comply with the project rules in `rules/` (coding-style, testing, security, performance, git-commit). Read detailed rules from `~/.dotfiles/ai/rules/`. Testing Decisions must follow the testing rules; Implementation Decisions must respect security and performance rules.
 
 ## Process
 
 ### Step 1: Read context
 
-- Read `CONTEXT.md` at the repo root and subordinate `CONTEXT.md` files through `CONTEXT-MAP.md`.
-  They record the **ubiquitous language**: the shared canonical vocabulary used by domain experts, users, documentation, tests, and code.
-  Use it throughout.
+- Read the applicable context files.
 - Read recent ADRs in `docs/adr/` — especially any added this session — and respect them.
 - Skim the codebase area the feature touches. The spec is grounded in the actual codebase, not assumptions.
 
@@ -50,18 +44,16 @@ Wait for the answer before continuing. If they simply confirm, use the proposed 
 ### Step 3: Write the canonical spec
 
 Synthesize `specs.html` using the semantic structure in [references/spec-template.md](references/spec-template.md).
-Use the ubiquitous language from `CONTEXT.md` and reference ADRs by number.
+Use the ubiquitous language from the applicable context files and reference ADRs by number.
 The file itself is the durable spec; do not create `specs.md` or a hidden duplicate model.
-The HTML must use "Spec" in its `<title>` and `<h1>` and emphasize user stories, decisions, and module sketches rather than file maps or code.
+The HTML must use `<feature title> - Spec` in its `<title>`, use "Spec" in its `<h1>`, and emphasize user stories, decisions, and module sketches rather than file maps or code.
 Use `visualize` guidance for presentation when available, but the semantic HTML deliverable is mandatory.
 
 ### Step 4: Review and advance
 
-Load `review-artifact` and review `specs.html` using [the shared protocol](../shared/references/review-artifact.md).
+Load `review-artifact` and review `specs.html` as an approval review using [the shared protocol](../shared/references/review-artifact.md).
 Point the user at missing or misstated user stories, implementation and testing decisions, and scope to cut.
 After each feedback batch, update the same HTML so the open browser live-reloads the current spec, then resume polling with an agent reply.
-If the browser runtime fails, use the protocol's chat fallback.
-
 On explicit browser approval or chat-fallback confirmation, advance immediately:
 
 > **Spec ready** — canonical artifact at `<spec-path>`. Breaking it into tasks via `/todo`.
@@ -71,10 +63,7 @@ Then proceed to `/todo`.
 ## Important Guidelines
 
 - **Synthesize, don't interview.** If essential information is genuinely missing, ask one targeted question — don't re-run the grill.
-- **Use the ubiquitous language from `CONTEXT.md`.** If the glossary says "Customer", do not write "User" or "Account".
 - **Do not silently change the domain model.** If feedback or synthesis exposes a missing or conflicting domain concept, invoke [model-domain](../model-domain/SKILL.md) to resolve and record it before continuing.
 - **No code snippets, no file paths** in the body (except the narrow exception in the template).
 - **Write canonical `specs.html` directly and keep it live.** Apply every feedback batch to that same file before polling again.
 - Keep the spec focused — suggest cutting scope if it grows too large.
-
-Ultrathink.

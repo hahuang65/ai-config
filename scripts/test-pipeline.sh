@@ -175,7 +175,9 @@ test_command_prompts() {
     else
       fail "commands/$name.md" "missing description frontmatter"
     fi
-    if [[ -f "$REPO_DIR/skills/$name/SKILL.md" ]]; then
+    if [[ "$name" == "resolve-conflicts" ]]; then
+      pass "commands/resolve-conflicts.md intentionally pairs a command and skill"
+    elif [[ -f "$REPO_DIR/skills/$name/SKILL.md" ]]; then
       fail "commands/$name.md" "duplicates a same-named skill"
     else
       pass "commands/$name.md has no same-named skill"
@@ -194,12 +196,15 @@ test_command_prompts() {
 
   local actual_names
   actual_names="$(printf '%s\n' "${names[@]}" | sort | paste -sd' ' -)"
-  [[ "$actual_names" == "deliver rebase" ]] \
+  [[ "$actual_names" == "deliver rebase resolve-conflicts" ]] \
     && pass "commands/ contains the curated alias and composition set" \
-    || fail "commands/" "expected only: deliver rebase; found: $actual_names"
+    || fail "commands/" "expected only: deliver rebase resolve-conflicts; found: $actual_names"
   grep -Eq '`orchard` skill.*rebase operation' "$REPO_DIR/commands/rebase.md" \
     && pass "rebase remains a thin Orchard alias" \
     || fail "commands/rebase.md" "rebase must delegate to the Orchard skill"
+  grep -Eq '`resolve-conflicts` skill' "$REPO_DIR/commands/resolve-conflicts.md" \
+    && pass "resolve-conflicts remains a thin conflict-resolution alias" \
+    || fail "commands/resolve-conflicts.md" "resolve-conflicts must delegate to the resolve-conflicts skill"
   if [[ ! -e "$REPO_DIR/skills/deliver/SKILL.md" ]] \
      && [[ ! -e "$REPO_DIR/skills/merge/SKILL.md" ]] \
      && grep -Fq 'classify the checkout using Git only' "$REPO_DIR/commands/deliver.md" \
@@ -250,25 +255,24 @@ test_skill_model_domain() {
   check_content_cached "$content" "$label" "[Cc]hallenge [Aa]gainst the [Gg]lossary"
   check_content_cached "$content" "$label" "[Ss]harpen [Ff]uzzy [Ll]anguage"
   check_content_cached "$content" "$label" "[Cc]ross-[Rr]eference [Ww]ith [Cc]ode"
-  check_content_cached "$content" "$label" "[Uu]pdate [Cc]ontext [Aa]rtifacts [Ii]nline"
+  check_content_cached "$content" "$label" "[Uu]pdate [Cc]ontext [Ff]iles [Ii]nline"
   check_content_cached "$content" "$label" "[Hh]ard to reverse"
   check_content_cached "$content" "$label" "real trade-off"
 }
 
 test_ubiquitous_language_contract() {
   section "Ubiquitous language contract"
-  local content context_file label skill_file skill_name stale_aliases
-  while read -r context_file; do
-    [[ -z "$context_file" ]] && continue
-    label="${context_file#"$REPO_DIR/"}"
-    check_content_cached "$(cat "$context_file")" "$label" "[Uu]biquitous language"
-  done < <(grep -RIl 'CONTEXT\.md' "$REPO_DIR/skills" "$REPO_DIR/agents" --include='*.md' | sort)
+  local baseline content context_file skill_file skill_name stale_aliases
+  baseline="$(cat "$REPO_DIR/harness-system-prompt.md")"
+  check_content_cached "$baseline" "harness-system-prompt.md" '`CONTEXT\.md` and `CONTEXT-MAP\.md` collectively as \*\*context files\*\*'
+  check_content_cached "$baseline" "harness-system-prompt.md" "[Uu]biquitous language.*domain experts.*documentation.*tests.*code"
+  check_content_cached "$baseline" "harness-system-prompt.md" "durable record of that language, not the language itself"
 
   for skill_name in build grill prototype review-code spec todo; do
     skill_file="$REPO_DIR/skills/$skill_name/SKILL.md"
     content="$(cat "$skill_file")"
     check_content_cached "$content" "skills/$skill_name/SKILL.md" "../model-domain/SKILL\.md"
-    check_content_cached "$content" "skills/$skill_name/SKILL.md" "[Uu]biquitous language"
+    check_content_cached "$content" "skills/$skill_name/SKILL.md" "[Cc]ontext files"
   done
 
   for context_file in \
@@ -280,10 +284,15 @@ test_ubiquitous_language_contract() {
     skills/spec/SKILL.md \
     skills/todo/SKILL.md \
     skills/visualize/SKILL.md; do
-    check_content_cached "$(cat "$REPO_DIR/$context_file")" "$context_file" "CONTEXT-MAP\.md"
+    check_content_cached "$(cat "$REPO_DIR/$context_file")" "$context_file" "[Cc]ontext files"
   done
 
-  stale_aliases="$(grep -REil 'CONTEXT\.md.{0,15}vocabular|domain language|project vocabulary' "$REPO_DIR/skills" "$REPO_DIR/agents" --include='*.md' || true)"
+  while read -r context_file; do
+    [[ -z "$context_file" ]] && continue
+    check_content_cached "$(cat "$context_file")" "${context_file#"$REPO_DIR/"}" "[Cc]ontext files"
+  done < <(grep -RIlEi 'CONTEXT\.md|CONTEXT-MAP\.md|ubiquitous language' "$REPO_DIR/skills" "$REPO_DIR/agents" --include='*.md' | sort)
+
+  stale_aliases="$(grep -REil 'CONTEXT\.md.{0,15}vocabular|domain language|project vocabulary|context artifacts' "$REPO_DIR/skills" "$REPO_DIR/agents" --include='*.md' || true)"
   [[ -z "$stale_aliases" ]] \
     && pass "skills and agents use ubiquitous language instead of glossary aliases" \
     || fail "ubiquitous language" "stale aliases found in: $(echo "$stale_aliases" | sed "s|$REPO_DIR/||" | paste -sd, -)"
@@ -402,7 +411,7 @@ test_phase_code_post() {
   local label="$2"
   check_content_cached "$content" "$label" "refactorer"
   check_content_cached "$content" "$label" "[Hh]ygiene [Mm]ode"
-  check_content_cached "$content" "$label" "never commit|NEVER commit|do not commit"
+  check_content_cached "$(cat "$REPO_DIR/harness-system-prompt.md")" "harness-system-prompt.md" "Do not stage, commit, push, or deliver unless"
   if [[ "$content" =~ (database-reviewer|code-reviewer|doc-updater|fact-checker|diff-review) ]]; then
     fail "$label" "implementation phase still invokes final-review work owned by review-change"
   else
@@ -1512,12 +1521,14 @@ test_install_behavior() {
     || fail "install-behavior" "Claude CLAUDE.md bootstrap missing"
   [[ -f "$tmphome/.claude/commands/deliver.md" ]] \
     && [[ -f "$tmphome/.claude/commands/rebase.md" ]] \
+    && [[ -f "$tmphome/.claude/commands/resolve-conflicts.md" ]] \
     && pass "Claude command prompts installed into commands/" \
-    || fail "install-behavior" "Claude deliver or rebase command missing"
+    || fail "install-behavior" "Claude deliver, rebase, or resolve-conflicts command missing"
   [[ -f "$tmphome/.pi/agent/prompts/deliver.md" ]] \
     && [[ -f "$tmphome/.pi/agent/prompts/rebase.md" ]] \
+    && [[ -f "$tmphome/.pi/agent/prompts/resolve-conflicts.md" ]] \
     && pass "pi command prompts installed into prompts/" \
-    || fail "install-behavior" "pi deliver or rebase prompt missing"
+    || fail "install-behavior" "pi deliver, rebase, or resolve-conflicts prompt missing"
   [[ ! -e "$tmphome/.claude/skills/deliver/SKILL.md" ]] \
     && [[ ! -e "$tmphome/.pi/agent/skills/deliver/SKILL.md" ]] \
     && pass "deliver has no duplicate skill" \
@@ -1593,6 +1604,7 @@ test_install_behavior() {
     || fail "install-behavior" "legacy pi rules/mise.md was not removed"
   [[ -L "$tmphome/.claude/commands/deliver.md" ]] \
     && [[ -L "$tmphome/.claude/commands/rebase.md" ]] \
+    && [[ -L "$tmphome/.claude/commands/resolve-conflicts.md" ]] \
     && pass "re-install preserves canonical Claude command prompts" \
     || fail "install-behavior" "canonical Claude command prompt missing"
   [[ ! -L "$tmphome/.claude/commands/merge.md" ]] \

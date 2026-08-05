@@ -22,7 +22,3 @@ Report what was accomplished this session:
 > - **Architectural friction** (modules feel shallow, tests had to reach past interfaces, the area is hard to navigate) → run `/review-code` — the `architecture-reviewer` agent surfaces deepening opportunities as an HTML report (no arguments = entire codebase, arguments = that area).
 >
 > Invoke them when you notice friction, not as a mandatory step.
-
-## Never commit
-
-**NEVER commit to version control** — no `git add`, `git commit`, or `git push`. The user commits when ready.

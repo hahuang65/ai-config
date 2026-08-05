@@ -38,9 +38,26 @@ browserTest("completes annotations through the rendered browser surface", async 
   }
 }, 15_000);
 
-browserTest("submits an artifact-owned decision form through the review session", async () => {
-  const review = await startInteractiveReview({ artifactContent: decisionFormArtifact() });
+browserTest("starts decision forms in Explore mode with the artifact document title", async () => {
+  const review = await startInteractiveReview({ artifactContent: decisionFormArtifact(), purpose: "decision" });
   try {
+    await waitForBrowserCondition(
+      () => review.browser.evaluate(`JSON.stringify(document.title === "Overnight Runner - Review Findings")`),
+      "Review shell did not adopt the artifact document title",
+    );
+    expect(await review.browser.evaluate(`JSON.stringify({
+      mode: document.querySelector("#mode").textContent,
+      pressed: document.querySelector("#mode").getAttribute("aria-pressed"),
+      title: document.title,
+    })`)).toEqual({
+      mode: "Explore",
+      pressed: "false",
+      title: "Overnight Runner - Review Findings",
+    });
+    expect(await review.browser.evaluateChild(`JSON.stringify((() => {
+      document.querySelector("#explore-target").click();
+      return document.body.dataset.explored;
+    })())`)).toBe("yes");
     await review.browser.evaluateChild(`JSON.stringify(document.querySelector("#submit-decisions").click() ?? true)`);
     expect(await review.polling).toMatchObject({
       status: "feedback",
@@ -221,16 +238,18 @@ async function startBrowserReview({ artifactContent }: { artifactContent: string
 
 async function startInteractiveReview({
   artifactContent,
+  purpose = "feedback",
   width = 960,
 }: {
   artifactContent: string;
+  purpose?: "feedback" | "approval" | "decision";
   width?: number;
 }) {
   const directory = await mkdtemp(path.join(tmpdir(), "review-artifact-browser-"));
   const artifact = path.join(directory, "specs.html");
   await writeFile(artifact, artifactContent);
   const server = await startReviewServer({ port: 0, stateFile: path.join(directory, "state.json") });
-  const created = await createSession(server, artifact);
+  const created = await createSession(server, artifact, purpose);
   const polling = pollForAgentEvent(server, created.key);
   const browser = await startFirefoxBidi({
     executable: firefox,
@@ -266,11 +285,15 @@ async function waitForBrowserCondition(check: () => Promise<boolean>, failure: s
   throw new Error(failure);
 }
 
-async function createSession(server: { baseUrl: string }, artifact: string) {
+async function createSession(
+  server: { baseUrl: string },
+  artifact: string,
+  purpose: "feedback" | "approval" | "decision" = "feedback",
+) {
   return fetch(`${server.baseUrl}/api/sessions`, {
     method: "POST",
     headers: { "content-type": "application/json" },
-    body: JSON.stringify({ file: artifact }),
+    body: JSON.stringify({ file: artifact, purpose }),
   }).then((response) => response.json());
 }
 
@@ -387,8 +410,9 @@ function selectText(target) {
 }
 
 function decisionFormArtifact() {
-  return `<!doctype html><form id="review-decisions">
-<button id="submit-decisions" type="submit">Submit decisions</button></form><script>
+  return `<!doctype html><title>Overnight Runner - Review Findings</title><main id="explore-target">Explore target</main>
+<form id="review-decisions"><button id="submit-decisions" type="submit">Submit decisions</button></form><script>
+document.querySelector("#explore-target").addEventListener("click", () => { document.body.dataset.explored = "yes"; });
 document.querySelector("#review-decisions").addEventListener("submit", (event) => {
   event.preventDefault();
   parent.postMessage({

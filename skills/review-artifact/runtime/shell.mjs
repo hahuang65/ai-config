@@ -1,9 +1,14 @@
 import { validateChatEntries } from "./assets/message-validation.js";
 
 export function renderReviewShell(session) {
-  const sessionJson = escapeJsonScript(
-    JSON.stringify({ key: session.key, file: session.file, initialChat: validateChatEntries(session.chat) }),
-  );
+  const sessionJson = escapeJsonScript(JSON.stringify({
+    key: session.key,
+    file: session.file,
+    mode: session.mode,
+    initialChat: validateChatEntries(session.chat),
+  }));
+  const annotating = session.mode !== "explore";
+  const modeLabel = annotating ? "Annotate" : "Explore";
   return `<!doctype html>
 <html lang="en">
 <head>
@@ -27,7 +32,7 @@ export function renderReviewShell(session) {
       </select>
     </label>
     <span id="presence" aria-live="polite">Agent not listening</span>
-    <button id="mode" type="button" aria-pressed="true">Annotate</button>
+    <button id="mode" type="button" aria-pressed="${annotating}">${modeLabel}</button>
   </header>
   <main class="layout">
     <section class="artifact-panel" aria-label="Artifact under review">

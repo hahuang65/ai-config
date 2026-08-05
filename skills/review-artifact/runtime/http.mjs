@@ -1,8 +1,10 @@
 import { validatePrompt as validateReviewPrompt } from "./assets/message-validation.js";
+import { REVIEW_PURPOSES } from "./protocol.mjs";
 
 export const LOOPBACK_HOST = "127.0.0.1";
 
 const MAX_JSON_BYTES = 256 * 1024;
+const REVIEW_PURPOSE_SET = new Set(REVIEW_PURPOSES);
 
 export function assertAllowedHost(hostHeader, port) {
   const allowed = new Set([`${LOOPBACK_HOST}:${port}`, `localhost:${port}`, `[::1]:${port}`]);
@@ -38,6 +40,14 @@ export async function readJson(request) {
   } catch {
     throw publicError(400, "invalid_json", "Request body must be valid JSON");
   }
+}
+
+export function validateReviewPurpose(value) {
+  const purpose = String(value ?? "feedback");
+  if (!REVIEW_PURPOSE_SET.has(purpose)) {
+    throw publicError(422, "invalid_review_purpose", "Review purpose is invalid");
+  }
+  return purpose;
 }
 
 export function validateFeedback(payload) {

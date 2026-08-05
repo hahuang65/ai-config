@@ -29,9 +29,8 @@ Commit to a direction. Pick an aesthetic and vary from recent generations. See [
 ### 2. Structure
 
 Write visible content in plain language.
-Prefer the project's **ubiquitous language** from the root `CONTEXT.md`, or from relevant subordinate context files selected through `CONTEXT-MAP.md`: the shared canonical vocabulary used by domain experts, users, documentation, tests, and code.
-Then use common technical terms the user is likely to know.
-Define an unavoidable unfamiliar term beside its first use, and never make internal workflow values or unexplained source identifiers the main explanation.
+Prefer the project's ubiquitous language from the applicable context files, then common technical terms the user is likely to know.
+Never make internal workflow values or unexplained source identifiers the main explanation.
 
 Choose a rendering approach based on content type. See the approach table in [references/diagram-types.md](references/diagram-types.md).
 
@@ -71,8 +70,7 @@ See [references/anti-patterns.md](references/anti-patterns.md) for forbidden pat
 For pipeline artifacts, write canonical `specs.html`, `tasks.html`, or informational `diff-review.html` as requested.
 For standalone visuals, use a descriptive name such as `diagram.html` or `slides.html`.
 
-**Open in browser:** when the artifact is informational only, use `xdg-open <path>` on Linux or `open <path>` on macOS.
-When the user is expected to give feedback, make a decision, or approve, load `review-artifact` and open the file through its browser workflow instead of opening it directly.
+**Open informational HTML:** use `xdg-open <path>` on Linux or `open <path>` on macOS.
 
 **Tell the user** the file path so they can reopen or share it.
 

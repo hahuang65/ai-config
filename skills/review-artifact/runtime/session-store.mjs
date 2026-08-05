@@ -12,7 +12,7 @@ export class SessionStore {
     this.pendingMutation = Promise.resolve();
   }
 
-  async upsert(file, url, { reopen = false } = {}) {
+  async upsert(file, url, { mode = "annotate", purpose = "feedback", reopen = false } = {}) {
     return this.#mutate(async () => {
       const state = await this.#read();
       const key = sessionKey(file);
@@ -25,6 +25,8 @@ export class SessionStore {
         file,
         url,
         status: resumesFinished ? "open" : existing.status ?? "open",
+        purpose,
+        mode,
         events: resumesFinished ? [] : existing.events ?? [],
         chat: existing.chat ?? [],
         updatedAt: new Date().toISOString(),

@@ -30,6 +30,16 @@ test("rejects malformed and oversized frame messages", () => {
   ]).toEqual([null, null, null]);
 });
 
+test("accepts only bounded artifact document titles", () => {
+  expect(validateFrameMessage({
+    type: "review:ready",
+    title: "Overnight Runner - Review Findings",
+  })).toEqual({ type: "review:ready", title: "Overnight Runner - Review Findings" });
+  expect(validateFrameMessage({ type: "review:ready", title: "x".repeat(2_001) })).toEqual({
+    type: "review:ready",
+  });
+});
+
 test("accepts a bounded artifact form submission", () => {
   expect(validateFrameMessage({
     type: "review:submit",

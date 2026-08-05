@@ -109,8 +109,6 @@ Summarize the refactoring results:
 - Tests status (all passing)
 - Any issues encountered
 
-Do NOT commit to version control — leave that to the user.
-
 ## Hygiene Route (vague goals)
 
 For a vague goal, detect the project tooling (Step 3) and then dispatch the `refactorer` agent (via the Agent tool) in **hygiene mode** with:
@@ -151,4 +149,3 @@ Act on corrections immediately. You have full context from the plan and executio
 - This skill produces transformed code, not documents. No `docs/features/` artifacts.
 - Refactoring is structure change, not behavior change. If you can't preserve behavior, stop.
 - On the directed route, the transformation plan is the contract. Don't add transformations the user didn't approve. On the hygiene route, the SAFE-only contract replaces the plan.
-- **NEVER commit to version control** — no `git add`, `git commit`, or `git push`.

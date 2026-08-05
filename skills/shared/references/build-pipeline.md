@@ -58,8 +58,8 @@ The workflow is designed to run in a **single long session**.
 By the time implementation starts, shared understanding has accumulated through grilling and HTML-native spec refinement.
 Canonical HTML artifacts survive context compaction and can be re-read at any point.
 
-`CONTEXT.md` records the project's **ubiquitous language**: the shared canonical vocabulary used by domain experts, users, documentation, tests, and code.
-It and `docs/adr/` are the durable spine that successive `/build` runs sharpen.
+The applicable context files record or locate the project's ubiquitous language.
+They and `docs/adr/` are the durable spine that successive `/build` runs sharpen.
 
 ## Review Artifact Sync
 

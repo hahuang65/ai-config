@@ -16,7 +16,7 @@ describe("review command", () => {
   test("opens an HTML review without launching a browser when requested", async () => {
     const directory = await mkdtemp(path.join(tmpdir(), "review-artifact-cli-"));
     const artifact = path.join(directory, "specs.html");
-    await writeFile(artifact, "<!doctype html><title>Spec</title>");
+    await writeFile(artifact, "<!doctype html><title>Overnight Runner - Spec</title>");
     const server = await startReviewServer({ port: 0, stateFile: path.join(directory, "state.json") });
     servers.push(server);
     let openedUrl = "";
@@ -28,15 +28,44 @@ describe("review command", () => {
       },
     });
 
-    expect(output.session.status).toBe("open");
+    expect(output.session).toMatchObject({ status: "open", purpose: "feedback", mode: "annotate" });
     expect(output.session.file).toEndWith("specs.html");
     expect(openedUrl).toBe("");
+  });
+
+  test("opens decision reviews with an Explore-mode purpose", async () => {
+    const directory = await mkdtemp(path.join(tmpdir(), "review-artifact-cli-"));
+    const artifact = path.join(directory, "review.html");
+    await writeFile(artifact, "<!doctype html><title>Overnight Runner - Review Findings</title>");
+    const server = await startReviewServer({ port: 0, stateFile: path.join(directory, "state.json") });
+    servers.push(server);
+
+    const output = await runReviewCommand([artifact, "--purpose", "decision", "--no-open"], {
+      ensureServer: async () => server,
+    });
+
+    expect(output.session).toMatchObject({ purpose: "decision", mode: "explore" });
+  });
+
+  test("rejects an unknown review purpose", async () => {
+    const directory = await mkdtemp(path.join(tmpdir(), "review-artifact-cli-"));
+    const artifact = path.join(directory, "review.html");
+    await writeFile(artifact, "<!doctype html><title>Overnight Runner - Review Findings</title>");
+    const server = await startReviewServer({ port: 0, stateFile: path.join(directory, "state.json") });
+    servers.push(server);
+
+    await expect(runReviewCommand([artifact, "--purpose", "unknown", "--no-open"], {
+      ensureServer: async () => server,
+    })).rejects.toThrow("Unknown review purpose: unknown");
+    await expect(runReviewCommand([artifact, "--purpose"], {
+      ensureServer: async () => server,
+    })).rejects.toThrow("Review purpose is required after --purpose");
   });
 
   test("returns structured feedback from the active review", async () => {
     const directory = await mkdtemp(path.join(tmpdir(), "review-artifact-cli-"));
     const artifact = path.join(directory, "tasks.html");
-    await writeFile(artifact, "<!doctype html><title>Tasks</title>");
+    await writeFile(artifact, "<!doctype html><title>Overnight Runner - Tasks</title>");
     const server = await startReviewServer({ port: 0, stateFile: path.join(directory, "state.json") });
     servers.push(server);
     const opened = await runReviewCommand([artifact, "--no-open"], { ensureServer: async () => server });
@@ -58,7 +87,7 @@ describe("review command", () => {
   test("ends a review without approving it", async () => {
     const directory = await mkdtemp(path.join(tmpdir(), "review-artifact-cli-"));
     const artifact = path.join(directory, "review.html");
-    await writeFile(artifact, "<!doctype html><title>Review</title>");
+    await writeFile(artifact, "<!doctype html><title>Overnight Runner - Review Findings</title>");
     const server = await startReviewServer({ port: 0, stateFile: path.join(directory, "state.json") });
     servers.push(server);
     await runReviewCommand([artifact, "--no-open"], { ensureServer: async () => server });

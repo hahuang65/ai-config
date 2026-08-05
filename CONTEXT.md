@@ -33,9 +33,15 @@ _Avoid_: Worker, child session.
 **Rule**:
 A `<root>/rules/<name>.md` file holding guidance the harness pulls into context on demand. Claude and pi read the canonical `~/.dotfiles/ai/rules/` files directly. See [`small-always-on-bootstrap-lazy-rulebooks`](docs/adr/0016-small-always-on-bootstrap-lazy-rulebooks.md).
 
+**Context files**:
+The collective name for `CONTEXT.md` and `CONTEXT-MAP.md` files.
+They record a project's domain concepts or locate the files and relationships for each applicable context.
+_Avoid_: Context artifacts, context docs, glossary files.
+
 **Ubiquitous language**:
 The shared, canonical vocabulary that domain experts, users, documentation, tests, and code use with one consistent meaning to describe a project's domain.
-`CONTEXT.md` records this language, while the `model-domain` skill actively builds, augments, and audits it.
+Context files are its durable record and navigation structure, while the `model-domain` skill actively builds, augments, and audits it.
+The files are not the language itself; the vocabulary becomes ubiquitous through consistent use.
 _Avoid_: Domain language, project vocabulary, `CONTEXT.md` vocabulary.
 
 ### Harness-specific terms
@@ -198,13 +204,15 @@ Its approval event is the Spec→Tasks gate.
 _Avoid_: PRD / prd.md / prd.html (the artifact's former name, renamed 2026-07-09), plan (the pre-pipeline document format the spec replaced), Markdown companion.
 
 **Review artifact**:
-A canonical semantic HTML document presented through the **review artifact workflow** when the pipeline needs feedback or approval.
+A canonical semantic HTML document presented through the **review artifact workflow** when the pipeline needs feedback, a decision, or approval.
 It is the durable source consumed by later phases, not a visual companion to Markdown.
+Its browser-tab title states `<document title> - <document intent>`.
 _Avoid_: visual companion, Markdown artifact.
 
 **Review artifact workflow**:
-The local browser feedback loop provided by the `review-artifact` skill for a **review artifact**: the user annotates elements or text, sends feedback, or emits an explicit approval event while the agent polls and updates the same HTML document.
-The shell and HTTP boundary share validation for transient and durable review messages, and a serialized local per-daemon capability limits event consumption to agent commands.
+The local browser feedback loop provided by the `review-artifact` skill for a **review artifact**: the user annotates elements or text, sends feedback, makes a decision, or emits an explicit approval event while the agent polls and updates the same HTML document.
+Feedback and approval reviews start in Annotate mode; decision reviews start in Explore mode.
+The shell adopts the reviewed document's title and shares validation with the HTTP boundary for transient and durable review messages, while a serialized local per-daemon capability limits event consumption to agent commands.
 Closing or ending the session without approval does not clear a pipeline gate.
 _Avoid_: artifact review, annotation cycle, inline `//` review.
 

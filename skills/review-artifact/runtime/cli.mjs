@@ -3,7 +3,10 @@ import { realpath } from "node:fs/promises";
 import { openBrowser as launchBrowser } from "./browser.mjs";
 import { ensureReviewServer, stopReviewServer } from "./daemon.mjs";
 import { sessionKey } from "./session-store.mjs";
-import { AGENT_TOKEN_HEADER } from "./protocol.mjs";
+import { AGENT_TOKEN_HEADER, REVIEW_PURPOSES } from "./protocol.mjs";
+
+const REVIEW_PURPOSE_SET = new Set(REVIEW_PURPOSES);
+const VALUE_FLAGS = new Set(["--agent-reply", "--purpose"]);
 
 export async function runReviewCommand(argv, dependencies = {}) {
   const normalized = normalizeArguments(argv);
@@ -23,7 +26,17 @@ export async function runReviewCommand(argv, dependencies = {}) {
 async function openArtifact(args, baseUrl, dependencies) {
   const file = firstPositional(args);
   if (!file) throw commandError("An HTML file path is required");
-  const session = await postJson(`${baseUrl}/api/sessions`, { file, reopen: args.includes("--reopen") });
+  const requestedPurpose = flagValue(args, "--purpose");
+  if (args.includes("--purpose") && requestedPurpose === null) {
+    throw commandError("Review purpose is required after --purpose");
+  }
+  const purpose = requestedPurpose ?? "feedback";
+  if (!REVIEW_PURPOSE_SET.has(purpose)) throw commandError(`Unknown review purpose: ${purpose}`);
+  const session = await postJson(`${baseUrl}/api/sessions`, {
+    file,
+    purpose,
+    reopen: args.includes("--reopen"),
+  });
   const shouldOpen = !args.includes("--no-open") && process.env.REVIEW_ARTIFACT_NO_OPEN !== "1";
   if (shouldOpen && session.reopened !== false) await (dependencies.openBrowser ?? launchBrowser)(session.url);
   return {
@@ -31,11 +44,13 @@ async function openArtifact(args, baseUrl, dependencies) {
       file: session.file,
       url: session.url,
       status: session.status,
+      purpose: session.purpose,
+      mode: session.mode,
       ...(session.reopened === false ? { reopened: false } : {}),
     },
     nextStep: session.reopened === false
       ? "The user already finished this review. Do not reopen it without --reopen."
-      : `Run review-artifact poll ${session.file} to wait for feedback or approval.`,
+      : `Run review-artifact poll ${session.file} to wait for review activity.`,
   };
 }
 
@@ -68,7 +83,7 @@ export function normalizeArguments(argv) {
 
 function firstPositional(args) {
   for (let index = 0; index < args.length; index += 1) {
-    if (args[index] === "--agent-reply") {
+    if (VALUE_FLAGS.has(args[index])) {
       index += 1;
       continue;
     }

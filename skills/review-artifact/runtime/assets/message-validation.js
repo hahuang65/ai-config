@@ -17,6 +17,10 @@ const LIMITS = Object.freeze({
 
 export function validateFrameMessage(message) {
   if (!plainObject(message) || typeof message.type !== "string") return null;
+  if (message.type === "review:ready") {
+    const title = boundedString(message.title ?? "", LIMITS.displayText);
+    return { type: message.type, ...(title === null ? {} : { title }) };
+  }
   if (message.type === "review:queue" || message.type === "review:submit") {
     const prompt = validatePrompt(message.prompt);
     if (!prompt) return null;

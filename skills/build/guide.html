@@ -154,7 +154,7 @@ code { font-family: var(--font-mono); font-size: 0.85em; background: var(--accen
       <h3>grill <span class="badge">opus · interactive</span></h3>
       <p>Dependency-aware interview that invokes <code>model-domain</code> to sharpen the ubiquitous language, resolve cardinality, and capture qualifying decisions.</p>
       <ul>
-        <li>Reads <code>CONTEXT.md</code> + <code>docs/adr/</code> through <code>model-domain</code></li>
+        <li>Reads applicable context files + <code>docs/adr/</code> through <code>model-domain</code></li>
         <li>Asks the whole ready decision frontier in each round and recommends answers</li>
         <li>Challenges fuzzy language; cross-references with code</li>
         <li>Updates <code>CONTEXT.md</code> inline as terms resolve</li>
@@ -167,12 +167,12 @@ code { font-family: var(--font-mono); font-size: 0.85em; background: var(--accen
       <h3>spec <span class="badge">synthesis</span></h3>
       <p>Synthesizes a feature spec from the grilling outcome. Does NOT re-interview.</p>
       <ul>
-        <li>Reads root or mapped context files, recent ADRs, conversation</li>
+        <li>Reads applicable context files, recent ADRs, conversation</li>
         <li>Sketches major modules (deep-modules philosophy)</li>
         <li>Proposes module test surfaces; user corrects boundaries/seams only</li>
         <li>Writes spec: problem, solution, user stories, decisions, testing</li>
         <li>NO code snippets, NO file paths (they go stale)</li>
-        <li>Browser annotations and messages through <code>review-artifact</code></li>
+        <li>Browser annotations and messages through <code>review-artifact</code> in Annotate mode</li>
         <li>Explicit approval advances the gate</li>
       </ul>
       <div class="out"><strong>Canonical output:</strong> <code>docs/features/&lt;slug&gt;/specs.html</code></div>
@@ -186,7 +186,7 @@ code { font-family: var(--font-mono); font-size: 0.85em; background: var(--accen
         <li>Each slice = thin path through schema, API, UI, tests</li>
         <li>Marked HITL (human-in-loop) or AFK (away-from-keyboard)</li>
         <li>Dependency order: blockers first</li>
-        <li>Review through <code>review-artifact</code> until explicit approval</li>
+        <li>Review through <code>review-artifact</code> in Annotate mode until explicit approval</li>
       </ul>
       <div class="out"><strong>Canonical output:</strong> <code>docs/features/&lt;slug&gt;/tasks.html</code></div>
     </div>
@@ -212,7 +212,7 @@ code { font-family: var(--font-mono); font-size: 0.85em; background: var(--accen
         <li>Runs targeted evidence, documentation checks, and lint in fixed order</li>
         <li>Fact-checks canonical <code>specs.html</code> and <code>tasks.html</code> in place</li>
         <li>Presents Findings with independent severity and action</li>
-        <li>Opens the final report through <code>review-artifact</code></li>
+        <li>Opens the final report through <code>review-artifact</code> in Explore mode</li>
         <li><span class="cmd-tag">review-code</span> remains optional standalone architecture exploration</li>
       </ul>
       <div class="out"><strong>Output:</strong> disposable decision report + Review-to-done approval</div>
@@ -254,11 +254,11 @@ code { font-family: var(--font-mono); font-size: 0.85em; background: var(--accen
 
 <div class="section">
   <div class="section-title"><span class="num">04</span>Review Artifact Loop</div>
-  <p style="margin-bottom: 16px; font-size: 0.95rem;">Whenever an HTML artifact asks for feedback or approval, <code>review-artifact</code> opens it in a local browser surface.</p>
+  <p style="margin-bottom: 16px; font-size: 0.95rem;">Whenever an HTML artifact asks for feedback, a decision, or approval, <code>review-artifact</code> opens it in a local browser surface. Feedback and approval start in Annotate mode; decisions start in Explore mode. Every browser-tab title uses <code>&lt;document title&gt; - &lt;document intent&gt;</code>.</p>
   <div class="pre">generate canonical HTML → annotate exact element or text
           ↑                          ↓
           └──── live reload ← agent applies feedback</div>
-  <p style="margin-top:14px; font-size:0.9rem; color: var(--text-dim);">Artifacts use the ubiquitous language recorded in the applicable root or mapped context files. The foreground poll returns durable feedback batches, severe layout warnings, and an explicit approval event. In the final report, each issue card contains its own decision controls and one bottom button submits all decisions without copy and paste. Ending or closing review is not approval.</p>
+  <p style="margin-top:14px; font-size:0.9rem; color: var(--text-dim);">Artifacts use the ubiquitous language from the applicable context files. The foreground poll returns durable feedback batches, severe layout warnings, and an explicit approval event. In the final report, each issue card contains its own decision controls and one bottom button submits all decisions without copy and paste. Ending or closing review is not approval.</p>
 </div>
 
 <div class="section">

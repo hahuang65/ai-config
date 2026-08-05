@@ -1,7 +1,7 @@
 # Standalone Domain-Modeling Session
 
 Use this workflow when `model-domain` is invoked directly rather than embedded in another skill.
-The session builds or sharpens the project's **ubiquitous language** and the context artifacts that record it.
+The session builds or sharpens the project's ubiquitous language and the context files that record or locate it.
 
 ## Select the Mode
 

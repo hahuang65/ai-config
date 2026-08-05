@@ -38,8 +38,7 @@ Key principles (see [language.md](references/language.md) for the full list):
 - **One adapter = hypothetical seam. Two adapters = real seam.**
 
 This skill is _informed_ by the project's domain model.
-The **ubiquitous language** is the shared, canonical vocabulary used by domain experts, users, documentation, tests, and code.
-Its terms give names to good seams, and ADRs record decisions the skill should not re-litigate.
+The ubiquitous language gives names to good seams, and ADRs record decisions the skill should not re-litigate.
 
 ## Standalone Use
 
@@ -55,17 +54,15 @@ For surface-level cleanup right after implementation (dead code, unused imports,
 
 ### 1. Discover via the agent
 
-Read the root `CONTEXT.md`, or use `CONTEXT-MAP.md` to find the applicable subordinate context files, and read any ADRs in the area first.
-Use the ubiquitous language they record because its vocabulary and decisions frame the review.
+Read the applicable context files and any ADRs in the area first.
 
-Resolve the scope per the rules above, then run the `architecture-reviewer` agent (via the Agent tool) with: the scope (area files or "entire codebase"), the relevant `CONTEXT.md` terms, and any ADR numbers in the area. The agent walks the code, applies the **deletion test**, and returns structured candidates (files, problem, solution, benefits, before/after sketch, strength, ADR conflicts). It never edits and never proposes final interfaces — that's the grilling loop's job.
+Resolve the scope per the rules above, then run the `architecture-reviewer` agent (via the Agent tool) with: the scope (area files or "entire codebase"), the relevant ubiquitous-language terms, and any ADR numbers in the area. The agent walks the code, applies the **deletion test**, and returns structured candidates (files, problem, solution, benefits, before/after sketch, strength, ADR conflicts). It never edits and never proposes final interfaces — that's the grilling loop's job.
 
 ### 2. Present Candidates as an HTML Report
 
 Render the agent's findings as a self-contained HTML file written to the OS temp directory so nothing lands in the repo.
 Resolve the temp dir from `$TMPDIR`, falling back to `/tmp` or `%TEMP%` on Windows, and write to `<tmpdir>/architecture-review-<timestamp>.html` so each run gets a fresh file.
-Load `review-artifact` and open the report through [the shared review protocol](../shared/references/review-artifact.md), then tell the user the absolute path.
-If the runtime fails, use the protocol's chat fallback.
+Load `review-artifact` and open the report as a decision review through [the shared review protocol](../shared/references/review-artifact.md), then tell the user the absolute path.
 
 The report uses **Tailwind via CDN** for layout and styling, and **Mermaid via CDN** for diagrams where a graph/flow/sequence reliably communicates the structure. Mix Mermaid with hand-crafted CSS/SVG visuals — use Mermaid when relationships are graph-shaped (call graphs, dependencies, sequences), and hand-built divs/SVG when you want something more editorial (mass diagrams, cross-sections, collapse animations). Each candidate gets a **before/after visualisation**. Be visual.
 
@@ -80,9 +77,9 @@ Each of the agent's candidates renders as a card:
 
 End the report with a **Top recommendation** section: which candidate you'd tackle first and why.
 
-**Use the ubiquitous language from `CONTEXT.md` and common technical terms in the visible report.**
+**Use the ubiquitous language from applicable context files and common technical terms in the visible report.**
 Use [language.md](references/language.md) to reason precisely, then describe the concrete problem and suggested change without requiring the user to learn that glossary.
-If `CONTEXT.md` defines “Order,” write “Order intake”; use a code name such as `FooBarHandler` only when the exact source anchor helps.
+If a context file defines “Order,” write “Order intake”; use a code name such as `FooBarHandler` only when the exact source anchor helps.
 
 **ADR conflicts**: if a candidate contradicts an existing ADR, only surface it when the friction is real enough to warrant revisiting the ADR. Mark it clearly in the card (e.g. a warning callout: _"contradicts ADR-0007 — but worth reopening because…"_). Don't list every theoretical refactor an ADR forbids.
 

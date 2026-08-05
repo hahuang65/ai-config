@@ -19,13 +19,11 @@ global context file for both harnesses:
 - pi: `~/.pi/agent/AGENTS.md`
 - Claude Code: `~/.claude/CLAUDE.md`
 
-The bootstrap contains only the critical cross-task baseline, the shared
-rulebook location, and concise load triggers. Branch naming stays always-on so
-it is available before the first branch is created; mise ownership stays
-always-on so tool invocations use the correct environment. Engineering-quality
-priorities and Markdown sentence formatting also stay always-on because they
-apply across planning, documentation, and implementation. Detailed Git policy
-loads only before staging, preparing a commit message, or committing.
+The bootstrap contains only the critical cross-task baseline, the shared rulebook location, and concise load triggers.
+Branch naming stays always-on so it is available before the first branch is created, and Git-write ownership stays always-on so unrelated workflows do not stage, commit, push, or deliver.
+Mise ownership stays always-on so tool invocations use the correct environment.
+Engineering-quality priorities, the context-files and ubiquitous-language definitions, user-facing prose guidance, confirmation semantics, HTML routing, and Markdown sentence formatting also stay always-on because they apply across planning, documentation, and implementation.
+Detailed Git policy loads only before staging, preparing a commit message, or committing.
 
 Keep one canonical lazy rulebook at `~/.dotfiles/ai/rules/`. Pi and Claude read
 needed files directly from that location; neither receives another rules
@@ -39,8 +37,8 @@ the shared guard core and therefore does not consume prompt tokens.
 
 ## Consequences
 
-- Pi and Claude pay only for the small bootstrap on every turn; detailed rules
-  consume context only when relevant.
+- Pi and Claude pay only for the small bootstrap on every turn; detailed rules consume context only when relevant.
+- Skills rely on the bootstrap for universal language, formatting, confirmation, HTML-routing, and Git-write behavior instead of repeating those contracts locally.
 - All agents refer to the same canonical rule names without embedding
   harness-specific lookup instructions.
 - Claude's old repo-managed symlinks under `~/.claude/rules/` and the interim
