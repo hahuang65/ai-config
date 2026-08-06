@@ -525,10 +525,19 @@ EOF
 # ---------------------------------------------------------------------------
 
 main() {
+  local planted_only=false
+  case "${1:-}" in
+    "") ;;
+    --planted-only) planted_only=true ;;
+    *) printf 'unknown option %q — use: --planted-only (or no option)\n' "$1" >&2; exit 2 ;;
+  esac
+
   echo "Self-test: test-pipeline.sh error detection"
   echo ""
 
-  test_valid_repo_passes
+  if [[ "$planted_only" == false ]]; then
+    test_valid_repo_passes
+  fi
   test_skill_missing_name_fails
   test_agent_missing_tools_fails
   test_agent_unknown_tool_fails
@@ -560,4 +569,4 @@ main() {
   fi
 }
 
-main
+main "$@"

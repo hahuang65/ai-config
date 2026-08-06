@@ -16,7 +16,8 @@ bundle: ## Rebuild pi's self-contained guard extension bundle (pi can't resolve 
 	@bun build harnesses/pi/extensions/guard-policies.ts --target=bun --outfile harnesses/pi/guard-policies.bundle.ts >/dev/null
 	@printf '  rebuilt harnesses/pi/guard-policies.bundle.ts\n'
 
-test: test/content test/install test/guard test/meta ## Run every check (all test/* targets)
+test: ## Run every check in safe concurrent lanes
+	@bun scripts/test-suite-runner.mjs
 
 test/content: ## Validate the shared authoring contract (skills, agents, rules)
 	@bash scripts/test-pipeline.sh content
