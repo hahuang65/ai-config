@@ -48,20 +48,15 @@ install_module() {
 
   # local-models.ts is self-contained (type-only imports erase at transpile),
   # so unlike the guard it needs no bundle — pi loads it fine through a symlink.
-  ln -sf "$MOD/extensions/local-models.ts" "$config_root/extensions/local-models.ts"
+  ln -sf \
+    "$MOD/extensions/local-models.ts" \
+    "$MOD/extensions/orchard.ts" \
+    "$MOD/extensions/review-change-guard.ts" \
+    "$MOD/extensions/review-change-progress.ts" \
+    "$config_root/extensions"
   dim "  $config_root/extensions/local-models.ts (local model auto-discovery)"
-
-  # Orchard lifecycle remains Git-owned. This thin adapter invokes the
-  # independently installed CLI and performs pi's native session replacement.
-  ln -sf "$MOD/extensions/orchard.ts" "$config_root/extensions/orchard.ts"
   dim "  $config_root/extensions/orchard.ts (Orchard session transitions)"
-
-  # Active only inside the standalone Review change CLI process tree.
-  # It blocks structured writes and common mutation commands inside the CLI's
-  # disposable clone, plus Git/provider delivery mutation across the process tree.
-  ln -sf "$MOD/extensions/review-change-guard.ts" "$config_root/extensions/review-change-guard.ts"
   dim "  $config_root/extensions/review-change-guard.ts (standalone Review change boundary)"
-  ln -sf "$MOD/extensions/review-change-progress.ts" "$config_root/extensions/review-change-progress.ts"
   dim "  $config_root/extensions/review-change-progress.ts (standalone Review change TUI telemetry)"
 
   # Subagent extension — ships as an example with pi. Symlinked if present;
@@ -73,6 +68,10 @@ install_module() {
   local pi_bin; pi_bin="$(command -v pi 2>/dev/null)" || true
   if [ -n "$pi_bin" ] && [ -x "$pi_bin" ]; then
     local pi_real; pi_real="$(readlink -f "$pi_bin" 2>/dev/null)" || pi_real="$pi_bin"
+    case "$pi_real" in
+      /*) ;;
+      *) pi_real="$(pwd -P)/$pi_real" ;;
+    esac
     # The binary's depth within the package root varies by install method: under
     # bin/ (Homebrew/npm: .../bin/pi) or directly in the root (Linux tarball:
     # /opt/pi-coding-agent/pi). Homebrew adds a wrinkle: Cellar/<ver>/bin/pi is
@@ -80,7 +79,7 @@ install_module() {
     # package root, which lives in the SIBLING subtree
     # libexec/lib/node_modules/@earendil-works/pi-coding-agent/. Walk up from
     # the binary probing both layouts, instead of hardcoding a dirname count.
-    local dir; dir="$(dirname "$pi_real")"
+    local dir="${pi_real%/*}"
     local brew_pkg="libexec/lib/node_modules/@earendil-works/pi-coding-agent"
     while [ "$dir" != "/" ] && [ -n "$dir" ]; do
       if [ -d "$dir/examples/extensions/subagent" ]; then
@@ -91,38 +90,38 @@ install_module() {
         pi_subagent_src="$dir/$brew_pkg/examples/extensions/subagent"
         break
       fi
-      dir="$(dirname "$dir")"
+      local parent="${dir%/*}"
+      [ "$parent" = "$dir" ] && break
+      dir="$parent"
     done
   fi
   if [ -n "$pi_subagent_src" ] && [ -d "$pi_subagent_src" ]; then
     mkdir -p "$config_root/extensions/subagent"
-    ln -sf "$pi_subagent_src/index.ts" "$config_root/extensions/subagent/index.ts"
     # Keep the upstream runner but adapt agent discovery locally: shared agent
     # frontmatter uses YAML tool arrays for Claude compatibility, while pi's
     # example parser accepts only comma-separated strings. The adapter handles
     # both and maps Claude's Glob tool to pi's find tool.
-    ln -sf "$MOD/extensions/subagent/agents.ts" "$config_root/extensions/subagent/agents.ts"
-    ln -sf "$MOD/extensions/subagent/tool-names.ts" "$config_root/extensions/subagent/tool-names.ts"
-    ln -sf "$MOD/extensions/subagent/model-selection.ts" "$config_root/extensions/subagent/model-selection.ts"
+    ln -sf \
+      "$pi_subagent_src/index.ts" \
+      "$MOD/extensions/subagent/agents.ts" \
+      "$MOD/extensions/subagent/tool-names.ts" \
+      "$MOD/extensions/subagent/model-selection.ts" \
+      "$config_root/extensions/subagent"
     dim "  $config_root/extensions/subagent/ (subagent extension + shared-agent adapter)"
 
     # Workflow prompt templates (e.g. /implement, /scout-and-plan)
     if [ -d "$pi_subagent_src/prompts" ]; then
       mkdir -p "$config_root/prompts"
-      for f in "$pi_subagent_src"/prompts/*.md; do
-        name="$(basename "$f")"
-        ln -sf "$f" "$config_root/prompts/$name"
-      done
+      local -a prompt_files=("$pi_subagent_src"/prompts/*.md)
+      [ ${#prompt_files[@]} -eq 0 ] || ln -sf "${prompt_files[@]}" "$config_root/prompts"
       dim "    $config_root/prompts/ — subagent workflow prompts"
     fi
 
     # Agent definitions (scout, planner, reviewer, worker)
     if [ -d "$pi_subagent_src/agents" ]; then
       mkdir -p "$config_root/agents"
-      for f in "$pi_subagent_src"/agents/*.md; do
-        name="$(basename "$f")"
-        ln -sf "$f" "$config_root/agents/$name"
-      done
+      local -a agent_files=("$pi_subagent_src"/agents/*.md)
+      [ ${#agent_files[@]} -eq 0 ] || ln -sf "${agent_files[@]}" "$config_root/agents"
       dim "    $config_root/agents/ — subagent agent definitions"
     fi
   fi

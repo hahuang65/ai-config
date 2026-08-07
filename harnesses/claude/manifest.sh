@@ -22,10 +22,8 @@ install_module() {
   prune_repo_rule_links "$config_root/rules"
   prune_repo_rule_links "$config_root/rulebook"
 
-  ln -sf "$MOD/settings.json" "$config_root/settings.json"
+  ln -sf "$MOD/settings.json" "$MOD/statusline.sh" "$MOD/hooks.json" "$config_root"
   dim "  $config_root/settings.json"
-  ln -sf "$MOD/statusline.sh" "$config_root/statusline.sh"
   dim "  $config_root/statusline.sh"
-  ln -sf "$MOD/hooks.json" "$config_root/hooks.json"
   dim "  $config_root/hooks.json"
 }

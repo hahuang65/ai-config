@@ -3,6 +3,7 @@ import { findFloorGaps, formatMatrix, floorPolicies, type Coverage } from "../sh
 import { POLICIES } from "../shared/policy-registry";
 import { evaluate, type ToolCall } from "../shared/guard-core";
 import piGuard from "../harnesses/pi/extensions/guard-policies";
+import { evaluateClaudePayload } from "../harnesses/claude/hooks/guard-verdict";
 
 const HARNESSES = ["pi", "Claude Code"];
 
@@ -20,20 +21,15 @@ function inProcessBlocks(guard: (pi: unknown) => void, call: ToolCall): boolean 
   return !!(verdict && verdict.block);
 }
 
-// Claude Code (tier B): drive the command-hook shim over stdin/stdout.
+// Claude Code (tier B): exercise the same normalization used by the command
+// hook. A separate smoke test retains real stdin/stdout transport evidence.
 async function claudeBlocks(call: ToolCall): Promise<boolean> {
-  const payload = {
+  const verdict = evaluateClaudePayload({
     cwd: call.cwd,
     tool_name: call.tool,
     tool_input: { command: call.command, file_path: call.path, content: call.content },
-  };
-  const proc = Bun.spawn(["bun", `${import.meta.dir}/../harnesses/claude/hooks/guard.ts`], {
-    stdin: Buffer.from(JSON.stringify(payload)),
-    stdout: "pipe",
   });
-  const out = await new Response(proc.stdout).text();
-  await proc.exited;
-  return out.includes('"permissionDecision":"deny"');
+  return verdict?.hookSpecificOutput.permissionDecision === "deny";
 }
 
 const ADAPTERS = [

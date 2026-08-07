@@ -42,6 +42,13 @@ test("all shared agents use the harness default model", () => {
   expect(agentsWithModels).toEqual([]);
 });
 
+test("the pi manifest bounds relative executable traversal", () => {
+  const manifest = readFileSync(new URL("../harnesses/pi/manifest.sh", import.meta.url), "utf8");
+
+  expect(manifest).toContain('*) pi_real="$(pwd -P)/$pi_real" ;;');
+  expect(manifest).toContain('[ "$parent" = "$dir" ] && break');
+});
+
 test("the runtime adapter imports the installed TypeScript helper", () => {
   const adapter = readFileSync(new URL("../harnesses/pi/extensions/subagent/agents.ts", import.meta.url), "utf8");
 

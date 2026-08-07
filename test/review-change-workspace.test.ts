@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, test } from "bun:test";
+import { afterAll, describe, expect, test } from "bun:test";
 import { execFile } from "node:child_process";
 import { mkdtemp, readFile, rm, stat, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
@@ -10,16 +10,28 @@ import {
   defaultReviewWorkspaceRoot,
   safeRemoteUrl,
 } from "../skills/review-change/runtime/workspace.mjs";
+import { createConcurrencyLimit } from "./concurrency-limit";
+import { ISOLATED_GIT_ENV, isolateTestGitConfiguration } from "./git-environment";
 
-const exec = promisify(execFile);
+isolateTestGitConfiguration();
+const executeFile = promisify(execFile);
+const exec = (file: string, args: string[]) => executeFile(file, args, {
+  env: ISOLATED_GIT_ENV,
+  timeout: 10_000,
+});
 const cleanups: Array<() => Promise<void>> = [];
 
-afterEach(async () => {
+const GIT_TEST_TIMEOUT_MS = 15_000;
+const withGitSlot = createConcurrencyLimit(2);
+const workspaceTest = (name: string, body: () => void | Promise<void>) =>
+  test.concurrent(name, () => withGitSlot(body), GIT_TEST_TIMEOUT_MS);
+
+afterAll(async () => {
   await Promise.all(cleanups.splice(0).map((cleanup) => cleanup()));
 });
 
 describe("standalone Review change remote metadata", () => {
-  test("retains only credential-safe fetch URLs", () => {
+  workspaceTest("retains only credential-safe fetch URLs", () => {
     expect(safeRemoteUrl("https://token:secret@github.com/acme/app.git"))
       .toBe("https://github.com/acme/app.git");
     expect(safeRemoteUrl("git@github.com:acme/app.git")).toBe("git@github.com:acme/app.git");
@@ -32,11 +44,11 @@ describe("standalone Review change remote metadata", () => {
 });
 
 describe("standalone Review change workspace", () => {
-  test("keeps review isolation separate from development worktrees", () => {
+  workspaceTest("keeps review isolation separate from development worktrees", () => {
     expect(defaultReviewWorkspaceRoot("/Users/example")).toBe("/Users/example/.review-orchard");
   });
 
-  test("snapshots tracked and untracked working state into an isolated clone", async () => {
+  workspaceTest("snapshots tracked and untracked working state into an isolated clone", async () => {
     const root = await mkdtemp(path.join(tmpdir(), "review-change-source-"));
     const orchard = await mkdtemp(path.join(tmpdir(), "review-change-orchard-"));
     cleanups.push(async () => {
@@ -75,7 +87,7 @@ describe("standalone Review change workspace", () => {
     expect(await readFile(path.join(root, "tracked.txt"), "utf8")).toBe("after\n");
   });
 
-  test("rejects a review workspace root inside the reviewed repository before creating it", async () => {
+  workspaceTest("rejects a review workspace root inside the reviewed repository before creating it", async () => {
     const root = await mkdtemp(path.join(tmpdir(), "review-change-source-"));
     cleanups.push(() => rm(root, { recursive: true, force: true }));
     await exec("git", ["init", "-b", "main", root]);
@@ -91,7 +103,7 @@ describe("standalone Review change workspace", () => {
     await expect(stat(reviewRoot)).rejects.toThrow();
   });
 
-  test("removes only its recorded workspace", async () => {
+  workspaceTest("removes only its recorded workspace", async () => {
     const root = await mkdtemp(path.join(tmpdir(), "review-change-source-"));
     const orchard = await mkdtemp(path.join(tmpdir(), "review-change-orchard-"));
     await exec("git", ["init", "-b", "main", root]);

@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, test } from "bun:test";
+import { afterAll, describe, expect, test } from "bun:test";
 import { execFile } from "node:child_process";
 import { mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
@@ -6,11 +6,23 @@ import path from "node:path";
 import { promisify } from "node:util";
 
 import { resolveReviewTarget } from "../skills/review-change/runtime/target.mjs";
+import { createConcurrencyLimit } from "./concurrency-limit";
+import { ISOLATED_GIT_ENV, isolateTestGitConfiguration } from "./git-environment";
 
-const exec = promisify(execFile);
+isolateTestGitConfiguration();
+const executeFile = promisify(execFile);
+const exec = (file: string, args: string[]) => executeFile(file, args, {
+  env: ISOLATED_GIT_ENV,
+  timeout: 10_000,
+});
 const roots: string[] = [];
 
-afterEach(async () => {
+const GIT_TEST_TIMEOUT_MS = 15_000;
+const withGitSlot = createConcurrencyLimit(2);
+const gitTest = (name: string, body: () => Promise<void>) =>
+  test.concurrent(name, () => withGitSlot(body), GIT_TEST_TIMEOUT_MS);
+
+afterAll(async () => {
   await Promise.all(roots.splice(0).map((root) => rm(root, { recursive: true, force: true })));
 });
 
@@ -37,7 +49,7 @@ async function createFeatureRepository() {
 }
 
 describe("standalone Review change target resolution", () => {
-  test("uses the default branch when the feature upstream points to itself", async () => {
+  gitTest("uses the default branch when the feature upstream points to itself", async () => {
     const repository = await createFeatureRepository();
 
     const target = await resolveReviewTarget({
@@ -49,7 +61,7 @@ describe("standalone Review change target resolution", () => {
     expect(target).toEqual({ kind: "working-state", target: `${repository.main}...${repository.head}` });
   });
 
-  test("freezes a non-origin explicit range to immutable objects", async () => {
+  gitTest("freezes a non-origin explicit range to immutable objects", async () => {
     const repository = await createFeatureRepository();
     await exec("git", ["-C", repository.root, "update-ref", "refs/remotes/upstream/main", repository.main]);
 
@@ -61,7 +73,7 @@ describe("standalone Review change target resolution", () => {
     expect(target).toEqual({ kind: "local-range", target: `${repository.main}...${repository.head}` });
   });
 
-  test("accepts an explicit GitHub pull-request URL", async () => {
+  gitTest("accepts an explicit GitHub pull-request URL", async () => {
     const repository = await createFeatureRepository();
     const pullRequest = "https://github.com/acme/app/pull/42";
 
@@ -73,7 +85,7 @@ describe("standalone Review change target resolution", () => {
     expect(target).toEqual({ kind: "pull-request", target: pullRequest });
   });
 
-  test("freezes a local branch name and reports source-resolution activity", async () => {
+  gitTest("freezes a local branch name and reports source-resolution activity", async () => {
     const repository = await createFeatureRepository();
     const activity: string[] = [];
 
@@ -88,7 +100,7 @@ describe("standalone Review change target resolution", () => {
     expect(activity.some((entry) => entry.includes(`Frozen branch feature/cli as ${repository.main}...${repository.head}`))).toBe(true);
   });
 
-  test("freezes a remote branch name from its merge-base with the default branch", async () => {
+  gitTest("freezes a remote branch name from its merge-base with the default branch", async () => {
     const repository = await createFeatureRepository();
     await exec("git", ["-C", repository.root, "switch", "main"]);
     await exec("git", ["-C", repository.root, "branch", "-D", "feature/cli"]);
@@ -101,7 +113,7 @@ describe("standalone Review change target resolution", () => {
     expect(target).toEqual({ kind: "local-range", target: `${repository.main}...${repository.head}` });
   });
 
-  test("preserves working-state scope when only dirty changes differ from the base", async () => {
+  gitTest("preserves working-state scope when only dirty changes differ from the base", async () => {
     const repository = await createFeatureRepository();
     await exec("git", ["-C", repository.root, "reset", "--hard", repository.main]);
     await exec("git", ["-C", repository.root, "update-ref", "refs/remotes/origin/feature/cli", repository.main]);
@@ -116,7 +128,7 @@ describe("standalone Review change target resolution", () => {
     expect(target).toEqual({ kind: "working-state", target: `${repository.main}...${repository.main}` });
   });
 
-  test("prefers the current branch pull request for a targetless run", async () => {
+  gitTest("prefers the current branch pull request for a targetless run", async () => {
     const repository = await createFeatureRepository();
     const pullRequest = "https://github.com/acme/app/pull/42";
 

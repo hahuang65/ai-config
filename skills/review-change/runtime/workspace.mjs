@@ -8,6 +8,7 @@ import { isPathWithin, resolveProspectivePath } from "./report-directory.mjs";
 
 const executeFile = promisify(execFile);
 const OUTPUT_LIMIT = 50 * 1024 * 1024;
+const COMMAND_TIMEOUT_MS = 15_000;
 const noActivity = () => {};
 
 export async function createReviewWorkspace({ cwd, reviewRoot, signal, onActivity = noActivity } = {}) {
@@ -102,7 +103,7 @@ function safeChildPath(root, relativePath) {
 async function gitOutput(args, context = {}) {
   context.onActivity?.("git", `git ${args.join(" ")}`);
   const { stdout } = await executeFile("git", args, {
-    encoding: "utf8", maxBuffer: OUTPUT_LIMIT, signal: context.signal,
+    encoding: "utf8", maxBuffer: OUTPUT_LIMIT, signal: context.signal, timeout: COMMAND_TIMEOUT_MS,
   });
   return stdout.trim();
 }
@@ -119,20 +120,24 @@ async function optionalGitOutput(args, context) {
 async function gitBuffer(args, context) {
   context.onActivity?.("git", `git ${args.join(" ")}`);
   const { stdout } = await executeFile("git", args, {
-    encoding: "buffer", maxBuffer: OUTPUT_LIMIT, signal: context.signal,
+    encoding: "buffer", maxBuffer: OUTPUT_LIMIT, signal: context.signal, timeout: COMMAND_TIMEOUT_MS,
   });
   return stdout;
 }
 
 async function runGit(args, context) {
   context.onActivity?.("git", `git ${args.join(" ")}`);
-  await executeFile("git", args, { maxBuffer: OUTPUT_LIMIT, signal: context.signal });
+  await executeFile("git", args, {
+    maxBuffer: OUTPUT_LIMIT, signal: context.signal, timeout: COMMAND_TIMEOUT_MS,
+  });
 }
 
 function runGitWithInput(args, input, context) {
   context.onActivity?.("git", `git ${args.join(" ")}`);
   return new Promise((resolve, reject) => {
-    const child = spawn("git", args, { stdio: ["pipe", "ignore", "pipe"], signal: context.signal });
+    const timeoutSignal = AbortSignal.timeout(COMMAND_TIMEOUT_MS);
+    const signal = context.signal ? AbortSignal.any([context.signal, timeoutSignal]) : timeoutSignal;
+    const child = spawn("git", args, { stdio: ["pipe", "ignore", "pipe"], signal });
     let stderr = "";
     child.stderr.on("data", (chunk) => { stderr += chunk; });
     child.once("error", reject);

@@ -1,35 +1,112 @@
 #!/usr/bin/env node
-import { spawn } from "node:child_process";
+import { constants } from "node:fs";
 import { cp, mkdtemp, readdir, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
-const LANE_TIMEOUT_MS = 180_000;
-const BROWSER_TEST = "test/review-artifact/browser.test.ts";
-const activeChildren = new Set();
+import {
+  CHILD_TERMINATION_GRACE_MS,
+  LANE_TIMEOUT_MS,
+  isolatedGitEnvironment,
+  runLaneProcess,
+  stopChildren,
+} from "./test-suite-process.mjs";
 
-export async function executeLanes(lanes, runLane, onComplete = () => {}) {
-  const pending = lanes.map(async (lane) => {
-    const result = await runLane(lane);
-    onComplete(result);
-    return result;
-  });
-  const results = await Promise.all(pending);
-  return Object.freeze({
-    ok: results.every(({ exitCode }) => exitCode === 0),
-    results: Object.freeze(results),
+export { isolatedGitEnvironment, runLaneProcess } from "./test-suite-process.mjs";
+
+const MAX_EXECUTION_WEIGHT = 14;
+const BROWSER_TEST = "test/review-artifact/browser.test.ts";
+const INSTALL_GROUPS = Object.freeze([
+  Object.freeze({ name: "isolation", selector: "isolation", expectedSeconds: 1.7, weight: 2 }),
+  Object.freeze({ name: "behavior", selector: "install-behavior", expectedSeconds: 2.7, weight: 2 }),
+  Object.freeze({ name: "modules", selector: "install-module-lifecycle", expectedSeconds: 0.7, weight: 2 }),
+]);
+const META_GROUPS = Object.freeze([
+  Object.freeze({ name: "frontmatter", expectedSeconds: 2.4, cases: Object.freeze([
+    "skill-missing-name", "agent-missing-tools", "agent-unknown-tool", "rule-missing-description",
+  ]) }),
+  Object.freeze({ name: "references", expectedSeconds: 3, cases: Object.freeze([
+    "broken-reference", "command-skill-overlap", "agent-missing-rule", "skill-missing-file", "duplicate-adr",
+  ]) }),
+  Object.freeze({ name: "contracts", expectedSeconds: 2, cases: Object.freeze([
+    "stale-stub", "forbidden-phrase", "retired-rule-frontmatter", "stale-pi-bundle", "bad-manifest",
+  ]) }),
+  Object.freeze({ name: "workflow", expectedSeconds: 2.8, cases: Object.freeze([
+    "coach-discipline", "build-phase-loading", "missing-context-files", "missing-ubiquitous-language",
+  ]) }),
+]);
+export function executeWeightedLanes(lanes, maximumWeight, runLane, onComplete = () => {}, signal) {
+  validateLaneWeights(lanes, maximumWeight);
+  const pending = [...lanes].sort((left, right) => right.expectedSeconds - left.expectedSeconds);
+  const results = [];
+  let activeWeight = 0;
+  let cancelled = signal?.aborted ?? false;
+  return new Promise((resolve) => {
+    const finishIfComplete = () => {
+      if (activeWeight > 0 || (!cancelled && pending.length > 0)) return false;
+      signal?.removeEventListener("abort", cancel);
+      resolve(suiteOutcome(results, cancelled));
+      return true;
+    };
+    const settle = (laneDefinition, initialResult) => {
+      activeWeight -= laneDefinition.weight;
+      let result = initialResult;
+      try {
+        onComplete(result);
+      } catch (error) {
+        result = laneFailure(laneDefinition, error);
+      }
+      results.push(result);
+      if (!finishIfComplete()) launch();
+    };
+    const launch = () => {
+      if (cancelled || finishIfComplete()) return;
+      while (pending.length > 0) {
+        const index = pending.findIndex(({ weight }) => weight <= maximumWeight - activeWeight);
+        if (index < 0) break;
+        const [laneDefinition] = pending.splice(index, 1);
+        activeWeight += laneDefinition.weight;
+        void Promise.resolve()
+          .then(() => runLane(laneDefinition))
+          .then(
+            (result) => settle(laneDefinition, result),
+            (error) => settle(laneDefinition, laneFailure(laneDefinition, error)),
+          );
+      }
+    };
+    function cancel() {
+      cancelled = true;
+      finishIfComplete();
+    }
+    signal?.addEventListener("abort", cancel, { once: true });
+    launch();
   });
 }
 
-export async function executePhases(phases, runLane, onComplete = () => {}) {
-  const results = [];
-  for (const phase of phases) {
-    const phaseOutcome = await executeLanes(phase, runLane, onComplete);
-    results.push(...phaseOutcome.results);
+function validateLaneWeights(lanes, maximumWeight) {
+  if (!Number.isFinite(maximumWeight) || maximumWeight <= 0) {
+    throw new Error("Maximum execution weight must be positive");
   }
+  const invalid = lanes.find(({ weight }) => !Number.isFinite(weight) || weight <= 0 || weight > maximumWeight);
+  if (invalid) throw new Error(`Lane has invalid execution weight: ${invalid.name}`);
+}
+
+function laneFailure(laneDefinition, error) {
   return Object.freeze({
-    ok: results.every(({ exitCode }) => exitCode === 0),
+    ...laneDefinition,
+    durationSeconds: 0,
+    exitCode: 1,
+    signal: null,
+    stdout: "",
+    stderr: `${error instanceof Error ? error.message : String(error)}\n`,
+  });
+}
+
+function suiteOutcome(results, aborted = false) {
+  return Object.freeze({
+    aborted,
+    ok: !aborted && results.every(({ exitCode }) => exitCode === 0),
     results: Object.freeze(results),
   });
 }
@@ -44,64 +121,111 @@ async function collectTestFiles(directory) {
   return nestedFiles.flat().sort();
 }
 
-async function buildPhases(repoDir, metaRepo) {
+async function buildLanes(repoDir, snapshots) {
   const browserPath = path.join(repoDir, BROWSER_TEST);
   const testFiles = await Promise.all([
     collectTestFiles(path.join(repoDir, "shared")),
     collectTestFiles(path.join(repoDir, "test")),
   ]);
   const guardRest = testFiles.flat().filter((testFile) => testFile !== browserPath);
-  const concurrentLanes = Object.freeze([
-    lane("content", repoDir, "bash", ["scripts/test-pipeline.sh", "content"]),
-    lane("install", repoDir, "bash", ["scripts/test-pipeline.sh", "install"]),
-    lane("guard/rest", repoDir, "bun", ["test", ...guardRest]),
-    lane("meta/planted", metaRepo, "bash", ["scripts/test-pipeline-self-test.sh", "--planted-only"]),
-  ]);
-  const browserLane = lane("guard/browser", repoDir, "bun", ["test", browserPath]);
-  return Object.freeze([concurrentLanes, Object.freeze([browserLane])]);
+  const coreLanes = [
+    lane("content/foundation", repoDir, "bash", ["scripts/test-pipeline.sh", "content", "content-foundation"],
+      { expectedSeconds: 2.2, weight: 2 }),
+    lane("content/build", repoDir, "bash", ["scripts/test-pipeline.sh", "content", "content-build"],
+      { expectedSeconds: 1.1, weight: 2 }),
+    lane("content/review", repoDir, "bash", ["scripts/test-pipeline.sh", "content", "content-review"],
+      { expectedSeconds: 1, weight: 2 }),
+    lane("content/references", repoDir, "bash", ["scripts/test-pipeline.sh", "content", "content-references"],
+      { expectedSeconds: 3.3, weight: 2 }),
+    lane("content/contracts", repoDir, "bash", ["scripts/test-pipeline.sh", "content", "content-contracts"],
+      { expectedSeconds: 0.7, weight: 2 }),
+    lane("install/manifests", repoDir, "bash", ["scripts/test-pipeline.sh", "install", "harness-modules"],
+      { expectedSeconds: 0.2, weight: 1 }),
+    lane("guard/rest", repoDir, "bun", ["test", "--parallel=4", "--max-concurrency=2", ...guardRest],
+      { expectedSeconds: 5, isolatedGit: true, weight: 4 }),
+    lane("guard/browser", repoDir, "bun", ["test", browserPath],
+      { expectedSeconds: 4, terminationGraceMs: 5_000, weight: 4 }),
+  ];
+  const installLanes = snapshots.installRepos.map(({ expectedSeconds, name, repo, selector, weight }) => lane(
+    `install/${name}`,
+    repo,
+    "bash",
+    ["scripts/test-pipeline.sh", "install", selector],
+    { expectedSeconds, isolatedGit: true, weight },
+  ));
+  const metaLanes = snapshots.metaRepos.map(({ cases, expectedSeconds, name, repo }) => lane(
+    `meta/${name}`,
+    repo,
+    "bash",
+    ["scripts/test-pipeline-self-test.sh", "--cases", ...cases],
+    { expectedSeconds, weight: 2 },
+  ));
+  const lanes = [...coreLanes, ...installLanes, ...metaLanes];
+  return Object.freeze(lanes.map((definition) => Object.freeze({
+    ...definition,
+    temporaryDirectory: path.join(snapshots.temporaryRoot, "lanes", definition.name.replaceAll("/", "-")),
+  })));
 }
 
-function lane(name, cwd, command, args) {
-  return Object.freeze({ name, cwd, command, args: Object.freeze(args) });
-}
-
-function runLaneProcess(laneDefinition) {
-  const startedAt = performance.now();
-  return new Promise((resolve) => {
-    const child = spawn(laneDefinition.command, laneDefinition.args, {
-      cwd: laneDefinition.cwd,
-      env: process.env,
-      stdio: ["ignore", "pipe", "pipe"],
-      timeout: LANE_TIMEOUT_MS,
-    });
-    activeChildren.add(child);
-    const stdout = [];
-    const stderr = [];
-    child.stdout.on("data", (chunk) => stdout.push(chunk));
-    child.stderr.on("data", (chunk) => stderr.push(chunk));
-    child.on("error", (error) => stderr.push(Buffer.from(`${error.message}\n`)));
-    child.on("close", (exitCode, signal) => {
-      activeChildren.delete(child);
-      resolve(Object.freeze({
-        ...laneDefinition,
-        durationSeconds: (performance.now() - startedAt) / 1_000,
-        exitCode: exitCode ?? 1,
-        signal,
-        stdout: Buffer.concat(stdout).toString("utf8"),
-        stderr: Buffer.concat(stderr).toString("utf8"),
-      }));
-    });
+function lane(name, cwd, command, args, scheduling = {}) {
+  return Object.freeze({
+    name,
+    cwd,
+    command,
+    args: Object.freeze(args),
+    expectedSeconds: scheduling.expectedSeconds ?? 1,
+    weight: scheduling.weight ?? 1,
+    env: scheduling.env ? Object.freeze({ ...scheduling.env }) : undefined,
+    isolatedGit: scheduling.isolatedGit ?? false,
+    terminationGraceMs: scheduling.terminationGraceMs ?? CHILD_TERMINATION_GRACE_MS,
+    timeoutMs: scheduling.timeoutMs ?? LANE_TIMEOUT_MS,
   });
 }
 
-async function createMetaSnapshot(repoDir) {
+async function createSuiteSnapshots(repoDir, signal) {
   const temporaryRoot = await mkdtemp(path.join(tmpdir(), "ai-config-test-suite-"));
-  const metaRepo = path.join(temporaryRoot, "repo");
-  await cp(repoDir, metaRepo, {
+  try {
+    signal?.throwIfAborted();
+    const metaRepos = await allOrThrow(META_GROUPS.map(async (group) => {
+      const repo = path.join(temporaryRoot, `meta-${group.name}`);
+      await copySnapshot(repoDir, repo, signal);
+      return Object.freeze({ ...group, repo });
+    }));
+    const installRepos = await allOrThrow(INSTALL_GROUPS.map(async (group) => {
+      const repo = path.join(temporaryRoot, `install-${group.name}`);
+      await copySnapshot(repoDir, repo, signal);
+      const setupLane = lane(`setup/${group.name}`, repo, "git", ["init", "-q"], { isolatedGit: true });
+      const initialized = await runLaneProcess(setupLane, signal);
+      if (initialized.exitCode !== 0) throw new Error(`Could not initialize install snapshot: ${group.name}`);
+      signal?.throwIfAborted();
+      return Object.freeze({ ...group, repo });
+    }));
+    return Object.freeze({
+      installRepos: Object.freeze(installRepos),
+      metaRepos: Object.freeze(metaRepos),
+      temporaryRoot,
+    });
+  } catch (error) {
+    await rm(temporaryRoot, { recursive: true, force: true });
+    throw error;
+  }
+}
+
+async function allOrThrow(promises) {
+  const results = await Promise.allSettled(promises);
+  const failure = results.find((result) => result.status === "rejected");
+  if (failure) throw failure.reason;
+  return results.map((result) => result.value);
+}
+
+async function copySnapshot(repoDir, destination, signal) {
+  signal?.throwIfAborted();
+  await cp(repoDir, destination, {
     recursive: true,
+    mode: constants.COPYFILE_FICLONE,
     filter: (source) => !isExcludedSnapshotPath(repoDir, source),
   });
-  return Object.freeze({ metaRepo, temporaryRoot });
+  signal?.throwIfAborted();
 }
 
 function isExcludedSnapshotPath(repoDir, source) {
@@ -109,13 +233,9 @@ function isExcludedSnapshotPath(repoDir, source) {
   return relativePath === ".git" || relativePath === ".rumdl_cache";
 }
 
-function printStart(phases) {
-  console.log("\n  ▌ ai-config — safe test phases\n");
-  phases.forEach((phase, index) => {
-    const names = phase.map(({ name }) => name).join(", ");
-    console.log(`  ${index + 1}. ${names}`);
-  });
-  console.log("");
+function printStart(lanes) {
+  console.log("\n  ▌ ai-config — resource-aware concurrent test lanes\n");
+  console.log(`  • ${lanes.length} weighted lanes with execution weight capped at ${MAX_EXECUTION_WEIGHT}\n`);
 }
 
 function printCompletion(result) {
@@ -132,12 +252,20 @@ function printFailures(results) {
   }
 }
 
-async function runSuite(repoDir) {
-  const snapshot = await createMetaSnapshot(repoDir);
+async function runSuite(repoDir, signal) {
+  const snapshot = await createSuiteSnapshots(repoDir, signal);
   try {
-    const phases = await buildPhases(repoDir, snapshot.metaRepo);
-    printStart(phases);
-    const outcome = await executePhases(phases, runLaneProcess, printCompletion);
+    const lanes = await buildLanes(repoDir, snapshot);
+    signal?.throwIfAborted();
+    printStart(lanes);
+    const runLane = (laneDefinition) => runLaneProcess(laneDefinition, signal);
+    const outcome = await executeWeightedLanes(
+      lanes,
+      MAX_EXECUTION_WEIGHT,
+      runLane,
+      printCompletion,
+      signal,
+    );
     printFailures(outcome.results);
     console.log(outcome.ok ? "\n  ✓ all test lanes passed\n" : "\n  ✗ one or more test lanes failed\n");
     return outcome.ok ? 0 : 1;
@@ -146,15 +274,16 @@ async function runSuite(repoDir) {
   }
 }
 
-function stopChildren(signal) {
-  for (const child of activeChildren) child.kill(signal);
-}
-
 async function main() {
   const repoDir = fileURLToPath(new URL("..", import.meta.url));
-  process.once("SIGINT", () => stopChildren("SIGINT"));
-  process.once("SIGTERM", () => stopChildren("SIGTERM"));
-  process.exitCode = await runSuite(repoDir);
+  const controller = new AbortController();
+  const cancel = () => {
+    controller.abort();
+    stopChildren("SIGTERM");
+  };
+  process.once("SIGINT", cancel);
+  process.once("SIGTERM", cancel);
+  process.exitCode = await runSuite(repoDir, controller.signal);
 }
 
 if (import.meta.main) {

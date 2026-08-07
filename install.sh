@@ -74,34 +74,40 @@ prune_repo_command_links() {
 # Mirror canonical commands into the harness-native directory selected by its
 # manifest: commands/ for Claude Code and prompts/ for pi.
 mirror_commands() {
-  local target_dir="$1" entry name
+  local target_dir="$1" entry
+  local -a entries=()
   for entry in "$REPO_DIR"/commands/*.md; do
-    [ -f "$entry" ] || continue
-    name="$(basename "$entry")"
-    ln -sf "$entry" "$target_dir/$name"
-    dim "  $target_dir/$name"
+    [ -f "$entry" ] && entries+=("$entry")
+  done
+  [ ${#entries[@]} -eq 0 ] || ln -sf "${entries[@]}" "$target_dir"
+  for entry in "${entries[@]}"; do
+    dim "  $target_dir/${entry##*/}"
   done
 }
 
 # Mirror one shared category from the repo root into a config root. Skills are
 # directories (symlinked with -n); agents and rules are .md files.
 mirror_category() {
-  local cat="$1" config_root="$2" entry name
+  local cat="$1" config_root="$2" entry
   case "$cat" in
     skills)
+      local -a skill_entries=()
       for entry in "$REPO_DIR"/skills/*/; do
-        [ -d "$entry" ] || continue
-        name="$(basename "$entry")"
-        ln -sfn "$entry" "$config_root/skills/$name"
-        dim "  $config_root/skills/$name"
+        [ -d "$entry" ] && skill_entries+=("${entry%/}")
+      done
+      [ ${#skill_entries[@]} -eq 0 ] || ln -sfn "${skill_entries[@]}" "$config_root/skills"
+      for entry in "${skill_entries[@]}"; do
+        dim "  $config_root/skills/${entry##*/}"
       done
       ;;
     agents|rules)
+      local -a file_entries=()
       for entry in "$REPO_DIR/$cat"/*.md; do
-        [ -f "$entry" ] || continue
-        name="$(basename "$entry")"
-        ln -sf "$entry" "$config_root/$cat/$name"
-        dim "  $config_root/$cat/$name"
+        [ -f "$entry" ] && file_entries+=("$entry")
+      done
+      [ ${#file_entries[@]} -eq 0 ] || ln -sf "${file_entries[@]}" "$config_root/$cat"
+      for entry in "${file_entries[@]}"; do
+        dim "  $config_root/$cat/${entry##*/}"
       done
       ;;
     *)
@@ -115,9 +121,8 @@ mirror_category() {
 install_harness() {
   local manifest="$1"
   (
-    MOD="$(cd "$(dirname "$manifest")" && pwd)"
-    local harness_name
-    harness_name="$(basename "$MOD")"
+    MOD="$(cd "${manifest%/*}" && pwd)"
+    local harness_name="${MOD##*/}"
 
     # Manifest contract (defaults; the manifest overrides what it needs).
     config_root=""

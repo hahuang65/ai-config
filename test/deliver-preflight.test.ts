@@ -1,22 +1,26 @@
-import { afterEach, expect, test } from "bun:test";
+import { afterAll, expect, test } from "bun:test";
 import { mkdtemp, mkdir, realpath, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 
+import { createConcurrencyLimit } from "./concurrency-limit";
+import { ISOLATED_GIT_ENV } from "./git-environment";
+
 const REPOSITORY = path.join(import.meta.dir, "..");
 const SCRIPT = path.join(REPOSITORY, "scripts", "deliver-preflight.sh");
-const GIT_ENV = {
-  ...process.env,
-  GIT_CONFIG_GLOBAL: "/dev/null",
-  GIT_CONFIG_SYSTEM: "/dev/null",
-};
+const GIT_ENV = ISOLATED_GIT_ENV;
 const temporaryDirectories: string[] = [];
 
-afterEach(async () => {
+const GIT_TEST_TIMEOUT_MS = 15_000;
+const withGitSlot = createConcurrencyLimit(2);
+const gitTest = (name: string, body: () => Promise<void>) =>
+  test.concurrent(name, () => withGitSlot(body), GIT_TEST_TIMEOUT_MS);
+
+afterAll(async () => {
   await Promise.all(temporaryDirectories.splice(0).map((directory) => rm(directory, { force: true, recursive: true })));
 });
 
-test("reports a primary ordinary checkout and its dirty state", async () => {
+gitTest("reports a primary ordinary checkout and its dirty state", async () => {
   const repository = await createRepository();
 
   const clean = await preflight(repository);
@@ -36,7 +40,7 @@ test("reports a primary ordinary checkout and its dirty state", async () => {
   expect(dirty.values.dirty).toBe("true");
 });
 
-test("rejects linked worktrees and a trunk checked out in one", async () => {
+gitTest("rejects linked worktrees and a trunk checked out in one", async () => {
   const repository = await createRepository();
   const linked = path.join(path.dirname(repository), "linked");
   await git(repository, ["worktree", "add", linked, "main"]);
@@ -50,7 +54,7 @@ test("rejects linked worktrees and a trunk checked out in one", async () => {
   expect(primaryResult.stderr).toContain("trunk is already checked out");
 });
 
-test("accepts the primary checkout of an absorbed Git submodule", async () => {
+gitTest("accepts the primary checkout of an absorbed Git submodule", async () => {
   const root = await temporaryDirectory();
   const source = path.join(root, "source");
   const superproject = path.join(root, "superproject");
@@ -75,7 +79,7 @@ test("accepts the primary checkout of an absorbed Git submodule", async () => {
   });
 });
 
-test("trusts A5 classification only from global or system Git configuration", async () => {
+gitTest("trusts A5 classification only from global or system Git configuration", async () => {
   const repository = await createRepository();
   await git(repository, ["config", "ai.projectFamily", "a5"]);
 
@@ -92,7 +96,7 @@ test("trusts A5 classification only from global or system Git configuration", as
   expect(global.values).toMatchObject({ a5: "true", pr_alias: "true", project_family_scope: "global" });
 });
 
-test("classifies an explicit worktree intent as managed without invoking Orchard", async () => {
+gitTest("classifies an explicit worktree intent as managed without invoking Orchard", async () => {
   const repository = await createRepository();
 
   const result = await preflight(repository, ["another-task", "--keep"]);
@@ -101,7 +105,7 @@ test("classifies an explicit worktree intent as managed without invoking Orchard
   expect(result.values).toMatchObject({ delivery: "managed", keep: "true", reason: "explicit-intent" });
 });
 
-test("classifies a checkout beneath the canonical Orchard root as managed", async () => {
+gitTest("classifies a checkout beneath the canonical Orchard root as managed", async () => {
   const home = await temporaryDirectory();
   const repository = path.join(home, ".orchard", "project", "task");
   await mkdir(repository, { recursive: true });
@@ -114,7 +118,7 @@ test("classifies a checkout beneath the canonical Orchard root as managed", asyn
   expect(result.values).toMatchObject({ delivery: "managed", keep: "false", reason: "orchard-root" });
 });
 
-test("rejects ambiguous fallback trunk branches", async () => {
+gitTest("rejects ambiguous fallback trunk branches", async () => {
   const repository = await createRepository();
   await git(repository, ["symbolic-ref", "--delete", "refs/remotes/origin/HEAD"]);
   await git(repository, ["branch", "master", "main"]);
@@ -125,7 +129,7 @@ test("rejects ambiguous fallback trunk branches", async () => {
   expect(result.stderr).toContain("trunk is ambiguous");
 });
 
-test("rejects detached HEAD and unsupported ordinary options", async () => {
+gitTest("rejects detached HEAD and unsupported ordinary options", async () => {
   const repository = await createRepository();
   await git(repository, ["switch", "--detach"]);
 
@@ -177,7 +181,13 @@ async function git(cwd: string, args: string[], env = GIT_ENV) {
 }
 
 async function run(command: string[], cwd: string, env: Record<string, string | undefined>) {
-  const child = Bun.spawn(command, { cwd, env, stderr: "pipe", stdout: "pipe" });
+  const child = Bun.spawn(command, {
+    cwd,
+    env,
+    signal: AbortSignal.timeout(10_000),
+    stderr: "pipe",
+    stdout: "pipe",
+  });
   const [exitCode, stdout, stderr] = await Promise.all([
     child.exited,
     new Response(child.stdout).text(),

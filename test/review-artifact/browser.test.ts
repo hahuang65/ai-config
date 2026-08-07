@@ -1,19 +1,57 @@
-import { expect, test } from "bun:test";
-import { spawn } from "node:child_process";
+import { afterAll, beforeAll, expect, test } from "bun:test";
 import { existsSync } from "node:fs";
 import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 
 import { startReviewServer } from "../../skills/review-artifact/runtime/server.mjs";
-import { startFirefoxBidi } from "./firefox-bidi";
+import {
+  annotationArtifact,
+  decisionFormArtifact,
+  narrowLayoutExpression,
+  queueFloodArtifact,
+  scrollArtifact,
+} from "./browser-fixtures";
+import { createConcurrencyLimit } from "../concurrency-limit";
+import { startFirefoxBidiPool } from "./firefox-bidi";
 
 const macFirefox = "/Applications/Firefox.app/Contents/MacOS/firefox";
 const firefox = Bun.which("firefox") ?? (existsSync(macFirefox) ? macFirefox : null);
 if (!firefox) throw new Error("Firefox is required for review-artifact browser evidence");
-const browserTest = test;
+const BROWSER_TEST_TIMEOUT_MS = 30_000;
+const MAX_BROWSER_CONTEXTS = 3;
+const withBrowserSlot = createConcurrencyLimit(MAX_BROWSER_CONTEXTS);
+const browserTest = (name: string, body: () => Promise<void>, timeout = BROWSER_TEST_TIMEOUT_MS) =>
+  test.concurrent(name, () => withBrowserSlot(body), Math.max(timeout, BROWSER_TEST_TIMEOUT_MS));
+const multiContextBrowserTest = (name: string, body: () => Promise<void>, timeout = BROWSER_TEST_TIMEOUT_MS) =>
+  test.concurrent(name, () => withBrowserSlot(body, 2), Math.max(timeout, BROWSER_TEST_TIMEOUT_MS));
+const exclusiveBrowserTest = (name: string, body: () => Promise<void>, timeout = BROWSER_TEST_TIMEOUT_MS) =>
+  test.concurrent(
+    name,
+    () => withBrowserSlot(body, MAX_BROWSER_CONTEXTS),
+    Math.max(timeout, BROWSER_TEST_TIMEOUT_MS),
+  );
 const SHELL_READY_TIMEOUT_MS = 5_000;
 const SHELL_READY_POLL_MS = 50;
+const AGENT_EVENT_TIMEOUT_MS = 20_000;
+let browserPool: Awaited<ReturnType<typeof startFirefoxBidiPool>>;
+let browserPoolDirectory: string;
+
+beforeAll(async () => {
+  browserPoolDirectory = await mkdtemp(path.join(tmpdir(), "review-artifact-firefox-pool-"));
+  browserPool = await startFirefoxBidiPool({
+    executable: firefox,
+    profile: path.join(browserPoolDirectory, "firefox-profile"),
+  });
+}, BROWSER_TEST_TIMEOUT_MS);
+
+afterAll(async () => {
+  try {
+    await browserPool?.close();
+  } finally {
+    await rm(browserPoolDirectory, { recursive: true, force: true });
+  }
+}, BROWSER_TEST_TIMEOUT_MS);
 
 browserTest("completes annotations through the rendered browser surface", async () => {
   const review = await startBrowserReview({ artifactContent: annotationArtifact() });
@@ -37,6 +75,26 @@ browserTest("completes annotations through the rendered browser surface", async 
     await closeReview(review);
   }
 }, 15_000);
+
+multiContextBrowserTest("isolates persisted state between pooled browser contexts", async () => {
+  const review = await startInteractiveReview({ artifactContent: decisionFormArtifact() });
+  void review.polling.catch(() => {});
+  let secondContext: Awaited<ReturnType<typeof browserPool.createContext>> | undefined;
+  try {
+    secondContext = await browserPool.createContext({ width: 1280, height: 900 });
+    const secondSession = await createSession(review.server, review.artifact);
+    await secondContext.navigate(secondSession.url);
+    await waitForShellListening(secondContext);
+    await review.browser.evaluate(`JSON.stringify(localStorage.setItem("pool-isolation", "first") ?? true)`);
+    expect(await secondContext.evaluate(`JSON.stringify(localStorage.getItem("pool-isolation"))`)).toBeNull();
+  } finally {
+    const results = await Promise.allSettled([
+      secondContext?.close(),
+      closeInteractiveReview(review),
+    ]);
+    throwCleanupFailures(results, "Browser isolation cleanup failed");
+  }
+});
 
 browserTest("starts decision forms in Explore mode with the artifact document title", async () => {
   const review = await startInteractiveReview({ artifactContent: decisionFormArtifact(), purpose: "decision" });
@@ -131,7 +189,7 @@ browserTest("drives actual narrow shell controls through keyboard feedback", asy
   }
 }, 15_000);
 
-browserTest("renders replies safely and restores scroll after actual shell reload", async () => {
+exclusiveBrowserTest("renders replies safely and restores scroll after actual shell reload", async () => {
   const review = await startInteractiveReview({ artifactContent: scrollArtifact("Before reload") });
   try {
     await waitForArtifactScroll(review.browser);
@@ -153,18 +211,14 @@ browserTest("renders replies safely and restores scroll after actual shell reloa
 
 browserTest("renders the actual shell without narrow horizontal overflow", async () => {
   const directory = await mkdtemp(path.join(tmpdir(), "review-artifact-browser-"));
-  const artifact = path.join(directory, "specs.html");
-  await writeFile(artifact, "<!doctype html><main>Actual narrow shell</main>");
-  const server = await startReviewServer({ port: 0, stateFile: path.join(directory, "state.json") });
-  const created = await createSession(server, artifact);
-  const browser = await startFirefoxBidi({
-    executable: firefox,
-    profile: path.join(directory, "firefox-profile"),
-    width: 480,
-    height: 900,
-  });
-
+  let browser: BrowserContext | undefined;
+  let server: Awaited<ReturnType<typeof startReviewServer>> | undefined;
   try {
+    const artifact = path.join(directory, "specs.html");
+    await writeFile(artifact, "<!doctype html><main>Actual narrow shell</main>");
+    server = await startReviewServer({ port: 0, stateFile: path.join(directory, "state.json") });
+    const created = await createSession(server, artifact);
+    browser = await createBrowserContext(480);
     await browser.navigate(created.url);
     expect(await browser.evaluate(narrowLayoutExpression())).toEqual({
       bodyScrollable: true,
@@ -173,53 +227,46 @@ browserTest("renders the actual shell without narrow horizontal overflow", async
       regionsVisible: true,
     });
   } finally {
-    await browser.close();
-    await server.close();
-    await rm(directory, { recursive: true, force: true });
+    await cleanupReviewResources({ browser, directory, server }, true);
   }
 }, 15_000);
 
 browserTest("survives malformed durable chat on actual shell reload", async () => {
   const directory = await mkdtemp(path.join(tmpdir(), "review-artifact-browser-"));
-  const artifact = path.join(directory, "specs.html");
-  const stateFile = path.join(directory, "state.json");
-  await writeFile(artifact, "<!doctype html><main>Durable chat</main>");
-  let server = await startReviewServer({ port: 0, stateFile });
-  const created = await createSession(server, artifact);
-  await server.close();
-  const state = JSON.parse(await readFile(stateFile, "utf8"));
-  state.sessions[created.key].chat = [
-    { role: "agent", text: "Safe durable reply" },
-    { role: "user", text: "Malformed", prompt: { target: { type: "text-range", text: {} } } },
-  ];
-  await writeFile(stateFile, JSON.stringify(state));
-  server = await startReviewServer({ port: 0, stateFile });
-  const reopened = await createSession(server, artifact);
-  const browser = await startFirefoxBidi({
-    executable: firefox,
-    profile: path.join(directory, "firefox-profile"),
-    width: 960,
-    height: 900,
-  });
-
+  let browser: BrowserContext | undefined;
+  let server: Awaited<ReturnType<typeof startReviewServer>> | undefined;
   try {
+    const artifact = path.join(directory, "specs.html");
+    const stateFile = path.join(directory, "state.json");
+    await writeFile(artifact, "<!doctype html><main>Durable chat</main>");
+    server = await startReviewServer({ port: 0, stateFile });
+    const created = await createSession(server, artifact);
+    await server.close();
+    server = undefined;
+    const state = JSON.parse(await readFile(stateFile, "utf8"));
+    state.sessions[created.key].chat = [
+      { role: "agent", text: "Safe durable reply" },
+      { role: "user", text: "Malformed", prompt: { target: { type: "text-range", text: {} } } },
+    ];
+    await writeFile(stateFile, JSON.stringify(state));
+    server = await startReviewServer({ port: 0, stateFile });
+    const reopened = await createSession(server, artifact);
+    browser = await createBrowserContext();
     await browser.navigate(reopened.url);
     expect(await browser.evaluate(`JSON.stringify({
       messages: document.querySelector("#messages").textContent,
       sendVisible: document.querySelector("#send").getBoundingClientRect().width > 0,
     })`)).toEqual({ messages: "AgentSafe durable reply", sendVisible: true });
   } finally {
-    await browser.close();
-    await server.close();
-    await rm(directory, { recursive: true, force: true });
+    await cleanupReviewResources({ browser, directory, server }, true);
   }
 }, 15_000);
 
-browserTest("keeps browser approval distinct from ending review", async () => {
-  expect([
-    await runShellDecision("approve"),
-    await runShellDecision("end"),
-  ]).toEqual([
+multiContextBrowserTest("keeps browser approval distinct from ending review", async () => {
+  expect(await Promise.all([
+    runShellDecision("approve"),
+    runShellDecision("end"),
+  ])).toEqual([
     { status: "approved", endedBy: "user" },
     { status: "ended", endedBy: "user" },
   ]);
@@ -227,13 +274,24 @@ browserTest("keeps browser approval distinct from ending review", async () => {
 
 async function startBrowserReview({ artifactContent }: { artifactContent: string }) {
   const directory = await mkdtemp(path.join(tmpdir(), "review-artifact-browser-"));
-  const artifact = path.join(directory, "specs.html");
-  await writeFile(artifact, artifactContent);
-  const server = await startReviewServer({ port: 0, stateFile: path.join(directory, "state.json") });
-  const created = await createSession(server, artifact);
-  const polling = pollForAgentEvent(server, created.key);
-  const browser = spawnFirefox(directory, created.url);
-  return { artifact, browser, directory, key: created.key, polling, server };
+  let browser: BrowserContext | undefined;
+  let polling: ReturnType<typeof pollForAgentEvent> | undefined;
+  let server: Awaited<ReturnType<typeof startReviewServer>> | undefined;
+  const pollController = new AbortController();
+  try {
+    const artifact = path.join(directory, "specs.html");
+    await writeFile(artifact, artifactContent);
+    server = await startReviewServer({ port: 0, stateFile: path.join(directory, "state.json") });
+    const created = await createSession(server, artifact);
+    polling = pollForAgentEvent(server, created.key, pollController.signal);
+    browser = await createBrowserContext();
+    await browser.navigate(created.url);
+    return { artifact, browser, directory, key: created.key, pollController, polling, server };
+  } catch (error) {
+    void polling?.catch(() => {});
+    await cleanupReviewResources({ browser, directory, pollController, server });
+    throw error;
+  }
 }
 
 async function startInteractiveReview({
@@ -246,30 +304,41 @@ async function startInteractiveReview({
   width?: number;
 }) {
   const directory = await mkdtemp(path.join(tmpdir(), "review-artifact-browser-"));
-  const artifact = path.join(directory, "specs.html");
-  await writeFile(artifact, artifactContent);
-  const server = await startReviewServer({ port: 0, stateFile: path.join(directory, "state.json") });
-  const created = await createSession(server, artifact, purpose);
-  const polling = pollForAgentEvent(server, created.key);
-  const browser = await startFirefoxBidi({
-    executable: firefox,
-    profile: path.join(directory, "firefox-profile"),
-    width,
-    height: 900,
-  });
-  await browser.navigate(created.url);
-  await waitForShellListening(browser);
-  return { artifact, browser, directory, key: created.key, polling, server };
+  let browser: BrowserContext | undefined;
+  let polling: ReturnType<typeof pollForAgentEvent> | undefined;
+  let server: Awaited<ReturnType<typeof startReviewServer>> | undefined;
+  const pollController = new AbortController();
+  try {
+    const artifact = path.join(directory, "specs.html");
+    await writeFile(artifact, artifactContent);
+    server = await startReviewServer({ port: 0, stateFile: path.join(directory, "state.json") });
+    const created = await createSession(server, artifact, purpose);
+    polling = pollForAgentEvent(server, created.key, pollController.signal);
+    browser = await createBrowserContext(width);
+    await browser.navigate(created.url);
+    await waitForShellListening(browser);
+    return { artifact, browser, directory, key: created.key, pollController, polling, server };
+  } catch (error) {
+    void polling?.catch(() => {});
+    await cleanupReviewResources({ browser, directory, pollController, server });
+    throw error;
+  }
 }
 
-async function waitForShellListening(browser: Awaited<ReturnType<typeof startFirefoxBidi>>) {
+function createBrowserContext(width = 960) {
+  return browserPool.createContext({ width, height: 900 });
+}
+
+type BrowserContext = Awaited<ReturnType<typeof createBrowserContext>>;
+
+async function waitForShellListening(browser: BrowserContext) {
   await waitForBrowserCondition(
     () => browser.evaluate(`JSON.stringify(document.body.dataset.presence === "listening")`),
     "Review shell event stream did not become ready",
   );
 }
 
-async function waitForArtifactScroll(browser: Awaited<ReturnType<typeof startFirefoxBidi>>) {
+async function waitForArtifactScroll(browser: BrowserContext) {
   await waitForBrowserCondition(
     () => browser.evaluateChild(`JSON.stringify(scrollY >= 350)`),
     "Reviewed artifact did not reach its initial scroll position",
@@ -297,17 +366,16 @@ async function createSession(
   }).then((response) => response.json());
 }
 
-function pollForAgentEvent(server: { agentToken: string; baseUrl: string }, key: string) {
+function pollForAgentEvent(
+  server: { agentToken: string; baseUrl: string },
+  key: string,
+  signal?: AbortSignal,
+) {
+  const timeout = AbortSignal.timeout(AGENT_EVENT_TIMEOUT_MS);
   return fetch(`${server.baseUrl}/api/sessions/${key}/poll`, {
     headers: { "x-review-artifact-agent-token": server.agentToken },
-    signal: AbortSignal.timeout(10_000),
+    signal: signal ? AbortSignal.any([signal, timeout]) : timeout,
   }).then((response) => response.json());
-}
-
-function spawnFirefox(directory: string, targetUrl: string) {
-  return spawn(firefox, [
-    "--headless", "--no-remote", "--profile", path.join(directory, "firefox-profile"), targetUrl,
-  ], { stdio: "ignore" });
 }
 
 async function sendAgentReply(review: { key: string; server: { agentToken: string; baseUrl: string } }, text: string) {
@@ -334,132 +402,34 @@ async function runShellDecision(action: "approve" | "end") {
 }
 
 async function closeReview(review: Awaited<ReturnType<typeof startBrowserReview>>) {
-  await stopBrowser(review.browser);
-  await review.server.close();
-  await rm(review.directory, { recursive: true, force: true });
+  await cleanupReviewResources(review, true);
 }
 
 async function closeInteractiveReview(review: Awaited<ReturnType<typeof startInteractiveReview>>) {
-  await review.browser.close();
-  await review.server.close();
-  await rm(review.directory, { recursive: true, force: true });
+  await cleanupReviewResources(review, true);
 }
 
-async function stopBrowser(browser: ReturnType<typeof spawn>) {
-  if (browser.exitCode !== null) return;
-  browser.kill("SIGTERM");
-  await Promise.race([
-    new Promise<void>((resolve) => browser.once("close", () => resolve())),
-    Bun.sleep(2_000),
+async function cleanupReviewResources(
+  resources: {
+    browser?: BrowserContext;
+    directory: string;
+    pollController?: AbortController;
+    server?: Awaited<ReturnType<typeof startReviewServer>>;
+  },
+  reportFailure = false,
+) {
+  resources.pollController?.abort();
+  const results = await Promise.allSettled([
+    resources.browser?.close(),
+    resources.server?.close(),
+    rm(resources.directory, { recursive: true, force: true }),
   ]);
-  if (browser.exitCode === null) browser.kill("SIGKILL");
+  if (reportFailure) throwCleanupFailures(results, "Review browser cleanup failed");
 }
 
-function narrowLayoutExpression() {
-  return `JSON.stringify((() => {
-    const selectors = [".artifact-panel", ".conversation", "#message", ".actions"];
-    const regionsVisible = selectors.every((selector) => {
-      const element = document.querySelector(selector);
-      const rect = element?.getBoundingClientRect();
-      return rect && rect.width > 0 && rect.height > 0 && rect.left >= 0 && rect.right <= innerWidth + 1;
-    });
-    return {
-      bodyScrollable: getComputedStyle(document.body).overflowY === "auto",
-      narrow: matchMedia("(max-width: 820px)").matches && innerWidth <= 480,
-      noHorizontalOverflow: document.documentElement.scrollWidth <= innerWidth,
-      regionsVisible,
-    };
-  })())`;
-}
-
-function annotationArtifact() {
-  return `<!doctype html><html><body><main tabindex="-1">Browser review target</main>
-<script>
-window.addEventListener("load", () => setTimeout(() => {
-  parent.postMessage({ type: "review:queue", prompt: null }, "*");
-  const target = document.querySelector("main");
-  target.focus();
-  target.dispatchEvent(new MouseEvent("click", { bubbles: true, cancelable: true }));
-  setTimeout(() => {
-    const input = document.querySelector('[data-review-artifact-ui="card"] textarea');
-    if (!input || document.activeElement !== input) return;
-    input.value = "Tighten this browser-tested copy";
-    input.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true, cancelable: true }));
-    setTimeout(() => selectText(target), 100);
-  }, 150);
-}, 300));
-function selectText(target) {
-  const range = document.createRange();
-  range.setStart(target.firstChild, 0);
-  range.setEnd(target.firstChild, 7);
-  const selection = window.getSelection();
-  selection.removeAllRanges();
-  selection.addRange(range);
-  document.dispatchEvent(new MouseEvent("mouseup", { bubbles: true }));
-  setTimeout(() => {
-    const input = document.querySelector('[data-review-artifact-ui="card"] textarea');
-    if (!input || document.activeElement !== input) return;
-    input.value = "Rewrite the selected words";
-    input.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true, cancelable: true }));
-    setTimeout(() => parent.postMessage({
-      type: "review:snapshot", snapshot: 'main "Browser review target"',
-    }, "*"), 100);
-  }, 150);
-}
-</script></body></html>`;
-}
-
-function decisionFormArtifact() {
-  return `<!doctype html><title>Overnight Runner - Review Findings</title><main id="explore-target">Explore target</main>
-<form id="review-decisions"><button id="submit-decisions" type="submit">Submit decisions</button></form><script>
-document.querySelector("#explore-target").addEventListener("click", () => { document.body.dataset.explored = "yes"; });
-document.querySelector("#review-decisions").addEventListener("submit", (event) => {
-  event.preventDefault();
-  parent.postMessage({
-    type: "review:submit",
-    prompt: {
-      prompt: '{"action":"fix-selected","selectedFindingIds":["review-1"]}',
-      selector: "#review-decisions",
-      tag: "review-decisions",
-      text: "Review decisions",
-    },
-  }, "*");
-});
-</script>`;
-}
-
-function queueFloodArtifact() {
-  return `<!doctype html><main>Queue target</main><script>
-window.addEventListener("load", () => setTimeout(() => {
-  for (let index = 0; index < 101; index += 1) {
-    parent.postMessage({
-      type: "review:queue",
-      prompt: { prompt: "Queued " + index, selector: "main", tag: "main", text: "Queue target" },
-    }, "*");
-  }
-  setTimeout(() => parent.postMessage({ type: "review:snapshot", snapshot: "main" }, "*"), 100);
-}, 300));
-</script>`;
-}
-
-function scrollArtifact(label: string) {
-  return `<!doctype html><style>body{height:2400px}</style><main>${label}</main>
-<script>
-window.addEventListener("load", () => setTimeout(() => {
-  const reload = new URL(location.href).searchParams.has("reload");
-  if (!reload) {
-    scrollTo(0, 400);
-    return;
-  }
-  const observer = setInterval(() => {
-    if (scrollY < 350) return;
-    clearInterval(observer);
-    parent.postMessage({
-      type: "review:queue",
-      prompt: { prompt: "observe:ok", selector: "main", tag: "message", text: "After reload" },
-    }, "*");
-    parent.postMessage({ type: "review:snapshot", snapshot: "restored" }, "*");
-  }, 50);
-}, 100));
-</script>`;
+function throwCleanupFailures(results: PromiseSettledResult<unknown>[], message: string) {
+  const failures = results
+    .filter((result): result is PromiseRejectedResult => result.status === "rejected")
+    .map((result) => result.reason);
+  if (failures.length > 0) throw new AggregateError(failures, message);
 }

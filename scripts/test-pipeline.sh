@@ -47,7 +47,10 @@ _cache_agent_names() {
   [[ ${#AGENT_NAMES[@]} -gt 0 ]] && return
   local f
   for f in "$REPO_DIR"/agents/*.md; do
-    [[ -f "$f" ]] && AGENT_NAMES+=("$(basename "$f" .md)")
+    if [[ -f "$f" ]]; then
+      local agent_basename="${f##*/}"
+      AGENT_NAMES+=("${agent_basename%.md}")
+    fi
   done
 }
 
@@ -56,7 +59,11 @@ _cache_agent_names() {
 # ---------------------------------------------------------------------------
 
 extract_frontmatter() {
-  sed -n '/^---$/,/^---$/p' "$1" | sed '1d;$d'
+  awk '
+    /^---$/ { delimiter += 1; next }
+    delimiter == 1 { print }
+    delimiter >= 2 { exit }
+  ' "$1"
 }
 
 extract_body() {
@@ -111,7 +118,8 @@ test_frontmatter_skills() {
     local skill_file="$skill_dir/SKILL.md"
     [[ -f "$skill_file" ]] || continue
     local label
-    label="skills/$(basename "$skill_dir")/SKILL.md"
+    local skill_path="${skill_dir%/}"
+    label="skills/${skill_path##*/}/SKILL.md"
     local fm
     fm="$(extract_frontmatter "$skill_file")"
     for field in name description; do
@@ -132,7 +140,7 @@ test_frontmatter_agents() {
   section "Frontmatter: agents"
   local agent_file
   for agent_file in "$REPO_DIR"/agents/*.md; do
-    local label="agents/$(basename "$agent_file")"
+    local label="agents/${agent_file##*/}"
     local fm
     fm="$(extract_frontmatter "$agent_file")"
     for field in name description tools; do
@@ -167,7 +175,8 @@ test_command_prompts() {
   local names=()
   for command_file in "$REPO_DIR"/commands/*.md; do
     [[ -f "$command_file" ]] || continue
-    name="$(basename "$command_file" .md)"
+    name="${command_file##*/}"
+    name="${name%.md}"
     names+=("$name")
     fm="$(extract_frontmatter "$command_file")"
     if grep -q '^description:' <<<"$fm"; then
@@ -1073,7 +1082,8 @@ check_agent_files_exist() {
       [[ -z "$agent_name" ]] && continue
       local agent_file="$REPO_DIR/agents/${agent_name}.md"
       if [[ -f "$agent_file" ]]; then
-        pass "agents/${agent_name}.md exists (referenced from $(basename "$(dirname "$skill_file")")/SKILL.md)"
+        local skill_parent="${skill_file%/*}"
+        pass "agents/${agent_name}.md exists (referenced from ${skill_parent##*/}/SKILL.md)"
       else
         fail "cross-ref" "agents/${agent_name}.md not found (referenced from $skill_file)"
       fi
@@ -1087,10 +1097,8 @@ check_agent_files_exist() {
 check_skill_reference_links() {
   local skill_file
   for skill_file in "$REPO_DIR"/skills/*/SKILL.md; do
-    local skill_dir
-    skill_dir="$(dirname "$skill_file")"
-    local skill_name
-    skill_name="$(basename "$skill_dir")"
+    local skill_dir="${skill_file%/*}"
+    local skill_name="${skill_dir##*/}"
     local rel
     while read -r rel; do
       [[ -z "$rel" ]] && continue
@@ -1119,7 +1127,7 @@ test_agent_rule_deps() {
   section "Agent rule dependencies"
   local agent_file
   for agent_file in "$REPO_DIR"/agents/*.md; do
-    local label="agents/$(basename "$agent_file")"
+    local label="agents/${agent_file##*/}"
     local body
     body="$(extract_body "$agent_file")"
     while read -r rule_path; do
@@ -1161,8 +1169,8 @@ test_symlink_targets() {
   section "Symlink targets"
   local skill_dir
   for skill_dir in "$REPO_DIR"/skills/*/; do
-    local skill_name
-    skill_name="$(basename "$skill_dir")"
+    local skill_path="${skill_dir%/}"
+    local skill_name="${skill_path##*/}"
     [[ "$skill_name" == "shared" ]] && continue
     local skill_file="$skill_dir/SKILL.md"
     if [[ -f "$skill_file" ]]; then
@@ -1176,9 +1184,9 @@ test_symlink_targets() {
     local f
     for f in "$REPO_DIR/$dir"/*.md; do
       if [[ -f "$f" ]]; then
-        pass "$dir/$(basename "$f") exists"
+        pass "$dir/${f##*/} exists"
       else
-        fail "$dir" "$(basename "$f") is not a regular file"
+        fail "$dir" "${f##*/} is not a regular file"
       fi
     done
   done
@@ -1222,8 +1230,8 @@ test_guide_skill_sync() {
   section "Guide/skill sync"
   local skill_dir
   for skill_dir in "$REPO_DIR"/skills/*/; do
-    local skill_name
-    skill_name="$(basename "$skill_dir")"
+    local skill_path="${skill_dir%/}"
+    local skill_name="${skill_path##*/}"
     local guide_file="$skill_dir/guide.html"
     local skill_file="$skill_dir/SKILL.md"
     [[ -f "$guide_file" && -f "$skill_file" ]] || continue
@@ -1245,7 +1253,7 @@ test_no_ttsr_frontmatter() {
   section "Rules are advisory-only (TTSR retired)"
   local rule_file
   for rule_file in "$REPO_DIR"/rules/*.md; do
-    local label="rules/$(basename "$rule_file")"
+    local label="rules/${rule_file##*/}"
     local fm
     fm="$(extract_frontmatter "$rule_file")"
     if grep -qE "^(condition|scope):" <<<"$fm"; then
@@ -1285,7 +1293,7 @@ test_advisory_rule_frontmatter() {
   section "Rule frontmatter: advisory metadata"
   local rule_file
   for rule_file in "$REPO_DIR"/rules/*.md; do
-    local label="rules/$(basename "$rule_file")"
+    local label="rules/${rule_file##*/}"
     local fm
     fm="$(extract_frontmatter "$rule_file")"
     if grep -q "^description:" <<<"$fm"; then
@@ -1316,7 +1324,8 @@ test_harness_modules() {
   local mod name report
   for mod in "$REPO_DIR"/harnesses/*/; do
     [ -d "$mod" ] || continue
-    name="$(basename "$mod")"
+    local module_path="${mod%/}"
+    name="${module_path##*/}"
     if [[ ! -f "$mod/manifest.sh" ]]; then
       fail "harnesses/$name" "missing manifest.sh"
       continue
@@ -1378,7 +1387,7 @@ check_stale_in_dir() {
   local stub_file
   for stub_file in "$dir"/*.md; do
     [[ -f "$stub_file" ]] || continue
-    local label="${label_prefix}/$(basename "$stub_file")"
+    local label="${label_prefix}/${stub_file##*/}"
     local non_empty_count
     non_empty_count="$(grep -cE '.+' "$stub_file" 2>/dev/null || echo 0)"
     if [[ "$non_empty_count" -lt "$MIN_NON_EMPTY_LINES" ]]; then
@@ -1415,14 +1424,7 @@ test_stale_stubs() {
 # pwd -P keeps the comparison physical on both sides — readlink -f resolves
 # symlink components, so a logical mod_real would silently never match.
 root_leaks_into_module() {
-  local root="$1" module="$2" mod_real link tgt
-  mod_real="$(cd "$REPO_DIR/$module" 2>/dev/null && pwd -P)" || return 1
-  [[ -d "$root" ]] || return 1
-  while IFS= read -r -d '' link; do
-    tgt="$(readlink -f "$link" 2>/dev/null)" || continue
-    [[ "$tgt" == "$mod_real"/* ]] && return 0
-  done < <(find "$root" -type l -print0 2>/dev/null)
-  return 1
+  bun "$REPO_DIR/scripts/check-symlink-leak.mjs" "$1" "$REPO_DIR/$2"
 }
 
 test_isolation() {
@@ -1436,15 +1438,26 @@ test_isolation() {
     return
   fi
 
+  local scan_status
   if root_leaks_into_module "$tmphome/.pi/agent" "harnesses/claude"; then
     fail "isolation" "~/.pi/agent contains a symlink into the harnesses/claude module"
   else
-    pass "isolation: pi root has no symlink into the harnesses/claude module"
+    scan_status=$?
+    if [[ $scan_status -eq 1 ]]; then
+      pass "isolation: pi root has no symlink into the harnesses/claude module"
+    else
+      fail "isolation" "could not scan the pi root for cross-harness links"
+    fi
   fi
   if root_leaks_into_module "$tmphome/.claude" "harnesses/pi"; then
     fail "isolation" "~/.claude contains a symlink into the harnesses/pi module"
   else
-    pass "isolation: claude root has no symlink into the harnesses/pi module"
+    scan_status=$?
+    if [[ $scan_status -eq 1 ]]; then
+      pass "isolation: claude root has no symlink into the harnesses/pi module"
+    else
+      fail "isolation" "could not scan the Claude root for cross-harness links"
+    fi
   fi
 
   # test-the-test: a planted sibling link MUST be detected, or the check is vacuous.
@@ -1454,7 +1467,21 @@ test_isolation() {
   elif root_leaks_into_module "$tmphome/.pi/agent" "harnesses/claude"; then
     pass "isolation check catches a planted sibling leak"
   else
-    fail "isolation" "planted sibling leak was not detected"
+    scan_status=$?
+    if [[ $scan_status -eq 1 ]]; then
+      fail "isolation" "planted sibling leak was not detected"
+    else
+      fail "isolation" "planted sibling leak could not be scanned"
+    fi
+  fi
+
+  if root_leaks_into_module "$tmphome/.pi/agent" "harnesses/missing-module" 2>/dev/null; then
+    fail "isolation" "scanner accepted a missing module root"
+  else
+    scan_status=$?
+    [[ $scan_status -eq 2 ]] \
+      && pass "isolation scanner reports operational errors" \
+      || fail "isolation" "scanner did not distinguish an operational error"
   fi
 
   rm -rf "$tmphome"
@@ -1470,8 +1497,8 @@ test_isolation() {
 # ---------------------------------------------------------------------------
 
 test_install_behavior() {
-  section "Install loop: idempotency, prune, module add/remove"
-  local tmphome tmpmods
+  section "Install loop: projection, migration, idempotency, prune"
+  local tmphome
   tmphome="$(mktemp -d)"
   mkdir -p "$tmphome/.local/bin"
   ln -s "$REPO_DIR/skills/change-review/bin/change-review.mjs" "$tmphome/.local/bin/change-review"
@@ -1587,6 +1614,14 @@ test_install_behavior() {
   rm -f "$tmphome/.local/bin/review-change"
   printf '%s\n' '#!/bin/sh' 'echo user-owned' >"$tmphome/.local/bin/review-change"
   chmod +x "$tmphome/.local/bin/review-change"
+
+  # Plant prune fixtures before the idempotency run so one reinstall proves
+  # migration, preservation, idempotency, and pruning together.
+  ln -s "/nonexistent-${tmphome##*/}" "$tmphome/.pi/agent/skills/_dangling"
+  for retired in architect code-reviewer doc-updater; do
+    ln -s "$REPO_DIR/agents/$retired.md" "$tmphome/.pi/agent/agents/$retired.md"
+  done
+
   if HOME="$tmphome" bash "$REPO_DIR/install.sh" >/dev/null 2>&1 \
      && [[ -e "$tmphome/.claude/settings.json" ]]; then
     pass "re-running install is idempotent"
@@ -1625,12 +1660,6 @@ test_install_behavior() {
     && pass "re-install preserves an unrelated review-change executable" \
     || fail "install-behavior" "unrelated review-change executable was overwritten"
 
-  # Prune: dangling and retired links in managed category dirs are removed on re-install.
-  ln -s "/nonexistent-$(basename "$tmphome")" "$tmphome/.pi/agent/skills/_dangling"
-  for retired in architect code-reviewer doc-updater; do
-    ln -s "$REPO_DIR/agents/$retired.md" "$tmphome/.pi/agent/agents/$retired.md"
-  done
-  HOME="$tmphome" bash "$REPO_DIR/install.sh" >/dev/null 2>&1
   if [[ -L "$tmphome/.pi/agent/skills/_dangling" ]]; then
     fail "install-behavior" "dangling symlink not pruned on re-install"
   else
@@ -1642,29 +1671,45 @@ test_install_behavior() {
       || fail "install-behavior" "retired agent link remains: $retired"
   done
 
-  # Add/remove: a throwaway module dir is picked up by the loop; deleting the
-  # directory removes that harness with nothing else disturbed.
-  tmpmods="$(mktemp -d)"
-  mkdir -p "$tmpmods/alpha"
-  cat >"$tmpmods/alpha/manifest.sh" <<'EOF'
+  rm -rf "$tmphome"
+}
+
+test_install_module_lifecycle() {
+  section "Install loop: module add/remove"
+  local lifecycle_results result
+  lifecycle_results="$(
+    tmphome=""
+    tmpmods=""
+    tmphome="$(mktemp -d)"
+    tmpmods="$(mktemp -d)"
+    trap 'rm -rf "$tmphome" "$tmpmods"' EXIT
+    mkdir -p "$tmpmods/alpha"
+    cat >"$tmpmods/alpha/manifest.sh" <<'EOF'
 config_root="$HOME/.alpha-harness"
 consumed_categories=(skills)
 install_module() { :; }
 EOF
-  HARNESSES_DIR="$tmpmods" HOME="$tmphome" bash "$REPO_DIR/install.sh" >/dev/null 2>&1
-  if [[ -d "$tmphome/.alpha-harness/skills" ]]; then
-    pass "adding a module directory installs a new harness"
-  else
-    fail "install-behavior" "added module was not installed"
-  fi
-  rm -rf "$tmpmods/alpha"
-  if HARNESSES_DIR="$tmpmods" HOME="$tmphome" bash "$REPO_DIR/install.sh" >/dev/null 2>&1; then
-    pass "deleting a module directory removes it cleanly (install still succeeds)"
-  else
-    fail "install-behavior" "install failed after module removal"
-  fi
-
-  rm -rf "$tmphome" "$tmpmods"
+    if HARNESSES_DIR="$tmpmods" HOME="$tmphome" bash "$REPO_DIR/install.sh" >/dev/null 2>&1 \
+        && [[ -d "$tmphome/.alpha-harness/skills" ]]; then
+      printf '%s\n' add-pass
+    else
+      printf '%s\n' add-fail
+    fi
+    rm -rf "$tmpmods/alpha"
+    if HARNESSES_DIR="$tmpmods" HOME="$tmphome" bash "$REPO_DIR/install.sh" >/dev/null 2>&1; then
+      printf '%s\n' remove-pass
+    else
+      printf '%s\n' remove-fail
+    fi
+  )"
+  while IFS= read -r result; do
+    case "$result" in
+      add-pass) pass "adding a module directory installs a new harness" ;;
+      add-fail) fail "install-module-lifecycle" "added module was not installed" ;;
+      remove-pass) pass "deleting a module directory removes it cleanly (install still succeeds)" ;;
+      remove-fail) fail "install-module-lifecycle" "install failed after module removal" ;;
+    esac
+  done <<<"$lifecycle_results"
 }
 
 # The TypeScript guard suite (guard core + adapters + conformance) runs under
@@ -1678,18 +1723,29 @@ EOF
 
 # content: the shared authoring contract — skills/agents/rules markdown is
 # well-formed and internally consistent.
-run_content() {
+run_content_foundation() {
   run test_frontmatter_skills
   run test_frontmatter_agents
   run test_command_prompts
   run test_skill_model_domain
   run test_ubiquitous_language_contract
+}
+
+run_content_build() {
   run test_phase_grill
   run test_phase_spec
   run test_phase_todo
   run test_phase_code
   run test_phase_coach
   run test_phase_coach_holding_line
+}
+
+run_content_pipeline() {
+  run_content_foundation
+  run_content_build
+}
+
+run_content_review() {
   run test_phase_review_change
   run test_review_change_cli
   run test_agent_change_reviewer
@@ -1702,17 +1758,34 @@ run_content() {
   run test_retired_review_change_agents
   run test_retired_cleaners
   run test_skill_refactor
+}
+
+run_content_references() {
   run test_phase_orchestrator
   run test_unique_adr_ids
   run test_cross_references
   run test_agent_rule_deps
   run test_symlink_targets
   run test_guide_skill_sync
+}
+
+run_content_contracts() {
   run test_no_ttsr_frontmatter
   run test_advisory_rule_frontmatter
   run test_pi_bundle_current
   run test_no_forbidden_claude_centric_phrasing
   run test_stale_stubs
+}
+
+run_content_structure() {
+  run_content_references
+  run_content_contracts
+}
+
+run_content() {
+  run_content_pipeline
+  run_content_review
+  run_content_structure
 }
 
 # install: the install system, harness modules, cross-harness isolation, and
@@ -1721,6 +1794,7 @@ run_install() {
   run test_harness_modules
   run test_isolation
   run test_install_behavior
+  run test_install_module_lifecycle
 }
 
 # Run one named check for the meta-suite. Keeping this allowlist explicit avoids
@@ -1744,6 +1818,15 @@ run_selected() {
     phase-orchestrator)        run test_phase_orchestrator ;;
     harness-modules)           run test_harness_modules ;;
     isolation)                 run test_isolation ;;
+    install-behavior)          run test_install_behavior ;;
+    install-module-lifecycle)  run test_install_module_lifecycle ;;
+    content-foundation)        run_content_foundation ;;
+    content-build)             run_content_build ;;
+    content-pipeline)          run_content_pipeline ;;
+    content-review)            run_content_review ;;
+    content-references)        run_content_references ;;
+    content-contracts)         run_content_contracts ;;
+    content-structure)         run_content_structure ;;
     *) printf 'unknown check %q\n' "$1" >&2; exit 2 ;;
   esac
 }
@@ -1751,7 +1834,7 @@ run_selected() {
 # Usage: test-pipeline.sh [content|install] [check]   (no arg runs both)
 # The optional check selector is for test-pipeline-self-test.sh, which plants
 # one error at a time and exercises only the detector responsible for it.
-main() {
+pipeline_main() {
   _cache_agent_names
   local category="${1:-all}" selected="${2:-}" label
   case "$category" in
@@ -1787,4 +1870,6 @@ main() {
   fi
 }
 
-main "$@"
+if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then
+  pipeline_main "$@"
+fi

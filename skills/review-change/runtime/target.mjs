@@ -3,6 +3,7 @@ import { promisify } from "node:util";
 
 const executeFile = promisify(execFile);
 const OUTPUT_LIMIT = 1024 * 1024;
+const COMMAND_TIMEOUT_MS = 15_000;
 const GITHUB_PR_URL = /^https:\/\/github\.com\/[^/]+\/[^/]+\/pull\/\d+(?:\/)?$/i;
 const noActivity = () => {};
 
@@ -109,6 +110,7 @@ async function currentPullRequest(cwd, context = {}) {
       encoding: "utf8",
       maxBuffer: OUTPUT_LIMIT,
       signal: context.signal,
+      timeout: COMMAND_TIMEOUT_MS,
     });
     return stdout.trim() || null;
   } catch (error) {
@@ -136,6 +138,7 @@ async function gitOutput(cwd, args, context = {}) {
     encoding: "utf8",
     maxBuffer: OUTPUT_LIMIT,
     signal: context.signal,
+    timeout: COMMAND_TIMEOUT_MS,
   });
   return stdout.trim();
 }

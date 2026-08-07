@@ -1,53 +1,86 @@
 import { spawn } from "node:child_process";
-import { createServer } from "node:net";
 
-interface FirefoxBidiOptions {
+interface FirefoxPoolOptions {
   executable: string;
   profile: string;
+}
+
+interface FirefoxContextOptions {
   width: number;
   height: number;
 }
 
-export async function startFirefoxBidi(options: FirefoxBidiOptions) {
-  const port = await reservePort();
+const REQUEST_TIMEOUT_MS = 10_000;
+const CONNECT_RETRY_MS = 50;
+
+export async function startFirefoxBidiPool(options: FirefoxPoolOptions) {
   const processRef = spawn(options.executable, [
     "--headless",
     "--no-remote",
     "--profile",
     options.profile,
     "--remote-debugging-port",
-    String(port),
+    "0",
     "about:blank",
   ], {
-    env: {
-      ...process.env,
-      MOZ_HEADLESS_WIDTH: String(options.width),
-      MOZ_HEADLESS_HEIGHT: String(options.height),
-    },
-    stdio: "ignore",
+    detached: process.platform !== "win32",
+    stdio: ["ignore", "ignore", "pipe"],
   });
+  const releaseSignalOwnership = ownFirefoxSignals(processRef);
   let socket: WebSocket | null = null;
   try {
-    socket = await connectWithRetry(`ws://127.0.0.1:${port}/session`, processRef);
+    const webSocketUrl = await discoverWebDriverUrl(processRef);
+    socket = await connectWithRetry(`${webSocketUrl}/session`, processRef);
     const request = requestClient(socket);
     await request("session.new", { capabilities: { alwaysMatch: {} } });
-    const tree = await request("browsingContext.getTree", {});
-    const context = tree.result.contexts[0]?.context;
-    if (!context) throw new Error("Firefox BiDi did not expose a browsing context");
-    await request("browsingContext.setViewport", {
-      context,
-      viewport: { width: options.width, height: options.height },
-      devicePixelRatio: 1,
-    });
-    return bidiController({ context, processRef, request, socket });
+    return poolController({ processRef, releaseSignalOwnership, request, socket });
   } catch (error) {
     socket?.close();
     await stopProcess(processRef);
+    releaseSignalOwnership();
     throw error;
   }
 }
 
-function bidiController({ context, processRef, request, socket }: any) {
+function poolController({ processRef, releaseSignalOwnership, request, socket }: any) {
+  let lifecycle = Promise.resolve();
+  const serializeLifecycle = <T>(task: () => Promise<T>) => {
+    const result = lifecycle.then(task, task);
+    lifecycle = result.then(() => {}, () => {});
+    return result;
+  };
+  return {
+    createContext: (options: FirefoxContextOptions) => serializeLifecycle(async () => {
+      const userContext = (await request("browser.createUserContext", {})).result.userContext;
+      try {
+        const context = (await request("browsingContext.create", { type: "tab", userContext })).result.context;
+        await setViewport(request, context, options);
+        return contextController(request, context, userContext, serializeLifecycle);
+      } catch (error) {
+        await request("browser.removeUserContext", { userContext }).catch(() => {});
+        throw error;
+      }
+    }),
+    close: async () => {
+      try {
+        await lifecycle;
+        await request("session.end", {}).catch(() => {});
+        socket.close();
+        await stopProcess(processRef);
+      } finally {
+        releaseSignalOwnership();
+      }
+    },
+  };
+}
+
+function contextController(
+  request: any,
+  context: string,
+  userContext: string,
+  serializeLifecycle: <T>(task: () => Promise<T>) => Promise<T>,
+) {
+  let closed = false;
   return {
     navigate: (url: string) => request("browsingContext.navigate", { context, url, wait: "complete" }),
     evaluate: (expression: string) => evaluateInContext(request, context, expression),
@@ -58,12 +91,20 @@ function bidiController({ context, processRef, request, socket }: any) {
       if (!child) throw new Error("Firefox BiDi did not expose the artifact context");
       return evaluateInContext(request, child, expression);
     },
-    close: async () => {
-      await request("session.end", {}).catch(() => {});
-      socket.close();
-      await stopProcess(processRef);
-    },
+    close: () => serializeLifecycle(async () => {
+      if (closed) return;
+      closed = true;
+      await request("browser.removeUserContext", { userContext });
+    }),
   };
+}
+
+function setViewport(request: any, context: string, options: FirefoxContextOptions) {
+  return request("browsingContext.setViewport", {
+    context,
+    viewport: { width: options.width, height: options.height },
+    devicePixelRatio: 1,
+  });
 }
 
 async function evaluateInContext(request: any, context: string, expression: string) {
@@ -77,30 +118,43 @@ async function evaluateInContext(request: any, context: string, expression: stri
 
 function requestClient(socket: WebSocket) {
   let requestId = 0;
-  const pending = new Map<number, { resolve(value: any): void; reject(error: Error): void }>();
-  socket.addEventListener("message", (event) => {
-    const message = JSON.parse(String(event.data));
-    if (!message.id) return;
-    const request = pending.get(message.id);
-    pending.delete(message.id);
-    if (message.type === "error") request?.reject(new Error(message.message ?? message.error));
-    else request?.resolve(message);
-  });
+  const pending = new Map<number, PendingRequest>();
+  socket.addEventListener("message", (event) => settleRequest(pending, event));
   return (method: string, params: Record<string, unknown>) => new Promise<any>((resolve, reject) => {
     const id = ++requestId;
-    pending.set(id, { resolve, reject });
+    const timer = setTimeout(() => {
+      pending.delete(id);
+      reject(new Error(`Firefox BiDi request timed out: ${method}`));
+    }, REQUEST_TIMEOUT_MS);
+    pending.set(id, { reject, resolve, timer });
     socket.send(JSON.stringify({ id, method, params }));
   });
 }
 
+interface PendingRequest {
+  reject(error: Error): void;
+  resolve(value: any): void;
+  timer: ReturnType<typeof setTimeout>;
+}
+
+function settleRequest(pending: Map<number, PendingRequest>, event: MessageEvent) {
+  const message = JSON.parse(String(event.data));
+  const request = pending.get(message.id);
+  if (!request) return;
+  pending.delete(message.id);
+  clearTimeout(request.timer);
+  if (message.type === "error") request.reject(new Error(message.message ?? message.error));
+  else request.resolve(message);
+}
+
 async function connectWithRetry(url: string, processRef: ReturnType<typeof spawn>) {
-  const deadline = Date.now() + 5_000;
+  const deadline = Date.now() + REQUEST_TIMEOUT_MS;
   while (Date.now() < deadline) {
     if (processRef.exitCode !== null) throw new Error("Firefox exited before BiDi became available");
     try {
       return await openWebSocket(url);
     } catch {
-      await Bun.sleep(50);
+      await Bun.sleep(CONNECT_RETRY_MS);
     }
   }
   throw new Error("Firefox BiDi did not become available");
@@ -124,24 +178,106 @@ function openWebSocket(url: string) {
   });
 }
 
-function reservePort() {
-  return new Promise<number>((resolve, reject) => {
-    const server = createServer();
-    server.once("error", reject);
-    server.listen(0, "127.0.0.1", () => {
-      const address = server.address();
-      const port = typeof address === "object" && address ? address.port : 0;
-      server.close((error) => error ? reject(error) : resolve(port));
-    });
+function discoverWebDriverUrl(processRef: ReturnType<typeof spawn>) {
+  return new Promise<string>((resolve, reject) => {
+    let output = "";
+    const timer = setTimeout(() => finish(new Error("Firefox did not report its BiDi endpoint")), REQUEST_TIMEOUT_MS);
+    const onData = (chunk: Buffer) => {
+      output += chunk.toString("utf8");
+      const match = output.match(/WebDriver BiDi listening on (ws:\/\/[^\s]+)/);
+      if (match) finish(null, match[1]);
+    };
+    const onClose = () => finish(new Error("Firefox exited before reporting its BiDi endpoint"));
+    const onError = (error: Error) => finish(error);
+    function finish(error: Error | null, url?: string) {
+      clearTimeout(timer);
+      processRef.stderr?.off("data", onData);
+      processRef.stderr?.resume();
+      processRef.off("close", onClose);
+      processRef.off("error", onError);
+      if (error) reject(error);
+      else resolve(url!);
+    }
+    processRef.stderr?.on("data", onData);
+    processRef.once("close", onClose);
+    processRef.once("error", onError);
   });
 }
 
 async function stopProcess(processRef: ReturnType<typeof spawn>) {
-  if (processRef.exitCode !== null) return;
-  processRef.kill("SIGTERM");
-  await Promise.race([
-    new Promise<void>((resolve) => processRef.once("close", () => resolve())),
-    Bun.sleep(2_000),
+  const processGroupId = processRef.pid;
+  if (!processHasExited(processRef)) {
+    signalProcessTree(processRef, "SIGTERM");
+    if (!await waitForProcessClose(processRef, 2_000)) {
+      signalProcessTree(processRef, "SIGKILL");
+      if (!await waitForProcessClose(processRef, 2_000)) {
+        throw new Error("Firefox process did not stop");
+      }
+    }
+  }
+  if (processGroupId !== undefined) await stopFirefoxProcessGroup(processGroupId);
+}
+
+function signalProcessTree(processRef: ReturnType<typeof spawn>, signal: NodeJS.Signals) {
+  try {
+    if (process.platform === "win32" || processRef.pid === undefined) processRef.kill(signal);
+    else process.kill(-processRef.pid, signal);
+  } catch {
+    processRef.kill(signal);
+  }
+}
+
+function waitForProcessClose(processRef: ReturnType<typeof spawn>, timeout: number) {
+  if (processHasExited(processRef)) return Promise.resolve(true);
+  return Promise.race([
+    new Promise<true>((resolve) => processRef.once("close", () => resolve(true))),
+    Bun.sleep(timeout).then(() => false),
   ]);
-  if (processRef.exitCode === null) processRef.kill("SIGKILL");
+}
+
+function processHasExited(processRef: ReturnType<typeof spawn>) {
+  return processRef.exitCode !== null || processRef.signalCode !== null;
+}
+
+async function stopFirefoxProcessGroup(processGroupId: number) {
+  if (process.platform === "win32" || !processGroupExists(processGroupId)) return;
+  try {
+    process.kill(-processGroupId, "SIGKILL");
+  } catch (error: any) {
+    if (error.code !== "ESRCH") throw error;
+  }
+  const deadline = Date.now() + 2_000;
+  while (processGroupExists(processGroupId) && Date.now() < deadline) await Bun.sleep(20);
+  if (processGroupExists(processGroupId)) throw new Error("Firefox process group did not stop");
+}
+
+function processGroupExists(processGroupId: number) {
+  try {
+    process.kill(-processGroupId, 0);
+    return true;
+  } catch (error: any) {
+    return error.code !== "ESRCH";
+  }
+}
+
+function ownFirefoxSignals(processRef: ReturnType<typeof spawn>) {
+  const handlers = new Map<NodeJS.Signals, () => void>();
+  let stopping = false;
+  const release = () => {
+    for (const [signal, handler] of handlers) process.off(signal, handler);
+    handlers.clear();
+  };
+  for (const signal of ["SIGINT", "SIGTERM"] as const) {
+    const handler = () => {
+      if (stopping) return;
+      stopping = true;
+      void stopProcess(processRef).catch(() => {}).finally(() => {
+        release();
+        process.kill(process.pid, signal);
+      });
+    };
+    handlers.set(signal, handler);
+    process.once(signal, handler);
+  }
+  return release;
 }

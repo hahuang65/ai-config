@@ -56,8 +56,8 @@ fixture_file() {
   local rel="$1"
   local tmp="$TMPDIR/$rel"
   local repo="$REPO_DIR/$rel"
-  mkdir -p "$(dirname "$tmp")"
-  mkdir -p "$(dirname "$repo")"
+  mkdir -p "${tmp%/*}"
+  mkdir -p "${repo%/*}"
   rm -f "$repo" 2>/dev/null || true
   ln -sf "$tmp" "$repo"
   echo "$tmp"
@@ -97,7 +97,7 @@ fixture_replace() {
   local rel="$1"
   local repo="$REPO_DIR/$rel"
   local tmp="$TMPDIR/$rel"
-  mkdir -p "$(dirname "$tmp")"
+  mkdir -p "${tmp%/*}"
   cp "$repo" "$tmp"
   mv "$repo" "$repo.__real__"
   ln -sf "$tmp" "$repo"
@@ -113,13 +113,30 @@ cleanup() {
 }
 trap cleanup EXIT
 
+# Load detector functions once. Each planted case resets detector state but
+# avoids starting another Bash process and reparsing the full pipeline.
+# shellcheck disable=SC1090
+. "$PIPELINE"
+
 run_pipeline() {
-  bash "$PIPELINE" "$@" >/dev/null 2>&1
+  PASS=0
+  FAIL=0
+  ERRORS=()
+  AGENT_NAMES=()
+  (pipeline_main "$@") >/dev/null 2>&1
 }
 
 # ---------------------------------------------------------------------------
 # Self-test 1: Valid repo passes
 # ---------------------------------------------------------------------------
+
+test_pipeline_entry_passes() {
+  if bash "$PIPELINE" content coach-holding-line >/dev/null 2>&1; then
+    self_pass "pipeline entry: clean selector exits 0"
+  else
+    self_fail "pipeline entry: clean selector should exit 0"
+  fi
+}
 
 test_valid_repo_passes() {
   if run_pipeline; then
@@ -524,38 +541,71 @@ EOF
 # Main
 # ---------------------------------------------------------------------------
 
+run_planted_case() {
+  case "$1" in
+    skill-missing-name) test_skill_missing_name_fails ;;
+    agent-missing-tools) test_agent_missing_tools_fails ;;
+    agent-unknown-tool) test_agent_unknown_tool_fails ;;
+    broken-reference) test_broken_skill_reference_fails ;;
+    command-skill-overlap) test_command_skill_overlap_fails ;;
+    agent-missing-rule) test_agent_missing_rule_fails ;;
+    stale-stub) test_stale_stub_fails ;;
+    forbidden-phrase) test_forbidden_already_loaded_in_context_fails ;;
+    retired-rule-frontmatter) test_reintroduced_ttsr_rule_fails ;;
+    stale-pi-bundle) test_stale_pi_bundle_fails ;;
+    rule-missing-description) test_advisory_rule_missing_description_fails ;;
+    bad-manifest) test_bad_manifest_fails ;;
+    skill-missing-file) test_skill_dir_missing_skill_md_fails ;;
+    coach-discipline) test_implement_coach_missing_holding_line_fails ;;
+    build-phase-loading) test_build_missing_phase_loading_fails ;;
+    duplicate-adr) test_duplicate_adr_id_fails ;;
+    missing-context-files) test_context_consumer_missing_context_map_fails ;;
+    missing-ubiquitous-language) test_context_consumer_missing_ubiquitous_language_fails ;;
+    *) printf 'unknown planted case %q\n' "$1" >&2; exit 2 ;;
+  esac
+}
+
+run_all_planted_cases() {
+  local planted_case
+  for planted_case in \
+    skill-missing-name agent-missing-tools agent-unknown-tool broken-reference \
+    command-skill-overlap agent-missing-rule stale-stub forbidden-phrase \
+    retired-rule-frontmatter stale-pi-bundle rule-missing-description bad-manifest \
+    skill-missing-file coach-discipline build-phase-loading duplicate-adr \
+    missing-context-files missing-ubiquitous-language; do
+    run_planted_case "$planted_case"
+  done
+}
+
 main() {
-  local planted_only=false
+  local mode=all selected_case=""
+  local -a selected_cases=()
   case "${1:-}" in
     "") ;;
-    --planted-only) planted_only=true ;;
-    *) printf 'unknown option %q — use: --planted-only (or no option)\n' "$1" >&2; exit 2 ;;
+    --planted-only) mode=planted ;;
+    --case) mode=case; selected_case="${2:-}"; [[ -n "$selected_case" && -z "${3:-}" ]] \
+      || { echo 'usage: test-pipeline-self-test.sh --case <name>' >&2; exit 2; } ;;
+    --cases) mode=cases; selected_cases=("${@:2}"); [[ ${#selected_cases[@]} -gt 0 ]] \
+      || { echo 'usage: test-pipeline-self-test.sh --cases <name>...' >&2; exit 2; } ;;
+    *) printf 'unknown option %q — use: --planted-only | --case <name> | --cases <name>... (or no option)\n' "$1" >&2; exit 2 ;;
   esac
 
   echo "Self-test: test-pipeline.sh error detection"
   echo ""
 
-  if [[ "$planted_only" == false ]]; then
+  test_pipeline_entry_passes
+  if [[ "$mode" == all ]]; then
     test_valid_repo_passes
   fi
-  test_skill_missing_name_fails
-  test_agent_missing_tools_fails
-  test_agent_unknown_tool_fails
-  test_broken_skill_reference_fails
-  test_command_skill_overlap_fails
-  test_agent_missing_rule_fails
-  test_stale_stub_fails
-  test_forbidden_already_loaded_in_context_fails
-  test_reintroduced_ttsr_rule_fails
-  test_stale_pi_bundle_fails
-  test_advisory_rule_missing_description_fails
-  test_bad_manifest_fails
-  test_skill_dir_missing_skill_md_fails
-  test_implement_coach_missing_holding_line_fails
-  test_build_missing_phase_loading_fails
-  test_duplicate_adr_id_fails
-  test_context_consumer_missing_context_map_fails
-  test_context_consumer_missing_ubiquitous_language_fails
+  if [[ "$mode" == case ]]; then
+    run_planted_case "$selected_case"
+  elif [[ "$mode" == cases ]]; then
+    for selected_case in "${selected_cases[@]}"; do
+      run_planted_case "$selected_case"
+    done
+  else
+    run_all_planted_cases
+  fi
 
   echo ""
   echo "Results: $SELF_PASS passed, $SELF_FAIL failed"
