@@ -3,10 +3,18 @@
 ## 1. See the current state
 
 List every unresolved path with Git's machine-readable status, then select exactly one mode.
+When no unresolved path remains, continue only for a validated Orchard rebase recovery with an active rebase whose prior resolutions are already staged and awaiting continuation.
 
 **Git operation mode** requires an in-progress rebase or merge.
 Inspect the branch graph, operation metadata, target tip, commit being replayed or merged, and the full conflict diff.
 Record the original operation goal from `$ARGUMENTS`, Git metadata, and available authoritative context.
+
+An **Orchard rebase recovery** is a Git operation mode owned by Orchard.
+Accept it only when read-only `orchard status --json` reports protocol version 1 and the exact managed worktree reports `recovery.kind` as `rebase`, `recovery.status` as `rebasing` or `conflicted`, and a recorded operation ID, original tip, and target tip that agree with the active rebase metadata.
+When unresolved entries remain, resolve them normally.
+When none remain, record the exact staged diff and staged path list, then resume at automated checks without rewriting or staging the resolution again.
+Treat the operation ID as internal workflow state and never ask the user to type or copy it.
+If the current checkout is not the exact managed worktree, return control to the owning `/rebase` workflow so it can enter that worktree through Orchard before resolution.
 
 **Working-state restoration mode** requires durable recovery metadata from the trusted workflow that captured the state.
 Require the exact checkout, recovery-stash object ID, pre-capture status and index evidence, rebased tip, and owning workflow identity.
@@ -65,12 +73,20 @@ Repeat the relevant checks after each repair.
 ### Git operation mode
 
 Before staging or completing the operation, read `~/.dotfiles/ai/rules/git-commit.md` and follow its staging policy.
-Review all changed and untracked files, then stage the resolved operation paths explicitly.
+Review all changed and untracked files.
+For newly resolved conflicts, stage only the resolved operation paths explicitly.
+For a resumed Orchard recovery whose resolution was already staged, do not run `git add`; verify that its exact staged diff and staged path list are unchanged from inspection.
 Verify that Git reports no unresolved entries, and preserve an existing replayed commit message rather than replacing it with a newly authored message.
+If an authorized resolution leaves the replayed commit with no staged delta, preserve its place in the task history with `git commit --allow-empty --reuse-message=REBASE_HEAD` before continuation.
+Never use `git rebase --skip` for an Orchard-owned rebase because Orchard verifies that the task commit count is unchanged.
 Continue the active Git operation through its normal command.
 
 If continuing a rebase exposes another conflict, return to Step 1 for the new commit and conflict set.
 Continue until Git reports that the operation is complete.
+
+After an Orchard-owned rebase completes, invoke `orchard rebase --finalize-operation <recorded-operation-id> --json` from the exact managed worktree.
+Require protocol version 1, the same worktree identity, and rebase status `finalized` before reporting success to the owning workflow.
+If finalization fails, preserve the Orchard rebase recovery metadata, report the failure, and stop without starting another lifecycle operation.
 
 ### Working-state restoration mode
 

@@ -52,6 +52,21 @@ test("conflict resolution verifies and completes every operation step", async ()
   expect(workflow).toContain("git-commit.md");
 });
 
+test("Orchard-owned rebases finalize through the recorded lifecycle operation", async () => {
+  const workflow = await source("skills/resolve-conflicts/references/workflow.md");
+
+  expect(workflow).toContain("Orchard rebase recovery");
+  expect(workflow).toContain("operation ID");
+  expect(workflow).toContain("orchard rebase --finalize-operation");
+  expect(workflow).toContain("exact managed worktree");
+  expect(workflow).toContain("When no unresolved path remains");
+  expect(workflow).toContain("staged diff and staged path list");
+  expect(workflow).toContain("do not run `git add`");
+  expect(workflow).toContain("exact staged diff and staged path list are unchanged");
+  expect(workflow).toContain("git commit --allow-empty --reuse-message=REBASE_HEAD");
+  expect(workflow).toContain("Never use `git rebase --skip`");
+});
+
 test("working-state restoration returns to its owner without committing", async () => {
   const skill = await source("skills/resolve-conflicts/SKILL.md");
   const workflow = await source("skills/resolve-conflicts/references/workflow.md");

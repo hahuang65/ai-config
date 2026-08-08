@@ -30,6 +30,7 @@ Fallback summary (used only when `~/.gitmessage` is absent):
 
 - Mutate an in-progress conflict only when the user explicitly asks to resolve it, including by invoking `/resolve-conflicts`, or when the active user-requested workflow already owns conflict resolution.
 - Once resolution is explicit, follow the `resolve-conflicts` skill instead of aborting as a substitute for investigating the competing intents.
+- The `/rebase` workflow explicitly owns resolution only for a conflict that Orchard preserves with durable recovery metadata.
 - Preserve the no-merge-commit policy.
   If an in-progress merge can finish only by creating a merge commit, report that incompatibility before changing conflicted files.
 - Before staging resolved paths or continuing a Git operation, apply this rule's normal staging and commit-message policy.

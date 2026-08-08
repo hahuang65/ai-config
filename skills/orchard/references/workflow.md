@@ -11,6 +11,8 @@ Standalone Orchard operations fail closed; never substitute raw worktree, rebase
 
 Pass the user's lifecycle request to the CLI without reproducing its Git, commit-interaction, delivery policy, or filesystem behavior.
 Rebase and deliver infer the current task inside its worktree or accept a worktree intent when invoked from primary trunk.
+A harness-owned rebase may explicitly request conflict preservation in machine mode, consume its durable `needs-conflict-resolution` outcome, and finalize only the exact recorded operation after the conflict workflow completes.
+Default standalone rebases still abort and restore conflicts.
 Use ordinary human output only when no harness transition is needed.
 A deliver `needs-commit` outcome returns to the calling prompt so it can run the commit skill and retry; pull-request delivery is terminal and requires no transition.
 Use `--json` for native harness transitions and require an absolute target path in the versioned outcome.
@@ -47,5 +49,6 @@ Never clean the preserved worktree merely because continuation failed.
 ## Non-transition commands
 
 Status, rebase, path-only output, dry runs, explicit keep behavior, pull-request delivery, needs-commit delivery, and maintenance commands may complete without a harness transition.
+If a preserved rebase conflict belongs to a different managed worktree, enter that worktree through the native harness transition before loading the conflict resolver.
 Local delivery invoked from primary trunk finalizes immediately when safe.
 Delivery outside a managed task worktree or without an explicit worktree intent from primary trunk must fail through Orchard rather than falling back to raw Git commands.

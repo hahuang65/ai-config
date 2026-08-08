@@ -206,9 +206,14 @@ test_command_prompts() {
   [[ "$actual_names" == "deliver rebase" ]] \
     && pass "commands/ contains the curated alias and composition set" \
     || fail "commands/" "expected only: deliver rebase; found: $actual_names"
-  grep -Eq '`orchard` skill.*rebase operation' "$REPO_DIR/commands/rebase.md" \
-    && pass "rebase remains a thin Orchard alias" \
-    || fail "commands/rebase.md" "rebase must delegate to the Orchard skill"
+  if grep -Fq 'Load and follow the `orchard` skill' "$REPO_DIR/commands/rebase.md" \
+     && grep -Fq 'load the `resolve-conflicts` skill' "$REPO_DIR/commands/rebase.md" \
+     && grep -Fq 'needs-conflict-resolution' "$REPO_DIR/commands/rebase.md" \
+     && grep -Fq -- '--finalize-operation' "$REPO_DIR/commands/rebase.md"; then
+    pass "rebase composes Orchard lifecycle with conflict resolution"
+  else
+    fail "commands/rebase.md" "rebase must compose Orchard with conflict resolution"
+  fi
   if [[ ! -e "$REPO_DIR/skills/deliver/SKILL.md" ]] \
      && [[ ! -e "$REPO_DIR/skills/merge/SKILL.md" ]] \
      && grep -Fq 'classify the checkout using Git only' "$REPO_DIR/commands/deliver.md" \

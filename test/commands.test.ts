@@ -68,12 +68,15 @@ test("deliver delegates deterministic checkout classification to its helper", as
   expect(preflight).not.toContain("orchard ");
 });
 
-test("rebase is a thin Orchard alias", async () => {
+test("rebase composes Orchard lifecycle with conflict resolution", async () => {
   const rebase = await source("commands/rebase.md");
 
-  expect(rebase).toContain("Load and follow the `orchard` skill for its rebase operation");
-  expect(rebase).not.toContain("Run Orchard preflight");
-  expect(rebase).not.toContain("orchard rebase $ARGUMENTS");
+  expect(rebase).toContain("Load and follow the `orchard` skill");
+  expect(rebase).toContain("$ARGUMENTS");
+  expect(rebase).toContain("load the `resolve-conflicts` skill");
+  expect(rebase).toContain("needs-conflict-resolution");
+  expect(rebase).toContain("--finalize-operation");
+  expect(rebase).not.toContain("git rebase");
 });
 
 test("the active README inventory lists every command", async () => {

@@ -45,6 +45,20 @@ test("Orchard skill delegates the installed CLI and native harness transitions",
   expect(content).not.toContain("child agent");
 });
 
+test("rebase delegates conflict preservation and resolution through Orchard", async () => {
+  const rebase = await source("commands/rebase.md");
+  const resolver = await source("skills/resolve-conflicts/references/workflow.md");
+
+  expect(rebase).toContain("--resolve-conflicts");
+  expect(rebase).toContain("needs-conflict-resolution");
+  expect(rebase).toContain("already has Orchard rebase recovery");
+  expect(rebase).toContain("load the `resolve-conflicts` skill");
+  expect(rebase).toContain("--finalize-operation");
+  expect(rebase).not.toContain("git rebase");
+  expect(resolver).toContain("Orchard rebase recovery");
+  expect(resolver).toContain("orchard rebase --finalize-operation");
+});
+
 test("build delegates isolation while preserving an explicit local-branch fallback", async () => {
   const build = await source("skills/build/SKILL.md");
 

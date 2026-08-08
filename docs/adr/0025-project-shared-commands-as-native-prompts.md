@@ -1,6 +1,7 @@
 # Project shared commands as harness-native prompts
 
 ADR-0027 supersedes this ADR's decision to keep delivery in a skill and restores `deliver` as an Orchard-oriented prompt composition.
+ADR-0029 supersedes the decision to keep `rebase` as a thin alias and composes it with conflict resolution while Orchard retains lifecycle ownership.
 
 Some explicit slash workflows benefit from concise harness-native prompt shortcuts.
 Skills remain discoverable capability packages, while prompt templates are explicit parameterized user-message shortcuts.

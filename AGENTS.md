@@ -72,8 +72,8 @@ Implications:
   Change review separates the read-only `change-reviewer` from the mutating `change-fixer`, consults `database-reviewer` conditionally, and uses `fact-checker` for build artifacts; implementation owns only the `refactorer` hygiene sweep.
 - **Skills** own discoverable capabilities and progressively disclosed workflow behavior.
   **Commands** own explicit slash entry points and must never have a same-named skill.
-  A command is either a thin alias to a differently named skill, such as `/rebase` delegating to `orchard`, or a concise composition of multiple skills when that composition adds behavior beyond one skill.
-  `/deliver` routes only Orchard-managed worktrees to Orchard and handles ordinary local branches directly as a composition of Git policy and the commit skill.
+  A command is either a thin alias to a differently named skill or a concise composition of multiple skills when that composition adds behavior beyond one skill.
+  `/rebase` composes Orchard lifecycle ownership with the conflict-resolution skill, and `/deliver` routes only Orchard-managed worktrees to Orchard while handling ordinary local branches directly through Git policy and the commit skill.
   Never copy a delegated skill's behavior into a command.
   Do not add a prompt solely to reproduce a skill's Claude slash spelling in pi; pi advertises skill metadata for automatic matching and provides `/skill:<name>` for forced invocation.
   Claude registers commands directly as `/<name>`, while pi loads the same files as prompt templates with the same names.
