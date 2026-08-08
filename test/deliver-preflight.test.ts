@@ -96,13 +96,13 @@ gitTest("trusts A5 classification only from global or system Git configuration",
   expect(global.values).toMatchObject({ a5: "true", pr_alias: "true", project_family_scope: "global" });
 });
 
-gitTest("classifies an explicit worktree intent as managed without invoking Orchard", async () => {
-  const repository = await createRepository();
+gitTest("classifies an explicit worktree intent outside a Git checkout using only managed facts", async () => {
+  const directory = await temporaryDirectory();
 
-  const result = await preflight(repository, ["another-task", "--keep"]);
+  const result = await preflight(directory, ["another-task", "--keep"]);
 
   expect(result.exitCode).toBe(0);
-  expect(result.values).toMatchObject({ delivery: "managed", keep: "true", reason: "explicit-intent" });
+  expect(result.values).toEqual({ delivery: "managed", keep: "true", reason: "explicit-intent" });
 });
 
 gitTest("classifies a checkout beneath the canonical Orchard root as managed", async () => {
@@ -115,7 +115,7 @@ gitTest("classifies a checkout beneath the canonical Orchard root as managed", a
   const result = await preflight(repository, [], env);
 
   expect(result.exitCode).toBe(0);
-  expect(result.values).toMatchObject({ delivery: "managed", keep: "false", reason: "orchard-root" });
+  expect(result.values).toEqual({ delivery: "managed", keep: "false", reason: "orchard-root" });
 });
 
 gitTest("rejects ambiguous fallback trunk branches", async () => {

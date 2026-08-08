@@ -7,9 +7,14 @@ Before delivery, run the read-only `~/.dotfiles/ai/scripts/deliver-preflight.sh`
 Pass each parsed `$ARGUMENTS` value as a separate quoted shell argument; never use `eval` or interpolate the raw argument string into a command.
 The helper does not invoke Orchard and returns stable `key=value` facts.
 If it exits nonzero, report its error and stop.
+Treat `delivery` as the output discriminator.
+Read it and branch on it before validating any mode-specific facts.
+Stop if it is missing or is not `managed` or `ordinary`.
 
 When `delivery=managed`, the helper has found either an explicit worktree intent or a canonical current Git root inside the canonical `~/.orchard/` root.
-For managed delivery, load the `orchard` skill and follow its deliver operation with `$ARGUMENTS` unchanged.
+For managed delivery, require `reason` and `keep` in addition to `delivery`.
+Do not require or use ordinary-delivery facts such as `root`, `branch`, `trunk`, `feature_tip`, `dirty`, `a5`, or `pr_alias`.
+Then load the `orchard` skill and follow its deliver operation with `$ARGUMENTS` unchanged.
 If Orchard returns `needs-commit`, validate the exact managed worktree path and branch, load the `commit` skill there, and retry Orchard delivery.
 Do not treat the worktree intent as commit scope.
 Stop if commit fails or leaves changes behind, and follow every other Orchard transition or terminal result exactly.
@@ -17,7 +22,7 @@ Stop if commit fails or leaves changes behind, and follow every other Orchard tr
 When `delivery=ordinary`, deliver the reported ordinary local feature branch directly through Git.
 Never invoke Orchard for an ordinary local branch, including Orchard status, discovery, rebase, delivery, or cleanup.
 
-1. Require `root`, `branch`, `trunk`, `feature_tip`, `dirty`, `keep`, `a5`, and `pr_alias` in the preflight output.
+1. For ordinary delivery, require `root`, `branch`, `trunk`, `feature_tip`, `dirty`, `keep`, `a5`, and `pr_alias` in addition to `delivery`.
 2. If `dirty=true`, load the `commit` skill for the current checkout.
 Do not treat `--keep` as commit scope.
 Continue only after commit succeeds and status is clean, then rerun the same preflight with the same arguments and require `delivery=ordinary`, `dirty=false`, and unchanged `root`, `branch`, and `trunk`.

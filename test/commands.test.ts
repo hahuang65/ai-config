@@ -37,6 +37,11 @@ test("deliver routes only managed tasks through Orchard", async () => {
   const delivery = await source("commands/deliver.md");
 
   expect(delivery).toContain("classify the checkout using Git only");
+  expect(delivery).toContain("Treat `delivery` as the output discriminator");
+  expect(delivery).toContain("before validating any mode-specific facts");
+  expect(delivery).toContain("For managed delivery, require `reason` and `keep`");
+  expect(delivery).toContain("Do not require or use ordinary-delivery facts");
+  expect(delivery).toContain("For ordinary delivery, require");
   expect(delivery).toContain("explicit worktree intent");
   expect(delivery).toContain("canonical `~/.orchard/` root");
   expect(delivery).toContain("load the `orchard` skill");
