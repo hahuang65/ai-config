@@ -12,6 +12,7 @@ import {
   runLaneProcess,
   stopChildren,
 } from "./test-suite-process.mjs";
+import { reportLaneFailures } from "./test-suite-report.mjs";
 
 export { isolatedGitEnvironment, runLaneProcess } from "./test-suite-process.mjs";
 
@@ -243,13 +244,9 @@ function printCompletion(result) {
   console.log(`  ${marker} ${result.name.padEnd(18)} ${result.durationSeconds.toFixed(2)} s`);
 }
 
-function printFailures(results) {
+async function printFailures(results) {
   const failures = results.filter(({ exitCode }) => exitCode !== 0);
-  for (const failure of failures) {
-    console.error(`\n  ── ${failure.name} failed ──\n`);
-    if (failure.stdout) process.stderr.write(failure.stdout);
-    if (failure.stderr) process.stderr.write(failure.stderr);
-  }
+  await reportLaneFailures(failures);
 }
 
 async function runSuite(repoDir, signal) {
@@ -266,7 +263,7 @@ async function runSuite(repoDir, signal) {
       printCompletion,
       signal,
     );
-    printFailures(outcome.results);
+    await printFailures(outcome.results);
     console.log(outcome.ok ? "\n  ✓ all test lanes passed\n" : "\n  ✗ one or more test lanes failed\n");
     return outcome.ok ? 0 : 1;
   } finally {

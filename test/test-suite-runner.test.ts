@@ -1,6 +1,6 @@
 import { expect, test } from "bun:test";
 import { spawn } from "node:child_process";
-import { mkdtemp, readFile, readdir, rm } from "node:fs/promises";
+import { mkdtemp, readFile, readdir, rm, stat } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 
@@ -9,6 +9,7 @@ import {
   isolatedGitEnvironment,
   runLaneProcess,
 } from "../scripts/test-suite-runner.mjs";
+import { reportLaneFailures } from "../scripts/test-suite-report.mjs";
 
 const lanes = Object.freeze([
   Object.freeze({ name: "heavy-a", expectedSeconds: 3, weight: 2 }),
@@ -101,6 +102,48 @@ test("turns a completion callback error into a lane failure", async () => {
 
   expect(outcome.ok).toBe(false);
   expect(outcome.results[0].stderr).toContain("display failed");
+});
+
+test("bounds failed lane output and persists its complete redacted log", async () => {
+  const temporaryRoot = await mkdtemp(path.join(tmpdir(), "suite-failure-report-"));
+  const diagnostics: string[] = [];
+  const credential = "example-credential";
+  const longOutput = `--token ${credential}\n${"diagnostic line\n".repeat(1_000)}`;
+  try {
+    const report = await reportLaneFailures([{
+      durationSeconds: 1.25,
+      exitCode: 1,
+      name: "guard/example",
+      stderr: longOutput,
+      stdout: "setup output\n",
+    }], {
+      temporaryRoot,
+      writeDiagnostic: (text) => diagnostics.push(text),
+    });
+
+    const diagnostic = diagnostics.join("");
+    const fullLog = await readFile(report.fullLogPath, "utf8");
+    const permissions = (await stat(report.fullLogPath)).mode & 0o777;
+    expect({
+      diagnosticHasFullPath: diagnostic.includes(report.fullLogPath),
+      diagnosticIsBounded: diagnostic.length < 10_000,
+      diagnosticShowsOmission: diagnostic.includes("characters omitted"),
+      fullLogHasTail: fullLog.endsWith("diagnostic line\n"),
+      fullLogIsRedacted: fullLog.includes("--token [REDACTED]"),
+      fullLogLeaksCredential: fullLog.includes(credential),
+      permissions,
+    }).toEqual({
+      diagnosticHasFullPath: true,
+      diagnosticIsBounded: true,
+      diagnosticShowsOmission: true,
+      fullLogHasTail: true,
+      fullLogIsRedacted: true,
+      fullLogLeaksCredential: false,
+      permissions: 0o600,
+    });
+  } finally {
+    await rm(temporaryRoot, { recursive: true, force: true });
+  }
 });
 
 test("does not launch a lane after its suite is cancelled", async () => {
