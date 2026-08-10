@@ -244,7 +244,7 @@ async function stopFirefoxProcessGroup(processGroupId: number) {
   try {
     process.kill(-processGroupId, "SIGKILL");
   } catch (error: any) {
-    if (error.code !== "ESRCH") throw error;
+    if (!new Set(["EPERM", "ESRCH"]).has(error.code)) throw error;
   }
   const deadline = Date.now() + 2_000;
   while (processGroupExists(processGroupId) && Date.now() < deadline) await Bun.sleep(20);
@@ -256,7 +256,7 @@ function processGroupExists(processGroupId: number) {
     process.kill(-processGroupId, 0);
     return true;
   } catch (error: any) {
-    return error.code !== "ESRCH";
+    return !new Set(["EPERM", "ESRCH"]).has(error.code);
   }
 }
 

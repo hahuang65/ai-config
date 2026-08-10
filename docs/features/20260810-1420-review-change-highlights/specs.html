@@ -1,0 +1,1037 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Latest Change Highlights - Spec</title>
+  <style>
+    :root {
+      color-scheme: light dark;
+      --font-display: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+      --font-body: "Avenir Next", Avenir, "Segoe UI", sans-serif;
+      --font-mono: Menlo, Monaco, Consolas, monospace;
+      --paper: #f4efe4;
+      --paper-raised: #fffaf0;
+      --paper-recessed: #ebe3d4;
+      --ink: #27241f;
+      --ink-muted: #6e675d;
+      --line: #cfc3b1;
+      --line-strong: #9f927f;
+      --terracotta: #a94f32;
+      --terracotta-soft: #f0d8ca;
+      --sage: #426b5a;
+      --sage-soft: #dce9df;
+      --ochre: #9a6a16;
+      --ochre-soft: #f2e3bd;
+      --blue: #365f78;
+      --blue-soft: #d9e7ee;
+      --shadow: 0 12px 30px rgba(62, 49, 32, 0.09);
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --paper: #1f1d1a;
+        --paper-raised: #292621;
+        --paper-recessed: #181714;
+        --ink: #f3eadb;
+        --ink-muted: #b8ad9d;
+        --line: #49433a;
+        --line-strong: #746a5c;
+        --terracotta: #e58a67;
+        --terracotta-soft: #4b2d23;
+        --sage: #91c7aa;
+        --sage-soft: #243d31;
+        --ochre: #e3bc68;
+        --ochre-soft: #493b20;
+        --blue: #92bfd5;
+        --blue-soft: #243b47;
+        --shadow: 0 12px 30px rgba(0, 0, 0, 0.24);
+      }
+    }
+
+    * { box-sizing: border-box; }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      margin: 0;
+      background-color: var(--paper);
+      background-image: repeating-linear-gradient(
+        0deg,
+        transparent,
+        transparent 31px,
+        color-mix(in srgb, var(--line) 28%, transparent) 31px,
+        color-mix(in srgb, var(--line) 28%, transparent) 32px
+      );
+      color: var(--ink);
+      font-family: var(--font-body);
+      font-size: 16px;
+      line-height: 1.65;
+      overflow-wrap: break-word;
+    }
+
+    a {
+      color: var(--blue);
+      text-decoration-thickness: 1px;
+      text-underline-offset: 3px;
+    }
+
+    .page {
+      width: min(1180px, calc(100% - 40px));
+      margin: 0 auto;
+      padding: 54px 0 88px;
+    }
+
+    .masthead {
+      display: grid;
+      grid-template-columns: minmax(0, 1.5fr) minmax(250px, 0.5fr);
+      gap: 40px;
+      align-items: end;
+      padding: 38px 42px;
+      background: var(--paper-raised);
+      border: 1px solid var(--line);
+      border-top: 6px solid var(--terracotta);
+      box-shadow: var(--shadow);
+    }
+
+    .eyebrow,
+    .section-label,
+    .card-label {
+      margin: 0 0 10px;
+      color: var(--terracotta);
+      font-family: var(--font-mono);
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+    }
+
+    h1,
+    h2,
+    h3 {
+      color: var(--ink);
+      font-family: var(--font-display);
+      text-wrap: balance;
+    }
+
+    h1 {
+      max-width: 760px;
+      margin: 0;
+      font-size: clamp(2.8rem, 7vw, 5.6rem);
+      font-weight: 700;
+      letter-spacing: -0.045em;
+      line-height: 0.95;
+    }
+
+    .dek {
+      max-width: 760px;
+      margin: 24px 0 0;
+      color: var(--ink-muted);
+      font-family: var(--font-display);
+      font-size: clamp(1.2rem, 2.1vw, 1.55rem);
+      line-height: 1.45;
+    }
+
+    .scope-note {
+      padding: 20px 22px;
+      background: var(--paper-recessed);
+      border-left: 3px solid var(--sage);
+    }
+
+    .scope-note strong {
+      display: block;
+      margin-bottom: 6px;
+      color: var(--sage);
+      font-family: var(--font-mono);
+      font-size: 0.76rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .scope-note p { margin: 0; }
+
+    .contents {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px 20px;
+      margin: 28px 0 0;
+      padding: 16px 20px;
+      background: color-mix(in srgb, var(--paper-raised) 88%, transparent);
+      border: 1px solid var(--line);
+      font-family: var(--font-mono);
+      font-size: 0.77rem;
+    }
+
+    .contents a { color: var(--ink-muted); }
+
+    section {
+      margin-top: 62px;
+      scroll-margin-top: 24px;
+    }
+
+    .section-heading {
+      display: grid;
+      grid-template-columns: 58px minmax(0, 1fr);
+      gap: 18px;
+      align-items: start;
+      padding-bottom: 14px;
+      border-bottom: 1px solid var(--line-strong);
+    }
+
+    .section-number {
+      color: var(--terracotta);
+      font-family: var(--font-mono);
+      font-size: 0.9rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      padding-top: 11px;
+    }
+
+    h2 {
+      margin: 0;
+      font-size: clamp(2rem, 4vw, 3rem);
+      line-height: 1.05;
+    }
+
+    h3 {
+      margin: 0 0 10px;
+      font-size: 1.35rem;
+      line-height: 1.25;
+    }
+
+    p { margin: 0 0 1em; }
+
+    .lead {
+      max-width: 74ch;
+      margin: 24px 0 0 76px;
+      font-family: var(--font-display);
+      font-size: 1.23rem;
+      line-height: 1.6;
+    }
+
+    .problem-grid,
+    .solution-grid,
+    .module-grid,
+    .decision-grid {
+      display: grid;
+      gap: 18px;
+      margin-top: 26px;
+    }
+
+    .problem-grid { grid-template-columns: minmax(0, 1.4fr) minmax(260px, 0.6fr); }
+    .solution-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .module-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .decision-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+
+    .paper-card {
+      min-width: 0;
+      padding: 22px 24px;
+      background: var(--paper-raised);
+      border: 1px solid var(--line);
+    }
+
+    .paper-card--hero {
+      border-left: 4px solid var(--terracotta);
+      box-shadow: var(--shadow);
+    }
+
+    .paper-card--recessed { background: var(--paper-recessed); }
+    .paper-card--sage { border-top: 4px solid var(--sage); }
+    .paper-card--ochre { border-top: 4px solid var(--ochre); }
+    .paper-card--blue { border-top: 4px solid var(--blue); }
+
+    .paper-card p:last-child,
+    .paper-card ul:last-child { margin-bottom: 0; }
+
+    .flow {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      margin-top: 28px;
+      border: 1px solid var(--line);
+      background: var(--paper-raised);
+    }
+
+    .flow-step {
+      min-width: 0;
+      min-height: 156px;
+      padding: 19px;
+      position: relative;
+      border-right: 1px solid var(--line);
+    }
+
+    .flow-step:last-child { border-right: 0; }
+
+    .flow-step::after {
+      content: "";
+      position: absolute;
+      top: 28px;
+      right: -6px;
+      z-index: 1;
+      width: 11px;
+      height: 11px;
+      background: var(--paper-raised);
+      border-top: 1px solid var(--line-strong);
+      border-right: 1px solid var(--line-strong);
+      transform: rotate(45deg);
+    }
+
+    .flow-step:last-child::after { display: none; }
+
+    .flow-index {
+      display: inline-block;
+      margin-bottom: 13px;
+      color: var(--terracotta);
+      font-family: var(--font-mono);
+      font-size: 0.72rem;
+      font-weight: 700;
+    }
+
+    .flow-step strong {
+      display: block;
+      margin-bottom: 7px;
+      font-family: var(--font-display);
+      font-size: 1.08rem;
+    }
+
+    .flow-step p {
+      color: var(--ink-muted);
+      font-size: 0.89rem;
+      line-height: 1.5;
+    }
+
+    .stories {
+      display: grid;
+      gap: 12px;
+      margin: 28px 0 0;
+      padding: 0;
+      list-style: none;
+      counter-reset: story;
+    }
+
+    .stories li {
+      min-width: 0;
+      counter-increment: story;
+      padding: 18px 22px 18px 70px;
+      position: relative;
+      background: var(--paper-raised);
+      border-bottom: 1px solid var(--line);
+    }
+
+    .stories li::before {
+      content: counter(story, decimal-leading-zero);
+      position: absolute;
+      top: 18px;
+      left: 20px;
+      color: var(--terracotta);
+      font-family: var(--font-mono);
+      font-size: 0.82rem;
+      font-weight: 700;
+    }
+
+    .stories li:nth-child(4n + 2) { border-left: 3px solid var(--sage); }
+    .stories li:nth-child(4n + 3) { border-left: 3px solid var(--ochre); }
+    .stories li:nth-child(4n + 4) { border-left: 3px solid var(--blue); }
+
+    .table-wrap {
+      margin-top: 26px;
+      overflow: hidden;
+      background: var(--paper-raised);
+      border: 1px solid var(--line);
+    }
+
+    .table-scroll { overflow-x: auto; }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.91rem;
+    }
+
+    th,
+    td {
+      padding: 14px 16px;
+      text-align: left;
+      vertical-align: top;
+      border-bottom: 1px solid var(--line);
+    }
+
+    th {
+      background: var(--paper-recessed);
+      color: var(--ink-muted);
+      font-family: var(--font-mono);
+      font-size: 0.7rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      white-space: nowrap;
+    }
+
+    tbody tr:last-child td { border-bottom: 0; }
+    tbody tr:nth-child(even) { background: color-mix(in srgb, var(--blue-soft) 25%, transparent); }
+
+    .kind {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 2px;
+      font-family: var(--font-mono);
+      font-size: 0.7rem;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+
+    .kind--added { color: var(--sage); background: var(--sage-soft); }
+    .kind--updated { color: var(--blue); background: var(--blue-soft); }
+    .kind--moved { color: var(--ochre); background: var(--ochre-soft); }
+    .kind--removed { color: var(--terracotta); background: var(--terracotta-soft); }
+
+    .change-mock {
+      display: grid;
+      grid-template-rows: auto minmax(250px, 1fr);
+      min-height: 360px;
+      margin-top: 28px;
+      overflow: hidden;
+      background: var(--paper-raised);
+      border: 1px solid var(--line-strong);
+      box-shadow: var(--shadow);
+    }
+
+    .change-bar {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 9px;
+      padding: 10px 14px;
+      background: var(--paper-recessed);
+      border-bottom: 1px solid var(--line);
+      font-family: var(--font-mono);
+      font-size: 0.74rem;
+    }
+
+    .change-bar strong { margin-right: auto; }
+
+    .mock-button {
+      padding: 5px 9px;
+      color: var(--ink);
+      background: var(--paper-raised);
+      border: 1px solid var(--line-strong);
+      border-radius: 3px;
+      font: inherit;
+    }
+
+    .mock-artifact {
+      padding: 35px clamp(24px, 8vw, 90px);
+      position: relative;
+      background-image: linear-gradient(90deg, color-mix(in srgb, var(--blue-soft) 22%, transparent), transparent 45%);
+    }
+
+    .mock-region {
+      max-width: 620px;
+      padding: 18px 20px 18px 27px;
+      position: relative;
+      background: var(--paper-raised);
+      border: 1px solid var(--line);
+    }
+
+    .mock-region::before {
+      content: "";
+      position: absolute;
+      inset: -1px auto -1px -1px;
+      width: 8px;
+      background: repeating-linear-gradient(
+        135deg,
+        var(--blue),
+        var(--blue) 3px,
+        var(--blue-soft) 3px,
+        var(--blue-soft) 6px
+      );
+    }
+
+    .mock-region::after {
+      content: "Updated";
+      position: absolute;
+      top: -12px;
+      right: 14px;
+      padding: 3px 8px;
+      color: var(--blue);
+      background: var(--blue-soft);
+      border: 1px solid var(--blue);
+      border-radius: 2px;
+      font-family: var(--font-mono);
+      font-size: 0.68rem;
+      font-weight: 700;
+    }
+
+    .mock-region h3 { font-size: 1.2rem; }
+    .mock-region p { margin: 0; color: var(--ink-muted); }
+
+    .decision-list,
+    .scope-list,
+    .test-list {
+      margin: 12px 0 0;
+      padding-left: 1.5em;
+    }
+
+    .decision-list li,
+    .scope-list li,
+    .test-list li { margin: 0.55em 0; }
+
+    .module-card {
+      min-width: 0;
+      padding: 22px 24px;
+      background: var(--paper-raised);
+      border: 1px solid var(--line);
+      border-left: 4px solid var(--blue);
+    }
+
+    .module-card:nth-child(2n) { border-left-color: var(--sage); }
+    .module-card:nth-child(3n) { border-left-color: var(--ochre); }
+
+    .test-surface {
+      margin-top: 14px;
+      padding-top: 12px;
+      color: var(--ink-muted);
+      border-top: 1px dashed var(--line-strong);
+      font-size: 0.88rem;
+    }
+
+    .test-surface strong {
+      color: var(--ink);
+      font-family: var(--font-mono);
+      font-size: 0.72rem;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+    }
+
+    .callout {
+      margin-top: 24px;
+      padding: 18px 22px;
+      background: var(--ochre-soft);
+      border-left: 4px solid var(--ochre);
+    }
+
+    .callout strong { color: var(--ochre); }
+
+    .meta-footer {
+      margin-top: 70px;
+      padding-top: 18px;
+      color: var(--ink-muted);
+      border-top: 1px solid var(--line-strong);
+      font-family: var(--font-mono);
+      font-size: 0.72rem;
+    }
+
+    .problem-grid > *,
+    .solution-grid > *,
+    .module-grid > *,
+    .decision-grid > *,
+    .flow > *,
+    .masthead > * { min-width: 0; }
+
+    @media (max-width: 860px) {
+      .masthead,
+      .problem-grid,
+      .module-grid,
+      .decision-grid { grid-template-columns: 1fr; }
+
+      .solution-grid { grid-template-columns: 1fr; }
+
+      .flow {
+        grid-template-columns: 1fr;
+      }
+
+      .flow-step {
+        min-height: 0;
+        border-right: 0;
+        border-bottom: 1px solid var(--line);
+      }
+
+      .flow-step:last-child { border-bottom: 0; }
+      .flow-step::after { display: none; }
+      .lead { margin-left: 0; }
+    }
+
+    @media (max-width: 560px) {
+      .page {
+        width: min(100% - 24px, 1180px);
+        padding-top: 18px;
+      }
+
+      .masthead { padding: 27px 23px; }
+      .section-heading { grid-template-columns: 1fr; gap: 0; }
+      .section-number { padding-top: 0; }
+      .stories li { padding-left: 58px; }
+      .stories li::before { left: 15px; }
+      .paper-card, .module-card { padding: 19px; }
+      .change-bar strong { width: 100%; }
+    }
+
+    @media print {
+      body { background: white; color: black; }
+      .page { width: 100%; padding: 0; }
+      .masthead, .change-mock, .paper-card, .module-card { box-shadow: none; }
+      section { break-inside: avoid; }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <header class="masthead">
+      <div>
+        <p class="eyebrow">Review artifact runtime · proposed behavior</p>
+        <h1>Latest Change Highlights Spec</h1>
+        <p class="dek">Make each saved revision easy to inspect without losing the reviewer’s place or changing the canonical HTML.</p>
+      </div>
+      <aside class="scope-note" aria-label="Core promise">
+        <strong>Core promise</strong>
+        <p>The first render stays clean.</p>
+        <p>Each later live reload marks only the newest review-visible changes.</p>
+      </aside>
+    </header>
+
+    <nav class="contents" aria-label="Spec sections">
+      <a href="#problem">Problem</a>
+      <a href="#solution">Solution</a>
+      <a href="#stories">User stories</a>
+      <a href="#implementation">Implementation decisions</a>
+      <a href="#testing">Testing decisions</a>
+      <a href="#out-of-scope">Out of scope</a>
+      <a href="#notes">Further notes</a>
+    </nav>
+
+    <main data-artifact-kind="spec" data-artifact-version="1">
+      <section id="problem">
+        <div class="section-heading">
+          <span class="section-number">01</span>
+          <div>
+            <p class="section-label">Problem statement</p>
+            <h2>Reloading shows the answer, but not what changed.</h2>
+          </div>
+        </div>
+        <p class="lead">An open review already live-reloads when its canonical HTML changes, but the reviewer must scan the whole document to find the revised intent.</p>
+        <div class="problem-grid">
+          <article class="paper-card paper-card--hero">
+            <h3>The cost grows with the document</h3>
+            <p>A small revision can be difficult to locate in a long Spec, Tasks document, or review report.</p>
+            <p>This is especially costly when feedback on one artifact forces an upstream artifact to be revised and reviewed again.</p>
+            <p>The reviewer needs a clear view of only the newest saved revision without turning the review runtime into another source of truth.</p>
+          </article>
+          <aside class="paper-card paper-card--recessed">
+            <p class="card-label">Current constraints</p>
+            <ul class="scope-list">
+              <li>The canonical HTML must remain unchanged by review controls.</li>
+              <li>Scroll and annotation mode already survive live reload.</li>
+              <li>The sandbox keeps the shell separate from the artifact DOM.</li>
+              <li>Review must continue when comparison cannot complete.</li>
+            </ul>
+          </aside>
+        </div>
+      </section>
+
+      <section id="solution">
+        <div class="section-heading">
+          <span class="section-number">02</span>
+          <div>
+            <p class="section-label">Solution</p>
+            <h2>Compare settled artifact revisions in the browser.</h2>
+          </div>
+        </div>
+        <p class="lead">The review runtime captures a bounded settled rendering after each load, compares consecutive artifact revisions, and presents the resulting changed regions as temporary review UI.</p>
+
+        <div class="solution-grid">
+          <article class="paper-card paper-card--sage">
+            <p class="card-label">Clean start</p>
+            <h3>No initial highlight</h3>
+            <p>The first open, a full shell refresh, and a newly opened tab establish a baseline without implying that the whole artifact is new.</p>
+          </article>
+          <article class="paper-card paper-card--blue">
+            <p class="card-label">Focused revision</p>
+            <h3>Only the latest changes</h3>
+            <p>Added, Updated, Moved, and Removed regions remain marked until another artifact revision arrives or the reviewer dismisses them.</p>
+          </article>
+          <article class="paper-card paper-card--ochre">
+            <p class="card-label">Safe fallback</p>
+            <h3>Review always continues</h3>
+            <p>Bounded comparison failures produce one plain status marker and never block, mutate, or repeatedly reload the artifact.</p>
+          </article>
+        </div>
+
+        <div class="flow" aria-label="Artifact revision flow">
+          <article class="flow-step">
+            <span class="flow-index">01</span>
+            <strong>Settle</strong>
+            <p>Wait for a bounded stable rendered state after load.</p>
+          </article>
+          <article class="flow-step">
+            <span class="flow-index">02</span>
+            <strong>Capture</strong>
+            <p>Keep a bounded semantic snapshot in the current browser tab.</p>
+          </article>
+          <article class="flow-step">
+            <span class="flow-index">03</span>
+            <strong>Compare</strong>
+            <p>Match conservatively and find the smallest changed regions.</p>
+          </article>
+          <article class="flow-step">
+            <span class="flow-index">04</span>
+            <strong>Present</strong>
+            <p>Draw runtime rails and type badges without changing layout.</p>
+          </article>
+          <article class="flow-step">
+            <span class="flow-index">05</span>
+            <strong>Navigate</strong>
+            <p>Let the reviewer move through or dismiss the newest change set.</p>
+          </article>
+        </div>
+
+        <figure class="change-mock" aria-labelledby="change-mock-caption">
+          <div class="change-bar">
+            <strong>3 changed regions</strong>
+            <span class="mock-button">Previous</span>
+            <span class="mock-button">Next</span>
+            <span class="mock-button">Dismiss</span>
+          </div>
+          <div class="mock-artifact">
+            <article class="mock-region">
+              <h3>Review-visible change</h3>
+              <p>A patterned leading rail and visible type badge identify the region without covering its content.</p>
+            </article>
+          </div>
+          <figcaption id="change-mock-caption" hidden>Example of the change bar and an Updated region.</figcaption>
+        </figure>
+      </section>
+
+      <section id="stories">
+        <div class="section-heading">
+          <span class="section-number">03</span>
+          <div>
+            <p class="section-label">User stories</p>
+            <h2>The complete reviewer experience.</h2>
+          </div>
+        </div>
+        <ol class="stories">
+          <li>As a reviewer, I want the initial artifact render to have no change highlight, so that opening an existing document does not imply that all content is new.</li>
+          <li>As a reviewer, I want a live reload to identify only review-visible changes from the newest saved revision, so that I can inspect revised intent quickly.</li>
+          <li>As a reviewer, I want additions, updates, moves, and removals to have plain-language labels, so that I understand why each region is marked.</li>
+          <li>As a reviewer, I want text, relevant attributes, visible computed styles, and semantic ordering to participate in comparison, so that meaningful visual and content revisions are not missed.</li>
+          <li>As a reviewer, I want interactions made after the prior artifact load to stay outside the comparison baseline, so that expanding a section or using a form does not create false changes.</li>
+          <li>As a reviewer, I want my scroll position preserved when a reload completes, so that the runtime does not interrupt the part of the artifact I am reading.</li>
+          <li>As a reviewer, I want a changed-region count with wrapping Previous and Next controls, so that I can find offscreen changes when I choose.</li>
+          <li>As a reviewer, I want Previous or Next to select and scroll to one region at a time, so that navigation is deliberate and the current region is clear.</li>
+          <li>As a reviewer, I want to dismiss the latest-change highlight, so that I can return to an unmarked artifact until another revision arrives.</li>
+          <li>As a reviewer, I want removed content represented at the nearest surviving container without restoring deleted text, so that deletion is visible without falsifying the current artifact.</li>
+          <li>As a reviewer, I want annotation outlines to remain clear on highlighted regions, so that giving feedback and locating prior annotations continue to work.</li>
+          <li>As a reviewer, I want rapid saves to coalesce into the newest settled revision, so that I do not see highlights for intermediate states that never became reviewable.</li>
+          <li>As a reviewer, I want an unchanged reload to clear the previous highlight without creating a new one, so that the view always represents the newest artifact revision.</li>
+          <li>As a reviewer, I want oversized or unstable artifacts to report that detailed comparison is limited or unavailable, so that review remains usable and does not silently mislead me.</li>
+          <li>As a reviewer with the same session open in multiple tabs, I want each tab to own its own baseline, so that a tab compares only revisions it actually rendered.</li>
+          <li>As an artifact author, I want all snapshot, comparison, and highlight state to remain bounded and in browser memory, so that the canonical HTML and durable review state remain unchanged.</li>
+          <li>As a runtime maintainer, I want malformed or stale cross-frame messages rejected, so that rapid reloads cannot apply an old comparison result to a newer artifact.</li>
+          <li>As a current keyboard or reduced-motion user, I want the existing review controls and reduced-motion behavior to keep working, so that this feature does not regress established behavior.</li>
+        </ol>
+      </section>
+
+      <section id="implementation">
+        <div class="section-heading">
+          <span class="section-number">04</span>
+          <div>
+            <p class="section-label">Implementation decisions</p>
+            <h2>State stays local; boundaries stay narrow.</h2>
+          </div>
+        </div>
+        <p class="lead">The implementation follows <a href="../../adr/0018-adopt-html-native-review-artifacts.md">ADR-0018</a>: canonical semantic HTML remains authoritative, while the review runtime owns temporary presentation and browser interaction.</p>
+
+        <div class="module-grid" aria-label="Production module sketch">
+          <article class="module-card" id="module-revision-engine">
+            <p class="card-label">Deep module</p>
+            <h3>Artifact revision engine</h3>
+            <p>Captures bounded settled semantic snapshots and compares two revisions to produce conservative, non-overlapping changed regions.</p>
+            <p class="test-surface"><strong>Public interface:</strong> capture a revision and compare two revisions under explicit limits.</p>
+          </article>
+          <article class="module-card" id="module-reload-coordinator">
+            <p class="card-label">Deep module</p>
+            <h3>Reload lifecycle coordinator</h3>
+            <p>Owns each tab’s baseline, reload generation, rapid-save coalescing, stale-result rejection, dismissal state, and fail-open recovery.</p>
+            <p class="test-surface"><strong>Public interface:</strong> accept lifecycle events and issue bounded frame and presentation actions.</p>
+          </article>
+          <article class="module-card" id="module-change-view">
+            <p class="card-label">Artifact-side view</p>
+            <h3>Artifact change view</h3>
+            <p>Maps current changed regions to pointer-free overlays, removal anchors, active navigation, and annotation-priority behavior inside the iframe.</p>
+            <p class="test-surface"><strong>Public interface:</strong> the rendered browser review surface.</p>
+          </article>
+          <article class="module-card" id="module-change-bar">
+            <p class="card-label">Shell-side view</p>
+            <h3>Shell change bar</h3>
+            <p>Shows the changed-region count, comparison status, and wrapping Previous, Next, and Dismiss controls above the iframe.</p>
+            <p class="test-surface"><strong>Public interface:</strong> the rendered browser review surface.</p>
+          </article>
+          <article class="module-card" id="module-message-contract">
+            <p class="card-label">Trust boundary</p>
+            <h3>Cross-frame message contract</h3>
+            <p>Validates bounded snapshots, generation identifiers, comparison commands, and results while preserving source-window checks.</p>
+            <p class="test-surface"><strong>Public interface:</strong> shell-message and frame-message validators.</p>
+          </article>
+        </div>
+
+        <h3 style="margin-top: 34px;">Change semantics</h3>
+        <div class="table-wrap">
+          <div class="table-scroll">
+            <table>
+              <thead>
+                <tr>
+                  <th scope="col">Type</th>
+                  <th scope="col">What qualifies</th>
+                  <th scope="col">Where the marker appears</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><span class="kind kind--added">Added</span></td>
+                  <td>A new semantic element or newly visible rendered content has no conservative match in the prior revision.</td>
+                  <td>The smallest new semantic element.</td>
+                </tr>
+                <tr>
+                  <td><span class="kind kind--updated">Updated</span></td>
+                  <td>Matched content changes in direct text, relevant attributes, or the bounded visible computed-style set.</td>
+                  <td>The smallest matched semantic owner that explains the update.</td>
+                </tr>
+                <tr>
+                  <td><span class="kind kind--moved">Moved</span></td>
+                  <td>A matched element changes relative order among matched siblings without geometry-only noise.</td>
+                  <td>The moved element, combined with Updated when both apply.</td>
+                </tr>
+                <tr>
+                  <td><span class="kind kind--removed">Removed</span></td>
+                  <td>A prior semantic element has no conservative match in the current revision.</td>
+                  <td>The nearest matched surviving container, or a page marker when none is useful.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="decision-grid">
+          <article class="paper-card">
+            <p class="card-label">Matching and granularity</p>
+            <ul class="decision-list">
+              <li>Match unique stable identifiers and task metadata first.</li>
+              <li>Use conservative structural and text anchors only when unique.</li>
+              <li>Use the closest unambiguous container instead of guessing.</li>
+              <li>Do not duplicate a descendant change on every ancestor.</li>
+              <li>Count an ancestor separately only for its own attributes, direct text, or child structure.</li>
+            </ul>
+          </article>
+          <article class="paper-card">
+            <p class="card-label">Snapshot boundary</p>
+            <ul class="decision-list">
+              <li>Capture after a bounded stable period and exclude runtime review UI.</li>
+              <li>Keep the settled snapshot from each load rather than the interaction-mutated DOM at save time.</li>
+              <li>Include a bounded set of visible computed styles, including visibility, generated content, color, typography, spacing, and size.</li>
+              <li>Exclude document metadata, script source, hidden automation metadata, and geometry-only responsive changes.</li>
+            </ul>
+          </article>
+          <article class="paper-card">
+            <p class="card-label">Reload lifecycle</p>
+            <ul class="decision-list">
+              <li>The first settled load establishes a silent baseline.</li>
+              <li>Rapid source saves retain the last settled baseline and replace unfinished target loads with the newest available state.</li>
+              <li>Generation identifiers prevent stale snapshots or results from becoming current.</li>
+              <li>A successful comparison promotes the newest snapshot to the next baseline even when no changed regions exist.</li>
+              <li>A failed comparison resets the baseline chain before later comparisons resume.</li>
+            </ul>
+          </article>
+          <article class="paper-card">
+            <p class="card-label">Presentation</p>
+            <ul class="decision-list">
+              <li>The change bar appears above the iframe only when a result or status marker exists.</li>
+              <li>No region is active after reload, so scroll remains preserved.</li>
+              <li>Next initially selects the first region and Previous initially selects the last.</li>
+              <li>Overlays use a patterned leading rail and visible type badge without changing artifact layout.</li>
+              <li>Annotation hover and locate outlines take priority while the change rail and badge remain visible.</li>
+            </ul>
+          </article>
+          <article class="paper-card">
+            <p class="card-label">Bounds and failure</p>
+            <ul class="decision-list">
+              <li>Cap settlement duration, scanned elements, depth, text, attributes, computed styles, snapshot bytes, and displayed changed regions.</li>
+              <li>Reject malformed messages and ignore stale generations.</li>
+              <li>Use one page-level “Detailed highlights are limited” marker when comparison exceeds limits.</li>
+              <li>Use one page-level “Change comparison unavailable” marker when capture, settlement, comparison, or rendering fails.</li>
+              <li>Clear stale highlights and keep the review fully usable in every failure case.</li>
+            </ul>
+          </article>
+          <article class="paper-card">
+            <p class="card-label">Ownership</p>
+            <ul class="decision-list">
+              <li>The shell owns the prior snapshot because it survives iframe replacement but not a shell refresh.</li>
+              <li>The current iframe owns current element references, overlays, and navigation targets.</li>
+              <li>The server continues to emit reload events without storing or comparing revision content.</li>
+              <li>Snapshots never enter durable session state, browser storage, or cross-tab synchronization.</li>
+              <li>Dismissal removes presentation but preserves the current revision as the next comparison baseline.</li>
+            </ul>
+          </article>
+        </div>
+
+        <div class="callout">
+          <strong>Accessibility scope for this version.</strong>
+          The feature uses visible text labels and native shell buttons, but it adds no announcements, focus movement, focus restoration, or new keyboard shortcuts.
+          Existing keyboard operation and reduced-motion behavior must not regress.
+        </div>
+      </section>
+
+      <section id="testing">
+        <div class="section-heading">
+          <span class="section-number">05</span>
+          <div>
+            <p class="section-label">Testing decisions</p>
+            <h2>Pin behavior at deep interfaces and in Firefox.</h2>
+          </div>
+        </div>
+        <p class="lead">Tests follow the existing runtime pattern: deterministic modules cover exhaustive comparison and lifecycle cases, while real browser evidence proves the integrated shell and sandboxed iframe behavior.</p>
+
+        <div class="module-grid">
+          <article class="module-card">
+            <p class="card-label">Test directly</p>
+            <h3>Artifact revision engine</h3>
+            <p>Use its capture-and-compare interface to cover text, relevant attributes, computed styles, additions, removals, sibling moves, combined labels, ambiguous identity, non-overlapping regions, bounds, and unstable-state failure.</p>
+          </article>
+          <article class="module-card">
+            <p class="card-label">Test directly</p>
+            <h3>Reload lifecycle coordinator</h3>
+            <p>Use its event interface with controlled time to cover silent initial baselines, rapid-save coalescing, stale generations, unchanged revisions, dismissal, baseline promotion, and recovery after failed comparison.</p>
+          </article>
+          <article class="module-card">
+            <p class="card-label">Test directly</p>
+            <h3>Cross-frame message contract</h3>
+            <p>Use the validators to prove valid message acceptance and rejection of malformed, oversized, unknown, and stale payloads.</p>
+          </article>
+          <article class="module-card">
+            <p class="card-label">Covered through browser</p>
+            <h3>Artifact change view and shell change bar</h3>
+            <p>Use a real Firefox review session because overlays, iframe scrolling, sandbox messages, annotation priority, and controls are user-visible integration behavior.</p>
+          </article>
+        </div>
+
+        <div class="table-wrap">
+          <div class="table-scroll">
+            <table>
+              <thead>
+                <tr>
+                  <th scope="col">Browser behavior</th>
+                  <th scope="col">Required observation</th>
+                  <th scope="col">Prior art</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Initial open and full reopen</td>
+                  <td>No change bar or overlay appears before a later live reload.</td>
+                  <td>Existing shell startup and durable-session browser evidence.</td>
+                </tr>
+                <tr>
+                  <td>Content and presentation changes</td>
+                  <td>Text, relevant attributes, inline-style effects, reordering, additions, and removal anchors receive correct labels.</td>
+                  <td>Existing rendered annotation and layout evidence.</td>
+                </tr>
+                <tr>
+                  <td>Reload continuity</td>
+                  <td>Scroll is preserved, no region starts active, and interaction-only mutations are excluded.</td>
+                  <td>Existing live-reload and scroll-restoration evidence.</td>
+                </tr>
+                <tr>
+                  <td>Controls</td>
+                  <td>Previous and Next wrap, activate the correct region, and scroll only after user action; Dismiss clears all presentation.</td>
+                  <td>Existing narrow-shell keyboard and control evidence.</td>
+                </tr>
+                <tr>
+                  <td>Annotation priority</td>
+                  <td>Hover and locate outlines stay clear while the change rail and label remain visible.</td>
+                  <td>Existing annotation locate protocol evidence.</td>
+                </tr>
+                <tr>
+                  <td>Rapid saves and stale frames</td>
+                  <td>Only the newest settled state is shown and no obsolete frame result appears.</td>
+                  <td>Existing atomic-replacement and event-stream evidence.</td>
+                </tr>
+                <tr>
+                  <td>Independent tabs</td>
+                  <td>Each tab uses only revisions that it rendered and a new tab starts clean.</td>
+                  <td>Existing isolated pooled browser-context evidence.</td>
+                </tr>
+                <tr>
+                  <td>Bounds and failure</td>
+                  <td>The correct page-level status appears while the artifact remains interactive and stale presentation clears.</td>
+                  <td>Existing bounded queue, validation, and severe-layout fallback evidence.</td>
+                </tr>
+                <tr>
+                  <td>Narrow layout</td>
+                  <td>The change bar and artifact remain usable without horizontal overflow.</td>
+                  <td>Existing narrow shell browser evidence.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <section id="out-of-scope">
+        <div class="section-heading">
+          <span class="section-number">06</span>
+          <div>
+            <p class="section-label">Out of scope</p>
+            <h2>Deliberate exclusions keep the first version bounded.</h2>
+          </div>
+        </div>
+        <div class="problem-grid">
+          <article class="paper-card">
+            <h3>Not part of comparison</h3>
+            <ul class="scope-list">
+              <li>Referenced CSS, JavaScript, image, or sibling HTML saves that do not trigger a canonical HTML reload.</li>
+              <li>Pixel comparison for canvas, images, video, or other rasterized output.</li>
+              <li>Script source, document metadata, hidden automation metadata, or runtime review UI.</li>
+              <li>DOM changes caused only by user interaction after the previous settled load.</li>
+              <li>Geometry changes caused only by viewport size, font loading, or responsive layout.</li>
+            </ul>
+          </article>
+          <article class="paper-card paper-card--recessed">
+            <h3>Not part of presentation</h3>
+            <ul class="scope-list">
+              <li>Persistent change history or navigation across older revisions.</li>
+              <li>Cross-tab synchronization or durable snapshot storage.</li>
+              <li>Automatic scrolling or focus movement when a reload completes.</li>
+              <li>Timed highlight expiry or an undo action after Dismiss.</li>
+              <li>New announcements, focus management, keyboard shortcuts, or accessibility navigation.</li>
+              <li>Any rewrite of canonical HTML to add runtime controls or markers.</li>
+            </ul>
+          </article>
+        </div>
+      </section>
+
+      <section id="notes">
+        <div class="section-heading">
+          <span class="section-number">07</span>
+          <div>
+            <p class="section-label">Further notes</p>
+            <h2>Durable context for implementation.</h2>
+          </div>
+        </div>
+        <div class="decision-grid">
+          <article class="paper-card paper-card--hero">
+            <h3>Canonical immutability is non-negotiable</h3>
+            <p>The source artifact remains the only durable content model.</p>
+            <p>Snapshots, comparison results, bars, rails, badges, and removal markers are temporary browser presentation.</p>
+          </article>
+          <article class="paper-card">
+            <h3>No new architectural decision</h3>
+            <p>This feature extends the existing HTML-native review decision in ADR-0018.</p>
+            <p>The detailed UX and comparison policy are reversible runtime behavior, so they do not require a new project-wide decision record.</p>
+          </article>
+        </div>
+      </section>
+    </main>
+
+    <footer class="meta-footer">
+      Canonical feature spec · latest change highlights · prepared for review
+    </footer>
+  </div>
+</body>
+</html>

@@ -126,7 +126,13 @@ body[data-presence="working"] #presence { color: var(--accent); }
 .toolbar button[aria-pressed="true"] { border-color: var(--accent); color: var(--accent); }
 
 .layout { height: calc(100% - 54px); display: grid; grid-template-columns: minmax(0, 1fr) clamp(300px, 32vw, 520px); grid-template-rows: minmax(0, 1fr); }
-.artifact-panel { min-width: 0; min-height: 0; padding: 10px; background: var(--artifact-panel); }
+.artifact-panel { min-width: 0; min-height: 0; display: grid; grid-template-rows: auto minmax(0, 1fr); padding: 10px; background: var(--artifact-panel); }
+.change-bar { display: flex; align-items: center; gap: 8px; min-width: 0; padding: 8px 12px; border: 1px solid var(--line); border-bottom: 0; border-radius: 8px 8px 0 0; background: var(--panel); font: 700 11px/1.3 ui-monospace, monospace; }
+.change-bar strong { margin-right: auto; }
+.change-bar button { padding: 5px 9px; border: 1px solid var(--line); border-radius: 6px; background: var(--panel-raised); color: var(--text); cursor: pointer; }
+.change-bar[data-status] button { display: none; }
+.change-bar[hidden] { display: none; }
+.change-bar:not([hidden]) + #artifact { border-radius: 0 0 8px 8px; }
 #artifact { display: block; width: 100%; height: 100%; border: 0; border-radius: 8px; background: white; }
 
 .conversation {

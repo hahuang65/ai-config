@@ -216,6 +216,40 @@ The shell adopts the reviewed document's title and shares validation with the HT
 Closing or ending the session without approval does not clear a pipeline gate.
 _Avoid_: artifact review, annotation cycle, inline `//` review.
 
+**Artifact revision**:
+The settled rendered state produced when a watched canonical HTML file live-reloads in an open **review artifact workflow**.
+It is compared with the settled state captured after the prior load, so later artifact interactions do not become part of the comparison.
+Rapid saves during settling coalesce into the newest available settled state rather than creating intermediate artifact revisions.
+A rendered state that does not stabilize within a bounded settling period causes comparison to fail safely.
+Only canonical HTML saves produce artifact revisions; referenced asset saves do not.
+Each browser tab owns its artifact revisions independently, and a newly opened tab starts without comparison state.
+
+**Review-visible change**:
+A difference between consecutive **artifact revisions** that changes rendered content, status, accessibility, or layout.
+It includes added and removed elements, changed text, relevant attribute changes, bounded visible computed-style changes, and relative reordering among matched siblings.
+Visible computed-style changes include visibility, generated content, color, typography, spacing, and size, but not pixel differences in canvas, images, or video.
+It excludes document metadata, script source, hidden automation metadata, runtime review UI, and geometry changes caused only by the viewport, font loading, or responsive layout.
+
+**Changed region**:
+The smallest non-overlapping semantic element that explains one **review-visible change**.
+It is classified as Added, Updated, Moved, Removed, or an informative combination such as Updated and moved.
+A descendant change does not also make every ancestor a changed region; an ancestor counts separately only when its own attributes, direct text, or child structure changed.
+Element matching uses stable identifiers and task metadata first, then conservative structural and text anchors.
+An ambiguous match marks the closest unambiguous container instead of guessing.
+
+**Latest-change highlight**:
+Runtime-only presentation that identifies the **changed regions** in the newest **artifact revision** without modifying the canonical HTML.
+Each changed region has a pointer-free overlay with a patterned leading rail and a visible change-type badge; only the region selected through navigation receives a stronger border.
+Annotation hover and locate outlines take visual priority while the change rail and badge remain visible.
+A slim change bar above the artifact iframe appears only while highlights or a comparison-status marker exist.
+It preserves the reviewer's scroll position, initially selects no region, and provides a changed-region count plus wrapping Previous and Next navigation.
+Next initially selects the first region, Previous initially selects the last, and Dismiss removes the bar and all highlights until another artifact revision arrives.
+Removed content marks the nearest surviving container, or the page when no useful container survives, without restoring the removed content.
+An unchanged artifact revision clears the prior highlight without creating a new one.
+A revision that exceeds comparison limits uses one page-level marker that states detailed highlights are limited.
+If comparison fails, stale highlights clear, review continues, and one page-level marker states that change comparison is unavailable.
+It does not appear on the initial load, remains until the next artifact revision or explicit dismissal, and does not survive a full shell refresh, closed review, or reopened review.
+
 **Pipeline skill**:
 A skill the `/build` skill orchestrator drives through its five phases and supporting review workflow — `build`, `grill`, `spec`, `todo`, `code`, `coach`, **Review change**, and `review-artifact`.
 Some pipeline skills also run standalone, including `grill`, `spec`, `todo`, and **Review change**.

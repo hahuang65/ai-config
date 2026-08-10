@@ -1,6 +1,12 @@
+import { captureSettledArtifactRevision } from "./revision-settling.js";
+import { activateChangedRegion, clearChangedRegions, presentChangedRegions } from "./change-overlay.js";
+import { validateShellMessage } from "./message-validation.js";
+
 (() => {
   "use strict";
 
+  const frameGeneration = boundedGeneration(new URL(location.href).searchParams.get("generation"));
+  let activeComparisonId = 0;
   let annotationMode = true;
   let hovered = null;
   let locateTarget = null;
@@ -282,6 +288,21 @@
 
   window.addEventListener("message", (event) => {
     if (event.source !== parent) return;
+    if (event.data?.type === "review:present-changed-regions") {
+      const message = validateShellMessage(event.data);
+      if (message?.generation === frameGeneration) presentComparison(message);
+      return;
+    }
+    if (event.data?.type === "review:activate-changed-region") {
+      const message = validateShellMessage(event.data);
+      if (activeComparisonMatches(message)) activateChangedRegion(message.direction);
+      return;
+    }
+    if (event.data?.type === "review:dismiss-changed-regions") {
+      const message = validateShellMessage(event.data);
+      if (activeComparisonMatches(message)) clearChangedRegions();
+      return;
+    }
     if (event.data?.type === "review:get-ready") reportReady();
     if (event.data?.type === "review:set-mode") {
       annotationMode = Boolean(event.data.enabled);
@@ -311,7 +332,44 @@
 
   reportReady();
   reportScroll();
+  reportArtifactRevision();
   rootLayoutAudit();
+
+  async function reportArtifactRevision() {
+    try {
+      const revision = await captureSettledArtifactRevision(document.body);
+      parent.postMessage({ type: "review:artifact-revision", generation: frameGeneration, revision }, "*");
+    } catch (error) {
+      parent.postMessage({
+        type: "review:artifact-revision-failed",
+        generation: frameGeneration,
+        status: error?.name === "ArtifactRevisionLimitError" ? "limited" : "unavailable",
+      }, "*");
+    }
+  }
+
+  function presentComparison(message) {
+    activeComparisonId = message.comparisonId;
+    try {
+      presentChangedRegions(message.regions);
+    } catch {
+      clearChangedRegions();
+      parent.postMessage({
+        type: "review:change-presentation-failed",
+        comparisonId: message.comparisonId,
+        generation: frameGeneration,
+      }, "*");
+    }
+  }
+
+  function activeComparisonMatches(message) {
+    return message?.generation === frameGeneration && message.comparisonId === activeComparisonId;
+  }
+
+  function boundedGeneration(value) {
+    const generation = Number(value ?? 0);
+    return Number.isSafeInteger(generation) && generation >= 0 && generation <= 10_000_000 ? generation : 0;
+  }
 
   async function rootLayoutAudit() {
     const layout = globalThis.ReviewArtifactLayout;

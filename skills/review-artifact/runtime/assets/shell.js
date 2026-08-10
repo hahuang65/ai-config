@@ -1,3 +1,7 @@
+import { compareArtifactRevisions } from "./artifact-revision.js";
+import { createChangeBar } from "./change-bar.js";
+import { createArtifactChangePresenter } from "./change-presenter.js";
+import { createBrowserReloadController } from "./change-session.js";
 import {
   appendPrompt,
   validateChatEntries,
@@ -11,6 +15,11 @@ import {
   const DEFAULT_THEME = "catppuccin-mocha";
   const session = JSON.parse(document.getElementById("review-session").textContent);
   const artifact = document.getElementById("artifact");
+  const changeBar = document.querySelector("[data-review-change-bar]");
+  const changeCount = document.querySelector("[data-review-change-count]");
+  const dismissChangesButton = document.querySelector('[data-review-change-action="dismiss"]');
+  const nextChangeButton = document.querySelector('[data-review-change-action="next"]');
+  const previousChangeButton = document.querySelector('[data-review-change-action="previous"]');
   const modeButton = document.getElementById("mode");
   const themeSelect = document.getElementById("theme");
   const presence = document.getElementById("presence");
@@ -32,6 +41,13 @@ import {
   let pendingAction = "feedback";
   let queueLimitReported = false;
   let artifactScroll = { x: 0, y: 0 };
+  const changeBarView = createChangeBar({ bar: changeBar, count: changeCount });
+  const changePresenter = createArtifactChangePresenter({ artifact, changeBar: changeBarView });
+  const reloadController = createBrowserReloadController({
+    compare: compareArtifactRevisions,
+    navigate: reloadArtifact,
+    present: changePresenter.present,
+  });
   applyTheme(readTheme(), { persist: false });
 
   function readTheme() {
@@ -247,6 +263,25 @@ import {
     if (message.type === "review:queue") queuePrompt(message.prompt);
     if (message.type === "review:submit" && queuePrompt(message.prompt)) requestSnapshot("feedback");
     if (message.type === "review:snapshot") submit(message.snapshot);
+    if (message.type === "review:artifact-revision") {
+      reloadController.accept({
+        type: "frame-settled",
+        generation: message.generation,
+        revision: message.revision,
+      });
+      artifact.dataset.reviewRevisionReady = "true";
+    }
+    if (message.type === "review:artifact-revision-failed") {
+      reloadController.accept({
+        type: "frame-failed",
+        generation: message.generation,
+        status: message.status,
+      });
+      artifact.dataset.reviewRevisionReady = "true";
+    }
+    if (message.type === "review:change-presentation-failed") {
+      changePresenter.presentationFailed(message);
+    }
     if (message.type === "review:layout") reportLayout(message.layoutWarnings);
     if (message.type === "review:scroll") artifactScroll = { x: message.x, y: message.y };
     if (message.type === "review:locate-result" && activeLocateBadge?.isConnected) {
@@ -269,6 +304,9 @@ import {
     layoutGateCopy.textContent = "The agent has been notified before review begins.";
   }
 
+  nextChangeButton.addEventListener("click", () => changePresenter.activate("next"));
+  previousChangeButton.addEventListener("click", () => changePresenter.activate("previous"));
+  dismissChangesButton.addEventListener("click", changePresenter.dismiss);
   modeButton.addEventListener("click", () => {
     annotationMode = !annotationMode;
     modeButton.setAttribute("aria-pressed", String(annotationMode));
@@ -296,7 +334,7 @@ import {
     if (update.type === "presence") {
       setPresence(update.state);
     }
-    if (update.type === "reload") reloadArtifact();
+    if (update.type === "reload") reloadController.accept({ type: "reload-requested" });
   };
 
   function setPresence(state) {
@@ -308,14 +346,16 @@ import {
     }[state] || "Agent not listening";
   }
 
-  function reloadArtifact() {
+  function reloadArtifact(generation) {
     const position = artifactScroll;
+    delete artifact.dataset.reviewRevisionReady;
     artifact.addEventListener("load", () => {
       artifact.contentWindow?.postMessage({ type: "review:restore-scroll", ...position }, "*");
       artifact.contentWindow?.postMessage({ type: "review:set-mode", enabled: annotationMode }, "*");
     }, { once: true });
     const source = new URL(artifact.src);
     source.searchParams.set("reload", String(Date.now()));
+    source.searchParams.set("generation", String(generation));
     artifact.src = source.toString();
   }
 

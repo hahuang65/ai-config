@@ -194,6 +194,7 @@ async function handlePresentationRoutes(context, url) {
   if (request.method !== "GET") return false;
   const browserFile = browserAsset(url.pathname);
   if (browserFile) {
+    response.setHeader("access-control-allow-origin", "*");
     sendContent(response, 200, browserFile.type, await readFile(new URL(`./assets/${browserFile.file}`, import.meta.url)));
     return true;
   }
@@ -304,9 +305,15 @@ async function takeOrWait({ request, store, events, key }) {
 
 function browserAsset(pathname) {
   return {
+    "/artifact-revision.js": { file: "artifact-revision.js", type: "text/javascript; charset=utf-8" },
     "/bridge.js": { file: "bridge.js", type: "text/javascript; charset=utf-8" },
+    "/change-bar.js": { file: "change-bar.js", type: "text/javascript; charset=utf-8" },
+    "/change-overlay.js": { file: "change-overlay.js", type: "text/javascript; charset=utf-8" },
+    "/change-presenter.js": { file: "change-presenter.js", type: "text/javascript; charset=utf-8" },
+    "/change-session.js": { file: "change-session.js", type: "text/javascript; charset=utf-8" },
     "/layout-audit.js": { file: "layout-audit.js", type: "text/javascript; charset=utf-8" },
     "/message-validation.js": { file: "message-validation.js", type: "text/javascript; charset=utf-8" },
+    "/revision-settling.js": { file: "revision-settling.js", type: "text/javascript; charset=utf-8" },
     "/shell.js": { file: "shell.js", type: "text/javascript; charset=utf-8" },
     "/shell.css": { file: "shell.css", type: "text/css; charset=utf-8" },
   }[pathname] ?? null;

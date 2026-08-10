@@ -4,8 +4,25 @@ const {
   appendPrompt,
   validateChatEntries,
   validateFrameMessage,
+  validateShellMessage,
   validateStoredQueue,
 } = await import("../../skills/review-artifact/runtime/assets/message-validation.js");
+
+test("rejects cyclic revision payloads without throwing", () => {
+  const revision: Record<string, unknown> = { version: 1, elements: [] };
+  revision.cycle = revision;
+
+  expect(() => validateFrameMessage({
+    type: "review:artifact-revision",
+    generation: 1,
+    revision,
+  })).not.toThrow();
+  expect(validateFrameMessage({
+    type: "review:artifact-revision",
+    generation: 1,
+    revision,
+  })).toBeNull();
+});
 
 test("rejects malformed and oversized frame messages", () => {
   expect([
@@ -81,6 +98,58 @@ test("preserves a bounded text-range annotation", () => {
     type: "review:queue",
     prompt: { prompt: "Tighten this copy", target: { type: "text-range" } },
   });
+});
+
+test("accepts bounded failure messages and rejects unknown change messages", () => {
+  expect([
+    validateFrameMessage({
+      type: "review:artifact-revision-failed",
+      generation: 2,
+      status: "unavailable",
+    }),
+    validateFrameMessage({
+      type: "review:artifact-revision-failed",
+      generation: -1,
+      status: "unknown",
+    }),
+    validateShellMessage({
+      type: "review:unknown-change-command",
+      comparisonId: 1,
+      generation: 2,
+    }),
+  ]).toEqual([
+    { type: "review:artifact-revision-failed", generation: 2, status: "unavailable" },
+    null,
+    null,
+  ]);
+});
+
+test("accepts only bounded artifact revision messages", () => {
+  const revision = {
+    version: 1,
+    elements: [{ path: [0, 1], tag: "p", directText: "Revised" }],
+  };
+  expect([
+    validateFrameMessage({ type: "review:artifact-revision", generation: 0, revision }),
+    validateFrameMessage({ type: "review:artifact-revision", generation: Number.MAX_SAFE_INTEGER, revision }),
+    validateFrameMessage({ type: "review:artifact-revision", generation: 0, revision: { ...revision, version: 2 } }),
+    validateShellMessage({
+      type: "review:present-changed-regions",
+      comparisonId: 1,
+      generation: 0,
+      regions: [{ kind: "updated", path: [0, 1] }],
+    }),
+  ]).toEqual([
+    { type: "review:artifact-revision", generation: 0, revision },
+    null,
+    null,
+    {
+      type: "review:present-changed-regions",
+      comparisonId: 1,
+      generation: 0,
+      regions: [{ kind: "updated", path: [0, 1] }],
+    },
+  ]);
 });
 
 test("discards invalid persisted queue entries", () => {

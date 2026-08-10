@@ -36,6 +36,12 @@ export function renderReviewShell(session) {
   </header>
   <main class="layout">
     <section class="artifact-panel" aria-label="Artifact under review">
+      <div class="change-bar" data-review-change-bar hidden>
+        <strong data-review-change-count></strong>
+        <button type="button" data-review-change-action="previous">Previous</button>
+        <button type="button" data-review-change-action="next">Next</button>
+        <button type="button" data-review-change-action="dismiss">Dismiss</button>
+      </div>
       <iframe id="artifact" title="Artifact under review" sandbox="allow-scripts allow-forms" src="/artifact/${session.key}/index.html"></iframe>
     </section>
     <aside class="conversation" aria-label="Review conversation">
@@ -63,7 +69,7 @@ export function renderReviewShell(session) {
 export function injectBridge(html, key) {
   const scripts = [
     '<script src="/layout-audit.js"></script>',
-    `<script src="/bridge.js?key=${encodeURIComponent(key)}"></script>`,
+    `<script type="module" src="/bridge.js?key=${encodeURIComponent(key)}"></script>`,
   ].join("");
   if (/<\/body\s*>/i.test(html)) return html.replace(/<\/body\s*>/i, `${scripts}</body>`);
   return `${html}\n${scripts}`;

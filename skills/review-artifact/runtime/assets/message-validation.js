@@ -6,6 +6,10 @@ const LIMITS = Object.freeze({
   prompt: 10_000,
   queueBytes: 120_000,
   queuePrompts: 100,
+  revisionElements: 2_500,
+  revisionFields: 50,
+  revisionRegions: 50,
+  revisionSnapshot: 2_000_000,
   selector: 2_000,
   snapshot: 100_000,
   tag: 100,
@@ -36,6 +40,20 @@ export function validateFrameMessage(message) {
     const snapshot = boundedString(message.snapshot, LIMITS.snapshot);
     return snapshot === null ? null : { type: message.type, snapshot };
   }
+  if (message.type === "review:artifact-revision") {
+    const revision = validateArtifactRevision(message.revision);
+    const generation = boundedIdentifier(message.generation);
+    return revision && generation !== null ? { type: message.type, generation, revision } : null;
+  }
+  if (message.type === "review:artifact-revision-failed") {
+    const generation = boundedIdentifier(message.generation);
+    const status = new Set(["limited", "unavailable"]).has(message.status) ? message.status : null;
+    return generation !== null && status ? { type: message.type, generation, status } : null;
+  }
+  if (message.type === "review:change-presentation-failed") {
+    const identifiers = validateComparisonIdentifiers(message);
+    return identifiers ? { type: message.type, ...identifiers } : null;
+  }
   if (message.type === "review:layout") {
     const layoutWarnings = validateLayoutWarnings(message.layoutWarnings);
     return layoutWarnings ? { type: message.type, layoutWarnings } : null;
@@ -49,6 +67,21 @@ export function validateFrameMessage(message) {
     return x === null || y === null ? null : { type: message.type, x, y };
   }
   return null;
+}
+
+export function validateShellMessage(message) {
+  if (!plainObject(message) || typeof message.type !== "string") return null;
+  const identifiers = validateComparisonIdentifiers(message);
+  if (!identifiers) return null;
+  if (message.type === "review:activate-changed-region"
+    && new Set(["next", "previous"]).has(message.direction)) {
+    return { type: message.type, ...identifiers, direction: message.direction };
+  }
+  if (message.type === "review:dismiss-changed-regions") return { type: message.type, ...identifiers };
+  if (message.type !== "review:present-changed-regions") return null;
+  if (!Array.isArray(message.regions) || message.regions.length > LIMITS.revisionRegions) return null;
+  const regions = message.regions.map(validateChangedRegion);
+  return regions.every(Boolean) ? { type: message.type, ...identifiers, regions } : null;
 }
 
 export function validateStoredQueue(queue) {
@@ -110,6 +143,75 @@ function validateChatEntry(entry) {
   return { role: "user", text, prompt: metadata, ...timestamp };
 }
 
+function validateComparisonIdentifiers(message) {
+  const comparisonId = boundedIdentifier(message.comparisonId);
+  const generation = boundedIdentifier(message.generation);
+  return comparisonId === null || generation === null ? null : { comparisonId, generation };
+}
+
+function boundedIdentifier(value) {
+  return Number.isSafeInteger(value) && value >= 0 && value <= LIMITS.targetOffset ? value : null;
+}
+
+function validateArtifactRevision(revision) {
+  if (!plainObject(revision) || revision.version !== 1 || !Array.isArray(revision.elements)) return null;
+  if (revision.elements.length > LIMITS.revisionElements || serializedBytes(revision) > LIMITS.revisionSnapshot) return null;
+  const elements = revision.elements.map(validateRevisionElement);
+  return elements.every(Boolean) ? { version: 1, elements } : null;
+}
+
+function validateRevisionElement(element) {
+  if (!plainObject(element)) return null;
+  const path = validateElementPath(element.path);
+  const tag = boundedString(element.tag, LIMITS.tag);
+  const directText = boundedString(element.directText, LIMITS.text);
+  const identity = validateOptionalIdentity(element.identity);
+  const attributes = validateOptionalStringRecord(element.attributes);
+  const computedStyles = validateOptionalStringRecord(element.computedStyles);
+  if (!path || tag === null || directText === null || identity === null
+    || attributes === null || computedStyles === null) return null;
+  return {
+    path,
+    tag,
+    directText,
+    ...(identity === undefined ? {} : { identity }),
+    ...(attributes === undefined ? {} : { attributes }),
+    ...(computedStyles === undefined ? {} : { computedStyles }),
+  };
+}
+
+function validateOptionalIdentity(identity) {
+  if (identity === undefined) return undefined;
+  if (!plainObject(identity)) return null;
+  const allowed = new Set(["id", "sliceId", "criterionId"]);
+  if (Object.keys(identity).some((key) => !allowed.has(key))) return null;
+  const entries = Object.entries(identity).map(([key, value]) => [key, boundedString(value, LIMITS.selector)]);
+  return entries.every(([, value]) => value !== null) ? Object.fromEntries(entries) : null;
+}
+
+function validateOptionalStringRecord(record) {
+  if (record === undefined) return undefined;
+  if (!plainObject(record)) return null;
+  const entries = Object.entries(record);
+  if (entries.length > LIMITS.revisionFields) return null;
+  const boundedEntries = entries.map(([key, value]) => [boundedString(key, LIMITS.tag), boundedString(value, LIMITS.text)]);
+  return boundedEntries.every(([key, value]) => key !== null && value !== null)
+    ? Object.fromEntries(boundedEntries)
+    : null;
+}
+
+function validateChangedRegion(region) {
+  if (!plainObject(region)
+    || !new Set(["added", "moved", "removed", "updated", "updated-moved"]).has(region.kind)) return null;
+  const path = validateElementPath(region.path);
+  return path ? { kind: region.kind, path } : null;
+}
+
+function validateElementPath(candidate) {
+  if (!Array.isArray(candidate) || candidate.length > LIMITS.targetPath) return null;
+  return candidate.every((entry) => Number.isSafeInteger(entry) && entry >= 0) ? [...candidate] : null;
+}
+
 function validateTextTarget(target) {
   if (!plainObject(target) || target.type !== "text-range") return null;
   const text = boundedString(target.text, LIMITS.text);
@@ -155,7 +257,11 @@ function validateLayoutWarning(warning) {
 }
 
 function serializedBytes(value) {
-  return new TextEncoder().encode(JSON.stringify(value)).byteLength;
+  try {
+    return new TextEncoder().encode(JSON.stringify(value)).byteLength;
+  } catch {
+    return Number.POSITIVE_INFINITY;
+  }
 }
 
 function boundedString(value, maximum) {
@@ -181,5 +287,6 @@ globalThis.ReviewArtifactMessages = Object.freeze({
   validateChatEntries,
   validateFrameMessage,
   validatePrompt,
+  validateShellMessage,
   validateStoredQueue,
 });
