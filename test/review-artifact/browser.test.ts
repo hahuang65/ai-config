@@ -150,6 +150,40 @@ browserTest("bounds a live artifact feedback queue", async () => {
   }
 }, 15_000);
 
+browserTest("shows the layout gate only for reported failures and allows dismissal", async () => {
+  const review = await startInteractiveReview({
+    artifactContent: `<!doctype html><main>Layout gate target</main><script>
+      setTimeout(() => parent.postMessage({
+        type: "review:layout",
+        layoutWarnings: [{
+          selector: "main",
+          kind: "escaped-content",
+          axis: "horizontal",
+          overflowPx: 48,
+          viewportWidth: innerWidth,
+          severity: "error",
+          persistent: false,
+        }],
+      }, "*"), 1_000);
+    </script>`,
+  });
+  void review.polling.catch(() => {});
+  try {
+    expect(await review.browser.evaluate(`JSON.stringify(document.querySelector("#layout-gate").hidden)`)).toBeTrue();
+    await waitForBrowserCondition(
+      () => review.browser.evaluate(`JSON.stringify(!document.querySelector("#layout-gate").hidden)`),
+      "Layout gate did not appear for a reported failure",
+    );
+    expect(await review.browser.evaluate(`JSON.stringify((() => {
+      const button = document.querySelector("#show-anyway");
+      button.click();
+      return document.querySelector("#layout-gate").hidden;
+    })())`)).toBeTrue();
+  } finally {
+    await closeInteractiveReview(review);
+  }
+}, 15_000);
+
 browserTest("drives actual narrow shell controls through keyboard feedback", async () => {
   const review = await startInteractiveReview({
     artifactContent: "<!doctype html><main>Shell control target</main>",

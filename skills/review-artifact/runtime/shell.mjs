@@ -57,7 +57,7 @@ export function renderReviewShell(session) {
       </div>
     </aside>
   </main>
-  <div class="layout-gate" id="layout-gate" role="status">
+  <div class="layout-gate" id="layout-gate" role="status" hidden>
     <div><h2 id="layout-gate-title">Checking layout</h2><p id="layout-gate-copy">Waiting for stable browser geometry before review.</p><button id="show-anyway" type="button">Show anyway</button></div>
   </div>
   <script id="review-session" type="application/json">${sessionJson}</script>

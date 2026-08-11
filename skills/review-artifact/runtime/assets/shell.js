@@ -291,17 +291,17 @@ import {
   synchronizeArtifact();
 
   async function reportLayout(layoutWarnings) {
+    const hasLayoutFailure = layoutWarnings.length > 0;
+    layoutGate.hidden = !hasLayoutFailure;
+    if (hasLayoutFailure) {
+      layoutGateTitle.textContent = "Severe layout failure";
+      layoutGateCopy.textContent = "The agent has been notified before review begins.";
+    }
     await fetch(`/api/sessions/${session.key}/layout-warnings`, {
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify({ layoutWarnings }),
     });
-    if (layoutWarnings.length === 0) {
-      layoutGate.hidden = true;
-      return;
-    }
-    layoutGateTitle.textContent = "Severe layout failure";
-    layoutGateCopy.textContent = "The agent has been notified before review begins.";
   }
 
   nextChangeButton.addEventListener("click", () => changePresenter.activate("next"));
@@ -366,9 +366,6 @@ import {
     }
   });
 
-  setTimeout(() => {
-    if (layoutGateTitle.textContent === "Checking layout") layoutGate.hidden = true;
-  }, 4_000);
 
   for (const chat of validateChatEntries(session.initialChat)) addMessage(chat);
   renderQueue();
