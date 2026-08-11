@@ -4,7 +4,9 @@ description: Git commit and branch-integration conventions — message format, s
 
 # Git Commit
 
-Policy for staging and committing. Destructive-command blockers (force-push, `--no-verify`, hard reset) live in `no-git-destructive.md`; this file is about *what a normal commit should contain and how its message should read*.
+Policy for staging and committing.
+The `no-git-destructive` guardrail policy in the shared guard core blocks force-push, `--no-verify`, hard reset, and related unsafe operations.
+This rule defines what a normal commit contains and how its message reads.
 
 ## Commit message format
 
@@ -42,7 +44,10 @@ Fallback summary (used only when `~/.gitmessage` is absent):
 - Commit early and often. Small, focused commits are easier to review and revert.
 - Each commit should be a single logical change. Don't mix refactoring with feature work.
 - Never commit secrets, credentials, or `.env` files.
-- When committing changes, always check for corresponding files in `docs/features/` (research documents, plans, architecture diagrams) that were created or modified as part of the work. Include them in the commit unless they are ignored by any git mechanism (`.gitignore`, `.git/info/exclude`, or `core.excludesFile`). These artifacts are part of the feature's history.
+- Check for related context files, ADRs, canonical `mockups.html`, `specs.html`, `tasks.html`, and intentional feature visuals.
+  In ordinary projects, include them unless Git ignores them.
+  These artifacts are part of the feature history.
+  In A5 projects, follow the exception below instead.
 
 ### A5 project exception
 

@@ -1,6 +1,6 @@
 # CONTEXT.md Format
 
-Shared reference used by `model-domain`.
+Context-file format reference for the `model-domain` skill.
 
 ## Context Files and Ubiquitous Language
 

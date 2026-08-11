@@ -1,6 +1,6 @@
 # ADR Format
 
-Shared reference used by `model-domain` and `prototype`.
+Format reference for the `model-domain` skill.
 
 ADRs live in `docs/adr/` and use sequential numbering: `0001-slug.md`, `0002-slug.md`, etc.
 

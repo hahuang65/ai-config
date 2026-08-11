@@ -1,173 +1,78 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>/spec Skill Guide</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
-<style>
-:root {
-  --font-body: 'IBM Plex Sans', system-ui, sans-serif;
-  --font-mono: 'IBM Plex Mono', 'SF Mono', Consolas, monospace;
-  --bg: #f0f2f5; --surface: #ffffff; --surface-recessed: #e8ebf0;
-  --border: rgba(30, 58, 95, 0.10); --border-bright: rgba(30, 58, 95, 0.20);
-  --text: #1e293b; --text-dim: #64748b;
-  --accent: #1e3a5f; --accent-dim: rgba(30, 58, 95, 0.08);
-  --gold: #d4a73a; --gold-dim: rgba(212, 167, 58, 0.10);
-  --specs: #0891b2; --specs-dim: rgba(8, 145, 178, 0.10);
-  --must: #be123c; --must-dim: rgba(190, 18, 60, 0.10);
-  --grid: rgba(30, 58, 95, 0.04);
-}
-@media (prefers-color-scheme: dark) {
-  :root {
-    --bg: #0c1220; --surface: #131b2e; --surface-recessed: #0a0f1a;
-    --border: rgba(212, 167, 58, 0.08); --border-bright: rgba(212, 167, 58, 0.18);
-    --text: #e2e8f0; --text-dim: #8b9dc3;
-    --accent: #5b8cc9; --accent-dim: rgba(91, 140, 201, 0.12);
-    --gold: #e8c56a; --gold-dim: rgba(232, 197, 106, 0.12);
-    --specs: #22d3ee; --specs-dim: rgba(34, 211, 238, 0.12);
-    --must: #fb7185; --must-dim: rgba(251, 113, 133, 0.12);
-    --grid: rgba(91, 140, 201, 0.04);
-  }
-}
-* { margin: 0; padding: 0; box-sizing: border-box; }
-body { font-family: var(--font-body); background-color: var(--bg); background-image: linear-gradient(var(--grid) 1px, transparent 1px), linear-gradient(90deg, var(--grid) 1px, transparent 1px); background-size: 24px 24px; color: var(--text); line-height: 1.6; }
-.container { max-width: 1180px; margin: 0 auto; padding: 40px 24px 80px; }
-.header { text-align: center; padding: 48px 24px 40px; margin-bottom: 48px; background: var(--surface); border: 1px solid var(--border-bright); border-radius: 12px; position: relative; overflow: hidden; }
-.header::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; background: var(--specs); }
-.header h1 { font-family: var(--font-mono); font-size: clamp(1.6rem, 4vw, 2.4rem); font-weight: 700; letter-spacing: -0.02em; margin-bottom: 8px; }
-.header h1 span { color: var(--gold); }
-.header .subtitle { font-size: 1rem; color: var(--text-dim); max-width: 620px; margin: 0 auto; }
-.section { margin-bottom: 48px; }
-.section-title { font-family: var(--font-mono); font-size: 1.1rem; font-weight: 700; color: var(--gold); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 20px; padding-bottom: 8px; border-bottom: 1px solid var(--border-bright); }
-.section-title .num { color: var(--text-dim); margin-right: 8px; }
-.card-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; }
-.card { background: var(--surface); border: 1px solid var(--border); border-left: 4px solid var(--specs); border-radius: 8px; padding: 20px; }
-.card h3 { font-family: var(--font-mono); font-size: 0.95rem; font-weight: 700; color: var(--specs); margin-bottom: 10px; }
-.card p { font-size: 0.9rem; margin-bottom: 10px; }
-.card ul { list-style: none; padding: 0; font-size: 0.85rem; }
-.card li { padding: 4px 0; padding-left: 16px; position: relative; color: var(--text-dim); }
-.card li::before { content: '→'; position: absolute; left: 0; color: var(--gold); font-weight: 700; }
-.callout { background: var(--surface); border: 1px solid var(--gold); border-radius: 8px; padding: 16px 20px; margin: 20px 0; }
-.callout strong { color: var(--gold); font-family: var(--font-mono); }
-.callout.warn { border-color: var(--must); }
-.callout.warn strong { color: var(--must); }
-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
-thead { background: var(--surface-recessed); }
-th, td { padding: 10px 14px; text-align: left; border-bottom: 1px solid var(--border); vertical-align: top; }
-th { font-family: var(--font-mono); font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-dim); }
-tr:last-child td { border-bottom: none; }
-code { font-family: var(--font-mono); font-size: 0.85em; background: var(--accent-dim); padding: 2px 6px; border-radius: 3px; }
-.pre { background: var(--surface-recessed); padding: 16px 20px; border-radius: 6px; font-family: var(--font-mono); font-size: 0.82rem; overflow-x: auto; white-space: pre; line-height: 1.6; }
-.cmd-tag { font-family: var(--font-mono); font-size: 0.78rem; color: var(--gold); background: var(--gold-dim); padding: 2px 6px; border-radius: 3px; }
-.must-tag { font-family: var(--font-mono); font-size: 0.7rem; font-weight: 700; color: var(--must); background: var(--must-dim); padding: 2px 6px; border-radius: 3px; }
-</style>
+<link rel="stylesheet" href="../shared/guide.css">
 </head>
 <body>
-<div class="container">
-
-<div class="header">
-  <h1><span>/</span>spec</h1>
-  <p class="subtitle">Synthesize a feature spec from the current conversation (typically a <span class="cmd-tag">/grill</span> session). User stories + decisions, no code snippets, no file paths — durable. Based on Matt Pocock's <code>to-prd</code>.</p>
+<div class="shell">
+<header class="hero">
+<div class="kicker">Phase 2 · Spec</div>
+<h1>/spec</h1>
+<p class="lede">Synthesize settled design intent into canonical <code>specs.html</code>. Do not repeat the grill interview.</p>
+<div class="flow"><span>1 · grill and optional mockup</span><span class="active">2 · spec</span><span>3 · tasks</span><span>4 · implement</span><span>5 · review-change</span></div>
+</header>
+<main>
+<section>
+<div class="section-label">01 · Inputs</div>
+<h2>Transcribe decisions; do not rediscover them</h2>
+<ul>
+<li>Read applicable context files, recent ADRs, the conversation, and the affected code.</li>
+<li>Read approved <code>mockups.html</code> when present as Authoritative intent.</li>
+<li>For standalone use, run <code>mockup</code> first when relevant UI has no approved artifact.</li>
+<li>Ask one targeted question only when essential information is missing.</li>
+</ul>
+<p class="callout">Sketch major modules and propose each public-interface test surface. Ask the user only to correct boundaries or seams.</p>
+<p>Consult <code>api-designer</code> for changed REST contracts and <code>frontend-architect</code> for added or restructured UI. Skip them when their domain is not involved.</p>
+</section>
+<section>
+<div class="section-label">02 · Required structure</div>
+<h2>Write for durable intent</h2>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Section</th><th>Purpose</th></tr></thead>
+<tbody>
+<tr><td>Problem Statement</td><td>The problem from the user's perspective.</td></tr>
+<tr><td>Solution</td><td>The intended outcome.</td></tr>
+<tr><td>User Stories</td><td>Numbered actor, need, and benefit statements.</td></tr>
+<tr><td>Implementation Decisions</td><td>Modules, interfaces, schemas, contracts, and ADR references.</td></tr>
+<tr><td>Testing Decisions</td><td>Stable public test surfaces and relevant prior art.</td></tr>
+<tr><td>Out of Scope</td><td>Explicit exclusions.</td></tr>
+<tr><td>Further Notes</td><td>Only necessary remaining context.</td></tr>
+</tbody>
+</table>
 </div>
-
-<div class="section">
-  <div class="section-title"><span class="num">01</span>Place in the Pipeline</div>
-  <p style="font-size: 0.95rem; margin-bottom: 16px;">Phase 2 of <span class="cmd-tag">/build</span>. Inputs: applicable context files, ADRs, prior conversation, and approved <code>mockups.html</code> when relevant. Output: canonical <code>specs.html</code>.</p>
-  <div class="pre">/build "feature"
-  ├── Phase 1: /grill → conditional /mockup
-  ├── Phase 2: /spec          ← YOU ARE HERE
-  ├── Phase 3: /todo
-  └── Phase 4: /code (or /coach)</div>
+</section>
+<section>
+<div class="section-label">03 · Durability rules</div>
+<h2>Prefer stable concepts over implementation detail</h2>
+<div class="grid">
+<div class="card warn"><h3>No file paths</h3><p>Name modules and interfaces. Paths move and become stale.</p></div>
+<div class="card warn"><h3>No routine code snippets</h3><p>Describe decisions in prose. Include only a small decision-rich shape when prose is materially less precise.</p></div>
 </div>
-
-<div class="section">
-  <div class="section-title"><span class="num">02</span>Synthesize, Don't Re-Interview</div>
-  <div class="callout warn">
-    <strong>Critical:</strong> grilling and any approved mockup settled the design intent. <span class="cmd-tag">/spec</span> transcribes their outcomes — it does <em>NOT</em> re-interview the user. If essential information is genuinely missing, ask one targeted question. But don't re-run the grill session.
-  </div>
-  <p style="font-size: 0.9rem; color: var(--text-dim); margin-top: 10px;">The one micro-checkpoint that <em>is</em> in this phase: after sketching the major modules, propose their test surfaces yourself and ask the user only to correct module boundaries or public-interface seams. Don't ask which modules need tests — deep modules answer that.</p>
-  <p style="font-size: 0.9rem; color: var(--text-dim); margin-top: 10px;">Domain consultants: when the feature touches REST endpoints, the module sketch consults the <span class="agent-tag">api-designer</span> agent for the endpoint contract; when it adds or restructures UI, the <span class="agent-tag">frontend-architect</span> agent for component boundaries and state ownership. Skipped silently for features that touch neither.</p>
-  <p style="font-size: 0.9rem; color: var(--text-dim); margin-top: 10px;">Standalone use applies the mockup relevance test before synthesis. If relevant <code>mockups.html</code> is missing, run <span class="cmd-tag">/mockup</span> first. When present, summarize and link its selected design without duplicating the visual artifact.</p>
-</div>
-
-<div class="section">
-  <div class="section-title"><span class="num">03</span>spec Structure</div>
-  <table>
-    <thead><tr><th>Section</th><th>Content</th></tr></thead>
-    <tbody>
-      <tr><td><strong>Problem Statement</strong></td><td>The problem from the user's perspective</td></tr>
-      <tr><td><strong>Solution</strong></td><td>The solution from the user's perspective</td></tr>
-      <tr><td><strong>User Stories</strong></td><td>Extensive numbered list of <code>As a &lt;actor&gt;, I want &lt;feature&gt;, so that &lt;benefit&gt;</code></td></tr>
-      <tr><td><strong>Implementation Decisions</strong></td><td>Modules built/modified, interfaces, schema, contracts, references to ADRs</td></tr>
-      <tr><td><strong>Testing Decisions</strong></td><td>What makes a good test here, public-interface test surface per module, prior art</td></tr>
-      <tr><td><strong>Out of Scope</strong></td><td>Things deliberately excluded</td></tr>
-      <tr><td><strong>Further Notes</strong></td><td>Anything else worth recording</td></tr>
-    </tbody>
-  </table>
-</div>
-
-<div class="section">
-  <div class="section-title"><span class="num">04</span>Forbidden in the spec</div>
-  <div class="card-grid">
-    <div class="card" style="border-left-color: var(--must);">
-      <h3 style="color: var(--must);">No code snippets</h3>
-      <p>Code rots fast — what's correct today may not be when a task is picked up. Keep implementation code out of canonical review artifacts.</p>
-    </div>
-    <div class="card" style="border-left-color: var(--must);">
-      <h3 style="color: var(--must);">No file paths</h3>
-      <p>Same reason. Files get renamed, moved, split. The spec is durable; specific paths aren't. Reference modules by name from the applicable context files, not by location.</p>
-    </div>
-  </div>
-  <div class="callout">
-    <strong>Narrow exception:</strong> if grilling produced a snippet that encodes a decision more precisely than prose can (state machine, reducer, schema, type shape), inline it within the relevant decision and note where it came from. Trim to the decision-rich parts — not a working demo, just the important bits.
-  </div>
-</div>
-
-<div class="section">
-  <div class="section-title"><span class="num">05</span>Deep Modules</div>
-  <p style="font-size: 0.95rem; margin-bottom: 14px;">When sketching modules, actively look for <strong>deep</strong> modules over <strong>shallow</strong> ones.</p>
-  <div class="card-grid">
-    <div class="card">
-      <h3 style="color: var(--specs);">Deep</h3>
-      <p>Small interface, deep implementation. Encapsulates significant functionality behind a simple, testable API that rarely changes.</p>
-    </div>
-    <div class="card" style="border-left-color: var(--text-dim);">
-      <h3 style="color: var(--text-dim);">Shallow</h3>
-      <p>Interface nearly as wide as the implementation. Provides little encapsulation. A pass-through. Refactor target.</p>
-    </div>
-  </div>
-  <p style="font-size: 0.9rem; color: var(--text-dim); margin-top: 14px;">Deep modules are testable through their stable public interface, their tests survive refactors, and they hide complexity from callers. The spec's module sketch should bias toward these and record the test seam for each module.</p>
-</div>
-
-<div class="section">
-  <div class="section-title"><span class="num">06</span>Browser Review Loop</div>
-  <p style="font-size: 0.95rem; margin-bottom: 14px;">Write canonical <code>specs.html</code> in the project's ubiquitous language from the applicable context files, using <code>&lt;feature title&gt; - Spec</code> as the browser-tab title. Open it through <span class="cmd-tag">review-artifact</span> as an approval review, which starts in Annotate mode. The user can annotate exact elements or selected text and send a coherent feedback batch.</p>
-  <div class="pre">open specs.html → annotate → foreground poll
-        ↑                         ↓
-        └──── edit same HTML ← feedback</div>
-  <p style="font-size: 0.9rem; color: var(--text-dim); margin-top: 14px;">Address every note in the visible semantic HTML, save it, and let the existing browser session live-reload before polling again with an agent reply.</p>
-  <p style="font-size: 0.9rem; color: var(--text-dim); margin-top: 10px;"><strong>Material UI feedback return path:</strong> Pause the Spec approval review.</p>
-  <p style="font-size: 0.9rem; color: var(--text-dim); margin-top: 10px;">Update the changed <code>mockups.html</code>, then run it through <span class="cmd-tag">/mockup</span> and <span class="cmd-tag">review-artifact</span> until explicit approval.</p>
-  <p style="font-size: 0.9rem; color: var(--text-dim); margin-top: 10px;">Then synchronize <code>specs.html</code> with the approved mockup and resume the Spec approval review.</p>
-  <p style="font-size: 0.9rem; color: var(--text-dim); margin-top: 10px;">Continue to Tasks only after explicit Spec approval; renew any prior Spec approval invalidated by the UI change.</p>
-</div>
-
-<div class="section">
-  <div class="section-title"><span class="num">07</span>Live Sync Guarantee</div>
-  <div class="callout warn">
-    <strong>One reviewed source:</strong> <code>specs.html</code> is both the durable spec and the review surface. There is no Markdown companion and no intentionally stale visual.
-  </div>
-  <p style="font-size: 0.9rem; color: var(--text-dim); margin-top: 10px;">Use semantic headings and stable IDs. The HTML's <code>&lt;title&gt;</code> and <code>&lt;h1&gt;</code> must say "Spec", not "Plan".</p>
-</div>
-
-<div class="section">
-  <div class="section-title"><span class="num">08</span>Completion</div>
-  <p style="font-size: 0.95rem;">An explicit approval event advances to <span class="cmd-tag">/todo</span>. Ending or closing review is not approval; browser failure uses the chat fallback.</p>
-</div>
-
+<p class="callout"><strong>Prefer deep modules.</strong> A small stable interface should hide meaningful implementation complexity and provide a durable test seam.</p>
+</section>
+<section>
+<div class="section-label">04 · Review</div>
+<h2>Edit one live source</h2>
+<p>Write semantic <code>specs.html</code> with the title <code>&lt;feature title&gt; - Spec</code>. Open it through <code>review-artifact</code>, apply every feedback batch to the same file, and continue until explicit approval.</p>
+<ol>
+<li><strong>Material UI feedback return path:</strong> Pause the Spec approval review.</li>
+<li>Update the changed <code>mockups.html</code>, then run <code>mockup</code> through <code>review-artifact</code> until explicit approval.</li>
+<li>Synchronize <code>specs.html</code> with the approved mockup and resume the Spec approval review.</li>
+<li>Continue to Tasks only after explicit Spec approval; renew any prior Spec approval invalidated by the UI change.</li>
+</ol>
+<p class="callout">The HTML is both the durable spec and the review surface. There is no Markdown companion.</p>
+</section>
+<section>
+<div class="section-label">05 · Completion</div>
+<h2>Approval advances immediately</h2>
+<p>Explicit browser approval or chat-fallback confirmation clears Spec→Tasks and starts <code>todo</code>. Closing or ending review is not approval.</p>
+</section>
+</main>
+<footer>Human guide · spec skill · canonical specs.html</footer>
 </div>
 </body>
 </html>

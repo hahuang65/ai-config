@@ -1,255 +1,75 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>/code Skill Guide</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
-<style>
-:root {
-  --font-body: 'IBM Plex Sans', system-ui, sans-serif;
-  --font-mono: 'IBM Plex Mono', 'SF Mono', Consolas, monospace;
-  --bg: #f0f2f5;
-  --surface: #ffffff;
-  --surface-recessed: #e8ebf0;
-  --border: rgba(30, 58, 95, 0.10);
-  --border-bright: rgba(30, 58, 95, 0.20);
-  --text: #1e293b;
-  --text-dim: #64748b;
-  --accent: #1e3a5f;
-  --accent-dim: rgba(30, 58, 95, 0.08);
-  --gold: #d4a73a;
-  --gold-dim: rgba(212, 167, 58, 0.10);
-  --red: #be123c;
-  --red-dim: rgba(190, 18, 60, 0.10);
-  --green: #059669;
-  --green-dim: rgba(5, 150, 105, 0.10);
-  --refactor: #d97706;
-  --refactor-dim: rgba(217, 119, 6, 0.10);
-  --must: #be123c;
-  --must-dim: rgba(190, 18, 60, 0.10);
-  --grid: rgba(30, 58, 95, 0.04);
-}
-@media (prefers-color-scheme: dark) {
-  :root {
-    --bg: #0c1220;
-    --surface: #131b2e;
-    --surface-recessed: #0a0f1a;
-    --border: rgba(212, 167, 58, 0.08);
-    --border-bright: rgba(212, 167, 58, 0.18);
-    --text: #e2e8f0;
-    --text-dim: #8b9dc3;
-    --accent: #5b8cc9;
-    --accent-dim: rgba(91, 140, 201, 0.12);
-    --gold: #e8c56a;
-    --gold-dim: rgba(232, 197, 106, 0.12);
-    --red: #fb7185;
-    --red-dim: rgba(251, 113, 133, 0.12);
-    --green: #34d399;
-    --green-dim: rgba(52, 211, 153, 0.12);
-    --refactor: #fbbf24;
-    --refactor-dim: rgba(251, 191, 36, 0.10);
-    --must: #fb7185;
-    --must-dim: rgba(251, 113, 133, 0.12);
-    --grid: rgba(91, 140, 201, 0.04);
-  }
-}
-* { margin: 0; padding: 0; box-sizing: border-box; }
-body { font-family: var(--font-body); background-color: var(--bg); background-image: linear-gradient(var(--grid) 1px, transparent 1px), linear-gradient(90deg, var(--grid) 1px, transparent 1px); background-size: 24px 24px; color: var(--text); line-height: 1.6; }
-.container { max-width: 1180px; margin: 0 auto; padding: 40px 24px 80px; }
-.header { text-align: center; padding: 48px 24px 40px; margin-bottom: 48px; background: var(--surface); border: 1px solid var(--border-bright); border-radius: 12px; position: relative; overflow: hidden; }
-.header::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; background: linear-gradient(90deg, var(--red), var(--green), var(--refactor)); }
-.header h1 { font-family: var(--font-mono); font-size: clamp(1.6rem, 4vw, 2.4rem); font-weight: 700; letter-spacing: -0.02em; margin-bottom: 8px; }
-.header h1 span { color: var(--gold); }
-.header .subtitle { font-size: 1rem; color: var(--text-dim); max-width: 620px; margin: 0 auto 32px; }
-.cycle { display: flex; align-items: center; justify-content: center; gap: 0; flex-wrap: wrap; }
-.cycle-step { display: inline-flex; align-items: center; gap: 6px; padding: 8px 18px; border-radius: 6px; font-family: var(--font-mono); font-size: 0.82rem; font-weight: 700; border: 1px solid; }
-.cycle-step.red { background: var(--red-dim); border-color: var(--red); color: var(--red); }
-.cycle-step.green { background: var(--green-dim); border-color: var(--green); color: var(--green); }
-.cycle-step.refactor { background: var(--refactor-dim); border-color: var(--refactor); color: var(--refactor); }
-.cycle-arrow { font-size: 1.1rem; color: var(--text-dim); padding: 0 8px; }
-.section { margin-bottom: 48px; }
-.section-title { font-family: var(--font-mono); font-size: 1.1rem; font-weight: 700; color: var(--gold); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 20px; padding-bottom: 8px; border-bottom: 1px solid var(--border-bright); }
-.section-title .num { color: var(--text-dim); margin-right: 8px; }
-.card-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; }
-.card { background: var(--surface); border: 1px solid var(--border); border-left: 4px solid var(--accent); border-radius: 8px; padding: 20px; }
-.card.good { border-left-color: var(--green); }
-.card.bad { border-left-color: var(--red); }
-.card h3 { font-family: var(--font-mono); font-size: 0.95rem; font-weight: 700; margin-bottom: 12px; }
-.card.good h3 { color: var(--green); }
-.card.bad h3 { color: var(--red); }
-.card p { font-size: 0.9rem; margin-bottom: 12px; }
-.card ul { list-style: none; padding: 0; font-size: 0.85rem; }
-.card li { padding: 4px 0; padding-left: 16px; position: relative; color: var(--text-dim); }
-.card.good li::before { content: '✓'; position: absolute; left: 0; color: var(--green); font-weight: 700; }
-.card.bad li::before { content: '✗'; position: absolute; left: 0; color: var(--red); font-weight: 700; }
-.callout { background: var(--surface); border: 1px solid var(--gold); border-radius: 8px; padding: 16px 20px; margin: 20px 0; }
-.callout strong { color: var(--gold); font-family: var(--font-mono); }
-.callout.warn { border-color: var(--must); }
-.callout.warn strong { color: var(--must); }
-.cmd-tag { font-family: var(--font-mono); font-size: 0.78rem; color: var(--gold); background: var(--gold-dim); padding: 2px 6px; border-radius: 3px; }
-.agent-tag { font-family: var(--font-mono); font-size: 0.78rem; color: var(--accent); background: var(--accent-dim); padding: 2px 6px; border-radius: 3px; }
-.must-tag { font-family: var(--font-mono); font-size: 0.7rem; font-weight: 700; color: var(--must); background: var(--must-dim); padding: 2px 6px; border-radius: 3px; }
-.cond-tag { font-family: var(--font-mono); font-size: 0.7rem; font-weight: 700; color: var(--refactor); background: var(--refactor-dim); padding: 2px 6px; border-radius: 3px; }
-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
-thead { background: var(--surface-recessed); }
-th, td { padding: 10px 14px; text-align: left; border-bottom: 1px solid var(--border); vertical-align: top; }
-th { font-family: var(--font-mono); font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-dim); }
-tr:last-child td { border-bottom: none; }
-code { font-family: var(--font-mono); font-size: 0.85em; background: var(--accent-dim); padding: 2px 6px; border-radius: 3px; }
-.pre { background: var(--surface-recessed); padding: 16px 20px; border-radius: 6px; font-family: var(--font-mono); font-size: 0.82rem; overflow-x: auto; white-space: pre; line-height: 1.6; }
-.pre.bad { border-left: 3px solid var(--red); }
-.pre.good { border-left: 3px solid var(--green); }
-</style>
+<link rel="stylesheet" href="../shared/guide.css">
 </head>
 <body>
-<div class="container">
-
-<div class="header">
-  <h1><span>/</span>implement &amp; <span>/</span>coach</h1>
-  <p class="subtitle">Vertical-slice TDD execution of approved canonical <code>tasks.html</code>. One test, one implementation, repeat. Coach mode lets the user write the code; AI writes one test at a time. Inputs: approved <code>mockups.html</code> when present + <code>specs.html</code> + <code>tasks.html</code>.</p>
-  <div class="cycle">
-    <span class="cycle-step red">RED</span>
-    <span class="cycle-arrow">→</span>
-    <span class="cycle-step green">GREEN</span>
-    <span class="cycle-arrow">→</span>
-    <span class="cycle-step refactor">REFACTOR</span>
-    <span class="cycle-arrow">↺</span>
-  </div>
+<div class="shell">
+<header class="hero">
+<div class="kicker">Phase 4 · AI implementation</div>
+<h1>/code</h1>
+<p class="lede">The AI implements approved <code>tasks.html</code> one vertical slice and one RED→GREEN cycle at a time.</p>
+<div class="flow"><span class="active">RED</span><span>GREEN</span><span>REFACTOR</span><span>next criterion</span></div>
+</header>
+<main>
+<section>
+<div class="section-label">01 · Inputs and authorization</div>
+<h2>Approved intent drives the work</h2>
+<p>Read canonical <code>tasks.html</code>, linked <code>specs.html</code>, approved <code>mockups.html</code> when present, applicable context files, and relevant ADRs.</p>
+<p class="callout"><strong>Invocation is standing authorization.</strong> Routine reads, writes, test cycles, verification, documented service startup, and toolchain bootstrap proceed without repeated approval.</p>
+<p>Stop for a slice that cannot be implemented as written, a destructive operation outside session-owned artifacts, or a genuine architectural fork with no signal in approved intent or the codebase.</p>
+</section>
+<section>
+<div class="section-label">02 · Test quality</div>
+<h2>Test behavior through stable interfaces</h2>
+<div class="grid">
+<div class="card good"><h3>Prefer</h3><ul><li>User-visible behavior.</li><li>The highest stable public interface.</li><li>Real end-to-end code paths.</li><li>Tests that survive internal refactors.</li></ul></div>
+<div class="card warn"><h3>Avoid</h3><ul><li>Private methods and internal collaborators.</li><li>Side-channel verification.</li><li>Signature or data-shape tests without behavior.</li><li>Batched tests for imagined implementation.</li></ul></div>
 </div>
-
-<div class="section">
-  <div class="section-title"><span class="num">01</span>The Two Modes</div>
-  <table>
-    <thead><tr><th>Mode</th><th>Who writes the test</th><th>Who writes the impl</th><th>Cadence</th></tr></thead>
-    <tbody>
-      <tr><td><span class="cmd-tag">/code</span></td><td>AI</td><td>AI</td><td>Per slice: AI does RED→GREEN→REFACTOR, marks complete, moves on</td></tr>
-      <tr><td><span class="cmd-tag">/coach</span></td><td>AI</td><td><strong>User</strong></td><td>AI writes ONE test → user codes → AI verifies → AI writes next test</td></tr>
-    </tbody>
-  </table>
-  <p style="margin-top:14px; font-size:0.9rem; color: var(--text-dim);">Both modes use the same TDD philosophy. Coach mode hands the keyboard to the user during the GREEN step.</p>
-</div>
-
-<div class="section">
-  <div class="section-title"><span class="num">02</span>Good Tests vs Bad Tests</div>
-  <div class="card-grid">
-    <div class="card good">
-      <h3>Good tests</h3>
-      <p>Specifications written through the public interface.</p>
-      <ul>
-        <li>Describe <em>what</em>, not <em>how</em></li>
-        <li>Use the ubiquitous language from the applicable context files</li>
-        <li>Survive an internal refactor with zero changes</li>
-        <li>Exercise real code paths end-to-end</li>
-        <li>Pin behavior, not data structures</li>
-      </ul>
-    </div>
-    <div class="card bad">
-      <h3>Bad tests</h3>
-      <p>Coupled to implementation details. Warning sign: they break when you rename an internal function despite identical behavior.</p>
-      <ul>
-        <li>Mock internal collaborators</li>
-        <li>Test private methods</li>
-        <li>Verify through side channels (DB queries instead of the API)</li>
-        <li>Check signatures and shapes instead of behavior</li>
-        <li>Pass when behavior breaks, fail when it doesn't</li>
-      </ul>
-    </div>
-  </div>
-</div>
-
-<div class="section">
-  <div class="section-title"><span class="num">03</span>Vertical, Never Horizontal</div>
-  <div class="card-grid">
-    <div>
-      <p style="font-size:0.95rem; margin-bottom: 10px;"><strong style="color: var(--red); font-family: var(--font-mono);">WRONG — horizontal:</strong></p>
-      <div class="pre bad">RED:   test1, test2, test3, test4, test5
-GREEN: impl1, impl2, impl3, impl4, impl5</div>
-      <p style="font-size: 0.85rem; color: var(--text-dim); margin-top: 10px;">Tests written in batches test <em>imagined</em> behavior. They check the shape of things — signatures, data structures — instead of user-facing behavior. They become insensitive to real changes.</p>
-    </div>
-    <div>
-      <p style="font-size:0.95rem; margin-bottom: 10px;"><strong style="color: var(--green); font-family: var(--font-mono);">RIGHT — vertical:</strong></p>
-      <div class="pre good">RED→GREEN: test1 → impl1
-RED→GREEN: test2 → impl2
-RED→GREEN: test3 → impl3
-(refactor between cycles when GREEN)</div>
-      <p style="font-size: 0.85rem; color: var(--text-dim); margin-top: 10px;">Each test responds to what you learned from the previous cycle. Because you just wrote the code, you know exactly what behavior matters and how to verify it.</p>
-    </div>
-  </div>
-</div>
-
-<div class="section">
-  <div class="section-title"><span class="num">04</span>Per-Slice Workflow</div>
-  <table>
-    <thead><tr><th>Step</th><th>Action</th><th>Coach difference</th></tr></thead>
-    <tbody>
-      <tr><td>1. Confirm interface</td><td>Use the spec Testing Decisions and the slice's Test surface to identify the public interface. Look for deep modules — small interface, deep implementation.</td><td>same</td></tr>
-      <tr><td>2. Tracer bullet</td><td>Write ONE test through that interface for the end-to-end happy path. It must fail for the right reason (no impl yet, not a syntax error).</td><td>AI writes test</td></tr>
-      <tr><td>3. GREEN</td><td>Write minimal code to make the test pass.</td><td><strong>User writes code</strong>, AI verifies on "check"</td></tr>
-      <tr><td>4. Next criterion</td><td>For each remaining acceptance criterion, write the next test, then write code.</td><td>AI writes test; user writes code</td></tr>
-      <tr><td>5. Refactor</td><td>After all tests for the slice pass — only while GREEN — extract, deepen, simplify. Run tests after each step.</td><td>Done together; AI suggests, user executes</td></tr>
-      <tr><td>6. Mark complete</td><td>Update each criterion and slice to visible <code>complete</code> state with <code>data-status=&quot;complete&quot;</code> in <code>tasks.html</code>.</td><td>same</td></tr>
-    </tbody>
-  </table>
-  <div class="callout warn">
-    <strong>Never refactor while RED.</strong> Get to GREEN first. Refactoring with failing tests means you can't tell whether you're changing behavior accidentally.
-  </div>
-  <div class="callout warn" style="margin-top: 10px;">
-    <strong>Never queue tests in coach mode.</strong> Only the test you're currently solving exists. Don't preview the next one — the user should implement against the current test without anticipating.
-  </div>
-  <div class="callout warn" style="margin-top: 10px;">
-    <strong>Material UI redesign:</strong> stop the affected slice, update <code>mockups.html</code> and review it through <code>review-artifact</code>, synchronize <code>specs.html</code> and <code>tasks.html</code>, renew invalidated approvals, then resume the slice. Apply terse corrections immediately only when they do not materially redesign approved UI.
-  </div>
-</div>
-
-<div class="section">
-  <div class="section-title"><span class="num">05</span>Post-Implementation: Verification &amp; Hygiene</div>
-  <table>
-    <thead><tr><th>Step</th><th>Trigger</th><th>Severity</th></tr></thead>
-    <tbody>
-      <tr><td><strong>Type check / lint / test / build</strong></td><td>Always — full verification loop with exact commands and outcomes recorded</td><td><span class="must-tag">MUST</span></td></tr>
-      <tr><td><span class="agent-tag">tdd-guide</span></td><td>Always — guides each RED→GREEN→REFACTOR cycle</td><td><span class="must-tag">MUST</span></td></tr>
-      <tr><td><span class="agent-tag">refactorer</span> (hygiene mode)</td><td>Always — dead code, unused imports and dependencies, duplication, simplification; SAFE applied, CAREFUL/RISKY reported</td><td><span class="must-tag">MUST</span></td></tr>
-    </tbody>
-  </table>
-  <p style="margin-top:14px; font-size:0.9rem; color: var(--text-dim);">Phase 5 Review change owns adversarial review, conditional database Findings, targeted evidence, documentation, lint, canonical-artifact fact-checking, and the final decision report. Coach mode keeps source and test fixes user-owned.</p>
-</div>
-
-<div class="section">
-  <div class="section-title"><span class="num">06</span>Never Commits</div>
-  <div class="callout warn">
-    <strong>Neither mode runs git commit.</strong> No <code>git add</code>, no <code>git commit</code>, no <code>git push</code>. The user reviews the final state and commits when ready.
-  </div>
-</div>
-
-<div class="section">
-  <div class="section-title"><span class="num">07</span>Per-Slice Checklist</div>
-  <div class="card-grid">
-    <div class="card good">
-      <h3>Before claiming a slice done</h3>
-      <ul>
-        <li>Every test describes behavior, not implementation</li>
-        <li>Every test uses the public interface only</li>
-        <li>Every test would survive an internal refactor</li>
-        <li>Code is minimal for the tests it satisfies</li>
-        <li>No speculative features beyond the slice's acceptance criteria</li>
-        <li>Test names use the ubiquitous language from the applicable context files</li>
-      </ul>
-    </div>
-    <div class="card">
-      <h3>Handling deviations</h3>
-      <ul>
-        <li><strong>Minor issue:</strong> fix and continue; note the deviation in the slice body</li>
-        <li><strong>Can't implement as written:</strong> STOP and tell the user; wait for guidance</li>
-        <li><strong>Test failure during refactor:</strong> revert the refactor step; refactoring must not change behavior</li>
-        <li><strong>User reverts work:</strong> start fresh with the narrowed scope; don't patch a bad approach</li>
-      </ul>
-    </div>
-  </div>
-</div>
-
+</section>
+<section>
+<div class="section-label">03 · Per-slice loop</div>
+<h2>One test, one implementation</h2>
+<ol>
+<li>Use the slice Test surface and Spec Testing Decisions to confirm the public interface.</li>
+<li>Run the <code>tdd-guide</code> agent for the slice.</li>
+<li>Write one tracer-bullet test and confirm RED for the correct reason.</li>
+<li>Write minimum implementation and confirm GREEN.</li>
+<li>Repeat one criterion at a time.</li>
+<li>Refactor only while GREEN and rerun tests after each step.</li>
+<li>Mark criterion and slice visible status plus <code>data-status</code> complete in <code>tasks.html</code>.</li>
+</ol>
+<pre>RED→GREEN: test 1 → implementation 1
+RED→GREEN: test 2 → implementation 2
+REFACTOR only while GREEN</pre>
+</section>
+<section>
+<div class="section-label">04 · Intent changes</div>
+<h2>Keep canonical UI synchronized</h2>
+<p class="callout warn"><strong>Material UI redesign:</strong> stop the affected slice, update <code>mockups.html</code> through <code>review-artifact</code>, synchronize <code>specs.html</code> and <code>tasks.html</code>, renew invalidated approvals, then resume only after intent is synchronized.</p>
+<p>Terse corrections can proceed directly only when they stay within approved UI intent.</p>
+</section>
+<section>
+<div class="section-label">05 · Completion</div>
+<h2>Verify, then clean</h2>
+<ol>
+<li>Run type check, lint, the full test suite, and build. Fix failures until all pass.</li>
+<li>Run the <code>refactorer</code> agent in hygiene mode on changed files. Apply SAFE cleanup and report higher-risk candidates.</li>
+<li>Rerun full verification after any hygiene edit.</li>
+<li>Report every final command, scope, and outcome.</li>
+</ol>
+<p class="callout"><strong>Inside build:</strong> proceed directly to Review change. <strong>Standalone:</strong> offer optional <code>refactor</code> and <code>review-code</code> next steps.</p>
+</section>
+<section>
+<div class="section-label">06 · Git boundary</div>
+<h2>Leave delivery to the user</h2>
+<p>No staging, commit, push, or delivery occurs in <code>code</code>.</p>
+</section>
+</main>
+<footer>Human guide · code skill · AI-owned vertical-slice TDD</footer>
 </div>
 </body>
 </html>

@@ -1,327 +1,77 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>/build Pipeline Guide</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
-<style>
-:root {
-  --font-body: 'IBM Plex Sans', system-ui, sans-serif;
-  --font-mono: 'IBM Plex Mono', 'SF Mono', Consolas, monospace;
-  --bg: #f0f2f5;
-  --surface: #ffffff;
-  --surface-recessed: #e8ebf0;
-  --border: rgba(30, 58, 95, 0.10);
-  --border-bright: rgba(30, 58, 95, 0.20);
-  --text: #1e293b;
-  --text-dim: #64748b;
-  --accent: #1e3a5f;
-  --accent-dim: rgba(30, 58, 95, 0.08);
-  --gold: #d4a73a;
-  --gold-dim: rgba(212, 167, 58, 0.10);
-  --grill: #8b5cf6;
-  --grill-dim: rgba(139, 92, 246, 0.10);
-  --specs: #0891b2;
-  --specs-dim: rgba(8, 145, 178, 0.10);
-  --tasks: #d97706;
-  --tasks-dim: rgba(217, 119, 6, 0.10);
-  --implement: #059669;
-  --implement-dim: rgba(5, 150, 105, 0.10);
-  --review: #be123c;
-  --review-dim: rgba(190, 18, 60, 0.10);
-  --must: #be123c;
-  --must-dim: rgba(190, 18, 60, 0.10);
-  --grid: rgba(30, 58, 95, 0.04);
-}
-@media (prefers-color-scheme: dark) {
-  :root {
-    --bg: #0c1220;
-    --surface: #131b2e;
-    --surface-recessed: #0a0f1a;
-    --border: rgba(212, 167, 58, 0.08);
-    --border-bright: rgba(212, 167, 58, 0.18);
-    --text: #e2e8f0;
-    --text-dim: #8b9dc3;
-    --accent: #5b8cc9;
-    --accent-dim: rgba(91, 140, 201, 0.12);
-    --gold: #e8c56a;
-    --gold-dim: rgba(232, 197, 106, 0.12);
-    --grill: #a78bfa;
-    --grill-dim: rgba(167, 139, 250, 0.12);
-    --specs: #22d3ee;
-    --specs-dim: rgba(34, 211, 238, 0.12);
-    --tasks: #fbbf24;
-    --tasks-dim: rgba(251, 191, 36, 0.10);
-    --implement: #34d399;
-    --implement-dim: rgba(52, 211, 153, 0.12);
-    --review: #fb7185;
-    --review-dim: rgba(251, 113, 133, 0.12);
-    --must: #fb7185;
-    --must-dim: rgba(251, 113, 133, 0.12);
-    --grid: rgba(91, 140, 201, 0.04);
-  }
-}
-* { margin: 0; padding: 0; box-sizing: border-box; }
-body {
-  font-family: var(--font-body);
-  background-color: var(--bg);
-  background-image: linear-gradient(var(--grid) 1px, transparent 1px), linear-gradient(90deg, var(--grid) 1px, transparent 1px);
-  background-size: 24px 24px;
-  color: var(--text);
-  line-height: 1.6;
-}
-.container { max-width: 1180px; margin: 0 auto; padding: 40px 24px 80px; }
-.header { text-align: center; padding: 48px 24px 40px; margin-bottom: 48px; background: var(--surface); border: 1px solid var(--border-bright); border-radius: 12px; position: relative; overflow: hidden; }
-.header::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; background: linear-gradient(90deg, var(--grill), var(--specs), var(--tasks), var(--implement), var(--review)); }
-.header h1 { font-family: var(--font-mono); font-size: clamp(1.6rem, 4vw, 2.4rem); font-weight: 700; letter-spacing: -0.02em; margin-bottom: 8px; }
-.header h1 span { color: var(--gold); }
-.header .subtitle { font-size: 1rem; color: var(--text-dim); max-width: 620px; margin: 0 auto 32px; }
-.phase-flow { display: flex; align-items: center; justify-content: center; gap: 0; flex-wrap: wrap; }
-.phase-pill { display: inline-flex; align-items: center; gap: 6px; padding: 8px 16px; border-radius: 6px; font-family: var(--font-mono); font-size: 0.82rem; font-weight: 600; border: 1px solid; }
-.phase-pill.grill { background: var(--grill-dim); border-color: var(--grill); color: var(--grill); }
-.phase-pill.specs { background: var(--specs-dim); border-color: var(--specs); color: var(--specs); }
-.phase-pill.tasks { background: var(--tasks-dim); border-color: var(--tasks); color: var(--tasks); }
-.phase-pill.implement { background: var(--implement-dim); border-color: var(--implement); color: var(--implement); }
-.phase-pill.review { background: var(--review-dim); border-color: var(--review); color: var(--review); }
-.phase-arrow { font-size: 1.1rem; color: var(--text-dim); padding: 0 8px; }
-.phase-num { display: inline-flex; align-items: center; justify-content: center; width: 20px; height: 20px; border-radius: 50%; font-size: 0.66rem; font-weight: 700; background: currentColor; }
-.phase-num span { color: var(--surface); }
-@media (prefers-color-scheme: dark) { .phase-num span { color: var(--bg); } }
-.section { margin-bottom: 48px; }
-.section-title { font-family: var(--font-mono); font-size: 1.1rem; font-weight: 700; color: var(--gold); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 20px; padding-bottom: 8px; border-bottom: 1px solid var(--border-bright); }
-.section-title .num { color: var(--text-dim); margin-right: 8px; }
-.card-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; }
-.card { background: var(--surface); border: 1px solid var(--border); border-left: 4px solid var(--accent); border-radius: 8px; padding: 20px; }
-.card.grill { border-left-color: var(--grill); }
-.card.specs { border-left-color: var(--specs); }
-.card.tasks { border-left-color: var(--tasks); }
-.card.implement { border-left-color: var(--implement); }
-.card.review { border-left-color: var(--review); }
-.card h3 { font-family: var(--font-mono); font-size: 0.95rem; font-weight: 700; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
-.card h3 .badge { font-size: 0.7rem; padding: 2px 8px; border-radius: 4px; font-weight: 600; }
-.card.grill h3 .badge { background: var(--grill-dim); color: var(--grill); }
-.card.specs h3 .badge { background: var(--specs-dim); color: var(--specs); }
-.card.tasks h3 .badge { background: var(--tasks-dim); color: var(--tasks); }
-.card.implement h3 .badge { background: var(--implement-dim); color: var(--implement); }
-.card.review h3 .badge { background: var(--review-dim); color: var(--review); }
-.card p { font-size: 0.9rem; color: var(--text); margin-bottom: 12px; }
-.card ul { list-style: none; padding: 0; font-size: 0.85rem; }
-.card li { padding: 4px 0; padding-left: 16px; position: relative; color: var(--text-dim); }
-.card li::before { content: '→'; position: absolute; left: 0; color: var(--gold); font-weight: 700; }
-.card .out { margin-top: 12px; padding: 10px 12px; background: var(--surface-recessed); border-radius: 4px; font-family: var(--font-mono); font-size: 0.78rem; color: var(--text-dim); }
-.card .out strong { color: var(--text); }
-.callout { background: var(--surface); border: 1px solid var(--gold); border-radius: 8px; padding: 16px 20px; margin: 20px 0; }
-.callout strong { color: var(--gold); font-family: var(--font-mono); }
-.cmd-tag { font-family: var(--font-mono); font-size: 0.78rem; color: var(--gold); background: var(--gold-dim); padding: 2px 6px; border-radius: 3px; }
-.agent-tag { font-family: var(--font-mono); font-size: 0.78rem; color: var(--accent); background: var(--accent-dim); padding: 2px 6px; border-radius: 3px; }
-.stop { font-family: var(--font-mono); font-size: 0.7rem; font-weight: 700; color: var(--must); background: var(--must-dim); padding: 2px 6px; border-radius: 3px; letter-spacing: 0.05em; }
-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
-thead { background: var(--surface-recessed); }
-th, td { padding: 10px 14px; text-align: left; border-bottom: 1px solid var(--border); }
-th { font-family: var(--font-mono); font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-dim); }
-tr:last-child td { border-bottom: none; }
-code { font-family: var(--font-mono); font-size: 0.85em; background: var(--accent-dim); padding: 2px 6px; border-radius: 3px; }
-.pre { background: var(--surface-recessed); padding: 16px 20px; border-radius: 6px; font-family: var(--font-mono); font-size: 0.82rem; overflow-x: auto; white-space: pre; line-height: 1.6; }
-</style>
+<link rel="stylesheet" href="../shared/guide.css">
 </head>
 <body>
-<div class="container">
-
-<div class="header">
-  <h1><span>/</span>build pipeline</h1>
-  <p class="subtitle">Five-phase workflow combining ubiquitous-language domain modeling, conditional UI mockups, canonical HTML artifacts, vertical-slice TDD, and intent-aware Review change.</p>
-  <div class="phase-flow">
-    <span class="phase-pill grill"><span class="phase-num"><span>1</span></span> grill</span>
-    <span class="phase-arrow">→</span>
-    <span class="phase-pill specs">conditional mockup</span>
-    <span class="phase-arrow">→</span>
-    <span class="phase-pill specs"><span class="phase-num"><span>2</span></span> specs</span>
-    <span class="phase-arrow">→</span>
-    <span class="phase-pill tasks"><span class="phase-num"><span>3</span></span> tasks</span>
-    <span class="phase-arrow">→</span>
-    <span class="phase-pill implement"><span class="phase-num"><span>4</span></span> implement</span>
-    <span class="phase-arrow">→</span>
-    <span class="phase-pill review"><span class="phase-num"><span>5</span></span> review change</span>
-  </div>
+<div class="shell">
+<header class="hero">
+<div class="kicker">Feature workflow</div>
+<h1>/build</h1>
+<p class="lede">Five phases turn an idea into an approved, verified change through domain modeling, optional UI mockups, canonical HTML, vertical-slice TDD, and Review change.</p>
+<div class="flow" aria-label="Build phases">
+<span>1 · grill</span><span>mockup when relevant</span><span>2 · spec</span><span>3 · tasks</span><span>4 · implement</span><span>5 · review</span>
 </div>
-
-<div class="section">
-  <div class="section-title"><span class="num">01</span>The Five Phases</div>
-  <div class="card-grid">
-
-    <div class="card grill">
-      <h3>grill <span class="badge">opus · interactive</span></h3>
-      <p>Dependency-aware interview that invokes <code>model-domain</code> to sharpen the ubiquitous language, resolve cardinality, and capture qualifying decisions.</p>
-      <ul>
-        <li>Reads applicable context files + <code>docs/adr/</code> through <code>model-domain</code></li>
-        <li>Asks the whole ready decision frontier in each round and recommends answers</li>
-        <li>Challenges fuzzy language; cross-references with code</li>
-        <li>Updates <code>CONTEXT.md</code> inline as terms resolve</li>
-        <li>Offers ADRs sparingly (hard-to-reverse + surprising + real trade-off)</li>
-        <li>Returns to <code>/build</code>, which routes relevant UI into canonical <code>mockups.html</code>; approval clears Design→Spec</li>
-      </ul>
-      <div class="out"><strong>Output:</strong> <code>./CONTEXT.md</code> (ubiquitous-language record)<br><strong>Output:</strong> <code>./docs/adr/*.md</code> (qualifying decisions)</div>
-    </div>
-
-    <div class="card specs">
-      <h3>spec <span class="badge">synthesis</span></h3>
-      <p>Synthesizes a feature spec from the grilling outcome. Does NOT re-interview.</p>
-      <ul>
-        <li>Reads applicable context files, recent ADRs, conversation, and approved <code>mockups.html</code> when present</li>
-        <li>Sketches major modules (deep-modules philosophy)</li>
-        <li>Proposes module test surfaces; user corrects boundaries/seams only</li>
-        <li>Writes spec: problem, solution, user stories, decisions, testing</li>
-        <li>NO code snippets, NO file paths (they go stale)</li>
-        <li>Browser annotations and messages through <code>review-artifact</code> in Annotate mode</li>
-        <li>Explicit approval advances the gate</li>
-      </ul>
-      <div class="out"><strong>Canonical output:</strong> <code>docs/features/&lt;slug&gt;/specs.html</code></div>
-    </div>
-
-    <div class="card tasks">
-      <h3>todo <span class="badge">vertical slices</span></h3>
-      <p>Breaks the approved spec into vertical-slice tracer bullets. Each slice cuts through every layer end-to-end.</p>
-      <ul>
-        <li>Reads canonical <code>specs.html</code>, approved <code>mockups.html</code> when present, applicable context files, and ADRs</li>
-        <li>Each slice = thin path through schema, API, UI, tests</li>
-        <li>Marked HITL (human-in-loop) or AFK (away-from-keyboard)</li>
-        <li>Dependency order: blockers first</li>
-        <li>Review through <code>review-artifact</code> in Annotate mode until explicit approval</li>
-      </ul>
-      <div class="out"><strong>Canonical output:</strong> <code>docs/features/&lt;slug&gt;/tasks.html</code></div>
-    </div>
-
-    <div class="card implement">
-      <h3>implement <span class="badge">sonnet · TDD</span></h3>
-      <p>Executes the approved slices via vertical-slice TDD — one test, one implementation, repeat. No batching.</p>
-      <ul>
-        <li>Reads approved <code>mockups.html</code> when present with canonical <code>specs.html</code> and <code>tasks.html</code></li>
-        <li>For each slice: confirm interface → RED→GREEN per criterion → refactor</li>
-        <li>Tests describe behavior through the spec/task public interface, not implementation</li>
-        <li>Verification loop: type check, lint, test, build</li>
-        <li>Agents: <span class="agent-tag">tdd-guide</span> and <span class="agent-tag">refactorer</span> (hygiene mode)</li>
-        <li>Coach variant: AI writes ONE test, user implements, AI verifies</li>
-      </ul>
-      <div class="out"><strong>Output:</strong> verified code ready for final validation</div>
-    </div>
-
-    <div class="card review">
-      <h3>review change <span class="badge">opus · final gate</span></h3>
-      <p>Validates the complete feature change against canonical approved intent rather than searching for optional redesign.</p>
-      <ul>
-        <li>Fresh adversarial reviewer evaluates the full feature diff</li>
-        <li>Runs targeted evidence, documentation checks, and lint in fixed order</li>
-        <li>Validates approved <code>mockups.html</code> when present and reports material UI drift</li>
-        <li>A deliberate material UI redesign pauses final review, returns through <code>mockup</code> and <code>review-artifact</code>, synchronizes <code>specs.html</code> and <code>tasks.html</code>, renews invalidated approvals, and restarts Review change with refreshed Authoritative intent without adding a fifth gate</li>
-        <li>Fact-checks canonical <code>specs.html</code> and <code>tasks.html</code> in place</li>
-        <li>Presents Findings with independent severity and action</li>
-        <li>Opens the final report through <code>review-artifact</code> in Explore mode</li>
-        <li><span class="cmd-tag">review-code</span> remains optional standalone architecture exploration</li>
-      </ul>
-      <div class="out"><strong>Output:</strong> disposable decision report + Review-to-done approval</div>
-    </div>
-
-  </div>
+</header>
+<main>
+<section>
+<div class="section-label">01 · Before Phase 1</div>
+<h2>Isolate the work</h2>
+<div class="grid">
+<div class="card"><h3>Already in a linked worktree</h3><p>Continue there without Orchard adoption or relocation.</p></div>
+<div class="card"><h3>Main project directory</h3><p>Preflight Orchard, then let it acquire and enter a task worktree.</p></div>
 </div>
-
-<div class="section">
-  <div class="section-title"><span class="num">02</span>Where the Artifacts Live</div>
-  <div class="pre">/
-├── CONTEXT.md              project-wide ubiquitous language (maintained by /model-domain)
-├── docs/
-│   ├── adr/                project-wide ADRs (added by /grill)
-│   │   ├── 0001-event-sourced-orders.md
-│   │   └── 0002-postgres-for-write-model.md
-│   └── features/
-│       └── &lt;YYYYMMDD-HHMM&gt;-&lt;slug&gt;/
-│           ├── mockups.html       conditional approved UI design
-│           ├── specs.html         Phase 2 — canonical spec and build intent
-│           └── tasks.html         Phase 3 — canonical slices and completion state</div>
-  <div class="callout">
-    <strong>Lifespan:</strong> <code>CONTEXT.md</code> and <code>docs/adr/</code> live at the repo root and accrete across many <code>/build</code> runs. Per-feature artifacts are scoped to one slug-directory and can be kept, deleted, or <code>.gitignore</code>d.
-  </div>
+<p class="callout warn"><strong>Degraded mode is explicit.</strong> If Orchard is missing or incompatible, continue on a local task branch only after warning the user and receiving approval.</p>
+</section>
+<section>
+<div class="section-label">02 · The five phases</div>
+<h2>One owning skill per phase</h2>
+<div class="grid">
+<div class="card"><h3>1 · Grill</h3><p><code>grill</code> interviews in dependency-aware rounds and invokes <code>model-domain</code> to update applicable context files and qualifying ADRs.</p><p>Relevant UI then runs through <code>mockup</code>; explicit approval clears Design→Spec.</p></div>
+<div class="card"><h3>2 · Spec</h3><p><code>spec</code> synthesizes settled intent instead of re-interviewing.</p><p><strong>Output:</strong> <code>specs.html</code>.</p></div>
+<div class="card"><h3>3 · Tasks</h3><p><code>todo</code> creates thin, dependency-ordered vertical slices marked AFK or HITL.</p><p><strong>Output:</strong> <code>tasks.html</code>.</p></div>
+<div class="card"><h3>4 · Implement</h3><p><code>code</code> lets the AI implement; <code>coach</code> keeps implementation with the user.</p><p>Both use one RED→GREEN cycle at a time, verify the project, and run the <code>refactorer</code> hygiene sweep.</p></div>
+<div class="card"><h3>5 · Review change</h3><p>A fresh adversarial review checks intent, targeted evidence, documentation, lint, and canonical artifact accuracy.</p><p><strong>Output:</strong> a disposable decision report.</p></div>
 </div>
-
-<div class="section">
-  <div class="section-title"><span class="num">03</span>Phase Gates &amp; User Triggers</div>
-  <table>
-    <thead><tr><th>Transition</th><th>User confirms (any wording)</th><th>Gate behavior</th></tr></thead>
-    <tbody>
-      <tr><td>Design→Spec</td><td>explicit <code>mockups.html</code> approval for relevant UI; otherwise post-grill chat confirmation</td><td><span class="stop">STOP</span> until the applicable signal arrives</td></tr>
-      <tr><td>after <code>/spec</code></td><td>explicit <code>review-artifact</code> approval or chat fallback</td><td><span class="stop">STOP</span> until canonical <code>specs.html</code> is approved</td></tr>
-      <tr><td>after <code>/todo</code></td><td>explicit <code>review-artifact</code> approval or chat fallback</td><td><span class="stop">STOP</span> until canonical <code>tasks.html</code> is approved and implementation mode is known</td></tr>
-      <tr><td>after <code>/review-change</code></td><td>explicit report approval after every ask-user disposition</td><td><span class="stop">STOP</span> until the Review-to-done decision is submitted</td></tr>
-    </tbody>
-  </table>
-  <p style="margin-top:14px; font-size:0.9rem; color: var(--text-dim);">The orchestrator never crosses an approval gate autonomously. Verified implementation advances directly from Phase 4 into Phase 5; every listed gate still requires the user's judgment.</p>
+</section>
+<section>
+<div class="section-label">03 · Artifacts</div>
+<h2>Canonical HTML only</h2>
+<pre>applicable context files             project-wide ubiquitous language
+docs/adr/*.md                        project-wide decisions
+docs/features/&lt;YYYYMMDD-HHMM&gt;-&lt;slug&gt;/
+  mockups.html                       conditional approved UI intent
+  specs.html                         approved spec
+  tasks.html                         approved slices and completion state</pre>
+<p class="callout"><code>mockups.html</code>, <code>specs.html</code>, and <code>tasks.html</code> are durable sources, not companions to Markdown. Each feedback batch updates the same live file.</p>
+</section>
+<section>
+<div class="section-label">04 · Approval gates</div>
+<h2>Four decisions, not per-tool prompts</h2>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Gate</th><th>Signal</th></tr></thead>
+<tbody>
+<tr><td>Design→Spec</td><td>Explicit <code>mockups.html</code> approval for relevant UI; otherwise post-grill chat confirmation.</td></tr>
+<tr><td>Spec→Tasks</td><td>Explicit approval of canonical <code>specs.html</code>.</td></tr>
+<tr><td>Tasks→Implement</td><td>Explicit approval of canonical <code>tasks.html</code> and selection of <code>code</code> or <code>coach</code>.</td></tr>
+<tr><td>Review→Done</td><td>Every ask-user Finding has a disposition and the final report is approved.</td></tr>
+</tbody>
+</table>
 </div>
-
-<div class="section">
-  <div class="section-title"><span class="num">04</span>Review Artifact Loop</div>
-  <p style="margin-bottom: 16px; font-size: 0.95rem;">Whenever an HTML artifact asks for feedback, a decision, or approval, <code>review-artifact</code> opens it in a local browser surface. Feedback and approval start in Annotate mode; decisions start in Explore mode. Every browser-tab title uses <code>&lt;document title&gt; - &lt;document intent&gt;</code>.</p>
-  <div class="pre">generate canonical HTML → annotate exact element or text
-          ↑                          ↓
-          └──── live reload ← agent applies feedback</div>
-  <p style="margin-top:14px; font-size:0.9rem; color: var(--text-dim);">Artifacts use the ubiquitous language from the applicable context files. The foreground poll returns durable feedback batches, severe layout warnings, and an explicit approval event. In the final report, each issue card contains its own decision controls and one bottom button submits all decisions without copy and paste. Ending or closing review is not approval.</p>
-</div>
-
-<div class="section">
-  <div class="section-title"><span class="num">05</span>Canonical HTML Sync</div>
-  <p style="font-size: 0.95rem; margin-bottom: 14px;"><code>mockups.html</code>, <code>specs.html</code>, and <code>tasks.html</code> are durable sources, not visual companions. Every feedback batch updates the same semantic HTML so the browser never intentionally lags.</p>
-  <p style="font-size: 0.9rem; color: var(--text-dim);">Phase 5 validates approved mockup intent when present, cold-fact-checks <code>specs.html</code> and <code>tasks.html</code> against final code, confirms fact-checking idempotence, and opens its disposable decision report through <code>review-artifact</code>. Browser failure falls back to chat without weakening explicit approval.</p>
-</div>
-
-<div class="section">
-  <div class="section-title"><span class="num">06</span>Standalone vs Orchestrated</div>
-  <table>
-    <thead><tr><th>Command</th><th>Standalone use</th><th>Inside /build</th></tr></thead>
-    <tbody>
-      <tr><td><span class="cmd-tag">/grill</span></td><td>Interview a feature and invoke <code>model-domain</code></td><td>Phase 1</td></tr>
-      <tr><td><span class="cmd-tag">/model-domain</span></td><td>Build, augment, or audit context files</td><td>Invoked by Phase 1</td></tr>
-      <tr><td><span class="cmd-tag">/mockup</span></td><td>Review a material browser or terminal UI before specification</td><td>Conditional after grilling</td></tr>
-      <tr><td><span class="cmd-tag">/spec</span></td><td>Turn an existing conversation and approved UI design into a spec</td><td>Phase 2</td></tr>
-      <tr><td><span class="cmd-tag">/todo</span></td><td>Break an existing spec into vertical slices</td><td>Phase 3</td></tr>
-      <tr><td><span class="cmd-tag">/code</span></td><td>Execute existing canonical tasks.html (AI)</td><td>Phase 4a</td></tr>
-      <tr><td><span class="cmd-tag">/coach</span></td><td>Execute existing canonical tasks.html (you write code)</td><td>Phase 4b</td></tr>
-      <tr><td><span class="cmd-tag">/review-change</span></td><td>Read-only PR, local-range, or isolated CLI review with HTML and terminal output</td><td>Phase 5</td></tr>
-      <tr><td><span class="cmd-tag">/review-code</span></td><td>Optional architecture exploration</td><td>Not automatic</td></tr>
-    </tbody>
-  </table>
-</div>
-
-<div class="section">
-  <div class="section-title"><span class="num">07</span>Key Principles</div>
-  <div class="card-grid">
-    <div class="card">
-      <h3>Vertical, never horizontal</h3>
-      <p>Each task slice cuts through every layer end-to-end (schema, API, UI, tests) and is demoable on its own. Horizontal slices ("set up the schema first") are explicitly rejected.</p>
-    </div>
-    <div class="card">
-      <h3>One test, one impl, repeat</h3>
-      <p>TDD is strictly vertical: write one test, write minimal code to pass, refactor when GREEN, move on. Batched tests describe imagined behavior, not actual behavior.</p>
-    </div>
-    <div class="card">
-      <h3>Ubiquitous language everywhere</h3>
-      <p>The shared canonical terms recorded in the applicable context files appear unchanged in conversation, specs, tasks, test names, and code identifiers. Inconsistency triggers rework.</p>
-    </div>
-    <div class="card">
-      <h3>Semantic HTML is the deliverable</h3>
-      <p><code>mockups.html</code> when relevant, <code>specs.html</code>, and <code>tasks.html</code> are durable reviewed sources. There are no Markdown companions or hidden duplicate models.</p>
-    </div>
-    <div class="card">
-      <h3>User judgment via gates</h3>
-      <p>Browser annotations, messages, and explicit approvals let the user inject domain knowledge, constraints, and trade-offs. The orchestrator never infers approval from ending review.</p>
-    </div>
-    <div class="card">
-      <h3>Never commits</h3>
-      <p>Neither <code>/code</code> nor <code>/coach</code> runs <code>git commit</code>. The user reviews and commits when ready.</p>
-    </div>
-  </div>
-</div>
-
+<p class="callout">Routine reads, edits, tests, and environment setup proceed within a phase. Verified implementation advances directly to Review change.</p>
+</section>
+<section>
+<div class="section-label">05 · UI intent changes</div>
+<h2>Return to the owning artifact</h2>
+<p>A deliberate material UI redesign pauses final review, returns through <code>mockup</code> and <code>review-artifact</code>, synchronizes <code>specs.html</code> and <code>tasks.html</code>, renews invalidated approvals, and restarts Review change with refreshed Authoritative intent without adding a fifth gate.</p>
+<p class="callout warn">Ending a browser review, closing the browser, or losing the connection is not approval.</p>
+</section>
+</main>
+<footer>Human guide · build skill · canonical workflow summary</footer>
 </div>
 </body>
 </html>

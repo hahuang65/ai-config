@@ -1,6 +1,6 @@
 ---
 name: spec
-description: Synthesize a feature spec from the current conversation context and codebase as canonical semantic HTML, then review it through review-artifact until explicitly approved. Produces docs/features/<slug>/specs.html with user stories, decisions, and testing notes.
+description: Synthesize a feature spec from the current conversation context and codebase as canonical semantic HTML, then review it through review-artifact until explicitly approved. Produces timestamped docs/features HTML with user stories, decisions, and testing notes.
 argument-hint: [feature-description]
 ---
 

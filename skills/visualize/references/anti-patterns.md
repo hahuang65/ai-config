@@ -9,7 +9,7 @@ These patterns are explicitly forbidden. They signal "AI-generated template." Re
 - Roboto, Arial, Helvetica — generic system fallbacks promoted to primary
 - system-ui, sans-serif alone — no character, no intent
 
-**Required:** Pick from the font pairings in `./references/libraries.md`. Every generation should use a different pairing.
+**Required:** Pick from the font pairings in [`libraries.md`](libraries.md). Every generation should use a different pairing.
 
 ## Color Palette
 

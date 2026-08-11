@@ -53,7 +53,7 @@ The map points to each context and its local documentation:
 Read the applicable context files: the root `CONTEXT.md`, or `CONTEXT-MAP.md` and the relevant subordinate `CONTEXT.md` files.
 Read recent and relevant project-wide ADRs from the root `docs/adr/`.
 Create context files lazily: create `CONTEXT.md` when the first term resolves, `CONTEXT-MAP.md` when the first multi-context structure resolves, and root `docs/adr/` when the first ADR qualifies.
-Use the [CONTEXT.md format](../shared/references/context-format.md) and [ADR format](../shared/references/adr-format.md).
+Use the [CONTEXT.md format](references/context-format.md) and [ADR format](references/adr-format.md).
 
 ## Standalone Session
 

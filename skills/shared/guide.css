@@ -1,0 +1,94 @@
+:root {
+  color-scheme: light dark;
+  --bg: #eef2f3;
+  --surface: #ffffff;
+  --surface-alt: #f5f7f7;
+  --text: #17212b;
+  --muted: #61707c;
+  --line: #cbd5d9;
+  --accent: #146b73;
+  --accent-soft: #dceff0;
+  --gold: #9a6712;
+  --warn: #a53d4a;
+  --warn-soft: #f8e4e7;
+  --good: #287a52;
+  --good-soft: #e0f1e8;
+  --mono: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+  --sans: "Avenir Next", Avenir, "Segoe UI", sans-serif;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #10171c;
+    --surface: #182229;
+    --surface-alt: #121b21;
+    --text: #e6edf0;
+    --muted: #9aabb5;
+    --line: #34444d;
+    --accent: #79cbd0;
+    --accent-soft: #18383c;
+    --gold: #e4bc69;
+    --warn: #f08c98;
+    --warn-soft: #40242a;
+    --good: #79c99d;
+    --good-soft: #1d392b;
+  }
+}
+
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font: 16px/1.6 var(--sans);
+}
+.shell { width: min(1050px, calc(100% - 32px)); margin: 28px auto 72px; }
+.hero {
+  padding: clamp(30px, 6vw, 64px);
+  border: 1px solid var(--line);
+  border-top: 5px solid var(--accent);
+  border-radius: 18px 18px 4px 4px;
+  background: var(--surface);
+}
+.kicker, .section-label {
+  color: var(--gold);
+  font: 700 0.75rem/1.3 var(--mono);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+h1, h2, h3 { line-height: 1.2; }
+h1 { margin: 8px 0 12px; font-size: clamp(2.2rem, 7vw, 4.5rem); letter-spacing: -0.05em; }
+h2 { margin: 6px 0 16px; font-size: clamp(1.35rem, 3vw, 1.9rem); }
+h3 { margin: 0 0 8px; font-size: 1rem; }
+.lede { max-width: 720px; margin: 0; color: var(--muted); font-size: 1.08rem; }
+.flow { display: flex; gap: 8px; margin-top: 24px; overflow-x: auto; padding-bottom: 4px; }
+.flow span { flex: 0 0 auto; padding: 6px 10px; border: 1px solid var(--line); border-radius: 999px; background: var(--surface-alt); font: 700 0.76rem var(--mono); }
+.flow .active { border-color: var(--accent); background: var(--accent-soft); color: var(--accent); }
+main { display: grid; gap: 18px; margin-top: 18px; }
+section { padding: clamp(22px, 4vw, 36px); border: 1px solid var(--line); background: var(--surface); }
+section:nth-child(odd) { border-radius: 4px 16px 4px 16px; }
+section:nth-child(even) { border-radius: 16px 4px 16px 4px; }
+.grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+.grid.three { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.card { min-width: 0; padding: 16px; border: 1px solid var(--line); border-left: 4px solid var(--accent); background: var(--surface-alt); }
+.card p:last-child, .card ul:last-child { margin-bottom: 0; }
+.good { border-left-color: var(--good); background: var(--good-soft); }
+.warn { border-left-color: var(--warn); background: var(--warn-soft); }
+.callout { margin: 16px 0 0; padding: 14px 16px; border-left: 4px solid var(--gold); background: var(--surface-alt); }
+.callout.warn { border-left-color: var(--warn); }
+.table-wrap { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+th, td { padding: 10px 12px; border-bottom: 1px solid var(--line); text-align: left; vertical-align: top; }
+th { color: var(--muted); background: var(--surface-alt); font: 700 0.75rem var(--mono); text-transform: uppercase; }
+tr:last-child td { border-bottom: 0; }
+ul, ol { margin: 10px 0 0; padding-left: 1.35rem; }
+li { margin: 6px 0; }
+code { padding: 0.1em 0.35em; border-radius: 4px; background: var(--accent-soft); color: var(--accent); font-family: var(--mono); }
+pre { margin: 14px 0 0; padding: 16px; overflow-x: auto; border: 1px solid var(--line); background: var(--surface-alt); font: 0.84rem/1.55 var(--mono); white-space: pre-wrap; }
+.badge { display: inline-block; padding: 2px 7px; border-radius: 999px; background: var(--accent-soft); color: var(--accent); font: 700 0.72rem var(--mono); }
+footer { padding: 18px 4px; color: var(--muted); font: 0.72rem var(--mono); }
+@media (max-width: 740px) {
+  .shell { width: min(100% - 18px, 1050px); margin-top: 9px; }
+  .grid, .grid.three { grid-template-columns: 1fr; }
+  th, td { padding: 9px; }
+}

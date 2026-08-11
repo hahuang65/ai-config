@@ -1,6 +1,6 @@
 ---
 name: code
-description: Execute approved vertical slices from canonical docs/features/<slug>/tasks.html, slice by slice, using red-green-refactor TDD. Use after /todo has produced approved HTML-native tasks.
+description: Execute approved vertical slices from canonical timestamped docs/features tasks.html, slice by slice, using red-green-refactor TDD. Use after /todo has produced approved HTML-native tasks.
 argument-hint: [feature-dir-or-slug]
 ---
 

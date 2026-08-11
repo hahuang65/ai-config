@@ -86,7 +86,7 @@ Vertical or horizontal timeline with a central line (CSS pseudo-element). Phase 
 
 ## Dashboard / Metrics Overview
 
-Card grid layout. Hero numbers large and prominent. Sparklines via inline SVG `<polyline>`. Progress bars via CSS `linear-gradient` on a div. For real charts (bar, line, pie), use **Chart.js via CDN** (see `./references/libraries.md`). KPI cards with trend indicators.
+Card grid layout. Hero numbers large and prominent. Sparklines via inline SVG `<polyline>`. Progress bars via CSS `linear-gradient` on a div. For real charts (bar, line, pie), use **Chart.js via CDN** (see [`libraries.md`](libraries.md)). KPI cards with trend indicators.
 
 ## Implementation Plans
 
@@ -97,7 +97,7 @@ For visualizing implementation plans, extension designs, or feature specificatio
 - Show **key snippets only** — the 5-10 lines that illustrate the core logic
 - Use **collapsible sections** for full code if truly needed
 
-**Code blocks require `white-space: pre-wrap`.** See the "Code Blocks" section in `./references/css-core.md`.
+**Code blocks require `white-space: pre-wrap`.** See the "Code Blocks" section in [`css-core.md`](css-core.md).
 
 **Structure:**
 1. Overview/purpose
@@ -125,7 +125,7 @@ Don't just format the prose — transform it. A feature list becomes a card grid
 
 ## Prose Accent Elements
 
-Use these sparingly within visual pages. See "Prose Page Elements" in `./references/css-components.md`.
+Use these sparingly within visual pages. See "Prose Page Elements" in [`css-components.md`](css-components.md).
 
 - **Lead paragraph** — larger intro text to set context
 - **Pull quote** — highlight a key insight; one per page maximum

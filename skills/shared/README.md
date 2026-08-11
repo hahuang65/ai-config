@@ -11,13 +11,11 @@ Skills import these by relative path, e.g. from `skills/spec/SKILL.md`:
 | File | Imported by |
 |------|-------------|
 | `references/build-pipeline.md` | build, grill, mockup, spec, todo, code, coach |
-| `references/review-artifact.md` | build, mockup, spec, todo, review-code, review-artifact |
+| `references/review-artifact.md` | build, mockup, spec, todo, resolve-conflicts, review-change, review-code, review-artifact |
 | `references/tdd-protocol.md` | code, coach |
 | `references/testable-interfaces.md` | build, spec, todo, code, coach |
 | `references/tooling.md` | code, coach, refactor |
 | `references/implementation-hygiene.md` | code, coach |
 | `references/implementation-completion.md` | code, coach |
-| `references/context-format.md` | model-domain |
-| `references/adr-format.md` | model-domain |
 
 `install.sh` symlinks every `skills/*/` directory (including this one), so `../shared/references/...` resolves both in-repo and after install. `scripts/test-pipeline.sh` skips `shared` in its per-skill `SKILL.md` checks.

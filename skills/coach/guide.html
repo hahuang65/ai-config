@@ -1,226 +1,76 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>/coach Skill Guide</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
-<style>
-:root {
-  --font-body: 'IBM Plex Sans', system-ui, sans-serif;
-  --font-mono: 'IBM Plex Mono', 'SF Mono', Consolas, monospace;
-  --bg: #f0f2f5; --surface: #ffffff; --surface-recessed: #e8ebf0;
-  --border: rgba(30, 58, 95, 0.10); --border-bright: rgba(30, 58, 95, 0.20);
-  --text: #1e293b; --text-dim: #64748b;
-  --accent: #1e3a5f; --accent-dim: rgba(30, 58, 95, 0.08);
-  --gold: #d4a73a; --gold-dim: rgba(212, 167, 58, 0.10);
-  --red: #be123c; --red-dim: rgba(190, 18, 60, 0.10);
-  --green: #059669; --green-dim: rgba(5, 150, 105, 0.10);
-  --refactor: #d97706; --refactor-dim: rgba(217, 119, 6, 0.10);
-  --user: #8b5cf6; --user-dim: rgba(139, 92, 246, 0.12);
-  --ai: #0891b2; --ai-dim: rgba(8, 145, 178, 0.10);
-  --must: #be123c; --must-dim: rgba(190, 18, 60, 0.10);
-  --grid: rgba(30, 58, 95, 0.04);
-}
-@media (prefers-color-scheme: dark) {
-  :root {
-    --bg: #0c1220; --surface: #131b2e; --surface-recessed: #0a0f1a;
-    --border: rgba(212, 167, 58, 0.08); --border-bright: rgba(212, 167, 58, 0.18);
-    --text: #e2e8f0; --text-dim: #8b9dc3;
-    --accent: #5b8cc9; --accent-dim: rgba(91, 140, 201, 0.12);
-    --gold: #e8c56a; --gold-dim: rgba(232, 197, 106, 0.12);
-    --red: #fb7185; --red-dim: rgba(251, 113, 133, 0.12);
-    --green: #34d399; --green-dim: rgba(52, 211, 153, 0.12);
-    --refactor: #fbbf24; --refactor-dim: rgba(251, 191, 36, 0.10);
-    --user: #a78bfa; --user-dim: rgba(167, 139, 250, 0.14);
-    --ai: #22d3ee; --ai-dim: rgba(34, 211, 238, 0.12);
-    --must: #fb7185; --must-dim: rgba(251, 113, 133, 0.12);
-    --grid: rgba(91, 140, 201, 0.04);
-  }
-}
-* { margin: 0; padding: 0; box-sizing: border-box; }
-body { font-family: var(--font-body); background-color: var(--bg); background-image: linear-gradient(var(--grid) 1px, transparent 1px), linear-gradient(90deg, var(--grid) 1px, transparent 1px); background-size: 24px 24px; color: var(--text); line-height: 1.6; }
-.container { max-width: 1180px; margin: 0 auto; padding: 40px 24px 80px; }
-.header { text-align: center; padding: 48px 24px 40px; margin-bottom: 48px; background: var(--surface); border: 1px solid var(--border-bright); border-radius: 12px; position: relative; overflow: hidden; }
-.header::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; background: linear-gradient(90deg, var(--ai), var(--user)); }
-.header h1 { font-family: var(--font-mono); font-size: clamp(1.6rem, 4vw, 2.4rem); font-weight: 700; letter-spacing: -0.02em; margin-bottom: 8px; }
-.header h1 span { color: var(--gold); }
-.header .subtitle { font-size: 1rem; color: var(--text-dim); max-width: 620px; margin: 0 auto; }
-.section { margin-bottom: 48px; }
-.section-title { font-family: var(--font-mono); font-size: 1.1rem; font-weight: 700; color: var(--gold); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 20px; padding-bottom: 8px; border-bottom: 1px solid var(--border-bright); }
-.section-title .num { color: var(--text-dim); margin-right: 8px; }
-.dialogue { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
-.dialogue-turn { padding: 14px 18px; border-bottom: 1px solid var(--border); display: flex; gap: 14px; align-items: flex-start; }
-.dialogue-turn:last-child { border-bottom: none; }
-.dialogue-turn .actor { font-family: var(--font-mono); font-size: 0.75rem; font-weight: 700; padding: 3px 10px; border-radius: 4px; white-space: nowrap; }
-.dialogue-turn.ai .actor { background: var(--ai-dim); color: var(--ai); }
-.dialogue-turn.user .actor { background: var(--user-dim); color: var(--user); }
-.dialogue-turn .msg { font-size: 0.9rem; }
-.dialogue-turn .msg code { font-family: var(--font-mono); font-size: 0.85em; background: var(--accent-dim); padding: 2px 5px; border-radius: 3px; }
-.dialogue-turn .step { font-family: var(--font-mono); font-size: 0.7rem; color: var(--text-dim); margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.06em; }
-.card-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; }
-.card { background: var(--surface); border: 1px solid var(--border); border-left: 4px solid var(--accent); border-radius: 8px; padding: 20px; }
-.card.do { border-left-color: var(--green); }
-.card.dont { border-left-color: var(--red); }
-.card h3 { font-family: var(--font-mono); font-size: 0.95rem; font-weight: 700; margin-bottom: 10px; }
-.card.do h3 { color: var(--green); }
-.card.dont h3 { color: var(--red); }
-.card ul { list-style: none; padding: 0; font-size: 0.85rem; }
-.card li { padding: 4px 0; padding-left: 16px; position: relative; color: var(--text-dim); }
-.card.do li::before { content: '✓'; position: absolute; left: 0; color: var(--green); font-weight: 700; }
-.card.dont li::before { content: '✗'; position: absolute; left: 0; color: var(--red); font-weight: 700; }
-.callout { background: var(--surface); border: 1px solid var(--gold); border-radius: 8px; padding: 16px 20px; margin: 20px 0; }
-.callout strong { color: var(--gold); font-family: var(--font-mono); }
-.callout.warn { border-color: var(--must); }
-.callout.warn strong { color: var(--must); }
-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
-thead { background: var(--surface-recessed); }
-th, td { padding: 10px 14px; text-align: left; border-bottom: 1px solid var(--border); vertical-align: top; }
-th { font-family: var(--font-mono); font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-dim); }
-tr:last-child td { border-bottom: none; }
-code { font-family: var(--font-mono); font-size: 0.85em; background: var(--accent-dim); padding: 2px 6px; border-radius: 3px; }
-.cmd-tag { font-family: var(--font-mono); font-size: 0.78rem; color: var(--gold); background: var(--gold-dim); padding: 2px 6px; border-radius: 3px; }
-.agent-tag { font-family: var(--font-mono); font-size: 0.78rem; color: var(--accent); background: var(--accent-dim); padding: 2px 6px; border-radius: 3px; }
-.must-tag { font-family: var(--font-mono); font-size: 0.7rem; font-weight: 700; color: var(--must); background: var(--must-dim); padding: 2px 6px; border-radius: 3px; }
-.cond-tag { font-family: var(--font-mono); font-size: 0.7rem; font-weight: 700; color: var(--refactor); background: var(--refactor-dim); padding: 2px 6px; border-radius: 3px; }
-</style>
+<link rel="stylesheet" href="../shared/guide.css">
 </head>
 <body>
-<div class="container">
-
-<div class="header">
-  <h1><span>/</span>coach</h1>
-  <p class="subtitle">Vertical-slice TDD where <strong>the user writes the code</strong>. AI reads approved <code>mockups.html</code> when present as Authoritative intent, writes ONE failing test, waits, verifies, then writes the next. No batched tests and no AI-authored implementation during the coaching loop.</p>
+<div class="shell">
+<header class="hero">
+<div class="kicker">Phase 4 · User implementation</div>
+<h1>/coach</h1>
+<p class="lede">The AI writes one failing behavior test. The user implements. The AI waits, verifies, and only then writes the next test.</p>
+<div class="flow"><span>AI · RED</span><span class="active">USER · IMPLEMENT</span><span>AI · VERIFY</span><span>repeat</span></div>
+</header>
+<main>
+<section>
+<div class="section-label">01 · Ownership</div>
+<h2>The user writes implementation</h2>
+<div class="grid">
+<div class="card"><h3>AI owns</h3><ul><li>Interface confirmation.</li><li>One current failing test.</li><li>Focused verification and debugging guidance.</li><li>Task status updates.</li></ul></div>
+<div class="card"><h3>User owns</h3><ul><li>Implementation code.</li><li>Source and test repairs.</li><li>Whether to hand control to <code>code</code>.</li><li>Higher-risk hygiene choices.</li></ul></div>
 </div>
-
-<div class="section">
-  <div class="section-title"><span class="num">01</span>The Coaching Dialogue</div>
-  <div class="dialogue">
-    <div class="dialogue-turn ai">
-      <span class="actor">AI</span>
-      <div>
-        <div class="step">Step 2a — Confirm interface</div>
-        <div class="msg">Here's the proposed public interface for Slice 1:<br><br><code>POST /orders</code> with cart payload → <code>201 { id, status }</code>.<br><br>Does this match what you had in mind?</div>
-      </div>
-    </div>
-    <div class="dialogue-turn user">
-      <span class="actor">USER</span>
-      <div class="msg">Yes — also add an Idempotency-Key header.</div>
-    </div>
-    <div class="dialogue-turn ai">
-      <span class="actor">AI</span>
-      <div>
-        <div class="step">Step 2b — Tracer bullet (RED)</div>
-        <div class="msg">Updated. First test:<br><br><code>it("returns 201 with order id for a valid request", ...)</code><br><br>Currently failing — handler doesn't exist. Implement just enough to make this pass.</div>
-      </div>
-    </div>
-    <div class="dialogue-turn user">
-      <span class="actor">USER</span>
-      <div class="msg">Done. Check.</div>
-    </div>
-    <div class="dialogue-turn ai">
-      <span class="actor">AI</span>
-      <div>
-        <div class="step">Step 2c — Verify (GREEN)</div>
-        <div class="msg">✅ Passing. Next test:<br><br><code>it("returns 400 for an empty cart", ...)</code></div>
-      </div>
-    </div>
-    <div class="dialogue-turn user">
-      <span class="actor">USER</span>
-      <div class="msg">Done.</div>
-    </div>
-    <div class="dialogue-turn ai">
-      <span class="actor">AI</span>
-      <div>
-        <div class="step">Step 2c — Verify (GREEN)</div>
-        <div class="msg">❌ Failing: <code>expected 400, got 500</code>. Looks like the empty-cart check is throwing instead of returning a structured error. Want to try again?</div>
-      </div>
-    </div>
-  </div>
-</div>
-
-<div class="section">
-  <div class="section-title"><span class="num">02</span>Hard Rules</div>
-  <div class="card-grid">
-    <div class="card do">
-      <h3>Do</h3>
-      <ul>
-        <li>Write ONE failing test at a time</li>
-        <li>Show the user the expected public interface from the spec/task test surface up front</li>
-        <li>Run the test before claiming RED to confirm it fails for the right reason</li>
-        <li>When the user signals they're ready (any wording, not a keyword), run only the relevant test</li>
-        <li>Use the ubiquitous language from the applicable context files in test names</li>
-        <li>Refactor together when GREEN; suggest, let the user execute</li>
-      </ul>
-    </div>
-    <div class="card dont">
-      <h3>Don't</h3>
-      <ul>
-        <li>Write all tests upfront — that's the rejected horizontal pattern</li>
-        <li>Write the implementation code during the coaching loop</li>
-        <li>Preview the next test to the user — they should implement against the current one without anticipating</li>
-        <li>Refactor while RED</li>
-        <li>Patch a bad approach when the user reverts — start fresh</li>
-        <li>Run <code>git commit</code> — ever</li>
-      </ul>
-    </div>
-  </div>
-</div>
-
-<div class="section">
-  <div class="section-title"><span class="num">03</span>Why No Batched Tests</div>
-  <div class="callout warn">
-    <strong>The horizontal anti-pattern:</strong> "Write all the tests upfront, then walk the user through each module." This produces crap tests.
-  </div>
-  <ul style="font-size: 0.9rem; color: var(--text); padding-left: 20px; margin-top: 14px;">
-    <li>Tests written in bulk test <em>imagined</em> behavior, not <em>actual</em> behavior</li>
-    <li>They check the <em>shape</em> of things (signatures, data structures) rather than user-facing behavior</li>
-    <li>They become insensitive to real changes — pass when behavior breaks, fail when it doesn't</li>
-    <li>The user outruns their headlights, committing to test structure before understanding the implementation</li>
-  </ul>
-  <p style="font-size: 0.9rem; color: var(--text-dim); margin-top: 14px;">By writing one test at a time, each test responds to what was learned from the previous cycle. The test you write next is the test you now know you need.</p>
-</div>
-
-<div class="section">
-  <div class="section-title"><span class="num">04</span>Per-Slice Workflow</div>
-  <table>
-    <thead><tr><th>Step</th><th>Who</th><th>Action</th></tr></thead>
-    <tbody>
-      <tr><td>2a. Confirm interface</td><td>AI ↔ user</td><td>Present proposed public interface from the spec/task test surface; user confirms or adjusts the seam</td></tr>
-      <tr><td>2b. Tracer bullet</td><td>AI</td><td>Write ONE failing test through that interface for the happy path; show it failing</td></tr>
-      <tr><td>2c. GREEN</td><td>User → AI verify</td><td>User writes minimal code; AI runs the test and reports pass/fail</td></tr>
-      <tr><td>2d. Next criterion</td><td>AI → User → AI</td><td>AI writes the next test; user implements; AI verifies. Repeat per acceptance criterion.</td></tr>
-      <tr><td>2e. Refactor (optional)</td><td>AI suggests, user executes</td><td>Only when GREEN. AI offers candidates; user accepts or declines; tests run after each step.</td></tr>
-      <tr><td>2f. Mark complete</td><td>AI</td><td>Set visible slice and criterion status plus <code>data-status</code> to <code>complete</code> in canonical <code>tasks.html</code></td></tr>
-    </tbody>
-  </table>
-  <div class="callout warn" style="margin-top: 10px;">
-    <strong>Material UI redesign:</strong> stop the affected slice, update <code>mockups.html</code> and review it through <code>review-artifact</code>, synchronize <code>specs.html</code> and <code>tasks.html</code>, renew invalidated approvals, then resume coaching the slice with source implementation still owned by the user.
-  </div>
-</div>
-
-<div class="section">
-  <div class="section-title"><span class="num">05</span>Post-Implementation Cleanup</div>
-  <table>
-    <thead><tr><th>Step</th><th>Who fixes</th><th>Severity</th></tr></thead>
-    <tbody>
-      <tr><td><strong>Type check / lint / test / build</strong></td><td>AI guides, user fixes</td><td><span class="must-tag">MUST</span></td></tr>
-      <tr><td><span class="agent-tag">refactorer</span> (hygiene mode)</td><td>Engine applies SAFE, user decides CAREFUL/RISKY</td><td><span class="must-tag">MUST</span></td></tr>
-      <tr><td><span class="cmd-tag">/review-change</span></td><td>User fixes source/test Findings with guidance; AI may handle docs and formatting</td><td><span class="must-tag">MUST</span></td></tr>
-    </tbody>
-  </table>
-  <p style="margin-top:14px; font-size:0.9rem; color: var(--text-dim);"><strong>Coaching philosophy:</strong> the user owns source and test repairs through final Review change. SAFE hygiene, documentation, formatting, fact-checking, and visual sync remain AI-driven.</p>
-</div>
-
-<div class="section">
-  <div class="section-title"><span class="num">06</span>Never Commits</div>
-  <div class="callout warn">
-    <strong>No git commit, ever.</strong> The user reviews the final state and commits when ready. This is the user's code — they decide when it's ready to ship.
-  </div>
-</div>
-
+</section>
+<section>
+<div class="section-label">02 · Waiting is the deliverable</div>
+<h2>Yield after every test</h2>
+<ul>
+<li>Remain silent until the user signals readiness to check.</li>
+<li>Ignore incomplete-todo reminders; open criteria belong in <code>tasks.html</code>.</li>
+<li>Never poll implementation files to infer silent progress.</li>
+<li>Never switch to <code>code</code> without explicit permission.</li>
+<li>If the switch was offered once, do not offer it again.</li>
+</ul>
+<p class="callout warn">Silence is not consent to take over. A coach turn is complete when the failing test and handoff are complete.</p>
+</section>
+<section>
+<div class="section-label">03 · Per-slice loop</div>
+<h2>One criterion at a time</h2>
+<ol>
+<li>Present the public interface from the Task Test surface and Spec Testing Decisions. Wait for confirmation.</li>
+<li>Write one end-to-end tracer test and run it to prove RED for the correct reason.</li>
+<li>Show the test and failure, then wait.</li>
+<li>When the user signals ready, run only the relevant test. Guide debugging without writing the fix.</li>
+<li>After GREEN, write the next criterion test. Never queue or preview future tests.</li>
+<li>Refactor together only while GREEN.</li>
+<li>Mark visible and <code>data-status</code> completion in <code>tasks.html</code>.</li>
+</ol>
+<p class="callout">One-test cadence prevents tests from describing imagined behavior before the implementation teaches the next useful case.</p>
+</section>
+<section>
+<div class="section-label">04 · Intent changes</div>
+<h2>Keep approved UI synchronized</h2>
+<p class="callout warn"><strong>Material UI redesign:</strong> stop the affected slice, update <code>mockups.html</code> through <code>review-artifact</code>, synchronize <code>specs.html</code> and <code>tasks.html</code>, renew invalidated approvals, then resume only after intent is synchronized; the user remains the source-code implementer.</p>
+</section>
+<section>
+<div class="section-label">05 · Completion</div>
+<h2>Verify without taking ownership</h2>
+<ol>
+<li>Guide type check, lint, the full test suite, and build until clean.</li>
+<li>Run the <code>refactorer</code> in hygiene mode. Apply SAFE mechanical cleanup; let the user decide CAREFUL or RISKY candidates.</li>
+<li>Report final commands, scopes, outcomes, and completed slices.</li>
+</ol>
+<p class="callout"><strong>Inside build:</strong> Review change is mandatory and keeps source and test fixes user-owned. <strong>Standalone:</strong> offer optional <code>refactor</code> and <code>review-code</code> next steps.</p>
+</section>
+<section>
+<div class="section-label">06 · Git boundary</div>
+<h2>No staging or delivery</h2>
+<p>Coach does not stage, commit, push, or deliver.</p>
+</section>
+</main>
+<footer>Human guide · coach skill · user-owned implementation</footer>
 </div>
 </body>
 </html>

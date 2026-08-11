@@ -11,7 +11,7 @@ A disciplined 5-phase workflow for building features. Each phase is its own skil
 
 **Pipeline:** `/grill` → *conditional* `/mockup` → `/spec` → `/todo` → `/code` *(or `/coach`)* → `/review-change`
 
-See [../shared/references/build-pipeline.md](../shared/references/build-pipeline.md) for the approval gates, file conventions (`docs/features/<slug>/`), session management, and canonical HTML synchronization rules every phase obeys. Read it first.
+See [../shared/references/build-pipeline.md](../shared/references/build-pipeline.md) for the approval gates, timestamped Feature directory convention, session management, and canonical HTML synchronization rules every phase obeys. Read it first.
 
 ## Worktree Isolation Before Phase 1
 
@@ -139,4 +139,5 @@ When available it provides presentation guidance and the standalone `/visualize-
 Review change fact-checks and updates the canonical `specs.html` and `tasks.html` directly rather than generating Markdown companions or an automatic diff review.
 ## Cleanup
 
-After the feature is complete, the user decides whether to keep, delete, or commit the feature directory under `docs/features/`, including `mockups.html` when present. `CONTEXT.md` and `docs/adr/` are project-wide and should be committed.
+After the feature is complete, the user decides whether to keep, delete, or commit the Feature directory, including `mockups.html` when present.
+Defer inclusion of Feature artifacts, context files, and ADRs to the `git-commit` rule, including its A5 project exception.

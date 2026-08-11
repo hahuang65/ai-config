@@ -25,8 +25,8 @@ Example:
 
 ## Pointers (not duplicated content)
 
-- Spec: docs/features/<slug>/specs.html
-- Tasks: docs/features/<slug>/tasks.html
+- Spec: docs/features/<YYYYMMDD-HHMM>-<slug>/specs.html
+- Tasks: docs/features/<YYYYMMDD-HHMM>-<slug>/tasks.html
 - ADRs touched: docs/adr/0007-...
 - Recent diff: git log -p <sha>..<sha>
 - External references: <URLs>

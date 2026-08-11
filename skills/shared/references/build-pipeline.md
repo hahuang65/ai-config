@@ -18,16 +18,14 @@ Within an active phase, all routine operations proceed **without per-call approv
 
 ### Project-wide (accrete across many `/build` runs)
 
-```
-/
-├── CONTEXT.md                      # ubiquitous-language record (maintained by /model-domain)
-└── docs/
-    └── adr/                        # Architectural Decision Records (added by /grill)
-        ├── 0001-event-sourced-orders.md
-        └── 0002-postgres-for-write-model.md
+```text
+CONTEXT.md or CONTEXT-MAP.md         # root context entry point
+<context>/CONTEXT.md                 # optional bounded-context records
+docs/adr/*.md                        # project-wide decisions
 ```
 
-These outlive any single feature and should be committed.
+These outlive any single feature.
+The `git-commit` rule decides whether to include them, including its A5 project exception.
 
 ### Feature-specific (one directory per build run)
 
@@ -77,4 +75,5 @@ The disposable Review change report lives in the operating-system temp directory
 
 ## Cleanup
 
-After a feature is complete, the user decides whether to keep, delete, or commit the feature directory under `docs/features/`. `CONTEXT.md` and `docs/adr/` should always be committed.
+After a feature is complete, the user decides whether to keep, delete, or commit the Feature directory.
+Defer artifact inclusion to the `git-commit` rule, including its A5 project exception.

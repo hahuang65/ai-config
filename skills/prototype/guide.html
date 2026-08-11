@@ -1,175 +1,60 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>/prototype Skill Guide</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
-<style>
-:root {
-  --font-body: 'IBM Plex Sans', system-ui, sans-serif;
-  --font-mono: 'IBM Plex Mono', 'SF Mono', Consolas, monospace;
-  --bg: #f0f2f5; --surface: #ffffff; --surface-recessed: #e8ebf0;
-  --border: rgba(30, 58, 95, 0.10); --border-bright: rgba(30, 58, 95, 0.20);
-  --text: #1e293b; --text-dim: #64748b;
-  --accent: #1e3a5f; --accent-dim: rgba(30, 58, 95, 0.08);
-  --gold: #d4a73a; --gold-dim: rgba(212, 167, 58, 0.10);
-  --logic: #059669; --logic-dim: rgba(5, 150, 105, 0.10);
-  --ui: #d97706; --ui-dim: rgba(217, 119, 6, 0.10);
-  --must: #be123c; --must-dim: rgba(190, 18, 60, 0.10);
-  --grid: rgba(30, 58, 95, 0.04);
-}
-@media (prefers-color-scheme: dark) {
-  :root {
-    --bg: #0c1220; --surface: #131b2e; --surface-recessed: #0a0f1a;
-    --border: rgba(212, 167, 58, 0.08); --border-bright: rgba(212, 167, 58, 0.18);
-    --text: #e2e8f0; --text-dim: #8b9dc3;
-    --accent: #5b8cc9; --accent-dim: rgba(91, 140, 201, 0.12);
-    --gold: #e8c56a; --gold-dim: rgba(232, 197, 106, 0.12);
-    --logic: #34d399; --logic-dim: rgba(52, 211, 153, 0.12);
-    --ui: #fbbf24; --ui-dim: rgba(251, 191, 36, 0.10);
-    --must: #fb7185; --must-dim: rgba(251, 113, 133, 0.12);
-    --grid: rgba(91, 140, 201, 0.04);
-  }
-}
-* { margin: 0; padding: 0; box-sizing: border-box; }
-body { font-family: var(--font-body); background-color: var(--bg); background-image: linear-gradient(var(--grid) 1px, transparent 1px), linear-gradient(90deg, var(--grid) 1px, transparent 1px); background-size: 24px 24px; color: var(--text); line-height: 1.6; }
-.container { max-width: 1180px; margin: 0 auto; padding: 40px 24px 80px; }
-.header { text-align: center; padding: 48px 24px 40px; margin-bottom: 48px; background: var(--surface); border: 1px solid var(--border-bright); border-radius: 12px; position: relative; overflow: hidden; }
-.header::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; background: linear-gradient(90deg, var(--logic), var(--ui)); }
-.header h1 { font-family: var(--font-mono); font-size: clamp(1.6rem, 4vw, 2.4rem); font-weight: 700; letter-spacing: -0.02em; margin-bottom: 8px; }
-.header h1 span { color: var(--gold); }
-.header .subtitle { font-size: 1rem; color: var(--text-dim); max-width: 620px; margin: 0 auto 24px; }
-.branches { display: flex; justify-content: center; gap: 16px; flex-wrap: wrap; }
-.branch-pill { display: inline-flex; align-items: center; gap: 8px; padding: 8px 18px; border-radius: 6px; font-family: var(--font-mono); font-size: 0.82rem; font-weight: 700; border: 1px solid; }
-.branch-pill.logic { background: var(--logic-dim); border-color: var(--logic); color: var(--logic); }
-.branch-pill.ui { background: var(--ui-dim); border-color: var(--ui); color: var(--ui); }
-.section { margin-bottom: 48px; }
-.section-title { font-family: var(--font-mono); font-size: 1.1rem; font-weight: 700; color: var(--gold); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 20px; padding-bottom: 8px; border-bottom: 1px solid var(--border-bright); }
-.section-title .num { color: var(--text-dim); margin-right: 8px; }
-.branch-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
-@media (max-width: 720px) { .branch-grid { grid-template-columns: 1fr; } }
-.branch-card { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 22px 24px; }
-.branch-card.logic { border-left: 4px solid var(--logic); }
-.branch-card.ui { border-left: 4px solid var(--ui); }
-.branch-card h3 { font-family: var(--font-mono); font-size: 1rem; margin-bottom: 6px; }
-.branch-card.logic h3 { color: var(--logic); }
-.branch-card.ui h3 { color: var(--ui); }
-.branch-card .subhead { font-size: 0.85rem; color: var(--text-dim); margin-bottom: 14px; }
-.branch-card .q { font-style: italic; color: var(--text); margin: 8px 0; padding-left: 12px; border-left: 2px solid currentColor; font-size: 0.88rem; }
-.branch-card.logic .q { border-left-color: var(--logic); }
-.branch-card.ui .q { border-left-color: var(--ui); }
-.branch-card ul { list-style: none; padding: 0; font-size: 0.85rem; margin-top: 12px; }
-.branch-card li { padding: 5px 0; padding-left: 18px; position: relative; color: var(--text-dim); }
-.branch-card li::before { content: '→'; position: absolute; left: 0; color: var(--gold); font-weight: 700; }
-.callout { background: var(--surface); border: 1px solid var(--gold); border-radius: 8px; padding: 16px 20px; margin: 16px 0; font-size: 0.9rem; }
-.callout strong { color: var(--gold); font-family: var(--font-mono); }
-.callout.warn { border-color: var(--must); }
-.callout.warn strong { color: var(--must); }
-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
-thead { background: var(--surface-recessed); }
-th, td { padding: 10px 14px; text-align: left; border-bottom: 1px solid var(--border); vertical-align: top; }
-th { font-family: var(--font-mono); font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-dim); }
-tr:last-child td { border-bottom: none; }
-code { font-family: var(--font-mono); font-size: 0.85em; background: var(--accent-dim); padding: 2px 6px; border-radius: 3px; }
-.cmd-tag { font-family: var(--font-mono); font-size: 0.78rem; color: var(--gold); background: var(--gold-dim); padding: 2px 6px; border-radius: 3px; }
-.anti-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 14px; }
-.anti { background: var(--surface); border: 1px solid var(--border); border-left: 3px solid var(--must); border-radius: 6px; padding: 14px 18px; font-size: 0.88rem; }
-.anti strong { color: var(--must); font-family: var(--font-mono); display: block; margin-bottom: 4px; font-size: 0.85rem; }
-</style>
+<link rel="stylesheet" href="../shared/guide.css">
 </head>
 <body>
-<div class="container">
-
-<div class="header">
-  <h1><span>/</span>prototype</h1>
-  <p class="subtitle">Throwaway code that answers <em>one question</em>. The question decides the shape: a TUI for logic/state, or a runnable UI grounded in the host application. A canonical mockup can settle end-user design before or after the experiment.</p>
-  <div class="branches">
-    <span class="branch-pill logic">Logic — TUI</span>
-    <span class="branch-pill ui">UI — Host app</span>
-  </div>
+<div class="shell">
+<header class="hero">
+<div class="kicker">Focused experiment</div>
+<h1>/prototype</h1>
+<p class="lede">Build throwaway runnable code to answer one logic, state, integration, real-data-density, or host-application question.</p>
+<div class="flow"><span>logic · terminal shell</span><span>UI · host application</span><span class="active">one question</span></div>
+</header>
+<main>
+<section>
+<div class="section-label">01 · Choose the artifact</div>
+<h2>The question decides the branch</h2>
+<div class="grid">
+<div class="card"><h3>Logic prototype</h3><p>Use a small interactive terminal shell for state machines, reducers, data models, or API behavior.</p><ul><li>Keep logic portable and separate from the shell.</li><li>Render complete state after each action.</li><li>Show keyboard controls.</li></ul></div>
+<div class="card"><h3>UI prototype</h3><p>Use the real host application when integration, real data density, or actual state behavior is part of the question.</p><ul><li>Prefer an existing page and real application context.</li><li>Use a throwaway route only when necessary.</li><li>Never ship prototype controls.</li></ul></div>
 </div>
-
-<div class="section">
-  <div class="section-title"><span class="num">01</span>Pick a Branch</div>
-  <div class="branch-grid">
-    <div class="branch-card logic">
-      <h3>Logic Prototype</h3>
-      <p class="subhead">Tiny interactive terminal app. The user presses keys; state changes.</p>
-      <p class="q">"Does this state machine handle X then Y?"</p>
-      <p class="q">"Can this data model represent the case where…?"</p>
-      <p class="q">"What should the API surface look like?"</p>
-      <ul>
-        <li>Isolate logic in a <strong>portable</strong> module — pure reducer, state machine, or pure functions</li>
-        <li>TUI is throwaway; validated portable logic needs production tests before it is absorbed</li>
-        <li>Re-render the full frame on every action (no scrollback)</li>
-        <li>Keyboard shortcuts shown at bottom</li>
-      </ul>
-    </div>
-    <div class="branch-card ui">
-      <h3>UI Prototype</h3>
-      <p class="subhead">Runnable throwaway UI inside the host application when standalone HTML cannot answer the question.</p>
-      <p class="q">"Does the selected design work with real dashboard density?"</p>
-      <p class="q">"Can this interaction use the application's actual state flow?"</p>
-      <p class="q">"Does integration with this host page expose a design problem?"</p>
-      <ul>
-        <li><strong>Default to the existing host page</strong> — preserve real data, navigation, and density</li>
-        <li>Use a throwaway route only when no existing page makes sense</li>
-        <li>Use variants only when the integration question itself requires comparison</li>
-        <li>Hide all prototype controls in production builds; never ship them</li>
-      </ul>
-    </div>
-  </div>
-  <div class="callout">
-    <strong>Picking wrong wastes the whole prototype.</strong> A visual-design question that standalone HTML can answer belongs to <code>/mockup</code>. Use a UI prototype only when the host application, integration, real data density, or state behavior is part of the question.
-  </div>
-  <div class="callout">
-    <strong>First / Last / Skip:</strong> run <code>/mockup</code> first when end-user design is the subject or an imperative prerequisite; leave it until last when UI only presents logic, data exploration, manual processing, or state; skip it when no UI design question exists.
-  </div>
-</div>
-
-<div class="section">
-  <div class="section-title"><span class="num">02</span>Rules Both Branches Share</div>
-  <table>
-    <thead><tr><th>Rule</th><th>What it means</th></tr></thead>
-    <tbody>
-      <tr><td><strong>Throwaway from day one</strong></td><td>Code is named and located so a casual reader can tell it's not production</td></tr>
-      <tr><td><strong>One command to run</strong></td><td>Whatever the project's task runner supports — <code>pnpm</code>, <code>python</code>, <code>bun</code>, etc.</td></tr>
-      <tr><td><strong>No persistence by default</strong></td><td>State lives in memory unless the question is specifically about persistence</td></tr>
-      <tr><td><strong>Skip the polish</strong></td><td>No tests, no abstractions, no error handling beyond keeping it runnable</td></tr>
-      <tr><td><strong>Surface the state</strong></td><td>After every action, and after every variant switch when variants exist, the user can see what changed</td></tr>
-      <tr><td><strong>Delete or absorb when done</strong></td><td>The shell goes away; validated portable logic is rewritten or absorbed under production constraints and tests</td></tr>
-    </tbody>
-  </table>
-</div>
-
-<div class="section">
-  <div class="section-title"><span class="num">03</span>Place in the Pipeline</div>
-  <div class="callout">
-    Prototyping lives <strong>outside</strong> the <span class="cmd-tag">/build</span> pipeline. It usually surfaces when integration, real data density, or state behavior cannot be judged in <code>mockups.html</code> or conversation. Pair with <span class="cmd-tag">/handoff</span> when the prototype needs its own focused session, and let the prototype consume an approved mockup without promoting either artifact's throwaway code.
-  </div>
-</div>
-
-<div class="section">
-  <div class="section-title"><span class="num">04</span>The Answer Is What You Keep</div>
-  <p style="font-size: 0.95rem; margin-bottom: 12px;">A prototype produces two things: a runnable artifact (throwaway) and an <strong>answer</strong> (durable). The answer goes into a commit message, an ADR, an issue, or a <code>NOTES.md</code> next to the prototype — along with the question it was answering. Then the prototype shell is deleted.</p>
-  <p style="font-size: 0.9rem; color: var(--text-dim);">If the answer changes the ubiquitous language or crystallises a durable decision, invoke <span class="cmd-tag">/model-domain</span> to update context files or record a qualifying ADR.</p>
-</div>
-
-<div class="section">
-  <div class="section-title"><span class="num">05</span>Anti-Patterns</div>
-  <div class="anti-grid">
-    <div class="anti"><strong>Adding tests</strong>A prototype that needs tests is no longer a prototype.</div>
-    <div class="anti"><strong>Wiring to the real DB</strong>Use in-memory unless the question is about persistence.</div>
-    <div class="anti"><strong>Generalising</strong>No "what if we wanted X later." One question, one prototype.</div>
-    <div class="anti"><strong>Blurring logic and TUI</strong>If the reducer references <code>console.log</code>, it's not portable anymore.</div>
-    <div class="anti"><strong>Shipping the shell</strong>The TUI / variant switcher is for the question. Rewrite when folding in.</div>
-    <div class="anti"><strong>Variants differing only in colour</strong>That's a tweak. Real variants disagree about structure.</div>
-  </div>
-</div>
-
+<p class="callout"><strong>Visual-only design belongs to <code>mockup</code>.</strong> A runnable UI is justified only when standalone HTML cannot answer the question.</p>
+</section>
+<section>
+<div class="section-label">02 · Mockup order</div>
+<h2>First, Last, or Skip</h2>
+<p><strong>First / Last / Skip:</strong> run <code>mockup</code> first when end-user design is the subject or prerequisite; leave it until last when UI only presents logic, data, or state; skip it when no UI design question exists.</p>
+</section>
+<section>
+<div class="section-label">03 · Constraints</div>
+<h2>Make disposal obvious</h2>
+<ul>
+<li>Name and locate the code so readers know it is not production.</li>
+<li>Provide one command to run.</li>
+<li>Keep state in memory unless persistence is the question.</li>
+<li>Skip tests, abstractions, and polish beyond what keeps it runnable.</li>
+<li>Show relevant state after every action or variant switch.</li>
+<li>Delete the shell or rewrite validated portable logic under production constraints and tests.</li>
+</ul>
+<p class="callout warn">Use variants only when the question requires different behavior or integration strategies. Decorative-only variants do not test a meaningful hypothesis.</p>
+</section>
+<section>
+<div class="section-label">04 · Pipeline boundary</div>
+<h2>Experiment outside <code>build</code></h2>
+<p>Prototype runs outside the main pipeline. Use <code>handoff</code> when the experiment needs its own focused session, then return the answer to the owning workflow.</p>
+</section>
+<section>
+<div class="section-label">05 · Keep the answer</div>
+<h2>Discard the shell</h2>
+<p>Record the question and result in an issue, commit message, ADR, or short note. Then remove the prototype.</p>
+<p>If the answer changes the ubiquitous language or creates a qualifying durable decision, invoke <code>model-domain</code> to update the correct context files or ADR.</p>
+</section>
+</main>
+<footer>Human guide · prototype skill · one question, throwaway code</footer>
 </div>
 </body>
 </html>

@@ -1,186 +1,65 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>/grill Skill Guide</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
-<style>
-:root {
-  --font-body: 'IBM Plex Sans', system-ui, sans-serif;
-  --font-mono: 'IBM Plex Mono', 'SF Mono', Consolas, monospace;
-  --bg: #f0f2f5; --surface: #ffffff; --surface-recessed: #e8ebf0;
-  --border: rgba(30, 58, 95, 0.10); --border-bright: rgba(30, 58, 95, 0.20);
-  --text: #1e293b; --text-dim: #64748b;
-  --accent: #1e3a5f; --accent-dim: rgba(30, 58, 95, 0.08);
-  --gold: #d4a73a; --gold-dim: rgba(212, 167, 58, 0.10);
-  --grill: #8b5cf6; --grill-dim: rgba(139, 92, 246, 0.10);
-  --must: #be123c; --must-dim: rgba(190, 18, 60, 0.10);
-  --grid: rgba(30, 58, 95, 0.04);
-}
-@media (prefers-color-scheme: dark) {
-  :root {
-    --bg: #0c1220; --surface: #131b2e; --surface-recessed: #0a0f1a;
-    --border: rgba(212, 167, 58, 0.08); --border-bright: rgba(212, 167, 58, 0.18);
-    --text: #e2e8f0; --text-dim: #8b9dc3;
-    --accent: #5b8cc9; --accent-dim: rgba(91, 140, 201, 0.12);
-    --gold: #e8c56a; --gold-dim: rgba(232, 197, 106, 0.12);
-    --grill: #a78bfa; --grill-dim: rgba(167, 139, 250, 0.12);
-    --must: #fb7185; --must-dim: rgba(251, 113, 133, 0.12);
-    --grid: rgba(91, 140, 201, 0.04);
-  }
-}
-* { margin: 0; padding: 0; box-sizing: border-box; }
-body { font-family: var(--font-body); background-color: var(--bg); background-image: linear-gradient(var(--grid) 1px, transparent 1px), linear-gradient(90deg, var(--grid) 1px, transparent 1px); background-size: 24px 24px; color: var(--text); line-height: 1.6; }
-.container { max-width: 1180px; margin: 0 auto; padding: 40px 24px 80px; }
-.header { text-align: center; padding: 48px 24px 40px; margin-bottom: 48px; background: var(--surface); border: 1px solid var(--border-bright); border-radius: 12px; position: relative; overflow: hidden; }
-.header::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; background: var(--grill); }
-.header h1 { font-family: var(--font-mono); font-size: clamp(1.6rem, 4vw, 2.4rem); font-weight: 700; letter-spacing: -0.02em; margin-bottom: 8px; }
-.header h1 span { color: var(--gold); }
-.header .subtitle { font-size: 1rem; color: var(--text-dim); max-width: 620px; margin: 0 auto; }
-.section { margin-bottom: 48px; }
-.section-title { font-family: var(--font-mono); font-size: 1.1rem; font-weight: 700; color: var(--gold); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 20px; padding-bottom: 8px; border-bottom: 1px solid var(--border-bright); }
-.section-title .num { color: var(--text-dim); margin-right: 8px; }
-.card-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; }
-.card { background: var(--surface); border: 1px solid var(--border); border-left: 4px solid var(--grill); border-radius: 8px; padding: 20px; }
-.card h3 { font-family: var(--font-mono); font-size: 0.95rem; font-weight: 700; color: var(--grill); margin-bottom: 10px; }
-.card p { font-size: 0.9rem; margin-bottom: 10px; }
-.card ul { list-style: none; padding: 0; font-size: 0.85rem; }
-.card li { padding: 4px 0; padding-left: 16px; position: relative; color: var(--text-dim); }
-.card li::before { content: '→'; position: absolute; left: 0; color: var(--gold); font-weight: 700; }
-.card .quote { font-style: italic; color: var(--text-dim); border-left: 2px solid var(--grill); padding-left: 12px; margin-top: 10px; font-size: 0.85rem; }
-.callout { background: var(--surface); border: 1px solid var(--gold); border-radius: 8px; padding: 16px 20px; margin: 20px 0; }
-.callout strong { color: var(--gold); font-family: var(--font-mono); }
-.callout.warn { border-color: var(--must); }
-.callout.warn strong { color: var(--must); }
-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
-thead { background: var(--surface-recessed); }
-th, td { padding: 10px 14px; text-align: left; border-bottom: 1px solid var(--border); vertical-align: top; }
-th { font-family: var(--font-mono); font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-dim); }
-tr:last-child td { border-bottom: none; }
-code { font-family: var(--font-mono); font-size: 0.85em; background: var(--accent-dim); padding: 2px 6px; border-radius: 3px; }
-.pre { background: var(--surface-recessed); padding: 16px 20px; border-radius: 6px; font-family: var(--font-mono); font-size: 0.82rem; overflow-x: auto; white-space: pre; line-height: 1.6; }
-.cmd-tag { font-family: var(--font-mono); font-size: 0.78rem; color: var(--gold); background: var(--gold-dim); padding: 2px 6px; border-radius: 3px; }
-.must-tag { font-family: var(--font-mono); font-size: 0.7rem; font-weight: 700; color: var(--must); background: var(--must-dim); padding: 2px 6px; border-radius: 3px; }
-</style>
+<link rel="stylesheet" href="../shared/guide.css">
 </head>
 <body>
-<div class="container">
-
-<div class="header">
-  <h1><span>/</span>grill</h1>
-  <p class="subtitle">Interactive feature interview in dependency-aware rounds. <code>/grill</code> owns the decision frontier and invokes <code>/model-domain</code> to maintain the ubiquitous language and qualifying decisions.</p>
+<div class="shell">
+<header class="hero">
+<div class="kicker">Phase 1 · Design</div>
+<h1>/grill</h1>
+<p class="lede">Stress-test a feature in dependency-aware rounds. Grill owns the interview; <code>model-domain</code> owns the ubiquitous language and durable decisions.</p>
+<div class="flow" aria-label="Build phases"><span class="active">1 · grill</span><span>mockup when relevant</span><span>2 · spec</span><span>3 · tasks</span><span>4 · implement</span><span>5 · review-change</span></div>
+</header>
+<main>
+<section>
+<div class="section-label">01 · Decision frontier</div>
+<h2>Ask only what is ready</h2>
+<p>The frontier contains every decision whose prerequisites are settled.</p>
+<ol>
+<li>Ask all independent frontier questions in one numbered round.</li>
+<li>Recommend an answer for each question.</li>
+<li>Wait for the user's decisions.</li>
+<li>Update resolved terms and decisions inline.</li>
+<li>Recompute the frontier and repeat.</li>
+</ol>
+<p class="callout"><strong>Facts are not interview questions.</strong> Inspect the codebase or delegate exploration, then ask the user only for decisions.</p>
+</section>
+<section>
+<div class="section-label">02 · Delegation</div>
+<h2>Two skills, one conversation</h2>
+<div class="grid">
+<div class="card"><h3>Grill owns</h3><ul><li>The design tree and question order.</li><li>Numbered rounds and recommendations.</li><li>Completion of every decision branch.</li></ul></div>
+<div class="card"><h3>Model domain owns</h3><ul><li>Applicable context-file topology.</li><li>Ubiquitous-language conflicts and updates.</li><li>ADRs only for hard-to-reverse, surprising trade-offs.</li></ul></div>
 </div>
+<p class="callout">Context files can include a root <code>CONTEXT-MAP.md</code> and subordinate <code>CONTEXT.md</code> files. Root <code>docs/adr/</code> holds qualifying project-wide decisions.</p>
+</section>
+<section>
+<div class="section-label">03 · Round format</div>
+<h2>Make batch replies easy</h2>
+<pre>❓ Q1 — &lt;question title&gt;: &lt;body or choices&gt;
+➡️ &lt;recommended answer&gt;
 
-<div class="section">
-  <div class="section-title"><span class="num">01</span>Place in the Pipeline</div>
-  <p style="font-size: 0.95rem; margin-bottom: 16px;">Phase 1 of <span class="cmd-tag">/build</span>. Grilling resolves product and domain decisions. Relevant end-user UI then runs through <span class="cmd-tag">/mockup</span> before Phase 2; <span class="cmd-tag">/spec</span> transcribes the settled design intent and does not re-interview.</p>
-  <div class="pre">/build "feature"
-  ├── Phase 1: /grill        ← YOU ARE HERE
-  │             /mockup       conditional for relevant UI
-  ├── Phase 2: /spec
-  ├── Phase 3: /todo
-  └── Phase 4: /code (or /coach)</div>
-</div>
-
-<div class="section">
-  <div class="section-title"><span class="num">02</span>What It Produces</div>
-  <div class="card-grid">
-    <div class="card">
-      <h3>model-domain → context files</h3>
-      <p><code>CONTEXT.md</code> and <code>CONTEXT-MAP.md</code> are collectively the context files. They are the durable record and navigation structure for the ubiquitous language, not the language itself. They are long-lived and accrue across every <code>/build</code> run.</p>
-      <ul>
-        <li>Updated <em>inline</em> as terms resolve — never batched</li>
-        <li>If absent, created lazily when the first term is resolved</li>
-        <li>For multi-context repos, lives under each bounded context, with a root <code>CONTEXT-MAP.md</code></li>
-      </ul>
-    </div>
-    <div class="card">
-      <h3>model-domain → docs/adr/*.md</h3>
-      <p>Architectural Decision Records. Numbered sequentially. Each captures <em>what was decided</em> and <em>why</em> in 1-3 sentences.</p>
-      <ul>
-        <li>Offered <strong>sparingly</strong>: only when hard-to-reverse AND surprising AND result of a real trade-off</li>
-        <li>If any of the three is missing, skip — don't document the obvious</li>
-        <li><code>docs/adr/</code> is created lazily on first ADR</li>
-      </ul>
-    </div>
-  </div>
-  <div class="callout">
-    <strong>Why repo root?</strong> These artifacts outlive any single feature. They're the durable spine that successive <code>/build</code> runs sharpen — not feature-scoped.
-  </div>
-</div>
-
-<div class="section">
-  <div class="section-title"><span class="num">03</span>Two Skills, One Session</div>
-  <div class="card-grid">
-    <div class="card">
-      <h3>grill owns the interview</h3>
-      <p>Map decisions as a tree. In each round, ask every question whose prerequisites are settled, then recompute the frontier from the user's answers.</p>
-      <div class="quote">Batch independent decisions; defer any question that depends on another answer still open in the round.</div>
-    </div>
-    <div class="card">
-      <h3>model-domain owns the model</h3>
-      <p>It challenges glossary conflicts, sharpens fuzzy terms, tests scenarios, checks the code, updates the applicable context file inline, and applies the ADR bar.</p>
-      <div class="quote">Invoking it from <code>/grill</code> embeds its discipline in the same interview; it does not start a second session.</div>
-    </div>
-  </div>
-</div>
-
-<div class="section">
-  <div class="section-title"><span class="num">04</span>Interaction Pattern</div>
-  <table>
-    <thead><tr><th>Rule</th><th>Why</th></tr></thead>
-    <tbody>
-      <tr><td><strong>Ask the whole frontier</strong> in each round</td><td>Batch every independent decision that is ready now, then wait for the user's answers before the next round</td></tr>
-      <tr><td><strong>Number and recommend</strong> for each question</td><td>Consistent labels make batch replies easy to map; concrete recommendations let users push back quickly</td></tr>
-      <tr><td><strong>Defer dependent questions</strong></td><td>A question blocked on another open answer belongs to a later round, even when both were initially visible</td></tr>
-      <tr><td><strong>Recompute after every round</strong></td><td>Answers reshape the design tree and expose a new frontier rather than a predetermined questionnaire</td></tr>
-      <tr><td><strong>Explore facts instead of asking</strong></td><td>Use tools or independent subagent exploration, deferring only downstream questions while the rest of the frontier proceeds</td></tr>
-      <tr><td><strong>Update documentation inline</strong>, never batch</td><td>Question delivery is batched; durable glossary and ADR updates still happen as decisions resolve</td></tr>
-    </tbody>
-  </table>
-  <div class="callout">
-    <strong>Question format:</strong> <code>❓ Q1 - &lt;question title&gt;: &lt;body or choices&gt;</code>, followed by <code>➡️ &lt;recommended answer&gt;</code>.
-  </div>
-</div>
-
-<div class="section">
-  <div class="section-title"><span class="num">05</span>Domain-Modeling Delegation</div>
-  <p style="font-size: 0.95rem; margin-bottom: 14px;"><code>/grill</code> loads <code>../model-domain/SKILL.md</code> at the start and follows it throughout the interview.</p>
-  <div class="callout warn">
-    <strong>Do not duplicate the discipline here.</strong> <code>/model-domain</code> is the source of truth for context topology, ubiquitous-language updates, audit and condensation, and the ADR qualification bar.
-  </div>
-</div>
-
-<div class="section">
-  <div class="section-title"><span class="num">06</span>Standalone Model Sessions</div>
-  <table>
-    <thead><tr><th>Mode</th><th>Purpose</th></tr></thead>
-    <tbody>
-      <tr><td><code>/model-domain build</code></td><td>Bootstrap context files for an existing project that has none</td></tr>
-      <tr><td><code>/model-domain augment</code></td><td>Add missing concepts or sharpen a named area</td></tr>
-      <tr><td><code>/model-domain audit</code></td><td>Condense bloat and resolve ambiguity, duplication, drift, or misplaced terms</td></tr>
-    </tbody>
-  </table>
-</div>
-
-<div class="section">
-  <div class="section-title"><span class="num">07</span>Completion</div>
-  <p style="font-size: 0.95rem; margin-bottom: 14px;">The grill phase ends when all are true:</p>
-  <ul style="font-size: 0.9rem; list-style: none; padding: 0;">
-    <li style="padding: 6px 0 6px 22px; position: relative;"><span style="position: absolute; left: 0; color: var(--gold); font-weight: 700;">→</span> The decision frontier is empty: every branch was visited and nothing remains silently assumed</li>
-    <li style="padding: 6px 0 6px 22px; position: relative;"><span style="position: absolute; left: 0; color: var(--gold); font-weight: 700;">→</span> All ambiguous terms have been pinned down</li>
-    <li style="padding: 6px 0 6px 22px; position: relative;"><span style="position: absolute; left: 0; color: var(--gold); font-weight: 700;">→</span> Cardinality and lifecycle questions are answered</li>
-    <li style="padding: 6px 0 6px 22px; position: relative;"><span style="position: absolute; left: 0; color: var(--gold); font-weight: 700;">→</span> ADR-worthy decisions are recorded</li>
-    <li style="padding: 6px 0 6px 22px; position: relative;"><span style="position: absolute; left: 0; color: var(--gold); font-weight: 700;">→</span> The user is satisfied with the shared understanding</li>
-  </ul>
-  <div class="callout">
-    <strong>Then:</strong> inside <code>/build</code>, return to the orchestrator for the mockup relevance decision. Relevant UI waits for explicit mockup approval; otherwise post-grill chat confirmation clears Design→Spec. Standalone grilling still reports what changed and waits for confirmation before drafting the Spec.
-  </div>
-</div>
-
+❓ Q2 — &lt;independent question&gt;: &lt;body or choices&gt;
+➡️ &lt;recommended answer&gt;</pre>
+<p>Defer a question when it depends on another answer still open in the same round.</p>
+</section>
+<section>
+<div class="section-label">04 · Completion</div>
+<h2>Finish with no silent assumptions</h2>
+<ul>
+<li>The frontier is empty.</li>
+<li>Ambiguous terms, cardinality, and lifecycle are resolved.</li>
+<li>Qualifying ADRs are recorded.</li>
+<li>The user is satisfied with the shared understanding.</li>
+</ul>
+<p class="callout"><strong>Inside build:</strong> return to the orchestrator. Relevant UI proceeds to <code>mockup</code>; otherwise post-grill chat confirmation clears Design→Spec. <strong>Standalone:</strong> report changed context files and ADRs, then wait before drafting the Spec.</p>
+</section>
+</main>
+<footer>Human guide · grill skill · model-domain owns documentation detail</footer>
 </div>
 </body>
 </html>

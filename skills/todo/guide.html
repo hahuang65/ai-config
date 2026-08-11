@@ -1,183 +1,82 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>/todo Skill Guide</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
-<style>
-:root {
-  --font-body: 'IBM Plex Sans', system-ui, sans-serif;
-  --font-mono: 'IBM Plex Mono', 'SF Mono', Consolas, monospace;
-  --bg: #f0f2f5; --surface: #ffffff; --surface-recessed: #e8ebf0;
-  --border: rgba(30, 58, 95, 0.10); --border-bright: rgba(30, 58, 95, 0.20);
-  --text: #1e293b; --text-dim: #64748b;
-  --accent: #1e3a5f; --accent-dim: rgba(30, 58, 95, 0.08);
-  --gold: #d4a73a; --gold-dim: rgba(212, 167, 58, 0.10);
-  --tasks: #d97706; --tasks-dim: rgba(217, 119, 6, 0.10);
-  --afk: #059669; --afk-dim: rgba(5, 150, 105, 0.10);
-  --hitl: #be123c; --hitl-dim: rgba(190, 18, 60, 0.10);
-  --must: #be123c; --must-dim: rgba(190, 18, 60, 0.10);
-  --grid: rgba(30, 58, 95, 0.04);
-}
-@media (prefers-color-scheme: dark) {
-  :root {
-    --bg: #0c1220; --surface: #131b2e; --surface-recessed: #0a0f1a;
-    --border: rgba(212, 167, 58, 0.08); --border-bright: rgba(212, 167, 58, 0.18);
-    --text: #e2e8f0; --text-dim: #8b9dc3;
-    --accent: #5b8cc9; --accent-dim: rgba(91, 140, 201, 0.12);
-    --gold: #e8c56a; --gold-dim: rgba(232, 197, 106, 0.12);
-    --tasks: #fbbf24; --tasks-dim: rgba(251, 191, 36, 0.10);
-    --afk: #34d399; --afk-dim: rgba(52, 211, 153, 0.12);
-    --hitl: #fb7185; --hitl-dim: rgba(251, 113, 133, 0.12);
-    --must: #fb7185; --must-dim: rgba(251, 113, 133, 0.12);
-    --grid: rgba(91, 140, 201, 0.04);
-  }
-}
-* { margin: 0; padding: 0; box-sizing: border-box; }
-body { font-family: var(--font-body); background-color: var(--bg); background-image: linear-gradient(var(--grid) 1px, transparent 1px), linear-gradient(90deg, var(--grid) 1px, transparent 1px); background-size: 24px 24px; color: var(--text); line-height: 1.6; }
-.container { max-width: 1180px; margin: 0 auto; padding: 40px 24px 80px; }
-.header { text-align: center; padding: 48px 24px 40px; margin-bottom: 48px; background: var(--surface); border: 1px solid var(--border-bright); border-radius: 12px; position: relative; overflow: hidden; }
-.header::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; background: var(--tasks); }
-.header h1 { font-family: var(--font-mono); font-size: clamp(1.6rem, 4vw, 2.4rem); font-weight: 700; letter-spacing: -0.02em; margin-bottom: 8px; }
-.header h1 span { color: var(--gold); }
-.header .subtitle { font-size: 1rem; color: var(--text-dim); max-width: 620px; margin: 0 auto; }
-.section { margin-bottom: 48px; }
-.section-title { font-family: var(--font-mono); font-size: 1.1rem; font-weight: 700; color: var(--gold); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 20px; padding-bottom: 8px; border-bottom: 1px solid var(--border-bright); }
-.section-title .num { color: var(--text-dim); margin-right: 8px; }
-.card-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; }
-.card { background: var(--surface); border: 1px solid var(--border); border-left: 4px solid var(--tasks); border-radius: 8px; padding: 20px; }
-.card.afk { border-left-color: var(--afk); }
-.card.hitl { border-left-color: var(--hitl); }
-.card h3 { font-family: var(--font-mono); font-size: 0.95rem; font-weight: 700; margin-bottom: 10px; }
-.card.afk h3 { color: var(--afk); }
-.card.hitl h3 { color: var(--hitl); }
-.card p { font-size: 0.9rem; margin-bottom: 10px; }
-.card ul { list-style: none; padding: 0; font-size: 0.85rem; }
-.card li { padding: 4px 0; padding-left: 16px; position: relative; color: var(--text-dim); }
-.card li::before { content: '→'; position: absolute; left: 0; color: var(--gold); font-weight: 700; }
-.callout { background: var(--surface); border: 1px solid var(--gold); border-radius: 8px; padding: 16px 20px; margin: 20px 0; }
-.callout strong { color: var(--gold); font-family: var(--font-mono); }
-.callout.warn { border-color: var(--must); }
-.callout.warn strong { color: var(--must); }
-.callout ol { margin-top: 10px; padding-left: 1.4rem; }
-.callout ol li { margin: 6px 0; }
-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
-thead { background: var(--surface-recessed); }
-th, td { padding: 10px 14px; text-align: left; border-bottom: 1px solid var(--border); vertical-align: top; }
-th { font-family: var(--font-mono); font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-dim); }
-tr:last-child td { border-bottom: none; }
-code { font-family: var(--font-mono); font-size: 0.85em; background: var(--accent-dim); padding: 2px 6px; border-radius: 3px; }
-.pre { background: var(--surface-recessed); padding: 16px 20px; border-radius: 6px; font-family: var(--font-mono); font-size: 0.82rem; overflow-x: auto; white-space: pre; line-height: 1.6; }
-.cmd-tag { font-family: var(--font-mono); font-size: 0.78rem; color: var(--gold); background: var(--gold-dim); padding: 2px 6px; border-radius: 3px; }
-.afk-tag { font-family: var(--font-mono); font-size: 0.72rem; font-weight: 700; color: var(--afk); background: var(--afk-dim); padding: 2px 8px; border-radius: 4px; }
-.hitl-tag { font-family: var(--font-mono); font-size: 0.72rem; font-weight: 700; color: var(--hitl); background: var(--hitl-dim); padding: 2px 8px; border-radius: 4px; }
-.must-tag { font-family: var(--font-mono); font-size: 0.7rem; font-weight: 700; color: var(--must); background: var(--must-dim); padding: 2px 6px; border-radius: 3px; }
-</style>
+<link rel="stylesheet" href="../shared/guide.css">
 </head>
 <body>
-<div class="container">
-
-<div class="header">
-  <h1><span>/</span>todo</h1>
-  <p class="subtitle">Break an approved spec into <strong>vertical-slice tracer bullets</strong>. Each slice cuts through every layer end-to-end and is demoable on its own. Reviewed and refined locally. Based on Matt Pocock's <code>to-issues</code>.</p>
+<div class="shell">
+<header class="hero">
+<div class="kicker">Phase 3 · Tasks</div>
+<h1>/todo</h1>
+<p class="lede">Turn an approved spec into thin, dependency-ordered vertical slices that are independently grabbable and demoable.</p>
+<div class="flow"><span>1 · grill and optional mockup</span><span>2 · spec</span><span class="active">3 · tasks</span><span>4 · implement</span><span>5 · review-change</span></div>
+</header>
+<main>
+<section>
+<div class="section-label">01 · Slice shape</div>
+<h2>Vertical, never horizontal</h2>
+<div class="grid">
+<div class="card good"><h3>Vertical slice</h3><p>“Customer can place an Order and see it in order history.”</p><ul><li>Crosses every required layer.</li><li>Proves one complete path.</li><li>Can be demonstrated alone.</li></ul></div>
+<div class="card warn"><h3>Rejected horizontal slice</h3><p>“Set up the Order schema.”</p><ul><li>Touches one layer only.</li><li>Leaves no visible complete behavior.</li><li>Must be reframed or combined.</li></ul></div>
 </div>
-
-<div class="section">
-  <div class="section-title"><span class="num">01</span>Place in the Pipeline</div>
-  <p style="font-size: 0.95rem; margin-bottom: 16px;">Phase 3 of <span class="cmd-tag">/build</span>. Inputs: approved <code>mockups.html</code> when present, canonical <code>specs.html</code>, applicable context files (through <code>CONTEXT-MAP.md</code> when present), and ADRs. Output: canonical <code>tasks.html</code>.</p>
-  <div class="pre">/build "feature"
-  ├── Phase 1: /grill → conditional /mockup
-  ├── Phase 2: /spec
-  ├── Phase 3: /todo         ← YOU ARE HERE
-  └── Phase 4: /code (or /coach)</div>
-</div>
-
-<div class="section">
-  <div class="section-title"><span class="num">02</span>Vertical, Never Horizontal</div>
-  <div class="card-grid">
-    <div class="card" style="border-left-color: var(--afk);">
-      <h3 style="color: var(--afk);">Vertical slice (right)</h3>
-      <p>"Customer can place an Order via the API and see it in their order history."</p>
-      <ul>
-        <li>Touches schema, API, business logic, UI, tests</li>
-        <li>Demoable end-to-end on its own</li>
-        <li>Tracer bullet — proves the path through every layer</li>
-      </ul>
-    </div>
-    <div class="card" style="border-left-color: var(--hitl);">
-      <h3 style="color: var(--hitl);">Horizontal slice (rejected)</h3>
-      <p>"Set up the Order database schema and migrations."</p>
-      <ul>
-        <li>Touches only one layer</li>
-        <li>Not demoable in isolation</li>
-        <li>System is in a broken/invisible state until later slices land</li>
-        <li>If a slice looks like this, split or reframe it</li>
-      </ul>
-    </div>
-  </div>
-  <div class="callout">
-    <strong>Many thin slices beat few thick ones.</strong> If a slice looks fat, split it. Each slice's value is in being independently grabbable and demoable.
-  </div>
-</div>
-
-<div class="section">
-  <div class="section-title"><span class="num">03</span>HITL vs AFK</div>
-  <table>
-    <thead><tr><th>Type</th><th>Definition</th><th>Bias</th></tr></thead>
-    <tbody>
-      <tr><td><span class="afk-tag">AFK</span></td><td>Away-from-keyboard. Can be implemented and merged without human interaction.</td><td><strong>Prefer this</strong> — most slices should be AFK</td></tr>
-      <tr><td><span class="hitl-tag">HITL</span></td><td>Human-in-the-loop. Requires interaction — an architectural decision, a design review, a credential rotation.</td><td>Reserved for genuine judgment calls</td></tr>
-    </tbody>
-  </table>
-</div>
-
-<div class="section">
-  <div class="section-title"><span class="num">04</span>Slice Anatomy</div>
-  <div class="pre">&lt;article data-slice-id="1" data-status="pending"
-         data-mode="AFK" data-dependencies="" data-stories="1,2,3"&gt;
-  Customer can place an Order
-  Blocked by: None
-  Test surface: POST /orders public behavior
-  What to build: complete Order placement path
-  Acceptance criteria:
-    data-criterion-id="1.1" data-status="pending"
-    data-criterion-id="1.2" data-status="pending"
-&lt;/article&gt;</div>
-  <p style="font-size: 0.9rem; color: var(--text-dim); margin-top: 14px;">Avoid file paths and code snippets in slice bodies — they go stale before the slice is picked up. The Test surface line names the stable public interface or observable behavior, not a spec file. Same narrow exception as the spec: decision-rich snippets (state machines, reducers, schemas) may be inlined when prose can't carry the precision.</p>
-</div>
-
-<div class="section">
-  <div class="section-title"><span class="num">05</span>Process</div>
-  <table>
-    <thead><tr><th>Step</th><th>Action</th></tr></thead>
-    <tbody>
-      <tr><td>1. Gather context</td><td>Read canonical <code>specs.html</code>, approved <code>mockups.html</code> when present, the applicable context files, and relevant ADRs. Carry authoritative UI decisions into acceptance criteria and test surfaces.</td></tr>
-      <tr><td>2. Draft slices</td><td>Vertical only. Each slice cuts through every layer. Carry forward the spec's public-interface test surface. Mark HITL/AFK. Order by dependency.</td></tr>
-      <tr><td>3. Write <code>tasks.html</code></td><td>Use <code>&lt;feature title&gt; - Tasks</code> as the browser-tab title. Use the ubiquitous language from the applicable context files for visible content and semantic slice containers with stable identity, status, dependency, mode, story, test-surface, and acceptance-criterion metadata. Show “can run unattended” / “needs you present” as the main labels and AFK/HITL as secondary metadata.</td></tr>
-      <tr><td>4. Review</td><td>Open through <span class="cmd-tag">review-artifact</span> as an approval review, which starts in Annotate mode. Ask about granularity, dependencies, HITL/AFK, and coverage.</td></tr>
-      <tr><td>5. Iterate</td><td>Address every browser annotation or message in the same HTML and let the open review live-reload.</td></tr>
-      <tr><td>6. Finalize</td><td>Explicit approval finalizes the artifact; report counts and advance to implementation.</td></tr>
-    </tbody>
-  </table>
-  <div class="callout warn">
-    <strong>Material UI redesign return path</strong>
-    <ol>
-      <li>When Task feedback materially redesigns UI, pause the current Tasks approval review.</li>
-      <li>Run the changed <code>mockups.html</code> through <code>mockup</code> and <code>review-artifact</code> until explicit approval.</li>
-      <li>Then synchronize <code>specs.html</code> and <code>tasks.html</code>, renew the invalidated Spec approval, and renew the invalidated Tasks approval.</li>
-      <li>Continue to implementation only after both approvals are explicitly renewed.</li>
-    </ol>
-  </div>
-</div>
-
-<div class="section">
-  <div class="section-title"><span class="num">06</span>Completion</div>
-  <p style="font-size: 0.95rem;">An explicit browser approval or chat-fallback confirmation finalizes <code>tasks.html</code>. Ending review is not approval. Report the counts and advance to Phase 4 (<span class="cmd-tag">/code</span> or <span class="cmd-tag">/coach</span>).</p>
-</div>
-
+<p class="callout"><strong>Prefer many thin slices.</strong> If a slice is large, split it without breaking end-to-end value.</p>
+</section>
+<section>
+<div class="section-label">02 · Execution mode</div>
+<h2>Prefer unattended work</h2>
+<div class="table-wrap"><table>
+<thead><tr><th>Mode</th><th>Use</th></tr></thead>
+<tbody>
+<tr><td><span class="badge">AFK</span></td><td>Can run without human interaction. Prefer this for most slices.</td></tr>
+<tr><td><span class="badge">HITL</span></td><td>Needs real human judgment, such as a design or architecture decision.</td></tr>
+</tbody>
+</table></div>
+</section>
+<section>
+<div class="section-label">03 · Canonical artifact</div>
+<h2>Write structured <code>tasks.html</code></h2>
+<ul>
+<li>Link visibly to the source <code>specs.html</code>.</li>
+<li>Set document-level artifact kind and version attributes.</li>
+<li>Give each slice stable identity, status, dependencies, mode, and story metadata.</li>
+<li>Show its public Test surface and acceptance criteria as visible content.</li>
+<li>Give every criterion stable identity and status metadata.</li>
+</ul>
+<p class="callout warn">Do not include file paths or code snippets in task bodies. The Test surface names a stable public interface or observable behavior.</p>
+</section>
+<section>
+<div class="section-label">04 · Process</div>
+<h2>Ground, draft, review</h2>
+<p>Standalone input can be a Spec path, Feature slug, or GitHub issue. When an issue is supplied, its body replaces <code>specs.html</code> as the task source.</p>
+<ol>
+<li>Read approved <code>specs.html</code>, approved <code>mockups.html</code> when present, applicable context files, ADRs, and relevant code.</li>
+<li>Draft slices in dependency order and carry forward user-story coverage and public test surfaces.</li>
+<li>Write canonical <code>tasks.html</code> with the title <code>&lt;feature title&gt; - Tasks</code>.</li>
+<li>Review granularity, dependencies, AFK/HITL mode, and story coverage through <code>review-artifact</code>.</li>
+<li>Apply feedback to the same live file until explicit approval.</li>
+</ol>
+</section>
+<section>
+<div class="section-label">05 · UI intent changes</div>
+<h2>Return to the approved design</h2>
+<ol>
+<li>If Task feedback materially redesigns UI, pause the current Tasks approval review.</li>
+<li>Run the changed <code>mockups.html</code> through <code>mockup</code> and <code>review-artifact</code> until explicit approval.</li>
+<li>Then synchronize <code>specs.html</code> and <code>tasks.html</code>, renew the invalidated Spec approval, and renew the invalidated Tasks approval.</li>
+<li>Continue to implementation only after both approvals are explicitly renewed.</li>
+</ol>
+</section>
+<section>
+<div class="section-label">06 · Completion</div>
+<h2>Choose the implementation owner</h2>
+<p>Approval clears Tasks→Implement. Report the slice and mode counts, then choose <code>code</code> for AI implementation or <code>coach</code> for user implementation.</p>
+<p class="callout">Ending review is not approval.</p>
+</section>
+</main>
+<footer>Human guide · todo skill · canonical tasks.html</footer>
 </div>
 </body>
 </html>
