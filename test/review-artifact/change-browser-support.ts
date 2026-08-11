@@ -10,7 +10,7 @@ export type BrowserPool = Awaited<ReturnType<typeof startFirefoxBidiPool>>;
 export type BrowserContext = Awaited<ReturnType<BrowserPool["createContext"]>>;
 export type ChangeReview = Awaited<ReturnType<typeof startChangeReviewFromHtml>>;
 
-export async function startChangeReviewFromHtml(browserPool: BrowserPool, html: string, width = 960) {
+export async function startChangeReviewFromHtml(browserPool: BrowserPool, html: string, width = 960, height = 900) {
   const directory = await mkdtemp(path.join(tmpdir(), "review-artifact-change-"));
   const artifact = path.join(directory, "specs.html");
   const pollController = new AbortController();
@@ -18,7 +18,7 @@ export async function startChangeReviewFromHtml(browserPool: BrowserPool, html: 
   const server = await startReviewServer({ port: 0, stateFile: path.join(directory, "state.json") });
   const session = await createSession(server, artifact);
   void pollForAgentEvent(server, session.key, pollController.signal).catch(() => {});
-  const browser = await browserPool.createContext({ width, height: 900 });
+  const browser = await browserPool.createContext({ width, height });
   await browser.navigate(session.url);
   await waitForListening(browser);
   await waitForRevisionReady(browser);

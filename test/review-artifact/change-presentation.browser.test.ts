@@ -18,6 +18,13 @@ const firefox = Bun.which("firefox") ?? (existsSync(macFirefox) ? macFirefox : n
 if (!firefox) throw new Error("Firefox is required for review-artifact browser evidence");
 
 const TEST_TIMEOUT_MS = 20_000;
+const LAYOUT_TEST_TIMEOUT_MS = 30_000;
+const LAYOUT_TOLERANCE_PX = 1;
+const LAYOUT_VIEWPORTS = [
+  { height: 900, name: "wide", narrow: false, width: 1280 },
+  { height: 900, name: "narrow", narrow: true, width: 480 },
+  { height: 2063, name: "tall", narrow: false, width: 1646 },
+] as const;
 let browserPool: Awaited<ReturnType<typeof startFirefoxBidiPool>>;
 let browserPoolDirectory: string;
 
@@ -91,6 +98,28 @@ test("keeps change controls and keyboard mode usable at the narrow shell width",
     await closeChangeReview(review);
   }
 }, TEST_TIMEOUT_MS);
+
+test("fills the artifact panel content row across viewport shapes and revision states", async () => {
+  const violations: string[] = [];
+  for (const viewport of LAYOUT_VIEWPORTS) {
+    const review = await startChangeReviewFromHtml(
+      browserPool,
+      presentationArtifact("Draft copy"),
+      viewport.width,
+      viewport.height,
+    );
+    try {
+      violations.push(...await readLayoutViolations(review.browser, viewport, false));
+      await writeFile(review.artifact, presentationArtifact("Fresh copy"));
+      await waitForOneRegion(review);
+      violations.push(...await readLayoutViolations(review.browser, viewport, true));
+    } finally {
+      await closeChangeReview(review);
+    }
+  }
+
+  expect(violations).toEqual([]);
+}, LAYOUT_TEST_TIMEOUT_MS);
 
 test("keeps annotation hover and locate outlines above the change cue", async () => {
   const review = await startChangeReviewFromHtml(browserPool, presentationArtifact("Draft copy"));
@@ -181,6 +210,86 @@ test("shows a patterned rail and plain-language badge without changing artifact 
     await closeChangeReview(review);
   }
 }, TEST_TIMEOUT_MS);
+
+async function readLayoutViolations(
+  browser: Awaited<ReturnType<typeof startChangeReviewFromHtml>>["browser"],
+  viewport: typeof LAYOUT_VIEWPORTS[number],
+  expectedBarVisible: boolean,
+) {
+  const geometry = await measureShellGeometry(browser);
+  const state = expectedBarVisible ? "visible" : "hidden";
+  const prefix = `${viewport.name}/${state}`;
+  const violations: string[] = [];
+  recordEdgeViolation(violations, prefix, "left", geometry.iframe.left, geometry.content.left);
+  recordEdgeViolation(violations, prefix, "right", geometry.iframe.right, geometry.content.right);
+  recordEdgeViolation(
+    violations,
+    prefix,
+    "top",
+    geometry.iframe.top,
+    expectedBarVisible ? geometry.barBottom : geometry.content.top,
+  );
+  recordEdgeViolation(violations, prefix, "bottom", geometry.iframe.bottom, geometry.content.bottom);
+  if (geometry.barVisible !== expectedBarVisible) violations.push(`${prefix}: unexpected change-bar visibility`);
+  if (viewport.narrow && geometry.panelBottom > geometry.conversationTop + LAYOUT_TOLERANCE_PX) {
+    violations.push(`${prefix}: artifact panel does not precede conversation`);
+  }
+  if (viewport.narrow && geometry.scrollWidth > geometry.viewportWidth + LAYOUT_TOLERANCE_PX) {
+    violations.push(`${prefix}: shell overflows horizontally`);
+  }
+  return violations;
+}
+
+function measureShellGeometry(browser: Awaited<ReturnType<typeof startChangeReviewFromHtml>>["browser"]) {
+  return browser.evaluate(`JSON.stringify((() => {
+    const panel = document.querySelector(".artifact-panel");
+    const iframe = document.querySelector("#artifact");
+    const bar = document.querySelector("[data-review-change-bar]");
+    const conversation = document.querySelector(".conversation");
+    const panelRect = panel.getBoundingClientRect();
+    const iframeRect = iframe.getBoundingClientRect();
+    const barRect = bar.getBoundingClientRect();
+    const panelStyle = getComputedStyle(panel);
+    const edge = (value) => Number.parseFloat(value) || 0;
+    return {
+      barBottom: barRect.bottom,
+      barVisible: !bar.hidden,
+      content: {
+        bottom: panelRect.bottom - edge(panelStyle.borderBottomWidth) - edge(panelStyle.paddingBottom),
+        left: panelRect.left + edge(panelStyle.borderLeftWidth) + edge(panelStyle.paddingLeft),
+        right: panelRect.right - edge(panelStyle.borderRightWidth) - edge(panelStyle.paddingRight),
+        top: panelRect.top + edge(panelStyle.borderTopWidth) + edge(panelStyle.paddingTop),
+      },
+      conversationTop: conversation.getBoundingClientRect().top,
+      iframe: { bottom: iframeRect.bottom, left: iframeRect.left, right: iframeRect.right, top: iframeRect.top },
+      panelBottom: panelRect.bottom,
+      scrollWidth: document.documentElement.scrollWidth,
+      viewportWidth: innerWidth,
+    };
+  })())`) as Promise<ShellGeometry>;
+}
+
+function recordEdgeViolation(
+  violations: string[],
+  prefix: string,
+  edge: string,
+  actual: number,
+  expected: number,
+) {
+  const delta = actual - expected;
+  if (Math.abs(delta) > LAYOUT_TOLERANCE_PX) violations.push(`${prefix}: ${edge} delta ${delta}px`);
+}
+
+interface ShellGeometry {
+  barBottom: number;
+  barVisible: boolean;
+  content: { bottom: number; left: number; right: number; top: number };
+  conversationTop: number;
+  iframe: { bottom: number; left: number; right: number; top: number };
+  panelBottom: number;
+  scrollWidth: number;
+  viewportWidth: number;
+}
 
 async function waitForOneRegion(review: Awaited<ReturnType<typeof startChangeReviewFromHtml>>) {
   await waitForCondition(

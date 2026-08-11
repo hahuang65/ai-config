@@ -1,4 +1,5 @@
 import { spawn } from "node:child_process";
+import { mkdir } from "node:fs/promises";
 
 interface FirefoxPoolOptions {
   executable: string;
@@ -14,6 +15,7 @@ const REQUEST_TIMEOUT_MS = 10_000;
 const CONNECT_RETRY_MS = 50;
 
 export async function startFirefoxBidiPool(options: FirefoxPoolOptions) {
+  await mkdir(options.profile, { recursive: true });
   const processRef = spawn(options.executable, [
     "--headless",
     "--no-remote",

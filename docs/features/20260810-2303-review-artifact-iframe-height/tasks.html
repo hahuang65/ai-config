@@ -1,0 +1,216 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Review Artifact Iframe Height - Tasks</title>
+  <style>
+    :root {
+      color-scheme: light dark;
+      --bg: #edf1ec;
+      --paper: #fbfcf8;
+      --recessed: #e4e9e1;
+      --line: #b9c3b7;
+      --text: #202720;
+      --muted: #606b61;
+      --accent: #386c53;
+      --accent-soft: #d7e7dc;
+      --pending: #986019;
+      --pending-soft: #f3e4c8;
+      --font-display: Georgia, "Times New Roman", serif;
+      --font-body: "Avenir Next", Avenir, "Segoe UI", sans-serif;
+      --font-mono: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #171c18;
+        --paper: #202721;
+        --recessed: #1a201b;
+        --line: #48534a;
+        --text: #edf2eb;
+        --muted: #adb8ae;
+        --accent: #8bc6a3;
+        --accent-soft: #294334;
+        --pending: #e5b66e;
+        --pending-soft: #44351f;
+      }
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--font-body);
+      font-size: 17px;
+      line-height: 1.6;
+      overflow-wrap: break-word;
+    }
+    body::before { position: fixed; inset: 0 auto 0 0; width: 8px; background: var(--accent); content: ""; }
+    header, main, footer { width: min(1040px, calc(100% - 40px)); margin-inline: auto; }
+    header { padding: 68px 0 36px; }
+    .kicker, .label, .chip, .status, dt { font-family: var(--font-mono); font-size: 0.72rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; }
+    .kicker, .label { color: var(--accent); }
+    h1, h2, h3 { text-wrap: balance; }
+    h1 { margin: 10px 0 12px; font: 500 clamp(3.6rem, 9vw, 6.8rem)/0.92 var(--font-display); letter-spacing: -0.055em; }
+    .lede { max-width: 680px; margin: 0; color: var(--muted); font-size: 1.2rem; }
+    a { color: var(--accent); text-underline-offset: 3px; }
+    main { display: grid; gap: 22px; padding-bottom: 60px; }
+    .summary, .slice { min-width: 0; border: 1px solid var(--line); border-radius: 14px; background: var(--paper); }
+    .summary { display: grid; grid-template-columns: 1fr 1fr 1fr; overflow: hidden; }
+    .summary > div { min-width: 0; padding: 22px; border-left: 1px solid var(--line); }
+    .summary > div:first-child { border-left: 0; }
+    .summary strong { display: block; margin-top: 5px; font: 500 1.55rem/1.1 var(--font-display); }
+    .summary p { margin: 7px 0 0; color: var(--muted); font-size: 0.92rem; }
+    .slice { overflow: hidden; }
+    .slice-header { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 18px; align-items: start; padding: clamp(24px, 4vw, 38px); background: color-mix(in srgb, var(--paper) 88%, var(--accent) 12%); }
+    .slice-number { color: var(--accent); font: 700 1rem/1 var(--font-mono); }
+    h2 { margin: 0; font: 500 clamp(2rem, 4vw, 3.2rem)/1.02 var(--font-display); letter-spacing: -0.035em; }
+    .status { padding: 6px 10px; border: 1px solid color-mix(in srgb, var(--pending) 55%, var(--line)); border-radius: 999px; background: var(--pending-soft); color: var(--pending); white-space: nowrap; }
+    .slice-body { padding: clamp(24px, 4vw, 38px); }
+    .metadata { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; margin: 0 0 30px; }
+    .metadata > div { min-width: 0; padding: 14px; background: var(--recessed); }
+    dt { color: var(--muted); }
+    dd { margin: 5px 0 0; }
+    .chip { display: inline-block; padding: 3px 8px; border-radius: 5px; background: var(--accent-soft); color: var(--accent); }
+    section + section { margin-top: 30px; padding-top: 26px; border-top: 1px solid var(--line); }
+    h3 { margin: 6px 0 12px; font: 500 1.65rem/1.2 var(--font-display); }
+    p { margin: 0 0 1em; }
+    .test-surface { padding: 18px 20px; border-left: 4px solid var(--accent); background: var(--accent-soft); }
+    .test-surface strong { display: block; margin-bottom: 5px; }
+    .criteria { list-style: none; margin: 0; padding: 0; }
+    .criteria li { position: relative; padding: 17px 16px 17px 54px; border-top: 1px solid var(--line); }
+    .criteria li:first-child { border-top: 0; }
+    .criteria li::before { position: absolute; top: 19px; left: 16px; width: 20px; height: 20px; border: 2px solid var(--pending); border-radius: 50%; content: ""; }
+    .criteria strong { display: block; margin-bottom: 3px; }
+    .criteria span { color: var(--muted); }
+    .criteria .criterion-status { color: var(--accent); font: 700 0.68rem/1.4 var(--font-mono); letter-spacing: 0.08em; text-transform: uppercase; }
+    .slice[data-status="complete"] .status { border-color: var(--accent); background: var(--accent-soft); color: var(--accent); }
+    .criteria li[data-status="complete"]::before { border-color: var(--accent); background: var(--accent); box-shadow: inset 0 0 0 4px var(--paper); }
+    .verification-summary { padding: clamp(24px, 4vw, 38px); border: 1px solid var(--line); border-radius: 14px; background: var(--recessed); color: var(--muted); }
+    .verification-summary strong { color: var(--text); }
+    footer { padding: 0 0 42px; color: var(--muted); font-family: var(--font-mono); font-size: 0.75rem; }
+    @media (max-width: 760px) {
+      body { font-size: 16px; }
+      header, main, footer { width: min(100% - 28px, 1040px); }
+      header { padding-top: 46px; }
+      .summary, .metadata { grid-template-columns: 1fr; }
+      .summary > div { border-top: 1px solid var(--line); border-left: 0; }
+      .summary > div:first-child { border-top: 0; }
+      .slice-header { grid-template-columns: auto minmax(0, 1fr); }
+      .slice-header .status { grid-column: 2; justify-self: start; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="kicker">Approved Spec → implementation slices</div>
+    <h1>Tasks</h1>
+    <p class="lede">One focused tracer bullet repairs the review shell and proves the result through its real Firefox surface.</p>
+    <p><a href="specs.html">Read the approved Spec</a></p>
+  </header>
+
+  <main data-artifact-kind="tasks" data-artifact-version="1">
+    <section class="summary" aria-label="Task summary">
+      <div>
+        <span class="label">Dependency graph</span>
+        <strong>Slice 01</strong>
+        <p>Unblocked and independently verifiable.</p>
+      </div>
+      <div>
+        <span class="label">Can run unattended</span>
+        <strong>1 slice</strong>
+        <p><span class="chip">AFK</span> No human interaction is required.</p>
+      </div>
+      <div>
+        <span class="label">Needs you present</span>
+        <strong>0 slices</strong>
+        <p>No design or product decisions remain open.</p>
+      </div>
+    </section>
+
+    <article class="slice" data-slice-id="slice-01" data-status="complete" data-mode="AFK" data-dependencies="" data-stories="1,2,3,4,5,6,7,8,9">
+      <header class="slice-header">
+        <div class="slice-number">01</div>
+        <h2>Keep the artifact iframe inside its full grid row</h2>
+        <span class="status">Complete</span>
+      </header>
+      <div class="slice-body">
+        <dl class="metadata">
+          <div><dt>Mode</dt><dd><span class="chip">AFK</span></dd></div>
+          <div><dt>Blocked by</dt><dd>None</dd></div>
+          <div><dt>Stories</dt><dd>1–9</dd></div>
+          <div><dt>Scope</dt><dd>Review shell layout</dd></div>
+        </dl>
+
+        <section id="slice-01-build">
+          <div class="label">What to build</div>
+          <h3>Place the iframe in the remaining grid row and let it stretch.</h3>
+          <p>Begin with Firefox browser evidence that reproduces the collapsed iframe using a short reviewed document.</p>
+          <p>Then make the smallest shell layout change that lets the iframe occupy the remaining artifact-panel row at every agreed viewport shape.</p>
+          <p>Keep change-bar state, shell markup, browser interactions, sandboxing, and message boundaries unchanged.</p>
+        </section>
+
+        <section id="slice-01-test-surface">
+          <div class="label">Test surface</div>
+          <h3>Rendered review shell geometry in Firefox</h3>
+          <div class="test-surface">
+            <strong>First RED test</strong>
+            Exercise the actual review shell through the existing Firefox WebDriver BiDi pool at 1280 × 900, 480 × 900, and 1646 × 2063 CSS pixels, then compare iframe edges with the artifact panel’s available content row in both change-bar states.
+          </div>
+        </section>
+
+        <section id="slice-01-acceptance">
+          <div class="label">Acceptance criteria</div>
+          <h3>Evidence required to complete the slice</h3>
+          <ol class="criteria">
+            <li data-criterion-id="slice-01-wide" data-status="complete">
+              <span class="criterion-status">Complete</span>
+              <strong>Wide viewport geometry</strong>
+              <span>At 1280 × 900 CSS pixels, with the change bar hidden and visible, the iframe’s edges match the artifact panel’s available content row within one CSS pixel.</span>
+            </li>
+            <li data-criterion-id="slice-01-narrow" data-status="complete">
+              <span class="criterion-status">Complete</span>
+              <strong>Narrow stacked geometry</strong>
+              <span>At 480 × 900 CSS pixels, the iframe fills its intended stacked region in both change-bar states while the shell keeps its ordering and has no horizontal overflow.</span>
+            </li>
+            <li data-criterion-id="slice-01-tall" data-status="complete">
+              <span class="criterion-status">Complete</span>
+              <strong>Tall viewport geometry</strong>
+              <span>At 1646 × 2063 CSS pixels, a short artifact grows far beyond intrinsic iframe height and reaches the artifact panel’s content bottom in both change-bar states.</span>
+            </li>
+            <li data-criterion-id="slice-01-layout-ownership" data-status="complete">
+              <span class="criterion-status">Complete</span>
+              <strong>CSS owns sizing</strong>
+              <span>The repair adds no measured height, resize observer, viewport listener, inline sizing, or document-to-shell height protocol.</span>
+            </li>
+            <li data-criterion-id="slice-01-boundaries" data-status="complete">
+              <span class="criterion-status">Complete</span>
+              <strong>Existing boundaries remain intact</strong>
+              <span>Shell semantics, keyboard behavior, focus styles, iframe title, artifact scrolling, sandbox policy, and runtime message behavior remain unchanged.</span>
+            </li>
+            <li data-criterion-id="slice-01-firefox" data-status="complete">
+              <span class="criterion-status">Complete</span>
+              <strong>Firefox remains mandatory</strong>
+              <span>The browser evidence fails when Firefox is unavailable and is not converted into an optional or skipped check.</span>
+            </li>
+          </ol>
+        </section>
+      </div>
+    </article>
+
+    <section id="verification-summary" class="verification-summary" aria-labelledby="verification-summary-title">
+      <div class="label">Verification summary</div>
+      <h2 id="verification-summary-title">Cold fact-check complete</h2>
+      <p><strong>26 factual, behavioral, and completion claims checked:</strong> 25 confirmed, 1 corrected, and 0 unverifiable.</p>
+      <ul>
+        <li>Corrected the build description from the original indefinite-percentage-height hypothesis to the Firefox-proven hidden-state auto-placement failure.</li>
+        <li>Confirmed all six criterion states and the slice completion metadata remain complete.</li>
+        <li>Confirmed the focused Firefox test passes all three exact viewport sizes in hidden and visible change-bar states, with one-pixel edge tolerance.</li>
+        <li>Confirmed the final scope: one production CSS rule changed, plus three browser-test support files; shell markup, scripts, sandboxing, and message behavior did not change.</li>
+      </ul>
+    </section>
+  </main>
+
+  <footer>Canonical feature Tasks · One AFK slice · Implementation complete</footer>
+</body>
+</html>

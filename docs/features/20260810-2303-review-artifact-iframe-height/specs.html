@@ -1,0 +1,286 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Review Artifact Iframe Height - Spec</title>
+  <style>
+    :root {
+      color-scheme: light dark;
+      --bg: #f5f1e8;
+      --surface: #fffdf7;
+      --surface-raised: #ffffff;
+      --surface-recessed: #ebe5d9;
+      --border: #c9c0b1;
+      --text: #28241f;
+      --muted: #6e665c;
+      --accent: #a2482d;
+      --good: #456b4a;
+      --good-soft: #dce9dc;
+      --font-display: Georgia, "Times New Roman", serif;
+      --font-body: "Avenir Next", Avenir, "Segoe UI", sans-serif;
+      --font-mono: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #1d1b18;
+        --surface: #28241f;
+        --surface-raised: #312c26;
+        --surface-recessed: #211e1a;
+        --border: #51493f;
+        --text: #f1eadf;
+        --muted: #bcb1a3;
+        --accent: #ef936f;
+        --good: #9bc49e;
+        --good-soft: #293b2d;
+      }
+    }
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      background-color: var(--bg);
+      background-image: repeating-linear-gradient(-45deg, transparent, transparent 48px, color-mix(in srgb, var(--border) 24%, transparent) 48px, color-mix(in srgb, var(--border) 24%, transparent) 49px);
+      color: var(--text);
+      font-family: var(--font-body);
+      font-size: 17px;
+      line-height: 1.65;
+      overflow-wrap: break-word;
+    }
+    header, main, footer { width: min(1080px, calc(100% - 40px)); margin-inline: auto; }
+    header { padding: 76px 0 44px; }
+    .eyebrow, .section-label, .status {
+      font-family: var(--font-mono);
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+    }
+    .eyebrow { color: var(--accent); }
+    h1, h2, h3 { text-wrap: balance; }
+    h1 {
+      max-width: 820px;
+      margin: 12px 0 14px;
+      font-family: var(--font-display);
+      font-size: clamp(3.6rem, 10vw, 7.4rem);
+      font-weight: 500;
+      letter-spacing: -0.065em;
+      line-height: 0.88;
+    }
+    .subtitle { max-width: 690px; margin: 0; color: var(--muted); font-size: clamp(1.1rem, 2vw, 1.35rem); }
+    .contract {
+      display: grid;
+      grid-template-columns: minmax(0, 1.7fr) minmax(240px, 0.8fr);
+      gap: 1px;
+      margin-top: 34px;
+      overflow: hidden;
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      background: var(--border);
+    }
+    .contract > * { min-width: 0; padding: 22px; background: var(--surface); }
+    .contract strong { display: block; margin-bottom: 5px; font-family: var(--font-display); font-size: 1.35rem; }
+    .contract p { margin: 0; color: var(--muted); }
+    .status { align-self: stretch; display: grid; place-items: center; background: var(--good-soft); color: var(--good); text-align: center; }
+    main { display: grid; gap: 26px; padding-bottom: 70px; }
+    section {
+      min-width: 0;
+      padding: clamp(24px, 4vw, 42px);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      background: var(--surface);
+    }
+    section.hero-section { background: color-mix(in srgb, var(--surface) 90%, var(--accent) 10%); border-color: color-mix(in srgb, var(--border) 55%, var(--accent) 45%); }
+    .section-label { display: flex; align-items: center; gap: 9px; color: var(--accent); }
+    .section-label::before { width: 8px; height: 8px; border-radius: 50%; background: currentColor; content: ""; }
+    h2 { margin: 8px 0 18px; font-family: var(--font-display); font-size: clamp(2rem, 4vw, 3.2rem); font-weight: 500; line-height: 1.04; letter-spacing: -0.03em; }
+    h3 { margin: 0 0 8px; font-size: 1rem; }
+    p { margin: 0 0 1em; }
+    p:last-child { margin-bottom: 0; }
+    .before-after { display: grid; grid-template-columns: 0.9fr 1.1fr; gap: 18px; }
+    .before-after article { min-width: 0; padding: 22px; border-radius: 10px; background: var(--surface-recessed); }
+    .before-after article:last-child { border-left: 4px solid var(--good); background: var(--good-soft); }
+    ol.stories { list-style: none; margin: 0; padding: 0; counter-reset: story; }
+    ol.stories li { position: relative; counter-increment: story; padding: 18px 0 18px 52px; border-top: 1px solid var(--border); }
+    ol.stories li:first-child { border-top: 0; }
+    ol.stories li::before {
+      position: absolute;
+      top: 17px;
+      left: 0;
+      width: 32px;
+      color: var(--accent);
+      font-family: var(--font-mono);
+      font-size: 0.8rem;
+      font-weight: 700;
+      content: counter(story, decimal-leading-zero);
+    }
+    .decision-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+    .decision-grid article { min-width: 0; padding: 20px; border: 1px solid var(--border); border-radius: 10px; background: var(--surface-raised); }
+    .decision-grid article.primary { grid-column: 1 / -1; border-left: 4px solid var(--accent); }
+    .decision-grid p { color: var(--muted); }
+    .checks { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin: 22px 0; }
+    .check { min-width: 0; padding: 18px; border-top: 3px solid var(--accent); background: var(--surface-recessed); }
+    .check strong { display: block; font-family: var(--font-display); font-size: 1.3rem; }
+    ul { padding-left: 1.4em; }
+    li + li { margin-top: 0.55em; }
+    .note { padding: 18px 20px; border-left: 4px solid var(--good); background: var(--good-soft); }
+    .verification-summary { background: var(--surface-recessed); color: var(--muted); }
+    .verification-summary strong { color: var(--text); }
+    footer { padding: 0 0 44px; color: var(--muted); font-family: var(--font-mono); font-size: 0.75rem; }
+    @media (max-width: 720px) {
+      body { font-size: 16px; }
+      header, main, footer { width: min(100% - 24px, 1080px); }
+      header { padding-top: 48px; }
+      .contract, .before-after, .decision-grid, .checks { grid-template-columns: 1fr; }
+      .decision-grid article.primary { grid-column: auto; }
+      section { padding: 22px; }
+    }
+    @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="eyebrow">Review artifact workflow · Compatibility repair</div>
+    <h1>Spec</h1>
+    <p class="subtitle">Keep the reviewed artifact full-height in Firefox, regardless of viewport shape or change-bar state.</p>
+    <div class="contract" aria-label="Scope summary">
+      <div>
+        <strong>One browser-derived layout contract</strong>
+        <p>The artifact iframe occupies every pixel left for it by the review shell grid.</p>
+      </div>
+      <div class="status">Focused repair</div>
+    </div>
+  </header>
+
+  <main data-artifact-kind="spec" data-artifact-version="1">
+    <section id="problem" class="hero-section">
+      <div class="section-label">Problem statement</div>
+      <h2>A full-height panel can contain a collapsed artifact.</h2>
+      <p>In Firefox, the artifact iframe can remain near its intrinsic height of about 150 pixels while the artifact panel and conversation panel fill the available viewport.</p>
+      <p>The reviewed document itself lays out correctly when opened directly, so the failure belongs to the review shell.</p>
+      <p>This defect makes most of a tall review surface unusable and can hide content far above an apparently empty panel.</p>
+    </section>
+
+    <section id="solution">
+      <div class="section-label">Solution</div>
+      <h2>Let the grid own the iframe height.</h2>
+      <div class="before-after">
+        <article>
+          <h3>Previous behavior</h3>
+          <p>When the change bar is hidden, it produces no grid item. Without explicit placement, grid auto-placement puts the iframe in the first intrinsic <code>auto</code> row instead of the remaining second row.</p>
+          <p>The old <code>height: 100%</code> then fills that intrinsic row, leaving the iframe near its 150-pixel intrinsic height.</p>
+        </article>
+        <article>
+          <h3>Implemented behavior</h3>
+          <p>The iframe is explicitly placed in grid row 2 and stretches across the row that remains after the optional change bar.</p>
+          <p>The shell removes the percentage height and uses CSS layout only, with no measured height or JavaScript sizing state.</p>
+        </article>
+      </div>
+    </section>
+
+    <section id="user-stories">
+      <div class="section-label">User stories</div>
+      <h2>Observable outcomes</h2>
+      <ol class="stories">
+        <li>As a reviewer on a wide viewport, I want the artifact to fill its panel, so that I can use the complete review surface.</li>
+        <li>As a reviewer on a tall viewport, I want the artifact to grow with the panel, so that Firefox does not leave a large empty region below it.</li>
+        <li>As a reviewer on a narrow viewport, I want the stacked artifact region to retain its intended height, so that the artifact and conversation remain usable without horizontal overflow.</li>
+        <li>As a reviewer examining the latest artifact revision, I want the artifact to fill the space below the visible change bar, so that revision navigation does not collapse the document.</li>
+        <li>As a reviewer without a visible change bar, I want the artifact to begin at the panel’s content edge, so that no unexplained gap appears above it.</li>
+        <li>As a keyboard user, I want the existing shell order, controls, focus indicators, and iframe title to remain unchanged, so that the layout repair does not alter navigation or meaning.</li>
+        <li>As a workflow owner, I want the iframe size to remain derived by CSS Grid, so that viewport changes do not introduce script state, resize listeners, or timing failures.</li>
+        <li>As a maintainer, I want real Firefox evidence across representative viewport shapes, so that an intrinsic-height regression cannot pass unnoticed.</li>
+        <li>As a security-conscious reviewer, I want the existing iframe sandbox and message boundaries to remain unchanged, so that a layout repair does not broaden reviewed-document privileges.</li>
+      </ol>
+    </section>
+
+    <section id="implementation-decisions">
+      <div class="section-label">Implementation decisions</div>
+      <h2>A single production boundary</h2>
+      <div class="decision-grid">
+        <article class="primary">
+          <h3>Review shell layout</h3>
+          <p>The review shell layout is the only production module that changes.</p>
+          <p>The change bar occupies the intrinsic first row when visible. The artifact iframe is explicitly placed in row 2 and stretches through that remaining bounded row without a percentage height.</p>
+        </article>
+        <article>
+          <h3>Geometry contract</h3>
+          <p>The iframe’s inline edges match the artifact panel’s content edges.</p>
+          <p>Its bottom edge matches the panel’s content bottom.</p>
+          <p>Its top edge matches either the panel’s content top or the visible change bar’s bottom.</p>
+        </article>
+        <article>
+          <h3>State ownership</h3>
+          <p>Change-bar visibility remains in the existing hidden-state mechanism.</p>
+          <p>Iframe height remains browser-derived layout, not application state.</p>
+        </article>
+        <article>
+          <h3>Accessibility</h3>
+          <p>The semantic landmarks, iframe title, document order, focus behavior, artifact scrolling, and narrow-page scrolling remain unchanged.</p>
+        </article>
+        <article>
+          <h3>Runtime boundaries</h3>
+          <p>The shell markup, reviewed document, artifact bridge, sandbox policy, and message protocol do not change.</p>
+        </article>
+      </div>
+    </section>
+
+    <section id="testing-decisions">
+      <div class="section-label">Testing decisions</div>
+      <h2>Firefox geometry is the stable seam.</h2>
+      <p>The review shell layout is tested directly through its rendered browser surface using the existing Firefox WebDriver BiDi pool.</p>
+      <div class="checks" aria-label="Viewport evidence">
+        <div class="check"><strong>Wide</strong><span>1280 × 900 CSS pixels · side-by-side</span></div>
+        <div class="check"><strong>Narrow</strong><span>480 × 900 CSS pixels · stacked</span></div>
+        <div class="check"><strong>Tall</strong><span>1646 × 2063 CSS pixels · regression case</span></div>
+      </div>
+      <ul>
+        <li>The Firefox RED run failed only with the change bar hidden: the iframe bottom missed the panel content bottom by 676, 325, and 1839 pixels in the wide, narrow, and tall viewports. All three visible-bar measurements already passed.</li>
+        <li>Each viewport measures the iframe and artifact panel with the change bar hidden.</li>
+        <li>Each viewport then exposes the change bar through real review behavior and measures the remaining artifact row again.</li>
+        <li>Geometry assertions allow a one-pixel rendering tolerance and compare edges rather than fixed output heights.</li>
+        <li>A deliberately short reviewed document ensures that intrinsic iframe height remains visible when the shell contract fails.</li>
+        <li>The narrow case also preserves stacked ordering and the existing no-horizontal-overflow evidence.</li>
+        <li>Declaration-text assertions are not authoritative because the required behavior is rendered geometry.</li>
+      </ul>
+      <div class="note">
+        <strong>Browser requirement:</strong>
+        Firefox remains mandatory and must not be skipped when unavailable.
+      </div>
+    </section>
+
+    <section id="out-of-scope">
+      <div class="section-label">Out of scope</div>
+      <h2>Boundaries that stay fixed</h2>
+      <ul>
+        <li>No changes to the conditional UI mockup feature or its worktree.</li>
+        <li>No review-shell markup, interaction, persistence, message, or approval changes.</li>
+        <li>No JavaScript height measurement, resize observer, viewport listener, or inline sizing.</li>
+        <li>No reviewed-document CSS changes and no document-to-shell height protocol.</li>
+        <li>No change to browser support policy or the mandatory Firefox evidence gate.</li>
+      </ul>
+    </section>
+
+    <section id="further-notes">
+      <div class="section-label">Further notes</div>
+      <h2>Compatibility, not redesign</h2>
+      <p>This repair preserves the review artifact workflow established by ADR-0018.</p>
+      <p>The change should be judged by consistent rendered geometry, not by a specific CSS declaration.</p>
+    </section>
+
+    <section id="verification-summary" class="verification-summary" aria-labelledby="verification-summary-title">
+      <div class="section-label">Verification summary</div>
+      <h2 id="verification-summary-title">Cold fact-check complete</h2>
+      <p><strong>45 factual and behavioral claims checked:</strong> 44 confirmed, 1 corrected, and 0 unverifiable.</p>
+      <ul>
+        <li>Corrected the original indefinite-percentage-height cause hypothesis: the Firefox RED evidence instead showed hidden-state auto-placement into the first intrinsic <code>auto</code> row.</li>
+        <li>Confirmed the final CSS explicitly places <code>#artifact</code> in row 2, stretches it, and removes <code>height: 100%</code>.</li>
+        <li>Confirmed the three viewport sizes and both change-bar states with the focused Firefox geometry test.</li>
+        <li>Confirmed from the diff against <code>1ae4dcb</code> that <code>shell.css</code> is the only production file changed; the other three changed files are browser-test support.</li>
+      </ul>
+    </section>
+  </main>
+
+  <footer>Canonical feature Spec · Review artifact iframe height</footer>
+</body>
+</html>
