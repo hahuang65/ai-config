@@ -1,7 +1,7 @@
 import { closeSync, mkdirSync, openSync, writeSync } from "node:fs";
 import path from "node:path";
 
-import { sanitizeTelemetryLine } from "./terminal-text.mjs";
+import { sanitizeTelemetryLine, sanitizeTelemetryText } from "./terminal-text.mjs";
 
 const LOG_DIRECTORY = path.join(".git", "review-change");
 const LOG_FILENAME = "telemetry.log";
@@ -37,6 +37,6 @@ function serializeEntry(entry) {
     timestamp: entry.timestamp,
     stage: sanitizeTelemetryLine(entry.stage),
     kind: sanitizeTelemetryLine(entry.kind),
-    message: sanitizeTelemetryLine(entry.message),
+    message: sanitizeTelemetryText(entry.message),
   })}\n`;
 }

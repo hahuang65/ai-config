@@ -1,4 +1,7 @@
+import { stripVTControlCharacters } from "node:util";
+
 const DEFAULT_PREVIEW_LENGTH = 120;
+const NON_LAYOUT_CONTROL = /[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f]/g;
 const CREDENTIAL_CORES = [
   ["api", "key"],
   ["private", "key"],
@@ -13,11 +16,26 @@ const CREDENTIAL_CORES = [
   ["secret"],
 ];
 const CREDENTIAL_VALUE = String.raw`(?:"(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|\S+)`;
-const CREDENTIAL_FLAG_PREFIX = /(?<![a-z\d_-])(-{1,2})([a-z][a-z\d_-]*)(\s*[=:]\s*|\s+)/gi;
-const CREDENTIAL_ASSIGNMENT_PREFIX = /(?<![a-z\d_-])([a-z][a-z\d_-]*)(\s*[=:]\s*)/gi;
-const CREDENTIAL_OBJECT_PREFIX = /(["'])([a-z][a-z\d_-]*)\1(\s*:\s*)/gi;
-const AUTHORIZATION_NAME = /\bauthorization\b/gi;
-const BEARER_VALUE = new RegExp(`(\\bbearer\\s+)${CREDENTIAL_VALUE}`, "gi");
+const CREDENTIAL_LAYOUT = String.raw`[\t\r\n]*`;
+const CREDENTIAL_NAME = String.raw`[a-z](?:[a-z\d_-]|[\t\r\n]+(?=[a-z\d_-]))*`;
+const HORIZONTAL_LAYOUT = String.raw`[ \t]*`;
+const CREDENTIAL_VALUE_LAYOUT = String.raw`(?:[ \t]*(?:\r\n|\r|\n)[ \t]+|[ \t]*)`;
+const CREDENTIAL_FLAG_MARKER = /(?<![a-z\d_-])-{1,2}/gi;
+const CREDENTIAL_ASSIGNMENT_PREFIX = new RegExp(
+  String.raw`(?=(?<![a-z\d_-])(${CREDENTIAL_NAME})(${HORIZONTAL_LAYOUT}[=:]${CREDENTIAL_VALUE_LAYOUT}))`,
+  "gi",
+);
+const CREDENTIAL_OBJECT_PREFIX = new RegExp(
+  String.raw`(["'])(${CREDENTIAL_LAYOUT}${CREDENTIAL_NAME}${CREDENTIAL_LAYOUT})\1(${HORIZONTAL_LAYOUT}:${CREDENTIAL_VALUE_LAYOUT})`,
+  "gi",
+);
+const AUTHORIZATION_NAME = new RegExp(
+  String.raw`(?<![a-z\d_-])${layoutFlexibleLiteral("authorization")}(?![a-z\d_-])`, "gi",
+);
+const BEARER_VALUE = new RegExp(
+  String.raw`((?<![a-z\d_-])${layoutFlexibleLiteral("bearer")}(?![a-z\d_-])\s+)${CREDENTIAL_VALUE}`,
+  "gi",
+);
 const URI_USERINFO = /\b([a-z][a-z\d+.-]*:\/\/)[^/\s@]+@/gi;
 
 export function credentialRedactedPreview(value, maximumLength = DEFAULT_PREVIEW_LENGTH) {
@@ -56,7 +74,8 @@ export function truncateText(value, maximumLength) {
 }
 
 export function redactCredentials(value) {
-  const knownFormsRedacted = redactAuthorizationValues(String(value)
+  const normalized = normalizeTerminalControls(value);
+  const knownFormsRedacted = redactAuthorizationValues(normalized
     .replace(URI_USERINFO, "$1[REDACTED]@"))
     .replace(BEARER_VALUE, "$1[REDACTED]");
   const objectFormsRedacted = redactCredentialObjectProperties(knownFormsRedacted);
@@ -85,7 +104,7 @@ function authorizationValueRange(value, nameStart, nameEnd) {
   const quotedKey = quotedAuthorizationKey(value, nameStart, nameEnd);
   const colon = quotedKey?.colon ?? nextNonWhitespace(value, nameEnd);
   if (value[colon] !== ":") return null;
-  const valueStart = nextNonWhitespace(value, colon + 1);
+  const valueStart = credentialValueStart(value, colon + 1);
   if (valueStart >= value.length) return null;
   if (quotedKey) return objectValueRange(value, valueStart);
   const enclosingQuote = activeQuoteOnLine(value, nameStart);
@@ -120,7 +139,13 @@ function objectValueRange(value, valueStart) {
 function findUnquotedAuthorizationEnd(value, start, objectKey) {
   for (let index = start; index < value.length; index += 1) {
     const character = value[index];
-    if (character === "\r" || character === "\n" || character === ";") return index;
+    if (character === "\r" || character === "\n") {
+      const continuation = indentedContinuationStart(value, index);
+      if (continuation === null) return index;
+      index = continuation - 1;
+      continue;
+    }
+    if (character === ";") return index;
     if (objectKey && (character === "," || character === "}")) return index;
     if (value.startsWith("&&", index) || value.startsWith("||", index)) return index;
     if (character === "|" && /\s/.test(value[index - 1] ?? "")) return index;
@@ -129,6 +154,15 @@ function findUnquotedAuthorizationEnd(value, start, objectKey) {
     if (/^(?:[a-z][a-z\d+.-]*:\/\/|--?[a-z\d])/i.test(remainder)) return index;
   }
   return value.length;
+}
+
+function indentedContinuationStart(value, newline) {
+  if (value[newline] !== "\r" && value[newline] !== "\n") return null;
+  let start = newline + 1;
+  if (value[newline] === "\r" && value[start] === "\n") start += 1;
+  if (value[start] !== " " && value[start] !== "\t") return null;
+  while (value[start] === " " || value[start] === "\t") start += 1;
+  return start;
 }
 
 function activeQuoteOnLine(value, end) {
@@ -210,20 +244,67 @@ function readObjectCredentialRange(value, start) {
 function redactCredentialFlags(value) {
   let redacted = "";
   let copiedThrough = 0;
-  let match = CREDENTIAL_FLAG_PREFIX.exec(value);
+  let match = CREDENTIAL_FLAG_MARKER.exec(value);
   while (match) {
-    if (isCredentialName(match[2])) {
-      const credentialValue = readCredentialValue(value, match.index + match[0].length);
-      const whitespaceSeparated = match[3].trim() === "";
-      if (credentialValue && (!whitespaceSeparated || !credentialValue.optionLike)) {
-        redacted += `${value.slice(copiedThrough, match.index)}${match[0]}[REDACTED]`;
-        copiedThrough = credentialValue.end;
-        CREDENTIAL_FLAG_PREFIX.lastIndex = credentialValue.end;
-      }
+    const credential = findFlagCredential(value, match.index + match[0].length);
+    if (credential) {
+      redacted += value.slice(copiedThrough, credential.valueStart);
+      redacted += "[REDACTED]";
+      copiedThrough = credential.valueEnd;
+      CREDENTIAL_FLAG_MARKER.lastIndex = credential.valueEnd;
     }
-    match = CREDENTIAL_FLAG_PREFIX.exec(value);
+    match = CREDENTIAL_FLAG_MARKER.exec(value);
   }
   return `${redacted}${value.slice(copiedThrough)}`;
+}
+
+function findFlagCredential(value, markerEnd) {
+  let nameStart = markerEnd;
+  while (/[\t\r\n]/.test(value[nameStart] ?? "")) nameStart += 1;
+  let nameEnd = nameStart;
+  while (nameEnd < value.length) {
+    const delimiter = readFlagDelimiter(value, nameEnd);
+    if (delimiter && isCredentialName(value.slice(nameStart, nameEnd))) {
+      const credentialValue = readCredentialValue(value, delimiter.end);
+      if (credentialValue && (!delimiter.whitespaceSeparated || !credentialValue.optionLike)) {
+        return { valueStart: delimiter.end, valueEnd: credentialValue.end };
+      }
+    }
+    const nextNameEnd = advanceFlagName(value, nameEnd);
+    if (nextNameEnd === nameEnd) return null;
+    nameEnd = nextNameEnd;
+  }
+  return null;
+}
+
+function readFlagDelimiter(value, start) {
+  const horizontalEnd = skipHorizontalLayout(value, start);
+  if (value[horizontalEnd] === "=" || value[horizontalEnd] === ":") {
+    const end = credentialValueStart(value, horizontalEnd + 1);
+    return { end, whitespaceSeparated: false };
+  }
+  const continuation = indentedContinuationStart(value, horizontalEnd);
+  if (continuation !== null) return { end: continuation, whitespaceSeparated: true };
+  return horizontalEnd > start ? { end: horizontalEnd, whitespaceSeparated: true } : null;
+}
+
+function credentialValueStart(value, start) {
+  const horizontalEnd = skipHorizontalLayout(value, start);
+  return indentedContinuationStart(value, horizontalEnd) ?? horizontalEnd;
+}
+
+function skipHorizontalLayout(value, start) {
+  let end = start;
+  while (value[end] === " " || value[end] === "\t") end += 1;
+  return end;
+}
+
+function advanceFlagName(value, start) {
+  if (/[a-z\d_-]/i.test(value[start] ?? "")) return start + 1;
+  if (!/[\t\r\n]/.test(value[start] ?? "")) return start;
+  let end = start;
+  while (/[\t\r\n]/.test(value[end] ?? "")) end += 1;
+  return /[a-z\d_-]/i.test(value[end] ?? "") ? end : start;
 }
 
 function redactCredentialAssignments(value) {
@@ -231,13 +312,16 @@ function redactCredentialAssignments(value) {
   let copiedThrough = 0;
   let match = CREDENTIAL_ASSIGNMENT_PREFIX.exec(value);
   while (match) {
-    if (isCredentialName(match[1])) {
-      const credentialValue = readCredentialValue(value, match.index + match[0].length);
-      if (credentialValue) {
-        redacted += `${value.slice(copiedThrough, match.index)}${match[0]}[REDACTED]`;
-        copiedThrough = credentialValue.end;
-        CREDENTIAL_ASSIGNMENT_PREFIX.lastIndex = credentialValue.end;
-      }
+    const prefix = `${match[1]}${match[2]}`;
+    const credentialValue = isCredentialName(match[1])
+      ? readCredentialValue(value, match.index + prefix.length)
+      : null;
+    if (credentialValue) {
+      redacted += `${value.slice(copiedThrough, match.index)}${prefix}[REDACTED]`;
+      copiedThrough = credentialValue.end;
+      CREDENTIAL_ASSIGNMENT_PREFIX.lastIndex = credentialValue.end;
+    } else {
+      CREDENTIAL_ASSIGNMENT_PREFIX.lastIndex = match.index + 1;
     }
     match = CREDENTIAL_ASSIGNMENT_PREFIX.exec(value);
   }
@@ -256,8 +340,16 @@ function readCredentialValue(value, start) {
   return { end: Math.min(value.length, closingQuote + 1), optionLike: false };
 }
 
+function layoutFlexibleLiteral(value) {
+  return Array.from(value).join(CREDENTIAL_LAYOUT);
+}
+
 function isCredentialName(name) {
-  const segments = name.toLowerCase().split(/[-_]+/);
+  const normalizedName = name
+    .replace(/[\t\r\n]+/g, "")
+    .replace(/([A-Z]+)([A-Z][a-z])/g, "$1_$2")
+    .replace(/([a-z\d])([A-Z])/g, "$1_$2");
+  const segments = normalizedName.toLowerCase().split(/[-_]+/);
   return CREDENTIAL_CORES.some((core) => {
     if (segments.length < core.length) return false;
     const coreStart = segments.length - core.length;
@@ -265,9 +357,12 @@ function isCredentialName(name) {
   });
 }
 
+function normalizeTerminalControls(value) {
+  return stripVTControlCharacters(String(value)).replace(NON_LAYOUT_CONTROL, "");
+}
+
 function singleLine(value) {
-  return String(value)
-    .replace(/\u001b\[[0-?]*[ -/]*[@-~]/g, "")
+  return normalizeTerminalControls(value)
     .replace(/[\u0000-\u001f\u007f]/g, " ")
     .replace(/\s+/g, " ")
     .trim();

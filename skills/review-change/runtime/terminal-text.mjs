@@ -15,15 +15,14 @@ export function terminalLinePreview(value) {
 }
 
 export function sanitizeTelemetryLine(value) {
-  const plain = redactCredentials(stripControls(String(value)));
+  const plain = redactCredentials(value);
   return plain.replace(/[\u0000-\u001f\u007f]/g, " ").replace(/\s+/g, " ").trim();
 }
 
-export function sanitizeTerminalSummary(value) {
-  const plain = stripControls(String(value)).replace(/[^\n\t\u0020-\u007e\u00a0-\uffff]/g, "");
-  return redactCredentials(plain);
+export function sanitizeTelemetryText(value) {
+  return redactCredentials(value);
 }
 
-function stripControls(value) {
-  return value.replace(/\u001b\[[0-?]*[ -/]*[@-~]/g, "");
+export function sanitizeTerminalSummary(value) {
+  return sanitizeTelemetryText(value).replace(/[^\n\t\u0020-\u007e\u00a0-\uffff]/g, "");
 }

@@ -163,6 +163,32 @@ describe("review artifact executable argument boundary", () => {
     ], stateDirectory);
     const knownTokenValue = `gh${"p"}_${"fixtureKnownToken123"}`;
     const knownToken = await runReviewArtifact([knownTokenValue], stateDirectory);
+    const controlFragmentedValue = "fixture-control-fragmented-value";
+    const controlFragmented = await runReviewArtifact([
+      `GITHUB_\u001b[31mTOKEN=${controlFragmentedValue}`,
+    ], stateDirectory);
+    const layoutFragmentedValue = "fixture-layout-fragmented-value";
+    const layoutFragmented = await runReviewArtifact([
+      `{\"access_token\t\":\"${layoutFragmentedValue}\",\"status\":\"kept\"}`,
+    ], stateDirectory);
+    const trailingFlagValue = "fixture-trailing-flag-value";
+    const trailingFlag = await runReviewArtifact([
+      `--GITHUB_TOKEN\t${trailingFlagValue} --dry-run`,
+    ], stateDirectory);
+    const fragmentedAuthorizationValue = "fixture-fragmented-authorization-value";
+    const fragmentedAuthorization = await runReviewArtifact([
+      `Authoriza\ttion: Bearer\r\n ${fragmentedAuthorizationValue}`,
+    ], stateDirectory);
+    const followingRecord = await runReviewArtifact([
+      "--token\nbuild failed",
+    ], stateDirectory);
+    const emptyAuthorization = await runReviewArtifact([
+      "Authorization:\nbuild failed",
+    ], stateDirectory);
+    const camelCaseValue = "fixture-camel-case-value";
+    const camelCaseCredential = await runReviewArtifact([
+      `apiKey=${camelCaseValue}`,
+    ], stateDirectory);
 
     expect(oversized.exitCode).toBe(2);
     expect(oversized.stdout).toBe("");
@@ -205,6 +231,21 @@ describe("review artifact executable argument boundary", () => {
     );
     expect(compoundKeys.stderr).toContain("AWS_SECRET_ACCESS_KEY=[REDACTED] SSH_PRIVATE_KEY=[REDACTED] private_key_count=7");
     expect(knownToken.stderr).toContain("Unknown command: [REDACTED]");
+    expect(controlFragmented.stderr).toContain("Unknown command: GITHUB_TOKEN=[REDACTED]");
+    expect(controlFragmented.stderr).not.toContain(controlFragmentedValue);
+    expect(controlFragmented.stderr).not.toContain("\u001b");
+    expect(layoutFragmented.stderr).toContain('access_token ":"[REDACTED]"');
+    expect(layoutFragmented.stderr).not.toContain(layoutFragmentedValue);
+    expect(trailingFlag.stderr).toContain("--GITHUB_TOKEN [REDACTED] --dry-run");
+    expect(trailingFlag.stderr).not.toContain(trailingFlagValue);
+    expect(fragmentedAuthorization.stderr).toContain("Authoriza tion: [REDACTED]");
+    expect(fragmentedAuthorization.stderr).not.toContain(fragmentedAuthorizationValue);
+    expect(followingRecord.stderr).toContain("Unknown command: --token build failed");
+    expect(followingRecord.stderr).not.toContain("[REDACTED]");
+    expect(emptyAuthorization.stderr).toContain("Unknown command: Authorization: build failed");
+    expect(emptyAuthorization.stderr).not.toContain("[REDACTED]");
+    expect(camelCaseCredential.stderr).toContain("Unknown command: apiKey=[REDACTED]");
+    expect(camelCaseCredential.stderr).not.toContain(camelCaseValue);
     expect([
       whitespaceFlag.stderr,
       quotedAssignment.stderr,
@@ -221,6 +262,10 @@ describe("review artifact executable argument boundary", () => {
       objectCredentials.stderr,
       compoundKeys.stderr,
       knownToken.stderr,
+      controlFragmented.stderr,
+      layoutFragmented.stderr,
+      trailingFlag.stderr,
+      fragmentedAuthorization.stderr,
     ].join("\n")).not.toMatch(
       /whitespace-separated-secret|quoted secret with spaces|p@ss\/word|db,value|prod key|client secret|uri-secret|fixture-nonce|fixture-response|fixture-basic|fixture-bearer|fixture-custom|fixture-token|fixture-access-value|fixture-client-value|fixture-aws-value|fixture private key|fixtureKnownToken123/,
     );

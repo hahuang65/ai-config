@@ -11,6 +11,8 @@ describe("shared credential redaction", () => {
       "DB_PASSWORD: 'assigned secret with spaces' migrate",
       "report-secret unrelated-tail",
       "client_secret: \"colon secret with spaces\"",
+      "apiKey=fixture-camel-api-value",
+      "clientSecret: fixture-camel-client-value",
       "postgresql://alice:uri-secret@example.com/database",
     ].join("\n");
 
@@ -21,7 +23,25 @@ describe("shared credential redaction", () => {
       "DB_PASSWORD: [REDACTED] migrate",
       "report-secret unrelated-tail",
       "client_secret: [REDACTED]",
+      "apiKey=[REDACTED]",
+      "clientSecret: [REDACTED]",
       "postgresql://[REDACTED]@example.com/database",
+    ].join("\n"));
+  });
+
+  test("classifies acronym credentials without consuming camel-case metrics", () => {
+    const diagnostic = [
+      "APIKey=fixture-acronym-api-value",
+      "OAuthToken: fixture-acronym-token-value",
+      "apiKeyCount=42",
+      "clientSecretAge=30",
+    ].join("\n");
+
+    expect(redactCredentials(diagnostic)).toBe([
+      "APIKey=[REDACTED]",
+      "OAuthToken: [REDACTED]",
+      "apiKeyCount=42",
+      "clientSecretAge=30",
     ].join("\n"));
   });
 
@@ -60,6 +80,9 @@ describe("shared credential redaction", () => {
       "Authorization: Digest username=\"fixture-user\", realm=\"example\", nonce=\"fixture-nonce\", response=\"fixture-response\"",
       "next-command --dry-run",
       "Authorization: Custom fixture-part-one fixture-part-two",
+      "Authoriza\ttion: Basic fixture-layout-authorization==",
+      "Bea\nrer fixture-layout-bearer",
+      "Authorization: Bearer\r\n fixture-folded-authorization",
       "following-record",
       `${awsSecretAccessKey}=fixture-aws-value deploy`,
       "SSH_PRIVATE_KEY='fixture private key' publish",
@@ -72,6 +95,9 @@ describe("shared credential redaction", () => {
     expect(redactCredentials(diagnostic)).toBe([
       "Authorization: [REDACTED]",
       "next-command --dry-run",
+      "Authorization: [REDACTED]",
+      "Authoriza\ttion: [REDACTED]",
+      "Bea\nrer [REDACTED]",
       "Authorization: [REDACTED]",
       "following-record",
       `${awsSecretAccessKey}=[REDACTED] deploy`,
@@ -115,6 +141,75 @@ describe("shared credential redaction", () => {
       `{'client_secret': '[REDACTED]', 'count': 2}`,
       `{"access_token_count":"42","client_secret_age":"30"}`,
     ].join("\n"));
+  });
+
+  test("normalizes terminal controls before matching credential names", () => {
+    const diagnostic = [
+      "GITHUB_\u001b[31mTOKEN=fixture-csi-value",
+      "DB_\u001b]0;window-title\u0007PASSWORD=fixture-osc-value",
+      "PROD_API_\tKEY=fixture-tab-value",
+      "AWS_SECRET_ACCESS_\r\nKEY=fixture-line-value",
+      "GITHUB_TO\tKEN=fixture-interior-value",
+      "--client_se\ncret fixture-flag-value continue",
+      "--\tGITHUB_TOKEN fixture-leading-flag-value continue",
+      "--GITHUB_TOKEN\tfixture-trailing-flag-value --dry-run",
+      "{\"access_to\tken\":\"fixture-object-value\",\"status\":\"kept\"}",
+      "{\"\tclient_secret\r\":\"fixture-boundary-object-value\",\"status\":\"kept\"}",
+    ].join("\n");
+
+    expect(redactCredentials(diagnostic)).toBe([
+      "GITHUB_TOKEN=[REDACTED]",
+      "DB_PASSWORD=[REDACTED]",
+      "PROD_API_\tKEY=[REDACTED]",
+      "AWS_SECRET_ACCESS_\r\nKEY=[REDACTED]",
+      "GITHUB_TO\tKEN=[REDACTED]",
+      "--client_se\ncret [REDACTED] continue",
+      "--\tGITHUB_TOKEN [REDACTED] continue",
+      "--GITHUB_TOKEN\t[REDACTED] --dry-run",
+      "{\"access_to\tken\":\"[REDACTED]\",\"status\":\"kept\"}",
+      "{\"\tclient_secret\r\":\"[REDACTED]\",\"status\":\"kept\"}",
+    ].join("\n"));
+  });
+
+  test("redacts generic credentials only across horizontal or indented value layout", () => {
+    const forms = [
+      {
+        withValue: (layout: string) => `--token${layout}fixture-flag-value`,
+        redacted: (layout: string) => `--token${layout}[REDACTED]`,
+        withoutValue: (lineEnding: string) => `--token${lineEnding}build failed`,
+      },
+      {
+        withValue: (layout: string) => `GITHUB_TOKEN=${layout}fixture-assignment-value`,
+        redacted: (layout: string) => `GITHUB_TOKEN=${layout}[REDACTED]`,
+        withoutValue: (lineEnding: string) => `GITHUB_TOKEN=${lineEnding}build failed`,
+      },
+      {
+        withValue: (layout: string) => `{"access_token":${layout}"fixture-object-value"}`,
+        redacted: (layout: string) => `{"access_token":${layout}"[REDACTED]"}`,
+        withoutValue: (lineEnding: string) => `{"access_token":${lineEnding}build failed`,
+      },
+    ];
+    const valueLayouts = [" ", "\n ", "\r ", "\r\n "];
+    const lineEndings = ["\n", "\r", "\r\n"];
+
+    const redactedValues = forms.flatMap((form) => valueLayouts.map((layout) => ({
+      actual: redactCredentials(form.withValue(layout)),
+      expected: form.redacted(layout),
+    })));
+    const preservedRecords = forms.flatMap((form) => lineEndings.map((lineEnding) => {
+      const diagnostic = form.withoutValue(lineEnding);
+      return { actual: redactCredentials(diagnostic), expected: diagnostic };
+    }));
+
+    expect([...redactedValues, ...preservedRecords].every(({ actual, expected }) => actual === expected)).toBe(true);
+  });
+
+  test("preserves non-indented records after empty Authorization fields", () => {
+    const diagnostics = ["\n", "\r", "\r\n"].map(
+      (lineEnding) => `Authorization:${lineEnding}build failed`,
+    );
+
+    expect(diagnostics.map(redactCredentials)).toEqual(diagnostics);
   });
 
   test("preserves ordinary short diagnostics", () => {

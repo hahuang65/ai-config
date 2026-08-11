@@ -248,6 +248,26 @@ describe("review-change CLI runtime", () => {
     );
     const knownTokenValue = `gh${"p"}_${"fixtureKnownToken123"}`;
     const knownToken = await invoke(`--value=${knownTokenValue}`);
+    const controlFragmentedValue = "fixture-control-fragmented-value";
+    const controlFragmented = await invoke(
+      `--GITHUB_\u001b[31mTOKEN=${controlFragmentedValue}`,
+    );
+    const layoutFragmentedValue = "fixture-layout-fragmented-value";
+    const layoutFragmented = await invoke(
+      `--\tGITHUB_TOKEN ${layoutFragmentedValue}`,
+    );
+    const trailingFlagValue = "fixture-trailing-flag-value";
+    const trailingFlag = await invoke(
+      `--GITHUB_TOKEN\t${trailingFlagValue} --dry-run`,
+    );
+    const fragmentedAuthorizationValue = "fixture-fragmented-authorization-value";
+    const fragmentedAuthorization = await invoke(
+      `--header=Authoriza\ttion: Bearer\r\n ${fragmentedAuthorizationValue}`,
+    );
+    const followingRecord = await invoke("--token\nbuild failed");
+    const emptyAuthorization = await invoke("--header=Authorization:\nbuild failed");
+    const camelCaseValue = "fixture-camel-case-value";
+    const camelCaseCredential = await invoke(`--apiKey=${camelCaseValue}`);
 
     expect(oversized.exitCode).toBe(2);
     expect(oversized.stdout).toContain("characters omitted");
@@ -289,6 +309,25 @@ describe("review-change CLI runtime", () => {
     );
     expect(compoundKeys.stderr).toContain("AWS_SECRET_ACCESS_KEY=[REDACTED] SSH_PRIVATE_KEY=[REDACTED] private_key_count=7");
     expect(knownToken.stderr).toContain("Unknown option: --value=[REDACTED]");
+    expect(controlFragmented.stderr).toContain("Unknown option: --GITHUB_TOKEN=[REDACTED]");
+    expect(controlFragmented.stdout).not.toContain(controlFragmentedValue);
+    expect(controlFragmented.stderr).not.toContain(controlFragmentedValue);
+    expect(controlFragmented.stderr).not.toContain("\u001b");
+    expect(layoutFragmented.stderr).toContain("-- GITHUB_TOKEN [REDACTED]");
+    expect(layoutFragmented.stdout).not.toContain(layoutFragmentedValue);
+    expect(layoutFragmented.stderr).not.toContain(layoutFragmentedValue);
+    expect(trailingFlag.stderr).toContain("--GITHUB_TOKEN [REDACTED] --dry-run");
+    expect(trailingFlag.stdout).not.toContain(trailingFlagValue);
+    expect(trailingFlag.stderr).not.toContain(trailingFlagValue);
+    expect(fragmentedAuthorization.stderr).toContain("Authoriza tion: [REDACTED]");
+    expect(fragmentedAuthorization.stdout).not.toContain(fragmentedAuthorizationValue);
+    expect(fragmentedAuthorization.stderr).not.toContain(fragmentedAuthorizationValue);
+    expect(followingRecord.stderr).toContain("Unknown option: --token build failed");
+    expect(followingRecord.stderr).not.toContain("[REDACTED]");
+    expect(emptyAuthorization.stderr).toContain("Unknown option: --header=Authorization: build failed");
+    expect(emptyAuthorization.stderr).not.toContain("[REDACTED]");
+    expect(camelCaseCredential.stderr).toContain("Unknown option: --apiKey=[REDACTED]");
+    expect(camelCaseCredential.stderr).not.toContain(camelCaseValue);
     expect([
       whitespaceFlag.stderr,
       quotedFlag.stderr,
@@ -305,6 +344,10 @@ describe("review-change CLI runtime", () => {
       objectCredentials.stderr,
       compoundKeys.stderr,
       knownToken.stderr,
+      controlFragmented.stderr,
+      layoutFragmented.stderr,
+      trailingFlag.stderr,
+      fragmentedAuthorization.stderr,
     ].join("\n")).not.toMatch(
       /whitespace-separated-secret|quoted secret with spaces|p@ss\/word|whitespace-secret|db,value|prod key|client secret|uri-secret|fixture-nonce|fixture-response|fixture-basic|fixture-bearer|fixture-custom|fixture-token|fixture-access-value|fixture-client-value|fixture-aws-value|fixture private key|fixtureKnownToken123/,
     );
@@ -495,6 +538,36 @@ describe("review-change CLI runtime", () => {
       expect(`${output}${persisted}`).not.toMatch(/p@ss\/word|quoted result secret/);
     } finally {
       status.detachTelemetryLog();
+      await rm(workspace, { recursive: true, force: true });
+    }
+  });
+
+  test("preserves safe layout in complete redacted telemetry", async () => {
+    const workspace = await mkdtemp(path.join(tmpdir(), "review-change-layout-telemetry-"));
+    await mkdir(path.join(workspace, ".git"));
+    const credential = "fixture-layout-telemetry-value";
+    const telemetry = createTelemetryLog(workspace, [{
+      timestamp: "2026-08-05T00:00:00.000Z",
+      stage: "review",
+      kind: "log",
+      message: `PROD_AP\tI_KEY=${credential}\napiKey=${credential}\nAuthoriza\ttion: Basic ${credential}\nAuthorization: Bearer\r\n ${credential}\n--token\nbuild failed\nAuthorization:\nbuild failed`,
+    }]);
+
+    try {
+      telemetry.close();
+      const persisted = await readFile(telemetry.path, "utf8");
+      const entry = JSON.parse(persisted.trim());
+      expect({
+        leaked: entry.message.includes(credential),
+        message: entry.message,
+        physicalLines: persisted.trimEnd().split("\n").length,
+      }).toEqual({
+        leaked: false,
+        message: "PROD_AP\tI_KEY=[REDACTED]\napiKey=[REDACTED]\nAuthoriza\ttion: [REDACTED]\nAuthorization: [REDACTED]\n--token\nbuild failed\nAuthorization:\nbuild failed",
+        physicalLines: 1,
+      });
+    } finally {
+      telemetry.close();
       await rm(workspace, { recursive: true, force: true });
     }
   });
@@ -807,7 +880,7 @@ describe("review-change CLI runtime", () => {
       expect(persisted).toContain("PROD_API_KEY=[REDACTED] deploy");
       expect(persisted).toContain("CLIENT_SECRET=[REDACTED] finish");
       expect(persisted).toContain("AWS_SECRET_ACCESS_KEY=[REDACTED] SSH_PRIVATE_KEY=[REDACTED] private_key_count=7");
-      expect(persisted).toContain("Authorization: [REDACTED] next-command --dry-run; curl -H \\\"Authorization: [REDACTED]\\\" https://example.test/basic; curl -H 'Authorization: [REDACTED]' https://example.test/bearer; curl -H \\\"Authorization: [REDACTED]\\\" https://example.test/header; payload={\\\"Authorization\\\":\\\"[REDACTED]\\\",\\\"access_token\\\":\\\"[REDACTED]\\\",\\\"client_secret\\\":\\\"[REDACTED]\\\",\\\"url\\\":\\\"https://example.test/object\\\"}");
+      expect(persisted).toContain("Authorization: [REDACTED]\\nnext-command --dry-run; curl -H \\\"Authorization: [REDACTED]\\\" https://example.test/basic; curl -H 'Authorization: [REDACTED]' https://example.test/bearer; curl -H \\\"Authorization: [REDACTED]\\\" https://example.test/header; payload={\\\"Authorization\\\":\\\"[REDACTED]\\\",\\\"access_token\\\":\\\"[REDACTED]\\\",\\\"client_secret\\\":\\\"[REDACTED]\\\",\\\"url\\\":\\\"https://example.test/object\\\"}");
       expect(persisted).toContain("--token --dry-run token_count=42");
       expect(persisted).toContain("DB_PASSWORD: [REDACTED] result-tail");
       expect(persisted).toContain("postgresql://[REDACTED]@example.com/db");

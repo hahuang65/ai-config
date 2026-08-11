@@ -32,6 +32,8 @@ const META_GROUPS = Object.freeze([
   ]) }),
   Object.freeze({ name: "contracts", expectedSeconds: 2, cases: Object.freeze([
     "stale-stub", "forbidden-phrase", "retired-rule-frontmatter", "stale-pi-bundle", "bad-manifest",
+    "cli-ergonomics-routing", "cli-ergonomics-outcomes", "cli-ergonomics-readme-inventory",
+    "cli-ergonomics-readme-attribution",
   ]) }),
   Object.freeze({ name: "workflow", expectedSeconds: 2.8, cases: Object.freeze([
     "coach-discipline", "build-phase-loading", "missing-context-files", "missing-ubiquitous-language",

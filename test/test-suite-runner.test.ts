@@ -108,7 +108,18 @@ test("bounds failed lane output and persists its complete redacted log", async (
   const temporaryRoot = await mkdtemp(path.join(tmpdir(), "suite-failure-report-"));
   const diagnostics: string[] = [];
   const credential = "example-credential";
-  const longOutput = `--token ${credential}\n${"diagnostic line\n".repeat(1_000)}`;
+  const longOutput = [
+    `GITHUB_\u001b[31mTOKEN=${credential}`,
+    `PROD_AP\tI_KEY=${credential}`,
+    `apiKey=${credential}`,
+    `--GITHUB_TOKEN\t${credential} --dry-run`,
+    `{\"access_token\t\":\"${credential}\"}`,
+    `Authoriza\ttion: Basic ${credential}`,
+    `Authorization: Bearer\r\n ${credential}`,
+    "--token\nbuild failed",
+    "Authorization:\nbuild failed",
+    "diagnostic line\n".repeat(1_000),
+  ].join("\n");
   try {
     const report = await reportLaneFailures([{
       durationSeconds: 1.25,
@@ -129,7 +140,17 @@ test("bounds failed lane output and persists its complete redacted log", async (
       diagnosticIsBounded: diagnostic.length < 10_000,
       diagnosticShowsOmission: diagnostic.includes("characters omitted"),
       fullLogHasTail: fullLog.endsWith("diagnostic line\n"),
-      fullLogIsRedacted: fullLog.includes("--token [REDACTED]"),
+      fullLogPreservesFollowingRecord: fullLog.includes("--token\nbuild failed")
+        && fullLog.includes("Authorization:\nbuild failed"),
+      diagnosticHasControl: diagnostic.includes("\u001b"),
+      fullLogHasControl: fullLog.includes("\u001b"),
+      fullLogIsRedacted: fullLog.includes("GITHUB_TOKEN=[REDACTED]")
+        && fullLog.includes("PROD_AP\tI_KEY=[REDACTED]")
+        && fullLog.includes("apiKey=[REDACTED]")
+        && fullLog.includes("--GITHUB_TOKEN\t[REDACTED] --dry-run")
+        && fullLog.includes('{"access_token\t":"[REDACTED]"}')
+        && fullLog.includes("Authoriza\ttion: [REDACTED]")
+        && fullLog.includes("Authorization: [REDACTED]"),
       fullLogLeaksCredential: fullLog.includes(credential),
       permissions,
     }).toEqual({
@@ -137,6 +158,9 @@ test("bounds failed lane output and persists its complete redacted log", async (
       diagnosticIsBounded: true,
       diagnosticShowsOmission: true,
       fullLogHasTail: true,
+      fullLogPreservesFollowingRecord: true,
+      diagnosticHasControl: false,
+      fullLogHasControl: false,
       fullLogIsRedacted: true,
       fullLogLeaksCredential: false,
       permissions: 0o600,
@@ -144,6 +168,35 @@ test("bounds failed lane output and persists its complete redacted log", async (
   } finally {
     await rm(temporaryRoot, { recursive: true, force: true });
   }
+});
+
+test("bounds full-log persistence errors", async () => {
+  const diagnostics: string[] = [];
+  const report = await reportLaneFailures([{
+    durationSeconds: 1,
+    exitCode: 1,
+    name: "guard/example",
+    stderr: "failure",
+    stdout: "",
+  }], {
+    makeTemporaryDirectory: async () => {
+      throw new Error(`persistence failed ${"x".repeat(20_000)}`);
+    },
+    writeDiagnostic: (text) => diagnostics.push(text),
+  });
+
+  const diagnostic = diagnostics.join("");
+  expect({
+    diagnosticIsBounded: diagnostic.length < 9_000,
+    disclosesOmission: diagnostic.includes("characters omitted"),
+    fullLogPath: report.fullLogPath,
+    reportsUnavailable: diagnostic.includes("Full failure log unavailable"),
+  }).toEqual({
+    diagnosticIsBounded: true,
+    disclosesOmission: true,
+    fullLogPath: null,
+    reportsUnavailable: true,
+  });
 });
 
 test("does not launch a lane after its suite is cancelled", async () => {
