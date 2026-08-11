@@ -12,13 +12,16 @@ import {
   runLaneProcess,
   stopChildren,
 } from "./test-suite-process.mjs";
-import { classifyBunTestFiles } from "./test-suite-classification.mjs";
+import {
+  MAX_BROWSER_SUITES,
+  classifyBunTestFiles,
+} from "./test-suite-classification.mjs";
 import { reportLaneFailures } from "./test-suite-report.mjs";
 
 export { isolatedGitEnvironment, runLaneProcess } from "./test-suite-process.mjs";
 
 export const MAX_EXECUTION_WEIGHT = 14;
-export const BUN_TEST_EXECUTION_WEIGHTS = Object.freeze({ browser: 10, rest: 5 });
+export const BUN_TEST_EXECUTION_WEIGHTS = Object.freeze({ browser: 8, rest: 5 });
 const INSTALL_GROUPS = Object.freeze([
   Object.freeze({ name: "isolation", selector: "isolation", expectedSeconds: 1.7, weight: 2 }),
   Object.freeze({ name: "behavior", selector: "install-behavior", expectedSeconds: 2.7, weight: 2 }),
@@ -145,9 +148,10 @@ async function buildLanes(repoDir, snapshots) {
     lane("install/manifests", repoDir, "bash", ["scripts/test-pipeline.sh", "install", "harness-modules"],
       { expectedSeconds: 0.2, weight: 1 }),
     lane("bun/rest", repoDir, "bun", ["test", "--parallel=4", "--max-concurrency=2", ...bunTests.rest],
-      { expectedSeconds: 6, isolatedGit: true, weight: BUN_TEST_EXECUTION_WEIGHTS.rest }),
-    lane("bun/browser", repoDir, "bun", ["test", "--parallel=3", "--max-concurrency=2", ...bunTests.browser],
-      { expectedSeconds: 20, terminationGraceMs: 5_000, weight: BUN_TEST_EXECUTION_WEIGHTS.browser }),
+      { expectedSeconds: 9, isolatedGit: true, weight: BUN_TEST_EXECUTION_WEIGHTS.rest }),
+    lane("bun/browser", repoDir, "bun", [
+      "test", `--parallel=${MAX_BROWSER_SUITES}`, "--max-concurrency=2", ...bunTests.browser,
+    ], { expectedSeconds: 19, terminationGraceMs: 5_000, weight: BUN_TEST_EXECUTION_WEIGHTS.browser }),
   ];
   const installLanes = snapshots.installRepos.map(({ expectedSeconds, name, repo, selector, weight }) => lane(
     `install/${name}`,

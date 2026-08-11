@@ -1,9 +1,7 @@
-import { afterAll, beforeAll, expect, test } from "bun:test";
-import { existsSync } from "node:fs";
-import { mkdtemp, rm, writeFile } from "node:fs/promises";
-import { tmpdir } from "node:os";
-import path from "node:path";
+import { expect, test } from "bun:test";
+import { writeFile } from "node:fs/promises";
 
+import { changeBrowserPool as browserPool } from "./change-browser-pool";
 import {
   closeChangeReview,
   readChangeSurface,
@@ -11,31 +9,8 @@ import {
   waitForCondition,
   waitForRevisionReload,
 } from "./change-browser-support";
-import { startFirefoxBidiPool } from "./firefox-bidi";
-
-const macFirefox = "/Applications/Firefox.app/Contents/MacOS/firefox";
-const firefox = Bun.which("firefox") ?? (existsSync(macFirefox) ? macFirefox : null);
-if (!firefox) throw new Error("Firefox is required for review-artifact browser evidence");
 
 const TEST_TIMEOUT_MS = 20_000;
-let browserPool: Awaited<ReturnType<typeof startFirefoxBidiPool>>;
-let browserPoolDirectory: string;
-
-beforeAll(async () => {
-  browserPoolDirectory = await mkdtemp(path.join(tmpdir(), "review-artifact-settling-pool-"));
-  browserPool = await startFirefoxBidiPool({
-    executable: firefox,
-    profile: path.join(browserPoolDirectory, "firefox-profile"),
-  });
-}, TEST_TIMEOUT_MS);
-
-afterAll(async () => {
-  try {
-    await browserPool?.close();
-  } finally {
-    await rm(browserPoolDirectory, { recursive: true, force: true });
-  }
-}, TEST_TIMEOUT_MS);
 
 test("keeps later artifact interactions outside the frozen baseline", async () => {
   const review = await startChangeReviewFromHtml(browserPool, interactionArtifact("Source draft"));

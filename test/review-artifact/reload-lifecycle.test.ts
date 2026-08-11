@@ -63,6 +63,44 @@ test("replaces stale comparison presentation when bounded comparison overflows",
   ]);
 });
 
+test("clears an unchanged comparison and promotes it as the next baseline", () => {
+  const comparisons: Array<{ previous: unknown; current: unknown }> = [];
+  const presentations: unknown[] = [];
+  const controller = createBrowserReloadController({
+    compare: (previous: ReturnType<typeof revision>, current: ReturnType<typeof revision>) => {
+      comparisons.push({ previous, current });
+      return previous.elements[0].directText === current.elements[0].directText
+        ? []
+        : [{ kind: "updated", path: [0] }];
+    },
+    navigate: () => {},
+    present: (presentation: unknown) => presentations.push(presentation),
+  });
+
+  controller.accept({ type: "frame-settled", generation: 0, revision: revision("Draft") });
+  for (const copy of ["Revised", "Revised", "Final"]) {
+    controller.accept({ type: "reload-requested" });
+    controller.accept({
+      type: "frame-settled",
+      generation: comparisons.length + 1,
+      revision: revision(copy),
+    });
+  }
+
+  expect({ comparisons, presentations }).toMatchObject({
+    comparisons: [
+      { previous: revision("Draft"), current: revision("Revised") },
+      { previous: revision("Revised"), current: revision("Revised") },
+      { previous: revision("Revised"), current: revision("Final") },
+    ],
+    presentations: [
+      { regions: [{ kind: "updated", path: [0] }] },
+      { regions: [] },
+      { regions: [{ kind: "updated", path: [0] }] },
+    ],
+  });
+});
+
 test("ignores a comparison result superseded by another reload", () => {
   const baseline = revision("Draft");
   const lifecycle = createReloadLifecycleCoordinator();

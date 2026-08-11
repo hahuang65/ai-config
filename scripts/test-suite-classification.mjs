@@ -1,6 +1,7 @@
 import path from "node:path";
 
 export const BROWSER_TEST_SUFFIX = ".browser.test.ts";
+export const MAX_BROWSER_SUITES = 3;
 
 export function isBrowserTestFile(testFile) {
   return path.basename(testFile).endsWith(BROWSER_TEST_SUFFIX);

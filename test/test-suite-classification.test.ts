@@ -3,6 +3,7 @@ import { readFile, readdir } from "node:fs/promises";
 import path from "node:path";
 
 import {
+  MAX_BROWSER_SUITES,
   classifyBunTestFiles,
   isBrowserTestFile,
 } from "../scripts/test-suite-classification.mjs";
@@ -28,6 +29,13 @@ test("places every discovered Bun test in exactly one lane", async () => {
   expect([...classified.browser, ...classified.rest].sort()).toEqual(testFiles);
   expect(classified.browser.every(isBrowserTestFile)).toBe(true);
   expect(classified.rest.some(isBrowserTestFile)).toBe(false);
+});
+
+test("bounds discovered browser suites to the pooled execution budget", async () => {
+  const testFiles = await collectTestFiles(path.join(REPOSITORY_ROOT, "test"));
+  const browserTests = classifyBunTestFiles(testFiles).browser;
+
+  expect(browserTests.length).toBeLessThanOrEqual(MAX_BROWSER_SUITES);
 });
 
 test("requires Firefox-dependent tests to carry the browser suffix", async () => {

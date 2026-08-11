@@ -12,6 +12,7 @@ interface FirefoxContextOptions {
 }
 
 const REQUEST_TIMEOUT_MS = 10_000;
+const SESSION_START_TIMEOUT_MS = 15_000;
 const CONNECT_RETRY_MS = 50;
 
 export async function startFirefoxBidiPool(options: FirefoxPoolOptions) {
@@ -34,7 +35,7 @@ export async function startFirefoxBidiPool(options: FirefoxPoolOptions) {
     const webSocketUrl = await discoverWebDriverUrl(processRef);
     socket = await connectWithRetry(`${webSocketUrl}/session`, processRef);
     const request = requestClient(socket);
-    await request("session.new", { capabilities: { alwaysMatch: {} } });
+    await request("session.new", { capabilities: { alwaysMatch: {} } }, SESSION_START_TIMEOUT_MS);
     return poolController({ processRef, releaseSignalOwnership, request, socket });
   } catch (error) {
     socket?.close();
@@ -122,12 +123,16 @@ function requestClient(socket: WebSocket) {
   let requestId = 0;
   const pending = new Map<number, PendingRequest>();
   socket.addEventListener("message", (event) => settleRequest(pending, event));
-  return (method: string, params: Record<string, unknown>) => new Promise<any>((resolve, reject) => {
+  return (
+    method: string,
+    params: Record<string, unknown>,
+    timeoutMs = REQUEST_TIMEOUT_MS,
+  ) => new Promise<any>((resolve, reject) => {
     const id = ++requestId;
     const timer = setTimeout(() => {
       pending.delete(id);
       reject(new Error(`Firefox BiDi request timed out: ${method}`));
-    }, REQUEST_TIMEOUT_MS);
+    }, timeoutMs);
     pending.set(id, { reject, resolve, timer });
     socket.send(JSON.stringify({ id, method, params }));
   });
