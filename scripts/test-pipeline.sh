@@ -367,11 +367,13 @@ test_ubiquitous_language_contract() {
     skills/todo/SKILL.md \
     skills/visualize/SKILL.md; do
     check_content_cached "$(cat "$REPO_DIR/$context_file")" "$context_file" "[Cc]ontext files"
+    check_content_cached "$(cat "$REPO_DIR/$context_file")" "$context_file" "[Uu]biquitous language"
   done
 
   while read -r context_file; do
     [[ -z "$context_file" ]] && continue
     check_content_cached "$(cat "$context_file")" "${context_file#"$REPO_DIR/"}" "[Cc]ontext files"
+    check_content_cached "$(cat "$context_file")" "${context_file#"$REPO_DIR/"}" "[Uu]biquitous language"
   done < <(grep -RIlEi 'CONTEXT\.md|CONTEXT-MAP\.md|ubiquitous language' "$REPO_DIR/skills" "$REPO_DIR/agents" --include='*.md' | sort)
 
   stale_aliases="$(grep -REil 'CONTEXT\.md.{0,15}vocabular|domain language|project vocabulary|context artifacts' "$REPO_DIR/skills" "$REPO_DIR/agents" --include='*.md' || true)"

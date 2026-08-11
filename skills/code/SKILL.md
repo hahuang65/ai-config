@@ -42,7 +42,7 @@ Use the `tdd-guide` agent (via the Agent tool) to guide each slice's cycle.
 
 ## Process
 
-1. **Read context** — canonical `tasks.html`, its linked `specs.html`, approved `mockups.html` when present as Authoritative intent, applicable context files, and relevant ADRs.
+1. **Read context** — canonical `tasks.html`, its linked `specs.html`, approved `mockups.html` when present as Authoritative intent, applicable context files, and relevant ADRs. Use their ubiquitous language in tests and implementation.
 2. **For each slice (dependency order)** — work one slice at a time; do NOT batch slices:
    - **Confirm the public interface** from the slice's Test surface and the spec's Testing Decisions (deep module: small interface, deep implementation). Do not ask whether tests are needed; derive the test seam from the shared testable-interface protocol.
    - **Tracer bullet** — write ONE end-to-end test through that interface → it fails (RED) → minimal code → it passes (GREEN).
