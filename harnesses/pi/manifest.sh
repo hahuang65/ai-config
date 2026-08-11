@@ -115,14 +115,6 @@ install_module() {
       "$config_root/extensions/subagent"
     dim "  $config_root/extensions/subagent/ (subagent extension + shared-agent adapter)"
 
-    # Workflow prompt templates (e.g. /implement, /scout-and-plan)
-    if [ -d "$pi_subagent_src/prompts" ]; then
-      mkdir -p "$config_root/prompts"
-      local -a prompt_files=("$pi_subagent_src"/prompts/*.md)
-      [ ${#prompt_files[@]} -eq 0 ] || ln -sf "${prompt_files[@]}" "$config_root/prompts"
-      dim "    $config_root/prompts/ — subagent workflow prompts"
-    fi
-
     # Agent definitions (scout, planner, reviewer, worker)
     if [ -d "$pi_subagent_src/agents" ]; then
       mkdir -p "$config_root/agents"

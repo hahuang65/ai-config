@@ -1937,8 +1937,11 @@ test_install_behavior() {
     || fail "install-behavior" "Claude command prompt set is incorrect"
   [[ -f "$tmphome/.pi/agent/prompts/deliver.md" ]] \
     && [[ -f "$tmphome/.pi/agent/prompts/rebase.md" ]] \
+    && [[ ! -e "$tmphome/.pi/agent/prompts/implement.md" ]] \
+    && [[ ! -e "$tmphome/.pi/agent/prompts/implement-and-review.md" ]] \
+    && [[ ! -e "$tmphome/.pi/agent/prompts/scout-and-plan.md" ]] \
     && [[ ! -e "$tmphome/.pi/agent/prompts/resolve-conflicts.md" ]] \
-    && pass "pi command prompts installed into prompts/ without skill duplicates" \
+    && pass "pi installs only curated command prompts" \
     || fail "install-behavior" "pi command prompt set is incorrect"
   [[ ! -e "$tmphome/.claude/skills/deliver/SKILL.md" ]] \
     && [[ ! -e "$tmphome/.pi/agent/skills/deliver/SKILL.md" ]] \
