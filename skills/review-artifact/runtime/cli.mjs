@@ -52,7 +52,12 @@ async function pollArtifact({ file, reply }, connection, dependencies) {
   const writeStatus = dependencies.writeStatus ?? ((message) => process.stderr.write(`${message}\n`));
   const status = `[review-artifact] Waiting for feedback or approval on ${resolvedFile}. Retry if interrupted.`;
   writeStatus(credentialRedactedPreview(status, 300).text);
-  return getJson(`${connection.baseUrl}/api/sessions/${key}/poll`, connection.agentToken);
+  const pollUrl = `${connection.baseUrl}/api/sessions/${key}/poll`;
+  let event;
+  do {
+    event = await getJson(pollUrl, connection.agentToken);
+  } while (event.status === "waiting");
+  return event;
 }
 
 function normalizeConnection(connection, fallbackToken) {

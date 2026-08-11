@@ -429,6 +429,7 @@ describe("review command", () => {
     ]);
     await symlink(firstArtifact, artifactLink);
     const requestPaths: string[] = [];
+    let pollCount = 0;
     const server = Bun.serve({
       port: 0,
       async fetch(request) {
@@ -439,7 +440,8 @@ describe("review command", () => {
           await symlink(secondArtifact, artifactLink);
           return Response.json({ status: "sent" });
         }
-        return Response.json({ status: "waiting" });
+        pollCount += 1;
+        return Response.json(pollCount === 1 ? { status: "waiting" } : { status: "approved" });
       },
     });
     servers.push({ close: async () => { await server.stop(true); } });
@@ -452,8 +454,9 @@ describe("review command", () => {
     });
 
     const requestKeys = requestPaths.map((requestPath) => requestPath.split("/").at(-2));
-    expect({ diagnostic, requestKeys: new Set(requestKeys).size }).toEqual({
+    expect({ diagnostic, pollCount, requestKeys: new Set(requestKeys).size }).toEqual({
       diagnostic: `[review-artifact] Waiting for feedback or approval on ${canonicalArtifact}. Retry if interrupted.`,
+      pollCount: 2,
       requestKeys: 1,
     });
   });

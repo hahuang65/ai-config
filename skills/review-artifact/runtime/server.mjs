@@ -35,13 +35,28 @@ import {
 
 const ARTIFACT_WATCH_INTERVAL_MS = 100;
 const RELOAD_DEBOUNCE_MS = 60;
+const POLL_WAIT_MS = 240_000;
 
-export async function startReviewServer({ port, stateFile, agentToken = createAgentToken() }) {
+export async function startReviewServer({
+  port,
+  stateFile,
+  agentToken = createAgentToken(),
+  pollWaitMs = POLL_WAIT_MS,
+}) {
   const store = new SessionStore(stateFile);
   const events = new EventEmitter();
   const watchers = new Map();
   const server = createServer((request, response) => {
-    const context = { request, response, store, events, watchers, agentToken, port: server.address()?.port };
+    const context = {
+      request,
+      response,
+      store,
+      events,
+      watchers,
+      agentToken,
+      pollWaitMs,
+      port: server.address()?.port,
+    };
     handleRequest(context).catch((error) => {
       sendJson(response, error.statusCode ?? 500, {
         error: { code: error.code ?? "internal_error", message: error.expose ? error.message : "Internal error" },
@@ -118,13 +133,13 @@ async function handleSystemRoutes(context, url) {
 }
 
 async function handleAgentRoutes(context, url) {
-  const { request, response, store, events, agentToken, port } = context;
+  const { request, response, store, events, agentToken, pollWaitMs, port } = context;
   const match = url.pathname.match(/^\/api\/sessions\/([0-9a-f]{16})\/(end|agent-reply|poll)$/);
   if (!match) return false;
   assertAgentToken(request, agentToken);
   const [, key, action] = match;
   if (request.method === "GET" && action === "poll") {
-    sendJson(response, 200, await takeOrWait({ request, store, events, key }));
+    sendJson(response, 200, await takeOrWait({ request, store, events, key, pollWaitMs }));
     return true;
   }
   if (request.method !== "POST") return false;
@@ -274,7 +289,7 @@ async function requiredSession(store, key) {
   return session;
 }
 
-async function takeOrWait({ request, store, events, key }) {
+async function takeOrWait({ request, store, events, key, pollWaitMs }) {
   events.agentListeningKeys ??= new Set();
   events.agentListeningKeys.add(key);
   events.emit(`browser:${key}`, { type: "presence", state: "listening" });
@@ -284,19 +299,24 @@ async function takeOrWait({ request, store, events, key }) {
     return immediate;
   }
   return new Promise((resolve) => {
-    const finish = async () => {
-      cleanup();
-      resolve(await store.takeEvent(key));
-    };
+    let settled = false;
+    const waitTimer = setTimeout(() => settle({ status: "waiting" }), pollWaitMs);
+    const finish = async () => settle(await store.takeEvent(key));
     const cleanup = () => {
+      clearTimeout(waitTimer);
       events.agentListeningKeys.delete(key);
       events.off(key, finish);
       request.off("close", close);
     };
-    const close = () => {
+    const settle = (event) => {
+      if (settled) return;
+      settled = true;
       cleanup();
+      resolve(event);
+    };
+    const close = () => {
+      settle({ status: "interrupted" });
       events.emit(`browser:${key}`, { type: "presence", state: "waiting" });
-      resolve({ status: "interrupted" });
     };
     events.once(key, finish);
     request.once("close", close);

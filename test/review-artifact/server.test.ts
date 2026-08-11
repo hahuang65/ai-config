@@ -101,6 +101,30 @@ describe("review server", () => {
     expect(await polling).toMatchObject({ status: "feedback", prompts: [{ prompt: "Arrived later" }] });
   });
 
+  test("renews a quiet foreground poll before the HTTP client timeout", async () => {
+    const directory = await mkdtemp(path.join(tmpdir(), "review-artifact-"));
+    const artifact = path.join(directory, "specs.html");
+    await writeFile(artifact, "<!doctype html><main>Keep waiting</main>");
+    const server = await startReviewServer({
+      port: 0,
+      stateFile: path.join(directory, "state.json"),
+      pollWaitMs: 20,
+    });
+    servers.push(server);
+    const created = await fetch(`${server.baseUrl}/api/sessions`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ file: artifact }),
+    }).then((response) => response.json());
+
+    const event = await fetch(`${server.baseUrl}/api/sessions/${created.key}/poll`, {
+      headers: agentHeaders(server),
+      signal: AbortSignal.timeout(200),
+    }).then((response) => response.json());
+
+    expect(event).toEqual({ status: "waiting" });
+  });
+
   test("reports browser approval as a structured terminal event", async () => {
     const directory = await mkdtemp(path.join(tmpdir(), "review-artifact-"));
     const artifact = path.join(directory, "specs.html");
