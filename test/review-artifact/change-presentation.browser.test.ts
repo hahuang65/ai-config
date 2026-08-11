@@ -145,7 +145,7 @@ test("keeps annotation hover and locate outlines above the change cue", async ()
       return {
         annotation: { color: target.style.outline, offset: target.style.outlineOffset },
         badge: badge.textContent.trim(),
-        pattern: getComputedStyle(overlay).borderImageSource,
+        tint: getComputedStyle(overlay).backgroundColor,
       };
     })())`);
 
@@ -153,7 +153,7 @@ test("keeps annotation hover and locate outlines above the change cue", async ()
       annotation: { color: "rgb(182, 92, 56) solid 2px", offset: "2px" },
       badge: "Updated",
     });
-    expect(composition.pattern).toMatch(/gradient\(/i);
+    expect(composition.tint).toBe("rgba(196, 49, 132, 0.08)");
   } finally {
     await closeChangeReview(review);
   }
@@ -177,7 +177,7 @@ test("shows plain-language badges for every change type", async () => {
   }
 }, TEST_TIMEOUT_MS);
 
-test("shows a patterned rail and plain-language badge without changing artifact layout", async () => {
+test("shows a contrasting subtle tint and plain-language badge without changing artifact layout", async () => {
   const review = await startChangeReviewFromHtml(browserPool, presentationArtifact("Draft copy"));
   try {
     const before = await targetRect(review.browser);
@@ -191,7 +191,7 @@ test("shows a patterned rail and plain-language badge without changing artifact 
       const badgeRect = badge.getBoundingClientRect();
       return {
         badge: { label: badge.textContent.trim(), visible: badgeRect.width > 0 && badgeRect.height > 0 },
-        pattern: [style.backgroundImage, style.borderImageSource].join(" "),
+        tint: style.backgroundColor,
         pointerFree: style.pointerEvents === "none",
         target: (() => { const rect = document.querySelector("#presentation-change").getBoundingClientRect();
           return { left: rect.left, top: rect.top, width: rect.width, height: rect.height }; })(),
@@ -205,7 +205,7 @@ test("shows a patterned rail and plain-language badge without changing artifact 
         pointerFree: true,
       },
     });
-    expect(presentation.pattern).toMatch(/gradient\(/i);
+    expect(presentation.tint).toBe("rgba(196, 49, 132, 0.08)");
   } finally {
     await closeChangeReview(review);
   }

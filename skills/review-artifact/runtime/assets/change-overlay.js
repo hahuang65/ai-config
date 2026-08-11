@@ -55,9 +55,8 @@ function createOverlay(target, region) {
   overlay.style.cssText = [
     "all:initial", "position:absolute", `left:${rect.left + scrollX}px`, `top:${rect.top + scrollY}px`,
     `width:${rect.width}px`, `height:${rect.height}px`, "box-sizing:border-box", "pointer-events:none",
-    "border-left:6px solid transparent",
-    "border-image:repeating-linear-gradient(135deg,#365f78 0 3px,#d9e7ee 3px 6px) 1",
-    "box-shadow:inset 0 0 0 1px rgba(54,95,120,.45)",
+    "background:rgba(196,49,132,.08)",
+    "box-shadow:none",
   ].join(";");
   overlay.append(createBadge(region.kind));
   return overlay;
@@ -65,9 +64,8 @@ function createOverlay(target, region) {
 
 function setActive(overlay, active) {
   overlay.toggleAttribute("data-review-change-active", active);
-  overlay.style.boxShadow = active
-    ? "inset 0 0 0 3px rgba(54,95,120,.9)"
-    : "inset 0 0 0 1px rgba(54,95,120,.45)";
+  overlay.style.background = active ? "rgba(196,49,132,.14)" : "rgba(196,49,132,.08)";
+  overlay.style.boxShadow = active ? "inset 0 0 0 2px rgba(196,49,132,.75)" : "none";
 }
 
 function createBadge(kind) {
@@ -76,7 +74,7 @@ function createBadge(kind) {
   badge.textContent = labelFor(kind);
   badge.style.cssText = [
     "all:initial", "position:absolute", "top:-12px", "right:8px", "padding:3px 7px",
-    "border:1px solid #365f78", "border-radius:3px", "background:#d9e7ee", "color:#17384b",
+    "border:1px solid #c43184", "border-radius:3px", "background:#ffe0f2", "color:#6f1748",
     "font:700 11px/1.2 ui-monospace,monospace", "pointer-events:none",
   ].join(";");
   return badge;

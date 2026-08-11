@@ -253,8 +253,8 @@ test("Next initially selects and scrolls to the first changed region", async () 
 
     expect({ clicked, before, after }).toMatchObject({
       clicked: true,
-      before: { activeTargets: [], firstVisible: false },
-      after: { activeTargets: ["first-change"], firstVisible: true },
+      before: { activeTargets: [], visibleTargets: ["first-change", "last-change"], firstVisible: false },
+      after: { activeTargets: ["first-change"], visibleTargets: ["first-change", "last-change"], firstVisible: true },
     });
     expect(after.scrollY).toBeLessThan(before.scrollY);
   } finally {

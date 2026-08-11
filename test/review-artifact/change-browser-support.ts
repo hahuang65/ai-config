@@ -76,10 +76,13 @@ export function readNavigationSurface(browser: BrowserContext) {
     return {
       activeTargets: [...document.querySelectorAll("[data-review-change-active]")]
         .map((region) => region.dataset.reviewArtifactTarget),
+      visibleTargets: [...document.querySelectorAll("[data-review-artifact-change]")]
+        .filter((region) => getComputedStyle(region).opacity !== "0")
+        .map((region) => region.dataset.reviewArtifactTarget),
       firstVisible: first.top >= 0 && first.bottom <= innerHeight,
       scrollY,
     };
-  })())`) as Promise<{ activeTargets: string[]; firstVisible: boolean; scrollY: number }>;
+  })())`) as Promise<{ activeTargets: string[]; visibleTargets: string[]; firstVisible: boolean; scrollY: number }>;
 }
 
 export async function waitForRevisionReload(browser: BrowserContext) {
