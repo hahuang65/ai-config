@@ -14,7 +14,8 @@ Rebase and deliver infer the current task inside its worktree or accept a worktr
 A harness-owned rebase may explicitly request conflict preservation in machine mode, consume its durable `needs-conflict-resolution` outcome, and finalize only the exact recorded operation after the conflict workflow completes.
 Default standalone rebases still abort and restore conflicts.
 Use ordinary human output only when no harness transition is needed.
-A deliver `needs-commit` outcome returns to the calling prompt so it can run the commit skill and retry; pull-request delivery is terminal and requires no transition.
+A deliver `needs-commit` outcome is non-transitioning; continue the calling workflow in the same turn so it can run the commit skill and retry.
+A pull-request delivery is terminal and requires no transition.
 Use `--json` for native harness transitions and require an absolute target path in the versioned outcome.
 
 The Orchard workflow has no knowledge of build phases or approval gates.
@@ -22,13 +23,15 @@ Its continuation instruction describes only the caller's requested workflow, suc
 
 ## Pi transition
 
-Use the `orchard_transition` tool as the final action of the current tool turn.
-Pass the Orchard command, its arguments, and a generic continuation instruction.
+Call the `orchard_transition` tool and inspect its outcome.
+When it reports a non-transition outcome such as `needs-commit`, continue the calling workflow in the same turn.
+Only a queued worktree transition ends the current turn.
+For a queued transition, pass the Orchard command, its arguments, and a generic continuation instruction, then use the tool call as the final action.
 The extension invokes the CLI, requires an empty editor, and prefills one authenticated internal command without starting another model turn.
 Tell the user to Press Enter once; they never type or copy command text.
 Pi then forks persisted history into the target cwd and switches the same TUI session.
 If the user declines the prefilled command, the worktree remains preserved for later entry.
-Do not send another model response before the switch.
+Do not send another model response after the tool queues the switch.
 
 ## Claude Code transition
 

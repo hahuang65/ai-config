@@ -162,8 +162,9 @@ export function createOrchardExtension(
       description: "Run an interactive Orchard lifecycle command and continue this pi conversation in its target worktree.",
       promptSnippet: "Acquire, convert, enter, deliver, or return through Orchard in the same pi session",
       promptGuidelines: [
-        "Use orchard_transition as the final action in a turn when an Orchard command must move the current pi conversation.",
-        "After calling orchard_transition, do not emit another assistant response in the same turn.",
+        "Inspect every orchard_transition result before deciding whether the current turn ends.",
+        "When orchard_transition reports a non-transition outcome such as needs-commit, continue the calling workflow in the same turn.",
+        "Only when orchard_transition queues a transition, use it as the final action and do not emit another assistant response in the same turn.",
       ],
       parameters: ORCHARD_PARAMETERS as any,
       executionMode: "sequential",

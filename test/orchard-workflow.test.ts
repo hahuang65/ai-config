@@ -34,6 +34,8 @@ test("Orchard skill delegates the installed CLI and native harness transitions",
   expect(content).toContain("orchard_transition");
   expect(content).toContain("prefills one authenticated internal command");
   expect(content).toContain("Press Enter once");
+  expect(content).toContain("continue the calling workflow in the same turn");
+  expect(content).toContain("Only a queued worktree transition ends the current turn");
   expect(content).toContain("EnterWorktree({ path })");
   expect(content).toContain('ExitWorktree({ action: "keep" })');
   expect(content).toContain('--owner-pid "$PPID"');

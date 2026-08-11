@@ -64,6 +64,15 @@ function registerExtension(outputs: string[], dependencyOverrides: Record<string
   };
 }
 
+test("Orchard tool guidance continues non-transition outcomes in the current turn", () => {
+  const extension = registerExtension([]);
+  const guidance = extension.tools[0].promptGuidelines.join("\n");
+
+  expect(guidance).toContain("needs-commit");
+  expect(guidance).toContain("continue the calling workflow in the same turn");
+  expect(guidance).toContain("Only when orchard_transition queues a transition");
+});
+
 test("Orchard tool preloads one authenticated transition command and terminates the turn", async () => {
   const extension = registerExtension([
     machineOutcome("new", {
