@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>/mockup Skill Guide</title>
+<style>
+:root { color-scheme: light dark; --bg:#f3efe5; --surface:#fffaf0; --ink:#292722; --muted:#726b61; --line:#d5caba; --sage:#3f6c58; --sage-soft:#dce9df; --clay:#a6533f; --clay-soft:#f0ddd5; --mono:"SFMono-Regular",Consolas,monospace; --display:"Avenir Next","Century Gothic",sans-serif; --body:"Iowan Old Style","Palatino Linotype",Georgia,serif; }
+@media (prefers-color-scheme: dark) { :root { --bg:#181b18; --surface:#222520; --ink:#eee9de; --muted:#b6afa3; --line:#45493f; --sage:#91c8aa; --sage-soft:#263b31; --clay:#e59580; --clay-soft:#422e29; } }
+* { box-sizing:border-box; }
+body { margin:0; color:var(--ink); background:var(--bg); font:17px/1.62 var(--body); overflow-wrap:break-word; }
+.container { width:min(1100px,calc(100% - 28px)); margin:24px auto 70px; }
+.hero, section { border:1px solid var(--line); background:var(--surface); }
+.hero { padding:clamp(32px,7vw,72px); border-radius:2px 28px 2px 28px; }
+.eyebrow, .label, .tag { font:700 .7rem/1.3 var(--mono); letter-spacing:.12em; text-transform:uppercase; }
+.eyebrow { color:var(--clay); }
+h1,h2,h3 { font-family:var(--display); line-height:1.15; }
+h1 { margin:10px 0 14px; font-size:clamp(2.6rem,8vw,5.2rem); letter-spacing:-.055em; }
+.lede { max-width:690px; margin:0; color:var(--muted); font-size:1.2rem; }
+main { display:grid; gap:18px; margin-top:20px; }
+section { min-width:0; padding:clamp(22px,4vw,40px); }
+section:nth-child(odd) { border-radius:2px 20px 2px 20px; }
+section:nth-child(even) { border-radius:20px 2px 20px 2px; }
+.label { color:var(--sage); }
+h2 { margin:8px 0 20px; font-size:clamp(1.55rem,3vw,2.2rem); }
+.flow { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:9px; }
+.step, .card { min-width:0; padding:17px; border:1px solid var(--line); background:var(--bg); }
+.step.active { border:2px solid var(--sage); background:var(--sage-soft); }
+.step strong, .card strong { display:block; font-family:var(--display); }
+.step small, .card p { color:var(--muted); }
+.grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:13px; }
+.card p { margin:7px 0 0; }
+.callout { padding:18px 20px; border-left:4px solid var(--clay); background:var(--clay-soft); }
+ul { padding-left:2em; }
+li { margin:9px 0; }
+code { font-family:var(--mono); color:var(--sage); }
+footer { padding:22px 3px; color:var(--muted); font:.72rem var(--mono); }
+@media (max-width:760px) { .flow,.grid { grid-template-columns:1fr; } .container { width:min(100% - 18px,1100px); margin-top:9px; } }
+</style>
+</head>
+<body>
+<div class="container">
+<header class="hero">
+<div class="eyebrow">Conditional design workflow</div>
+<h1>/mockup</h1>
+<p class="lede">Show a material end-user interface before the Spec fixes its intent. Review one canonical HTML artifact, settle the visual direction, and carry that decision into implementation.</p>
+</header>
+<main>
+<section>
+<div class="label">01 · Place in Build</div>
+<h2>One Design→Spec gate, two paths</h2>
+<div class="flow">
+<div class="step"><strong>Grill</strong><small>Resolve product and domain decisions.</small></div>
+<div class="step active"><strong>Mockup when relevant</strong><small>Approval clears Design→Spec for material UI.</small></div>
+<div class="step"><strong>Spec</strong><small>Summarize and link the selected design.</small></div>
+<div class="step"><strong>Tasks onward</strong><small>Read the mockup as Authoritative intent.</small></div>
+</div>
+<p class="callout">When no relevant UI exists, post-grill chat confirmation clears the same Design→Spec gate. The conditional mockup does not add a fifth approval boundary.</p>
+</section>
+<section>
+<div class="label">02 · Relevance</div>
+<h2>Use visual judgment only where it adds value</h2>
+<div class="grid">
+<div class="card"><strong>Run</strong><p>New or materially changed browser or terminal layouts, interaction flows, information hierarchy, responsive behavior, or visual states.</p></div>
+<div class="card"><strong>Skip</strong><p>Internal work, exact copy replacement, mechanical styling repair, or a small defect fix with no design decision.</p></div>
+</div>
+</section>
+<section>
+<div class="label">03 · Canonical output</div>
+<h2>One durable <code>mockups.html</code></h2>
+<ul>
+<li>Use realistic content and identify every affected surface.</li>
+<li>Show important loading, empty, error, success, disabled, and permission states when relevant.</li>
+<li>Demonstrate responsive intent and accessibility behavior.</li>
+<li>Keep the artifact semantic, self-contained, and safe to review locally.</li>
+<li>Update the same live artifact after every feedback batch.</li>
+</ul>
+</section>
+<section>
+<div class="label">04 · Design count</div>
+<h2>Recommend first; branch only for a real fork</h2>
+<p>Present one recommended design by default. Before approval, visibly mark one recommended design as selected and state its rationale.</p>
+<p>Add two or three structurally different alternatives only when grilling leaves an unresolved visual decision. Differences must change layout, information hierarchy, or the primary action rather than only color or copy.</p>
+</section>
+<section>
+<div class="label">05 · Authority</div>
+<h2>Bind behavior, not every pixel</h2>
+<div class="grid">
+<div class="card"><strong>Authoritative</strong><p>Information hierarchy, interaction behavior, important states, responsive intent, and accessibility behavior.</p></div>
+<div class="card"><strong>Directional by default</strong><p>Exact dimensions and decorative styling unless the artifact explicitly marks them as required.</p></div>
+</div>
+</section>
+<section>
+<div class="label">06 · Review completion</div>
+<h2>Settle the design before approval</h2>
+<ol>
+<li>When alternatives remain unresolved, use a <code>review-artifact</code> feedback or decision interaction to settle the selection. Do not request approval yet.</li>
+<li>After the selection settles, update the same <code>mockups.html</code> with the selected design, its rationale, and rejected alternatives. Show “None” when no alternative was rejected.</li>
+<li>Only then start or resume the approval review and apply its feedback to the same live artifact.</li>
+</ol>
+<p>Explicit approval is the Design→Spec signal. Ending or closing review is not approval.</p>
+</section>
+</main>
+<footer>Human guide · mockup skill · canonical HTML review</footer>
+</div>
+</body>
+</html>

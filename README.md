@@ -16,8 +16,8 @@ cd ~/.dotfiles/ai
 
 The centerpiece of this repository is `/build` — a disciplined 5-phase workflow for building software features with AI assistance. It enforces a "think before you code" discipline:
 
-1. **Grill** the idea in dependency-aware rounds and invoke `model-domain` to sharpen the project's **ubiquitous language**: the shared canonical vocabulary used by domain experts, users, documentation, tests, and code.
-2. **Draft a spec** synthesizing the grilling outcome (user stories + decisions, no code snippets)
+1. **Design** the feature by grilling the idea in dependency-aware rounds, invoking `model-domain` to sharpen the project's **ubiquitous language**, and conditionally reviewing material UI through `/mockup`. Explicit mockup approval or, when no UI is relevant, post-grill chat confirmation clears the Design→Spec gate.
+2. **Draft a spec** synthesizing the grilling outcome and approved UI intent (user stories + decisions, no code snippets)
 3. **Break it into tasks** as vertical-slice tracer bullets (each slice cuts through every layer end-to-end)
 4. **Implement** via vertical-slice TDD — AI does it, or AI coaches you through it one test at a time
 5. **Review the change** against approved intent — adversarial review, targeted evidence, documentation, lint, and an explicit Review-to-done decision
@@ -32,6 +32,8 @@ Both implementation modes and all five phases are harness-neutral across Claude 
 /build "feature"
   ├── Phase 1: /grill        → ./CONTEXT.md  (glossary)
   │                            ./docs/adr/    (ADRs — hard-to-reverse decisions)
+  │             /mockup       → docs/features/<slug>/mockups.html (when relevant)
+  │                            → explicit approval clears Design→Spec
   │
   ├── Phase 2: /spec          → docs/features/<slug>/specs.html
   │                            (canonical HTML reviewed via review-artifact)
@@ -47,7 +49,7 @@ Both implementation modes and all five phases are harness-neutral across Claude 
                                 → review-artifact → approve as-is or fix selected
 ```
 
-`CONTEXT.md` and `docs/adr/` live at the repo root and accrete across many `/build` runs. Canonical per-feature `specs.html` and `tasks.html` live in `docs/features/<YYYYMMDD-HHMM>-<slug>/`; the final Review change report is disposable and lives in the operating-system temp directory.
+`CONTEXT.md` and `docs/adr/` live at the repo root and accrete across many `/build` runs. Canonical per-feature `mockups.html` (when relevant), `specs.html`, and `tasks.html` live in `docs/features/<YYYYMMDD-HHMM>-<slug>/`; the final Review change report is disposable and lives in the operating-system temp directory.
 
 ### Standalone Review Change CLI
 
@@ -86,7 +88,7 @@ Standalone Review change does not invoke `review-artifact`, poll for feedback, o
 A disabled push URL plus the CLI-specific pi guard protect the original checkout and block structured writes, common direct mutation, staging, commits, pushes, and provider mutations.
 Structured writes are allowed only inside a dedicated report directory whose resolved path is validated not to overlap the source checkout or clone.
 
-### Phase 1: Grill
+### Phase 1: Design (Grill + conditional Mockup)
 
 **Entry**: `/build [description]` or `/grill [topic]`
 
@@ -95,7 +97,8 @@ Structured writes are allowed only inside a dedicated report directory whose res
 3. Uses `model-domain` to challenge terminology collisions, sharpen fuzzy language, stress-test scenarios, and cross-reference with code.
 4. **Updates `CONTEXT.md` inline** as terms resolve and uses the resulting ubiquitous language consistently.
 5. **Offers ADRs sparingly** — only when hard-to-reverse, surprising, and the result of a real trade-off.
-6. **STOPS — waits for user confirmation before drafting the spec.**
+6. Inside `/build`, returns to the orchestrator for the mockup relevance decision. Relevant UI runs `/mockup`, whose explicit approval clears Design→Spec; work without relevant UI waits for post-grill chat confirmation.
+7. Standalone `/grill` reports its updates and waits for confirmation before the Spec.
 
 If a question can be answered by exploring the codebase, grill does so instead of asking.
 
@@ -114,8 +117,10 @@ It updates resolved terms inline and preserves the distinction between the ubiqu
 
 **Entry**: User says "draft the spec" or `/spec [description]`
 
-1. Reads `CONTEXT.md`, recent ADRs, and any prior session context
-2. **Does NOT re-interview** — grilling was the design phase; this transcribes its outcome
+Standalone `/spec` applies the mockup relevance test and runs `/mockup` first when relevant UI lacks an approved `mockups.html`.
+
+1. Reads `CONTEXT.md`, recent ADRs, prior session context, and approved `mockups.html` when present
+2. **Does NOT re-interview** — grilling and any approved mockup settled the design intent; this transcribes their outcomes
 3. Sketches major modules (deep-modules philosophy) and checks them with the user
 4. Writes canonical semantic `specs.html`
    - Sections: Problem Statement, Solution, User Stories, Implementation Decisions, Testing Decisions, Out of Scope, Further Notes
@@ -128,7 +133,7 @@ It updates resolved terms inline and preserves the distinction between the ubiqu
 
 **Entry**: User says "break it into tasks" or `/todo [spec-dir]`
 
-1. Reads approved canonical `specs.html`, `CONTEXT.md`, and relevant ADRs
+1. Reads approved canonical `specs.html`, approved `mockups.html` when present, `CONTEXT.md`, and relevant ADRs
 2. Drafts **vertical-slice tracer bullets** that cut through every layer and remain independently demoable
 3. Marks each slice **HITL** or **AFK** and prefers AFK
 4. Writes canonical `tasks.html` with stable slice, status, dependency, story, test-surface, and acceptance-criterion metadata
@@ -140,7 +145,7 @@ It updates resolved terms inline and preserves the distinction between the ubiqu
 
 **Entry**: User says "implement" or `/code [tasks-dir]` or `/coach [tasks-dir]`
 
-Both modes follow the same TDD philosophy: **vertical, never horizontal. One test → one implementation → repeat.** Tests written in batches upfront test *imagined* behavior, not *actual* behavior; this pattern is explicitly rejected.
+Both modes read approved `mockups.html` when present with canonical `specs.html` and `tasks.html`, then follow the same TDD philosophy: **vertical, never horizontal. One test → one implementation → repeat.** Tests written in batches upfront test *imagined* behavior, not *actual* behavior; this pattern is explicitly rejected.
 
 **Good tests** describe behavior through public interfaces; they survive refactors. **Bad tests** couple to implementation details, mock internal collaborators, or test private methods.
 
@@ -193,7 +198,7 @@ The `git-commit` rule covers what to include: `CONTEXT.md` and `docs/adr/` ship 
 ### Legacy Example
 
 The [`example/`](example/) directory contains historical artifacts from the earlier grill → PRD → tasks → implementation-with-diff-review pipeline.
-It remains a stylistic reference only; current runs produce canonical `specs.html` and `tasks.html` and end with Review change.
+It remains a stylistic reference only; current runs produce canonical `mockups.html` when relevant, `specs.html`, and `tasks.html`, then end with Review change.
 
 ## Skill / Rule / Agent Graph
 
@@ -203,6 +208,9 @@ It remains a stylistic reference only; current runs produce canonical `specs.htm
 │   └── model-domain
 │       ├── CONTEXT.md / CONTEXT-MAP.md
 │       └── docs/adr/
+│
+├── mockup (conditional)
+│   └── review-artifact → canonical mockups.html feedback + approval
 │
 ├── spec
 │   ├── api-designer / frontend-architect (conditional) → domain consult
@@ -271,10 +279,11 @@ Claude installs commands under `~/.claude/commands/`; pi installs the same Markd
 
 | Name | Model (rec.) | Role |
 |------|-------|------|
-| `build` | — | Orchestrator: coordinates grill → spec → todo → code/coach → review-change |
+| `build` | — | Orchestrator: coordinates grill → conditional mockup → spec → todo → code/coach → review-change |
 | `grill` | opus | Dependency-aware feature interview; invokes model-domain during Phase 1 |
 | `model-domain` | opus | Build, augment, or audit the ubiquitous language in context files; record qualifying ADRs |
-| `spec` | opus | Synthesize canonical specs.html and review it through review-artifact |
+| `mockup` | opus | Conditionally create and approve canonical mockups.html before the Spec |
+| `spec` | opus | Synthesize canonical specs.html from design intent and review it through review-artifact |
 | `todo` | opus | Break the approved spec into canonical HTML vertical slices |
 | `code` | sonnet | Execute approved tasks via vertical-slice TDD + multi-agent verification |
 | `coach` | sonnet | Coach user through implementation; AI writes ONE test at a time |
@@ -286,7 +295,7 @@ Claude installs commands under `~/.claude/commands/`; pi installs the same Markd
 |------|-------|------|
 | `refactor` | sonnet | User-directed restructuring (extract, inline, split, rename) with incremental test verification |
 | `review-code` | opus | Optional standalone architectural exploration — entire codebase or named area |
-| `prototype` | sonnet | Throwaway prototype to flesh out a design — terminal TUI for logic, or N UI variants on one route |
+| `prototype` | sonnet | Throwaway runnable code for logic or host application questions; composes mockup first, last, or not at all from the primary question |
 | `handoff` | sonnet | Summarise the current session into a disposable handoff doc in the OS temp dir for another session |
 | `pickup` | sonnet | Resume work from a handoff doc — most recent by default, or one matched from an argument |
 

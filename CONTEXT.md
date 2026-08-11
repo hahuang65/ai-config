@@ -203,6 +203,22 @@ _Avoid_: baseline.
 
 ### Build-pipeline terms
 
+**UI mockup**:
+A canonical, self-contained `mockups.html` review artifact that lets a user assess a proposed browser or terminal interface before the **Spec** records its design decisions.
+The `/build` pipeline conditionally invokes the `mockup` skill after grilling and before `spec` for a new or materially changed layout, interaction flow, information hierarchy, responsive behavior, or visual state.
+For relevant UI work, explicit approval of `mockups.html` clears the **Design→Spec gate**; otherwise post-grill chat confirmation clears the same gate.
+A UI mockup presents one recommended interactive design by default and adds two or three structurally different alternatives only when grilling leaves a real visual design fork unresolved.
+The selected design, its rationale, and any rejected alternatives remain in the feature directory as **Authoritative intent** consumed by later pipeline skills.
+Its information hierarchy, interaction behavior, important states, responsive intent, and accessibility behavior are authoritative, while dimensions and decorative styling are directional unless explicitly marked as required.
+It is distinct from a prototype, which is throwaway runnable code used when integration, real data density, or state behavior cannot be judged in the standalone artifact.
+A prototype invokes `mockup` first only when end-user interface design is the prototype subject or an imperative prerequisite; when UI is only a presentation layer for exploring data or manually processing it, the prototype evaluates its primary question first and leaves optional mockup work until last.
+_Avoid_: UI prototype, visual companion, mandatory variants, pixel-perfect contract.
+
+**Design→Spec gate**:
+The first `/build` approval boundary, cleared by post-grill chat confirmation when no **UI mockup** is relevant or by explicit `mockups.html` approval when one is relevant.
+A relevant UI build proceeds directly from grilling into the mockup workflow and starts `spec` immediately after mockup approval, so the conditional design step does not add a fifth pipeline gate.
+_Avoid_: Grill→Spec gate (does not describe the conditional mockup path), mockup gate (mistakenly implies an additional boundary).
+
 **Spec**:
 The canonical Phase-2 review artifact of the `/build` pipeline — `specs.html`, containing user stories plus implementation and testing decisions, synthesized by the `spec` skill from a grill session.
 Its approval event is the Spec→Tasks gate.
@@ -256,14 +272,14 @@ If comparison fails, stale highlights clear, review continues, and one page-leve
 It does not appear on the initial load, remains until the next artifact revision or explicit dismissal, and does not survive a full shell refresh, closed review, or reopened review.
 
 **Pipeline skill**:
-A skill the `/build` skill orchestrator drives through its five phases and supporting review workflow — `build`, `grill`, `spec`, `todo`, `code`, `coach`, **Review change**, and `review-artifact`.
-Some pipeline skills also run standalone, including `grill`, `spec`, `todo`, and **Review change**.
+A skill the `/build` skill orchestrator drives through its five phases and supporting review workflow — `build`, `grill`, `mockup`, `spec`, `todo`, `code`, `coach`, **Review change**, and `review-artifact`.
+Some pipeline skills also run standalone, including `grill`, `mockup`, `spec`, `todo`, and **Review change**.
 Distinct from a **standalone skill** (`refactor`, `review-code`, `handoff`, `pickup`, `prototype`) that `/build` never invokes automatically.
 _Avoid_: phase (a phase is a stage of the pipeline; a pipeline skill is the unit that runs it).
 
 **Authoritative intent**:
 The explicit acceptance context a **Review change** uses to distinguish a defect from a deliberate choice.
-Build mode takes it from approved canonical `specs.html` and `tasks.html`; pull-request mode takes it from the sanitized PR title and body, augmented or overridden by explicit `/review-change` or `review-change --intent` arguments.
+Build mode takes it from approved `mockups.html` when present and canonical `specs.html` and `tasks.html`; pull-request mode takes it from the sanitized PR title and body, augmented or overridden by explicit `/review-change` or `review-change --intent` arguments.
 _Avoid_: Diff summary, inferred intent, prompt instructions.
 
 **Finding**:
@@ -326,7 +342,7 @@ The skill-authoring convention where `SKILL.md` is a thin entry point that defer
 _Avoid_: lazy loading.
 
 **Feature directory**:
-The per-build-run home for canonical HTML review artifacts: `docs/features/<YYYYMMDD-HHMM>-<slug>/`, holding `specs.html` and `tasks.html`.
+The per-build-run home for canonical HTML review artifacts: `docs/features/<YYYYMMDD-HHMM>-<slug>/`, holding conditional `mockups.html`, `specs.html`, and `tasks.html`.
 The **Review change report** is disposable and stays in the operating-system temp directory; project-wide artifacts (`CONTEXT.md`, `docs/adr/`) live at the repo root and accrete across runs.
 _Avoid_: `docs/claude/` (the former Claude-specific name, replaced by the harness-neutral `docs/features/` — see [`adopt-docs-features-over-docs-claude`](docs/adr/0007-adopt-docs-features-over-docs-claude.md)), Markdown companions.
 

@@ -132,9 +132,11 @@ code { font-family: var(--font-mono); font-size: 0.85em; background: var(--accen
 
 <div class="header">
   <h1><span>/</span>build pipeline</h1>
-  <p class="subtitle">Five-phase workflow combining ubiquitous-language domain modeling, canonical HTML artifacts, vertical-slice TDD, and intent-aware Review change.</p>
+  <p class="subtitle">Five-phase workflow combining ubiquitous-language domain modeling, conditional UI mockups, canonical HTML artifacts, vertical-slice TDD, and intent-aware Review change.</p>
   <div class="phase-flow">
     <span class="phase-pill grill"><span class="phase-num"><span>1</span></span> grill</span>
+    <span class="phase-arrow">→</span>
+    <span class="phase-pill specs">conditional mockup</span>
     <span class="phase-arrow">→</span>
     <span class="phase-pill specs"><span class="phase-num"><span>2</span></span> specs</span>
     <span class="phase-arrow">→</span>
@@ -159,6 +161,7 @@ code { font-family: var(--font-mono); font-size: 0.85em; background: var(--accen
         <li>Challenges fuzzy language; cross-references with code</li>
         <li>Updates <code>CONTEXT.md</code> inline as terms resolve</li>
         <li>Offers ADRs sparingly (hard-to-reverse + surprising + real trade-off)</li>
+        <li>Returns to <code>/build</code>, which routes relevant UI into canonical <code>mockups.html</code>; approval clears Design→Spec</li>
       </ul>
       <div class="out"><strong>Output:</strong> <code>./CONTEXT.md</code> (ubiquitous-language record)<br><strong>Output:</strong> <code>./docs/adr/*.md</code> (qualifying decisions)</div>
     </div>
@@ -167,7 +170,7 @@ code { font-family: var(--font-mono); font-size: 0.85em; background: var(--accen
       <h3>spec <span class="badge">synthesis</span></h3>
       <p>Synthesizes a feature spec from the grilling outcome. Does NOT re-interview.</p>
       <ul>
-        <li>Reads applicable context files, recent ADRs, conversation</li>
+        <li>Reads applicable context files, recent ADRs, conversation, and approved <code>mockups.html</code> when present</li>
         <li>Sketches major modules (deep-modules philosophy)</li>
         <li>Proposes module test surfaces; user corrects boundaries/seams only</li>
         <li>Writes spec: problem, solution, user stories, decisions, testing</li>
@@ -182,7 +185,7 @@ code { font-family: var(--font-mono); font-size: 0.85em; background: var(--accen
       <h3>todo <span class="badge">vertical slices</span></h3>
       <p>Breaks the approved spec into vertical-slice tracer bullets. Each slice cuts through every layer end-to-end.</p>
       <ul>
-        <li>Reads canonical <code>specs.html</code>, applicable context files, ADRs</li>
+        <li>Reads canonical <code>specs.html</code>, approved <code>mockups.html</code> when present, applicable context files, and ADRs</li>
         <li>Each slice = thin path through schema, API, UI, tests</li>
         <li>Marked HITL (human-in-loop) or AFK (away-from-keyboard)</li>
         <li>Dependency order: blockers first</li>
@@ -195,6 +198,7 @@ code { font-family: var(--font-mono); font-size: 0.85em; background: var(--accen
       <h3>implement <span class="badge">sonnet · TDD</span></h3>
       <p>Executes the approved slices via vertical-slice TDD — one test, one implementation, repeat. No batching.</p>
       <ul>
+        <li>Reads approved <code>mockups.html</code> when present with canonical <code>specs.html</code> and <code>tasks.html</code></li>
         <li>For each slice: confirm interface → RED→GREEN per criterion → refactor</li>
         <li>Tests describe behavior through the spec/task public interface, not implementation</li>
         <li>Verification loop: type check, lint, test, build</li>
@@ -210,6 +214,8 @@ code { font-family: var(--font-mono); font-size: 0.85em; background: var(--accen
       <ul>
         <li>Fresh adversarial reviewer evaluates the full feature diff</li>
         <li>Runs targeted evidence, documentation checks, and lint in fixed order</li>
+        <li>Validates approved <code>mockups.html</code> when present and reports material UI drift</li>
+        <li>A deliberate material UI redesign pauses final review, returns through <code>mockup</code> and <code>review-artifact</code>, synchronizes <code>specs.html</code> and <code>tasks.html</code>, renews invalidated approvals, and restarts Review change with refreshed Authoritative intent without adding a fifth gate</li>
         <li>Fact-checks canonical <code>specs.html</code> and <code>tasks.html</code> in place</li>
         <li>Presents Findings with independent severity and action</li>
         <li>Opens the final report through <code>review-artifact</code> in Explore mode</li>
@@ -231,6 +237,7 @@ code { font-family: var(--font-mono); font-size: 0.85em; background: var(--accen
 │   │   └── 0002-postgres-for-write-model.md
 │   └── features/
 │       └── &lt;YYYYMMDD-HHMM&gt;-&lt;slug&gt;/
+│           ├── mockups.html       conditional approved UI design
 │           ├── specs.html         Phase 2 — canonical spec and build intent
 │           └── tasks.html         Phase 3 — canonical slices and completion state</div>
   <div class="callout">
@@ -243,7 +250,7 @@ code { font-family: var(--font-mono); font-size: 0.85em; background: var(--accen
   <table>
     <thead><tr><th>Transition</th><th>User confirms (any wording)</th><th>Gate behavior</th></tr></thead>
     <tbody>
-      <tr><td>after <code>/grill</code></td><td>any go-ahead to draft the spec</td><td><span class="stop">STOP</span> until the user confirms</td></tr>
+      <tr><td>Design→Spec</td><td>explicit <code>mockups.html</code> approval for relevant UI; otherwise post-grill chat confirmation</td><td><span class="stop">STOP</span> until the applicable signal arrives</td></tr>
       <tr><td>after <code>/spec</code></td><td>explicit <code>review-artifact</code> approval or chat fallback</td><td><span class="stop">STOP</span> until canonical <code>specs.html</code> is approved</td></tr>
       <tr><td>after <code>/todo</code></td><td>explicit <code>review-artifact</code> approval or chat fallback</td><td><span class="stop">STOP</span> until canonical <code>tasks.html</code> is approved and implementation mode is known</td></tr>
       <tr><td>after <code>/review-change</code></td><td>explicit report approval after every ask-user disposition</td><td><span class="stop">STOP</span> until the Review-to-done decision is submitted</td></tr>
@@ -263,8 +270,8 @@ code { font-family: var(--font-mono); font-size: 0.85em; background: var(--accen
 
 <div class="section">
   <div class="section-title"><span class="num">05</span>Canonical HTML Sync</div>
-  <p style="font-size: 0.95rem; margin-bottom: 14px;"><code>specs.html</code> and <code>tasks.html</code> are durable sources, not visual companions. Every feedback batch updates the same semantic HTML so the browser never intentionally lags.</p>
-  <p style="font-size: 0.9rem; color: var(--text-dim);">Phase 5 cold-fact-checks those same files against final code, confirms idempotence, and opens its disposable decision report through <code>review-artifact</code>. Browser failure falls back to chat without weakening explicit approval.</p>
+  <p style="font-size: 0.95rem; margin-bottom: 14px;"><code>mockups.html</code>, <code>specs.html</code>, and <code>tasks.html</code> are durable sources, not visual companions. Every feedback batch updates the same semantic HTML so the browser never intentionally lags.</p>
+  <p style="font-size: 0.9rem; color: var(--text-dim);">Phase 5 validates approved mockup intent when present, cold-fact-checks <code>specs.html</code> and <code>tasks.html</code> against final code, confirms fact-checking idempotence, and opens its disposable decision report through <code>review-artifact</code>. Browser failure falls back to chat without weakening explicit approval.</p>
 </div>
 
 <div class="section">
@@ -274,7 +281,8 @@ code { font-family: var(--font-mono); font-size: 0.85em; background: var(--accen
     <tbody>
       <tr><td><span class="cmd-tag">/grill</span></td><td>Interview a feature and invoke <code>model-domain</code></td><td>Phase 1</td></tr>
       <tr><td><span class="cmd-tag">/model-domain</span></td><td>Build, augment, or audit context files</td><td>Invoked by Phase 1</td></tr>
-      <tr><td><span class="cmd-tag">/spec</span></td><td>Turn an existing conversation into a spec</td><td>Phase 2</td></tr>
+      <tr><td><span class="cmd-tag">/mockup</span></td><td>Review a material browser or terminal UI before specification</td><td>Conditional after grilling</td></tr>
+      <tr><td><span class="cmd-tag">/spec</span></td><td>Turn an existing conversation and approved UI design into a spec</td><td>Phase 2</td></tr>
       <tr><td><span class="cmd-tag">/todo</span></td><td>Break an existing spec into vertical slices</td><td>Phase 3</td></tr>
       <tr><td><span class="cmd-tag">/code</span></td><td>Execute existing canonical tasks.html (AI)</td><td>Phase 4a</td></tr>
       <tr><td><span class="cmd-tag">/coach</span></td><td>Execute existing canonical tasks.html (you write code)</td><td>Phase 4b</td></tr>
@@ -301,7 +309,7 @@ code { font-family: var(--font-mono); font-size: 0.85em; background: var(--accen
     </div>
     <div class="card">
       <h3>Semantic HTML is the deliverable</h3>
-      <p><code>specs.html</code> and <code>tasks.html</code> are durable reviewed sources. There are no Markdown companions or hidden duplicate models.</p>
+      <p><code>mockups.html</code> when relevant, <code>specs.html</code>, and <code>tasks.html</code> are durable reviewed sources. There are no Markdown companions or hidden duplicate models.</p>
     </div>
     <div class="card">
       <h3>User judgment via gates</h3>

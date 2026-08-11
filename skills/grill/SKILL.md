@@ -57,7 +57,12 @@ When invoked from `/build`, the orchestrator passes the feature description and 
 
 The grill phase is done when the frontier is empty and the user is satisfied with the shared understanding.
 Every branch has been visited, nothing is silently assumed, ambiguous terms are pinned down, cardinality and lifecycle are answered, and ADR-worthy decisions are recorded.
-Then tell the user:
+Then report the updated context files and ADRs.
+
+Inside `/build`, return control to the orchestrator so it can determine mockup relevance and complete the Design→Spec gate through the applicable branch.
+Do not ask for separate post-grill confirmation in a build that requires mockup approval.
+
+When invoked standalone, tell the user:
 
 > **Grill phase complete.** I've updated:
 >
@@ -67,5 +72,5 @@ Then tell the user:
 >
 > When you're ready, just confirm and I'll draft the spec, synthesizing what we discussed via `/spec`.
 
-Do not start drafting the spec until the user confirms.
-The grilling conversation is the design phase, and the spec transcribes its outcome.
+Do not start drafting the standalone spec until the user confirms.
+The grilling conversation resolves product and domain decisions, and the Spec transcribes its outcome plus approved UI intent when present.

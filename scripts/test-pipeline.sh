@@ -82,8 +82,82 @@ check_content_cached() {
   fi
 }
 
+check_ordered_file_patterns() {
+  local file="$1" label="$2"
+  shift 2
+  local pattern match line previous_line=0
+  for pattern in "$@"; do
+    match="$(grep -niE -m 1 -- "$pattern" "$file" || true)"
+    line="${match%%:*}"
+    if [[ -z "$line" || "$line" -le "$previous_line" ]]; then
+      fail "$label" "missing or out-of-order '$pattern'"
+      return
+    fi
+    previous_line="$line"
+  done
+  pass "$label keeps its required sequence"
+}
+
 count_matches() {
   grep -cE "$1" "$2" 2>/dev/null || echo 0
+}
+
+extract_markdown_reference_targets() {
+  grep -oE '\]\([^)]*references/[^)#]+[.]md(#[^)]+)?\)' "$1" 2>/dev/null \
+    | sed -E 's/^\]\(//; s/\)$//' | sort -u || true
+}
+
+extract_markdown_reference_paths() {
+  # Return local or external references/...md targets without optional
+  # fragments so callers can classify or resolve the underlying file.
+  extract_markdown_reference_targets "$1" | sed -E 's/#.*$//' | sort -u
+}
+
+extract_markdown_headings() {
+  awk '
+    /^[[:space:]]*#{1,6}([[:space:]]+|$)/ {
+      heading = $0
+      sub(/^[[:space:]]*#+[[:space:]]*/, "", heading)
+      sub(/[[:space:]]+#+[[:space:]]*$/, "", heading)
+      print heading
+      previous = ""
+      next
+    }
+    previous != "" && /^[[:space:]]*(=+|-+)[[:space:]]*$/ {
+      print previous
+      previous = ""
+      next
+    }
+    /^[[:space:]]*$/ { previous = ""; next }
+    { previous = $0 }
+  ' "$1"
+}
+
+github_heading_fragment() {
+  printf '%s' "$1" \
+    | sed -E 's/<[^>]*>//g' \
+    | tr '[:upper:]' '[:lower:]' \
+    | sed -E 's/[^[:alnum:] _-]//g; s/[[:space:]]/-/g'
+}
+
+markdown_fragment_exists() {
+  local file="$1" fragment="$2" escaped_fragment heading slug count candidate
+  escaped_fragment="$(printf '%s' "$fragment" | sed 's,[][\\.^$*+?(){}|/],\\&,g')"
+  if grep -Eq "<[aA][[:space:]][^>]*([iI][dD]|[nN][aA][mM][eE])[[:space:]]*=[[:space:]]*(\"$escaped_fragment\"|'$escaped_fragment'|$escaped_fragment([[:space:]]|>))" "$file"; then
+    return 0
+  fi
+
+  declare -A slug_counts=()
+  while IFS= read -r heading; do
+    slug="$(github_heading_fragment "$heading")"
+    [[ -n "$slug" ]] || continue
+    count="${slug_counts[$slug]:-0}"
+    candidate="$slug"
+    [[ "$count" -eq 0 ]] || candidate="$slug-$count"
+    slug_counts[$slug]=$((count + 1))
+    [[ "$candidate" == "$fragment" ]] && return 0
+  done < <(extract_markdown_headings "$file")
+  return 1
 }
 
 gather_skill_content() {
@@ -103,8 +177,7 @@ gather_skill_content() {
     [[ -z "$rel" ]] && continue
     [[ "$rel" =~ ^https?: ]] && continue
     [[ -f "$skill_dir/$rel" ]] && { printf '\n'; cat "$skill_dir/$rel"; }
-  done < <(grep -oE '\]\([^)]*references/[^)]+\.md\)' "$skill_file" 2>/dev/null \
-             | sed -E 's/^\]\(//; s/\)$//' | sort -u || true)
+  done < <(extract_markdown_reference_paths "$skill_file")
 }
 
 # ---------------------------------------------------------------------------
@@ -325,6 +398,109 @@ test_phase_grill() {
   check_content_cached "$content" "$label" "CONTEXT\.md"
   check_content_cached "$content" "$label" "docs/adr/"
   check_content_cached "$content" "$label" "draft the spec"
+  check_content_cached "$content" "$label" "[Ii]nside.*build.*return.*orchestrator.*mockup relevance"
+}
+
+# ---------------------------------------------------------------------------
+# 4b. Skill: mockup
+# ---------------------------------------------------------------------------
+
+test_skill_mockup() {
+  section "Skill: mockup"
+  local file="$REPO_DIR/skills/mockup/SKILL.md"
+  local label="skills/mockup/SKILL.md"
+  local content direct_content
+  content="$(gather_skill_content mockup)"
+  direct_content="$(<"$file")"
+
+  if [[ -f "$file" ]] \
+    && grep -Eqi 'canonical.*mockups[.]html|mockups[.]html.*canonical' <<<"$content" \
+    && grep -Fq '`review-artifact`' <<<"$content" \
+    && grep -Eqi 'same (live )?artifact' <<<"$content" \
+    && grep -Eqi 'explicit approval' <<<"$content"; then
+    pass "$label carries one standalone UI mockup to explicit approval"
+  else
+    fail "$label" "must create canonical mockups.html, update the same live artifact through review-artifact, and wait for explicit approval"
+  fi
+
+  if grep -Eqi 'names.*docs/features/.*reuse.*supplied Feature directory' <<<"$direct_content" \
+    && grep -Eqi 'otherwise.*feature description.*derive.*docs/features/<YYYYMMDD-HHMM>-<slug>/' <<<"$direct_content" \
+    && grep -Fq '../shared/references/build-pipeline.md#file-conventions' <<<"$direct_content" \
+    && grep -Eqi 'create.*resolved directory.*before writing.*mockups[.]html' <<<"$direct_content"; then
+    pass "$label deterministically resolves a supplied directory or standalone feature description"
+  else
+    fail "$label" "must reuse a supplied Feature directory or derive and create a timestamped Feature directory from the standalone feature description before writing mockups.html"
+  fi
+
+  check_content_cached "$content" "$label" "browser.*terminal|terminal.*browser"
+  check_content_cached "$content" "$label" "[Mm]aterially changed.*(layout|interaction flow|information hierarchy|responsive behavior|visual state)"
+  check_content_cached "$content" "$label" "copy.*mechanical.*small defect"
+  check_content_cached "$content" "$label" "affected surfaces"
+  check_content_cached "$content" "$label" "realistic content.*important states"
+  check_content_cached "$content" "$label" "responsive intent.*accessibility behavior"
+  check_content_cached "$content" "$label" "data-artifact-kind=.mockup"
+  check_content_cached "$content" "$label" "one recommended.*design.*default"
+  check_content_cached "$content" "$label" "two or three.*alternatives.*(unresolved|real).*fork"
+  check_content_cached "$content" "$label" "structurally different"
+  check_content_cached "$content" "$label" "selected design.*rationale.*rejected alternatives"
+  check_content_cached "$content" "$label" "information hierarchy.*interaction behavior.*important states.*responsive intent.*accessibility behavior"
+  check_content_cached "$content" "$label" "dimensions.*decorative styling.*directional"
+
+  check_ordered_file_patterns "$file" "$label approval readiness" \
+    'before any approval review.*one recommended design.*visibly selected.*rationale' \
+    'unresolved alternatives.*review-artifact.*feedback or decision interaction.*settle' \
+    'after the selection settles.*same.*mockups[.]html.*selected design.*rationale.*rejected alternatives' \
+    'only after.*decision record.*start or resume.*approval review'
+
+  local contract="$REPO_DIR/skills/mockup/references/mockup-contract.md"
+  check_ordered_file_patterns "$contract" "skills/mockup/references/mockup-contract.md approval readiness" \
+    'before any approval review.*visibly select one recommended design.*rationale' \
+    'alternatives remain unresolved.*review-artifact.*feedback or decision interaction.*settle.*before requesting approval' \
+    'after the selection settles.*same.*mockups[.]html.*selected design.*rationale.*rejected alternative' \
+    'only after.*decision record.*start or resume.*approval review'
+
+  local guide="$REPO_DIR/skills/mockup/guide.html"
+  if [[ -f "$guide" ]] \
+    && grep -Fq 'mockups.html' "$guide" \
+    && grep -Fq 'Design→Spec' "$guide" \
+    && grep -Eqi 'one recommended.*design' "$guide"; then
+    pass "skills/mockup/guide.html explains the reviewed workflow"
+  else
+    fail "skills/mockup/guide.html" "must explain mockups.html, Design→Spec, and the default recommended design"
+  fi
+  check_ordered_file_patterns "$guide" "skills/mockup/guide.html approval readiness" \
+    'feedback or decision interaction.*settle the selection' \
+    'after the selection settles.*selected design.*rationale.*rejected alternatives' \
+    'only then start or resume the approval review' \
+    'explicit approval is the Design→Spec signal'
+}
+
+test_prototype_mockup_routing() {
+  section "Skill: prototype mockup routing"
+  local file="$REPO_DIR/skills/prototype/SKILL.md"
+  local label="skills/prototype/SKILL.md"
+  local content first_route logic_content
+  content="$(gather_skill_content prototype)"
+  first_route="$(grep -Ei '^- [*][*]First[*][*]' "$file" || true)"
+  logic_content="$(<"$REPO_DIR/skills/prototype/references/logic.md")"
+
+  if grep -Eqi 'end-user interface design.*(subject|feature under test).*[[:space:]]or[[:space:]].*imperative prerequisite' <<<"$first_route" \
+    && ! grep -Eqi '(subject|feature under test).*[[:space:]]and[[:space:]].*imperative prerequisite' <<<"$first_route" \
+    && grep -Eqi '(logic|data).*(manual processing|state).*primary question first.*mockup.*last' <<<"$content" \
+    && grep -Eqi '(without|no).*UI design question.*skip.*mockup' <<<"$content" \
+    && grep -Eqi 'visual-only design.*route directly.*mockup' <<<"$logic_content"; then
+    pass "Prototype routes mockup first, last, or skips it from the primary question"
+  else
+    fail "$label" "must route mockup first for interface-design subjects or imperative prerequisites, last for presentation-only UI, and skip it when no UI design question exists"
+  fi
+  check_content_cached "$content" "$label" "host application.*(integration|real data density|state behavior).*standalone"
+  check_content_cached "$content" "$label" "(mockup|prototype) code.*never|never.*(mockup|prototype) code.*production|not.*promote.*production"
+
+  local guide="$REPO_DIR/skills/prototype/guide.html"
+  check_content_cached "$(<"$guide")" "skills/prototype/guide.html" "mockup"
+  check_content_cached "$(<"$guide")" "skills/prototype/guide.html" "[Ff]irst.*[Ll]ast.*[Ss]kip"
+  check_content_cached "$(<"$guide")" "skills/prototype/guide.html" "host application.*real data density"
+  check_content_cached "$(<"$REPO_DIR/README.md")" "README.md" "prototype.*(mockup.*host application|host application.*mockup)"
 }
 
 # ---------------------------------------------------------------------------
@@ -363,6 +539,23 @@ test_phase_spec() {
   check_content_cached "$content" "$label" "[Ee]xplicit.*approval"
   check_content_cached "$content" "$label" "canonical"
   check_content_cached "$content" "$label" "specs\.html"
+  check_content_cached "$content" "$label" "(missing.*relevant.*mockups\.html|relevant.*mockups\.html.*missing).*(load|invoke|run).*mockup.*before.*(synthesi|draft|write)"
+  check_content_cached "$content" "$label" "[Rr]ead.*mockups\.html.*when present"
+  check_content_cached "$content" "$label" "[Ss]ummarize.*[Ll]ink.*selected design.*without duplicat"
+
+  check_ordered_file_patterns "$file" "$label material UI feedback return path" \
+    'Spec feedback materially redesigns the UI.*return path' \
+    'Pause.*Spec approval review' \
+    'changed.*mockups[.]html.*(load and run|run).*mockup.*review-artifact.*explicit approval' \
+    'Synchroni[sz]e.*specs[.]html.*approved mockup.*resume.*Spec approval review' \
+    'Continue to Tasks only after explicit Spec approval.*renew.*prior Spec approval.*invalidated'
+
+  local guide="$REPO_DIR/skills/spec/guide.html"
+  check_ordered_file_patterns "$guide" "skills/spec/guide.html material UI feedback return path" \
+    'Material UI feedback return path.*Pause.*Spec approval review' \
+    'changed.*mockups[.]html.*mockup.*review-artifact.*explicit approval' \
+    'synchroni[sz]e.*specs[.]html.*approved mockup.*resume.*Spec approval review' \
+    'Continue to Tasks only after explicit Spec approval.*renew.*prior Spec approval.*invalidated'
 
   # Domain consultants: the module sketch consults the api-designer /
   # frontend-architect agents when the feature touches their domain.
@@ -393,6 +586,20 @@ test_phase_todo() {
   check_content_cached "$content" "$label" "review-artifact"
   check_content_cached "$content" "$label" "data-status"
   check_content_cached "$content" "$label" "canonical"
+
+  check_ordered_file_patterns "$file" "$label material UI redesign return path" \
+    'task feedback materially redesigns UI.*return path' \
+    'pause.*Tasks approval review' \
+    'changed.*mockups[.]html.*mockup.*review-artifact.*explicit approval' \
+    'then synchronize.*specs[.]html.*tasks[.]html.*renew.*Spec approval.*Tasks approval' \
+    'continue to implementation only after.*approvals.*explicitly renewed'
+
+  local guide="$REPO_DIR/skills/todo/guide.html"
+  check_ordered_file_patterns "$guide" "skills/todo/guide.html material UI redesign return path" \
+    'task feedback materially redesigns UI.*pause.*Tasks approval review' \
+    'changed.*mockups[.]html.*mockup.*review-artifact.*explicit approval' \
+    'then synchronize.*specs[.]html.*tasks[.]html.*renew.*Spec approval.*Tasks approval' \
+    'continue to implementation only after.*approvals.*explicitly renewed'
 }
 
 # ---------------------------------------------------------------------------
@@ -505,7 +712,92 @@ test_phase_coach_holding_line() {
 }
 
 # ---------------------------------------------------------------------------
-# 6c2. Phase: review-change
+# 6c2. Approved mockup remains Authoritative intent downstream
+# ---------------------------------------------------------------------------
+
+test_authoritative_intent_thread() {
+  section "Authoritative-intent thread"
+  local todo_content code_content coach_content build_review_content review_build_content
+  local mockup_intent_pattern='(read|receive|pass).*approved.*mockups[.]html'
+
+  todo_content="$(extract_body "$REPO_DIR/skills/todo/SKILL.md")"
+  code_content="$(extract_body "$REPO_DIR/skills/code/SKILL.md")"
+  coach_content="$(extract_body "$REPO_DIR/skills/coach/SKILL.md")"
+  build_review_content="$(awk '
+    /^### Phase 5: Review Change/ { in_section = 1 }
+    /^## Key Principles/ { in_section = 0 }
+    in_section
+  ' "$REPO_DIR/skills/build/SKILL.md")"
+  review_build_content="$(<"$REPO_DIR/skills/review-change/references/build-mode.md")"
+
+  if [[ "${todo_content,,}" =~ $mockup_intent_pattern ]] \
+    && [[ "${todo_content,,}" == *"authoritative intent"* ]] \
+    && [[ "${todo_content,,}" == *"information hierarchy"* ]] \
+    && [[ "${todo_content,,}" == *"interaction behavior"* ]] \
+    && [[ "${todo_content,,}" == *"important states"* ]] \
+    && [[ "${todo_content,,}" == *"responsive intent"* ]] \
+    && [[ "${todo_content,,}" == *"accessibility"* ]] \
+    && [[ "${todo_content,,}" == *"acceptance criteria"* ]] \
+    && [[ "${todo_content,,}" == *"test surfaces"* ]] \
+    && [[ "${code_content,,}" =~ $mockup_intent_pattern ]] \
+    && [[ "${code_content,,}" == *"authoritative intent"* ]] \
+    && [[ "${coach_content,,}" =~ $mockup_intent_pattern ]] \
+    && [[ "${coach_content,,}" == *"authoritative intent"* ]] \
+    && [[ "${build_review_content,,}" =~ $mockup_intent_pattern ]] \
+    && [[ "${build_review_content,,}" == *"authoritative intent"* ]] \
+    && [[ "${review_build_content,,}" =~ $mockup_intent_pattern ]] \
+    && [[ "${review_build_content,,}" == *"authoritative intent"* ]]; then
+    pass "approved mockup remains Authoritative intent from Tasks through build-mode Review change"
+  else
+    fail "approved mockup remains Authoritative intent from Tasks through build-mode Review change" "one or more downstream consumers dropped the approved UI contract"
+  fi
+
+  local guide_file
+  for guide_file in todo code coach build; do
+    check_content_cached "$(<"$REPO_DIR/skills/$guide_file/guide.html")" "skills/$guide_file/guide.html" "mockups\.html"
+  done
+  check_content_cached "$(<"$REPO_DIR/skills/shared/references/implementation-completion.md")" "skills/shared/references/implementation-completion.md" "mockups\.html"
+
+  local implementation_mode implementation_content implementation_label
+  for implementation_mode in code coach; do
+    implementation_label="skills/$implementation_mode/SKILL.md"
+    implementation_content="$(extract_body "$REPO_DIR/$implementation_label")"
+    check_content_cached "$implementation_content" "$implementation_label" "[Ss]top the affected slice"
+    check_content_cached "$implementation_content" "$implementation_label" "[Uu]pdate.*mockups[.]html.*review.*review-artifact.*explicit approval"
+    check_content_cached "$implementation_content" "$implementation_label" "[Ss]ynchroni[sz]e.*specs[.]html.*tasks[.]html"
+    check_content_cached "$implementation_content" "$implementation_label" "[Rr]enew.*approval.*invalidated"
+    check_content_cached "$implementation_content" "$implementation_label" "[Rr]esume.*affected slice.*only after"
+    check_content_cached "$(<"$REPO_DIR/skills/$implementation_mode/guide.html")" "skills/$implementation_mode/guide.html" "[Mm]aterial UI redesign:.*stop.*affected slice.*mockups[.]html.*review-artifact.*specs[.]html.*tasks[.]html.*renew invalidated approvals.*resume"
+  done
+
+  check_content_cached "$code_content" "skills/code/SKILL.md" "[Tt]erse corrections.*act immediately only.*does not materially redesign.*approved UI"
+}
+
+# ---------------------------------------------------------------------------
+# 6c3. Build-mode Review change material UI redesign return path
+# ---------------------------------------------------------------------------
+
+test_review_change_material_ui_redesign() {
+  section "Review change: material UI redesign"
+  local file="$REPO_DIR/skills/review-change/references/build-mode.md"
+  local guide="$REPO_DIR/skills/build/guide.html"
+
+  check_ordered_file_patterns "$file" "$file material UI redesign return path" \
+    'Ordinary conformance repair.*existing fourth Review-to-done gate' \
+    'deliberately requests a material UI redesign during final Review change' \
+    'Pause final Review change.*not.*ordinary conformance repair' \
+    'Update.*mockups[.]html.*mockup.*review-artifact.*explicit approval' \
+    'Synchronize.*specs[.]html.*tasks[.]html.*approved mockup' \
+    'Renew every approval invalidated.*existing gate' \
+    'Restart Review change.*refreshed Authoritative intent' \
+    'keeps exactly four approval gates.*does not create a fifth gate'
+
+  check_content_cached "$(<"$guide")" "skills/build/guide.html" \
+    "deliberate material UI redesign.*pauses final review.*mockup.*review-artifact.*synchronizes.*specs[.]html.*tasks[.]html.*renews invalidated approvals.*restarts Review change.*refreshed Authoritative intent.*without adding a fifth gate"
+}
+
+# ---------------------------------------------------------------------------
+# 6c4. Phase: review-change
 # ---------------------------------------------------------------------------
 
 test_phase_review_change() {
@@ -520,6 +812,9 @@ test_phase_review_change() {
   check_content_cached "$content" "$label" "adversarial review.*targeted evidence.*documentation checks.*lint.*fixed order"
   check_content_cached "$content" "$label" "severity.*error.*warning.*info.*action.*auto-fix.*ask-user.*no-op.*fail(s|ing)? closed"
   check_content_cached "$content" "$label" "smallest relevant|focused checks.*full repository suite.*missing evidence.*ask-user"
+  check_content_cached "$content" "$label" "behavior tests.*browser checks.*rendered screenshots.*manual checks"
+  check_content_cached "$content" "$label" "insufficient UI evidence.*ask-user"
+  check_content_cached "$content" "$label" "material.*drift.*pixel"
   check_content_cached "$content" "$label" "Authoritative intent.*acceptance data.*not.*instructions"
   check_content_cached "$content" "$label" "three.*fix/recheck rounds.*fresh.*complete.*Change reviewer.*never.*fixer rationale"
   check_content_cached "$content" "$label" "every initial adversarial stage.*every restart.*dispatch a fresh.*change-reviewer.*complete immutable scope.*decision ledger.*specialist Findings"
@@ -1006,7 +1301,7 @@ test_phase_orchestrator() {
   content="$(gather_skill_content build)"
 
   check_content_cached "$content" "$label" "docs/features/"
-  for phase in grill spec todo code coach review-change; do
+  for phase in grill mockup spec todo code coach review-change; do
     check_content_cached "$content" "$label" "$phase"
   done
 
@@ -1022,6 +1317,11 @@ test_phase_orchestrator() {
   check_content_cached "$content" "$label" "review-artifact"
   check_content_cached "$content" "$label" "review-code.*(not.*build|optional standalone)"
   check_content_cached "$content" "$label" "exactly [*][*]four[*][*] approval gates.*Review.*done"
+  check_content_cached "$content" "$label" "Design→Spec.*Spec→Tasks.*Tasks→Implement.*Review→done"
+  check_content_cached "$content" "$label" "[Rr]elevant UI.*mockup approval clears the Design→Spec gate.*without another confirmation"
+  check_content_cached "$content" "$label" "scope and (inspected|existing) (code|interface).*ambiguous"
+  check_content_cached "$content" "$label" "mockups\.html"
+  check_content_cached "$content" "$label" "[Pp]ost-grill chat confirmation.*no.*relevant UI"
 
   check_content_cached "$content" "$label" "Mandatory Phase Loading"
   check_content_cached "$content" "$label" "At the start of each phase"
@@ -1029,6 +1329,20 @@ test_phase_orchestrator() {
   for phase in grill spec todo code coach review-change; do
     check_content_cached "$content" "$label" "../$phase/SKILL\.md"
   done
+  check_content_cached "$content" "$label" "Conditional.*../mockup/SKILL\.md"
+
+  local pipeline_protocol
+  pipeline_protocol="$(<"$REPO_DIR/skills/shared/references/build-pipeline.md")"
+  check_content_cached "$pipeline_protocol" "skills/shared/references/build-pipeline.md" "Design→Spec"
+  check_content_cached "$pipeline_protocol" "skills/shared/references/build-pipeline.md" "mockups\.html"
+  check_content_cached "$pipeline_protocol" "skills/shared/references/build-pipeline.md" "explicit mockup approval.*post-grill chat confirmation|post-grill chat confirmation.*explicit mockup approval"
+
+  local build_guide
+  build_guide="$(<"$REPO_DIR/skills/build/guide.html")"
+  check_content_cached "$build_guide" "skills/build/guide.html" "Design→Spec"
+  check_content_cached "$build_guide" "skills/build/guide.html" "mockups\.html"
+  check_content_cached "$(<"$REPO_DIR/README.md")" "README.md" "Design→Spec"
+  check_content_cached "$(<"$REPO_DIR/README.md")" "README.md" "/mockup"
 
   local bootstrap
   bootstrap="$(<"$REPO_DIR/harness-system-prompt.md")"
@@ -1068,7 +1382,7 @@ test_unique_adr_ids() {
 # ---------------------------------------------------------------------------
 
 check_skill_references_phases() {
-  for phase in grill spec todo code coach review-change; do
+  for phase in grill mockup spec todo code coach review-change; do
     local target="$REPO_DIR/skills/$phase/SKILL.md"
     if [[ -f "$target" ]]; then
       pass "skills/$phase/SKILL.md exists (referenced from build)"
@@ -1104,16 +1418,27 @@ check_skill_reference_links() {
   for skill_file in "$REPO_DIR"/skills/*/SKILL.md; do
     local skill_dir="${skill_file%/*}"
     local skill_name="${skill_dir##*/}"
-    local rel
-    while read -r rel; do
-      [[ -z "$rel" ]] && continue
-      [[ "$rel" =~ ^https?: ]] && continue
-      if [[ -f "$skill_dir/$rel" ]]; then
-        pass "skills/$skill_name/SKILL.md: reference '$rel' resolves"
-      else
-        fail "cross-ref" "skills/$skill_name/SKILL.md: reference '$rel' does not resolve"
+    local target rel fragment target_file
+    while read -r target; do
+      [[ -z "$target" ]] && continue
+      [[ "$target" =~ ^https?: ]] && continue
+      rel="${target%%#*}"
+      target_file="$skill_dir/$rel"
+      if [[ ! -f "$target_file" ]]; then
+        fail "cross-ref" "skills/$skill_name/SKILL.md: reference '$target' does not resolve"
+        continue
       fi
-    done < <(grep -oE '\]\([^)]*references/[^)]+\.md\)' "$skill_file" | sed -E 's/^\]\(//; s/\)$//' || true)
+      if [[ "$target" != *#* ]]; then
+        pass "skills/$skill_name/SKILL.md: reference '$target' resolves"
+        continue
+      fi
+      fragment="${target#*#}"
+      if markdown_fragment_exists "$target_file" "$fragment"; then
+        pass "skills/$skill_name/SKILL.md: reference '$target' resolves"
+      else
+        fail "cross-ref" "skills/$skill_name/SKILL.md: fragment '#$fragment' does not resolve in '$rel'"
+      fi
+    done < <(extract_markdown_reference_targets "$skill_file")
   done
 }
 
@@ -1615,14 +1940,16 @@ test_install_behavior() {
     || fail "install-behavior" "pi legacy commands/ should not be installed"
 
   for target in \
+    "$tmphome/.claude/skills/mockup/SKILL.md" \
+    "$tmphome/.pi/agent/skills/mockup/SKILL.md" \
     "$tmphome/.claude/skills/review-change/SKILL.md" \
     "$tmphome/.pi/agent/skills/review-change/SKILL.md" \
     "$tmphome/.claude/agents/change-reviewer.md" \
     "$tmphome/.claude/agents/change-fixer.md" \
     "$tmphome/.pi/agent/agents/change-reviewer.md" \
     "$tmphome/.pi/agent/agents/change-fixer.md"; do
-    [[ -f "$target" ]] && pass "Review change primitive installed: ${target#"$tmphome"/}" \
-      || fail "install-behavior" "Review change primitive missing: ${target#"$tmphome"/}"
+    [[ -f "$target" ]] && pass "shared primitive installed: ${target#"$tmphome"/}" \
+      || fail "install-behavior" "shared primitive missing: ${target#"$tmphome"/}"
   done
   [[ -x "$tmphome/.local/bin/review-change" ]] \
     && pass "standalone review-change executable installed" \
@@ -1789,6 +2116,8 @@ run_content_foundation() {
 
 run_content_build() {
   run test_phase_grill
+  run test_skill_mockup
+  run test_prototype_mockup_routing
   run test_phase_spec
   run test_phase_todo
   run test_phase_code
@@ -1799,9 +2128,11 @@ run_content_build() {
 run_content_pipeline() {
   run_content_foundation
   run_content_build
+  run test_authoritative_intent_thread
 }
 
 run_content_review() {
+  run test_review_change_material_ui_redesign
   run test_phase_review_change
   run test_review_change_cli
   run test_agent_change_reviewer
@@ -1877,6 +2208,12 @@ run_selected() {
     cli-ergonomics-inventory)  run test_cli_ergonomics_rule_inventory ;;
     symlink-targets)           run test_symlink_targets ;;
     coach-holding-line)        run test_phase_coach_holding_line ;;
+    mockup-workflow)           run test_skill_mockup ;;
+    spec-workflow)             run test_phase_spec ;;
+    todo-workflow)             run test_phase_todo ;;
+    mockup-intent-thread)      run test_authoritative_intent_thread ;;
+    prototype-mockup-routing)  run test_prototype_mockup_routing ;;
+    review-change-ui-redesign) run test_review_change_material_ui_redesign ;;
     phase-orchestrator)        run test_phase_orchestrator ;;
     harness-modules)           run test_harness_modules ;;
     isolation)                 run test_isolation ;;

@@ -6,13 +6,15 @@ argument-hint: [feature-description]
 
 # Specs Phase
 
-Synthesize a feature spec from the grill session and codebase. **Do NOT interview the user further** — grilling was the design phase; this phase transcribes its outcome into a durable artifact.
+Synthesize a feature spec from the grill session and codebase. **Do NOT interview the user further** — grilling and any approved mockup settled the design intent; this phase transcribes their outcomes into a durable artifact.
 
 ## Place in the /build Pipeline
 
 This is **Phase 2** of the `/build` pipeline.
 It assumes `/grill` already happened in this conversation or is recorded in the applicable context files and `docs/adr/`.
 If invoked standalone and the context feels thin, point the user at `/grill` instead.
+Before synthesis, apply the `mockup` relevance test; when a relevant `mockups.html` is missing, load and run [mockup](../mockup/SKILL.md) before synthesizing the Spec.
+Inside `/build`, reuse the mockup and Design→Spec decision already produced by the orchestrator rather than asking again.
 See [../shared/references/build-pipeline.md](../shared/references/build-pipeline.md) for file conventions; write the canonical `specs.html` into the feature directory.
 Read [../shared/references/testable-interfaces.md](../shared/references/testable-interfaces.md) before sketching modules so the testing plan is derived from public interfaces, not delegated back to the user.
 
@@ -22,6 +24,7 @@ Read [../shared/references/testable-interfaces.md](../shared/references/testable
 
 - Read the applicable context files.
 - Read recent ADRs in `docs/adr/` — especially any added this session — and respect them.
+- Read approved `mockups.html` when present and treat its selected design as Authoritative intent.
 - Skim the codebase area the feature touches. The spec is grounded in the actual codebase, not assumptions.
 
 ### Step 2: Sketch the modules
@@ -48,12 +51,20 @@ Use the ubiquitous language from the applicable context files and reference ADRs
 The file itself is the durable spec; do not create `specs.md` or a hidden duplicate model.
 The HTML must use `<feature title> - Spec` in its `<title>`, use "Spec" in its `<h1>`, and emphasize user stories, decisions, and module sketches rather than file maps or code.
 Use `visualize` guidance for presentation when available, but the semantic HTML deliverable is mandatory.
+When a mockup exists, summarize and link the selected design without duplicating the visual artifact in the Spec.
 
 ### Step 4: Review and advance
 
 Load `review-artifact` and review `specs.html` as an approval review using [the shared protocol](../shared/references/review-artifact.md).
 Point the user at missing or misstated user stories, implementation and testing decisions, and scope to cut.
 After each feedback batch, update the same HTML so the open browser live-reloads the current spec, then resume polling with an agent reply.
+If Spec feedback materially redesigns the UI, use this return path:
+
+1. Pause the Spec approval review.
+2. Update the changed `mockups.html`, then load and run [mockup](../mockup/SKILL.md) through `review-artifact` until explicit approval.
+3. Synchronize `specs.html` with the approved mockup, then resume the Spec approval review.
+4. Continue to Tasks only after explicit Spec approval; renew any prior Spec approval invalidated by the UI change.
+
 On explicit browser approval or chat-fallback confirmation, advance immediately:
 
 > **Spec ready** — canonical artifact at `<spec-path>`. Breaking it into tasks via `/todo`.

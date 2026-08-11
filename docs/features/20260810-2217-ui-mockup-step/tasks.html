@@ -1,0 +1,242 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Conditional UI Mockups - Tasks</title>
+<style>
+:root {
+  color-scheme: light dark;
+  --paper: #f5f0e6;
+  --sheet: #fffaf1;
+  --ink: #292722;
+  --muted: #716b61;
+  --line: #d6cbbc;
+  --sage: #3f6c58;
+  --sage-soft: #dce9df;
+  --clay: #a6533f;
+  --clay-soft: #f2dfd8;
+  --gold: #8d6b25;
+  --gold-soft: #eee4c7;
+  --body: "Iowan Old Style", "Palatino Linotype", Georgia, serif;
+  --display: "Avenir Next", "Century Gothic", sans-serif;
+  --mono: "SFMono-Regular", Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --paper: #181b18;
+    --sheet: #222520;
+    --ink: #eee9de;
+    --muted: #b6afa3;
+    --line: #45493f;
+    --sage: #91c8aa;
+    --sage-soft: #263b31;
+    --clay: #e59580;
+    --clay-soft: #422e29;
+    --gold: #d8b96c;
+    --gold-soft: #3b3524;
+  }
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  color: var(--ink);
+  background-color: var(--paper);
+  background-image: linear-gradient(90deg, transparent 0 95%, color-mix(in srgb, var(--line) 25%, transparent) 95% 95.2%, transparent 95.2%);
+  background-size: 36px 36px;
+  font: 17px/1.62 var(--body);
+  overflow-wrap: break-word;
+}
+a { color: var(--sage); text-underline-offset: 3px; }
+.shell { width: min(1160px, calc(100% - 28px)); margin: 24px auto 70px; }
+header { padding: clamp(30px, 6vw, 68px); border: 1px solid var(--line); border-radius: 2px 28px 2px 28px; background: var(--sheet); }
+.eyebrow, .label, .chip, dt { font: 700 .7rem/1.3 var(--mono); letter-spacing: .11em; text-transform: uppercase; }
+.eyebrow { color: var(--clay); }
+h1, h2, h3 { font-family: var(--display); line-height: 1.14; }
+h1 { margin: 10px 0 12px; font-size: clamp(2.5rem, 7vw, 5rem); letter-spacing: -.055em; }
+.lede { max-width: 720px; margin: 0; color: var(--muted); font-size: 1.22rem; }
+.summary { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin-top: 28px; }
+.summary-card { min-width: 0; padding: 16px; border: 1px solid var(--line); background: var(--paper); }
+.summary-card strong { display: block; font: 700 1.65rem var(--display); }
+.summary-card span { color: var(--muted); }
+main { display: grid; gap: 18px; margin-top: 20px; }
+section { min-width: 0; padding: clamp(22px, 4vw, 40px); border: 1px solid var(--line); background: var(--sheet); }
+.label { color: var(--sage); }
+h2 { margin: 8px 0 22px; font-size: clamp(1.55rem, 3vw, 2.2rem); }
+.dependency-flow { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 9px; }
+.dependency-flow article { min-width: 0; padding: 15px; border-top: 4px solid var(--sage); background: var(--sage-soft); }
+.dependency-flow article:nth-child(3) { border-color: var(--gold); background: var(--gold-soft); }
+.dependency-flow article:nth-child(4) { border-color: var(--clay); background: var(--clay-soft); }
+.dependency-flow strong { display: block; font-family: var(--display); }
+.dependency-flow small { display: block; margin-top: 5px; color: var(--muted); line-height: 1.35; }
+.slice { position: relative; border-radius: 2px 20px 2px 20px; }
+.slice::before { content: attr(data-slice-id); position: absolute; top: 24px; right: 30px; color: color-mix(in srgb, var(--line) 65%, transparent); font: 700 3rem var(--display); }
+.slice-head { max-width: 760px; padding-right: 65px; }
+.slice h2 { margin-bottom: 8px; }
+.slice-summary { margin: 0; color: var(--muted); }
+.chips { display: flex; flex-wrap: wrap; gap: 7px; margin: 18px 0; }
+.chip { padding: 4px 8px; border: 1px solid var(--line); border-radius: 999px; color: var(--muted); background: var(--paper); }
+.chip.afk { color: var(--sage); border-color: var(--sage); background: var(--sage-soft); }
+.slice-grid { display: grid; grid-template-columns: minmax(0, 1.45fr) minmax(240px, .55fr); gap: 22px; }
+.slice-grid > * { min-width: 0; }
+.criteria { margin: 0; padding-left: 2em; }
+.criteria li { margin: 10px 0; padding-left: 5px; }
+.meta { margin: 0; padding: 18px; border-left: 4px solid var(--sage); background: var(--paper); }
+.meta div + div { margin-top: 14px; }
+dt { color: var(--clay); }
+dd { margin: 3px 0 0; color: var(--muted); }
+.status { display: inline-block; margin-right: 7px; width: 9px; height: 9px; border: 2px solid var(--gold); border-radius: 50%; }
+.note { padding: 17px 20px; border-left: 4px solid var(--gold); background: var(--gold-soft); }
+.verification-card { padding: 18px 20px; border: 1px solid var(--line); background: var(--paper); color: var(--muted); }
+.verification-card p { margin: 0; }
+.verification-card p + p { margin-top: 8px; }
+.verification-card strong { color: var(--ink); }
+footer { padding: 22px 4px; color: var(--muted); font: .72rem var(--mono); }
+@media (max-width: 780px) {
+  .summary, .dependency-flow, .slice-grid { grid-template-columns: 1fr; }
+  .slice::before { font-size: 2rem; }
+  .shell { width: min(100% - 18px, 1160px); margin-top: 9px; }
+}
+</style>
+</head>
+<body>
+<div class="shell">
+<header>
+  <div class="eyebrow">Approved intent · <a href="specs.html">Read the Spec</a></div>
+  <h1>Conditional UI Mockups — Tasks</h1>
+  <p class="lede">Four unattended tracer bullets add the mockup workflow, route relevant builds through it, carry its Authoritative intent into implementation, and keep prototypes focused on their primary question.</p>
+  <div class="summary" aria-label="Task summary">
+    <div class="summary-card"><strong>4</strong><span>thin vertical slices</span></div>
+    <div class="summary-card"><strong>4 AFK</strong><span>can run unattended</span></div>
+    <div class="summary-card"><strong>0 HITL</strong><span>needs you present</span></div>
+  </div>
+</header>
+<main data-artifact-kind="tasks" data-artifact-version="1">
+<section id="dependencies">
+  <div class="label">01 · Dependency graph</div>
+  <h2>Deliver standalone value first</h2>
+  <div class="dependency-flow">
+    <article><strong>S1 · Mockup</strong><small>Unblocked standalone workflow.</small></article>
+    <article><strong>S2 · Build + Spec</strong><small>Uses S1 for the Design→Spec path.</small></article>
+    <article><strong>S3 · Intent thread</strong><small>Uses S1 and S2 across later phases.</small></article>
+    <article><strong>S4 · Prototype</strong><small>Uses S1 and can proceed beside S2.</small></article>
+  </div>
+  <p class="note"><strong>Mode split:</strong> All design decisions are approved in the Spec, so each slice can run unattended. UI review inside future builds remains human-owned; implementing this workflow does not require a new design decision.</p>
+</section>
+<section class="slice" id="slice-1" data-slice-id="S1" data-status="complete" data-mode="AFK" data-dependencies="" data-stories="1,3,4,5,6,7,8,9,10,11,14,15,23">
+  <div class="label">02 · Tracer bullet</div>
+  <div class="slice-head"><h2>Make UI mockups a standalone reviewed workflow</h2><p class="slice-summary">Deliver a discoverable mockup skill that can classify relevance, render credible interface states, iterate on feedback, and preserve an approved visual decision.</p></div>
+  <div class="chips"><span class="chip afk">Can run unattended · AFK</span><span class="chip">Status · Complete</span><span class="chip">Blocked by · None</span></div>
+  <div class="slice-grid">
+    <div>
+      <h3>What to build</h3>
+      <p>Define the concise workflow entry point, progressively disclosed artifact contract, and consistent human guide. The workflow produces one recommended interactive design by default, adds meaningful alternatives only for a true design fork, and reviews the canonical result for explicit approval.</p>
+      <h3>Acceptance criteria</h3>
+      <ol class="criteria">
+        <li data-criterion-id="S1-C1" data-status="complete"><span class="status"></span>The skill recognizes material browser and terminal UI while excluding internal work, exact copy replacements, mechanical styling repairs, and small defect fixes without a design decision.</li>
+        <li data-criterion-id="S1-C2" data-status="complete"><span class="status"></span>The canonical artifact uses semantic, self-contained HTML and visibly identifies affected surfaces, realistic content, important states, responsive intent, and accessibility behavior.</li>
+        <li data-criterion-id="S1-C3" data-status="complete"><span class="status"></span>The artifact presents one recommended design unless an unresolved fork justifies two or three structurally different alternatives.</li>
+        <li data-criterion-id="S1-C4" data-status="complete"><span class="status"></span>Feedback updates the same live artifact, and the settled artifact visibly preserves the selected design, rationale, and rejected alternatives before explicit approval.</li>
+        <li data-criterion-id="S1-C5" data-status="complete"><span class="status"></span>The workflow defines authoritative interaction, hierarchy, state, responsive, and accessibility decisions while marking decorative styling and dimensions as directional by default.</li>
+        <li data-criterion-id="S1-C6" data-status="complete"><span class="status"></span>Content-contract tests fail when relevance, variant discipline, canonical output, authority, or approval behavior disappears.</li>
+        <li data-criterion-id="S1-C7" data-status="complete"><span class="status"></span>The existing directory-driven installer projects the new skill into both harnesses without a same-named Command.</li>
+      </ol>
+    </div>
+    <dl class="meta">
+      <div><dt>Stories</dt><dd>1, 3–11, 14–15, 23</dd></div>
+      <div><dt>Test surface</dt><dd>Direct public mockup workflow through the repository content contract.</dd></div>
+      <div><dt>Complete when</dt><dd>A user can invoke the standalone workflow and reach an approved, durable design decision.</dd></div>
+    </dl>
+  </div>
+</section>
+<section class="slice" id="slice-2" data-slice-id="S2" data-status="complete" data-mode="AFK" data-dependencies="S1" data-stories="1,2,3,4,11,12,13,20,23">
+  <div class="label">03 · Tracer bullet</div>
+  <div class="slice-head"><h2>Route relevant builds through the Design→Spec gate</h2><p class="slice-summary">Integrate the approved standalone workflow without adding a fifth pipeline boundary or mixing design exploration into specification synthesis.</p></div>
+  <div class="chips"><span class="chip afk">Can run unattended · AFK</span><span class="chip">Status · Complete</span><span class="chip">Blocked by · S1</span></div>
+  <div class="slice-grid">
+    <div>
+      <h3>What to build</h3>
+      <p>Make Build determine relevance from grilled scope and inspected code, create the Feature directory when a mockup is needed, and load the mockup workflow before Spec. Keep post-grill chat confirmation for non-UI work and use mockup approval for relevant UI.</p>
+      <h3>Acceptance criteria</h3>
+      <ol class="criteria">
+        <li data-criterion-id="S2-C1" data-status="complete"><span class="status"></span>Build loads the mockup skill directly and asks the user about relevance only when scope and code leave the classification ambiguous.</li>
+        <li data-criterion-id="S2-C2" data-status="complete"><span class="status"></span>Relevant UI proceeds from grilling into mockup review, and explicit mockup approval clears the Design→Spec gate and starts Spec without another confirmation.</li>
+        <li data-criterion-id="S2-C3" data-status="complete"><span class="status"></span>Work without relevant UI retains post-grill chat confirmation as the same first approval boundary.</li>
+        <li data-criterion-id="S2-C4" data-status="complete"><span class="status"></span>The pipeline still declares and enforces exactly four approval gates.</li>
+        <li data-criterion-id="S2-C5" data-status="complete"><span class="status"></span>Standalone Spec detects a missing relevant mockup, invokes the prerequisite workflow, then summarizes and links the approved design without duplicating it.</li>
+        <li data-criterion-id="S2-C6" data-status="complete"><span class="status"></span>Material UI feedback returns to the mockup, synchronizes the Spec, and requires renewed Spec approval when prior approval is invalidated.</li>
+        <li data-criterion-id="S2-C7" data-status="complete"><span class="status"></span>Shared pipeline guidance, Build and Spec guides, ubiquitous language, and content-contract checks describe both gate branches consistently.</li>
+      </ol>
+    </div>
+    <dl class="meta">
+      <div><dt>Stories</dt><dd>1–4, 11–13, 20, 23</dd></div>
+      <div><dt>Test surface</dt><dd>Direct public Build and Spec workflow contracts.</dd></div>
+      <div><dt>Complete when</dt><dd>Both UI and non-UI builds cross one Design→Spec boundary through the correct signal.</dd></div>
+    </dl>
+  </div>
+</section>
+<section class="slice" id="slice-3" data-slice-id="S3" data-status="complete" data-mode="AFK" data-dependencies="S1,S2" data-stories="14,15,16,17,18,19,23">
+  <div class="label">04 · Tracer bullet</div>
+  <div class="slice-head"><h2>Carry approved visual intent through delivery</h2><p class="slice-summary">Make every downstream phase consume the mockup when present and distinguish material design drift from harmless decorative differences.</p></div>
+  <div class="chips"><span class="chip afk">Can run unattended · AFK</span><span class="chip">Status · Complete</span><span class="chip">Blocked by · S1, S2</span></div>
+  <div class="slice-grid">
+    <div>
+      <h3>What to build</h3>
+      <p>Thread the approved mockup into task design, both implementation modes, and build-mode Review change. Preserve approved design intent, require focused evidence for conformance, and fail visibly when the available environment cannot substantiate a material UI claim.</p>
+      <h3>Acceptance criteria</h3>
+      <ol class="criteria">
+        <li data-criterion-id="S3-C1" data-status="complete"><span class="status"></span>Tasks read the mockup when present and carry its authoritative behavior, hierarchy, states, responsive intent, and accessibility decisions into UI acceptance criteria and test surfaces.</li>
+        <li data-criterion-id="S3-C2" data-status="complete"><span class="status"></span>Task feedback that materially redesigns UI returns upstream to synchronized mockup and Spec review instead of inventing a new interface.</li>
+        <li data-criterion-id="S3-C3" data-status="complete"><span class="status"></span>Code and coach read the approved mockup with the Spec and Tasks while retaining their existing implementation ownership and TDD discipline.</li>
+        <li data-criterion-id="S3-C4" data-status="complete"><span class="status"></span>Build passes the mockup to Review change as Authoritative intent when present.</li>
+        <li data-criterion-id="S3-C5" data-status="complete"><span class="status"></span>Review change uses the smallest available behavior tests, browser checks, rendered screenshots, or documented manual checks and reports material drift rather than pixel differences.</li>
+        <li data-criterion-id="S3-C6" data-status="complete"><span class="status"></span>Insufficient UI evidence produces an ask-user Finding instead of an unsupported conformance claim.</li>
+        <li data-criterion-id="S3-C7" data-status="complete"><span class="status"></span>Cross-skill content tests fail if any downstream consumer drops the approved mockup or its synchronization rule.</li>
+      </ol>
+    </div>
+    <dl class="meta">
+      <div><dt>Stories</dt><dd>14–19, 23</dd></div>
+      <div><dt>Test surface</dt><dd>Cross-skill Authoritative-intent contract from Tasks through Review change.</dd></div>
+      <div><dt>Complete when</dt><dd>A reviewed UI change reaches final validation without losing or overstating its approved visual intent.</dd></div>
+    </dl>
+  </div>
+</section>
+<section class="slice" id="slice-4" data-slice-id="S4" data-status="complete" data-mode="AFK" data-dependencies="S1" data-stories="5,6,7,14,15,21,22,23">
+  <div class="label">05 · Tracer bullet</div>
+  <div class="slice-head"><h2>Keep prototypes focused while composing mockups</h2><p class="slice-summary">Clarify the boundary between a canonical UI mockup and throwaway runnable code, then order them from the question the prototype must answer.</p></div>
+  <div class="chips"><span class="chip afk">Can run unattended · AFK</span><span class="chip">Status · Complete</span><span class="chip">Blocked by · S1</span></div>
+  <div class="slice-grid">
+    <div>
+      <h3>What to build</h3>
+      <p>Update Prototype so it can consume an approved mockup when interface design is central, defer optional visual work when UI only presents another experiment, and skip mockup entirely when no design question exists.</p>
+      <h3>Acceptance criteria</h3>
+      <ol class="criteria">
+        <li data-criterion-id="S4-C1" data-status="complete"><span class="status"></span>A prototype invokes mockup first when end-user interface design is the subject or an imperative prerequisite.</li>
+        <li data-criterion-id="S4-C2" data-status="complete"><span class="status"></span>A prototype that uses UI only to explore data, iterate through manual processing, or expose state answers its primary question first and leaves optional mockup work until last.</li>
+        <li data-criterion-id="S4-C3" data-status="complete"><span class="status"></span>A prototype without a UI design question skips mockup.</li>
+        <li data-criterion-id="S4-C4" data-status="complete"><span class="status"></span>Runnable UI prototypes remain grounded in the host application when integration, real data density, or state behavior cannot be judged in standalone HTML.</li>
+        <li data-criterion-id="S4-C5" data-status="complete"><span class="status"></span>Prototype and mockup code remain non-production, and neither workflow silently promotes throwaway code.</li>
+        <li data-criterion-id="S4-C6" data-status="complete"><span class="status"></span>The Prototype guide, public description, context files, and routing tests use the same boundary and ordering rules.</li>
+      </ol>
+    </div>
+    <dl class="meta">
+      <div><dt>Stories</dt><dd>5–7, 14–15, 21–23</dd></div>
+      <div><dt>Test surface</dt><dd>Direct public Prototype routing contract.</dd></div>
+      <div><dt>Complete when</dt><dd>Prototype composition selects first, last, or skip behavior from the experiment's actual question.</dd></div>
+    </dl>
+  </div>
+</section>
+<section id="verification-summary" data-verification-owner="fact-checker">
+  <div class="label">06 · Verification summary</div>
+  <h2>Cold-context fact-check</h2>
+  <div class="verification-card">
+    <p><strong>143 factual claim blocks checked across both canonical artifacts:</strong> 143 confirmed, 0 corrected, and 0 unverifiable.</p>
+    <p><strong>Corrections:</strong> None. Names, paths, workflow behavior, the four-gate count, task dependencies, and completion metadata match the current source and Git history from branch point <code>1ae4dcb300f9d2f19624685a4fa3c808be8a39bf</code>.</p>
+    <p><strong>Evidence:</strong> The relevant content and install lanes passed, as did the nine focused planted-regression cases. The complete gate also ran; six Firefox-based tests could not start because Firefox did not report its BiDi endpoint.</p>
+  </div>
+</section>
+</main>
+<footer>Canonical task artifact · Conditional UI Mockups · 4 AFK / 0 HITL · source: specs.html</footer>
+</div>
+</body>
+</html>

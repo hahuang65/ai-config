@@ -92,7 +92,7 @@ code { font-family: var(--font-mono); font-size: 0.85em; background: var(--accen
 
 <div class="header">
   <h1><span>/</span>coach</h1>
-  <p class="subtitle">Vertical-slice TDD where <strong>the user writes the code</strong>. AI writes ONE failing test, waits, verifies, writes the next. No batched tests, no AI-authored implementation during the coaching loop.</p>
+  <p class="subtitle">Vertical-slice TDD where <strong>the user writes the code</strong>. AI reads approved <code>mockups.html</code> when present as Authoritative intent, writes ONE failing test, waits, verifies, then writes the next. No batched tests and no AI-authored implementation during the coaching loop.</p>
 </div>
 
 <div class="section">
@@ -196,6 +196,9 @@ code { font-family: var(--font-mono); font-size: 0.85em; background: var(--accen
       <tr><td>2f. Mark complete</td><td>AI</td><td>Set visible slice and criterion status plus <code>data-status</code> to <code>complete</code> in canonical <code>tasks.html</code></td></tr>
     </tbody>
   </table>
+  <div class="callout warn" style="margin-top: 10px;">
+    <strong>Material UI redesign:</strong> stop the affected slice, update <code>mockups.html</code> and review it through <code>review-artifact</code>, synchronize <code>specs.html</code> and <code>tasks.html</code>, renew invalidated approvals, then resume coaching the slice with source implementation still owned by the user.
+  </div>
 </div>
 
 <div class="section">

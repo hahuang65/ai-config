@@ -15,7 +15,7 @@ Resolve it from `$ARGUMENTS` (a path or slug), or with no argument find the most
 - The user has explicitly approved the tasks (do not assume approval).
 - The applicable context files and relevant ADRs have been read.
 
-See [../shared/references/build-pipeline.md](../shared/references/build-pipeline.md) for file conventions and visual-sync rules. See [../shared/references/testable-interfaces.md](../shared/references/testable-interfaces.md) for how spec Testing Decisions and task Test surfaces determine where tests attach.
+See [../shared/references/build-pipeline.md](../shared/references/build-pipeline.md) for file conventions and canonical HTML synchronization rules. See [../shared/references/testable-interfaces.md](../shared/references/testable-interfaces.md) for how spec Testing Decisions and task Test surfaces determine where tests attach.
 
 ## Holding the line — yielding to the user IS the deliverable
 
@@ -59,7 +59,7 @@ For each acceptance criterion:
 
 ## Process
 
-1. **Read context** — canonical `tasks.html`, its linked `specs.html`, applicable context files, and ADRs.
+1. **Read context** — canonical `tasks.html`, its linked `specs.html`, approved `mockups.html` when present as Authoritative intent, applicable context files, and ADRs.
 Announce the plan: one slice at a time, one test at a time; confirm Slice 1's interface before writing any test.
 
 2. **For each slice (dependency order):**
@@ -73,6 +73,13 @@ Announce the plan: one slice at a time, one test at a time; confirm Slice 1's in
 3. **Verification loop** — after all slices, run type check, lint, full test suite, and build per [../shared/references/tooling.md](../shared/references/tooling.md). Guide the user through any fixes until all pass.
 
 4. **Post-implementation hygiene** — run the `refactorer` in hygiene mode through [../shared/references/implementation-hygiene.md](../shared/references/implementation-hygiene.md). Apply grep-verified SAFE cleanup directly and surface CAREFUL/RISKY candidates for the user to decide. Rerun full verification after any edit. Final adversarial validation belongs to Review change, where coached ownership of source and tests still applies.
+
+## Material UI Synchronization
+
+Stop the affected slice when implementation feedback or a requested correction materially redesigns the approved UI.
+Update canonical `mockups.html` and review the same artifact through `review-artifact` until it receives explicit approval, then synchronize `specs.html` and `tasks.html` with the approved design.
+Renew each approval invalidated by the changed intent, including Spec or Tasks approval when its approved content changes.
+Resume coaching the affected slice only after the canonical artifacts and approvals are synchronized; the user remains the source-code implementer.
 
 ## Completion
 

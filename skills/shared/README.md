@@ -10,8 +10,8 @@ Skills import these by relative path, e.g. from `skills/spec/SKILL.md`:
 
 | File | Imported by |
 |------|-------------|
-| `references/build-pipeline.md` | build, grill, spec, todo, code, coach |
-| `references/review-artifact.md` | build, spec, todo, review-code, review-artifact |
+| `references/build-pipeline.md` | build, grill, mockup, spec, todo, code, coach |
+| `references/review-artifact.md` | build, mockup, spec, todo, review-code, review-artifact |
 | `references/tdd-protocol.md` | code, coach |
 | `references/testable-interfaces.md` | build, spec, todo, code, coach |
 | `references/tooling.md` | code, coach, refactor |

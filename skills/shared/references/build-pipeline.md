@@ -1,13 +1,13 @@
 # Build Pipeline Protocol
 
-Shared reference for the `/build` pipeline skills (`build`, `grill`, `spec`, `todo`, `code`, `coach`, `review-change`, `review-artifact`).
+Shared reference for the `/build` pipeline skills (`build`, `grill`, `mockup`, `spec`, `todo`, `code`, `coach`, `review-change`, `review-artifact`).
 It defines the approval gates, file conventions, session management, and canonical HTML synchronization rules they obey.
 
 ## Approval Gates
 
 The pipeline has exactly **four** approval gates. These are the only points where you wait for user confirmation:
 
-1. **Grill → Spec** — after grilling invokes `model-domain` to update the ubiquitous language in `CONTEXT.md` and qualifying decisions in `docs/adr/`
+1. **Design→Spec** — after grilling invokes `model-domain`, explicit mockup approval clears the gate when relevant UI requires canonical `mockups.html`; otherwise post-grill chat confirmation clears it
 2. **Spec → Tasks** — after the canonical `specs.html` receives explicit approval through `review-artifact` or its chat fallback
 3. **Tasks → Implement** — after the canonical `tasks.html` receives explicit approval through the same workflow
 4. **Review → Done** — after all slices are complete and verified, implementation flows gate-less into Phase 5 Review change; its report is where the user explicitly disposes every `ask-user` Finding and approves as-is or selects repairs
@@ -33,6 +33,7 @@ These outlive any single feature and should be committed.
 
 ```
 docs/features/<YYYYMMDD-HHMM>-<slug>/
+  mockups.html        # Conditional canonical UI design and Authoritative intent
   specs.html          # Phase 2 canonical review artifact and build intent
   tasks.html          # Phase 3 canonical review artifact and completion state
 ```
@@ -46,7 +47,9 @@ To create the feature directory:
 2. Get the current timestamp: `date +%Y%m%d-%H%M`
 3. Create `docs/features/<timestamp>-<slug>/`
 
-The directory is created once at the start of Phase 2 (the first phase that writes feature-specific artifacts) and reused across Phases 2–5. When sub-skills are invoked, pass the directory path so they write into it.
+For relevant UI, create the directory after grilling and before invoking `mockup`; explicit mockup approval then starts `spec` without another confirmation.
+For work without relevant UI, create it after post-grill chat confirmation at the start of Phase 2.
+Reuse the directory through all later phases and pass it to each invoked skill.
 
 ## Testable Interface Thread
 
@@ -63,11 +66,12 @@ They and `docs/adr/` are the durable spine that successive `/build` runs sharpen
 
 ## Review Artifact Sync
 
-`specs.html` and `tasks.html` are canonical semantic HTML, not companions to another source.
+`mockups.html` when present, `specs.html`, and `tasks.html` are canonical semantic HTML, not companions to another source.
 Generate each once, open it through the [review artifact protocol](review-artifact.md), and update the same file after every feedback batch so the browser live-reloads the current artifact.
-Later phases read those HTML files directly and update visible semantic metadata such as task completion status.
+Later phases read those HTML files directly; implementation updates visible task-completion metadata in `tasks.html`.
 
-After implementation, Review change cold-fact-checks both canonical artifacts against final code and Git history, applies factual corrections in place, and confirms that a second clean pass is idempotent.
+After implementation, Review change validates approved mockup intent with focused UI evidence and reports material drift without rewriting the mockup to match implementation.
+It cold-fact-checks `specs.html` and `tasks.html` against final code and Git history, applies factual corrections in place, and confirms that a second clean pass is idempotent.
 It does not generate an automatic `diff-review.html`; `/visualize-diff` remains available standalone.
 The disposable Review change report lives in the operating-system temp directory and is opened through `review-artifact` for the final decision.
 

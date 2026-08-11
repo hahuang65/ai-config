@@ -62,6 +62,8 @@ body { font-family: var(--font-body); background-color: var(--bg); background-im
 .callout strong { color: var(--gold); font-family: var(--font-mono); }
 .callout.warn { border-color: var(--must); }
 .callout.warn strong { color: var(--must); }
+.callout ol { margin-top: 10px; padding-left: 1.4rem; }
+.callout ol li { margin: 6px 0; }
 table { width: 100%; border-collapse: collapse; font-size: 0.85rem; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
 thead { background: var(--surface-recessed); }
 th, td { padding: 10px 14px; text-align: left; border-bottom: 1px solid var(--border); vertical-align: top; }
@@ -85,9 +87,9 @@ code { font-family: var(--font-mono); font-size: 0.85em; background: var(--accen
 
 <div class="section">
   <div class="section-title"><span class="num">01</span>Place in the Pipeline</div>
-  <p style="font-size: 0.95rem; margin-bottom: 16px;">Phase 3 of <span class="cmd-tag">/build</span>. Inputs: canonical <code>specs.html</code>, applicable context files (through <code>CONTEXT-MAP.md</code> when present), and ADRs. Output: canonical <code>tasks.html</code>.</p>
+  <p style="font-size: 0.95rem; margin-bottom: 16px;">Phase 3 of <span class="cmd-tag">/build</span>. Inputs: approved <code>mockups.html</code> when present, canonical <code>specs.html</code>, applicable context files (through <code>CONTEXT-MAP.md</code> when present), and ADRs. Output: canonical <code>tasks.html</code>.</p>
   <div class="pre">/build "feature"
-  ├── Phase 1: /grill
+  ├── Phase 1: /grill → conditional /mockup
   ├── Phase 2: /spec
   ├── Phase 3: /todo         ← YOU ARE HERE
   └── Phase 4: /code (or /coach)</div>
@@ -152,7 +154,7 @@ code { font-family: var(--font-mono); font-size: 0.85em; background: var(--accen
   <table>
     <thead><tr><th>Step</th><th>Action</th></tr></thead>
     <tbody>
-      <tr><td>1. Gather context</td><td>Read canonical <code>specs.html</code>, the applicable context files, and relevant ADRs. Explore code if not yet done.</td></tr>
+      <tr><td>1. Gather context</td><td>Read canonical <code>specs.html</code>, approved <code>mockups.html</code> when present, the applicable context files, and relevant ADRs. Carry authoritative UI decisions into acceptance criteria and test surfaces.</td></tr>
       <tr><td>2. Draft slices</td><td>Vertical only. Each slice cuts through every layer. Carry forward the spec's public-interface test surface. Mark HITL/AFK. Order by dependency.</td></tr>
       <tr><td>3. Write <code>tasks.html</code></td><td>Use <code>&lt;feature title&gt; - Tasks</code> as the browser-tab title. Use the ubiquitous language from the applicable context files for visible content and semantic slice containers with stable identity, status, dependency, mode, story, test-surface, and acceptance-criterion metadata. Show “can run unattended” / “needs you present” as the main labels and AFK/HITL as secondary metadata.</td></tr>
       <tr><td>4. Review</td><td>Open through <span class="cmd-tag">review-artifact</span> as an approval review, which starts in Annotate mode. Ask about granularity, dependencies, HITL/AFK, and coverage.</td></tr>
@@ -160,6 +162,15 @@ code { font-family: var(--font-mono); font-size: 0.85em; background: var(--accen
       <tr><td>6. Finalize</td><td>Explicit approval finalizes the artifact; report counts and advance to implementation.</td></tr>
     </tbody>
   </table>
+  <div class="callout warn">
+    <strong>Material UI redesign return path</strong>
+    <ol>
+      <li>When Task feedback materially redesigns UI, pause the current Tasks approval review.</li>
+      <li>Run the changed <code>mockups.html</code> through <code>mockup</code> and <code>review-artifact</code> until explicit approval.</li>
+      <li>Then synchronize <code>specs.html</code> and <code>tasks.html</code>, renew the invalidated Spec approval, and renew the invalidated Tasks approval.</li>
+      <li>Continue to implementation only after both approvals are explicitly renewed.</li>
+    </ol>
+  </div>
 </div>
 
 <div class="section">

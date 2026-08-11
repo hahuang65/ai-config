@@ -23,6 +23,7 @@ Fetch a referenced issue body via `gh issue view` and treat it as the source.
 ### Step 1: Gather context
 
 Read canonical `specs.html` thoroughly (or the GitHub issue body if that was passed), the applicable context files, and relevant ADRs.
+Read approved `mockups.html` when present as Authoritative intent, and carry its information hierarchy, interaction behavior, important states, responsive intent, and accessibility decisions into UI acceptance criteria and Test surfaces.
 If you have not explored the relevant code areas yet, do so now; titles and descriptions should be grounded in real modules.
 
 ### Step 2: Draft vertical slices
@@ -52,6 +53,13 @@ Do not create `tasks.md` or a hidden duplicate model.
 
 Load `review-artifact` and review `tasks.html` as an approval review through [the shared protocol](../shared/references/review-artifact.md).
 Ask the user to check granularity, dependency relationships, HITL/AFK markers, and uncovered spec stories.
+If Task feedback materially redesigns UI, use this return path:
+
+1. Pause the current Tasks approval review.
+2. Run the changed `mockups.html` through [mockup](../mockup/SKILL.md) and its `review-artifact` loop until explicit approval.
+3. Then synchronize `specs.html` and `tasks.html` with the approved mockup, renew the invalidated Spec approval, and renew the invalidated Tasks approval.
+4. Continue to implementation only after both approvals are explicitly renewed.
+
 After each feedback batch, update the same HTML and resume polling with an agent reply.
 On explicit browser approval or chat-fallback confirmation, report the slice count and HITL/AFK split, then advance to implementation:
 

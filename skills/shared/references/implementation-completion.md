@@ -14,7 +14,7 @@ Report what was accomplished this session:
 
 ## What happens next
 
-- **Inside `/build`:** proceed straight to Phase 5 — `review-change` scoped to only the feature change, with canonical `specs.html` and `tasks.html` as Authoritative intent, the implementation mode for repair ownership, and the exact final verification commands, scopes, and outcomes as prior broad evidence that it records without rerunning. No gate sits between implementation and Review change; its report carries the final approve-as-is or fix-selected decision.
+- **Inside `/build`:** proceed straight to Phase 5 — `review-change` scoped to only the feature change, with approved `mockups.html` when present plus canonical `specs.html` and `tasks.html` as Authoritative intent, the implementation mode for repair ownership, and the exact final verification commands, scopes, and outcomes as prior broad evidence that it records without rerunning. No gate sits between implementation and Review change; its report carries the final approve-as-is or fix-selected decision.
 - **Standalone `/code`:** after reporting, add these pointers:
 
 > If you notice structural issues now that the code is done:

@@ -9,7 +9,7 @@ A tiny interactive terminal app that lets the user drive a state model by hand. 
 - "I want to feel out what the API should look like before writing it."
 - Anything where the user wants to **press buttons and watch state change**.
 
-If the question is "what should this look like" — wrong branch. Use [ui.md](ui.md).
+For a visual-only design question such as "what should this look like," route directly to the [`mockup`](../../mockup/SKILL.md) skill instead of building a runnable UI prototype.
 
 ## Process
 
@@ -25,7 +25,7 @@ Match the project's existing conventions for tooling — don't add a new package
 
 ### 3. Isolate the Logic in a Portable Module
 
-Put the actual logic — the bit that's answering the question — behind a small, pure interface that could be lifted out and dropped into the real codebase later. The TUI around it is throwaway; the logic module shouldn't be.
+Put the actual logic — the bit that answers the question — behind a small, pure interface that can be evaluated independently. The TUI around it is throwaway; validated logic can later be rewritten or absorbed under production constraints and tests.
 
 The right shape depends on the question:
 
@@ -36,7 +36,7 @@ The right shape depends on the question:
 
 Pick whichever shape best fits the question being asked, *not* whichever is easiest to wire to a TUI. Keep it pure: no I/O, no terminal code, no `console.log` for control flow. The TUI imports it and calls into it; nothing flows the other direction.
 
-This is what makes the prototype useful past its own lifetime. When the question's been answered, the validated reducer / machine / function set can be lifted into the real module — the TUI shell gets deleted.
+This is what makes the prototype useful past its own lifetime. When the question is answered, delete the TUI shell and carry only validated logic into a production module with normal tests and error handling.
 
 ### 4. Build the Smallest TUI That Exposes the State
 
@@ -76,4 +76,4 @@ When the prototype has done its job, the answer to the question is the only thin
 - **Don't wire it to the real database.** Use an in-memory store unless the question is specifically about persistence.
 - **Don't generalise.** No "what if we wanted to support X later." The prototype answers one question.
 - **Don't blur the logic and the TUI together.** If the reducer / state machine references `console.log`, prompts, or terminal escape codes, it's no longer portable. Keep the TUI as a thin shell over a pure module.
-- **Don't ship the TUI shell into production.** The shell is optimised for being driven by hand from a terminal. The logic module behind it is the bit worth keeping.
+- **Don't ship the TUI shell into production.** The shell is optimized for manual terminal use. Only validated logic is eligible to be rewritten or absorbed under production constraints and tests.

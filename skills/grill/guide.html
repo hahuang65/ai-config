@@ -76,9 +76,10 @@ code { font-family: var(--font-mono); font-size: 0.85em; background: var(--accen
 
 <div class="section">
   <div class="section-title"><span class="num">01</span>Place in the Pipeline</div>
-  <p style="font-size: 0.95rem; margin-bottom: 16px;">Phase 1 of <span class="cmd-tag">/build</span>. The grilling session is the design phase. Phase 2 (<span class="cmd-tag">/spec</span>) just transcribes its outcome — it does NOT re-interview.</p>
+  <p style="font-size: 0.95rem; margin-bottom: 16px;">Phase 1 of <span class="cmd-tag">/build</span>. Grilling resolves product and domain decisions. Relevant end-user UI then runs through <span class="cmd-tag">/mockup</span> before Phase 2; <span class="cmd-tag">/spec</span> transcribes the settled design intent and does not re-interview.</p>
   <div class="pre">/build "feature"
   ├── Phase 1: /grill        ← YOU ARE HERE
+  │             /mockup       conditional for relevant UI
   ├── Phase 2: /spec
   ├── Phase 3: /todo
   └── Phase 4: /code (or /coach)</div>
@@ -176,7 +177,7 @@ code { font-family: var(--font-mono); font-size: 0.85em; background: var(--accen
     <li style="padding: 6px 0 6px 22px; position: relative;"><span style="position: absolute; left: 0; color: var(--gold); font-weight: 700;">→</span> The user is satisfied with the shared understanding</li>
   </ul>
   <div class="callout">
-    <strong>Then:</strong> tell the user what changed (terms added, ADRs created), say <em>"say 'draft the spec' when ready"</em>, and <span class="must-tag">STOP</span>. The orchestrator does not advance autonomously.
+    <strong>Then:</strong> inside <code>/build</code>, return to the orchestrator for the mockup relevance decision. Relevant UI waits for explicit mockup approval; otherwise post-grill chat confirmation clears Design→Spec. Standalone grilling still reports what changed and waits for confirmation before drafting the Spec.
   </div>
 </div>
 

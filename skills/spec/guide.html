@@ -75,9 +75,9 @@ code { font-family: var(--font-mono); font-size: 0.85em; background: var(--accen
 
 <div class="section">
   <div class="section-title"><span class="num">01</span>Place in the Pipeline</div>
-  <p style="font-size: 0.95rem; margin-bottom: 16px;">Phase 2 of <span class="cmd-tag">/build</span>. Inputs: applicable context files, ADRs, and prior conversation. Output: canonical <code>specs.html</code>.</p>
+  <p style="font-size: 0.95rem; margin-bottom: 16px;">Phase 2 of <span class="cmd-tag">/build</span>. Inputs: applicable context files, ADRs, prior conversation, and approved <code>mockups.html</code> when relevant. Output: canonical <code>specs.html</code>.</p>
   <div class="pre">/build "feature"
-  ├── Phase 1: /grill
+  ├── Phase 1: /grill → conditional /mockup
   ├── Phase 2: /spec          ← YOU ARE HERE
   ├── Phase 3: /todo
   └── Phase 4: /code (or /coach)</div>
@@ -86,10 +86,11 @@ code { font-family: var(--font-mono); font-size: 0.85em; background: var(--accen
 <div class="section">
   <div class="section-title"><span class="num">02</span>Synthesize, Don't Re-Interview</div>
   <div class="callout warn">
-    <strong>Critical:</strong> grilling was the design phase. <span class="cmd-tag">/spec</span> transcribes its outcome — it does <em>NOT</em> re-interview the user. If essential information is genuinely missing, ask one targeted question. But don't re-run the grill session.
+    <strong>Critical:</strong> grilling and any approved mockup settled the design intent. <span class="cmd-tag">/spec</span> transcribes their outcomes — it does <em>NOT</em> re-interview the user. If essential information is genuinely missing, ask one targeted question. But don't re-run the grill session.
   </div>
   <p style="font-size: 0.9rem; color: var(--text-dim); margin-top: 10px;">The one micro-checkpoint that <em>is</em> in this phase: after sketching the major modules, propose their test surfaces yourself and ask the user only to correct module boundaries or public-interface seams. Don't ask which modules need tests — deep modules answer that.</p>
   <p style="font-size: 0.9rem; color: var(--text-dim); margin-top: 10px;">Domain consultants: when the feature touches REST endpoints, the module sketch consults the <span class="agent-tag">api-designer</span> agent for the endpoint contract; when it adds or restructures UI, the <span class="agent-tag">frontend-architect</span> agent for component boundaries and state ownership. Skipped silently for features that touch neither.</p>
+  <p style="font-size: 0.9rem; color: var(--text-dim); margin-top: 10px;">Standalone use applies the mockup relevance test before synthesis. If relevant <code>mockups.html</code> is missing, run <span class="cmd-tag">/mockup</span> first. When present, summarize and link its selected design without duplicating the visual artifact.</p>
 </div>
 
 <div class="section">
@@ -148,6 +149,10 @@ code { font-family: var(--font-mono); font-size: 0.85em; background: var(--accen
         ↑                         ↓
         └──── edit same HTML ← feedback</div>
   <p style="font-size: 0.9rem; color: var(--text-dim); margin-top: 14px;">Address every note in the visible semantic HTML, save it, and let the existing browser session live-reload before polling again with an agent reply.</p>
+  <p style="font-size: 0.9rem; color: var(--text-dim); margin-top: 10px;"><strong>Material UI feedback return path:</strong> Pause the Spec approval review.</p>
+  <p style="font-size: 0.9rem; color: var(--text-dim); margin-top: 10px;">Update the changed <code>mockups.html</code>, then run it through <span class="cmd-tag">/mockup</span> and <span class="cmd-tag">review-artifact</span> until explicit approval.</p>
+  <p style="font-size: 0.9rem; color: var(--text-dim); margin-top: 10px;">Then synchronize <code>specs.html</code> with the approved mockup and resume the Spec approval review.</p>
+  <p style="font-size: 0.9rem; color: var(--text-dim); margin-top: 10px;">Continue to Tasks only after explicit Spec approval; renew any prior Spec approval invalidated by the UI change.</p>
 </div>
 
 <div class="section">

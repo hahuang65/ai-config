@@ -85,10 +85,10 @@ code { font-family: var(--font-mono); font-size: 0.85em; background: var(--accen
 
 <div class="header">
   <h1><span>/</span>prototype</h1>
-  <p class="subtitle">Throwaway code that answers <em>one question</em>. The question decides the shape: a TUI for logic/state, or several UI variants on a single route.</p>
+  <p class="subtitle">Throwaway code that answers <em>one question</em>. The question decides the shape: a TUI for logic/state, or a runnable UI grounded in the host application. A canonical mockup can settle end-user design before or after the experiment.</p>
   <div class="branches">
     <span class="branch-pill logic">Logic — TUI</span>
-    <span class="branch-pill ui">UI — Variants</span>
+    <span class="branch-pill ui">UI — Host app</span>
   </div>
 </div>
 
@@ -103,27 +103,30 @@ code { font-family: var(--font-mono); font-size: 0.85em; background: var(--accen
       <p class="q">"What should the API surface look like?"</p>
       <ul>
         <li>Isolate logic in a <strong>portable</strong> module — pure reducer, state machine, or pure functions</li>
-        <li>TUI is throwaway; logic module is liftable into production</li>
+        <li>TUI is throwaway; validated portable logic needs production tests before it is absorbed</li>
         <li>Re-render the full frame on every action (no scrollback)</li>
         <li>Keyboard shortcuts shown at bottom</li>
       </ul>
     </div>
     <div class="branch-card ui">
       <h3>UI Prototype</h3>
-      <p class="subhead">3 radically different variants on one route, switched via <code>?variant=A|B|C</code>.</p>
-      <p class="q">"What should this page look like?"</p>
-      <p class="q">"Try a few options for this dashboard."</p>
-      <p class="q">"Different layout for the settings screen."</p>
+      <p class="subhead">Runnable throwaway UI inside the host application when standalone HTML cannot answer the question.</p>
+      <p class="q">"Does the selected design work with real dashboard density?"</p>
+      <p class="q">"Can this interaction use the application's actual state flow?"</p>
+      <p class="q">"Does integration with this host page expose a design problem?"</p>
       <ul>
-        <li><strong>Default to sub-shape A</strong> — variants on an existing page (real data, real density)</li>
-        <li>Sub-shape B (new route) only when no existing page makes sense</li>
-        <li>Floating bottom switcher with left/right arrows and the variant label</li>
-        <li>Hidden in production builds; never ships</li>
+        <li><strong>Default to the existing host page</strong> — preserve real data, navigation, and density</li>
+        <li>Use a throwaway route only when no existing page makes sense</li>
+        <li>Use variants only when the integration question itself requires comparison</li>
+        <li>Hide all prototype controls in production builds; never ship them</li>
       </ul>
     </div>
   </div>
   <div class="callout">
-    <strong>Picking wrong wastes the whole prototype.</strong> Logic ≠ UI. Backend module → logic. Page or component → UI. If genuinely ambiguous and the user is unreachable, pick the surrounding-code default and state the assumption at the top of the prototype.
+    <strong>Picking wrong wastes the whole prototype.</strong> A visual-design question that standalone HTML can answer belongs to <code>/mockup</code>. Use a UI prototype only when the host application, integration, real data density, or state behavior is part of the question.
+  </div>
+  <div class="callout">
+    <strong>First / Last / Skip:</strong> run <code>/mockup</code> first when end-user design is the subject or an imperative prerequisite; leave it until last when UI only presents logic, data exploration, manual processing, or state; skip it when no UI design question exists.
   </div>
 </div>
 
@@ -136,8 +139,8 @@ code { font-family: var(--font-mono); font-size: 0.85em; background: var(--accen
       <tr><td><strong>One command to run</strong></td><td>Whatever the project's task runner supports — <code>pnpm</code>, <code>python</code>, <code>bun</code>, etc.</td></tr>
       <tr><td><strong>No persistence by default</strong></td><td>State lives in memory unless the question is specifically about persistence</td></tr>
       <tr><td><strong>Skip the polish</strong></td><td>No tests, no abstractions, no error handling beyond keeping it runnable</td></tr>
-      <tr><td><strong>Surface the state</strong></td><td>After every action or variant switch, the user can see what changed</td></tr>
-      <tr><td><strong>Delete or absorb when done</strong></td><td>The validated decision folds into the real code; the prototype shell goes away</td></tr>
+      <tr><td><strong>Surface the state</strong></td><td>After every action, and after every variant switch when variants exist, the user can see what changed</td></tr>
+      <tr><td><strong>Delete or absorb when done</strong></td><td>The shell goes away; validated portable logic is rewritten or absorbed under production constraints and tests</td></tr>
     </tbody>
   </table>
 </div>
@@ -145,7 +148,7 @@ code { font-family: var(--font-mono); font-size: 0.85em; background: var(--accen
 <div class="section">
   <div class="section-title"><span class="num">03</span>Place in the Pipeline</div>
   <div class="callout">
-    Prototyping lives <strong>outside</strong> the <span class="cmd-tag">/build</span> pipeline. It usually surfaces during a <span class="cmd-tag">/grill</span> session when a design question can't be resolved by talking it through. Pair with <span class="cmd-tag">/handoff</span> when the prototype needs its own focused session — hand off the question, build the prototype there, capture the answer back in the parent session.
+    Prototyping lives <strong>outside</strong> the <span class="cmd-tag">/build</span> pipeline. It usually surfaces when integration, real data density, or state behavior cannot be judged in <code>mockups.html</code> or conversation. Pair with <span class="cmd-tag">/handoff</span> when the prototype needs its own focused session, and let the prototype consume an approved mockup without promoting either artifact's throwaway code.
   </div>
 </div>
 

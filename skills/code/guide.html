@@ -109,7 +109,7 @@ code { font-family: var(--font-mono); font-size: 0.85em; background: var(--accen
 
 <div class="header">
   <h1><span>/</span>implement &amp; <span>/</span>coach</h1>
-  <p class="subtitle">Vertical-slice TDD execution of approved canonical <code>tasks.html</code>. One test, one implementation, repeat. Coach mode lets the user write the code; AI writes one test at a time. Inputs: <code>specs.html</code> + <code>tasks.html</code>.</p>
+  <p class="subtitle">Vertical-slice TDD execution of approved canonical <code>tasks.html</code>. One test, one implementation, repeat. Coach mode lets the user write the code; AI writes one test at a time. Inputs: approved <code>mockups.html</code> when present + <code>specs.html</code> + <code>tasks.html</code>.</p>
   <div class="cycle">
     <span class="cycle-step red">RED</span>
     <span class="cycle-arrow">→</span>
@@ -198,6 +198,9 @@ RED→GREEN: test3 → impl3
   </div>
   <div class="callout warn" style="margin-top: 10px;">
     <strong>Never queue tests in coach mode.</strong> Only the test you're currently solving exists. Don't preview the next one — the user should implement against the current test without anticipating.
+  </div>
+  <div class="callout warn" style="margin-top: 10px;">
+    <strong>Material UI redesign:</strong> stop the affected slice, update <code>mockups.html</code> and review it through <code>review-artifact</code>, synchronize <code>specs.html</code> and <code>tasks.html</code>, renew invalidated approvals, then resume the slice. Apply terse corrections immediately only when they do not materially redesign approved UI.
   </div>
 </div>
 

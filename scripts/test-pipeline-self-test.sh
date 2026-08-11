@@ -245,6 +245,47 @@ EOF
 }
 
 # ---------------------------------------------------------------------------
+# Self-test 5a: Broken fragment-bearing skill reference
+# ---------------------------------------------------------------------------
+
+test_broken_fragment_skill_reference_fails() {
+  local skill_dir
+  skill_dir="$(fixture_skill_dir "test-self-test-broken-fragment-reference")"
+  mkdir -p "$skill_dir/references"
+  cat >"$skill_dir/references/existing-reference.md" <<'EOF'
+# Existing Section
+
+<a id="explicit-section"></a>
+
+This reference contains a heading and an explicit HTML anchor.
+EOF
+  cat >"$skill_dir/SKILL.md" <<'EOF'
+---
+name: test-self-test-broken-fragment-reference
+description: A fixture skill with fragment-bearing references.
+---
+
+Read the [heading](references/existing-reference.md#existing-section) and
+[explicit anchor](references/existing-reference.md#explicit-section).
+EOF
+
+  if run_pipeline content cross-references; then
+    self_pass "fragment references: existing heading and HTML anchor resolve"
+  else
+    self_fail "fragment references: existing heading and HTML anchor should resolve"
+    return
+  fi
+
+  printf '%s\n' 'Read [missing details](references/existing-reference.md#missing-section).' \
+    >>"$skill_dir/SKILL.md"
+  if run_pipeline content cross-references; then
+    self_fail "broken fragment reference: test-pipeline.sh should exit non-zero"
+  else
+    self_pass "broken fragment reference: test-pipeline.sh correctly exits non-zero"
+  fi
+}
+
+# ---------------------------------------------------------------------------
 # Self-test 5b: a same-named command and skill fail the gate
 # ---------------------------------------------------------------------------
 
@@ -375,6 +416,7 @@ test_stale_pi_bundle_fails() {
   else
     self_pass "stale pi guard bundle: test-pipeline.sh correctly exits non-zero"
   fi
+  fixture_restore "$rel"
 }
 
 # ---------------------------------------------------------------------------
@@ -458,6 +500,7 @@ test_implement_coach_missing_holding_line_fails() {
   else
     self_pass "stripped coach holding-line section: test-pipeline.sh correctly exits non-zero"
   fi
+  fixture_restore "$rel"
 }
 
 # ---------------------------------------------------------------------------
@@ -482,10 +525,205 @@ test_build_missing_phase_loading_fails() {
   else
     self_pass "stripped build phase-loading section: test-pipeline.sh correctly exits non-zero"
   fi
+  fixture_restore "$rel"
 }
 
 # ---------------------------------------------------------------------------
-# Self-test 17: duplicate ADR identifiers
+# Self-test 17: mockup workflow loses its artifact contract and approval
+# ---------------------------------------------------------------------------
+
+test_mockup_contract_missing_fails() {
+  local rel="skills/mockup/SKILL.md"
+  fixture_replace "$rel"
+
+  grep -vE 'mockup contract|approval|approved' "$TMPDIR/$rel" > "$TMPDIR/$rel.tmp"
+  mv "$TMPDIR/$rel.tmp" "$TMPDIR/$rel"
+
+  if run_pipeline content mockup-workflow; then
+    self_fail "stripped mockup contract: test-pipeline.sh should exit non-zero"
+  else
+    self_pass "stripped mockup contract: test-pipeline.sh correctly exits non-zero"
+  fi
+  fixture_restore "$rel"
+}
+
+# ---------------------------------------------------------------------------
+# Self-test 18: mockup loses standalone target resolution
+# ---------------------------------------------------------------------------
+
+test_mockup_target_resolution_missing_fails() {
+  local rel="skills/mockup/SKILL.md"
+  fixture_replace "$rel"
+
+  grep -vE 'Otherwise, treat.*feature description' "$TMPDIR/$rel" > "$TMPDIR/$rel.tmp"
+  mv "$TMPDIR/$rel.tmp" "$TMPDIR/$rel"
+
+  if run_pipeline content mockup-workflow; then
+    self_fail "stripped mockup target resolution: test-pipeline.sh should exit non-zero"
+  else
+    self_pass "stripped mockup target resolution: test-pipeline.sh correctly exits non-zero"
+  fi
+  fixture_restore "$rel"
+}
+
+# ---------------------------------------------------------------------------
+# Planted self-test: mockup approval starts before alternatives settle
+# ---------------------------------------------------------------------------
+
+test_mockup_approval_order_fails() {
+  local rel="skills/mockup/SKILL.md" approval_line
+  fixture_replace "$rel"
+  approval_line="$(grep -E '^6[.] Only after' "$TMPDIR/$rel")"
+
+  awk -v approval_line="$approval_line" '
+    /^4[.] When unresolved alternatives/ { print approval_line }
+    /^6[.] Only after/ { next }
+    { print }
+  ' "$TMPDIR/$rel" > "$TMPDIR/$rel.tmp"
+  mv "$TMPDIR/$rel.tmp" "$TMPDIR/$rel"
+
+  if run_pipeline content mockup-workflow; then
+    self_fail "early mockup approval: test-pipeline.sh should exit non-zero"
+  else
+    self_pass "early mockup approval: test-pipeline.sh correctly exits non-zero"
+  fi
+  fixture_restore "$rel"
+}
+
+# ---------------------------------------------------------------------------
+# Self-test 19: prototype uses conjunctive mockup-first routing
+# ---------------------------------------------------------------------------
+
+test_prototype_mockup_routing_conjunctive_fails() {
+  local rel="skills/prototype/SKILL.md"
+  fixture_replace "$rel"
+
+  sed 's/prototype subject or visual design is an imperative prerequisite/prototype subject and visual design is an imperative prerequisite/' \
+    "$TMPDIR/$rel" > "$TMPDIR/$rel.tmp"
+  mv "$TMPDIR/$rel.tmp" "$TMPDIR/$rel"
+
+  if run_pipeline content prototype-mockup-routing; then
+    self_fail "conjunctive prototype mockup routing: test-pipeline.sh should exit non-zero"
+  else
+    self_pass "conjunctive prototype mockup routing: test-pipeline.sh correctly exits non-zero"
+  fi
+  fixture_restore "$rel"
+}
+
+# ---------------------------------------------------------------------------
+# Planted self-test: an implementation mode loses the material UI return path
+# ---------------------------------------------------------------------------
+
+test_implementation_mockup_sync_missing_fails() {
+  local rel="skills/code/SKILL.md"
+  fixture_replace "$rel"
+
+  if run_pipeline content mockup-intent-thread; then
+    self_pass "implementation mockup sync: clean selector exits 0"
+  else
+    self_fail "implementation mockup sync: clean selector should exit 0"
+    fixture_restore "$rel"
+    return
+  fi
+
+  awk '
+    /^## Material UI Synchronization/ { skip = 1 }
+    /^## Completion/ { skip = 0 }
+    !skip
+  ' "$TMPDIR/$rel" > "$TMPDIR/$rel.tmp"
+  mv "$TMPDIR/$rel.tmp" "$TMPDIR/$rel"
+
+  if run_pipeline content mockup-intent-thread; then
+    self_fail "stripped implementation mockup sync: test-pipeline.sh should exit non-zero"
+  else
+    self_pass "stripped implementation mockup sync: test-pipeline.sh correctly exits non-zero"
+  fi
+  fixture_restore "$rel"
+}
+
+# ---------------------------------------------------------------------------
+# Planted self-test: final Review change loses its material UI return path
+# ---------------------------------------------------------------------------
+
+test_review_change_ui_redesign_missing_fails() {
+  local rel="skills/review-change/references/build-mode.md"
+  fixture_replace "$rel"
+
+  if run_pipeline content review-change-ui-redesign; then
+    self_pass "Review change UI redesign: clean selector exits 0"
+  else
+    self_fail "Review change UI redesign: clean selector should exit 0"
+    fixture_restore "$rel"
+    return
+  fi
+
+  awk '
+    /^## Material UI redesign during final review/ { skip = 1 }
+    /^## Feature-artifact synchronization/ { skip = 0 }
+    !skip
+  ' "$TMPDIR/$rel" > "$TMPDIR/$rel.tmp"
+  mv "$TMPDIR/$rel.tmp" "$TMPDIR/$rel"
+
+  if run_pipeline content review-change-ui-redesign; then
+    self_fail "stripped Review change UI redesign: test-pipeline.sh should exit non-zero"
+  else
+    self_pass "stripped Review change UI redesign: test-pipeline.sh correctly exits non-zero"
+  fi
+  fixture_restore "$rel"
+}
+
+# ---------------------------------------------------------------------------
+# Planted self-test: Tasks omits changed-mockup review and approval
+# ---------------------------------------------------------------------------
+
+test_todo_redesign_approval_missing_fails() {
+  local rel="skills/todo/SKILL.md"
+  fixture_replace "$rel"
+
+  awk '
+    /^2[.] Run the changed .*review-artifact.*explicit approval[.]$/ {
+      print "2. Update the changed `mockups.html` without a review."
+      next
+    }
+    { print }
+  ' "$TMPDIR/$rel" > "$TMPDIR/$rel.tmp"
+  mv "$TMPDIR/$rel.tmp" "$TMPDIR/$rel"
+
+  if run_pipeline content todo-workflow; then
+    self_fail "Tasks mockup review omitted: test-pipeline.sh should exit non-zero"
+  else
+    self_pass "Tasks mockup review omitted: test-pipeline.sh correctly exits non-zero"
+  fi
+  fixture_restore "$rel"
+}
+
+# ---------------------------------------------------------------------------
+# Planted self-test: Spec omits changed-mockup review and approval
+# ---------------------------------------------------------------------------
+
+test_spec_redesign_approval_missing_fails() {
+  local rel="skills/spec/SKILL.md"
+  fixture_replace "$rel"
+
+  awk '
+    /^2[.] Update the changed .*review-artifact.*explicit approval[.]$/ {
+      print "2. Update the changed `mockups.html` without a review."
+      next
+    }
+    { print }
+  ' "$TMPDIR/$rel" > "$TMPDIR/$rel.tmp"
+  mv "$TMPDIR/$rel.tmp" "$TMPDIR/$rel"
+
+  if run_pipeline content spec-workflow; then
+    self_fail "Spec mockup review omitted: test-pipeline.sh should exit non-zero"
+  else
+    self_pass "Spec mockup review omitted: test-pipeline.sh correctly exits non-zero"
+  fi
+  fixture_restore "$rel"
+}
+
+# ---------------------------------------------------------------------------
+# Self-test 20: duplicate ADR identifiers
 # ---------------------------------------------------------------------------
 
 test_duplicate_adr_id_fails() {
@@ -610,11 +848,14 @@ test_cli_ergonomics_readme_attribution_drift_fails() {
 # ---------------------------------------------------------------------------
 
 run_planted_case() {
-  case "$1" in
+  local planted_case="$1"
+  remove_fixtures
+  case "$planted_case" in
     skill-missing-name) test_skill_missing_name_fails ;;
     agent-missing-tools) test_agent_missing_tools_fails ;;
     agent-unknown-tool) test_agent_unknown_tool_fails ;;
     broken-reference) test_broken_skill_reference_fails ;;
+    broken-fragment-reference) test_broken_fragment_skill_reference_fails ;;
     command-skill-overlap) test_command_skill_overlap_fails ;;
     agent-missing-rule) test_agent_missing_rule_fails ;;
     stale-stub) test_stale_stub_fails ;;
@@ -626,6 +867,14 @@ run_planted_case() {
     skill-missing-file) test_skill_dir_missing_skill_md_fails ;;
     coach-discipline) test_implement_coach_missing_holding_line_fails ;;
     build-phase-loading) test_build_missing_phase_loading_fails ;;
+    mockup-contract) test_mockup_contract_missing_fails ;;
+    mockup-target-resolution) test_mockup_target_resolution_missing_fails ;;
+    mockup-approval-order) test_mockup_approval_order_fails ;;
+    prototype-mockup-routing) test_prototype_mockup_routing_conjunctive_fails ;;
+    implementation-mockup-sync) test_implementation_mockup_sync_missing_fails ;;
+    review-change-ui-redesign) test_review_change_ui_redesign_missing_fails ;;
+    todo-redesign-approval) test_todo_redesign_approval_missing_fails ;;
+    spec-redesign-approval) test_spec_redesign_approval_missing_fails ;;
     duplicate-adr) test_duplicate_adr_id_fails ;;
     missing-context-files) test_context_consumer_missing_context_map_fails ;;
     missing-ubiquitous-language) test_context_consumer_missing_ubiquitous_language_fails ;;
@@ -633,17 +882,21 @@ run_planted_case() {
     cli-ergonomics-outcomes) test_cli_ergonomics_missing_outcome_fails ;;
     cli-ergonomics-readme-inventory) test_cli_ergonomics_readme_inventory_drift_fails ;;
     cli-ergonomics-readme-attribution) test_cli_ergonomics_readme_attribution_drift_fails ;;
-    *) printf 'unknown planted case %q\n' "$1" >&2; exit 2 ;;
+    *) printf 'unknown planted case %q\n' "$planted_case" >&2; exit 2 ;;
   esac
+  remove_fixtures
 }
 
 run_all_planted_cases() {
   local planted_case
   for planted_case in \
     skill-missing-name agent-missing-tools agent-unknown-tool broken-reference \
-    command-skill-overlap agent-missing-rule stale-stub forbidden-phrase \
+    broken-fragment-reference command-skill-overlap agent-missing-rule stale-stub forbidden-phrase \
     retired-rule-frontmatter stale-pi-bundle rule-missing-description bad-manifest \
-    skill-missing-file coach-discipline build-phase-loading duplicate-adr \
+    skill-missing-file coach-discipline build-phase-loading mockup-contract \
+    mockup-target-resolution mockup-approval-order prototype-mockup-routing \
+    implementation-mockup-sync review-change-ui-redesign todo-redesign-approval \
+    spec-redesign-approval duplicate-adr \
     missing-context-files missing-ubiquitous-language cli-ergonomics-routing \
     cli-ergonomics-outcomes cli-ergonomics-readme-inventory \
     cli-ergonomics-readme-attribution; do

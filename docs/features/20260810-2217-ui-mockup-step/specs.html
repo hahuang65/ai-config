@@ -1,0 +1,261 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Conditional UI Mockups - Spec</title>
+<style>
+:root {
+  color-scheme: light dark;
+  --paper: #f4efe4;
+  --paper-raised: #fffaf0;
+  --ink: #2c2924;
+  --muted: #746d62;
+  --line: #d8cdbc;
+  --sage: #426b5a;
+  --sage-soft: #dce8df;
+  --clay: #a6533f;
+  --clay-soft: #f0ddd5;
+  --gold: #926d25;
+  --shadow: 0 18px 50px rgba(63, 49, 34, .09);
+  --body: "Iowan Old Style", "Palatino Linotype", Georgia, serif;
+  --display: "Avenir Next", "Century Gothic", sans-serif;
+  --mono: "SFMono-Regular", Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --paper: #191b19;
+    --paper-raised: #222521;
+    --ink: #eee9de;
+    --muted: #b7afa2;
+    --line: #44483f;
+    --sage: #8fc3a9;
+    --sage-soft: #253a30;
+    --clay: #e4937e;
+    --clay-soft: #412d28;
+    --gold: #d6b66b;
+    --shadow: 0 18px 50px rgba(0, 0, 0, .2);
+  }
+}
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body {
+  margin: 0;
+  color: var(--ink);
+  background-color: var(--paper);
+  background-image: repeating-linear-gradient(0deg, transparent 0 31px, color-mix(in srgb, var(--line) 22%, transparent) 31px 32px);
+  font-family: var(--body);
+  font-size: 17px;
+  line-height: 1.68;
+  overflow-wrap: break-word;
+}
+a { color: var(--sage); text-underline-offset: 3px; }
+.shell { width: min(1120px, calc(100% - 32px)); margin: 28px auto 72px; }
+.hero {
+  position: relative;
+  overflow: hidden;
+  padding: clamp(34px, 7vw, 76px);
+  border: 1px solid var(--line);
+  border-radius: 3px 28px 3px 28px;
+  background: var(--paper-raised);
+  box-shadow: var(--shadow);
+}
+.hero::after {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto auto;
+  width: 31%;
+  height: 8px;
+  background: linear-gradient(90deg, var(--sage), var(--clay));
+}
+.kicker, .section-label, .tag {
+  font-family: var(--mono);
+  font-size: .72rem;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+}
+.kicker { color: var(--clay); font-weight: 700; }
+h1, h2, h3 { font-family: var(--display); line-height: 1.12; }
+h1 { max-width: 760px; margin: 12px 0 16px; font-size: clamp(2.4rem, 7vw, 5.3rem); letter-spacing: -.055em; }
+.lede { max-width: 700px; margin: 0; color: var(--muted); font-size: clamp(1.08rem, 2.2vw, 1.35rem); }
+.hero-meta { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 28px; }
+.tag { padding: 5px 9px; border: 1px solid var(--line); border-radius: 999px; color: var(--muted); background: var(--paper); }
+main { display: grid; gap: 22px; margin-top: 24px; }
+section { min-width: 0; padding: clamp(24px, 5vw, 48px); border: 1px solid var(--line); background: var(--paper-raised); }
+section:nth-child(odd) { border-radius: 3px 20px 3px 20px; }
+section:nth-child(even) { border-radius: 20px 3px 20px 3px; }
+.section-label { color: var(--sage); font-weight: 700; }
+h2 { margin: 8px 0 24px; font-size: clamp(1.6rem, 3.4vw, 2.35rem); letter-spacing: -.025em; }
+h3 { margin: 0 0 8px; font-size: 1.06rem; }
+p { max-width: 75ch; }
+.problem-solution { display: grid; grid-template-columns: .9fr 1.1fr; gap: 22px; }
+.problem-solution > * { min-width: 0; }
+.panel { padding: 22px; border-left: 4px solid var(--clay); background: var(--clay-soft); }
+.panel.solution { border-color: var(--sage); background: var(--sage-soft); }
+.panel p:last-child { margin-bottom: 0; }
+.flow { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 8px; margin: 28px 0 8px; }
+.flow-step { position: relative; min-width: 0; padding: 16px 12px; border: 1px solid var(--line); background: var(--paper); }
+.flow-step strong { display: block; font-family: var(--display); }
+.flow-step small { display: block; margin-top: 5px; color: var(--muted); line-height: 1.35; }
+.flow-step.design { border: 2px solid var(--sage); background: var(--sage-soft); }
+.flow-step.design::before { content: "conditional"; position: absolute; top: -12px; right: 8px; padding: 2px 6px; color: var(--paper-raised); background: var(--sage); font: .62rem var(--mono); text-transform: uppercase; }
+ol.stories { margin: 0; padding-left: 2.2em; columns: 2; column-gap: 44px; }
+ol.stories li { break-inside: avoid; margin: 0 0 14px; padding-left: 6px; }
+.decision-grid, .module-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+.decision, .module { min-width: 0; padding: 20px; border: 1px solid var(--line); background: var(--paper); }
+.decision:nth-child(3n + 1) { border-top: 4px solid var(--sage); }
+.decision:nth-child(3n + 2) { border-top: 4px solid var(--clay); }
+.decision:nth-child(3n) { border-top: 4px solid var(--gold); }
+.decision p, .module p { margin: 0; color: var(--muted); }
+.module .test { margin-top: 12px; padding-top: 12px; border-top: 1px dashed var(--line); color: var(--ink); font-size: .94rem; }
+.module .test strong { color: var(--sage); }
+.checks { margin: 0; padding-left: 2em; }
+.checks li { margin: 9px 0; }
+.callout { margin-top: 24px; padding: 18px 20px; border-left: 4px solid var(--gold); background: color-mix(in srgb, var(--gold) 10%, var(--paper-raised)); }
+.verification-card { padding: 18px 20px; border: 1px solid var(--line); background: var(--paper); color: var(--muted); }
+.verification-card p { margin: 0; }
+.verification-card p + p { margin-top: 8px; }
+.verification-card strong { color: var(--ink); }
+footer { padding: 24px 4px; color: var(--muted); font-family: var(--mono); font-size: .72rem; }
+@media (max-width: 780px) {
+  .problem-solution, .decision-grid, .module-grid { grid-template-columns: 1fr; }
+  .flow { grid-template-columns: 1fr; }
+  ol.stories { columns: 1; }
+  .shell { width: min(100% - 20px, 1120px); margin-top: 10px; }
+}
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+</style>
+</head>
+<body>
+<div class="shell">
+<header class="hero">
+  <div class="kicker">Build pipeline · proposed intent</div>
+  <h1>Conditional UI Mockups — Spec</h1>
+  <p class="lede">Material interface changes become visible and reviewable before prose freezes their design, while non-UI work keeps the current direct path to specification.</p>
+  <div class="hero-meta"><span class="tag">ADR-0030</span><span class="tag">Four approval gates</span><span class="tag">Canonical HTML</span><span class="tag">No pixel contract</span></div>
+</header>
+<main data-artifact-kind="spec" data-artifact-version="1">
+<section id="problem-solution">
+  <div class="section-label">01 · Intent</div>
+  <h2>Put visual judgment before specification</h2>
+  <div class="problem-solution">
+    <article class="panel">
+      <h3>Problem Statement</h3>
+      <p>The build pipeline can approve a detailed Spec without first showing the user what a material browser or terminal interface will look like or how its important states will behave.</p>
+      <p>Ad hoc prototypes and one-off HTML files do not give every relevant feature the same durable review path.</p>
+    </article>
+    <article class="panel solution">
+      <h3>Solution</h3>
+      <p>Add a standalone <strong>mockup</strong> workflow that creates canonical <strong>mockups.html</strong> after grilling and before the Spec when the agreed scope contains material UI design.</p>
+      <p>Review the artifact through the existing review artifact workflow, then use explicit approval to clear the Design→Spec gate and carry the selected design through tasks, implementation, and Review change.</p>
+    </article>
+  </div>
+  <div class="flow" aria-label="Updated build flow">
+    <div class="flow-step"><strong>Grill</strong><small>Resolve product and domain decisions.</small></div>
+    <div class="flow-step design"><strong>Mockup</strong><small>Run only for material end-user UI.</small></div>
+    <div class="flow-step"><strong>Spec</strong><small>Record the approved design intent.</small></div>
+    <div class="flow-step"><strong>Tasks + code</strong><small>Implement through the selected test seams.</small></div>
+    <div class="flow-step"><strong>Review change</strong><small>Report material drift with evidence.</small></div>
+  </div>
+</section>
+<section id="user-stories">
+  <div class="section-label">02 · User stories</div>
+  <h2>Observable outcomes</h2>
+  <ol class="stories">
+    <li>As a build user, I want material UI changes mocked up before the Spec, so that I can judge the interface before implementation intent is fixed.</li>
+    <li>As a build user, I want non-UI work to skip mockups, so that the pipeline does not add unnecessary review work.</li>
+    <li>As a build user, I want browser and terminal interfaces treated consistently, so that either kind of end-user surface receives design review.</li>
+    <li>As a build user, I want small copy edits, mechanical styling repairs, and internal changes excluded, so that the trigger remains proportional.</li>
+    <li>As a build user, I want one recommended interactive design by default, so that review begins from a clear proposal.</li>
+    <li>As a build user, I want alternatives only for a real unresolved design fork, so that variants add information rather than noise.</li>
+    <li>As a build user, I want alternatives to differ in structure, hierarchy, or primary action, so that each option represents a meaningful choice.</li>
+    <li>As a build user, I want realistic content and important states in the mockup, so that I can assess density, errors, loading, empty states, and interaction behavior.</li>
+    <li>As a build user, I want responsive and accessible behavior represented, so that the selected design does not assume one viewport or input method.</li>
+    <li>As a build user, I want to annotate the mockup and request revisions, so that exact elements and text can be corrected before approval.</li>
+    <li>As a build user, I want explicit mockup approval to continue directly to the Spec, so that there is one unambiguous Design→Spec signal.</li>
+    <li>As a build user, I want non-UI builds to retain post-grill chat confirmation, so that both paths share one approval boundary.</li>
+    <li>As a build user, I want the pipeline to retain exactly four approval gates, so that conditional mockups do not add another phase boundary.</li>
+    <li>As a build user, I want the selected design and rationale preserved, so that later phases understand why it won.</li>
+    <li>As a build user, I want rejected alternatives retained as decision context, so that later work does not reopen settled options without cause.</li>
+    <li>As an implementer, I want the approved mockup read with the Spec and Tasks, so that UI implementation follows the same Authoritative intent.</li>
+    <li>As an implementer, I want behavior and hierarchy to be binding while decorative details remain directional, so that implementation does not become a pixel-matching exercise.</li>
+    <li>As a reviewer, I want material UI drift substantiated with focused evidence, so that Review change does not claim conformance without support.</li>
+    <li>As a reviewer, I want insufficient visual evidence reported as an ask-user Finding, so that uncertainty remains visible.</li>
+    <li>As a standalone Spec user, I want a missing relevant mockup detected before synthesis, so that standalone use keeps the same design prerequisite.</li>
+    <li>As a prototype user, I want mockup timing based on the prototype question, so that presentation scaffolding does not block logic or data exploration.</li>
+    <li>As a prototype user, I want mockup first when end-user UI design is the subject or an imperative prerequisite, so that the runnable experiment starts from settled visual intent.</li>
+    <li>As a pipeline maintainer, I want guides, context files, and content gates updated together, so that both harnesses receive one consistent workflow.</li>
+  </ol>
+</section>
+<section id="implementation-decisions">
+  <div class="section-label">03 · Implementation decisions</div>
+  <h2>One conditional workflow, one intent thread</h2>
+  <div class="decision-grid">
+    <article class="decision"><h3>Standalone workflow</h3><p><strong>mockup</strong> is a reusable skill rather than behavior embedded in <strong>spec</strong>. Build conditionally orchestrates it, and standalone Spec checks the same prerequisite.</p></article>
+    <article class="decision"><h3>Relevance test</h3><p>Run for a new or materially changed end-user layout, interaction flow, information hierarchy, responsive behavior, or visual state. Ask only when code and grilled scope leave relevance ambiguous.</p></article>
+    <article class="decision"><h3>Canonical artifact</h3><p><strong>mockups.html</strong> is self-contained semantic HTML in the Feature directory. It shows affected surfaces, realistic states, responsive intent, accessibility behavior, and any true alternatives.</p></article>
+    <article class="decision"><h3>Review and gate</h3><p>Open the mockup as an approval review. For relevant UI, approval clears the Design→Spec gate; otherwise post-grill chat confirmation clears that same first boundary.</p></article>
+    <article class="decision"><h3>Selection record</h3><p>After feedback settles, the artifact visibly identifies the selected direction and rationale while preserving rejected alternatives as decision context.</p></article>
+    <article class="decision"><h3>Authority boundary</h3><p>Hierarchy, interaction, important states, responsive intent, and accessibility behavior are authoritative. Dimensions and decorative styling are directional unless explicitly marked as required.</p></article>
+    <article class="decision"><h3>Synchronization</h3><p>Spec, Tasks, implementation, and Review change read the mockup when present. A material UI change returns to the mockup; an already-approved Spec then needs renewed approval before tasks continue.</p></article>
+    <article class="decision"><h3>Validation evidence</h3><p>Review change uses the smallest available behavior tests, browser checks, rendered screenshots, or documented manual checks. Missing evidence becomes an ask-user Finding.</p></article>
+    <article class="decision"><h3>Prototype ordering</h3><p>Run mockup first only when end-user interface design is the prototype subject or an imperative prerequisite. If UI only presents logic, data exploration, or manual processing, answer the primary question first and leave optional mockup work until last.</p></article>
+    <article class="decision"><h3>Existing runtime</h3><p>Reuse the review artifact workflow unchanged. Skill installation remains directory-driven, so the new workflow projects into both harnesses without a same-named Command.</p></article>
+  </div>
+  <div class="callout"><strong>Decision source:</strong> ADR-0030 records why mockup is conditional, standalone, ordered before the Spec, and folded into the existing first approval boundary.</div>
+</section>
+<section id="module-sketch">
+  <div class="section-label">04 · Module sketch</div>
+  <h2>Production boundaries and public seams</h2>
+  <div class="module-grid">
+    <article class="module"><h3>Mockup workflow</h3><p>Owns relevance inputs, artifact generation, meaningful alternatives, feedback iteration, approval, and the visible selection record.</p><p class="test"><strong>Test directly:</strong> the public mockup workflow through content-contract assertions.</p></article>
+    <article class="module"><h3>Build orchestration</h3><p>Loads mockup conditionally after grilling, routes both UI and non-UI work through the Design→Spec gate, and starts Spec without a duplicate confirmation.</p><p class="test"><strong>Test directly:</strong> the public build pipeline contract.</p></article>
+    <article class="module"><h3>Authoritative-intent thread</h3><p>Propagates an approved mockup through Spec, Tasks, code, coach, artifact synchronization, and build-mode Review change.</p><p class="test"><strong>Test directly:</strong> cross-skill content-contract assertions over each consumer.</p></article>
+    <article class="module"><h3>Prototype composition</h3><p>Orders optional mockup work from the prototype question and prevents presentation scaffolding from becoming the experiment by accident.</p><p class="test"><strong>Test directly:</strong> the public prototype routing contract.</p></article>
+  </div>
+</section>
+<section id="testing-decisions">
+  <div class="section-label">05 · Testing decisions</div>
+  <h2>Verify the installed workflow contract</h2>
+  <ul class="checks">
+    <li>Extend the repository content gate so it fails when the mockup skill omits relevance, canonical artifact, meaningful-variant, approval, or authority rules.</li>
+    <li>Assert that Build loads the mockup skill directly, preserves exactly four approval gates, and defines both branches of the Design→Spec gate.</li>
+    <li>Assert that Spec, Tasks, code, coach, and build-mode Review change read approved mockups when present and apply the synchronization rule.</li>
+    <li>Assert that Prototype distinguishes end-user interface design from UI used only as a presentation layer and orders mockup work accordingly.</li>
+    <li>Use the existing authoring gate for frontmatter, reference resolution, guide consistency, duplicate Command rejection, ADR numbering, installation, and harness isolation.</li>
+    <li>Run the complete repository gate because shared skills and installation behavior affect both harnesses.</li>
+  </ul>
+</section>
+<section id="out-of-scope">
+  <div class="section-label">06 · Boundaries</div>
+  <h2>Out of Scope</h2>
+  <ul class="checks">
+    <li>Changing the review artifact runtime or adding a second browser-review implementation.</li>
+    <li>Requiring mockups for internal work, minor copy edits, mechanical visual repairs, or every prototype.</li>
+    <li>Replacing runnable prototypes with static HTML.</li>
+    <li>Promoting mockup or prototype code directly into production.</li>
+    <li>Pixel-level automated comparison or treating every decorative choice as binding.</li>
+    <li>Adding a fifth pipeline approval gate or a same-named Command.</li>
+    <li>Creating a mockup for this workflow-only feature, which does not add an end-user browser or terminal surface.</li>
+  </ul>
+</section>
+<section id="further-notes">
+  <div class="section-label">07 · Further notes</div>
+  <h2>Durable operating notes</h2>
+  <p>The new workflow must follow progressive disclosure: keep its entry point concise and move detailed artifact guidance into its own references.</p>
+  <p>Human guides must remain consistent with their skills, and all reviewer-facing text must use the ubiquitous language recorded in the applicable context files.</p>
+</section>
+<section id="verification-summary" data-verification-owner="fact-checker">
+  <div class="section-label">08 · Verification summary</div>
+  <h2>Cold-context fact-check</h2>
+  <div class="verification-card">
+    <p><strong>143 factual claim blocks checked across both canonical artifacts:</strong> 143 confirmed, 0 corrected, and 0 unverifiable.</p>
+    <p><strong>Corrections:</strong> None. Names, paths, workflow behavior, the four-gate count, task dependencies, and completion metadata match the current source and Git history from branch point <code>1ae4dcb300f9d2f19624685a4fa3c808be8a39bf</code>.</p>
+    <p><strong>Evidence:</strong> The relevant content and install lanes passed, as did the nine focused planted-regression cases. The complete gate also ran; six Firefox-based tests could not start because Firefox did not report its BiDi endpoint.</p>
+  </div>
+</section>
+</main>
+<footer>Canonical review artifact · Conditional UI Mockups · Spec · ADR-0030</footer>
+</div>
+</body>
+</html>
