@@ -33,8 +33,9 @@ install_module() {
     dim "  $config_root/settings.json — exists, skipping (--force to overwrite)"
   fi
 
-  mkdir -p "$config_root/extensions"
+  mkdir -p "$config_root/extensions" "$config_root/themes"
   prune_dangling "$config_root/extensions"
+  prune_dangling "$config_root/themes"
 
   # pi auto-discovers extensions from extensions/, but it does not
   # realpath-resolve a symlinked extension, so the adapter can't reach
@@ -53,11 +54,16 @@ install_module() {
     "$MOD/extensions/orchard.ts" \
     "$MOD/extensions/review-change-guard.ts" \
     "$MOD/extensions/review-change-progress.ts" \
+    "$MOD/extensions/write-tool-highlights.ts" \
     "$config_root/extensions"
   dim "  $config_root/extensions/local-models.ts (local model auto-discovery)"
   dim "  $config_root/extensions/orchard.ts (Orchard session transitions)"
   dim "  $config_root/extensions/review-change-guard.ts (standalone Review change boundary)"
   dim "  $config_root/extensions/review-change-progress.ts (standalone Review change TUI telemetry)"
+  dim "  $config_root/extensions/write-tool-highlights.ts (amber write success backgrounds)"
+
+  ln -sf "$MOD/themes/catppuccin-mocha.json" "$config_root/themes"
+  dim "  $config_root/themes/catppuccin-mocha.json (default pi theme)"
 
   # Subagent extension — ships as an example with pi. Symlinked if present;
   # skipped gracefully on a system where pi is not installed. Resolves the

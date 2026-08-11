@@ -1,4 +1,5 @@
 {
   "defaultProvider": "opencode",
-  "defaultThinkingLevel": "high"
+  "defaultThinkingLevel": "high",
+  "theme": "catppuccin-mocha"
 }

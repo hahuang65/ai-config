@@ -1909,6 +1909,12 @@ test_install_behavior() {
   [[ -e "$tmphome/.pi/agent/extensions/review-change-progress.ts" ]] \
     && pass "standalone Review change progress extension installed" \
     || fail "install-behavior" "standalone Review change progress extension missing"
+  [[ -e "$tmphome/.pi/agent/extensions/write-tool-highlights.ts" ]] \
+    && pass "pi write tool highlight extension installed" \
+    || fail "install-behavior" "pi write tool highlight extension missing"
+  [[ -e "$tmphome/.pi/agent/themes/catppuccin-mocha.json" ]] \
+    && pass "pi Catppuccin Mocha theme installed" \
+    || fail "install-behavior" "pi Catppuccin Mocha theme missing"
   # pi does not realpath-resolve symlinked extensions, so the installed adapter
   # must be a self-contained bundle — no leftover relative imports it can't find.
   if [[ -f "$tmphome/.pi/agent/extensions/guard-policies.ts" ]] \
