@@ -5,6 +5,8 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 
 import {
+  BUN_TEST_EXECUTION_WEIGHTS,
+  MAX_EXECUTION_WEIGHT,
   executeWeightedLanes,
   isolatedGitEnvironment,
   runLaneProcess,
@@ -29,6 +31,11 @@ test("removes inherited Git controls from isolated Git lanes", () => {
   expect(isolatedGitEnvironment({ GIT_WORK_TREE: "/external/tree" })).not.toHaveProperty("GIT_WORK_TREE");
   expect(isolatedGitEnvironment({ GIT_EXEC_PATH: "/external/helpers" })).not.toHaveProperty("GIT_EXEC_PATH");
   expect(isolatedGitEnvironment({ GIT_TEMPLATE_DIR: "/external/templates" })).not.toHaveProperty("GIT_TEMPLATE_DIR");
+});
+
+test("keeps browser and ordinary Bun test lanes from competing", () => {
+  expect(BUN_TEST_EXECUTION_WEIGHTS.browser + BUN_TEST_EXECUTION_WEIGHTS.rest)
+    .toBeGreaterThan(MAX_EXECUTION_WEIGHT);
 });
 
 test("starts the longest lanes that fit the available execution weight", async () => {

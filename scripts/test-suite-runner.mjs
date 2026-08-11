@@ -12,12 +12,13 @@ import {
   runLaneProcess,
   stopChildren,
 } from "./test-suite-process.mjs";
+import { classifyBunTestFiles } from "./test-suite-classification.mjs";
 import { reportLaneFailures } from "./test-suite-report.mjs";
 
 export { isolatedGitEnvironment, runLaneProcess } from "./test-suite-process.mjs";
 
-const MAX_EXECUTION_WEIGHT = 14;
-const BROWSER_TEST = "test/review-artifact/browser.test.ts";
+export const MAX_EXECUTION_WEIGHT = 14;
+export const BUN_TEST_EXECUTION_WEIGHTS = Object.freeze({ browser: 10, rest: 5 });
 const INSTALL_GROUPS = Object.freeze([
   Object.freeze({ name: "isolation", selector: "isolation", expectedSeconds: 1.7, weight: 2 }),
   Object.freeze({ name: "behavior", selector: "install-behavior", expectedSeconds: 2.7, weight: 2 }),
@@ -125,12 +126,11 @@ async function collectTestFiles(directory) {
 }
 
 async function buildLanes(repoDir, snapshots) {
-  const browserPath = path.join(repoDir, BROWSER_TEST);
   const testFiles = await Promise.all([
     collectTestFiles(path.join(repoDir, "shared")),
     collectTestFiles(path.join(repoDir, "test")),
   ]);
-  const guardRest = testFiles.flat().filter((testFile) => testFile !== browserPath);
+  const bunTests = classifyBunTestFiles(testFiles.flat());
   const coreLanes = [
     lane("content/foundation", repoDir, "bash", ["scripts/test-pipeline.sh", "content", "content-foundation"],
       { expectedSeconds: 2.2, weight: 2 }),
@@ -144,10 +144,10 @@ async function buildLanes(repoDir, snapshots) {
       { expectedSeconds: 0.7, weight: 2 }),
     lane("install/manifests", repoDir, "bash", ["scripts/test-pipeline.sh", "install", "harness-modules"],
       { expectedSeconds: 0.2, weight: 1 }),
-    lane("guard/rest", repoDir, "bun", ["test", "--parallel=4", "--max-concurrency=2", ...guardRest],
-      { expectedSeconds: 5, isolatedGit: true, weight: 4 }),
-    lane("guard/browser", repoDir, "bun", ["test", browserPath],
-      { expectedSeconds: 4, terminationGraceMs: 5_000, weight: 4 }),
+    lane("bun/rest", repoDir, "bun", ["test", "--parallel=4", "--max-concurrency=2", ...bunTests.rest],
+      { expectedSeconds: 6, isolatedGit: true, weight: BUN_TEST_EXECUTION_WEIGHTS.rest }),
+    lane("bun/browser", repoDir, "bun", ["test", "--parallel=3", "--max-concurrency=2", ...bunTests.browser],
+      { expectedSeconds: 20, terminationGraceMs: 5_000, weight: BUN_TEST_EXECUTION_WEIGHTS.browser }),
   ];
   const installLanes = snapshots.installRepos.map(({ expectedSeconds, name, repo, selector, weight }) => lane(
     `install/${name}`,

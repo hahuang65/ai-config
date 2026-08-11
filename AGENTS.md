@@ -27,6 +27,15 @@ isolation. Review-artifact browser evidence requires Firefox and must not be
 silently skipped. If you relocate content, update the gate in the same change —
 never weaken it to pass.
 
+## Test placement and execution lanes
+
+Read `test/README.md` before adding or moving tests.
+Keep guard-core tests under `shared/`, component tests under the matching `test/<component>/` directory, and cross-component runner or installation tests at the `test/` root.
+Any test that launches or requires real Firefox must use the `*.browser.test.ts` suffix and the shared Firefox fixtures with bounded concurrency.
+An ordinary `*.test.ts` file must not launch Firefox.
+When adding browser, Git-fixture, or subprocess-heavy evidence, run the focused test and `make test`, then update lane classification, expected duration, and execution weight when the workload model changes.
+Every Bun test must belong to exactly one deterministic lane; add a classification check with any new workload category.
+
 ## Progressive disclosure — required for every skill
 
 A skill's `SKILL.md` is loaded into the model's context the moment the skill

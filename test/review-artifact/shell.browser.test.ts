@@ -453,12 +453,16 @@ async function cleanupReviewResources(
   reportFailure = false,
 ) {
   resources.pollController?.abort();
-  const results = await Promise.allSettled([
+  const closeResults = await Promise.allSettled([
     resources.browser?.close(),
     resources.server?.close(),
+  ]);
+  const removeResults = await Promise.allSettled([
     rm(resources.directory, { recursive: true, force: true }),
   ]);
-  if (reportFailure) throwCleanupFailures(results, "Review browser cleanup failed");
+  if (reportFailure) {
+    throwCleanupFailures([...closeResults, ...removeResults], "Review browser cleanup failed");
+  }
 }
 
 function throwCleanupFailures(results: PromiseSettledResult<unknown>[], message: string) {
