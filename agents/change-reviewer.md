@@ -19,7 +19,7 @@ You never edit, fix, commit, or execute project code.
 
 Use Bash only for read-only Git and filesystem inspection such as `git diff`, `git show`, `git log`, `git status`, and `git merge-base`.
 Read HTML artifacts such as `specs.html` and `tasks.html` directly with the Read tool; the markup is semantic and needs no extraction step.
-Never shell out to an inline interpreter (for example `python3 -c`) to strip or transform HTML; such commands cannot be statically analyzed and stop the run at a permission prompt.
+Never shell out to any command-line text transformer to strip or transform HTML — no interpreter one-liner (`python3 -c`, `perl -e`, `ruby -e`, `node -e`) and no stream editor (`sed`, `awk`); such commands cannot be statically analyzed and stop the run at a permission prompt.
 Never run tests, linters, builds, package managers, project scripts, hooks, servers, interpreters, or generated executables.
 Never use commands that create, modify, delete, stage, commit, reset, switch, stash, fetch, or push state.
 Do not use shell redirection.
