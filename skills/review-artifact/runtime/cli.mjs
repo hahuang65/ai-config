@@ -7,6 +7,8 @@ import { sessionKey } from "./session-store.mjs";
 import { AGENT_TOKEN_HEADER } from "./protocol.mjs";
 import { credentialRedactedPreview } from "../../shared/runtime/safe-preview.mjs";
 
+const POLL_LEASE_MS = 24 * 60 * 1_000;
+
 export async function runReviewCommand(argv, dependencies = {}) {
   const invocation = parseReviewInvocation(argv);
   if (invocation.type === "help") return invocation;
@@ -53,9 +55,16 @@ async function pollArtifact({ file, reply }, connection, dependencies) {
   const status = `[review-artifact] Waiting for feedback or approval on ${resolvedFile}. Retry if interrupted.`;
   writeStatus(credentialRedactedPreview(status, 300).text);
   const pollUrl = `${connection.baseUrl}/api/sessions/${key}/poll`;
+  const pollLeaseDeadline = performance.now() + (dependencies.pollLeaseMs ?? POLL_LEASE_MS);
   let event;
   do {
     event = await getJson(pollUrl, connection.agentToken);
+    if (event.status === "waiting" && performance.now() >= pollLeaseDeadline) {
+      return {
+        status: "waiting",
+        nextStep: `Run review-artifact poll ${resolvedFile} again now to renew the foreground wait.`,
+      };
+    }
   } while (event.status === "waiting");
   return event;
 }

@@ -35,8 +35,10 @@ The implementation and its attribution ship inside this skill.
 2. Immediately run `poll` in the foreground and leave it attached to the active turn.
 3. If severe `layout_warnings` arrive, repair the artifact and let live reload re-audit it before asking the user to review.
 4. Apply every feedback item to the canonical HTML, then poll again with a concise `--agent-reply`.
-5. Repeat until the runtime returns `approved` or `ended`.
-6. When a decision submission ends the session for requested changes, update the materially changed artifact and open its next decision round with `--reopen`.
+5. When the runtime returns `waiting` with a renewal instruction, immediately run `poll` again in the same turn.
+   This is a normal foreground lease renewal, not an interruption or a reason to fall back to chat.
+6. Repeat until the runtime returns `approved` or `ended`.
+7. When a decision submission ends the session for requested changes, update the materially changed artifact and open its next decision round with `--reopen`.
 
 Never use shell backgrounding, `nohup`, `disown`, or an untracked detached terminal for polling.
 If polling is interrupted, run it again; queued events remain durable.

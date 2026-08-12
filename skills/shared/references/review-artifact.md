@@ -46,7 +46,8 @@ Keep exact machine values in safe metadata or generated submissions rather than 
 5. When feedback arrives, address every annotation and message in the canonical HTML.
 6. Save the updated HTML so the existing browser session live-reloads it.
 7. Poll again with a concise agent reply describing what changed.
-8. Repeat until the user explicitly approves or ends the session.
+8. If the poll returns `waiting` with a renewal instruction, immediately poll again in the same turn.
+9. Repeat until the user explicitly approves or ends the session.
 
 Feedback targets include a selector, nearby text, and text-range anchors when the user selected text.
 Use the compact DOM snapshot only as supporting context; the canonical HTML remains authoritative.
@@ -80,5 +81,7 @@ Preserve stable section and task identifiers so existing feedback remains unders
 
 If the browser runtime cannot start, fall back to chat and preserve explicit approval semantics.
 Report the fallback rather than silently skipping review.
+A foreground poll uses bounded leases so the harness command finishes normally before its fixed wall-clock timeout.
+A `waiting` result with a renewal instruction is normal and must start the next foreground poll immediately.
 If a foreground poll is interrupted, rerun it because queued feedback and terminal decisions remain durable.
 Never background the poll without a harness-native completion path that is guaranteed to resume the same agent turn.

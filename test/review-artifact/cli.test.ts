@@ -418,6 +418,36 @@ describe("review command", () => {
     expect(output).toMatchObject({ status: "feedback", prompts: [{ prompt: "Split slice two" }] });
   });
 
+  test("returns a renewal instruction when the foreground polling lease expires", async () => {
+    const directory = await mkdtemp(path.join(tmpdir(), "review-artifact-cli-renewal-"));
+    const artifact = path.join(directory, "review.html");
+    await writeFile(artifact, "<!doctype html><title>Renew this review</title>");
+    let pollCount = 0;
+    const server = Bun.serve({
+      port: 0,
+      fetch() {
+        pollCount += 1;
+        return Response.json(pollCount === 1 ? { status: "waiting" } : { status: "approved" });
+      },
+    });
+    servers.push({ close: async () => { await server.stop(true); } });
+    const canonicalArtifact = await realpath(artifact);
+
+    const output = await runReviewCommand(["poll", artifact], {
+      ensureServer: async () => ({ baseUrl: server.url.origin, agentToken: "test-token" }),
+      pollLeaseMs: 0,
+      writeStatus: () => {},
+    });
+
+    expect({ output, pollCount }).toEqual({
+      output: {
+        status: "waiting",
+        nextStep: `Run review-artifact poll ${canonicalArtifact} again now to renew the foreground wait.`,
+      },
+      pollCount: 1,
+    });
+  });
+
   test("poll keeps its session identity and diagnostic path when a symlink changes", async () => {
     const directory = await mkdtemp(path.join(tmpdir(), "review-artifact-cli-symlink-"));
     const firstArtifact = path.join(directory, "first.html");
