@@ -13,11 +13,16 @@ Create the directory lazily, only when the first ADR qualifies.
 ```md
 # {Short title of the decision}
 
-{1-3 sentences: what is the context, what did we decide, and why.}
+{One short, concrete, plain-language scenario that exposed the problem.}
+
+{One or two sentences: what was decided and why.}
 ```
 
+Keep the scenario in the opening prose rather than adding a section heading.
+Use a separate scenario section only when several scenarios need detailed explanation.
+Apply this format to new records; do not rewrite previous ADRs only to add scenarios.
 That is enough for most local ADRs.
-The value is in recording that a decision was made and why, not in filling out sections.
+The value is in recording the concrete reason a decision was made and why, not in filling out sections.
 
 Add these optional sections only when they add genuine value:
 
@@ -41,8 +46,15 @@ Write every contract to the saved decisions document, never to the context docum
 A contract records an agreement that one context, system, or team relies on another to honor; it does not need to meet the decision-record threshold.
 If **Contracts** does not exist, create that section while preserving the page's unrelated content and existing section order.
 Update an existing matching contract in place; otherwise append the new contract to that section.
-Follow an established contract structure when one exists.
-Otherwise use a short contract heading and concise blocks for the parties, guarantee, conditions, failure behavior, and compatibility or versioning constraints that apply.
+Keep each contract as one visually cohesive card:
+
+1. Add a short contract heading outside the panel so other Confluence content can link to its anchor.
+2. Immediately follow it with one `panel-note` panel containing the complete contract.
+3. Use the panel's background color to distinguish the contract as one unit without introducing decorative color variation between contracts.
+4. Put concise blocks for the parties, guarantee, conditions, failure behavior, and compatibility or versioning constraints that apply inside the same panel.
+
+Preserve an established equivalent card structure when one exists.
+Do not split one contract across cards or nest tables, expands, or another panel inside its note panel.
 Never create a page for a contract.
 
 ### Decision List
