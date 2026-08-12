@@ -41,6 +41,22 @@ Never create a Confluence page for a contract or an individual decision.
 Do not use “ADR” or workflow-specific vocabulary on the page.
 Use **Contracts**, **Decisions**, **Decision details**, and **design session** so the document uses language that co-workers share.
 
+### Affected Users
+
+For every Confluence contract or decision card, determine whether it directly affects work another user will do.
+Examples include an interface they will implement or consume, or a choice that changes their downstream work.
+Always tag each affected user with a native Confluence user mention in an **Affected users** block inside the card.
+Classify what each tagged user needs:
+
+- **Awareness only** — the person needs to know, but no response or action is required.
+- **Action required** — the person must change or complete work.
+- **Decision required** — the person must make or approve a choice before work can proceed.
+
+For **Action required** and **Decision required**, state the specific action or decision next to the mention.
+Do not tag someone only because they may be interested.
+If an affected user's exact Confluence identity cannot be resolved, ask for the correct user and wait before updating the page.
+Never guess an account or substitute a plain-text `@name` for a native mention.
+
 ### Contracts
 
 Write every contract to the saved decisions document, never to the context document or a separate page.
@@ -52,7 +68,7 @@ Keep each contract as one visually cohesive card:
 1. Add a short contract heading outside the panel so other Confluence content can link to its anchor.
 2. Immediately follow it with one `panel-note` panel containing the complete contract.
 3. Use the panel's background color to distinguish the contract as one unit without introducing decorative color variation between contracts.
-4. Put concise blocks for the parties, guarantee, conditions, failure behavior, and compatibility or versioning constraints that apply inside the same panel.
+4. Put concise blocks inside the same panel for the parties, guarantee, conditions, failure behavior, compatibility or versioning constraints, and, when required, **Affected users**.
 
 Preserve an established equivalent card structure when one exists.
 Do not split one contract across cards or nest tables, expands, or another panel inside its note panel.
@@ -82,7 +98,7 @@ Append each record as one visually cohesive unit:
 2. Keep that heading outside the panel so `#D-NNN` remains a working link target.
 3. Immediately follow it with one `panel-note` panel containing the complete record.
 4. Start the panel with a bold title line containing the short title, date, design session, and decision makers.
-5. Add concise **Context**, **Scenario**, **Decision**, **Alternatives rejected**, and **Consequence** blocks inside the same panel.
+5. Add concise blocks inside the same panel for **Context**, **Scenario**, **Decision**, **Alternatives rejected**, **Consequence**, and, when required, **Affected users**.
 6. In **Scenario**, give one short, concrete, plain-language example of the scenario that led to this decision.
    Describe what happened or could happen and why the choice matters without repeating the other blocks or relying on technical jargon.
 

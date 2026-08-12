@@ -56,3 +56,18 @@ test("Confluence contracts use visually cohesive cards", async () => {
   expect(decisionFormat).toContain("one `panel-note` panel containing the complete contract");
   expect(decisionFormat).toContain("background color");
 });
+
+test("Confluence contracts and decisions tag users whose work they affect", async () => {
+  const decisionFormat = await source("skills/model-domain/references/adr-format.md");
+
+  expect(decisionFormat).toContain("For every Confluence contract or decision card");
+  expect(decisionFormat).toContain("Always tag each affected user");
+  expect(decisionFormat).toContain("native Confluence user mention");
+  expect(decisionFormat).toContain("interface they will implement or consume");
+  expect(decisionFormat).toContain("changes their downstream work");
+  expect(decisionFormat).toContain("**Affected users**");
+  expect(decisionFormat).toContain("**Awareness only**");
+  expect(decisionFormat).toContain("**Action required**");
+  expect(decisionFormat).toContain("**Decision required**");
+  expect(decisionFormat).toContain("state the specific action or decision");
+});
