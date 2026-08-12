@@ -33,9 +33,9 @@
 <h2>Two skills, one conversation</h2>
 <div class="grid">
 <div class="card"><h3>Grill owns</h3><ul><li>The design tree and question order.</li><li>Numbered rounds and recommendations.</li><li>Completion of every decision branch.</li></ul></div>
-<div class="card"><h3>Model domain owns</h3><ul><li>Applicable context-file topology.</li><li>Ubiquitous-language conflicts and updates.</li><li>ADRs only for hard-to-reverse, surprising trade-offs.</li></ul></div>
+<div class="card"><h3>Model domain owns</h3><ul><li>The main-directory or linked-worktree documentation destination.</li><li>Ubiquitous-language conflicts and updates.</li><li>Decision records only for hard-to-reverse, surprising trade-offs.</li></ul></div>
 </div>
-<p class="callout">Context files can include a root <code>CONTEXT-MAP.md</code> and subordinate <code>CONTEXT.md</code> files. Root <code>docs/adr/</code> holds qualifying project-wide decisions.</p>
+<p class="callout">The main project directory uses local context and decision files. A linked worktree reuses its saved local or Confluence destination and page links.</p>
 </section>
 <section>
 <div class="section-label">03 · Round format</div>
@@ -53,10 +53,10 @@
 <ul>
 <li>The frontier is empty.</li>
 <li>Ambiguous terms, cardinality, and lifecycle are resolved.</li>
-<li>Qualifying ADRs are recorded.</li>
+<li>Qualifying decision records are created at the selected destination.</li>
 <li>The user is satisfied with the shared understanding.</li>
 </ul>
-<p class="callout"><strong>Inside build:</strong> return to the orchestrator. Relevant UI proceeds to <code>mockup</code>; otherwise post-grill chat confirmation clears Design→Spec. <strong>Standalone:</strong> report changed context files and ADRs, then wait before drafting the Spec.</p>
+<p class="callout"><strong>Inside build:</strong> return to the orchestrator. Relevant UI proceeds to <code>mockup</code>; otherwise post-grill chat confirmation clears Design→Spec. <strong>Standalone:</strong> report changed context documentation and decision records, then wait before drafting the Spec.</p>
 </section>
 </main>
 <footer>Human guide · grill skill · model-domain owns documentation detail</footer>

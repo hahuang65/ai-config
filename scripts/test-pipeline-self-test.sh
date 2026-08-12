@@ -739,19 +739,19 @@ test_duplicate_adr_id_fails() {
 }
 
 # ---------------------------------------------------------------------------
-# Self-test 18: standalone review mode omits context-file loading
+# Self-test 18: standalone review mode omits context-documentation loading
 # ---------------------------------------------------------------------------
 
 test_context_consumer_missing_context_map_fails() {
   local rel="skills/review-change/references/workflow.md"
   fixture_replace "$rel"
-  sed 's/applicable context files/context index/g' "$TMPDIR/$rel" >"$TMPDIR/$rel.tmp"
+  sed 's/selected context documentation/context index/g' "$TMPDIR/$rel" >"$TMPDIR/$rel.tmp"
   mv "$TMPDIR/$rel.tmp" "$TMPDIR/$rel"
 
   if run_pipeline content ubiquitous-language; then
-    self_fail "missing context files: test-pipeline.sh should exit non-zero"
+    self_fail "missing context documentation: test-pipeline.sh should exit non-zero"
   else
-    self_pass "missing context files: test-pipeline.sh correctly exits non-zero"
+    self_pass "missing context documentation: test-pipeline.sh correctly exits non-zero"
   fi
   fixture_restore "$rel"
 }

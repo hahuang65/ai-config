@@ -13,7 +13,7 @@ Execute approved vertical-slice tasks **one slice at a time** using strict red-g
 - An approved canonical `tasks.html` in a feature directory under `docs/features/`.
 Resolve it from `$ARGUMENTS` (a path or slug), or with no argument find the most recent `docs/features/*/tasks.html` and confirm it is the right one.
 - The user has explicitly approved the tasks (do not assume approval).
-- The applicable context files and relevant ADRs have been read.
+- The selected context documentation and relevant decision records have been read.
 
 See [../shared/references/build-pipeline.md](../shared/references/build-pipeline.md) for file conventions and canonical HTML synchronization rules. See [../shared/references/testable-interfaces.md](../shared/references/testable-interfaces.md) for how spec Testing Decisions and task Test surfaces determine where tests attach.
 
@@ -42,7 +42,7 @@ Use the `tdd-guide` agent (via the Agent tool) to guide each slice's cycle.
 
 ## Process
 
-1. **Read context** — canonical `tasks.html`, its linked `specs.html`, approved `mockups.html` when present as Authoritative intent, applicable context files, and relevant ADRs. Use their ubiquitous language in tests and implementation.
+1. **Read context** — resolve the [domain documentation destination](../shared/references/domain-documentation.md), then read canonical `tasks.html`, its linked `specs.html`, approved `mockups.html` when present as Authoritative intent, and the selected context documentation and decision records. Use their ubiquitous language in tests and implementation.
 2. **For each slice (dependency order)** — work one slice at a time; do NOT batch slices:
    - **Confirm the public interface** from the slice's Test surface and the spec's Testing Decisions (deep module: small interface, deep implementation). Do not ask whether tests are needed; derive the test seam from the shared testable-interface protocol.
    - **Tracer bullet** — write ONE end-to-end test through that interface → it fails (RED) → minimal code → it passes (GREEN).

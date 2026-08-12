@@ -341,6 +341,23 @@ test_skill_model_domain() {
   check_content_cached "$content" "$label" "[Ss]harpen [Ff]uzzy [Ll]anguage"
   check_content_cached "$content" "$label" "[Cc]ross-[Rr]eference [Ww]ith [Cc]ode"
   check_content_cached "$content" "$label" "[Uu]pdate [Cc]ontext [Ff]iles [Ii]nline"
+  check_content_cached "$(cat "$file")" "$label" "../shared/references/domain-documentation\.md"
+  check_content_cached "$content" "$label" "[Mm]ain project directory.*[Ll]ocal files"
+  check_content_cached "$content" "$label" "[Ll]inked worktree"
+  check_content_cached "$content" "$label" "git rev-parse --show-toplevel"
+  check_content_cached "$content" "$label" "<worktree-root>/domain-documentation\.json"
+  check_content_cached "$content" "$label" "git config --global --path --get core\.excludesFile"
+  check_content_cached "$content" "$label" "git check-ignore -v --no-index"
+  check_content_cached "$content" "$label" "source path.*global excludes file"
+  check_content_cached "$content" "$label" "[Ll]ocal files.*default"
+  check_content_cached "$content" "$label" "[Cc]onfluence"
+  check_content_cached "$content" "$label" "[Cc]ontext document.*[Dd]ecisions document"
+  check_content_cached "$content" "$label" "contentFormat.*html"
+  check_content_cached "$content" "$label" "D-NNN"
+  check_content_cached "$content" "$label" "[Dd]ecision details.*does not exist.*final section"
+  check_content_cached "$content" "$label" "already exists.*without moving"
+  check_content_cached "$content" "$label" "[Ee]ach term.*visually cohesive entry"
+  check_content_cached "$content" "$label" "panel-note"
   check_content_cached "$content" "$label" "[Hh]ard to reverse"
   check_content_cached "$content" "$label" "real trade-off"
 }
@@ -357,7 +374,7 @@ test_ubiquitous_language_contract() {
     skill_file="$REPO_DIR/skills/$skill_name/SKILL.md"
     content="$(cat "$skill_file")"
     check_content_cached "$content" "skills/$skill_name/SKILL.md" "../model-domain/SKILL\.md"
-    check_content_cached "$content" "skills/$skill_name/SKILL.md" "[Cc]ontext files"
+    check_content_cached "$content" "skills/$skill_name/SKILL.md" "[Cc]ontext (files|documentation)"
   done
 
   for context_file in \
@@ -369,15 +386,20 @@ test_ubiquitous_language_contract() {
     skills/spec/SKILL.md \
     skills/todo/SKILL.md \
     skills/visualize/SKILL.md; do
-    check_content_cached "$(cat "$REPO_DIR/$context_file")" "$context_file" "[Cc]ontext files"
+    check_content_cached "$(cat "$REPO_DIR/$context_file")" "$context_file" "[Cc]ontext (files|documentation)"
     check_content_cached "$(cat "$REPO_DIR/$context_file")" "$context_file" "[Uu]biquitous language"
   done
 
   while read -r context_file; do
     [[ -z "$context_file" ]] && continue
-    check_content_cached "$(cat "$context_file")" "${context_file#"$REPO_DIR/"}" "[Cc]ontext files"
+    check_content_cached "$(cat "$context_file")" "${context_file#"$REPO_DIR/"}" "[Cc]ontext (files|documentation)"
     check_content_cached "$(cat "$context_file")" "${context_file#"$REPO_DIR/"}" "[Uu]biquitous language"
   done < <(grep -RIlEi 'CONTEXT\.md|CONTEXT-MAP\.md|ubiquitous language' "$REPO_DIR/skills" "$REPO_DIR/agents" --include='*.md' | sort)
+
+  for skill_name in coach code mockup review-code spec todo visualize; do
+    check_content_cached "$(cat "$REPO_DIR/skills/$skill_name/SKILL.md")" "skills/$skill_name/SKILL.md" "../shared/references/domain-documentation\.md"
+  done
+  check_content_cached "$(cat "$REPO_DIR/skills/review-change/references/workflow.md")" "skills/review-change/references/workflow.md" "../../shared/references/domain-documentation\.md"
 
   stale_aliases="$(grep -REil 'CONTEXT\.md.{0,15}vocabular|domain language|project vocabulary|context artifacts' "$REPO_DIR/skills" "$REPO_DIR/agents" --include='*.md' || true)"
   [[ -z "$stale_aliases" ]] \

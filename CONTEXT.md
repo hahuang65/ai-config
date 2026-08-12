@@ -39,14 +39,30 @@ _Avoid_: Worker, child session.
 A `<root>/rules/<name>.md` file holding guidance the harness pulls into context on demand. Claude and pi read the canonical `~/.dotfiles/ai/rules/` files directly. See [`small-always-on-bootstrap-lazy-rulebooks`](docs/adr/0016-small-always-on-bootstrap-lazy-rulebooks.md).
 
 **Context files**:
-The collective name for `CONTEXT.md` and `CONTEXT-MAP.md` files.
-They record a project's domain concepts or locate the files and relationships for each applicable context.
+The collective name for local `CONTEXT.md` and `CONTEXT-MAP.md` files.
+They are the local form of **context documentation**.
 _Avoid_: Context artifacts, context docs, glossary files.
+
+**Context documentation**:
+The selected durable record and navigation structure for a project's domain concepts and context relationships.
+The main project directory always uses local **context files**.
+A linked worktree uses its saved local selection or Confluence context document.
+_Avoid_: Context artifacts, context docs, glossary files.
+
+**Decision record**:
+A durable explanation of a hard-to-reverse, surprising choice that resulted from a real trade-off.
+Local destinations use Architectural Decision Records under `docs/adr/`; Confluence destinations use linked `D-NNN` entries and cohesive Decision details.
+
+**Domain documentation destination**:
+The local-or-Confluence choice used by `model-domain` for **context documentation** and **decision records**.
+The main project directory is always local.
+Each linked worktree stores only its own persistent choice and Confluence page links in an ignored `domain-documentation.json` at its worktree root.
+_Avoid_: Project-wide documentation setting, repository documentation setting.
 
 **Ubiquitous language**:
 The shared, canonical vocabulary that domain experts, users, documentation, tests, and code use with one consistent meaning to describe a project's domain.
-Context files are its durable record and navigation structure, while the `model-domain` skill actively builds, augments, and audits it.
-The files are not the language itself; the vocabulary becomes ubiquitous through consistent use.
+Context documentation is its durable record and navigation structure, while the `model-domain` skill actively builds, augments, and audits it.
+The documentation is not the language itself; the vocabulary becomes ubiquitous through consistent use.
 _Avoid_: Domain language, project vocabulary, `CONTEXT.md` vocabulary.
 
 ### Harness-specific terms

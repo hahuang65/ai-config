@@ -28,8 +28,9 @@ Commit to a direction. Pick an aesthetic and vary from recent generations. See [
 
 ### 2. Structure
 
+Resolve the [domain documentation destination](../shared/references/domain-documentation.md) before reading project language.
 Write visible content in plain language.
-Prefer the project's ubiquitous language from the applicable context files, then common technical terms the user is likely to know.
+Prefer the project's ubiquitous language from the selected context documentation, then common technical terms the user is likely to know.
 Never make internal workflow values or unexplained source identifiers the main explanation.
 
 Choose a rendering approach based on content type. See the approach table in [references/diagram-types.md](references/diagram-types.md).

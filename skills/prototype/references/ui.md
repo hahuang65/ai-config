@@ -61,7 +61,7 @@ Do not ask them to grade decorative details that belong to the mockup workflow.
 
 Record what the host integration taught the team.
 If it invalidates approved UI intent, return to `mockups.html` and review the changed design before production implementation.
-If it changes the ubiquitous language or creates a qualifying durable decision, route updates to the applicable context files or ADRs through `model-domain`.
+If it changes the ubiquitous language or creates a qualifying durable decision, route updates to the selected context documentation or decision records through `model-domain`.
 
 Delete the throwaway route, variants, stubs, and switcher when the question is answered.
 Rewrite validated behavior under production constraints and tests rather than promoting prototype or mockup code.

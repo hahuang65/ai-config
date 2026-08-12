@@ -37,7 +37,8 @@ The *decisions* are the user's: put each one to them and wait for their answers.
 At the start, load and follow [model-domain](../model-domain/SKILL.md) throughout the interview.
 Grill owns the dependency-aware interview; `model-domain` owns active domain modeling and its documentation discipline.
 
-Apply its full active-modeling, context files, and ADR workflow to every domain decision that the interview exposes.
+Apply its full active-modeling and decision-record workflow to every domain decision that the interview exposes.
+Resolve and reuse its main-directory or linked-worktree documentation destination before the first round.
 
 ## Place in the /build Pipeline
 
@@ -46,29 +47,29 @@ See [the shared build pipeline](../shared/references/build-pipeline.md).
 The output is not a feature-specific artifact.
 It is project-wide domain documentation that accrues across many `/build` runs:
 
-- The applicable **`CONTEXT.md`** files record the ubiquitous language.
-- The root **`docs/adr/`** directory records qualifying project-wide Architectural Decision Records.
+- A local destination uses the applicable **`CONTEXT.md`** files and root **`docs/adr/`** directory.
+- A Confluence destination uses the linked worktree's saved context document and decisions document.
 
-Do not put these inside the feature directory because they outlive any single feature.
+Do not put local domain documentation inside the feature directory or duplicate Confluence documentation there because it outlives any single feature.
 When invoked standalone, `$ARGUMENTS` is the topic to grill on.
 When invoked from `/build`, the orchestrator passes the feature description and this phase does not create the feature directory.
 
 ## Completion
 
 The grill phase is done when the frontier is empty and the user is satisfied with the shared understanding.
-Every branch has been visited, nothing is silently assumed, ambiguous terms are pinned down, cardinality and lifecycle are answered, and ADR-worthy decisions are recorded.
-Then report the updated context files and ADRs.
+Every branch has been visited, nothing is silently assumed, ambiguous terms are pinned down, cardinality and lifecycle are answered, and qualifying decisions are recorded.
+Then report the selected destination and updated context documentation and decision records.
 
 Inside `/build`, return control to the orchestrator so it can determine mockup relevance and complete the Design→Spec gate through the applicable branch.
 Do not ask for separate post-grill confirmation in a build that requires mockup approval.
 
 When invoked standalone, tell the user:
 
-> **Grill phase complete.** I've updated:
+> **Grill phase complete.** I used <local files / Confluence for this worktree> and updated:
 >
-> - `CONTEXT.md` with <n> term(s): <list>
-> - `docs/adr/` with <n> new ADR(s): <list>
->   *(or "no new ADRs — none of today's decisions met the hard-to-reverse + surprising + real-trade-off bar")*
+> - <context file or context document link> with <n> term(s): <list>
+> - <`docs/adr/` or decisions document link> with <n> new decision record(s): <list>
+>   *(or "no new decision records — none of today's decisions met the hard-to-reverse + surprising + real-trade-off bar")*
 >
 > When you're ready, just confirm and I'll draft the spec, synthesizing what we discussed via `/spec`.
 

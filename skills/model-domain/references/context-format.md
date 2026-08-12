@@ -70,3 +70,35 @@ The skill infers which structure applies:
 - If neither exists, create a root `CONTEXT.md` lazily when the first term is resolved
 
 When multiple contexts exist, infer which one the current topic relates to. If unclear, ask.
+
+## Confluence Context Document
+
+The saved Confluence context document is the native equivalent of local context files.
+Do not create a local Markdown companion.
+Keep the same tight definitions, opinionated canonical terms, avoided aliases, relationships, and example dialogue as the local format.
+
+Use the Confluence page title as the context name and organize its body with native headings:
+
+- An opening paragraph defines the context and why it exists.
+- **Language** contains the terms, grouped under section headings only when natural clusters emerge.
+- Each term is one visually cohesive entry: a canonical-term heading followed immediately by one `panel-note` panel.
+- Set each term heading one level below its containing **Language** or group heading; use deeper levels beneath groups or context subsections instead of forcing every term to `h3`.
+- Keep the term heading outside the panel so other Confluence content can link to its anchor.
+- Put the complete entry in that one panel: the one or two sentence definition, an italic **Avoid** line when aliases exist, and any concise relationship or cardinality notes specific to the term.
+- Do not split one term across several panels or nest tables, expands, or panels inside its note panel.
+- **Flagged ambiguities** records unresolved conflicts only while they remain active.
+- **Relationships** states ownership, direction, and cardinality when those facts matter.
+- **Example dialogue** shows domain experts and developers using the terms naturally.
+
+For multiple contexts, first follow any existing page structure or links to subordinate context pages.
+If the supplied page is the complete context document, add a **Contexts** section whose context subsections each contain their description and language, followed by one project-wide **Relationships** section.
+Do not invent or require extra Confluence pages.
+
+## Confluence-Safe Updates
+
+Use the available Confluence integration to fetch and update the page with `contentFormat: "html"`.
+Markdown round trips can destroy task lists and Confluence-local identifiers.
+An update replaces the entire page body, so start from a fresh HTML read and preserve all unrelated content.
+Preserve every existing `data-local-id` attribute exactly and omit `data-local-id` on new nodes.
+Preserve the page title unless the user explicitly changes it.
+After the update, fetch the page again in HTML and verify the changed definitions, links, and surrounding content.

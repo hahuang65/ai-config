@@ -18,14 +18,21 @@ Within an active phase, all routine operations proceed **without per-call approv
 
 ### Project-wide (accrete across many `/build` runs)
 
+`model-domain` follows the shared [domain documentation destination](domain-documentation.md) protocol before Phase 1 questions begin.
+The main project directory always uses local files without prompting.
+A linked worktree reuses its private `domain-documentation.json` selection or prompts once when that state is absent.
+
+A local destination uses:
+
 ```text
 CONTEXT.md or CONTEXT-MAP.md         # root context entry point
 <context>/CONTEXT.md                 # optional bounded-context records
 docs/adr/*.md                        # project-wide decisions
 ```
 
-These outlive any single feature.
-The `git-commit` rule decides whether to include them, including its A5 project exception.
+A Confluence destination uses the context document and decisions document saved for that linked worktree and creates no local companions.
+Both forms outlive any single feature.
+The `git-commit` rule decides whether to include local files, including its A5 project exception; worktree-private destination state and Confluence pages are never staged.
 
 ### Feature-specific (one directory per build run)
 
@@ -59,8 +66,9 @@ The workflow is designed to run in a **single long session**.
 By the time implementation starts, shared understanding has accumulated through grilling and HTML-native spec refinement.
 Canonical HTML artifacts survive context compaction and can be re-read at any point.
 
-The applicable context files record or locate the project's ubiquitous language.
-They and `docs/adr/` are the durable spine that successive `/build` runs sharpen.
+The selected context documentation records or locates the project's ubiquitous language.
+It and the selected decision records are the durable spine that successive `/build` runs sharpen.
+Later phases reuse the destination established in Phase 1 rather than prompting again.
 
 ## Review Artifact Sync
 
@@ -76,4 +84,5 @@ The disposable Review change report lives in the operating-system temp directory
 ## Cleanup
 
 After a feature is complete, the user decides whether to keep, delete, or commit the Feature directory.
-Defer artifact inclusion to the `git-commit` rule, including its A5 project exception.
+Defer artifact inclusion and local context or decision files to the `git-commit` rule, including its A5 project exception.
+Never stage the linked worktree's private destination state or its Confluence pages.

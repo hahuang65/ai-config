@@ -40,7 +40,7 @@ Repo name, date, and a compact legend: solid box = module, dashed line = seam, r
 ## Candidate Card
 
 The diagrams carry the weight.
-Keep prose sparse and in plain language, using the ubiquitous language from the applicable context files first and common technical terms the user is likely to know second.
+Keep prose sparse and in plain language, using the ubiquitous language from the selected context documentation first and common technical terms the user is likely to know second.
 Translate the analysis vocabulary in [language.md](language.md) into familiar labels unless the project already uses that term.
 
 Each candidate is one `<article>`:
@@ -52,7 +52,7 @@ Each candidate is one `<article>`:
 - **Problem** — one sentence. What hurts.
 - **Solution** — one sentence. What changes.
 - **Wins** — bullets, ≤6 words each. e.g. "Tests hit one interface", "Pricing logic stops leaking", "Delete 4 shallow wrappers".
-- **ADR callout** (if applicable) — one line in an amber-tinted box.
+- **Decision-record callout** (if applicable) — one line in an amber-tinted box using its `ADR-NNNN` or `D-NNN` identifier.
 
 No paragraphs of explanation. If the diagram needs a paragraph to be understood, redraw the diagram.
 
@@ -108,7 +108,7 @@ One larger card. Candidate name, one sentence on why, anchor link to its card. T
 ## Tone
 
 Use concise plain language throughout the visible report.
-Prefer names and phrases from the ubiquitous language in the applicable context files, then common technical terms the user is likely to know.
+Prefer names and phrases from the ubiquitous language in the selected context documentation, then common technical terms the user is likely to know.
 The specialist vocabulary in [language.md](language.md) guides the analysis, but it is not automatically reviewer-facing vocabulary.
 If an uncommon term is essential, define it in a short phrase beside its first use and use a familiar heading such as “Current problem,” “Suggested change,” or “Why this helps.”
 

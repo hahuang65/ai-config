@@ -29,10 +29,10 @@
 <div class="table-wrap"><table>
 <thead><tr><th>Step</th><th>Action</th></tr></thead>
 <tbody>
-<tr><td>1 · Discover</td><td>Read context files and ADRs, then run the read-only <code>architecture-reviewer</code> agent over the resolved scope.</td></tr>
+<tr><td>1 · Discover</td><td>Resolve and read the selected context documentation and decision records, then run the read-only <code>architecture-reviewer</code> agent over the resolved scope.</td></tr>
 <tr><td>2 · Report</td><td>Write a disposable HTML report with architectural candidates, before/after diagrams, recommendation strength, and a top recommendation.</td></tr>
 <tr><td>3 · Decide</td><td>Open it through <code>review-artifact</code> in Explore mode. Annotations or messages select a candidate; approval means no candidate will be explored now.</td></tr>
-<tr><td>4 · Grill</td><td>Resolve constraints, dependencies, interface shape, and surviving tests. Invoke <code>model-domain</code> when language or durable decisions change; it may update context files or qualifying ADRs.</td></tr>
+<tr><td>4 · Grill</td><td>Resolve constraints, dependencies, interface shape, and surviving tests. Invoke <code>model-domain</code> when language or durable decisions change; it updates the selected documentation destination.</td></tr>
 <tr><td>5 · Hand off</td><td>Route behavior-preserving work to <code>refactor</code> and interface-changing work to <code>build</code>. This skill never edits code.</td></tr>
 </tbody>
 </table></div>

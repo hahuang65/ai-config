@@ -49,7 +49,7 @@ Do **not** decide whether a phase exists from the `available_skills` list or by 
 
 Each phase also runs standalone:
 
-- `/grill [topic]` — Phase 1: interview and invoke `model-domain` to refine `CONTEXT.md` and write qualifying ADRs
+- `/grill [topic]` — Phase 1: interview and invoke `model-domain` to refine the selected context documentation and write qualifying decision records
 - `/model-domain [build|augment|audit] [scope-or-topic]` — standalone domain-modeling session without the full feature interview or pipeline
 - `/mockup [topic]` — conditional design support: review material browser or terminal UI before specification
 - `/spec [topic]` — Phase 2: synthesize canonical HTML from grilling and approved UI intent, then review it through `review-artifact`
@@ -70,8 +70,8 @@ Derive a short slug from `$ARGUMENTS` (lowercase, hyphens, max ~5 words). Run ea
 ### Phase 1: Design (Grill + conditional Mockup)
 
 Load [../grill/SKILL.md](../grill/SKILL.md), then run `grill` with the feature description.
-Grill invokes `model-domain` to maintain the ubiquitous language and qualifying ADRs.
-It updates `CONTEXT.md` / `docs/adr/` project-wide and does NOT create the feature directory yet.
+Grill invokes `model-domain` to resolve the worktree documentation destination and maintain the ubiquitous language and qualifying decision records.
+It updates local `CONTEXT.md` / `docs/adr/` or the linked worktree's saved Confluence pages project-wide and does NOT create the feature directory yet.
 
 Determine mockup relevance from the grilled scope and inspected code, and ask the user only when that classification remains genuinely ambiguous.
 When the scope establishes relevant UI, create the Feature directory, load [../mockup/SKILL.md](../mockup/SKILL.md), and run `mockup`.
@@ -123,14 +123,14 @@ Approval ends the pipeline. `/review-code` remains available afterward when the 
 
 ## Key Principles
 
-1. **Grill before drafting.** Use `model-domain` to establish the ubiquitous language in the applicable context files and codify qualifying decisions in ADRs.
+1. **Grill before drafting.** Use `model-domain` to establish the ubiquitous language in the selected context documentation and codify qualifying decision records.
 2. **Mock up material UI before specification.** Use one recommended design by default and alternatives only for a real unresolved fork.
 3. **Never write code before tasks are approved.** Phases 1–3 are gated.
 4. **Canonical semantic HTML files are the feature deliverables.** Do not create Markdown companions.
 5. **Vertical slices, never horizontal.** Each slice cuts through every layer.
 6. **Test stable public interfaces.** Use [../shared/references/testable-interfaces.md](../shared/references/testable-interfaces.md): Spec proposes module test surfaces, tasks carry them forward, implementation writes one behavior test at a time through the seam.
 7. **One test, one implementation, repeat.** No batched tests upfront.
-8. **Ubiquitous language everywhere** — use the canonical terms from applicable context files in the mockup, spec, tasks, test names, and code identifiers.
+8. **Ubiquitous language everywhere** — use the canonical terms from the selected context documentation in the mockup, spec, tasks, test names, and code identifiers.
 
 ## Visual-Explainer Integration
 
@@ -140,4 +140,5 @@ Review change fact-checks and updates the canonical `specs.html` and `tasks.html
 ## Cleanup
 
 After the feature is complete, the user decides whether to keep, delete, or commit the Feature directory, including `mockups.html` when present.
-Defer inclusion of Feature artifacts, context files, and ADRs to the `git-commit` rule, including its A5 project exception.
+Defer inclusion of Feature artifacts and local context or decision files to the `git-commit` rule, including its A5 project exception.
+Never stage worktree-private destination state or Confluence pages.

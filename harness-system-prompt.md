@@ -19,9 +19,10 @@ read only the rule needed for the current action, before taking that action.
   - Give written communication and visual artifacts enough context to stand alone.
   - Use ASD-STE100 Simplified Technical English for user-facing prose in chat, Markdown, and HTML.
   - Treat `CONTEXT.md` and `CONTEXT-MAP.md` collectively as **context files**.
-    Context files record or locate the project's **ubiquitous language**: the shared, canonical vocabulary that domain experts, users, documentation, tests, and code use with one consistent meaning.
-    The files are the durable record of that language, not the language itself.
-  - Use the ubiquitous language from applicable context files in prose, tests, and code identifiers, then prefer common technical terms.
+    **Context documentation** is the selected durable source: local context files or a linked worktree's saved Confluence context document.
+    It records or locates the project's **ubiquitous language**: the shared, canonical vocabulary that domain experts, users, documentation, tests, and code use with one consistent meaning.
+    The documentation is the durable record of that language, not the language itself.
+  - Use the ubiquitous language from applicable context documentation in prose, tests, and code identifiers, then prefer common technical terms.
   - Define unfamiliar terms at first use.
   - When writing documentation in A5 projects, do not use workflow-specific terms such as grill, ADR. Those are not terms that my co-workers share.
   - In Markdown, put each complete sentence on its own line while preserving normal structure.

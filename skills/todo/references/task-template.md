@@ -10,7 +10,7 @@ The visible semantic HTML is the approved task source consumed and updated by im
 - Put `data-artifact-kind="tasks"` and `data-artifact-version="1"` on the main content element.
 - Link visibly to the source `specs.html`.
 - Show the dependency graph and the “can run unattended” / “needs you present” split near the top, with `AFK` / `HITL` only as secondary workflow metadata.
-- Write visible content in plain language, preferring the ubiquitous language from the applicable context files and then common technical terms the reviewer is likely to know.
+- Write visible content in plain language, preferring the ubiquitous language from the selected context documentation and then common technical terms the reviewer is likely to know.
 - Define an unavoidable unfamiliar term beside its first use rather than assuming the reviewer knows it.
 
 ## Slice contract

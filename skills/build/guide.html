@@ -30,7 +30,7 @@
 <div class="section-label">02 · The five phases</div>
 <h2>One owning skill per phase</h2>
 <div class="grid">
-<div class="card"><h3>1 · Grill</h3><p><code>grill</code> interviews in dependency-aware rounds and invokes <code>model-domain</code> to update applicable context files and qualifying ADRs.</p><p>Relevant UI then runs through <code>mockup</code>; explicit approval clears Design→Spec.</p></div>
+<div class="card"><h3>1 · Grill</h3><p><code>grill</code> interviews in dependency-aware rounds and invokes <code>model-domain</code> to resolve the worktree destination, update context documentation, and record qualifying decisions.</p><p>Relevant UI then runs through <code>mockup</code>; explicit approval clears Design→Spec.</p></div>
 <div class="card"><h3>2 · Spec</h3><p><code>spec</code> synthesizes settled intent instead of re-interviewing.</p><p><strong>Output:</strong> <code>specs.html</code>.</p></div>
 <div class="card"><h3>3 · Tasks</h3><p><code>todo</code> creates thin, dependency-ordered vertical slices marked AFK or HITL.</p><p><strong>Output:</strong> <code>tasks.html</code>.</p></div>
 <div class="card"><h3>4 · Implement</h3><p><code>code</code> lets the AI implement; <code>coach</code> keeps implementation with the user.</p><p>Both use one RED→GREEN cycle at a time, verify the project, and run the <code>refactorer</code> hygiene sweep.</p></div>
@@ -40,8 +40,8 @@
 <section>
 <div class="section-label">03 · Artifacts</div>
 <h2>Canonical HTML only</h2>
-<pre>applicable context files             project-wide ubiquitous language
-docs/adr/*.md                        project-wide decisions
+<pre>local: CONTEXT*.md + docs/adr/*.md   project-wide domain documentation
+or: Confluence context + decisions  linked-worktree collaboration
 docs/features/&lt;YYYYMMDD-HHMM&gt;-&lt;slug&gt;/
   mockups.html                       conditional approved UI intent
   specs.html                         approved spec

@@ -7,7 +7,7 @@ argument-hint: [feature-description-or-directory]
 # UI Mockup
 
 Create canonical `mockups.html` in the Feature directory for a material end-user interface change.
-Use the applicable context files and agreed feature scope to keep the design grounded in the project's ubiquitous language.
+Use the selected context documentation and agreed feature scope to keep the design grounded in the project's ubiquitous language.
 
 Run for a new or materially changed layout, interaction flow, information hierarchy, responsive behavior, or visual state in a browser or terminal interface.
 Skip internal changes, exact copy replacements, mechanical styling repairs, and small defect fixes that require no design decision.
@@ -26,7 +26,7 @@ Read and follow the [UI mockup contract](references/mockup-contract.md) to inspe
 
 ## Process
 
-1. Read the agreed feature scope, applicable context files, relevant ADRs, and the existing interface area.
+1. Resolve the [domain documentation destination](../shared/references/domain-documentation.md), then read the agreed feature scope, selected context documentation and decision records, and the existing interface area.
 2. Apply the relevance test above; when no mockup is relevant, report why and return to the invoking workflow without creating an artifact.
 3. Generate or update `mockups.html` through the artifact contract. Before any approval review, one recommended design must be visibly selected with its rationale.
 4. When unresolved alternatives remain, load `review-artifact` and use a feedback or decision interaction to settle the selection. Do not request or accept approval while the selection is unresolved.

@@ -38,7 +38,7 @@ Key principles (see [language.md](references/language.md) for the full list):
 - **One adapter = hypothetical seam. Two adapters = real seam.**
 
 This skill is _informed_ by the project's domain model.
-The ubiquitous language gives names to good seams, and ADRs record decisions the skill should not re-litigate.
+The ubiquitous language gives names to good seams, and decision records preserve choices the skill should not re-litigate.
 
 ## Standalone Use
 
@@ -54,9 +54,10 @@ For surface-level cleanup right after implementation (dead code, unused imports,
 
 ### 1. Discover via the agent
 
-Read the applicable context files and any ADRs in the area first.
+Resolve the shared [domain documentation destination](../shared/references/domain-documentation.md), then read the selected context documentation and decision records in the area.
+Do not start a standalone modeling session merely to consume existing documentation.
 
-Resolve the scope per the rules above, then run the `architecture-reviewer` agent (via the Agent tool) with: the scope (area files or "entire codebase"), the relevant ubiquitous-language terms, and any ADR numbers in the area. The agent walks the code, applies the **deletion test**, and returns structured candidates (files, problem, solution, benefits, before/after sketch, strength, ADR conflicts). It never edits and never proposes final interfaces — that's the grilling loop's job.
+Resolve the scope per the rules above, then run the `architecture-reviewer` agent (via the Agent tool) with: the scope (area files or "entire codebase"), the relevant ubiquitous-language terms, and any decision identifiers in the area. The agent walks the code, applies the **deletion test**, and returns structured candidates (files, problem, solution, benefits, before/after sketch, strength, decision conflicts). It never edits and never proposes final interfaces — that's the grilling loop's job.
 
 ### 2. Present Candidates as an HTML Report
 
@@ -77,11 +78,11 @@ Each of the agent's candidates renders as a card:
 
 End the report with a **Top recommendation** section: which candidate you'd tackle first and why.
 
-**Use the ubiquitous language from applicable context files and common technical terms in the visible report.**
+**Use the ubiquitous language from the selected context documentation and common technical terms in the visible report.**
 Use [language.md](references/language.md) to reason precisely, then describe the concrete problem and suggested change without requiring the user to learn that glossary.
-If a context file defines “Order,” write “Order intake”; use a code name such as `FooBarHandler` only when the exact source anchor helps.
+If the context documentation defines “Order,” write “Order intake”; use a code name such as `FooBarHandler` only when the exact source anchor helps.
 
-**ADR conflicts**: if a candidate contradicts an existing ADR, only surface it when the friction is real enough to warrant revisiting the ADR. Mark it clearly in the card (e.g. a warning callout: _"contradicts ADR-0007 — but worth reopening because…"_). Don't list every theoretical refactor an ADR forbids.
+**Decision conflicts**: if a candidate contradicts an existing decision record, only surface it when the friction is real enough to warrant revisiting that decision. Mark it clearly in the card with its `ADR-NNNN` or `D-NNN` identifier. Don't list every theoretical refactor a recorded decision forbids.
 
 See [html-report.md](references/html-report.md) for the full HTML scaffold, diagram patterns, and styling guidance.
 
@@ -101,8 +102,8 @@ Do not invoke it merely to read and use the existing ubiquitous language.
 Apply it to review-specific side effects:
 
 - **Naming a deepened module after an unmodeled domain concept?** Invoke `model-domain` and resolve the term before using it as a module name.
-- **Sharpening a fuzzy term during the conversation?** Invoke `model-domain` and update the applicable `CONTEXT.md` immediately.
-- **User rejects the candidate with a load-bearing reason?** If the decision meets the `model-domain` ADR bar, offer: _"Want me to record this as an ADR so future architecture reviews don't re-suggest it?"_ Skip ephemeral or self-evident reasons.
+- **Sharpening a fuzzy term during the conversation?** Invoke `model-domain` and update the selected context documentation immediately.
+- **User rejects the candidate with a load-bearing reason?** If the decision meets the `model-domain` decision-record bar, offer to record it so future architecture reviews do not re-suggest it. Skip ephemeral or self-evident reasons.
 - **Want to explore alternative interfaces for the deepened module?** See [interface-design.md](references/interface-design.md).
 
 ### 4. Execute (handoff)
@@ -111,4 +112,4 @@ When a grilled candidate is ready to happen, hand it off — this skill never ed
 
 - A **scoped deepening** (boundaries agreed, behavior preserved) → run `/refactor` with the agreed transformation as the goal.
 - An **interface-changing deepening** (new seams, callers migrate) → take it through `/build`; the grilling you just did is a head start on Phase 1.
-- **Not now** → the report file is disposable; anything worth keeping went into `CONTEXT.md` or an ADR during the loop.
+- **Not now** → the report file is disposable; anything worth keeping went into the selected context documentation or a decision record during the loop.

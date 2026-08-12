@@ -11,7 +11,7 @@ The visible semantic HTML is both the review surface and the durable input to la
 - Use stable section IDs so feedback remains understandable after live reload.
 - Keep styling and scripts self-contained except for optional visualization CDNs.
 - Use semantic headings, lists, tables, sections, articles, and native controls.
-- Write visible content in plain language, preferring the ubiquitous language from the applicable context files and then common technical terms the reviewer is likely to know.
+- Write visible content in plain language, preferring the ubiquitous language from the selected context documentation and then common technical terms the reviewer is likely to know.
 - Define an unavoidable unfamiliar term beside its first use rather than assuming the reviewer knows it.
 
 ## Required visible sections
@@ -32,7 +32,7 @@ Cover the complete agreed scope, error paths, lifecycle, accessibility, security
 
 ### Implementation Decisions
 
-Record the modules and their interfaces, technical clarifications, ADR references, schema or protocol changes, and concrete interactions agreed during grilling.
+Record the modules and their interfaces, technical clarifications, decision-record references, schema or protocol changes, and concrete interactions agreed during the design session.
 Do not include file paths or implementation code because they go stale.
 A small decision-rich state machine, schema, or type shape is allowed only when prose would be materially less precise.
 

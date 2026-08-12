@@ -6,7 +6,7 @@ The visible semantic HTML is both the review surface and the durable design inpu
 
 ## Ground the design
 
-Read the applicable context files, relevant ADRs, approved grilling decisions, and the existing interface area.
+Read the selected context documentation, relevant decision records, approved design-session decisions, and the existing interface area.
 Use the project's component library, design tokens, typography, spacing, navigation, content density, and interaction conventions where they exist.
 Use realistic content rather than placeholder text so hierarchy and density can be judged.
 

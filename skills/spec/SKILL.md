@@ -11,7 +11,7 @@ Synthesize a feature spec from the grill session and codebase. **Do NOT intervie
 ## Place in the /build Pipeline
 
 This is **Phase 2** of the `/build` pipeline.
-It assumes `/grill` already happened in this conversation or is recorded in the applicable context files and `docs/adr/`.
+It assumes `/grill` already happened in this conversation or is recorded in the selected context documentation and decision records.
 If invoked standalone and the context feels thin, point the user at `/grill` instead.
 Before synthesis, apply the `mockup` relevance test; when a relevant `mockups.html` is missing, load and run [mockup](../mockup/SKILL.md) before synthesizing the Spec.
 Inside `/build`, reuse the mockup and Design→Spec decision already produced by the orchestrator rather than asking again.
@@ -22,8 +22,8 @@ Read [../shared/references/testable-interfaces.md](../shared/references/testable
 
 ### Step 1: Read context
 
-- Read the applicable context files.
-- Read recent ADRs in `docs/adr/` — especially any added this session — and respect them.
+- Resolve the [domain documentation destination](../shared/references/domain-documentation.md) again for this invocation. Reloading valid linked-worktree state avoids another prompt while renewing every trust check.
+- Read the applicable local context files and recent ADRs, or the saved Confluence context and decisions documents, especially records added this session.
 - Read approved `mockups.html` when present and treat its selected design as Authoritative intent.
 - Skim the codebase area the feature touches. The spec is grounded in the actual codebase, not assumptions.
 
@@ -47,7 +47,7 @@ Wait for the answer before continuing. If they simply confirm, use the proposed 
 ### Step 3: Write the canonical spec
 
 Synthesize `specs.html` using the semantic structure in [references/spec-template.md](references/spec-template.md).
-Use the ubiquitous language from the applicable context files and reference ADRs by number.
+Use the ubiquitous language from the selected context documentation and reference decision records by their `ADR-NNNN` or `D-NNN` identifier.
 The file itself is the durable spec; do not create `specs.md` or a hidden duplicate model.
 The HTML must use `<feature title> - Spec` in its `<title>`, use "Spec" in its `<h1>`, and emphasize user stories, decisions, and module sketches rather than file maps or code.
 Use `visualize` guidance for presentation when available, but the semantic HTML deliverable is mandatory.

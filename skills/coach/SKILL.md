@@ -13,7 +13,7 @@ Coach the user through approved vertical-slice tasks **one slice at a time, one 
 - An approved canonical `tasks.html` in a feature directory under `docs/features/`.
 Resolve it from `$ARGUMENTS` (a path or slug), or with no argument find the most recent `docs/features/*/tasks.html` and confirm it.
 - The user has explicitly approved the tasks (do not assume approval).
-- The applicable context files and relevant ADRs have been read.
+- The selected context documentation and relevant decision records have been read.
 
 See [../shared/references/build-pipeline.md](../shared/references/build-pipeline.md) for file conventions and canonical HTML synchronization rules. See [../shared/references/testable-interfaces.md](../shared/references/testable-interfaces.md) for how spec Testing Decisions and task Test surfaces determine where tests attach.
 
@@ -59,7 +59,7 @@ For each acceptance criterion:
 
 ## Process
 
-1. **Read context** — canonical `tasks.html`, its linked `specs.html`, approved `mockups.html` when present as Authoritative intent, applicable context files, and ADRs.
+1. **Read context** — resolve the [domain documentation destination](../shared/references/domain-documentation.md), then read canonical `tasks.html`, its linked `specs.html`, approved `mockups.html` when present as Authoritative intent, and the selected context documentation and decision records.
 Announce the plan: one slice at a time, one test at a time; confirm Slice 1's interface before writing any test.
 
 2. **For each slice (dependency order):**

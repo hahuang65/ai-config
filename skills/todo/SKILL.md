@@ -22,7 +22,8 @@ Fetch a referenced issue body via `gh issue view` and treat it as the source.
 
 ### Step 1: Gather context
 
-Read canonical `specs.html` thoroughly (or the GitHub issue body if that was passed), the applicable context files, and relevant ADRs.
+Resolve the [domain documentation destination](../shared/references/domain-documentation.md).
+Read canonical `specs.html` thoroughly (or the GitHub issue body if that was passed), the selected context documentation, and relevant decision records.
 Use their ubiquitous language in every slice.
 Read approved `mockups.html` when present as Authoritative intent, and carry its information hierarchy, interaction behavior, important states, responsive intent, and accessibility decisions into UI acceptance criteria and Test surfaces.
 If you have not explored the relevant code areas yet, do so now; titles and descriptions should be grounded in real modules.

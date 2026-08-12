@@ -1,49 +1,83 @@
-# ADR Format
+# Decision Record Format
 
-Format reference for the `model-domain` skill.
+Format reference for durable decisions created by the `model-domain` skill.
+The selected worktree documentation destination determines the native format.
 
-ADRs live in `docs/adr/` and use sequential numbering: `0001-slug.md`, `0002-slug.md`, etc.
+## Local ADRs
 
-Create the `docs/adr/` directory lazily — only when the first ADR is needed.
+Local Architectural Decision Records (ADRs) live in `docs/adr/` and use sequential numbering: `0001-slug.md`, `0002-slug.md`, and so on.
+Create the directory lazily, only when the first ADR qualifies.
 
-## Template
+### Template
 
 ```md
 # {Short title of the decision}
 
-{1-3 sentences: what's the context, what did we decide, and why.}
+{1-3 sentences: what is the context, what did we decide, and why.}
 ```
 
-That's it. An ADR can be a single paragraph. The value is in recording *that* a decision was made and *why* — not in filling out sections.
+That is enough for most local ADRs.
+The value is in recording that a decision was made and why, not in filling out sections.
 
-## Optional sections
+Add these optional sections only when they add genuine value:
 
-Only include these when they add genuine value. Most ADRs won't need them.
+- **Status** frontmatter (`proposed | accepted | deprecated | superseded by ADR-NNNN`) when a decision can be revisited.
+- **Considered Options** when rejected alternatives are worth remembering.
+- **Consequences** when non-obvious downstream effects need to be explicit.
 
-- **Status** frontmatter (`proposed | accepted | deprecated | superseded by ADR-NNNN`) — useful when decisions are revisited
-- **Considered Options** — only when the rejected alternatives are worth remembering
-- **Consequences** — only when non-obvious downstream effects need to be called out
+Scan `docs/adr/` for the highest existing number and increment it by one.
 
-## Numbering
+## Confluence Decisions Document
 
-Scan `docs/adr/` for the highest existing number and increment by one.
+The saved Confluence decisions document replaces local ADR files for that worktree.
+Do not use “ADR” or workflow-specific vocabulary on the page.
+Use **Decisions**, **Decision details**, and **design session** so the document uses language that co-workers share.
 
-## When to offer an ADR
+### Decision List
 
-All three of these must be true:
+Confluence decision-list items are inline-only.
+Add one line per decision in this format:
 
-1. **Hard to reverse** — the cost of changing your mind later is meaningful
-2. **Surprising without context** — a future reader will look at the code and wonder "why on earth did they do it this way?"
-3. **The result of a real trade-off** — there were genuine alternatives and you picked one for specific reasons
+```text
+YYYY-MM-DD — D-NNN: <short decision statement> (<design session>, <who>)
+```
 
-If a decision is easy to reverse, skip it — you'll just reverse it. If it's not surprising, nobody will wonder why. If there was no real alternative, there's nothing to record beyond "we did the obvious thing."
+Make the `D-NNN` text a link to the matching `#D-NNN` detail heading.
+Keep the statement short enough to scan on one line.
+Scan both the list and detail headings for the highest `D-NNN` identifier and increment it by one.
+Never reuse a missing or retired identifier.
 
-### What qualifies
+### Decision Details
 
-- **Architectural shape.** "We're using a monorepo." "The write model is event-sourced, the read model is projected into Postgres."
-- **Integration patterns between contexts.** "Ordering and Billing communicate via domain events, not synchronous HTTP."
-- **Technology choices that carry lock-in.** Database, message bus, auth provider, deployment target. Not every library — just the ones that would take a quarter to swap out.
-- **Boundary and scope decisions.** "Customer data is owned by the Customer context; other contexts reference it by ID only." The explicit no-s are as valuable as the yes-s.
-- **Deliberate deviations from the obvious path.** "We're using manual SQL instead of an ORM because X." Anything where a reasonable reader would assume the opposite. These stop the next engineer from "fixing" something that was deliberate.
-- **Constraints not visible in the code.** "We can't use AWS because of compliance requirements." "Response times must be under 200ms because of the partner API contract."
-- **Rejected alternatives when the rejection is non-obvious.** If you considered GraphQL and picked REST for subtle reasons, record it — otherwise someone will suggest GraphQL again in six months.
+If **Decision details** does not exist, create it as the final section of the page.
+If it already exists, append there without moving the section or any content around it.
+Append each record as one visually cohesive unit:
+
+1. Add an `h3` heading containing only `D-NNN`.
+2. Keep that heading outside the panel so `#D-NNN` remains a working link target.
+3. Immediately follow it with one `panel-note` panel containing the complete record.
+4. Start the panel with a bold title line containing the short title, date, design session, and decision makers.
+5. Add concise **Context**, **Decision**, **Alternatives rejected**, and **Consequence** blocks inside the same panel.
+
+Do not nest tables, expands, or another panel inside the note panel.
+Use the Confluence-safe HTML read, whole-body update, identifier preservation, and verification rules in [context-format.md](context-format.md).
+
+## When to Offer a Decision Record
+
+All three conditions must be true:
+
+1. **Hard to reverse** — changing the decision later has meaningful cost.
+2. **Surprising without context** — a future reader will reasonably ask why this choice was made.
+3. **The result of a real trade-off** — genuine alternatives existed and were rejected for specific reasons.
+
+If a decision is easy to reverse, not surprising, or has no real alternative, do not create a record.
+
+Typical qualifying decisions include:
+
+- Architectural shape.
+- Integration patterns between contexts.
+- Technology choices that carry lock-in.
+- Boundary and scope decisions.
+- Deliberate deviations from the obvious path.
+- Constraints not visible in code.
+- Rejected alternatives whose rejection is non-obvious.

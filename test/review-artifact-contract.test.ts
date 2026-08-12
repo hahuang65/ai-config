@@ -17,7 +17,7 @@ test("review artifacts use language the reviewer already knows", async () => {
 
   for (const content of [sharedProtocol, reviewChange, reviewCode, visualize, visualizeSkill]) {
     expect(content).toContain("plain language");
-    expect(content).toContain("context files");
+    expect(content).toContain("context documentation");
     expect(content).toContain("common technical terms");
   }
   expect(reviewChange).toContain("human-readable labels");
@@ -33,7 +33,7 @@ test("the harness baseline standardizes understandable communication", async () 
   expect(baseline).toContain("ASD-STE100 Simplified Technical English");
   expect(baseline).toContain("`CONTEXT.md` and `CONTEXT-MAP.md` collectively as **context files**");
   expect(baseline).toContain("ubiquitous language");
-  expect(baseline).toContain("The files are the durable record of that language, not the language itself");
+  expect(baseline).toContain("The documentation is the durable record of that language, not the language itself");
   expect(baseline).toContain("Define unfamiliar terms at first use");
   expect(baseline).toContain("In Markdown, put each complete sentence on its own line");
 });

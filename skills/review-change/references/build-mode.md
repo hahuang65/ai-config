@@ -7,7 +7,7 @@ Do not require committed work; `/build` deliberately leaves final version-contro
 ## Entry
 
 1. Receive the feature directory, branch point, current head, working-tree changes, and complete changed-file list from the `/build` orchestrator; do not independently replace that supplied scope.
-2. Read the approved mockup when present, spec, tasks, applicable context files, and relevant ADRs.
+2. Read the approved mockup when present, spec, tasks, selected context documentation, and relevant decision records.
 Use their **ubiquitous language**: the shared canonical vocabulary used by domain experts, users, documentation, tests, and code.
 3. Record whether implementation used AI code mode or coached mode, plus every final implementation verification command, scope, and outcome supplied by Phase 4.
 Label that result as prior broad Validation evidence in the final report and never rerun it during Review change.

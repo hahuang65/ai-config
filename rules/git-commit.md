@@ -44,10 +44,13 @@ Fallback summary (used only when `~/.gitmessage` is absent):
 - Commit early and often. Small, focused commits are easier to review and revert.
 - Each commit should be a single logical change. Don't mix refactoring with feature work.
 - Never commit secrets, credentials, or `.env` files.
-- Check for related context files, ADRs, canonical `mockups.html`, `specs.html`, `tasks.html`, and intentional feature visuals.
+- Check for related local context files, ADRs, canonical `mockups.html`, `specs.html`, `tasks.html`, and intentional feature visuals.
   In ordinary projects, include them unless Git ignores them.
   These artifacts are part of the feature history.
   In A5 projects, follow the exception below instead.
+- A linked worktree's ignored root `domain-documentation.json` is private worktree state, not a project artifact.
+  Never force-add, stage, or commit it.
+  Confluence context and decisions documents remain in Confluence and have no local companions to stage.
 
 ### A5 project exception
 

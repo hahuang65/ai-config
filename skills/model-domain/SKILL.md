@@ -1,6 +1,6 @@
 ---
 name: model-domain
-description: Build, augment, or audit a project's domain model and ubiquitous language. Use to bootstrap missing context files, condense bloated context, resolve domain terminology, record an architectural decision, or support another skill that needs to change the model.
+description: Build, augment, or audit a project's domain model and ubiquitous language in local or Confluence documentation. Use to bootstrap missing context, condense bloated context, resolve domain terminology, record a durable decision, or support another skill that needs to change the model.
 argument-hint: "[build|augment|audit] [scope-or-topic]"
 ---
 
@@ -9,19 +9,29 @@ argument-hint: "[build|augment|audit] [scope-or-topic]"
 Actively build and sharpen the project's domain model as you design.
 Challenge terms, invent edge-case scenarios, and write the glossary and decisions down when they crystallize.
 
-**Context files** are `CONTEXT.md` and `CONTEXT-MAP.md` files collectively.
-They record or locate the project's **ubiquitous language**: the shared, canonical vocabulary that domain experts, users, documentation, tests, and code use for the project's domain.
-The files are the durable record of that language, not the language itself; the words become ubiquitous only when everyone and every artifact use them consistently.
+**Context files** are local `CONTEXT.md` and `CONTEXT-MAP.md` files collectively.
+**Context documentation** is the selected durable source: context files or a linked worktree's saved Confluence context document.
+It records or locates the project's **ubiquitous language**: the shared, canonical vocabulary that domain experts, users, documentation, tests, and code use for the project's domain.
+The documentation is the durable record of that language, not the language itself; the words become ubiquitous only when everyone and every artifact use them consistently.
 
-Merely reading the applicable context files to consume the ubiquitous language is a one-line habit that any skill can follow.
+Merely reading the applicable context documentation to consume the ubiquitous language is a one-line habit that any skill can follow.
 Invoke this skill when terms, relationships, context boundaries, or durable decisions need to be added, challenged, or changed.
 
 When another skill invokes `model-domain`, embed this discipline in that skill's active workflow rather than starting a second interview.
 When invoked standalone, start the dedicated session below.
 
-Adapted from Matt Pocock's [domain-modeling skill](https://github.com/mattpocock/skills/blob/main/skills/engineering/domain-modeling/SKILL.md), with this repository's context and ADR conventions.
+Adapted from Matt Pocock's [domain-modeling skill](https://github.com/mattpocock/skills/blob/main/skills/engineering/domain-modeling/SKILL.md), with this repository's context and decision-record conventions.
 
-## File Structure
+## Resolve the Worktree Documentation Destination
+
+Read and follow the shared [domain documentation destination](../shared/references/domain-documentation.md) protocol before reading or writing domain documentation.
+It keeps the main project directory local without prompting and persists one safe local-or-Confluence selection only in each linked worktree.
+
+Read and write the selected destination only.
+Never create local context files or ADRs as hidden companions for Confluence pages.
+Use the [context documentation format](references/context-format.md) and [decision record format](references/adr-format.md), including their Confluence-safe update rules.
+
+## Local File Structure
 
 Most repositories have one context:
 
@@ -50,16 +60,18 @@ The map points to each context and its local documentation:
         └── CONTEXT.md
 ```
 
-Read the applicable context files: the root `CONTEXT.md`, or `CONTEXT-MAP.md` and the relevant subordinate `CONTEXT.md` files.
+For a local destination, read the applicable context files: the root `CONTEXT.md`, or `CONTEXT-MAP.md` and the relevant subordinate `CONTEXT.md` files.
 Read recent and relevant project-wide ADRs from the root `docs/adr/`.
 Create context files lazily: create `CONTEXT.md` when the first term resolves, `CONTEXT-MAP.md` when the first multi-context structure resolves, and root `docs/adr/` when the first ADR qualifies.
-Use the [CONTEXT.md format](references/context-format.md) and [ADR format](references/adr-format.md).
+
+For a Confluence destination, read the supplied context document and decisions document before modeling.
+Treat those two pages as the durable project-wide documentation; preserve their unrelated content and existing organization.
 
 ## Standalone Session
 
 When invoked standalone, read and follow the [standalone session workflow](references/standalone-session.md).
-It selects **build from scratch**, **augment**, or **audit and condense** from `$ARGUMENTS` and the existing context files.
-Investigate facts from code, documentation, and ADRs, and ask the user only for domain decisions.
+It selects **build from scratch**, **augment**, or **audit and condense** from `$ARGUMENTS` and the selected context documentation.
+Investigate facts from code, documentation, and decision records, and ask the user only for domain decisions.
 
 ## During the Session
 
@@ -83,22 +95,23 @@ Force precision about concept boundaries, context ownership, cardinality, identi
 When the user states how something works, check whether the code agrees.
 Surface contradictions, for example: "Your code cancels entire Orders, but you just said partial cancellation is possible — which is right?"
 
-### Update Context Files Inline
+### Update Context Files Inline or Update Confluence Inline
 
-When a term or an intra-context relationship resolves, update the applicable `CONTEXT.md` immediately.
-When context membership, ownership, a context boundary, or an inter-context relationship resolves, update `CONTEXT-MAP.md` immediately.
-Do not batch these updates or leave the map inconsistent with its context files.
+When a term or an intra-context relationship resolves, update the applicable local `CONTEXT.md` or the selected Confluence context document immediately.
+When context membership, ownership, a context boundary, or an inter-context relationship resolves, update the local `CONTEXT-MAP.md` or the corresponding Confluence context section immediately.
+Do not batch these updates or leave relationships inconsistent with their context definitions.
 
-`CONTEXT.md` is a glossary and nothing else.
+Context documentation is a glossary and context map, nothing else.
 Keep it devoid of implementation details, specifications, and scratch-pad content.
 Use its canonical terms consistently in the current conversation and every downstream artifact.
 
-### Offer ADRs Sparingly
+### Offer Decision Records Sparingly
 
-Offer to create an ADR only when all three conditions are true:
+Offer to create a local ADR or a Confluence decision record only when all three conditions are true:
 
 1. **Hard to reverse** — changing the decision later has meaningful cost.
 2. **Surprising without context** — a future reader will reasonably ask why this choice was made.
 3. **The result of a real trade-off** — genuine alternatives existed and were rejected for specific reasons.
 
-If any condition is missing, skip the ADR.
+If any condition is missing, do not create a decision record.
+For Confluence, use `D-NNN` identifiers and the **Decision details** structure from the decision record format.

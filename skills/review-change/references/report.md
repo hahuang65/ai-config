@@ -29,7 +29,7 @@ Generate control IDs from workflow-owned safe identifiers rather than user text.
 Render an Untrusted URL as text unless the workflow validates it as an expected `https:` provider URL or a report-owned local artifact URL before assigning it to a link target.
 Keep resolved Findings in history but separate them visually from current Findings.
 Write all visible report content in plain language.
-Prefer the ubiquitous language from the applicable context files.
+Prefer the ubiquitous language from the selected context documentation.
 Then prefer wording from Authoritative intent, source, tests, and project documentation, followed by common technical terms the user is likely to know.
 Define any unavoidable unfamiliar term beside its first use.
 Show human-readable labels as the primary text for machine values such as severity, action, disposition, and stage status; keep exact machine values in secondary metadata only when they help diagnose or submit the review.
