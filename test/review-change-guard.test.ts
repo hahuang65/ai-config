@@ -71,6 +71,22 @@ describe("Review change CLI guard", () => {
     }
   });
 
+  test("keeps worktree lifecycle mutations in the parent process", () => {
+    for (const command of [
+      "git worktree add --detach /reviews/head abc123",
+      "git -C /repo worktree remove /reviews/head",
+    ]) {
+      expect(evaluateReviewChangeToolCall(
+        { toolName: "bash", input: { command } },
+        outerContext,
+      )?.reason).toContain("Git delivery mutation");
+    }
+    expect(evaluateReviewChangeToolCall(
+      { toolName: "bash", input: { command: "git worktree list" } },
+      outerContext,
+    )).toBeNull();
+  });
+
   test("blocks file output from nominally read-only Git commands", () => {
     for (const command of [
       "git diff --output=/repo/changed.patch HEAD",

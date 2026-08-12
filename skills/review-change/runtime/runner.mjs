@@ -1,26 +1,53 @@
-import { spawn } from "node:child_process";
-import { readdir } from "node:fs/promises";
+import { spawnSync } from "node:child_process";
 import { tmpdir } from "node:os";
 import path from "node:path";
-import { fileURLToPath, pathToFileURL } from "node:url";
+import { fileURLToPath } from "node:url";
 
+import { validateTargetArgument } from "./arguments.mjs";
 import { spawnInForeground } from "./foreground-process.mjs";
 import { createLifecycleCancellation } from "./lifecycle-cancellation.mjs";
+import { isGitHubTargetInput, parseGitHubTarget } from "./github-target.mjs";
 import { buildReviewChangePrompt } from "./prompt.mjs";
 import { createReportDirectory } from "./report-directory.mjs";
+import { openReportArtifact } from "./report-viewer.mjs";
+import { prepareDirectRemoteReview } from "./remote-lifecycle.mjs";
+import { verifyDocumentedSandbox } from "./sandbox.mjs";
 import { resolveReviewTarget } from "./target.mjs";
 import { createTerminalStatus } from "./status.mjs";
 import { createReviewWorkspace } from "./workspace.mjs";
 
 const runtimeDirectory = path.dirname(fileURLToPath(import.meta.url));
 const defaultSkillDirectory = path.resolve(runtimeDirectory, "..");
-const viewerErrorLimit = 4_096;
 
 export async function runReviewChange(options, dependencies = {}) {
+  if (options.target !== null && options.target !== undefined) validateTargetArgument(options.target);
   const environment = dependencies.environment ?? process.env;
   if (environment.REVIEW_CHANGE_GATE === "1") {
     throw Object.assign(new Error("a Review change gate is already active"), { code: "NESTED_GATE" });
   }
+  const sourceDirectory = dependencies.cwd ?? process.cwd();
+  const githubTarget = explicitGitHubTarget(options.target);
+  if (options.trustRemote && !githubTarget) {
+    throw Object.assign(new Error("--trust-remote requires an explicit GitHub target"), { code: "USAGE_ERROR" });
+  }
+  if (options.sandbox && !githubTarget) {
+    throw Object.assign(new Error("--sandbox requires an explicit GitHub target"), { code: "USAGE_ERROR" });
+  }
+  const verifySandbox = dependencies.verifySandbox ?? verifyDocumentedSandbox;
+  const sandboxVerified = options.sandbox
+    ? await verifySandbox({ environment })
+    : false;
+  if (options.sandbox && !sandboxVerified) {
+    throw Object.assign(
+      new Error("--sandbox requires the documented sandbox environment"),
+      { code: "USAGE_ERROR" },
+    );
+  }
+  const lifecycleOptions = sandboxVerified ? { ...options, sandboxVerified: true } : options;
+  const isRepository = dependencies.isGitRepository ?? isGitRepository;
+  const repositoryCheck = githubTarget ? true : isRepository(sourceDirectory);
+  const insideRepository = repositoryCheck instanceof Promise ? await repositoryCheck : repositoryCheck;
+  if (!githubTarget && !insideRepository) throw outsideRepositoryUsageError();
   const status = dependencies.status ?? createTerminalStatus();
   const cancellation = createLifecycleCancellation({ processRef: dependencies.processRef, status });
   const state = {
@@ -32,7 +59,9 @@ export async function runReviewChange(options, dependencies = {}) {
   };
   try {
     status.start({ target: options.target, intent: options.intent });
-    state.exitCode = await executeReviewLifecycle({ options, dependencies, environment, status, cancellation, state });
+    state.exitCode = await executeReviewLifecycle({
+      options: lifecycleOptions, dependencies, environment, status, cancellation, state,
+    });
   } catch (error) {
     if (cancellation.exitCode() === null) state.failure = error;
   }
@@ -65,18 +94,73 @@ export async function runReviewChange(options, dependencies = {}) {
 async function executeReviewLifecycle({ options, dependencies, environment, status, cancellation, state }) {
   const skillDirectory = path.resolve(dependencies.skillDirectory ?? defaultSkillDirectory);
   const sourceDirectory = dependencies.cwd ?? process.cwd();
+  const requestedGitHubTarget = explicitGitHubTarget(options.target);
   const resolveTarget = dependencies.resolveTarget ?? resolveReviewTarget;
-  const resolvedScope = await runStatusStage(status, "target", "Resolve target", () => resolveTarget({
+  let resolvedScope = await runStatusStage(status, "target", "Resolve target", () => resolveTarget({
     cwd: sourceDirectory,
     target: options.target,
+    deferBranchFreshness: true,
     signal: cancellation.signal,
     onActivity: (kind, message) => status.activity?.("target", kind, message),
-  }), (scope) => `${scopeLabel(scope.kind)} scope frozen`);
+  }), (scope) => scope.kind === "local-branch"
+    ? "local branch accepted for isolated fetch"
+    : `${scopeLabel(scope.kind)} scope frozen`);
   cancellation.throwIfAborted();
-  status.setScope?.(`${scopeLabel(resolvedScope.kind)} · ${resolvedScope.target ?? "ask-user"}`);
-  const resolvedOptions = { ...options, target: resolvedScope.target, scopeKind: resolvedScope.kind, sourceScopeResolved: true };
-  await createIsolatedWorkspace({ sourceDirectory, dependencies, status, cancellation, state });
+  const acquiredGitHubTarget = directGitHubTarget(requestedGitHubTarget, resolvedScope);
+  const materializeLocalDescendant = resolvedScope.kind === "local-branch";
+  await createIsolatedWorkspace({
+    sourceDirectory,
+    githubTarget: acquiredGitHubTarget,
+    fetchRemote: requiresLocalBranchFreshness(resolvedScope.kind, options.target),
+    freshnessRemote: resolvedScope.freshnessRemote,
+    dependencies,
+    status,
+    cancellation,
+    state,
+  });
   cancellation.throwIfAborted();
+  if (acquiredGitHubTarget) {
+    const remoteReview = await prepareDirectRemoteReview({
+      githubTarget: acquiredGitHubTarget,
+      explicitTrust: options.trustRemote === true,
+      sandboxVerified: options.sandbox === true && options.sandboxVerified === true,
+      workspace: state.workspace,
+      dependencies,
+      status,
+      signal: cancellation.signal,
+    });
+    state.workspace = remoteReview.workspace;
+    status.setWorkspacePath?.(state.workspace.cwd);
+    resolvedScope = remoteReview.scope;
+  } else if (requiresPostIsolationResolution(resolvedScope.kind, options.target)) {
+    resolvedScope = await resolveTarget({
+      cwd: state.workspace.cwd,
+      target: options.target,
+      freshnessRemote: resolvedScope.freshnessRemote,
+      materializeSelectedHead: materializeLocalDescendant,
+      signal: cancellation.signal,
+      onActivity: (kind, message) => status.activity?.("workspace", kind, message),
+    });
+    if (materializeLocalDescendant) {
+      if (!resolvedScope.selectedHeadOid || typeof state.workspace.materializeHead !== "function") {
+        throw new Error("The selected local descendant cannot be materialized safely");
+      }
+      state.workspace = await state.workspace.materializeHead(resolvedScope.selectedHeadOid);
+      status.setWorkspacePath?.(state.workspace.cwd);
+    }
+  }
+  status.setScope?.(`${scopeLabel(resolvedScope.kind)} · ${resolvedScope.immutableRange ?? resolvedScope.target ?? "ask-user"}`);
+  const resolvedOptions = {
+    ...options,
+    target: resolvedScope.target,
+    scopeKind: resolvedScope.kind,
+    sourceScopeResolved: true,
+    immutableRange: resolvedScope.immutableRange,
+    selectedHeadOid: resolvedScope.selectedHeadOid,
+    headRepository: resolvedScope.headRepository,
+    trustClassification: resolvedScope.trustClassification,
+    materializationState: state.workspace.details?.materializationState,
+  };
   const exitCode = await runReviewStage(
     status, resolvedOptions, state.workspace, skillDirectory, environment, dependencies, cancellation,
   );
@@ -100,12 +184,17 @@ async function executeReviewLifecycle({ options, dependencies, environment, stat
   }
 }
 
-async function createIsolatedWorkspace({ sourceDirectory, dependencies, status, cancellation, state }) {
+async function createIsolatedWorkspace({
+  sourceDirectory, githubTarget, fetchRemote, freshnessRemote, dependencies, status, cancellation, state,
+}) {
   const createWorkspace = dependencies.createWorkspace ?? createReviewWorkspace;
   const createReportRoot = dependencies.createReportDirectory ?? createReportDirectory;
   await runStatusStage(status, "workspace", "Create isolation", async () => {
     state.workspace = await createWorkspace({
       cwd: sourceDirectory,
+      githubTarget,
+      fetchRemote,
+      freshnessRemote,
       signal: cancellation.signal,
       onActivity: (kind, message) => status.activity?.("workspace", kind, message),
     });
@@ -199,6 +288,53 @@ async function runStatusStage(status, stage, label, operation, detail = () => ""
   }
 }
 
+function isGitRepository(cwd) {
+  const check = spawnSync("git", ["-C", cwd, "rev-parse", "--git-dir"], {
+    stdio: "ignore",
+    timeout: 15_000,
+  });
+  return check.status === 0;
+}
+
+function outsideRepositoryUsageError() {
+  const message = "Outside a Git repository, use an explicit GitHub target: "
+    + "https://github.com/owner/repository/pull/59/changes, "
+    + "gh:owner/repository/pull/59, "
+    + "https://github.com/owner/repository/tree/feature/branch, or "
+    + "gh:owner/repository/tree/feature/branch.";
+  return Object.assign(new Error(message), { code: "USAGE_ERROR" });
+}
+
+function explicitGitHubTarget(target) {
+  if (!isGitHubTargetInput(target)) return null;
+  try {
+    const parsedTarget = parseGitHubTarget(target);
+    return parsedTarget.kind === "branch" && target.startsWith("gh:")
+      ? { ...parsedTarget, exactBranch: true }
+      : parsedTarget;
+  } catch (error) {
+    error.code = "USAGE_ERROR";
+    throw error;
+  }
+}
+
+function directGitHubTarget(requestedGitHubTarget, resolvedScope) {
+  if (requestedGitHubTarget) return requestedGitHubTarget;
+  if (resolvedScope.kind !== "pull-request") return null;
+  const target = parseGitHubTarget(resolvedScope.target);
+  if (target.kind !== "pull-request") throw new Error("Resolved pull-request scope is malformed");
+  return target;
+}
+
+function requiresLocalBranchFreshness(scopeKind, target) {
+  if (scopeKind === "local-branch") return true;
+  return Boolean(target && scopeKind === "local-range" && !target.includes(".."));
+}
+
+function requiresPostIsolationResolution(scopeKind, target) {
+  return scopeKind === "github-branch" || requiresLocalBranchFreshness(scopeKind, target);
+}
+
 function scopeLabel(scopeKind) {
   return scopeKind.replaceAll("-", " ");
 }
@@ -209,6 +345,8 @@ async function runInWorkspace(options, workspace, skillDirectory, environment, d
     ...options,
     sourceRoot: workspace.sourceRoot,
     reviewRoot: workspace.cwd,
+    requestedRepositorySshUrl: workspace.details?.requestedRepositorySshUrl,
+    materializationState: workspace.details?.materializationState,
     skillDirectory,
   });
   const args = [...options.piOptions, "--mode", "json", "--print", "--no-session", "--skill", skillDirectory, prompt];
@@ -245,85 +383,4 @@ function optionValue(options, name) {
   return index === -1 ? null : options[index + 1] ?? null;
 }
 
-export { spawnInForeground };
-
-export async function openReportArtifact(reportRoot, dependencies = {}) {
-  const readDirectory = dependencies.readDirectory ?? readdir;
-  const spawnProcess = dependencies.spawnProcess ?? spawn;
-  const platform = dependencies.platform ?? process.platform;
-  const entries = await readDirectory(reportRoot, { withFileTypes: true });
-  const reports = entries
-    .filter((entry) => entry.isFile() && path.extname(entry.name).toLowerCase() === ".html")
-    .map((entry) => path.join(reportRoot, entry.name));
-  if (reports.length !== 1) {
-    throw new Error(`expected one HTML report in ${reportRoot}, found ${reports.length}`);
-  }
-  const reportPath = reports[0];
-  const { command, args, waitForExit } = viewerCommand(platform, reportPath);
-  const stdio = waitForExit ? ["ignore", "ignore", "pipe"] : "ignore";
-  const processOptions = dependencies.signal
-    ? { stdio, signal: dependencies.signal }
-    : { stdio };
-  try {
-    await waitForViewer({ command, args, processOptions, spawnProcess, waitForExit });
-    return reportPath;
-  } catch (error) {
-    const failure = error instanceof Error ? error : new Error(String(error));
-    failure.reportPath = reportPath;
-    throw failure;
-  }
-}
-
-function waitForViewer({ command, args, processOptions, spawnProcess, waitForExit }) {
-  return new Promise((resolve, reject) => {
-    const child = spawnProcess(command, args, processOptions);
-    let stderr = "";
-    child.stderr?.setEncoding?.("utf8");
-    child.stderr?.on?.("data", (chunk) => {
-      stderr = `${stderr}${chunk}`.slice(0, viewerErrorLimit);
-    });
-    child.once("error", reject);
-    if (!waitForExit) {
-      child.once("spawn", () => {
-        child.unref?.();
-        resolve();
-      });
-      return;
-    }
-    child.once("close", (code) => {
-      if (code === 0) {
-        resolve();
-        return;
-      }
-      const detail = stderr.replace(/\s+/g, " ").trim();
-      const suffix = detail ? `: ${detail}` : "";
-      reject(new Error(`${command} exited with status ${code ?? "unknown"}${suffix}`));
-    });
-  });
-}
-
-function viewerCommand(platform, reportPath) {
-  if (platform === "darwin") {
-    const reportUrl = pathToFileURL(reportPath).href;
-    return {
-      command: "osascript",
-      args: [
-        "-e",
-        'set firefoxApp to application "Firefox"',
-        "-e",
-        "tell firefoxApp",
-        "-e",
-        "activate",
-        "-e",
-        `«event GURLGURL» "${reportUrl}"`,
-        "-e",
-        "end tell",
-      ],
-      waitForExit: true,
-    };
-  }
-  if (platform === "win32") {
-    return { command: "explorer.exe", args: [reportPath], waitForExit: false };
-  }
-  return { command: "xdg-open", args: [reportPath], waitForExit: false };
-}
+export { openReportArtifact, spawnInForeground };

@@ -94,7 +94,7 @@ function isGitMutation(args: string[]): boolean {
     return !first.startsWith("--get") && !new Set(["--list", "--show-origin", "-l"]).has(first);
   }
   if (command === "remote") return !new Set(["", "-v", "get-url", "show"]).has(commandArgs[0] ?? "");
-  if (command === "worktree") return !new Set(["add", "list", "remove"]).has(commandArgs[0] ?? "");
+  if (command === "worktree") return commandArgs[0] !== "list";
   return true;
 }
 

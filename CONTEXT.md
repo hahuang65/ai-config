@@ -277,6 +277,18 @@ Some pipeline skills also run standalone, including `grill`, `mockup`, `spec`, `
 Distinct from a **standalone skill** (`refactor`, `review-code`, `handoff`, `pickup`, `prototype`) that `/build` never invokes automatically.
 _Avoid_: phase (a phase is a stage of the pipeline; a pipeline skill is the unit that runs it).
 
+**Review target**:
+The user input that selects the change for a **Review change**.
+It can identify a local branch or range, or an explicit **GitHub target**, and resolves to an immutable review scope before validation.
+_Avoid_: Target string, mutable branch name, checkout.
+
+**GitHub target**:
+An explicit `github.com` URL or exact `gh:` identifier that names a GitHub pull request or branch for direct remote review.
+Browser URL suffixes, queries, and fragments are tolerated only at the canonical GitHub HTTPS origin without credentials, nonstandard ports, or endpoint ambiguity, while `gh:` identifiers reject those URL-only modifiers.
+Local shorthand discovers repositories only from documented GitHub SSH or HTTPS transports in canonical or default port forms.
+It always selects the named remote repository, even when Review change starts inside a different local repository.
+_Avoid_: Remote target, GitHub reference.
+
 **Authoritative intent**:
 The explicit acceptance context a **Review change** uses to distinguish a defect from a deliberate choice.
 Build mode takes it from approved `mockups.html` when present and canonical `specs.html` and `tasks.html`; pull-request mode takes it from the sanitized PR title and body, augmented or overridden by explicit `/review-change` or `review-change --intent` arguments.
@@ -296,8 +308,16 @@ If focused evidence cannot establish an intent criterion, the **Review change** 
 _Avoid_: Test suite, CI result, confidence.
 
 **Trusted change**:
-A build or local-range change, a remote pull request explicitly trusted by the user or isolated by a documented sandbox, or a pull request whose originating repository is an A5 project.
-Only a Trusted change may execute local tests, linters, hooks, or package scripts; other remote pull requests remain unmaterialized and use static inspection of immutable Git objects plus provider CI as **Validation evidence**.
+A build or local-range change, a remote change explicitly trusted by the user, a remote change already contained by the verified documented sandbox, or any remote change whose originating repository is an A5 project.
+The standalone sandbox interface is `REVIEW_CHANGE_SANDBOX=review-change-gondolin-v1` plus the immutable root-owned marker `/run/review-change/sandbox-v1` containing the same version line.
+`--sandbox` requests that route, but the parent must verify the marker with file APIs before acquisition and must not execute remote code to detect it.
+Git transport cannot attest that a clone belongs to a GitHub repository node ID.
+For a direct GitHub branch, A5 classification is available only after the parent strictly resolves provider `id` and canonical `nameWithOwner` metadata before acquisition, queries post-acquisition metadata by that immutable ID, and proves content equivalence by exact equality between provider and clone selected/default commit OIDs.
+This check binds reviewed content, not clone repository identity: an A→B→A name-reuse race is safe when both OID pairs are equal, while any mismatch fails closed and cleans only recorded paths.
+The requested identity only selects acquisition; post-acquisition canonical provider identity supplies `headRepository` for A5 classification.
+Branch scope uses only the verified selected/default OIDs, and Trusted materialization receives only the exact selected OID, so unrelated clone refs cannot affect scope, trust, or execution.
+A5 classification uses a recorded base-independent temporary Git context outside the acquired base, exposes only the canonical SSH URL from immutable-ID provider metadata to global or system configuration, and removes exactly that context.
+Only a Trusted change may execute local tests, linters, hooks, or package scripts; other remote changes remain unmaterialized and use static inspection of immutable Git objects plus provider CI as **Validation evidence**.
 _Avoid_: Same-repository change, disposable worktree, trusted author.
 
 **Review change report**:
@@ -319,7 +339,7 @@ _Avoid_: Reviewer, refactorer.
 
 **Review change**:
 The mandatory final `/build` phase: a fixed validation of a specific change against its **Authoritative intent** through adversarial review, targeted evidence, documentation checks, then lint.
-AI build mode may run up to three automatic fix/recheck rounds per stage; pull requests, explicit branches or local ranges, and standalone CLI reviews report Findings without mutation.
+AI build mode may run up to three automatic fix/recheck rounds per stage; GitHub pull requests and branches, explicit local branches or ranges, and standalone CLI reviews report Findings without mutation.
 Coached build mode preserves user ownership of source and tests, applying only documentation and mechanical formatting fixes automatically while guiding the user through source fixes.
 Delivery automation and optional standalone `review-code` architectural exploration remain outside this phase.
 Its terminal decision is presented through a **Review change report**.
@@ -328,14 +348,18 @@ _Avoid_: No-mistakes, code review (too broad), architecture review.
 **Review change CLI**:
 The standalone `review-change` executable that runs **Review change** through an isolated foreground pi process without requiring an existing agent session.
 With no target, it resolves the current branch pull request when present or reviews from the branch point through the current working state.
-It also accepts an explicit branch, local range, pull-request URL, or pull-request number.
+It also accepts an explicit local branch or range, pull-request shorthand, or an explicit GitHub pull-request or branch URL or `gh:` identifier.
+An exact local branch wins before numeric or `pull/<number>` shorthand.
 Before launching pi, it freezes the target in a disposable isolated clone under `~/.review-orchard/`, separate from development worktrees under `~/.orchard/`.
+For a mutable local branch, it fetches only the configured matching remote in isolation, selects and materializes the exact descendant, and replays the captured tracked and untracked state; unsafe or conflicting replay stops with corrective cleanup.
+An explicit immutable range does not fetch or rematerialize.
+A direct GitHub target acquires its named repository without checkout, verifies immutable provider content, and remains unmaterialized unless explicit trust, verified sandbox confinement, or A5 classification permits exact-head materialization.
 The original checkout and Git metadata remain outside the child process workspace.
 A CLI-specific guard blocks target writes, staging, commits, pushes, and provider mutations.
 Interactive output shows the review pipeline, bounded credential-redacted logs, Findings, and the final Summary; redirected output uses plain status lines.
-The final Summary keeps the isolated clone and telemetry available until dismissal, then cleanup removes exactly that clone.
+The final Summary keeps the isolated clone and telemetry available until dismissal, then cleanup removes exactly the recorded review paths.
 The CLI opens a disposable HTML report but never starts `review-artifact`, posts a provider review, or waits for approval.
-Detailed terminal behavior belongs to the CLI workflow reference and `review-change --help`, not this glossary.
+Detailed input, trust, and terminal behavior belongs to the CLI workflow references and `review-change --help`, not this glossary.
 _Avoid_: no-mistakes remote, delivery gate, pi session.
 
 **Progressive disclosure**:

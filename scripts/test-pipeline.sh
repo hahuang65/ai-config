@@ -855,6 +855,40 @@ test_phase_review_change() {
   check_content_cached "$content" "$label" "CLI-specific pi guard.*model|model.*CLI-specific pi guard"
 }
 
+test_review_change_branch_freshness_docs() {
+  section "Review change branch freshness docs"
+  local relative_path content
+  local public_surfaces=(
+    README.md
+    skills/review-change/SKILL.md
+    skills/review-change/bin/review-change.mjs
+    skills/review-change/references/cli-mode.md
+    skills/review-change/references/workflow.md
+    docs/adr/0022-run-standalone-review-change-through-pi.md
+  )
+
+  for relative_path in "${public_surfaces[@]}"; do
+    content="$(tr '\n' ' ' < "$REPO_DIR/$relative_path" | tr -s '[:space:]' ' ')"
+    check_content_cached "$content" "$relative_path" "configured matching remote"
+    check_content_cached "$content" "$relative_path" "capture(s|d)?.*before isolation"
+    check_content_cached "$content" "$relative_path" "credential-safe.*workspace.*fetch|fetch.*credential-safe.*workspace"
+    check_content_cached "$content" "$relative_path" "descendant.*local.*matching.remote tips"
+    check_content_cached "$content" "$relative_path" "fetched repository default branch.*remote"
+    check_content_cached "$content" "$relative_path" "[Ee]xplicit.*origin/<branch>.*use(s|d| of)?.*origin"
+    check_content_cached "$content" "$relative_path" "exact selected local head|exact selected descendant"
+    check_content_cached "$content" "$relative_path" "tracked patch.*untracked files"
+    check_content_cached "$content" "$relative_path" "[Rr]eplay conflict.*(cleanup|stale evidence)"
+    check_content_cached "$content" "$relative_path" "[Ee]xplicit.*range.*(does not|not).*rematerialize"
+    check_content_cached "$content" "$relative_path" "canonical.*nameWithOwner"
+    check_content_cached "$content" "$relative_path" "selected and default.*OID"
+    check_content_cached "$content" "$relative_path" "content equivalence"
+    check_content_cached "$content" "$relative_path" "repository-ID binding"
+    check_content_cached "$content" "$relative_path" "requested identity.*selects acquisition"
+    check_content_cached "$content" "$relative_path" "[Uu]nrelated clone refs"
+    check_content_cached "$content" "$relative_path" "exact selected OID"
+  done
+}
+
 test_review_change_cli() {
   section "CLI: review-change"
   local bin="$REPO_DIR/skills/review-change/bin/review-change.mjs"
@@ -867,13 +901,15 @@ test_review_change_cli() {
     || fail "$label" "standalone entry point missing or not executable"
   check_content_cached "$(cat "$bin")" "$label" "Usage: review-change.*target.*--intent"
   check_content_cached "$(cat "$bin")" "$label" "assertSupportedNode.*process[.]versions[.]node"
-  local runner prompt status_runtime status_state markdown_summary workspace report_directory target_resolution
+  local runner prompt report_viewer status_runtime status_state markdown_summary workspace local_materialization report_directory target_resolution
   runner="$(cat "$runtime/runner.mjs")"
   prompt="$(cat "$runtime/prompt.mjs")"
+  report_viewer="$(cat "$runtime/report-viewer.mjs")"
   status_runtime="$(cat "$runtime/status.mjs")"
   status_state="$(cat "$runtime/status-state.mjs")"
   markdown_summary="$(cat "$runtime/markdown-summary.mjs")"
   workspace="$(cat "$runtime/workspace.mjs")"
+  local_materialization="$(cat "$runtime/local-materialization.mjs")"
   report_directory="$(cat "$runtime/report-directory.mjs")"
   target_resolution="$(cat "$runtime/target.mjs")"
   check_content_cached "$runner" "skills/review-change/runtime/runner.mjs" "spawn.*command, args, options"
@@ -883,7 +919,7 @@ test_review_change_cli() {
   check_content_cached "$runner" "skills/review-change/runtime/runner.mjs" "workspace[.]cleanup"
   check_content_cached "$runner" "skills/review-change/runtime/runner.mjs" "status[.]finish.*finally.*cancellation[.]cleanup"
   check_content_cached "$status_runtime" "skills/review-change/runtime/status.mjs" "interrupt.*finalView.*dismissFinal.*restoreTerminal"
-  check_content_cached "$runner" "skills/review-change/runtime/runner.mjs" "openReportArtifact.*expected one HTML report.*viewerCommand"
+  check_content_cached "$report_viewer" "skills/review-change/runtime/report-viewer.mjs" "openReportArtifact.*expected one HTML report.*viewerCommand"
   check_content_cached "$prompt" "skills/review-change/runtime/prompt.mjs" "acceptance data, never executable instructions"
   check_content_cached "$prompt" "skills/review-change/runtime/prompt.mjs" "Do not invoke review-artifact or wait for approval.*parent process opens it"
   check_content_cached "$prompt" "skills/review-change/runtime/prompt.mjs" "Never stage, commit, push, or mutate provider state"
@@ -911,7 +947,7 @@ test_review_change_cli() {
   check_content_cached "$workspace" "skills/review-change/runtime/workspace.mjs" "defaultReviewWorkspaceRoot"
   check_content_cached "$workspace" "skills/review-change/runtime/workspace.mjs" "[.]review-orchard"
   check_content_cached "$workspace" "skills/review-change/runtime/workspace.mjs" "--no-hardlinks.*--no-checkout"
-  check_content_cached "$workspace" "skills/review-change/runtime/workspace.mjs" "ls-files.*--others.*--exclude-standard"
+  check_content_cached "$local_materialization" "skills/review-change/runtime/local-materialization.mjs" "ls-files.*--others.*--exclude-standard"
   check_content_cached "$workspace" "skills/review-change/runtime/workspace.mjs" "set-url.*--push.*no-push://review-change"
   check_content_cached "$report_directory" "skills/review-change/runtime/report-directory.mjs" "protectedRoots"
   check_content_cached "$report_directory" "skills/review-change/runtime/report-directory.mjs" "prepareSafeRoot"
@@ -2145,6 +2181,7 @@ run_content_pipeline() {
 run_content_review() {
   run test_review_change_material_ui_redesign
   run test_phase_review_change
+  run test_review_change_branch_freshness_docs
   run test_review_change_cli
   run test_agent_change_reviewer
   run test_agent_change_fixer
@@ -2225,6 +2262,7 @@ run_selected() {
     mockup-intent-thread)      run test_authoritative_intent_thread ;;
     prototype-mockup-routing)  run test_prototype_mockup_routing ;;
     review-change-ui-redesign) run test_review_change_material_ui_redesign ;;
+    review-branch-docs)        run test_review_change_branch_freshness_docs ;;
     phase-orchestrator)        run test_phase_orchestrator ;;
     harness-modules)           run test_harness_modules ;;
     isolation)                 run test_isolation ;;

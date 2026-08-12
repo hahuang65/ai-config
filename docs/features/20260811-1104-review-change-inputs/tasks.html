@@ -1,0 +1,566 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <title>Review Change Input Resolution - Tasks</title>
+  <style>
+    :root {
+      --font-display: "Iowan Old Style", "Palatino Linotype", "Book Antiqua", Palatino, Georgia, serif;
+      --font-body: "Avenir Next", Avenir, "Segoe UI", sans-serif;
+      --font-mono: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+      --bg: #f4efe4;
+      --surface: #fffdf7;
+      --surface-2: #e9e0cf;
+      --ink: #292c28;
+      --muted: #66695f;
+      --line: #cec3b0;
+      --line-strong: #a99a81;
+      --rust: #9f462b;
+      --rust-soft: #efd8ce;
+      --sage: #4f7058;
+      --sage-soft: #dbe7dc;
+      --blue: #3d6174;
+      --blue-soft: #d9e7eb;
+      --amber: #8f681e;
+      --amber-soft: #f0e3c3;
+      --shadow: rgba(56, 44, 28, 0.1);
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #1c1f1c;
+        --surface: #242723;
+        --surface-2: #2b2e29;
+        --ink: #eee9dd;
+        --muted: #b9b4a8;
+        --line: #42473f;
+        --line-strong: #666c61;
+        --rust: #e18d6e;
+        --rust-soft: #432d26;
+        --sage: #9fc1a5;
+        --sage-soft: #293a2f;
+        --blue: #9bbfd0;
+        --blue-soft: #263940;
+        --amber: #dfbd74;
+        --amber-soft: #3f3623;
+        --shadow: rgba(0, 0, 0, 0.26);
+      }
+    }
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      padding: 34px 42px 84px;
+      background-color: var(--bg);
+      background-image: radial-gradient(circle, color-mix(in srgb, var(--line) 35%, transparent) 1px, transparent 1px);
+      background-size: 26px 26px;
+      color: var(--ink);
+      font-family: var(--font-body);
+      font-size: 16px;
+      line-height: 1.62;
+      overflow-wrap: break-word;
+    }
+    a { color: var(--rust); text-decoration-thickness: 1px; text-underline-offset: 3px; }
+    code {
+      padding: 0.12em 0.38em;
+      border: 1px solid var(--line);
+      border-radius: 4px;
+      background: var(--surface-2);
+      color: var(--ink);
+      font-family: var(--font-mono);
+      font-size: 0.86em;
+      overflow-wrap: anywhere;
+    }
+    .wrap { max-width: 1260px; margin: 0 auto; }
+    .hero {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 28px;
+      align-items: end;
+      margin-bottom: 28px;
+      padding: 44px 48px;
+      border: 1px solid var(--line);
+      border-top: 5px solid var(--rust);
+      background: var(--surface);
+      box-shadow: 0 10px 32px var(--shadow);
+    }
+    .eyebrow, .label {
+      color: var(--rust);
+      font-family: var(--font-mono);
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+    }
+    .eyebrow { margin-bottom: 13px; }
+    h1, h2, h3 { color: var(--ink); text-wrap: balance; }
+    h1 {
+      margin: 0;
+      font-family: var(--font-display);
+      font-size: clamp(42px, 7vw, 70px);
+      font-weight: 600;
+      letter-spacing: -0.04em;
+      line-height: 0.98;
+    }
+    .subtitle { max-width: 65ch; margin: 18px 0 0; color: var(--muted); font-size: 18px; }
+    .hero-count { text-align: right; }
+    .hero-count strong {
+      display: block;
+      color: var(--rust);
+      font-family: var(--font-display);
+      font-size: 72px;
+      font-weight: 600;
+      line-height: 0.85;
+    }
+    .hero-count span { color: var(--muted); font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; }
+    .topline {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      gap: 14px;
+      align-items: center;
+      margin-bottom: 28px;
+      padding: 15px 18px;
+      border: 1px solid var(--line);
+      background: color-mix(in srgb, var(--surface) 91%, transparent);
+    }
+    .topline p { margin: 0; color: var(--muted); }
+    .split { display: flex; flex-wrap: wrap; gap: 8px; }
+    .pill {
+      padding: 5px 9px;
+      border-radius: 4px;
+      font-family: var(--font-mono);
+      font-size: 11px;
+      font-weight: 700;
+    }
+    .pill--afk { background: var(--sage-soft); color: var(--sage); }
+    .pill--hitl { background: var(--amber-soft); color: var(--amber); }
+    .pill--pending { background: var(--blue-soft); color: var(--blue); }
+    .overview {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 300px;
+      gap: 18px;
+      margin-bottom: 42px;
+    }
+    .overview > *, .task-grid > *, .task-meta > * { min-width: 0; }
+    .graph, .legend {
+      padding: 24px;
+      border: 1px solid var(--line);
+      background: var(--surface);
+    }
+    .graph h2, .legend h2 { margin: 0 0 18px; font-family: var(--font-display); font-size: 25px; }
+    .pipeline {
+      display: grid;
+      grid-template-columns: repeat(11, auto);
+      gap: 7px;
+      align-items: center;
+      overflow-x: auto;
+      padding: 10px 0 6px;
+    }
+    .step {
+      min-width: 92px;
+      padding: 12px 10px;
+      border: 1px solid var(--line);
+      border-top: 3px solid var(--blue);
+      background: var(--surface-2);
+      text-align: center;
+    }
+    .step b { display: block; font-family: var(--font-mono); font-size: 11px; }
+    .step span { display: block; margin-top: 4px; color: var(--muted); font-size: 10px; line-height: 1.3; }
+    .arrow { color: var(--line-strong); font-family: var(--font-mono); }
+    .legend dl { margin: 0; }
+    .legend dt { margin-top: 13px; color: var(--ink); font-weight: 700; }
+    .legend dt:first-child { margin-top: 0; }
+    .legend dd { margin: 3px 0 0; color: var(--muted); font-size: 13px; }
+    .section-head {
+      display: flex;
+      gap: 16px;
+      align-items: baseline;
+      margin: 0 0 20px;
+      padding-bottom: 11px;
+      border-bottom: 1px solid var(--line-strong);
+    }
+    .section-head span { color: var(--rust); font-family: var(--font-mono); font-size: 11px; font-weight: 700; }
+    .section-head h2 { margin: 0; font-family: var(--font-display); font-size: 38px; font-weight: 600; letter-spacing: -0.025em; }
+    .task-grid { display: grid; gap: 20px; }
+    .task {
+      position: relative;
+      overflow: hidden;
+      border: 1px solid var(--line);
+      background: var(--surface);
+      box-shadow: 0 4px 15px var(--shadow);
+    }
+    .task::before { content: ""; position: absolute; inset: 0 auto 0 0; width: 5px; background: var(--rust); }
+    .task:nth-child(3n + 2)::before { background: var(--sage); }
+    .task:nth-child(3n)::before { background: var(--blue); }
+    .task-head {
+      display: grid;
+      grid-template-columns: auto minmax(0, 1fr) auto;
+      gap: 17px;
+      align-items: start;
+      padding: 24px 26px 18px 31px;
+      border-bottom: 1px solid var(--line);
+    }
+    .task-no {
+      min-width: 48px;
+      color: var(--rust);
+      font-family: var(--font-display);
+      font-size: 37px;
+      font-weight: 600;
+      line-height: 1;
+    }
+    .task h3 { margin: 0; font-family: var(--font-display); font-size: 27px; font-weight: 600; line-height: 1.1; }
+    .task-summary { margin: 7px 0 0; color: var(--muted); }
+    .task-body { padding: 22px 26px 26px 31px; }
+    .task-meta {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 9px;
+      margin-bottom: 20px;
+    }
+    .meta {
+      padding: 10px 12px;
+      border: 1px solid var(--line);
+      background: var(--surface-2);
+    }
+    .meta b { display: block; margin-bottom: 3px; color: var(--muted); font-family: var(--font-mono); font-size: 9px; letter-spacing: 0.12em; text-transform: uppercase; }
+    .meta span { font-size: 13px; }
+    .build {
+      display: grid;
+      grid-template-columns: 0.9fr 1.1fr;
+      gap: 18px;
+    }
+    .build > * { min-width: 0; }
+    .build h4 { margin: 0 0 8px; color: var(--rust); font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.13em; text-transform: uppercase; }
+    .build p { margin: 0; }
+    .criteria {
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+    .criteria li {
+      position: relative;
+      margin: 0 0 9px;
+      padding: 9px 12px 9px 34px;
+      border-left: 2px solid var(--line);
+      background: color-mix(in srgb, var(--surface-2) 65%, transparent);
+    }
+    .criteria li:last-child { margin-bottom: 0; }
+    .criterion-mark {
+      position: absolute;
+      top: 11px;
+      left: 11px;
+      width: 11px;
+      height: 11px;
+      border: 1px solid var(--line-strong);
+      border-radius: 50%;
+      background: var(--surface);
+    }
+    .criterion-state { display: block; margin-top: 3px; color: var(--muted); font-family: var(--font-mono); font-size: 9px; letter-spacing: 0.09em; text-transform: uppercase; }
+    .coverage {
+      margin-top: 34px;
+      padding: 24px;
+      border: 1px dashed var(--line-strong);
+      background: var(--amber-soft);
+    }
+    .coverage h2 { margin: 0 0 8px; font-family: var(--font-display); font-size: 26px; }
+    .coverage p { margin: 0; color: var(--ink); }
+    .verification {
+      margin-top: 24px;
+      padding: 24px;
+      border: 1px solid var(--line);
+      border-left: 4px solid var(--blue);
+      background: color-mix(in srgb, var(--blue-soft) 42%, var(--surface));
+      color: var(--muted);
+    }
+    .verification h2 { margin: 0 0 8px; color: var(--blue); font-family: var(--font-display); font-size: 26px; }
+    .verification h3 { margin: 18px 0 7px; font-size: 19px; }
+    .verification p { margin: 0 0 0.8em; }
+    .verification ul { margin: 8px 0 0; padding-left: 1.5em; }
+    .verification li { margin: 0.48em 0; }
+    @media (max-width: 900px) {
+      .overview, .build { grid-template-columns: 1fr; }
+      .task-meta { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
+    @media (max-width: 650px) {
+      body { padding: 18px 16px 60px; }
+      .hero { grid-template-columns: 1fr; padding: 32px 24px; }
+      .hero-count { text-align: left; }
+      .hero-count strong { font-size: 52px; }
+      .task-head { grid-template-columns: auto minmax(0, 1fr); padding-right: 19px; padding-left: 23px; }
+      .task-head > .pill { grid-column: 2; justify-self: start; }
+      .task-body { padding-right: 19px; padding-left: 23px; }
+      .task-meta { grid-template-columns: 1fr; }
+      .section-head h2 { font-size: 31px; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      * { scroll-behavior: auto !important; }
+    }
+  </style>
+</head>
+<body>
+  <main class="wrap" data-artifact-kind="tasks" data-artifact-version="1">
+    <header class="hero">
+      <div>
+        <div class="eyebrow">Approved spec · Tracer-bullet plan</div>
+        <h1>Review Change Input Resolution Tasks</h1>
+        <p class="subtitle">Six complete slices move from accepted target text to a fresh, immutable, read-only review scope.</p>
+      </div>
+      <div class="hero-count" aria-label="Six slices"><strong>6</strong><span>vertical slices</span></div>
+    </header>
+
+    <div class="topline">
+      <p>Source: <a href="specs.html">Review Change Input Resolution Spec</a></p>
+      <div class="split" aria-label="Task modes and status">
+        <span class="pill pill--afk">6 can run unattended · AFK</span>
+        <span class="pill pill--hitl">0 need you present · HITL</span>
+        <span class="pill pill--afk">6 complete</span>
+      </div>
+    </div>
+
+    <section class="overview" aria-label="Plan overview">
+      <div class="graph">
+        <h2>Dependency path</h2>
+        <div class="pipeline" aria-label="Slices run in sequence">
+          <div class="step"><b>RCI-01</b><span>Pull-request grammar</span></div><span class="arrow" aria-hidden="true">→</span>
+          <div class="step"><b>RCI-02</b><span>Local-first shorthand</span></div><span class="arrow" aria-hidden="true">→</span>
+          <div class="step"><b>RCI-03</b><span>Fresh branch scope</span></div><span class="arrow" aria-hidden="true">→</span>
+          <div class="step"><b>RCI-04</b><span>Direct PR acquisition</span></div><span class="arrow" aria-hidden="true">→</span>
+          <div class="step"><b>RCI-05</b><span>Direct branch acquisition</span></div><span class="arrow" aria-hidden="true">→</span>
+          <div class="step"><b>RCI-06</b><span>Boundary parity</span></div>
+        </div>
+      </div>
+      <aside class="legend">
+        <h2>Execution split</h2>
+        <dl>
+          <dt>Can run unattended</dt>
+          <dd>All architecture and trust decisions are approved, so every slice is AFK.</dd>
+          <dt>Needs you present</dt>
+          <dd>No slice requires a new product or architecture decision.</dd>
+          <dt>Completion rule</dt>
+          <dd>Each slice starts with one failing behavior test and leaves a demonstrable review path.</dd>
+        </dl>
+      </aside>
+    </section>
+
+    <div class="section-head"><span>01—06</span><h2>Implementation slices</h2></div>
+    <section class="task-grid" aria-label="Implementation slices">
+      <article class="task" data-slice-id="RCI-01" data-status="complete" data-mode="AFK" data-dependencies="" data-stories="1,2,3,25,28">
+        <header class="task-head">
+          <div class="task-no">01</div>
+          <div><div class="label">RCI-01 · Input to scope</div><h3>Accept resilient pull-request targets</h3><p class="task-summary">Turn copied GitHub pull-request links and concise identifiers into the same normalized pull-request scope.</p></div>
+          <span class="pill pill--afk">Can run unattended · AFK</span>
+        </header>
+        <div class="task-body">
+          <div class="task-meta">
+            <div class="meta"><b>Status</b><span>Complete</span></div>
+            <div class="meta"><b>Blocked by</b><span>None</span></div>
+            <div class="meta"><b>Stories</b><span>1, 2, 3, 25, 28</span></div>
+            <div class="meta"><b>Test surface</b><span>Pure GitHub target parser</span></div>
+          </div>
+          <div class="build">
+            <div><h4>What to build</h4><p>Add one side-effect-free parser for GitHub pull-request URLs and <code>gh:</code> identifiers, then carry its normalized output through existing pull-request resolution and CLI help.</p></div>
+            <div><h4>Acceptance criteria</h4><ul class="criteria">
+              <li data-criterion-id="RCI-01-AC1" data-status="complete"><span class="criterion-mark" aria-hidden="true"></span>A canonical GitHub pull-request URL resolves through the parser and existing review path.<span class="criterion-state">Complete</span></li>
+              <li data-criterion-id="RCI-01-AC2" data-status="complete"><span class="criterion-mark" aria-hidden="true"></span>Trailing paths such as <code>/changes</code>, plus query strings and fragments, normalize to the numeric pull request.<span class="criterion-state">Complete</span></li>
+              <li data-criterion-id="RCI-01-AC3" data-status="complete"><span class="criterion-mark" aria-hidden="true"></span>The exact <code>gh:owner/repository/pull/number</code> identifier produces the same normalized target and rejects URL suffixes, queries, and fragments.<span class="criterion-state">Complete</span></li>
+              <li data-criterion-id="RCI-01-AC4" data-status="complete"><span class="criterion-mark" aria-hidden="true"></span>Malformed structure, unsupported hosts, embedded credentials, control characters, and oversized values fail before provider or Git activity.<span class="criterion-state">Complete</span></li>
+              <li data-criterion-id="RCI-01-AC5" data-status="complete"><span class="criterion-mark" aria-hidden="true"></span>CLI help names the accepted pull-request URL and identifier forms without changing existing options.<span class="criterion-state">Complete</span></li>
+            </ul></div>
+          </div>
+        </div>
+      </article>
+
+      <article class="task" data-slice-id="RCI-02" data-status="complete" data-mode="AFK" data-dependencies="RCI-01" data-stories="8,9,10,11,12,13,25,28">
+        <header class="task-head">
+          <div class="task-no">02</div>
+          <div><div class="label">RCI-02 · Local repository</div><h3>Resolve local-first pull-request shorthand</h3><p class="task-summary">Protect exact local branch names while making <code>pull/59</code> and bare numbers useful against an unambiguous GitHub remote.</p></div>
+          <span class="pill pill--afk">Can run unattended · AFK</span>
+        </header>
+        <div class="task-body">
+          <div class="task-meta">
+            <div class="meta"><b>Status</b><span>Complete</span></div>
+            <div class="meta"><b>Blocked by</b><span>RCI-01</span></div>
+            <div class="meta"><b>Stories</b><span>8–13, 25, 28</span></div>
+            <div class="meta"><b>Test surface</b><span><code>resolveReviewTarget</code></span></div>
+          </div>
+          <div class="build">
+            <div><h4>What to build</h4><p>Apply exact local branch matching before shorthand, identify the GitHub repository from remotes, and convert unambiguous shorthand into a normalized pull-request target.</p></div>
+            <div><h4>Acceptance criteria</h4><ul class="criteria">
+              <li data-criterion-id="RCI-02-AC1" data-status="complete"><span class="criterion-mark" aria-hidden="true"></span>An exact local branch named <code>pull/59</code> wins over pull-request shorthand.<span class="criterion-state">Complete</span></li>
+              <li data-criterion-id="RCI-02-AC2" data-status="complete"><span class="criterion-mark" aria-hidden="true"></span>An exact numeric local branch wins over bare-number pull-request shorthand.<span class="criterion-state">Complete</span></li>
+              <li data-criterion-id="RCI-02-AC3" data-status="complete"><span class="criterion-mark" aria-hidden="true"></span>Without an exact branch, <code>pull/59</code> and <code>59</code> select the same pull request.<span class="criterion-state">Complete</span></li>
+              <li data-criterion-id="RCI-02-AC4" data-status="complete"><span class="criterion-mark" aria-hidden="true"></span>A GitHub <code>origin</code> is selected before other remotes.<span class="criterion-state">Complete</span></li>
+              <li data-criterion-id="RCI-02-AC5" data-status="complete"><span class="criterion-mark" aria-hidden="true"></span>When <code>origin</code> is not GitHub, exactly one other GitHub remote is accepted.<span class="criterion-state">Complete</span></li>
+              <li data-criterion-id="RCI-02-AC6" data-status="complete"><span class="criterion-mark" aria-hidden="true"></span>No GitHub remote or multiple remaining GitHub remotes produces a corrective ambiguity error and no provider review.<span class="criterion-state">Complete</span></li>
+            </ul></div>
+          </div>
+        </div>
+      </article>
+
+      <article class="task" data-slice-id="RCI-03" data-status="complete" data-mode="AFK" data-dependencies="RCI-02" data-stories="14,15,16,17,18,20,27">
+        <header class="task-head">
+          <div class="task-no">03</div>
+          <div><div class="label">RCI-03 · Fresh local branch</div><h3>Freeze the current branch descendant</h3><p class="task-summary">Fetch inside review isolation and choose a branch tip by ancestry without touching source repository metadata.</p></div>
+          <span class="pill pill--afk">Can run unattended · AFK</span>
+        </header>
+        <div class="task-body">
+          <div class="task-meta">
+            <div class="meta"><b>Status</b><span>Complete</span></div>
+            <div class="meta"><b>Blocked by</b><span>RCI-02</span></div>
+            <div class="meta"><b>Stories</b><span>14–18, 20, 27</span></div>
+            <div class="meta"><b>Test surface</b><span>Workspace plus target resolver</span></div>
+          </div>
+          <div class="build">
+            <div><h4>What to build</h4><p>Move branch freshness work into the disposable local snapshot, fetch the matching remote there, compare local and fetched tips by ancestry, and freeze the selected range.</p></div>
+            <div><h4>Acceptance criteria</h4><ul class="criteria">
+              <li data-criterion-id="RCI-03-AC1" data-status="complete"><span class="criterion-mark" aria-hidden="true"></span>Fetch changes only the disposable review workspace and leaves source local refs, remote-tracking refs, and fetch metadata unchanged.<span class="criterion-state">Complete</span></li>
+              <li data-criterion-id="RCI-03-AC2" data-status="complete"><span class="criterion-mark" aria-hidden="true"></span>Mutable branches resolve their base from the fetched repository default branch, while explicit immutable ranges remain unchanged.<span class="criterion-state">Complete</span></li>
+              <li data-criterion-id="RCI-03-AC3" data-status="complete"><span class="criterion-mark" aria-hidden="true"></span>The descendant tip wins whether it is local or fetched remote state.<span class="criterion-state">Complete</span></li>
+              <li data-criterion-id="RCI-03-AC4" data-status="complete"><span class="criterion-mark" aria-hidden="true"></span><code>branch</code> and <code>origin/branch</code> apply the same descendant selection.<span class="criterion-state">Complete</span></li>
+              <li data-criterion-id="RCI-03-AC5" data-status="complete"><span class="criterion-mark" aria-hidden="true"></span>Diverged tips stop with an explicit message, and only Git's ordinary negative ancestry status means false; operational ancestry failures retain corrective diagnostics.<span class="criterion-state">Complete</span></li>
+              <li data-criterion-id="RCI-03-AC6" data-status="complete"><span class="criterion-mark" aria-hidden="true"></span>Fetch failure stops before validation rather than using stale remote-tracking state.<span class="criterion-state">Complete</span></li>
+            </ul></div>
+          </div>
+        </div>
+      </article>
+
+      <article class="task" data-slice-id="RCI-04" data-status="complete" data-mode="AFK" data-dependencies="RCI-03" data-stories="6,7,21,22,23,24,27">
+        <header class="task-head">
+          <div class="task-no">04</div>
+          <div><div class="label">RCI-04 · Direct pull request</div><h3>Acquire a pull request from any directory</h3><p class="task-summary">Use the repository named by an explicit GitHub target to create a safe review workspace without requiring a local checkout.</p></div>
+          <span class="pill pill--afk">Can run unattended · AFK</span>
+        </header>
+        <div class="task-body">
+          <div class="task-meta">
+            <div class="meta"><b>Status</b><span>Complete</span></div>
+            <div class="meta"><b>Blocked by</b><span>RCI-03</span></div>
+            <div class="meta"><b>Stories</b><span>6, 7, 21–24, 27</span></div>
+            <div class="meta"><b>Test surface</b><span><code>createReviewWorkspace</code> and CLI</span></div>
+          </div>
+          <div class="build">
+            <div><h4>What to build</h4><p>Add direct authenticated GitHub acquisition to the workspace lifecycle, preserve the untrusted no-materialization boundary, evaluate A5 through canonical SSH repository identity, and run the existing pull-request review from the acquired source.</p></div>
+            <div><h4>Acceptance criteria</h4><ul class="criteria">
+              <li data-criterion-id="RCI-04-AC1" data-status="complete"><span class="criterion-mark" aria-hidden="true"></span>An explicit GitHub pull-request target starts successfully outside every Git repository.<span class="criterion-state">Complete</span></li>
+              <li data-criterion-id="RCI-04-AC2" data-status="complete"><span class="criterion-mark" aria-hidden="true"></span>The same target started inside a different repository uses only the repository named by the target.<span class="criterion-state">Complete</span></li>
+              <li data-criterion-id="RCI-04-AC3" data-status="complete"><span class="criterion-mark" aria-hidden="true"></span>Private repository acquisition uses authenticated GitHub access without retaining or logging credentials.<span class="criterion-state">Complete</span></li>
+              <li data-criterion-id="RCI-04-AC4" data-status="complete"><span class="criterion-mark" aria-hidden="true"></span>The standalone parent classifies trust before materialization; an Untrusted pull-request head remains unmaterialized, while a Trusted head materializes exactly its selected OID.<span class="criterion-state">Complete</span></li>
+              <li data-criterion-id="RCI-04-AC5" data-status="complete"><span class="criterion-mark" aria-hidden="true"></span>The actual pull-request head repository, including a fork, supplies the identity used for A5 classification.<span class="criterion-state">Complete</span></li>
+              <li data-criterion-id="RCI-04-AC6" data-status="complete"><span class="criterion-mark" aria-hidden="true"></span>Canonical SSH identity can activate global or system A5 configuration, while repository-local configuration cannot grant trust.<span class="criterion-state">Complete</span></li>
+              <li data-criterion-id="RCI-04-AC7" data-status="complete"><span class="criterion-mark" aria-hidden="true"></span>Push is disabled and success, failure, and interruption clean only the recorded materialized and acquisition paths.<span class="criterion-state">Complete</span></li>
+            </ul></div>
+          </div>
+        </div>
+      </article>
+
+      <article class="task" data-slice-id="RCI-05" data-status="complete" data-mode="AFK" data-dependencies="RCI-04" data-stories="4,5,6,7,19,20,21,22,23,24,27">
+        <header class="task-head">
+          <div class="task-no">05</div>
+          <div><div class="label">RCI-05 · Direct branch</div><h3>Acquire and freeze a GitHub branch</h3><p class="task-summary">Extend direct acquisition to branch URLs and identifiers, including slash names and default-branch comparison.</p></div>
+          <span class="pill pill--afk">Can run unattended · AFK</span>
+        </header>
+        <div class="task-body">
+          <div class="task-meta">
+            <div class="meta"><b>Status</b><span>Complete</span></div>
+            <div class="meta"><b>Blocked by</b><span>RCI-04</span></div>
+            <div class="meta"><b>Stories</b><span>4–7, 19–24, 27</span></div>
+            <div class="meta"><b>Test surface</b><span>Parser, resolver, workspace, and CLI</span></div>
+          </div>
+          <div class="build">
+            <div><h4>What to build</h4><p>Normalize GitHub branch URLs and <code>gh:</code> identifiers, resolve the longest existing slash-bearing branch prefix, acquire its repository, and freeze the change against the remote default branch under the same trust boundary as pull requests.</p></div>
+            <div><h4>Acceptance criteria</h4><ul class="criteria">
+              <li data-criterion-id="RCI-05-AC1" data-status="complete"><span class="criterion-mark" aria-hidden="true"></span>A GitHub <code>tree</code> URL and equivalent <code>gh:</code> identifier resolve the same branch.<span class="criterion-state">Complete</span></li>
+              <li data-criterion-id="RCI-05-AC2" data-status="complete"><span class="criterion-mark" aria-hidden="true"></span>Slash-bearing branch names resolve through the longest existing branch-name prefix when a URL could include a repository path.<span class="criterion-state">Complete</span></li>
+              <li data-criterion-id="RCI-05-AC3" data-status="complete"><span class="criterion-mark" aria-hidden="true"></span>The repository's current remote default branch supplies the comparison base.<span class="criterion-state">Complete</span></li>
+              <li data-criterion-id="RCI-05-AC4" data-status="complete"><span class="criterion-mark" aria-hidden="true"></span>The base and branch head are frozen to immutable commits before validation starts.<span class="criterion-state">Complete</span></li>
+              <li data-criterion-id="RCI-05-AC5" data-status="complete"><span class="criterion-mark" aria-hidden="true"></span>Direct-branch A5 classification requires strict pre-acquisition provider ID and canonical identity, post-acquisition metadata queried by that ID, and exact selected/default OID equality with the clone; unrelated refs cannot affect scope or trust, and Trusted materialization receives only the selected OID.<span class="criterion-state">Complete</span></li>
+              <li data-criterion-id="RCI-05-AC6" data-status="complete"><span class="criterion-mark" aria-hidden="true"></span>Missing repositories, default branches, or requested branches fail with corrective errors and recorded cleanup.<span class="criterion-state">Complete</span></li>
+            </ul></div>
+          </div>
+        </div>
+      </article>
+
+      <article class="task" data-slice-id="RCI-06" data-status="complete" data-mode="AFK" data-dependencies="RCI-05" data-stories="25,26,27,28">
+        <header class="task-head">
+          <div class="task-no">06</div>
+          <div><div class="label">RCI-06 · Complete boundary</div><h3>Align errors, help, and workflow parity</h3><p class="task-summary">Close the feature through the executable boundary and make every Review change surface describe the same target language.</p></div>
+          <span class="pill pill--afk">Can run unattended · AFK</span>
+        </header>
+        <div class="task-body">
+          <div class="task-meta">
+            <div class="meta"><b>Status</b><span>Complete</span></div>
+            <div class="meta"><b>Blocked by</b><span>RCI-05</span></div>
+            <div class="meta"><b>Stories</b><span>25–28</span></div>
+            <div class="meta"><b>Test surface</b><span><code>review-change</code> executable</span></div>
+          </div>
+          <div class="build">
+            <div><h4>What to build</h4><p>Exercise all accepted and rejected target families through the executable, preserve terminal and cleanup behavior, and synchronize progressive skill references, compatibility text, and examples with the implemented contract.</p></div>
+            <div><h4>Acceptance criteria</h4><ul class="criteria">
+              <li data-criterion-id="RCI-06-AC1" data-status="complete"><span class="criterion-mark" aria-hidden="true"></span>Outside a repository, targetless and local-only invocation fails with concise accepted GitHub forms and a usage status.<span class="criterion-state">Complete</span></li>
+              <li data-criterion-id="RCI-06-AC2" data-status="complete"><span class="criterion-mark" aria-hidden="true"></span>Every invalid target is rejected before clone, fetch, provider, or report side effects.<span class="criterion-state">Complete</span></li>
+              <li data-criterion-id="RCI-06-AC3" data-status="complete"><span class="criterion-mark" aria-hidden="true"></span>The executable and interactive skill state the same URL, identifier, shorthand, precedence, freshness, and trust rules.<span class="criterion-state">Complete</span></li>
+              <li data-criterion-id="RCI-06-AC4" data-status="complete"><span class="criterion-mark" aria-hidden="true"></span>Existing local ranges, targetless current-branch review, terminal stages, report opening, cancellation, and Summary behavior remain compatible.<span class="criterion-state">Complete</span></li>
+              <li data-criterion-id="RCI-06-AC5" data-status="complete"><span class="criterion-mark" aria-hidden="true"></span>GitHub is the only direct forge target; unsupported forge-specific inputs fail without being guessed.<span class="criterion-state">Complete</span></li>
+              <li data-criterion-id="RCI-06-AC6" data-status="complete"><span class="criterion-mark" aria-hidden="true"></span>The focused tests and repository-wide content, install, guard, and meta gates all pass.<span class="criterion-state">Complete</span></li>
+            </ul></div>
+          </div>
+        </div>
+      </article>
+    </section>
+
+    <section class="coverage" aria-label="Story coverage">
+      <h2>Coverage check</h2>
+      <p>Stories 1–28 are covered.
+      Slices 1–3 establish safe local resolution, slices 4–5 add direct GitHub acquisition, and slice 6 is intended to prove the complete public boundary and documentation parity.</p>
+    </section>
+
+    <section class="verification" id="verification-summary" data-verification-owner="fact-checker" aria-label="Verification summary">
+      <h2>Verification Summary</h2>
+      <p>Repair verification checked the Finding behavior across these tasks and <a href="specs.html">the canonical spec</a> against the working tree based on <code>d97ea883064b55fa245848f451199c13ef05475d</code>, code, focused tests, context, ADRs, README, Review change skill references, and executable help.</p>
+      <p><strong>Result:</strong> Current statuses retain the stable task and criterion metadata, dependency and story links, completion state, and approved intent; focused lifecycle tests prove direct-branch content equivalence, unrelated-ref independence, symbolic-link-safe selected-local-head replay, and control-safe matching-remote freshness through RCI-035.</p>
+      <h3>Historical rounds</h3>
+      <p>Round 1 contains RCI-001 through RCI-007, round 2 contains RCI-008 through RCI-014, round 3 contains RCI-015 through RCI-019, round 4 contains RCI-020 through RCI-022, round 5 contains RCI-023 through RCI-025, round 6 contains RCI-026 through RCI-027, round 7 contains RCI-028, round 8 contains RCI-029, round 9 contains RCI-030 through RCI-031, round 10 contains RCI-032 through RCI-033, round 11 revisits RCI-032 and adds RCI-034, and round 12 adds RCI-035.
+      Later repairs preserve each earlier stable decision and record the current reviewed state below.</p>
+      <ul>
+        <li><strong>RCI-001 · repaired · round 1:</strong> Canonical GitHub pull-request URLs and strict <code>gh:</code> pull-request identifiers resolve one normalized target, while malformed inputs stop before side effects.</li>
+        <li><strong>RCI-002 · repaired · round 1:</strong> Exact local branch names win over pull-request shorthand, and shorthand requires one selected GitHub repository.</li>
+        <li><strong>RCI-003 · repaired · round 1:</strong> GitHub target parsing rejects control characters before URL normalization so malformed input cannot change parser meaning or start side effects.</li>
+        <li><strong>RCI-004 · repaired · round 1:</strong> An explicit pull-request target directly acquires its named repository from any directory and freezes the selected head object.</li>
+        <li><strong>RCI-005 · repaired · round 1:</strong> Direct branch targets resolve slash-bearing names, use the remote default branch as the base, and freeze both endpoints.</li>
+        <li><strong>RCI-006 · repaired · round 1:</strong> Executable help, skill guidance, and validation boundaries use the same target, precedence, freshness, and trust rules.</li>
+        <li><strong>RCI-007 · repaired · round 1:</strong> The standalone parent owns remote acquisition and trust classification before any selected head is materialized.</li>
+        <li><strong>RCI-008 · repaired · round 2:</strong> Mutable branch base resolution occurs after the isolated fetch and uses the fetched repository default branch; explicit immutable ranges remain unchanged.</li>
+        <li><strong>RCI-009 · repaired · round 2:</strong> Standalone help and authoritative Review change documentation describe accepted inputs, isolation, trust, and read-only behavior consistently.</li>
+        <li><strong>RCI-010 · repaired · round 2:</strong> Untrusted remote heads remain unmaterialized by default, and every permitted materialization uses the exact selected object ID.</li>
+        <li><strong>RCI-011 · repaired · round 2:</strong> Direct acquisition disables push, retains no credential-bearing remote URL, and limits cleanup to recorded paths.</li>
+        <li><strong>RCI-012 · repaired · round 2:</strong> Actual-head A5 classification uses a base-independent temporary Git context; cleanup protection starts immediately after allocation and removes the exact allocated path after success, canonicalization failure, or activity-reporting failure.</li>
+        <li><strong>RCI-013 · repaired · round 2:</strong> The actual head repository, including a fork, supplies canonical SSH identity, and repository-local configuration cannot grant A5 trust.</li>
+        <li><strong>RCI-014 · repaired · round 2:</strong> Strict <code>gh:</code> grammar rejects empty, backslash, dot, dot-dot, encoded-separator, suffix, query, and fragment mutations without reducing supported browser URL tolerance.</li>
+        <li><strong>RCI-015 · no-op/non-reproducible · round 3:</strong> Current Git behavior keeps a valid GitHub <code>origin</code> selected when an unrelated configured remote has no URL, so no source correction is required.</li>
+        <li><strong>RCI-016 · repaired · round 3:</strong> Ancestry checks return false only for Git's ordinary negative status and preserve corrective diagnostics for operational failures.</li>
+        <li><strong>RCI-017 · repaired · round 3:</strong> Direct pull-request and branch failures use the parent-owned lifecycle and clean only recorded acquisition and materialization paths.</li>
+        <li><strong>RCI-018 · repaired · round 3:</strong> Bare-number, <code>pull/number</code>, and targetless-discovered pull requests retain local-first discovery, then enter direct acquisition without fetching in the source repository.</li>
+        <li><strong>RCI-019 · repaired · round 3:</strong> The standalone child guard blocks <code>git worktree add</code> and <code>git worktree remove</code> while retaining read-only <code>git worktree list</code>.</li>
+        <li><strong>RCI-020 · repaired · round 4:</strong> Browser targets require canonical GitHub HTTPS origin, and documented GitHub SSH and HTTPS remotes reject normalization-sensitive raw path segments before normalization.</li>
+        <li><strong>RCI-021 · repaired · round 4:</strong> <code>--sandbox</code> permits exact-object materialization only after the parent verifies the versioned signal and immutable root-owned marker.</li>
+        <li><strong>RCI-022 · repaired · round 4:</strong> Both canonical Verification Summaries contain this complete stable ledger without changing approved intent or stable task and criterion metadata.</li>
+        <li><strong>RCI-023 · repaired · round 5:</strong> Cleanup records a materialized sibling path immediately after allocation, retries only that exact path after an early failure, and reports an unsuccessful final removal.</li>
+        <li><strong>RCI-024 · repaired · round 5:</strong> Mutable local branches capture, configure, fetch, and compare their matching credential-safe remote and its default branch inside isolation while explicit <code>origin/&lt;branch&gt;</code> remains unchanged.</li>
+        <li><strong>RCI-025 · repaired · round 5:</strong> Pull-request acquisition always fetches and resolves the numbered pull ref, then stops unless its commit object ID matches provider metadata.</li>
+        <li><strong>RCI-026 · repaired · round 6:</strong> GitHub remote discovery rejects every raw control character before URL parsing, treats a malformed preferred <code>origin</code> as a noncandidate, and leaves source state unchanged.</li>
+        <li><strong>RCI-027 · repaired · round 6:</strong> Public guidance consistently describes configured matching-remote capture, isolated credential-safe fetch, tip comparison, and default-base selection while explicit <code>origin/&lt;branch&gt;</code> stays on <code>origin</code>, with per-surface parity enforcement.</li>
+        <li><strong>RCI-028 · repaired · round 7:</strong> Remote URL discovery removes only Git's single output record terminator, preserves every other raw character for validation, rejects leading or trailing controls across supported transports, and stops malformed origins before workspace acquisition.</li>
+        <li><strong>RCI-029 · repaired · round 8:</strong> Every target argument rejects every Unicode control character at the executable and runner boundaries before GitHub-versus-local classification, repository inspection, reference resolution, provider calls, or workspace creation, while legitimate Unicode branch names remain valid.</li>
+        <li><strong>RCI-030 · repaired · round 9:</strong> Direct GitHub branch acquisition strictly validates canonical provider <code>nameWithOwner</code> metadata and uses post-acquisition immutable-ID provider identity for <code>headRepository</code> and A5 classification across rename, transfer, and case aliases; the requested identity only selects acquisition.</li>
+        <li><strong>RCI-031 · repaired · round 9:</strong> Mutable local branches materialize the exact selected descendant before child evidence and replay the captured tracked patch and untracked files there; conflict or unsafe replay stops with recorded cleanup, while explicit immutable ranges do not rematerialize.</li>
+        <li><strong>RCI-032 · repaired · round 11:</strong> Direct branch acquisition records the strict pre-clone provider ID, then queries that immutable node ID after no-checkout acquisition for canonical identity plus selected and default branch OIDs; both clone refs must match before scope freezing, A5 classification, or materialization, while aliases proceed and any missing ref, malformed response, provider failure, ID mismatch, or OID mismatch stops with exact recorded cleanup.</li>
+        <li><strong>RCI-033 · repaired · round 10:</strong> Untracked replay rejects symbolic links in every destination ancestor, verifies existing parents remain beneath the workspace, uses no-follow exclusive file handles with replacement checks where Node permits, and preserves only safe internal relative captured symbolic links; a selected-head symbolic-link parent stops child evidence, external or source writes, and leaves recorded cleanup to complete.</li>
+        <li><strong>RCI-034 · repaired · round 11:</strong> Matching-remote freshness reads <code>git remote get-url</code> as one raw record, removes only one Git output terminator, and rejects every remaining C0, C1, or DEL control before URL normalization or fetch; malformed HTTPS, SSH, and SCP-style records stop child evidence and clean only recorded isolation.</li>
+        <li><strong>RCI-035 · user-approved and repaired · round 12:</strong> The practical content-binding policy acknowledges that Git transport cannot attest repository node identity: direct-branch A5 classification requires strict pre-acquisition provider ID and canonical identity, post-acquisition metadata queried by that ID, and exact selected/default OID equality with the clone. An A→B→A race is safe when both OID pairs match; any mismatch fails closed with recorded cleanup, unrelated clone refs cannot affect scope, trust, or execution, and Trusted materialization receives only the exact selected OID.</li>
+      </ul>
+      <p><strong>Evidence:</strong> One-test-at-a-time checks cover immutable-ID provider queries, matching and mismatching selected/default OIDs, shared-history name reuse, unrelated clone refs, exact selected-OID materialization, missing refs, malformed responses, provider failure, exact cleanup, all leading, trailing, and embedded C0, C1, and DEL controls across HTTPS, SSH, and SCP-style remote records, no fetch, no child evidence, selected-descendant symbolic-link safety, and the complete stable ID set through RCI-035 in both canonical artifacts.</p>
+    </section>
+  </main>
+</body>
+</html>

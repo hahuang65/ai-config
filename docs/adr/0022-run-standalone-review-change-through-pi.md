@@ -2,9 +2,27 @@
 
 Review change must be executable outside an active agent session without creating a second validation implementation that can drift from the skill.
 The standalone `review-change` executable therefore launches an isolated foreground `pi` process, loads the canonical Review change skill, and carries target and intent as inert acceptance data.
-Every CLI invocation resolves its pull request or freezes its explicit branch or local range against the source repository before running read-only inside a disposable isolated clone containing tracked and untracked working state, with a disabled push URL and path-scoped cleanup.
-Review-owned clones and worktrees live under `~/.review-orchard/`, keeping them distinct from development worktrees under `~/.orchard/`.
-Branch targets derive a merge base from a non-self upstream or repository default branch and freeze both ends to immutable commit objects before isolation.
+A local CLI invocation identifies its target against the source repository, captures tracked and untracked working state into a disposable isolated clone, fetches there rather than modifying source Git metadata, and freezes its scope to immutable objects.
+For a mutable local branch, the parent materializes the exact selected descendant before pi starts, then replays the captured tracked patch and untracked files onto that head.
+Untracked replay rejects symbolic-link ancestors, verifies every existing destination parent remains beneath the workspace, uses no-follow exclusive file handles with replacement checks where Node permits, and preserves only captured internal relative symbolic links.
+Replay conflict, path replacement, symbolic-link escape, or another unsafe untracked path stops with corrective cleanup instead of running stale evidence; an explicit immutable range does not rematerialize.
+An explicit GitHub pull-request or branch target directly acquires the named repository without checkout into the same isolated boundary, so it does not require a local source repository.
+For a direct branch, the parent strictly resolves read-only provider `id` and canonical `nameWithOwner` metadata before clone.
+After the no-checkout clone, it queries that immutable provider node ID for current canonical metadata plus selected and default branch OIDs and requires exact equality with the clone's corresponding OIDs.
+Git transport cannot attest clone repository node identity; this is content equivalence, not cryptographic repository-ID binding.
+An A→B→A name-reuse race is safe when both OID pairs match, while a missing ref, malformed response, ID mismatch, OID mismatch, or provider failure stops with recorded cleanup before scope freezing, classification, or materialization.
+The requested identity only selects acquisition; post-acquisition canonical provider metadata supplies `headRepository`.
+Before pi starts, the parent derives scope and A5 identity only from verified provider metadata and those two OIDs.
+Unrelated clone refs cannot affect scope or trust, and materialization receives only the exact selected OID for an explicitly Trusted, verified-sandbox, or A5 remote change.
+The sandbox route requires `--sandbox` while the process already runs inside the documented sandbox.
+Before acquisition, the parent verifies `REVIEW_CHANGE_SANDBOX=review-change-gondolin-v1` and the immutable root-owned `/run/review-change/sandbox-v1` marker with file APIs, so the option alone cannot grant trust and no remote code participates in detection.
+Review-owned clones and worktrees live under `~/.review-orchard/`, keep disabled push URLs and path-scoped cleanup, and remain distinct from development worktrees under `~/.orchard/`.
+Cleanup removes only a recorded Trusted materialization path and the recorded no-checkout acquisition path.
+A mutable local branch captures its configured matching remote before isolation and requires an isolated fetch.
+It reads that remote URL as one raw Git record, removes only one output terminator, and rejects every remaining C0, C1, or DEL control before URL normalization or fetch.
+It configures the credential-safe URL in the workspace and fetches the remote only there.
+It selects the descendant of the local and matching-remote tips and derives the merge base from the fetched repository default branch from that remote.
+Explicit `origin/<branch>` uses `origin`; divergence or failed freshness checks stop instead of guessing.
 A CLI-specific pi guard blocks structured writes and common mutation commands inside the clone plus staging, commits, pushes, and provider mutation, while mandatory Review change subagents inherit the CLI-selected model.
 The only writable tool path is a dedicated report directory whose resolved location is validated not to overlap the source checkout or clone.
 The CLI retains the skill's disposable HTML report, separately copyable pull-request general and inline Finding comments, and terminal summary rather than creating a second report format.

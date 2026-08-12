@@ -1,18 +1,35 @@
 import { execFile, spawn } from "node:child_process";
-import { copyFile, lstat, mkdir, mkdtemp, readlink, realpath, rm, symlink } from "node:fs/promises";
+import { mkdir, mkdtemp, realpath, rm } from "node:fs/promises";
 import { homedir } from "node:os";
 import path from "node:path";
 import { promisify } from "node:util";
 
+import { acquireGitHubRepository } from "./github-acquisition.mjs";
+import { canonicalGitHubSshUrl } from "./github-target.mjs";
+import {
+  captureLocalSnapshot,
+  clearReplayedUntracked,
+  replayLocalSnapshot,
+} from "./local-materialization.mjs";
 import { isPathWithin, resolveProspectivePath } from "./report-directory.mjs";
+import { parseSafeGitOutputRecord } from "../../shared/runtime/git-output-record.mjs";
+
+export { acquireGitHubRepository } from "./github-acquisition.mjs";
+export { classifyRemoteTrust } from "./trust-classification.mjs";
 
 const executeFile = promisify(execFile);
 const OUTPUT_LIMIT = 50 * 1024 * 1024;
 const COMMAND_TIMEOUT_MS = 15_000;
 const noActivity = () => {};
 
-export async function createReviewWorkspace({ cwd, reviewRoot, signal, onActivity = noActivity } = {}) {
+export async function createReviewWorkspace(
+  { cwd, fetchRemote = false, freshnessRemote = "origin", githubTarget, reviewRoot, signal, onActivity = noActivity } = {},
+  dependencies = {},
+) {
   const context = { signal, onActivity };
+  if (githubTarget) {
+    return createRemoteReviewWorkspace({ githubTarget, reviewRoot, dependencies }, context);
+  }
   const sourceRoot = await gitOutput(["-C", cwd ?? process.cwd(), "rev-parse", "--show-toplevel"], context);
   const sourceHead = await gitOutput(["-C", sourceRoot, "rev-parse", "HEAD"], context);
   const sourceBranch = await optionalGitOutput(["-C", sourceRoot, "symbolic-ref", "--short", "HEAD"], context);
@@ -32,29 +49,216 @@ export async function createReviewWorkspace({ cwd, reviewRoot, signal, onActivit
     throw new Error("The isolated clone resolved inside the reviewed repository");
   }
   try {
-    const snapshot = await populateClone({ sourceRoot, sourceHead, sourceBranch, workspace }, context);
+    const snapshot = await populateClone({
+      sourceRoot, sourceHead, sourceBranch, workspace, fetchRemote, freshnessRemote,
+    }, context);
     onActivity("snapshot", `Snapshot ready: ${snapshot.patchBytes} patch bytes and ${snapshot.untrackedCount} untracked paths`);
-    return {
+    let localMaterialized = false;
+    const reviewWorkspace = {
       cwd: workspace,
       sourceRoot,
-      details: { ...snapshot, pushDisabled: true },
+      details: {
+        patchBytes: snapshot.patchBytes,
+        untrackedCount: snapshot.untrackedCount,
+        pushDisabled: true,
+        sourceHeadOid: sourceHead,
+        materializationState: "source-snapshot",
+      },
       cleanup: () => rm(workspace, { recursive: true, force: true }),
+      materializeHead: async (selectedHeadOid) => {
+        if (localMaterialized) throw new Error("The selected local head is already materialized");
+        validateCommitOid(selectedHeadOid);
+        await materializeLocalHead({ workspace, selectedHeadOid, snapshot, context });
+        localMaterialized = true;
+        return {
+          ...reviewWorkspace,
+          details: {
+            ...reviewWorkspace.details,
+            selectedHeadOid,
+            materializationState: "selected-head-replayed",
+          },
+        };
+      },
     };
+    return reviewWorkspace;
   } catch (error) {
     await rm(workspace, { recursive: true, force: true });
     throw error;
   }
 }
 
-async function populateClone({ sourceRoot, sourceHead, sourceBranch, workspace }, context) {
+async function createRemoteReviewWorkspace({ githubTarget, reviewRoot, dependencies }, context) {
+  const root = reviewRoot ?? defaultReviewWorkspaceRoot();
+  context.onActivity("path", `Prepare direct GitHub review workspace root ${root}`);
+  throwIfAborted(context.signal);
+  await mkdir(root, { recursive: true });
+  const prefix = `${safeName(githubTarget.repository)}-review-change-cli-`;
+  const workspace = await mkdtemp(path.join(await realpath(root), prefix));
+  const acquire = dependencies.acquireGitHubRepository ?? acquireGitHubRepository;
+  const materialize = dependencies.materializeGitHead ?? materializeGitHead;
+  const removeMaterialized = dependencies.removeMaterializedGitHead ?? removeMaterializedGitHead;
+  const makeMaterializedDirectory = dependencies.makeMaterializedDirectory ?? mkdtemp;
+  const removeMaterializedDirectory = dependencies.removeMaterializedDirectory ?? rm;
+  let materializedPath = null;
+  let materialized = false;
+  const cleanup = () => cleanupRemoteWorkspace({
+    workspace,
+    materializedPath,
+    materialized,
+    removeMaterialized,
+    removeMaterializedDirectory,
+    context,
+  });
+  try {
+    const acquisition = await acquire({ ...githubTarget, workspace, signal: context.signal, onActivity: context.onActivity });
+    context.onActivity("snapshot", `Acquired GitHub repository ${githubTarget.owner}/${githubTarget.repository}`);
+    const reviewWorkspace = {
+      cwd: workspace,
+      sourceRoot: workspace,
+      details: {
+        patchBytes: 0,
+        untrackedCount: 0,
+        remote: true,
+        requestedRepositorySshUrl: canonicalGitHubSshUrl(githubTarget),
+        ...acquisition,
+      },
+      cleanup,
+      materializeHead: async (selectedHeadOid) => {
+        if (materializedPath) throw new Error("The selected remote head is already materialized");
+        validateCommitOid(selectedHeadOid);
+        materializedPath = await allocateMaterializedPath(
+          root,
+          githubTarget.repository,
+          (allocatedPath) => { materializedPath = allocatedPath; },
+          { makeMaterializedDirectory, removeMaterializedDirectory },
+        );
+        await materialize({ repositoryRoot: workspace, materializedPath, selectedHeadOid, ...context });
+        materialized = true;
+        return {
+          ...reviewWorkspace,
+          cwd: materializedPath,
+          details: { ...reviewWorkspace.details, materializedPath, selectedHeadOid },
+        };
+      },
+    };
+    return reviewWorkspace;
+  } catch (error) {
+    try {
+      await cleanup();
+    } catch (cleanupError) {
+      throw new AggregateError([error, cleanupError], "direct acquisition and cleanup failed");
+    }
+    throw error;
+  }
+}
+
+async function cleanupRemoteWorkspace({
+  workspace, materializedPath, materialized, removeMaterialized, removeMaterializedDirectory, context,
+}) {
+  const failures = [];
+  if (materializedPath) {
+    try {
+      if (materialized) {
+        await removeMaterialized({ repositoryRoot: workspace, materializedPath, ...context, signal: undefined });
+      } else {
+        await removeMaterializedDirectory(materializedPath, { recursive: true, force: true });
+      }
+    } catch (error) {
+      failures.push(new Error(`Failed to remove recorded materialized path ${materializedPath}: ${error.message}`, { cause: error }));
+    }
+  }
+  try {
+    await rm(workspace, { recursive: true, force: true });
+  } catch (error) {
+    failures.push(error);
+  }
+  if (failures.length === 1) throw failures[0];
+  if (failures.length > 1) throw new AggregateError(failures, "direct workspace cleanup failed");
+}
+
+async function allocateMaterializedPath(reviewRoot, repository, recordAllocatedPath, dependencies) {
+  const prefix = path.join(await realpath(reviewRoot), `${safeName(repository)}-selected-head-`);
+  const allocatedPath = await dependencies.makeMaterializedDirectory(prefix);
+  recordAllocatedPath(allocatedPath);
+  await dependencies.removeMaterializedDirectory(allocatedPath, { recursive: true });
+  return allocatedPath;
+}
+
+async function materializeLocalHead({ workspace, selectedHeadOid, snapshot, context }) {
+  context.onActivity("snapshot", `Replay source snapshot onto exact selected head ${selectedHeadOid}`);
+  try {
+    await clearReplayedUntracked({ workspace, snapshot, signal: context.signal });
+    await runGit(["-C", workspace, "reset", "--hard", "HEAD"], context);
+    await runGit(["-C", workspace, "checkout", "--detach", selectedHeadOid], context);
+    await replayLocalSnapshot({
+      workspace,
+      snapshot,
+      applyTrackedPatch: (patch) => runGitWithInput(
+        ["-C", workspace, "apply", "--binary", "-"], patch, context,
+      ),
+      signal: context.signal,
+    });
+    const materializedHead = await gitOutput(["-C", workspace, "rev-parse", "HEAD"], context);
+    if (materializedHead !== selectedHeadOid) throw new Error("selected object ID verification failed");
+  } catch (error) {
+    throw new Error(
+      `Could not replay the source working snapshot onto the selected local head: ${error.message}`,
+      { cause: error },
+    );
+  }
+}
+
+async function materializeGitHead({ repositoryRoot, materializedPath, selectedHeadOid, signal, onActivity }) {
+  onActivity("trust", `Materialize exact selected head ${selectedHeadOid}`);
+  await runGit(["-C", repositoryRoot, "worktree", "add", "--detach", materializedPath, selectedHeadOid], {
+    signal,
+    onActivity,
+  });
+}
+
+async function removeMaterializedGitHead({ repositoryRoot, materializedPath, signal, onActivity }) {
+  onActivity("cleanup", `Remove recorded materialized path ${materializedPath}`);
+  await runGit(["-C", repositoryRoot, "worktree", "remove", materializedPath], { signal, onActivity });
+}
+
+function validateCommitOid(selectedHeadOid) {
+  if (!/^(?:[0-9a-f]{40}|[0-9a-f]{64})$/.test(selectedHeadOid)) {
+    throw new Error("The selected remote head must be an immutable commit object ID");
+  }
+}
+
+async function populateClone({
+  sourceRoot, sourceHead, sourceBranch, workspace, fetchRemote, freshnessRemote,
+}, context) {
   await runGit(["clone", "--no-hardlinks", "--no-checkout", sourceRoot, workspace], context);
   await mirrorLocalBranches(sourceRoot, workspace, sourceBranch, context);
   await runGit(["-C", workspace, "checkout", sourceBranch || "--detach", ...(sourceBranch ? [] : [sourceHead])], context);
-  await configureRemote(sourceRoot, workspace, context);
-  const patch = await gitBuffer(["-C", sourceRoot, "diff", "--binary", "HEAD", "--"], context);
-  if (patch.length > 0) await runGitWithInput(["-C", workspace, "apply", "--binary", "-"], patch, context);
-  const untrackedCount = await copyUntrackedFiles(sourceRoot, workspace, context);
-  return { patchBytes: patch.length, untrackedCount };
+  const fetchUrl = await configureRemotes(sourceRoot, workspace, freshnessRemote, context);
+  const snapshot = await captureLocalSnapshot({
+    sourceRoot,
+    workspace,
+    readGitBuffer: (args) => gitBuffer(args, context),
+    signal: context.signal,
+  });
+  await replayLocalSnapshot({
+    workspace,
+    snapshot,
+    applyTrackedPatch: (patch) => runGitWithInput(["-C", workspace, "apply", "--binary", "-"], patch, context),
+    signal: context.signal,
+  });
+  if (fetchRemote && !fetchUrl) {
+    throw new Error(`Branch freshness requires a credential-safe ${freshnessRemote} fetch URL`);
+  }
+  if (fetchRemote) {
+    await runGit(["-C", workspace, "fetch", freshnessRemote], context);
+    await runGit(["-C", workspace, "remote", "set-head", freshnessRemote, "--auto"], context);
+    context.onActivity("fetch", `Fetched current ${freshnessRemote} state and default branch inside review isolation`);
+  }
+  return {
+    patchBytes: snapshot.trackedPatch.length,
+    untrackedCount: snapshot.untrackedPaths.length,
+    ...snapshot,
+  };
 }
 
 async function mirrorLocalBranches(sourceRoot, workspace, checkedOutBranch, context) {
@@ -69,48 +273,51 @@ async function mirrorLocalBranches(sourceRoot, workspace, checkedOutBranch, cont
   }
 }
 
-async function configureRemote(sourceRoot, workspace, context) {
-  const remoteUrl = await optionalGitOutput(["-C", sourceRoot, "remote", "get-url", "origin"], context);
-  await runGit([
-    "-C", workspace, "remote", "set-url", "origin", safeRemoteUrl(remoteUrl) || "no-fetch://review-change",
-  ], context);
-  await runGit(["-C", workspace, "remote", "set-url", "--push", "origin", "no-push://review-change"], context);
-  context.onActivity("guard", "Configured a credential-safe fetch URL and disabled the push URL");
+async function configureRemotes(sourceRoot, workspace, freshnessRemote, context) {
+  const originFetchUrl = await configureRemote(sourceRoot, workspace, "origin", true, context);
+  const freshnessFetchUrl = freshnessRemote === "origin"
+    ? originFetchUrl
+    : await configureRemote(sourceRoot, workspace, freshnessRemote, false, context);
+  context.onActivity("guard", "Configured credential-safe fetch URLs and disabled the push URLs");
+  return freshnessFetchUrl;
 }
 
-async function copyUntrackedFiles(sourceRoot, workspace, context) {
-  const output = await gitBuffer(["-C", sourceRoot, "ls-files", "--others", "--exclude-standard", "-z"], context);
-  const relativePaths = output.toString("utf8").split("\0").filter(Boolean);
-  for (const relativePath of relativePaths) {
-    throwIfAborted(context.signal);
-    const source = safeChildPath(sourceRoot, relativePath);
-    const destination = safeChildPath(workspace, relativePath);
-    const sourceStat = await lstat(source);
-    await mkdir(path.dirname(destination), { recursive: true });
-    if (sourceStat.isSymbolicLink()) await symlink(await readlink(source), destination);
-    else if (sourceStat.isFile()) await copyFile(source, destination);
-  }
-  return relativePaths.length;
-}
-
-function safeChildPath(root, relativePath) {
-  const candidate = path.resolve(root, relativePath);
-  const relative = path.relative(path.resolve(root), candidate);
-  if (relative.startsWith("..") || path.isAbsolute(relative)) throw new Error("Git returned an unsafe path");
-  return candidate;
+async function configureRemote(sourceRoot, workspace, remoteName, exists, context) {
+  const remoteRecord = await optionalGitRawOutput(["-C", sourceRoot, "remote", "get-url", remoteName], context);
+  const fetchUrl = safeRemoteUrlRecord(remoteRecord);
+  const guardedUrl = fetchUrl || "no-fetch://review-change";
+  const configureArguments = exists
+    ? ["-C", workspace, "remote", "set-url", remoteName, guardedUrl]
+    : ["-C", workspace, "remote", "add", remoteName, guardedUrl];
+  await runGit(configureArguments, context);
+  await runGit(["-C", workspace, "remote", "set-url", "--push", remoteName, "no-push://review-change"], context);
+  return fetchUrl;
 }
 
 async function gitOutput(args, context = {}) {
+  return (await gitRawOutput(args, context)).trim();
+}
+
+async function gitRawOutput(args, context = {}) {
   context.onActivity?.("git", `git ${args.join(" ")}`);
   const { stdout } = await executeFile("git", args, {
     encoding: "utf8", maxBuffer: OUTPUT_LIMIT, signal: context.signal, timeout: COMMAND_TIMEOUT_MS,
   });
-  return stdout.trim();
+  return stdout;
 }
 
 async function optionalGitOutput(args, context) {
   try {
     return await gitOutput(args, context);
+  } catch (error) {
+    if (context.signal?.aborted) throw error;
+    return null;
+  }
+}
+
+async function optionalGitRawOutput(args, context) {
+  try {
+    return await gitRawOutput(args, context);
   } catch (error) {
     if (context.signal?.aborted) throw error;
     return null;
@@ -154,9 +361,14 @@ export function defaultReviewWorkspaceRoot(homeDirectory = homedir()) {
   return path.join(homeDirectory, ".review-orchard");
 }
 
+export function safeRemoteUrlRecord(stdout) {
+  const remoteUrl = parseSafeGitOutputRecord(stdout);
+  return remoteUrl === null ? null : safeRemoteUrl(remoteUrl);
+}
+
 export function safeRemoteUrl(remoteUrl) {
-  if (!remoteUrl) return null;
-  if (/^(?:git|https?|ssh):\/\//i.test(remoteUrl)) {
+  if (!remoteUrl || /[\u0000-\u001f\u007f-\u009f]/u.test(remoteUrl)) return null;
+  if (/^(?:file|git|https?|ssh):\/\//i.test(remoteUrl)) {
     try {
       const parsed = new URL(remoteUrl);
       if (parsed.search || parsed.hash) return null;

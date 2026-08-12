@@ -62,19 +62,78 @@ See [`skills/build/SKILL.md`](skills/build/SKILL.md) for the complete workflow c
 
 `./install.sh` links `review-change` into `~/.local/bin/`.
 The CLI requires Node.js 22+ and pi.
+It validates targets before acquisition, snapshots local state, fetches mutable local branches only in isolation, or directly acquires an explicit GitHub repository without checkout.
+It freezes the change to immutable commits, launches one foreground `pi` process as its AI backend, and remains read-only for every target.
 
 ```sh
 review-change
-review-change main...HEAD --intent "Preserve the public API"
-review-change 123 --intent "Validate this pull request"
-review-change main...HEAD --model gpt-5 --thinking high
+review-change --intent "Preserve the public API while adding cache invalidation"
+review-change feature/cache-invalidation --intent "Review this branch read-only"
+review-change origin/feature/cache-invalidation --intent "Review the freshest branch descendant"
+review-change main...HEAD --intent "Review this historical range read-only"
+review-change pull/123 --intent "Validate the pull request against its stated intent"
+review-change 123 --intent "Validate the pull request against its stated intent"
+review-change 'https://github.com/acme/app/pull/123/changes?diff=split#discussion'
+review-change gh:acme/app/pull/123
+review-change https://github.com/acme/app/tree/feature/cache-invalidation
+review-change gh:acme/app/tree/feature/cache-invalidation
+review-change gh:acme/app/pull/123 --sandbox
+review-change main...HEAD --provider openai --model gpt-5 --thinking high
 ```
 
-With no target, the CLI resolves the current branch pull request when present; otherwise it reviews from the branch point through the current working state.
-An explicit target can be a branch, local Git range, pull-request URL, or pull-request number.
-The CLI reviews an immutable isolated snapshot, prints a terminal summary, and opens a disposable HTML report.
-It does not edit the target, invoke `review-artifact`, post a provider review, or wait for approval.
-Run `review-change --help` for all options and terminal controls.
+With no target, the CLI requires a local Git repository, resolves its current branch pull request or branch point, then snapshots the current working state for review.
+An explicit local target can be a local branch, `origin/<branch>`, or a Git range.
+It can also be `pull/<number>` shorthand or a bare number from 1 through 2147483647; an exact local branch wins before either shorthand form.
+Shorthand selects the GitHub origin, or the only GitHub remote when `origin` is not GitHub, and stops if no unique GitHub remote exists.
+Remote discovery accepts only a documented GitHub SSH or HTTPS remote with no credentials, normalization-sensitive raw path segments, or a non-default port.
+An explicit GitHub pull-request target can be a URL with an optional suffix, query, or fragment, such as `https://github.com/owner/repository/pull/59/changes?diff=split#discussion`, or the exact `gh:owner/repository/pull/59` identifier.
+Every browser target requires the canonical GitHub HTTPS origin without credentials, a nonstandard port, or endpoint ambiguity.
+An explicit GitHub branch target can be a `tree/<branch>` URL or the exact `gh:owner/repository/tree/feature/branch` identifier, including a slash-bearing branch name.
+For a tree URL, Review change resolves the longest existing branch prefix before any repository path suffix; `gh:` identifiers reject URL suffixes, queries, and fragments.
+A mutable local branch requires an isolated fetch from its configured matching remote, whose name it captures before isolation.
+Review change reads that remote URL as one raw Git output record, removes only one terminator, and rejects every remaining C0, C1, or DEL control before URL normalization or fetch.
+It configures the credential-safe URL in the workspace, selects the descendant of the local and fetched matching-remote tips, and uses the fetched repository default branch from that remote as its base.
+Before child evidence, the parent materializes that exact selected local head in the disposable workspace and replays the source snapshot's captured tracked patch and untracked files.
+Untracked replay rejects a symbolic link in every destination ancestor, verifies each existing parent resolves beneath the workspace, and uses no-follow exclusive file handles with replacement checks where Node permits.
+It preserves only captured relative symbolic links whose lexical target stays inside isolation.
+A replay conflict, unsafe symbolic link, path replacement, or unsafe untracked path stops with corrective cleanup instead of running stale evidence.
+Explicit `origin/<branch>` continues to use `origin`; diverged tips or fetch failure stop resolution, while an immutable explicit range does not fetch, depend on origin availability, or rematerialize.
+Every explicit GitHub pull-request or branch target directly acquires its named repository without checkout regardless of the current directory and therefore works outside a Git repository.
+For a direct branch target, the parent strictly resolves read-only provider `id` and canonical `nameWithOwner` metadata before cloning.
+After the no-checkout clone, it queries that immutable provider node ID for current canonical metadata plus selected and default branch OIDs, then requires exact equality with the clone's corresponding OIDs.
+Git transport cannot attest clone repository node identity, so this is content equivalence, not cryptographic repository-ID binding.
+An A→B→A name-reuse race is safe when both OID pairs match; any provider failure, malformed response, missing ref, ID mismatch, or OID mismatch fails closed and cleans only recorded paths.
+The requested identity only selects acquisition, and post-acquisition canonical provider metadata supplies `headRepository`.
+Direct-branch A5 classification occurs only after these checks.
+The frozen range uses only the verified selected/default OIDs, and materialization receives only the exact selected OID, so unrelated clone refs cannot influence scope, trust, or execution.
+A directly acquired remote change is Untrusted by default and remains unmaterialized and unexecuted.
+`--trust-remote` explicitly trusts one direct GitHub target; A5 trust applies only when effective global or system Git configuration classifies the canonical SSH identity from immutable-ID provider metadata, and repository-local configuration cannot grant trust.
+The parent runs A5 classification in a recorded base-independent temporary Git context outside the acquired repository and removes exactly that context.
+`--sandbox` selects the documented sandbox route only when the standalone process already runs inside the documented sandbox.
+The sandbox runtime must set `REVIEW_CHANGE_SANDBOX=review-change-gondolin-v1` and provide the immutable root-owned marker `/run/review-change/sandbox-v1` with the same version line.
+The parent verifies the signal, marker ownership, permissions, exact path, and content before exact-OID materialization; the sandbox flag alone is not general trust outside that environment.
+Every mode remains read-only.
+Review-owned clones and worktrees live under `~/.review-orchard/`, separate from development worktrees under `~/.orchard/`.
+Provider, model, and thinking overrides pass directly to `pi` as argument-array values rather than through a shell; the selected model also reaches mandatory Review change subagents.
+In a sufficiently wide TTY, the CLI displays a color-coded left-right view: the pipeline occupies the left pane and the selected stage log occupies the right pane; narrow terminals retain the stacked layout.
+Stage states and log outcomes use distinct terminal colors, with `NO_COLOR` support for monochrome output.
+Each pipeline stage lists its purpose and recorded sub-stages vertically beneath it with a live or completed elapsed timer beside every sub-stage, shortening left-pane sub-stage labels to at most six words while retaining the bounded original telemetry text in the navigable, credential-redacted right-pane log alongside observable lifecycle actions, commands, durations, and outcomes.
+Collected Findings, missing evidence, documentation issues, and similar results appear as one concise line per item beneath their sub-stage; successful completion text is not repeated in the sidebar.
+The header keeps the isolated review worktree path, immutable scope, risk, and open Findings visible.
+Resolve target and Create isolation use concise pipeline outcomes rather than repeating the GitHub URL, workspace path, report path, or untracked-file details already available in the header and selected-stage log.
+Cleanup remains pending while the full-screen Summary keeps the isolated review worktree and full log available.
+After dismissal, the parent restores the terminal, closes telemetry, removes exactly that worktree, and reports the final Cleanup outcome outside the Summary as `Removed` on success.
+The parent validates ordered stage telemetry, shows each active sub-stage as the current operational intent, retains prior sub-stages as `STEP` log entries, owns cancellation through final Summary dismissal, latches interruption while initial Glow rendering is pending, restores terminal state after interruption, and uses plain status lines when output is redirected.
+Vim-style `j`/`k` navigates stages, Ctrl-D/Ctrl-U scrolls the selected log, Enter expands or collapses lines, `f` resumes following the active stage, and Ctrl-C aborts an active run; no single-character key aborts or closes the review.
+After validation, it opens the disposable HTML report in a new Firefox window on macOS (or the platform HTML viewer elsewhere) without waiting for browser closure and includes a copyable general review comment plus separately copyable inline Finding comments inside pull-request reports, with exact locations, a severity/action legend, inset copy icons, and persistent copied-state styling.
+On a successful interactive run, the parent renders its own and the assistant’s Markdown through non-interactive Glow when available, forces color when terminal color is enabled, and selects a final Summary stage within the existing pipeline/log layout rather than replacing it with a full-screen summary.
+That Summary rerenders after terminal-width changes.
+Glow failure or a Summary pane narrower than 20 columns falls back to the built-in renderer, Ctrl-U and Ctrl-D scroll the final log, and Ctrl-C exits once the review is no longer running; `q`, `x`, and Escape do not dismiss it.
+Redirected output prints the same summary normally.
+Standalone Review change does not invoke `review-artifact`, poll for feedback, or require approval.
+A disabled push URL plus the CLI-specific pi guard protect the original checkout and block structured writes, common direct mutation, staging, commits, pushes, and provider mutations.
+Structured writes are allowed only inside a dedicated report directory whose resolved path is validated not to overlap the source checkout or clone.
+Run `review-change --help` for all options, accepted inputs, trust controls, and terminal controls.
 
 ## Capabilities
 

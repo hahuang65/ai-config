@@ -1,3 +1,7 @@
+const BOOLEAN_OPTIONS = new Map([
+  ["--trust-remote", "trustRemote"],
+  ["--sandbox", "sandbox"],
+]);
 const VALUE_OPTIONS = new Map([
   ["--intent", "intent"],
   ["--provider", "provider"],
@@ -19,7 +23,7 @@ export function parseArguments(argv) {
       continue;
     }
     if (parsed.target !== null) throw usageError("Only one review target may be provided");
-    parsed.target = validateValue("target", argument, MAX_TARGET_LENGTH);
+    parsed.target = validateTargetArgument(argument);
   }
   validatePiSelection(parsed.piOptions);
   return parsed;
@@ -33,10 +37,15 @@ function validatePiSelection(piOptions) {
 
 function consumeOption(argv, index, parsed, seenOptions) {
   const option = argv[index];
+  const booleanOptionName = BOOLEAN_OPTIONS.get(option);
   const optionName = VALUE_OPTIONS.get(option);
-  if (!optionName) throw usageError(`Unknown option: ${option}`);
+  if (!booleanOptionName && !optionName) throw usageError(`Unknown option: ${option}`);
   if (seenOptions.has(option)) throw usageError(`${option} may be provided only once`);
   seenOptions.add(option);
+  if (booleanOptionName) {
+    parsed[booleanOptionName] = true;
+    return index;
+  }
   const value = argv[index + 1];
   if (value === undefined || value.startsWith("--")) throw usageError(`${option} requires a value`);
   if (optionName === "intent") {
@@ -45,6 +54,12 @@ function consumeOption(argv, index, parsed, seenOptions) {
     parsed.piOptions.push(option, validateValue(optionName, value, MAX_OPTION_LENGTH));
   }
   return index + 1;
+}
+
+export function validateTargetArgument(value) {
+  if (!value || /\p{Cc}/u.test(value)) throw usageError("target must be one non-empty line");
+  if (value.length > MAX_TARGET_LENGTH) throw usageError("target is too long");
+  return value;
 }
 
 function validateValue(name, value, maximumLength) {
