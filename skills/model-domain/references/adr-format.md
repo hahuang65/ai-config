@@ -30,8 +30,20 @@ Scan `docs/adr/` for the highest existing number and increment it by one.
 ## Confluence Decisions Document
 
 The saved Confluence decisions document replaces local ADR files for that worktree.
+It is also the only Confluence destination for contracts.
+Never create a Confluence page for a contract or an individual decision.
 Do not use “ADR” or workflow-specific vocabulary on the page.
-Use **Decisions**, **Decision details**, and **design session** so the document uses language that co-workers share.
+Use **Contracts**, **Decisions**, **Decision details**, and **design session** so the document uses language that co-workers share.
+
+### Contracts
+
+Write every contract to the saved decisions document, never to the context document or a separate page.
+A contract records an agreement that one context, system, or team relies on another to honor; it does not need to meet the decision-record threshold.
+If **Contracts** does not exist, create that section while preserving the page's unrelated content and existing section order.
+Update an existing matching contract in place; otherwise append the new contract to that section.
+Follow an established contract structure when one exists.
+Otherwise use a short contract heading and concise blocks for the parties, guarantee, conditions, failure behavior, and compatibility or versioning constraints that apply.
+Never create a page for a contract.
 
 ### Decision List
 

@@ -56,7 +56,8 @@ Local destinations use Architectural Decision Records under `docs/adr/`; Conflue
 **Domain documentation destination**:
 The local-or-Confluence choice used by `model-domain` for **context documentation** and **decision records** in an A5 linked worktree.
 The main project directory and every non-A5 project are always local and do not have a destination choice.
-Each A5 linked worktree stores only its own persistent choice and Confluence page links in an ignored `domain-documentation.json` at its worktree root.
+Each A5 linked worktree stores only its own persistent choice and two designated Confluence page links in an ignored `domain-documentation.json` at its worktree root.
+A Confluence destination never creates another page: glossary and context-map content stays on the context document, while contracts and decision records stay on the decisions document.
 _Avoid_: Project-wide documentation setting, repository documentation setting.
 
 **Ubiquitous language**:

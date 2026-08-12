@@ -84,5 +84,8 @@ Write the local or Confluence JSON shape only after the choice is complete.
 
 For local state, read and write the applicable `CONTEXT.md` / `CONTEXT-MAP.md` files and `docs/adr/` records.
 For Confluence state, read and write only the saved context document and decisions document.
+Never create any Confluence page, including a child page, a page for a context, a page for a contract, or a page for an individual decision.
+Write glossary and context-map content only to the saved context document.
+Write contracts and decision records only to the saved decisions document.
 Do not create local companions for Confluence documentation.
 If the Confluence integration is unavailable, report that the selected destination cannot be accessed; do not silently fall back to local files.

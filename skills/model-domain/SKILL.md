@@ -29,6 +29,8 @@ It uses local files without prompting for every non-A5 project and for an A5 mai
 It persists one safe local-or-Confluence selection only for an A5 linked worktree.
 
 Read and write the selected destination only.
+For Confluence, the two supplied pages are a closed destination: never create another page or write to a linked or subordinate page.
+Write context content only to the designated context document, and write contracts and decision records only to the designated decisions document.
 Never create local context files or ADRs as hidden companions for Confluence pages.
 Use the [context documentation format](references/context-format.md) and [decision record format](references/adr-format.md), including their Confluence-safe update rules.
 
@@ -66,7 +68,8 @@ Read recent and relevant project-wide ADRs from the root `docs/adr/`.
 Create context files lazily: create `CONTEXT.md` when the first term resolves, `CONTEXT-MAP.md` when the first multi-context structure resolves, and root `docs/adr/` when the first ADR qualifies.
 
 For a Confluence destination, read the supplied context document and decisions document before modeling.
-Treat those two pages as the durable project-wide documentation; preserve their unrelated content and existing organization.
+Treat those two designated pages as the complete durable project-wide documentation; preserve their unrelated content and existing organization.
+Do not create context-specific, contract-specific, or decision-specific pages.
 
 ## Standalone Session
 

@@ -30,7 +30,8 @@ CONTEXT.md or CONTEXT-MAP.md         # root context entry point
 docs/adr/*.md                        # project-wide decisions
 ```
 
-A Confluence destination uses the context document and decisions document saved for that A5 linked worktree and creates no local companions.
+A Confluence destination writes only to the context document and decisions document saved for that A5 linked worktree.
+It never creates another Confluence page or a local companion, and it keeps contracts in the decisions document's **Contracts** section.
 Both forms outlive any single feature.
 The `git-commit` rule decides whether to include local files, including its A5 project exception; worktree-private destination state and Confluence pages are never staged.
 

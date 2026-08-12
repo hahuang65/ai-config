@@ -90,9 +90,10 @@ Use the Confluence page title as the context name and organize its body with nat
 - **Relationships** states ownership, direction, and cardinality when those facts matter.
 - **Example dialogue** shows domain experts and developers using the terms naturally.
 
-For multiple contexts, first follow any existing page structure or links to subordinate context pages.
-If the supplied page is the complete context document, add a **Contexts** section whose context subsections each contain their description and language, followed by one project-wide **Relationships** section.
-Do not invent or require extra Confluence pages.
+For multiple contexts, keep every context in the designated context document.
+Use its existing structure when present; otherwise add a **Contexts** section whose context subsections each contain their description and language, followed by one project-wide **Relationships** section.
+Never create or write to subordinate or linked context pages.
+Do not put contracts in the context document; write them to the **Contracts** section of the designated decisions document as specified in [adr-format.md](adr-format.md).
 
 ## Confluence-Safe Updates
 

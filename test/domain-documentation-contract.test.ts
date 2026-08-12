@@ -20,3 +20,15 @@ test("only A5 linked worktrees ask where domain documentation should live", asyn
   expect(modelDomain).toContain("only for an A5 linked worktree");
   expect(context).toContain("Only an A5 linked worktree can select Confluence");
 });
+
+test("Confluence writes stay on the two designated pages", async () => {
+  const protocol = await source("skills/shared/references/domain-documentation.md");
+  const contextFormat = await source("skills/model-domain/references/context-format.md");
+  const decisionFormat = await source("skills/model-domain/references/adr-format.md");
+
+  expect(protocol).toContain("Never create any Confluence page");
+  expect(contextFormat).toContain("Never create or write to subordinate or linked context pages");
+  expect(decisionFormat).toContain("Write every contract to the saved decisions document");
+  expect(decisionFormat).toContain("If **Contracts** does not exist, create that section");
+  expect(decisionFormat).toContain("Never create a page for a contract");
+});
