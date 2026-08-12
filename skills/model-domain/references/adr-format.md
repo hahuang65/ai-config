@@ -15,14 +15,15 @@ Create the directory lazily, only when the first ADR qualifies.
 
 {One short, concrete, plain-language scenario that exposed the problem.}
 
-{One or two sentences: what was decided and why.}
+{1-3 sentences: what is the context, what did we decide, and why.}
 ```
 
+The scenario is additive; it does not replace the context, decision, or rationale in the following paragraph.
 Keep the scenario in the opening prose rather than adding a section heading.
 Use a separate scenario section only when several scenarios need detailed explanation.
 Apply this format to new records; do not rewrite previous ADRs only to add scenarios.
 That is enough for most local ADRs.
-The value is in recording the concrete reason a decision was made and why, not in filling out sections.
+The value is in recording that a decision was made and why, not in filling out sections.
 
 Add these optional sections only when they add genuine value:
 

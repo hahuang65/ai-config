@@ -41,12 +41,12 @@ test("Confluence decision cards include the scenario behind the decision", async
   expect(decisionFormat).toContain("scenario that led to this decision");
 });
 
-test("local decision records open with a concrete scenario", async () => {
+test("local decision records preserve context and add a concrete scenario", async () => {
   const decisionFormat = await source("skills/model-domain/references/adr-format.md");
 
   expect(decisionFormat).toContain("{One short, concrete, plain-language scenario that exposed the problem.}");
-  expect(decisionFormat).toContain("{One or two sentences: what was decided and why.}");
-  expect(decisionFormat).toContain("Keep the scenario in the opening prose");
+  expect(decisionFormat).toContain("{1-3 sentences: what is the context, what did we decide, and why.}");
+  expect(decisionFormat).toContain("The scenario is additive");
 });
 
 test("Confluence contracts use visually cohesive cards", async () => {
