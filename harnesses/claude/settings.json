@@ -232,7 +232,20 @@
       "Bash(terraform destroy *)",
       "Read(**/.aws/credentials)",
       "Read(**/credentials*)",
-      "Read(*.secrets.*)"
+      "Read(*.secrets.*)",
+      "EnterPlanMode",
+      "ExitPlanMode",
+      "DesignSync",
+      "NotebookEdit",
+      "SendMessage",
+      "PushNotification",
+      "RemoteTrigger",
+      "ReportFindings",
+      "ScheduleWakeup",
+      "AskUserQuestion",
+      "CronCreate",
+      "CronDelete",
+      "CronList"
     ],
     "ask": [
       "Bash(git clean *)",
@@ -287,5 +300,10 @@
     "terraform-ls@claude-code-lsps": true,
     "gopls-lsp@claude-plugins-official": true
   },
-  "tui": "fullscreen"
+  "tui": "fullscreen",
+  "disableBundledSkills": true,
+  "disableWorkflows": true,
+  "disableRemoteControl": true,
+  "disableClaudeAiConnectors": true,
+  "disableArtifact": true
 }
