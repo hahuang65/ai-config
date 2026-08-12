@@ -11,9 +11,7 @@ read only the rule needed for the current action, before taking that action.
   - If currently on trunk, create the task branch there.
   - Use Orchard only for `/build` or explicit lifecycle requests, passing the same `short-intent`.
 - **Do not stage, commit, push, or deliver unless the user's current request explicitly invokes a workflow that owns that action.**
-- **Do not use `git -C`.**
-  Change into the repository with `cd` and run plain `git` subcommands, so permission rules can match them.
-  Exception: use `git -C <absolute-repository-path>` when a guard requires it for a cross-repository branch change.
+- **Claude Code only: read `~/.dotfiles/ai/harnesses/claude/harness-rules.md` before running shell commands.**
 - **Treat a project as A5 only when its originating repository has effective `ai.projectFamily=a5` from global or system Git configuration.**
   Repository-local configuration cannot grant A5 status.
 - **Use mise-managed toolchains:** invoke tools directly, and never activate or recommend rbenv, rvm, chruby, asdf, nvm, or pyenv.
