@@ -389,6 +389,21 @@ The per-build-run home for canonical HTML review artifacts: `docs/features/<YYYY
 The **Review change report** is disposable and stays in the operating-system temp directory; project-wide artifacts (`CONTEXT.md`, `docs/adr/`) live at the repo root and accrete across runs.
 _Avoid_: `docs/claude/` (the former Claude-specific name, replaced by the harness-neutral `docs/features/` — see [`adopt-docs-features-over-docs-claude`](docs/adr/0007-adopt-docs-features-over-docs-claude.md)), Markdown companions.
 
+**3D design workflow**:
+The standalone `3d` skill workflow for collaboratively defining, generating, validating, and reviewing a parameterized physical part for Fused Deposition Modeling (FDM) printing.
+It is distinct from the software-focused **Build workflow** and from digital-only 3D rendering.
+_Avoid_: Parametric 3D printing skill, CAD build pipeline.
+
+**3D print project**:
+One directory for one physical product, containing its parameterized source, printable exports, final render, render configuration, and product README.
+In an established 3D model repository, its directory and file names follow that repository's conventions.
+_Avoid_: Model bundle, CAD output folder.
+
+**Model review sheet**:
+A temporary HTML review surface that presents model renders, dimensions, parameters, computed validation, and physical-validation limits at a **3D design workflow** checkpoint.
+It is not a deliverable in the **3D print project** unless the user asks to retain it.
+_Avoid_: Preview page, permanent review artifact.
+
 **Hygiene sweep**:
 The automatic, plan-less cleanup of just-changed files — dead code, unused imports and dependencies, duplicate consolidation, simplification, idiom fixes — executed by the `refactorer` agent in hygiene mode.
 It closes implementation before Review change and also runs standalone when `/refactor` is given a vague goal ("clean up X").

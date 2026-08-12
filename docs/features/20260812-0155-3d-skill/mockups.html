@@ -1,0 +1,270 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>3D Model Review Sheet - UI Mockup</title>
+<style>
+:root {
+  --paper: #f4f0e7;
+  --surface: #fffdf7;
+  --ink: #202725;
+  --muted: #67706c;
+  --line: #c9c5b8;
+  --teal: #166a67;
+  --teal-soft: #dcebea;
+  --amber: #9a5b13;
+  --amber-soft: #f6e7c9;
+  --green: #356c4b;
+  --green-soft: #e2eee5;
+  --shadow: rgba(32, 39, 37, 0.09);
+  --font-body: Charter, "Bitstream Charter", Georgia, serif;
+  --font-ui: "Avenir Next", Avenir, "Segoe UI", sans-serif;
+  --font-mono: "IBM Plex Mono", "SFMono-Regular", Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --paper: #18201f;
+    --surface: #212b29;
+    --ink: #edf1ec;
+    --muted: #acb7b2;
+    --line: #45514d;
+    --teal: #83c9c3;
+    --teal-soft: #263e3b;
+    --amber: #edbf7f;
+    --amber-soft: #423522;
+    --green: #9bc9a9;
+    --green-soft: #293d30;
+    --shadow: rgba(0, 0, 0, 0.25);
+  }
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  color: var(--ink);
+  background-color: var(--paper);
+  background-image: linear-gradient(var(--line) 1px, transparent 1px), linear-gradient(90deg, var(--line) 1px, transparent 1px);
+  background-size: 32px 32px;
+  font-family: var(--font-body);
+  line-height: 1.55;
+  overflow-wrap: break-word;
+}
+.shell { width: min(1180px, calc(100% - 32px)); margin: 32px auto 72px; }
+.hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 28px;
+  align-items: end;
+  padding: 30px 34px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-top: 5px solid var(--teal);
+  box-shadow: 0 12px 36px var(--shadow);
+}
+.kicker, .section-label, .eyebrow {
+  margin: 0 0 8px;
+  color: var(--teal);
+  font: 700 0.72rem/1.2 var(--font-mono);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+h1, h2, h3 { margin: 0; line-height: 1.12; }
+h1 { font: 700 clamp(2.2rem, 5vw, 4.6rem)/0.98 var(--font-ui); letter-spacing: -0.055em; }
+h2 { font: 650 clamp(1.5rem, 2.5vw, 2.25rem)/1.08 var(--font-ui); letter-spacing: -0.025em; }
+h3 { font: 650 1rem/1.25 var(--font-ui); }
+.lede { max-width: 720px; margin: 16px 0 0; color: var(--muted); font-size: 1.08rem; }
+.status {
+  min-width: 210px;
+  padding: 16px 18px;
+  border: 1px solid color-mix(in srgb, var(--green) 50%, var(--line));
+  background: var(--green-soft);
+}
+.status strong { display: block; font: 700 1.05rem var(--font-ui); color: var(--green); }
+.status span { color: var(--muted); font: 0.8rem var(--font-mono); }
+main { display: grid; gap: 22px; margin-top: 22px; }
+.panel { background: var(--surface); border: 1px solid var(--line); box-shadow: 0 5px 18px var(--shadow); }
+.panel-head { padding: 22px 26px 0; }
+.preview-layout { display: grid; grid-template-columns: minmax(0, 1.65fr) minmax(280px, 0.75fr); gap: 0; }
+.render-stage {
+  min-height: 470px;
+  display: grid;
+  place-items: center;
+  position: relative;
+  overflow: hidden;
+  border-right: 1px solid var(--line);
+  background: repeating-linear-gradient(-45deg, transparent 0 24px, color-mix(in srgb, var(--teal-soft) 28%, transparent) 24px 25px);
+}
+.render-stage svg { width: min(86%, 640px); height: auto; filter: drop-shadow(0 22px 18px var(--shadow)); }
+.view-tabs {
+  position: absolute;
+  left: 18px;
+  bottom: 18px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  font: 0.7rem var(--font-mono);
+}
+.view-tabs span { padding: 7px 9px; border: 1px solid var(--line); background: var(--surface); }
+.view-tabs .selected { color: var(--surface); background: var(--teal); border-color: var(--teal); }
+.facts { padding: 26px; }
+.fact-group + .fact-group { margin-top: 26px; padding-top: 22px; border-top: 1px solid var(--line); }
+.fact-list { margin: 12px 0 0; padding: 0; list-style: none; }
+.fact-list li { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 12px; padding: 8px 0; border-bottom: 1px dotted var(--line); }
+.fact-list span { color: var(--muted); }
+.fact-list strong { font-family: var(--font-mono); font-size: 0.83rem; }
+.grid { display: grid; grid-template-columns: 1fr 1fr; gap: 22px; }
+.grid > * { min-width: 0; }
+.card { padding: 24px 26px; background: var(--surface); border: 1px solid var(--line); }
+.checks { margin: 16px 0 0; padding: 0; list-style: none; }
+.checks li { position: relative; padding: 10px 0 10px 28px; border-bottom: 1px solid var(--line); }
+.checks li::before { position: absolute; left: 0; top: 12px; font: 700 0.78rem var(--font-mono); }
+.checks .pass::before { content: "PASS"; color: var(--green); transform: scale(0.72); transform-origin: left center; }
+.checks .warn::before { content: "TEST"; color: var(--amber); transform: scale(0.72); transform-origin: left center; }
+.checks small { display: block; color: var(--muted); }
+.notice { border-left: 5px solid var(--amber); background: var(--amber-soft); }
+.file-list { display: grid; gap: 9px; margin-top: 16px; }
+.file { padding: 11px 13px; background: color-mix(in srgb, var(--paper) 58%, var(--surface)); border: 1px solid var(--line); font: 0.78rem var(--font-mono); }
+.decision { padding: 26px; border-top: 1px solid var(--line); }
+.decision dl { display: grid; grid-template-columns: 150px minmax(0, 1fr); gap: 10px 18px; margin: 14px 0 0; }
+.decision dt { color: var(--muted); font: 700 0.75rem var(--font-mono); text-transform: uppercase; }
+.decision dd { margin: 0; }
+footer { margin-top: 20px; color: var(--muted); font: 0.75rem var(--font-mono); text-align: right; }
+@media (max-width: 780px) {
+  .shell { width: min(100% - 20px, 620px); margin-top: 10px; }
+  .hero { grid-template-columns: 1fr; padding: 24px; }
+  .status { min-width: 0; }
+  .preview-layout, .grid { grid-template-columns: 1fr; }
+  .render-stage { min-height: 350px; border-right: 0; border-bottom: 1px solid var(--line); }
+  .decision dl { grid-template-columns: 1fr; gap: 3px; }
+  .decision dd + dt { margin-top: 10px; }
+}
+</style>
+</head>
+<body>
+<div class="shell">
+<header class="hero">
+<div>
+<p class="kicker">Functional-shape checkpoint · 01</p>
+<h1>Cable Guide Bracket</h1>
+<p class="lede">Review the part's fit, attachment, proportions, and print orientation before surface finish and final exports are added.</p>
+</div>
+<div class="status" aria-label="Checkpoint status">
+<strong>Ready for review</strong>
+<span>4 computed checks passed</span>
+</div>
+</header>
+<main data-artifact-kind="mockup" data-artifact-version="1">
+<section class="panel" id="model-preview" aria-labelledby="preview-title">
+<div class="panel-head">
+<p class="section-label">01 · Model</p>
+<h2 id="preview-title">Inspect from every useful angle</h2>
+</div>
+<div class="preview-layout">
+<div class="render-stage" role="img" aria-label="Isometric technical render of a cable guide bracket">
+<svg viewBox="0 0 700 440" aria-hidden="true">
+<defs>
+  <linearGradient id="face" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#67aaa4"/><stop offset="1" stop-color="#1f6764"/></linearGradient>
+  <linearGradient id="side" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#2d7975"/><stop offset="1" stop-color="#174b49"/></linearGradient>
+</defs>
+<path d="M177 283 L454 113 L573 180 L296 351 Z" fill="url(#face)" stroke="#173e3c" stroke-width="4"/>
+<path d="M177 283 L296 351 L296 380 L177 312 Z" fill="url(#side)" stroke="#173e3c" stroke-width="4"/>
+<path d="M296 351 L573 180 L573 209 L296 380 Z" fill="#174e4b" stroke="#173e3c" stroke-width="4"/>
+<path d="M315 267 C335 211 373 183 422 158 L488 197 C443 221 410 248 395 299 Z" fill="#f4f0e7" stroke="#173e3c" stroke-width="4"/>
+<path d="M327 266 C345 226 372 205 409 185" fill="none" stroke="#92cec8" stroke-width="13" stroke-linecap="round"/>
+<ellipse cx="236" cy="286" rx="21" ry="13" fill="#f4f0e7" stroke="#173e3c" stroke-width="4" transform="rotate(28 236 286)"/>
+<ellipse cx="502" cy="178" rx="21" ry="13" fill="#f4f0e7" stroke="#173e3c" stroke-width="4" transform="rotate(28 502 178)"/>
+<path d="M172 316 L292 385 L292 398 L172 329 Z" fill="#cba45e" opacity=".72"/>
+</svg>
+<div class="view-tabs" aria-label="Available model views">
+<span class="selected">Isometric</span><span>Front</span><span>Right</span><span>Top</span><span>Print bed</span>
+</div>
+</div>
+<aside class="facts" aria-label="Model facts">
+<div class="fact-group">
+<p class="eyebrow">Envelope</p>
+<ul class="fact-list">
+<li><span>Width</span><strong>84.0 mm</strong></li>
+<li><span>Depth</span><strong>42.0 mm</strong></li>
+<li><span>Height</span><strong>18.0 mm</strong></li>
+</ul>
+</div>
+<div class="fact-group">
+<p class="eyebrow">Key parameters</p>
+<ul class="fact-list">
+<li><span>Cable diameter</span><strong>8.0 mm</strong></li>
+<li><span>Fit clearance</span><strong>0.4 mm</strong></li>
+<li><span>Wall</span><strong>2.4 mm</strong></li>
+<li><span>Screw holes</span><strong>2 × 4.5 mm</strong></li>
+</ul>
+</div>
+<div class="fact-group">
+<p class="eyebrow">Dimension sources</p>
+<p>User measurement: cable diameter.<br>Manufacturer drawing: screw head envelope.</p>
+</div>
+</aside>
+</div>
+</section>
+<div class="grid">
+<section class="card" id="computed-validation" aria-labelledby="validation-title">
+<p class="section-label">02 · Computed validation</p>
+<h2 id="validation-title">What the files prove</h2>
+<ul class="checks">
+<li class="pass"><strong>Solid model generated</strong><small>CadQuery completed without an exception.</small></li>
+<li class="pass"><strong>Mesh is watertight</strong><small>The STL contains one closed printable body.</small></li>
+<li class="pass"><strong>Bounding box matches</strong><small>84.0 × 42.0 × 18.0 mm.</small></li>
+<li class="pass"><strong>Minimum wall clears target</strong><small>2.4 mm minimum for the selected material.</small></li>
+</ul>
+</section>
+<section class="card notice" id="physical-validation" aria-labelledby="physical-title">
+<p class="section-label">03 · Physical validation</p>
+<h2 id="physical-title">What still needs a print</h2>
+<ul class="checks">
+<li class="warn"><strong>Cable fit</strong><small>Print the 20 mm fit coupon before the full bracket.</small></li>
+<li class="warn"><strong>Fastener seating</strong><small>Check the real screw head against the countersink.</small></li>
+<li class="warn"><strong>Working load</strong><small>Computed geometry does not prove long-term strength.</small></li>
+</ul>
+</section>
+</div>
+<div class="grid">
+<section class="card" id="print-plan" aria-labelledby="print-title">
+<p class="section-label">04 · Print plan</p>
+<h2 id="print-title">Proposed slicer setup</h2>
+<ul class="fact-list">
+<li><span>Material</span><strong>PETG</strong></li>
+<li><span>Layer height</span><strong>0.20 mm</strong></li>
+<li><span>Walls</span><strong>4</strong></li>
+<li><span>Infill</span><strong>25% gyroid</strong></li>
+<li><span>Supports</span><strong>None</strong></li>
+</ul>
+</section>
+<section class="card" id="project-files" aria-labelledby="files-title">
+<p class="section-label">05 · 3D print project</p>
+<h2 id="files-title">Files kept after approval</h2>
+<div class="file-list">
+<div class="file">Cable Guide Bracket/cable_guide_bracket.py</div>
+<div class="file">Cable Guide Bracket/cable_guide_bracket.stl</div>
+<div class="file">Cable Guide Bracket/cable_guide_bracket.step</div>
+<div class="file">Cable Guide Bracket/render.png</div>
+<div class="file">Cable Guide Bracket/render.conf</div>
+<div class="file">Cable Guide Bracket/README.md</div>
+</div>
+</section>
+</div>
+<section class="panel decision" id="design-decision" aria-labelledby="decision-title">
+<p class="section-label">Design decision</p>
+<h2 id="decision-title">Recommended review sheet</h2>
+<dl>
+<dt>Selected design</dt><dd>One dominant model render, compact engineering facts, separate computed and physical validation, and the final project file list.</dd>
+<dt>Rationale</dt><dd>The model remains the visual focus while fit assumptions, evidence, and unresolved print risks stay visible in the same review.</dd>
+<dt>Rejected alternatives</dt><dd>None. No unresolved interface fork remained after the design interview.</dd>
+<dt>Responsive intent</dt><dd>On narrow screens, the render comes first, followed by dimensions, validation, print guidance, and files in reading order.</dd>
+<dt>Accessibility</dt><dd>Semantic landmarks, descriptive render text, visible status text, ordered keyboard reading, and contrast that works in light and dark themes.</dd>
+<dt>Authoritative</dt><dd>Information hierarchy, validation separation, checkpoint status, and project file visibility.</dd>
+<dt>Directional</dt><dd>Exact colors, typography, spacing, and the sample bracket geometry.</dd>
+</dl>
+</section>
+</main>
+<footer>Model review sheet mockup · temporary checkpoint interface</footer>
+</div>
+</body>
+</html>

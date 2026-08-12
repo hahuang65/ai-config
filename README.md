@@ -155,6 +155,7 @@ Run `review-change --help` for all options, accepted inputs, trust controls, and
 
 | Skill | Purpose |
 |---|---|
+| `3d` | Design and review parameterized 3D-printable parts and document each 3D print project. |
 | `refactor` | Run a directed refactor or a scoped hygiene sweep. |
 | `review-code` | Explore architectural deepening opportunities without editing code. |
 | `prototype` | Build throwaway code to answer one logic, state, or integration question. |
@@ -243,6 +244,8 @@ SourceHut CI mirrors the repository to GitHub on push.
 
 - [Boris Tane's workflow](https://boristane.com/blog/how-i-use-claude-code/) inspired the original research-first pipeline and review discipline.
 - [Matt Pocock's skills-TDD pipeline](https://www.aihero.dev/skills-tdd) and [skills repository](https://github.com/mattpocock/skills) inspired the grill, spec, todo, TDD, handoff, prototype, review-code, model-domain, and `resolve-conflicts` workflows.
+- Nicolas Chourrout of [Flowful.ai](https://flowful.ai), the [flowful-ai/cad-skill repository](https://github.com/flowful-ai/cad-skill), and the article [“I Taught Claude to Design 3D-Printable Parts. Here's How”](https://medium.com/@nchourrout/i-taught-claude-to-design-3d-printable-parts-heres-how-675f644af78a) provided selective inspiration for the `3d` skill's interactive checkpoints and evidence discipline.
+  This repository contains an original implementation under MIT and does not copy the upstream code or substantial prose, which use PolyForm Noncommercial 1.0.0.
 - [nicobailon/visual-explainer](https://github.com/nicobailon/visual-explainer) is the source of the `visualize` skill.
 - [kunchenguid/no-mistakes](https://github.com/kunchenguid/no-mistakes) inspired Review change's independent reviewer/fixer roles and evidence-first Findings.
 - [kunchenguid/lavish-axi](https://github.com/kunchenguid/lavish-axi) inspired the local browser review loop; see [`skills/review-artifact/ATTRIBUTION.md`](skills/review-artifact/ATTRIBUTION.md).
