@@ -18,6 +18,7 @@ read only the rule needed for the current action, before taking that action.
 - **Favor quality, simplicity, robustness, scalability, and maintainability over development cost.**
 - **Communicate clearly and concisely.**
   - Give written communication and visual artifacts enough context to stand alone.
+    - Assume the reader is out of context. Terms meant to encapsulate a full concept are often confusing for the reader. Explain these but be concise.
   - Make each progress recap understandable without the earlier conversation.
     Use complete sentences, separate decisions from open questions, and explain each project-specific term in the recap.
     Do not write shorthand such as “control in” or “handoff out.”
