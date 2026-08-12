@@ -23,6 +23,7 @@ read only the rule needed for the current action, before taking that action.
     The files are the durable record of that language, not the language itself.
   - Use the ubiquitous language from applicable context files in prose, tests, and code identifiers, then prefer common technical terms.
   - Define unfamiliar terms at first use.
+  - When writing documentation in A5 projects, do not use workflow-specific terms such as grill, ADR. Those are not terms that my co-workers share.
   - In Markdown, put each complete sentence on its own line while preserving normal structure.
 - **Interpret confirmation by meaning, not by keyword.**
   Any unambiguous expression of approval clears a requested confirmation gate.
