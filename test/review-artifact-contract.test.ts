@@ -40,15 +40,17 @@ test("the harness baseline standardizes understandable communication", async () 
 
 test("the harness baseline owns shared workflow semantics", async () => {
   const baseline = await source("baseline-prompt.md");
+  const htmlRouting = await source("rules/html-routing.md");
   const skills = await Promise.all([
     "build", "coach", "code", "grill", "refactor", "spec", "todo", "visualize-diff",
   ].map((name) => source(`skills/${name}/SKILL.md`)));
 
   expect(baseline).toContain("Do not stage, commit, push, or deliver unless");
   expect(baseline).toContain("Interpret confirmation by meaning, not by keyword");
-  expect(baseline).toContain("Route HTML by purpose");
-  expect(baseline).toContain("use `review-artifact`");
-  expect(baseline).toContain("Browser close, disconnect, timeout, or ending a session is not approval");
+  expect(baseline).toContain("before opening or presenting an HTML file");
+  expect(htmlRouting).toContain("Route HTML by purpose");
+  expect(htmlRouting).toContain("use `review-artifact`");
+  expect(htmlRouting).toContain("Browser close, disconnect, timeout, or ending a session is not approval");
   expect(baseline).toContain("before designing a test strategy or writing or modifying tests");
   expect(baseline).toContain("before designing or writing code involving external input");
   expect(baseline).toContain("before designing or implementing optimization");

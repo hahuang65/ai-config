@@ -33,11 +33,6 @@ read only the rule needed for the current action, before taking that action.
 - **Interpret confirmation by meaning, not by keyword.**
   Any unambiguous expression of approval clears a requested confirmation gate.
   An ambiguous response or a response that raises a concern does not.
-- **Route HTML by purpose.**
-  Open informational HTML normally.
-  When HTML asks for feedback, a decision, or approval, use `review-artifact`.
-  Browser close, disconnect, timeout, or ending a session is not approval.
-  If the runtime fails, report the fallback and continue the review in chat.
 
 ## Shared rulebook
 
@@ -56,3 +51,4 @@ Load rules when their domain becomes relevant:
 - `performance.md` — before designing or implementing optimization, caching,
   pagination, or external-call timeouts
 - `cli-ergonomics.md` — before designing, implementing, or reviewing an Agent-facing CLI
+- `html-routing.md` — before opening or presenting an HTML file

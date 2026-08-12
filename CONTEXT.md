@@ -180,7 +180,7 @@ The guarantee that each harness sees only its own module's files plus the curate
 The check asserting each config root contains only `{its module's files} ∪ {the curated shared set}` — no symlink may resolve into a sibling harness's directory. A leak fails CI.
 
 **Advisory rule**:
-A `rules/*.md` file that is pure guidance the model reads — shares verbatim across harnesses like a skill, with no mechanical enforcement. After the guardrail consolidation (ADR-0012), **`rules/` is advisory-only**: `coding-style`, `testing`, `performance`, `cli-ergonomics`, `git-commit`, `mise`, and `security` (its non-blockable principles). All *enforcement* moved to the **guard core**. Distinct from a **Guardrail policy**.
+A `rules/*.md` file that is pure guidance the model reads — shares verbatim across harnesses like a skill, with no mechanical enforcement. After the guardrail consolidation (ADR-0012), **`rules/` is advisory-only**: `coding-style`, `testing`, `performance`, `cli-ergonomics`, `git-commit`, `html-routing`, `mise`, and `security` (its non-blockable principles). All *enforcement* moved to the **guard core**. Distinct from a **Guardrail policy**.
 _Avoid_: rule (unqualified — the bare word hides the advisory-vs-guardrail split).
 
 **Rule projection**:
