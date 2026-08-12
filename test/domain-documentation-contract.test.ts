@@ -32,3 +32,11 @@ test("Confluence writes stay on the two designated pages", async () => {
   expect(decisionFormat).toContain("If **Contracts** does not exist, create that section");
   expect(decisionFormat).toContain("Never create a page for a contract");
 });
+
+test("Confluence decision cards include the scenario behind the decision", async () => {
+  const decisionFormat = await source("skills/model-domain/references/adr-format.md");
+
+  expect(decisionFormat).toContain("**Scenario**");
+  expect(decisionFormat).toContain("short, concrete, plain-language example");
+  expect(decisionFormat).toContain("scenario that led to this decision");
+});

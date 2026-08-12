@@ -69,7 +69,9 @@ Append each record as one visually cohesive unit:
 2. Keep that heading outside the panel so `#D-NNN` remains a working link target.
 3. Immediately follow it with one `panel-note` panel containing the complete record.
 4. Start the panel with a bold title line containing the short title, date, design session, and decision makers.
-5. Add concise **Context**, **Decision**, **Alternatives rejected**, and **Consequence** blocks inside the same panel.
+5. Add concise **Context**, **Scenario**, **Decision**, **Alternatives rejected**, and **Consequence** blocks inside the same panel.
+6. In **Scenario**, give one short, concrete, plain-language example of the scenario that led to this decision.
+   Describe what happened or could happen and why the choice matters without repeating the other blocks or relying on technical jargon.
 
 Do not nest tables, expands, or another panel inside the note panel.
 Use the Confluence-safe HTML read, whole-body update, identifier preservation, and verification rules in [context-format.md](context-format.md).
