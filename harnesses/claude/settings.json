@@ -134,6 +134,8 @@
       "Bash(uv run ty check *)",
       "Bash(make lint)",
       "Bash(make lint *)",
+      "Bash(make test)",
+      "Bash(make test *)",
       "Bash(make ruff)",
       "Bash(make ruff *)",
       "Bash(make ty)",
@@ -243,6 +245,10 @@
     ],
     "additionalDirectories": [
       "~/.claude",
+      "~/.config",
+      "~/.dotfiles",
+      "~/.orchard",
+      "~/Projects/a5",
       "/tmp"
     ]
   },
