@@ -118,6 +118,8 @@
       "Bash(bun test *)",
       "Bash(mise x -- bun test)",
       "Bash(mise x -- bun test *)",
+      "Bash(npx eslint)",
+      "Bash(npx eslint *)",
       "Bash(rubocop *)",
       "Bash(mise x -- rubocop *)",
       "Bash(bundle exec rubocop *)",
