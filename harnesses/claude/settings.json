@@ -23,6 +23,7 @@
       "Read(docs/features/**)",
       "Read(*/docs/features/**)",
       "Read(**/docs/features/**)",
+      "Edit(**)",
       "Edit(docs/features/**)",
       "Edit(*/docs/features/**)",
       "Edit(**/docs/features/**)",
