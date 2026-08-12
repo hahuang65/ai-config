@@ -293,10 +293,13 @@ test_command_prompts() {
      && grep -Fq 'load the `orchard` skill' "$REPO_DIR/commands/deliver.md" \
      && grep -Fq 'Never invoke Orchard for an ordinary local branch' "$REPO_DIR/commands/deliver.md" \
      && grep -Fq 'git merge --ff-only' "$REPO_DIR/commands/deliver.md" \
-     && grep -Fq '`commit` skill' "$REPO_DIR/commands/deliver.md"; then
-    pass "deliver routes only managed worktrees through Orchard"
+     && grep -Fq '`commit` skill' "$REPO_DIR/commands/deliver.md" \
+     && grep -Fq 'automatically aborted' "$REPO_DIR/commands/deliver.md" \
+     && grep -Fq 'load the `resolve-conflicts` skill' "$REPO_DIR/commands/deliver.md" \
+     && grep -Fq 'retry Orchard delivery' "$REPO_DIR/commands/deliver.md"; then
+    pass "deliver routes managed worktrees through Orchard and resolves delivery rebase conflicts"
   else
-    fail "commands/deliver.md" "must separate managed Orchard delivery from ordinary Git delivery"
+    fail "commands/deliver.md" "must separate managed Orchard delivery from ordinary Git delivery and resolve managed rebase conflicts"
   fi
 
   grep -q '^command_target="commands"' "$REPO_DIR/harnesses/claude/manifest.sh" \

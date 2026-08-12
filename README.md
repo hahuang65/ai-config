@@ -167,7 +167,7 @@ Run `review-change --help` for all options, accepted inputs, trust controls, and
 
 ### Commands
 
-- `deliver` routes managed worktrees through Orchard and ordinary branches directly through Git.
+- `deliver` routes managed worktrees through Orchard, resolves managed delivery rebase conflicts through the shared conflict workflow, and routes ordinary branches directly through Git.
 - `/rebase` composes Orchard rebasing with conflict resolution.
 
 Maintainer-facing composition rules are in [`AGENTS.md`](AGENTS.md).

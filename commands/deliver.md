@@ -17,7 +17,14 @@ Do not require or use ordinary-delivery facts such as `root`, `branch`, `trunk`,
 Then load the `orchard` skill and follow its deliver operation with `$ARGUMENTS` unchanged.
 If Orchard returns `needs-commit`, validate the exact managed worktree path and branch, load the `commit` skill there, and retry Orchard delivery.
 Do not treat the worktree intent as commit scope.
-Stop if commit fails or leaves changes behind, and follow every other Orchard transition or terminal result exactly.
+Stop if commit fails or leaves changes behind.
+
+Treat this explicit `/deliver` invocation as authorization to resolve a managed delivery rebase conflict.
+When delivery proves that its rebase was automatically aborted, the original task tip was restored, and synchronized trunk was preserved, run the same harness-owned rebase path as `/rebase`: invoke `orchard rebase` for the selected intent with `--resolve-conflicts --json` and require the versioned rebase outcome.
+When its status is `needs-conflict-resolution`, validate the recovery facts and exact managed worktree, enter that worktree through Orchard when required, then load the `resolve-conflicts` skill with the delivery goal and recovery facts.
+Require the resolver to complete and finalize the recorded Orchard rebase operation.
+After a `rebased` or `finalized` outcome, retry Orchard delivery with the original `$ARGUMENTS` unchanged.
+For every other delivery or rebase failure, report Orchard's preserved state and stop.
 
 When `delivery=ordinary`, deliver the reported ordinary local feature branch directly through Git.
 Never invoke Orchard for an ordinary local branch, including Orchard status, discovery, rebase, delivery, or cleanup.

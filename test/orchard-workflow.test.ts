@@ -85,6 +85,10 @@ test("deliver reserves Orchard for managed worktrees", async () => {
 
   expect(delivery).toContain("classify the checkout using Git only");
   expect(delivery).toContain("load the `orchard` skill");
+  expect(delivery).toContain("automatically aborted");
+  expect(delivery).toContain("load the `resolve-conflicts` skill");
+  expect(delivery).toContain("needs-conflict-resolution");
+  expect(delivery).toContain("retry Orchard delivery");
   expect(delivery).toContain("Never invoke Orchard");
   expect(delivery).toContain("git merge --ff-only");
   expect(delivery).toContain("git pr create --web --fill");

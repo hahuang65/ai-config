@@ -45,6 +45,10 @@ test("deliver routes only managed tasks through Orchard", async () => {
   expect(delivery).toContain("explicit worktree intent");
   expect(delivery).toContain("canonical `~/.orchard/` root");
   expect(delivery).toContain("load the `orchard` skill");
+  expect(delivery).toContain("automatically aborted");
+  expect(delivery).toContain("load the `resolve-conflicts` skill");
+  expect(delivery).toContain("needs-conflict-resolution");
+  expect(delivery).toContain("retry Orchard delivery");
   expect(delivery).toContain("Never invoke Orchard");
   expect(delivery).toContain("ordinary local feature branch");
   expect(delivery).toContain("git merge --ff-only");
@@ -85,6 +89,7 @@ test("the active README inventory lists every command", async () => {
   expect(readme).toContain("Shared explicit aliases and compositions (deliver, rebase)");
   expect(readme).not.toContain("`resolve-conflicts` aliases the `resolve-conflicts` skill");
   expect(readme).toContain("`deliver` routes managed worktrees through Orchard");
+  expect(readme).toContain("resolves managed delivery rebase conflicts through the shared conflict workflow");
   expect(readme).toContain("ordinary branches directly through Git");
   expect(readme).not.toContain("`deliver` | — | Commit outstanding changes when needed");
   expect(readme).not.toContain("`merge` | — | Rebase and fast-forward ordinary Orchard tasks");
