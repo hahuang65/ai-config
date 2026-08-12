@@ -19,8 +19,8 @@ Within an active phase, all routine operations proceed **without per-call approv
 ### Project-wide (accrete across many `/build` runs)
 
 `model-domain` follows the shared [domain documentation destination](domain-documentation.md) protocol before Phase 1 questions begin.
-The main project directory always uses local files without prompting.
-A linked worktree reuses its private `domain-documentation.json` selection or prompts once when that state is absent.
+Every non-A5 project and every A5 main project directory uses local files without prompting.
+An A5 linked worktree reuses its private `domain-documentation.json` selection or prompts once when that state is absent.
 
 A local destination uses:
 
@@ -30,7 +30,7 @@ CONTEXT.md or CONTEXT-MAP.md         # root context entry point
 docs/adr/*.md                        # project-wide decisions
 ```
 
-A Confluence destination uses the context document and decisions document saved for that linked worktree and creates no local companions.
+A Confluence destination uses the context document and decisions document saved for that A5 linked worktree and creates no local companions.
 Both forms outlive any single feature.
 The `git-commit` rule decides whether to include local files, including its A5 project exception; worktree-private destination state and Confluence pages are never staged.
 

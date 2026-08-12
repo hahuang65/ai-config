@@ -10,7 +10,7 @@ Actively build and sharpen the project's domain model as you design.
 Challenge terms, invent edge-case scenarios, and write the glossary and decisions down when they crystallize.
 
 **Context files** are local `CONTEXT.md` and `CONTEXT-MAP.md` files collectively.
-**Context documentation** is the selected durable source: context files or a linked worktree's saved Confluence context document.
+**Context documentation** is the durable source: context files, or an A5 linked worktree's saved Confluence context document.
 It records or locates the project's **ubiquitous language**: the shared, canonical vocabulary that domain experts, users, documentation, tests, and code use for the project's domain.
 The documentation is the durable record of that language, not the language itself; the words become ubiquitous only when everyone and every artifact use them consistently.
 
@@ -25,7 +25,8 @@ Adapted from Matt Pocock's [domain-modeling skill](https://github.com/mattpocock
 ## Resolve the Worktree Documentation Destination
 
 Read and follow the shared [domain documentation destination](../shared/references/domain-documentation.md) protocol before reading or writing domain documentation.
-It keeps the main project directory local without prompting and persists one safe local-or-Confluence selection only in each linked worktree.
+It uses local files without prompting for every non-A5 project and for an A5 main project directory.
+It persists one safe local-or-Confluence selection only for an A5 linked worktree.
 
 Read and write the selected destination only.
 Never create local context files or ADRs as hidden companions for Confluence pages.

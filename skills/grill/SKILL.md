@@ -49,7 +49,7 @@ The output is not a feature-specific artifact.
 It is project-wide domain documentation that accrues across many `/build` runs:
 
 - A local destination uses the applicable **`CONTEXT.md`** files and root **`docs/adr/`** directory.
-- A Confluence destination uses the linked worktree's saved context document and decisions document.
+- A Confluence destination uses the A5 linked worktree's saved context document and decisions document.
 
 Do not put local domain documentation inside the feature directory or duplicate Confluence documentation there because it outlives any single feature.
 When invoked standalone, `$ARGUMENTS` is the topic to grill on.

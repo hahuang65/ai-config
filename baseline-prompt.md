@@ -23,7 +23,7 @@ read only the rule needed for the current action, before taking that action.
     Do not write shorthand such as “control in” or “handoff out.”
   - Use ASD-STE100 Simplified Technical English for user-facing prose in chat, Markdown, and HTML.
   - Treat `CONTEXT.md` and `CONTEXT-MAP.md` collectively as **context files**.
-    **Context documentation** is the selected durable source: local context files or a linked worktree's saved Confluence context document.
+    **Context documentation** is the durable source: local context files, or an A5 linked worktree's saved Confluence context document.
     It records or locates the project's **ubiquitous language**: the shared, canonical vocabulary that domain experts, users, documentation, tests, and code use with one consistent meaning.
     The documentation is the durable record of that language, not the language itself.
   - Use the ubiquitous language from applicable context documentation in prose, tests, and code identifiers, then prefer common technical terms.

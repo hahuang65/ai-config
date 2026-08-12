@@ -45,8 +45,8 @@ _Avoid_: Context artifacts, context docs, glossary files.
 
 **Context documentation**:
 The selected durable record and navigation structure for a project's domain concepts and context relationships.
-The main project directory always uses local **context files**.
-A linked worktree uses its saved local selection or Confluence context document.
+The main project directory and every non-A5 linked worktree always use local **context files**.
+Only an A5 linked worktree can select Confluence, after which it uses its saved local selection or Confluence context document.
 _Avoid_: Context artifacts, context docs, glossary files.
 
 **Decision record**:
@@ -54,9 +54,9 @@ A durable explanation of a hard-to-reverse, surprising choice that resulted from
 Local destinations use Architectural Decision Records under `docs/adr/`; Confluence destinations use linked `D-NNN` entries and cohesive Decision details.
 
 **Domain documentation destination**:
-The local-or-Confluence choice used by `model-domain` for **context documentation** and **decision records**.
-The main project directory is always local.
-Each linked worktree stores only its own persistent choice and Confluence page links in an ignored `domain-documentation.json` at its worktree root.
+The local-or-Confluence choice used by `model-domain` for **context documentation** and **decision records** in an A5 linked worktree.
+The main project directory and every non-A5 project are always local and do not have a destination choice.
+Each A5 linked worktree stores only its own persistent choice and Confluence page links in an ignored `domain-documentation.json` at its worktree root.
 _Avoid_: Project-wide documentation setting, repository documentation setting.
 
 **Ubiquitous language**:

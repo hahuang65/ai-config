@@ -71,7 +71,7 @@ Derive a short slug from `$ARGUMENTS` (lowercase, hyphens, max ~5 words). Run ea
 
 Load [../grill/SKILL.md](../grill/SKILL.md), then run `grill` with the feature description.
 Grill invokes `model-domain` to resolve the worktree documentation destination and maintain the ubiquitous language and qualifying decision records.
-It updates local `CONTEXT.md` / `docs/adr/` or the linked worktree's saved Confluence pages project-wide and does NOT create the feature directory yet.
+It updates local `CONTEXT.md` / `docs/adr/` or an A5 linked worktree's saved Confluence pages project-wide and does NOT create the feature directory yet.
 
 Determine mockup relevance from the grilled scope and inspected code, and ask the user only when that classification remains genuinely ambiguous.
 When the scope establishes relevant UI, create the Feature directory, load [../mockup/SKILL.md](../mockup/SKILL.md), and run `mockup`.

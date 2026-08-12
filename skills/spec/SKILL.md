@@ -22,7 +22,7 @@ Read [../shared/references/testable-interfaces.md](../shared/references/testable
 
 ### Step 1: Read context
 
-- Resolve the [domain documentation destination](../shared/references/domain-documentation.md) again for this invocation. Reloading valid linked-worktree state avoids another prompt while renewing every trust check.
+- Resolve the [domain documentation destination](../shared/references/domain-documentation.md) again for this invocation. For an A5 linked worktree, reloading valid state avoids another prompt while renewing every trust check. Every other checkout uses local files without prompting.
 - Read the applicable local context files and recent ADRs, or the saved Confluence context and decisions documents, especially records added this session.
 - Read approved `mockups.html` when present and treat its selected design as Authoritative intent.
 - Skim the codebase area the feature touches. The spec is grounded in the actual codebase, not assumptions.
