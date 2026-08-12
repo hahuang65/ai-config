@@ -78,17 +78,21 @@ function renderContext(overrides: Record<string, unknown> = {}) {
 }
 
 describe("Catppuccin Mocha theme", () => {
-  test("uses the Catppuccin success, error, and warning colors", () => {
+  test("uses hue-matched Catppuccin status colors", () => {
     const themeDefinition = JSON.parse(readFileSync(CATPPUCCIN_THEME_PATH, "utf8"));
 
     expect({
       success: themeDefinition.vars[themeDefinition.colors.success],
       error: themeDefinition.vars[themeDefinition.colors.error],
       warning: themeDefinition.vars[themeDefinition.colors.warning],
+      successBackground: themeDefinition.vars[themeDefinition.colors.toolSuccessBg],
+      errorBackground: themeDefinition.vars[themeDefinition.colors.toolErrorBg],
     }).toEqual({
       success: "#a6e3a1",
       error: "#f38ba8",
       warning: "#f9e2af",
+      successBackground: "#324430",
+      errorBackground: "#492a32",
     });
   });
 
@@ -104,12 +108,12 @@ describe("write tool highlights", () => {
     expect(Object.keys(registeredTools()).sort()).toEqual(["edit", "write"]);
   });
 
-  test("renders a successful write with the amber background", () => {
+  test("renders a successful write with the Catppuccin yellow background", () => {
     const { write } = registeredTools();
     const context = renderContext();
     const shell = write.renderCall({}, theme, context) as FakeComponent;
 
-    expect(shell.background("write")).toBe("\u001b[48;2;74;64;40mwrite\u001b[49m");
+    expect(shell.background("write")).toBe("\u001b[48;2;75;68;53mwrite\u001b[49m");
   });
 
   test("keeps failed writes on the error background", () => {
@@ -128,14 +132,14 @@ describe("write tool highlights", () => {
     expect(shell.background("write")).toBe("<toolPendingBg>write</toolPendingBg>");
   });
 
-  test("reapplies amber after the edit result renderer settles", () => {
+  test("reapplies Catppuccin yellow after the edit result renderer settles", () => {
     const { edit } = registeredTools();
     const context = renderContext();
     const call = edit.renderCall({}, theme, context) as FakeComponent;
 
     edit.renderResult({ content: [] }, { expanded: false, isPartial: false }, theme, context);
 
-    expect(call.background("edit")).toBe("\u001b[48;2;74;64;40medit\u001b[49m");
+    expect(call.background("edit")).toBe("\u001b[48;2;75;68;53medit\u001b[49m");
   });
 
   test("reapplies red after a failed edit settles", () => {
@@ -148,7 +152,7 @@ describe("write tool highlights", () => {
     expect(call.background("edit")).toBe("<toolErrorBg>edit</toolErrorBg>");
   });
 
-  test("uses an amber 256-color fallback", () => {
+  test("uses a yellow 256-color fallback", () => {
     const { write } = registeredTools();
     const fallbackTheme = { ...theme, getColorMode: () => "256color" as const };
     const shell = write.renderCall({}, fallbackTheme, renderContext()) as FakeComponent;

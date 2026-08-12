@@ -1,6 +1,6 @@
 import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
 
-const WRITE_BACKGROUND_TRUECOLOR = "\u001b[48;2;74;64;40m";
+const WRITE_BACKGROUND_TRUECOLOR = "\u001b[48;2;75;68;53m";
 const WRITE_BACKGROUND_256 = "\u001b[48;5;58m";
 const RESET_BACKGROUND = "\u001b[49m";
 const HIGHLIGHT_STATE = Symbol("write-tool-highlight");
@@ -61,7 +61,7 @@ type HighlightDependencies = {
   cwd: string;
 };
 
-function amberBackground(theme: RenderTheme): Background {
+function yellowBackground(theme: RenderTheme): Background {
   const prefix = theme.getColorMode() === "256color"
     ? WRITE_BACKGROUND_256
     : WRITE_BACKGROUND_TRUECOLOR;
@@ -71,7 +71,7 @@ function amberBackground(theme: RenderTheme): Background {
 function statusBackground(theme: RenderTheme, context: RenderContext): Background {
   if (context.isPartial) return (text) => theme.bg("toolPendingBg", text);
   if (context.isError) return (text) => theme.bg("toolErrorBg", text);
-  return amberBackground(theme);
+  return yellowBackground(theme);
 }
 
 function highlightState(context: RenderContext): HighlightRenderState {

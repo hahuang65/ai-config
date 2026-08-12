@@ -60,7 +60,7 @@ install_module() {
   dim "  $config_root/extensions/orchard.ts (Orchard session transitions)"
   dim "  $config_root/extensions/review-change-guard.ts (standalone Review change boundary)"
   dim "  $config_root/extensions/review-change-progress.ts (standalone Review change TUI telemetry)"
-  dim "  $config_root/extensions/write-tool-highlights.ts (amber write success backgrounds)"
+  dim "  $config_root/extensions/write-tool-highlights.ts (yellow write success backgrounds)"
 
   ln -sf "$MOD/themes/catppuccin-mocha.json" "$config_root/themes"
   dim "  $config_root/themes/catppuccin-mocha.json (default pi theme)"
