@@ -1,4 +1,4 @@
-# Harness System Prompt
+# Baseline Prompt
 
 Keep the always-loaded context small. Detailed advisory rules are a rulebook:
 read only the rule needed for the current action, before taking that action.

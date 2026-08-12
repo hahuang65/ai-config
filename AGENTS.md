@@ -101,7 +101,7 @@ Implications:
 
 `rules/*.md` is **advisory only** (ADR-0012).
 Detailed rules are on demand: Claude and pi read the canonical `~/.dotfiles/ai/rules/` files.
-A small shared bootstrap (`harness-system-prompt.md`, ADR-0016) is always loaded by both harnesses; it holds only critical constraints, the shared location, and load triggers.
+A small shared bootstrap (`baseline-prompt.md`, ADR-0016) is always loaded by both harnesses; it holds only critical constraints, the shared location, and load triggers.
 Agent `Project Rules` sections contain only bare rule names.
 Phrase every rule `description:` as a load trigger ("Read before writing tests…").
 **No rule carries `condition:`/`scope:`** — the retired TTSR frontmatter; the gate fails any rule that re-introduces it.

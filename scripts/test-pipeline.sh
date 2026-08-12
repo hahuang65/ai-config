@@ -309,9 +309,9 @@ test_command_prompts() {
     && pass "pi projects commands into prompts/" \
     || fail "harnesses/pi/manifest.sh" "must set command_target=prompts"
 
-  check_content_cached "$(cat "$REPO_DIR/harness-system-prompt.md")" "harness-system-prompt.md" "Treat a project as A5 only when its originating repository has effective .ai[.]projectFamily=a5. from global or system Git configuration"
+  check_content_cached "$(cat "$REPO_DIR/baseline-prompt.md")" "baseline-prompt.md" "Treat a project as A5 only when its originating repository has effective .ai[.]projectFamily=a5. from global or system Git configuration"
   local stale_a5_paths
-  stale_a5_paths="$(grep -RFl '~/Projects/a5/' "$REPO_DIR/harness-system-prompt.md" "$REPO_DIR/skills" "$REPO_DIR/commands" "$REPO_DIR/agents" "$REPO_DIR/rules" 2>/dev/null || true)"
+  stale_a5_paths="$(grep -RFl '~/Projects/a5/' "$REPO_DIR/baseline-prompt.md" "$REPO_DIR/skills" "$REPO_DIR/commands" "$REPO_DIR/agents" "$REPO_DIR/rules" 2>/dev/null || true)"
   if [[ -z "$stale_a5_paths" ]]; then
     pass "A5 classification uses trusted Git metadata without path duplication"
   else
@@ -365,10 +365,10 @@ test_skill_model_domain() {
 test_ubiquitous_language_contract() {
   section "Ubiquitous language contract"
   local baseline content context_file skill_file skill_name stale_aliases
-  baseline="$(cat "$REPO_DIR/harness-system-prompt.md")"
-  check_content_cached "$baseline" "harness-system-prompt.md" '`CONTEXT\.md` and `CONTEXT-MAP\.md` collectively as \*\*context files\*\*'
-  check_content_cached "$baseline" "harness-system-prompt.md" "[Uu]biquitous language.*domain experts.*documentation.*tests.*code"
-  check_content_cached "$baseline" "harness-system-prompt.md" "durable record of that language, not the language itself"
+  baseline="$(cat "$REPO_DIR/baseline-prompt.md")"
+  check_content_cached "$baseline" "baseline-prompt.md" '`CONTEXT\.md` and `CONTEXT-MAP\.md` collectively as \*\*context files\*\*'
+  check_content_cached "$baseline" "baseline-prompt.md" "[Uu]biquitous language.*domain experts.*documentation.*tests.*code"
+  check_content_cached "$baseline" "baseline-prompt.md" "durable record of that language, not the language itself"
 
   for skill_name in build grill prototype review-code spec todo; do
     skill_file="$REPO_DIR/skills/$skill_name/SKILL.md"
@@ -654,7 +654,7 @@ test_phase_code_post() {
   local label="$2"
   check_content_cached "$content" "$label" "refactorer"
   check_content_cached "$content" "$label" "[Hh]ygiene [Mm]ode"
-  check_content_cached "$(cat "$REPO_DIR/harness-system-prompt.md")" "harness-system-prompt.md" "Do not stage, commit, push, or deliver unless"
+  check_content_cached "$(cat "$REPO_DIR/baseline-prompt.md")" "baseline-prompt.md" "Do not stage, commit, push, or deliver unless"
   if [[ "$content" =~ (database-reviewer|code-reviewer|doc-updater|fact-checker|diff-review) ]]; then
     fail "$label" "implementation phase still invokes final-review work owned by review-change"
   else
@@ -1408,17 +1408,17 @@ test_phase_orchestrator() {
   check_content_cached "$(<"$REPO_DIR/README.md")" "README.md" "/mockup"
 
   local bootstrap
-  bootstrap="$(<"$REPO_DIR/harness-system-prompt.md")"
-  check_content_cached "$bootstrap" "harness-system-prompt.md" "Use a named feature branch, never trunk"
-  check_content_cached "$bootstrap" "harness-system-prompt.md" "Name it .user-initials/short-intent."
-  check_content_cached "$bootstrap" "harness-system-prompt.md" "Ordinary work stays in the current checkout on a local task branch"
-  check_content_cached "$bootstrap" "harness-system-prompt.md" "If currently on trunk, create the task branch there"
-  check_content_cached "$bootstrap" "harness-system-prompt.md" "Use Orchard only for .[/]build. or explicit lifecycle requests"
-  check_content_cached "$bootstrap" "harness-system-prompt.md" "passing the same .short-intent."
-  check_content_cached "$bootstrap" "harness-system-prompt.md" "Treat a project as A5 only when its originating repository has effective .ai[.]projectFamily=a5. from global or system Git configuration"
-  check_content_cached "$bootstrap" "harness-system-prompt.md" "Use mise-managed toolchains.*invoke tools directly.*never activate or recommend rbenv, rvm, chruby, asdf, nvm, or pyenv"
-  check_content_cached "$bootstrap" "harness-system-prompt.md" "Favor quality, simplicity, robustness, scalability, and maintainability over development cost"
-  check_content_cached "$bootstrap" "harness-system-prompt.md" "Communicate clearly and concisely"
+  bootstrap="$(<"$REPO_DIR/baseline-prompt.md")"
+  check_content_cached "$bootstrap" "baseline-prompt.md" "Use a named feature branch, never trunk"
+  check_content_cached "$bootstrap" "baseline-prompt.md" "Name it .user-initials/short-intent."
+  check_content_cached "$bootstrap" "baseline-prompt.md" "Ordinary work stays in the current checkout on a local task branch"
+  check_content_cached "$bootstrap" "baseline-prompt.md" "If currently on trunk, create the task branch there"
+  check_content_cached "$bootstrap" "baseline-prompt.md" "Use Orchard only for .[/]build. or explicit lifecycle requests"
+  check_content_cached "$bootstrap" "baseline-prompt.md" "passing the same .short-intent."
+  check_content_cached "$bootstrap" "baseline-prompt.md" "Treat a project as A5 only when its originating repository has effective .ai[.]projectFamily=a5. from global or system Git configuration"
+  check_content_cached "$bootstrap" "baseline-prompt.md" "Use mise-managed toolchains.*invoke tools directly.*never activate or recommend rbenv, rvm, chruby, asdf, nvm, or pyenv"
+  check_content_cached "$bootstrap" "baseline-prompt.md" "Favor quality, simplicity, robustness, scalability, and maintainability over development cost"
+  check_content_cached "$bootstrap" "baseline-prompt.md" "Communicate clearly and concisely"
 }
 
 # ---------------------------------------------------------------------------
@@ -1646,7 +1646,7 @@ test_cli_ergonomics_rule_routing() {
 
   if [[ -f "$rule_file" ]] \
      && extract_frontmatter "$rule_file" | grep -Fqx "$description" \
-     && grep -Fqx -- "$route" "$REPO_DIR/harness-system-prompt.md"; then
+     && grep -Fqx -- "$route" "$REPO_DIR/baseline-prompt.md"; then
     pass "CLI ergonomics guidance and its lazy-load trigger are paired"
   else
     fail "Agent-facing CLI advisory routing" "rules/cli-ergonomics.md and its bootstrap trigger must use the same relevance boundary"

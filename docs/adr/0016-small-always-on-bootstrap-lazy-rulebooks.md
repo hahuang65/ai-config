@@ -13,7 +13,7 @@ prompts larger without changing which rules each agent needed.
 
 ## Decision
 
-Install one small, harness-neutral bootstrap, `harness-system-prompt.md`, as the
+Install one small, harness-neutral bootstrap, `baseline-prompt.md`, as the
 global context file for both harnesses:
 
 - pi: `~/.pi/agent/AGENTS.md`
@@ -46,7 +46,7 @@ the shared guard core and therefore does not consume prompt tokens.
   `~/.pi/agent/rules/` links are removed too. Unrelated user files remain.
 - A rule's `description` remains a load trigger for oh-my-pi's native rulebook,
   while the bootstrap provides equivalent routing hints to pi and Claude.
-- `harness-system-prompt.md` is intentionally distinct from the repo-root
+- `baseline-prompt.md` is intentionally distinct from the repo-root
   `AGENTS.md`, which remains this repository's authoring contract and is never
   installed globally.
 - This supersedes ADR-0014's Claude-always-on comparison and extends its lazy

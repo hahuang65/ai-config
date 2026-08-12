@@ -96,7 +96,7 @@ test("the active README inventory lists every command", async () => {
 });
 
 test("the harness baseline identifies A5 projects once", async () => {
-  const baseline = await source("harness-system-prompt.md");
+  const baseline = await source("baseline-prompt.md");
   const delivery = await source("commands/deliver.md");
 
   expect(baseline).toContain("Treat a project as A5 only when its originating repository has effective `ai.projectFamily=a5` from global or system Git configuration");

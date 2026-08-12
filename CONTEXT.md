@@ -76,7 +76,7 @@ pi's config root. This repo's `harnesses/pi/` module contains settings, extensio
 ### Lifecycle terms
 
 **Always-on context**:
-Content the harness injects into every conversation's system prompt without the model having to ask for it. This repo keeps that surface to `harness-system-prompt.md` for Claude and pi: a critical baseline plus shared project classification and rule-loading triggers. Claude Code would also auto-load `~/.claude/rules/*.md`, so this repo deliberately leaves detailed rules only at the canonical source path.
+Content the harness injects into every conversation's system prompt without the model having to ask for it. This repo keeps that surface to `baseline-prompt.md` for Claude and pi: a critical baseline plus shared project classification and rule-loading triggers. Claude Code would also auto-load `~/.claude/rules/*.md`, so this repo deliberately leaves detailed rules only at the canonical source path.
 
 **A5 project**:
 A repository whose originating repository has effective global or system Git configuration `ai.projectFamily=a5`.
@@ -187,7 +187,7 @@ _Avoid_: rule (unqualified — the bare word hides the advisory-vs-guardrail spl
 How advisory rules reach a harness. **Claude** and **pi** read ordinary files from the canonical `~/.dotfiles/ai/rules/` directory and share the same small always-on bootstrap for routing. Enforcement, by contrast, travels through the **guard core**, not rule projection. (ADR-0016)
 
 **Global instruction bootstrap**:
-The small harness-neutral `harness-system-prompt.md` installed as Claude's `~/.claude/CLAUDE.md` and pi's `~/.pi/agent/AGENTS.md`. It contains only critical cross-task constraints, rulebook locations, and load triggers. It is distinct from the repo-root `AGENTS.md`, which is this repository's authoring contract and is never installed globally.
+The small harness-neutral `baseline-prompt.md` installed as Claude's `~/.claude/CLAUDE.md` and pi's `~/.pi/agent/AGENTS.md`. It contains only critical cross-task constraints, rulebook locations, and load triggers. It is distinct from the repo-root `AGENTS.md`, which is this repository's authoring contract and is never installed globally.
 
 **Context file** (pi):
 A file pi loads at startup: global `~/.pi/agent/AGENTS.md` (the bootstrap) and `SYSTEM.md` (replaces the system prompt), plus project `AGENTS.md`/`CLAUDE.md` discovered walking up from cwd. Pi reads named context files, not arbitrary rule directories, so detailed rule loading remains an explicit model action.

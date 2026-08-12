@@ -182,7 +182,7 @@ Maintainer-facing composition rules are in [`AGENTS.md`](AGENTS.md).
 ├── rules/                  7 on-demand advisory rules
 ├── harnesses/              Claude Code and pi modules
 ├── shared/                 Guardrail policy registry and detection core
-├── harness-system-prompt.md
+├── baseline-prompt.md
 ├── docs/adr/               Architectural decisions
 ├── docs/features/          Per-feature canonical HTML artifacts
 ├── test/ and scripts/      Validation and self-tests

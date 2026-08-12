@@ -25,7 +25,7 @@ test("review artifacts use language the reviewer already knows", async () => {
 });
 
 test("the harness baseline standardizes understandable communication", async () => {
-  const baseline = await source("harness-system-prompt.md");
+  const baseline = await source("baseline-prompt.md");
 
   expect(baseline).toContain("Communicate clearly and concisely");
   expect(baseline).toContain("written communication and visual artifacts enough context to stand alone");
@@ -39,7 +39,7 @@ test("the harness baseline standardizes understandable communication", async () 
 });
 
 test("the harness baseline owns shared workflow semantics", async () => {
-  const baseline = await source("harness-system-prompt.md");
+  const baseline = await source("baseline-prompt.md");
   const skills = await Promise.all([
     "build", "coach", "code", "grill", "refactor", "spec", "todo", "visualize-diff",
   ].map((name) => source(`skills/${name}/SKILL.md`)));

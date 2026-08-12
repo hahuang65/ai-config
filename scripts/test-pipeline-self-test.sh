@@ -779,7 +779,7 @@ test_context_consumer_missing_ubiquitous_language_fails() {
 # ---------------------------------------------------------------------------
 
 test_cli_ergonomics_routing_drift_fails() {
-  local rel="harness-system-prompt.md"
+  local rel="baseline-prompt.md"
   fixture_replace "$rel"
   awk '{ sub(/before designing, implementing, or reviewing an Agent-facing CLI/, "before reviewing any CLI"); print }' \
     "$TMPDIR/$rel" >"$TMPDIR/$rel.tmp"

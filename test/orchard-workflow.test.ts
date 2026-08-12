@@ -9,7 +9,7 @@ async function source(relativePath: string) {
 }
 
 test("harness baseline keeps ordinary work local and reserves Orchard for explicit isolation", async () => {
-  const prompt = await source("harness-system-prompt.md");
+  const prompt = await source("baseline-prompt.md");
 
   expect(prompt).toContain("Use a named feature branch, never trunk");
   expect(prompt).toContain("Name it `user-initials/short-intent`");

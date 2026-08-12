@@ -9,7 +9,7 @@ async function source(relativePath: string) {
 }
 
 test("progress recaps explain decisions without relying on the earlier conversation", async () => {
-  const baseline = await source("harness-system-prompt.md");
+  const baseline = await source("baseline-prompt.md");
   const skill = await source("skills/grill/SKILL.md");
   const protocol = await source("skills/grill/references/session-recaps.md");
   const guide = await source("skills/grill/guide.html");

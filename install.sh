@@ -174,7 +174,7 @@ install_harness() {
 
 # Small neutral bootstrap shared by harnesses that support a global context
 # file. Harness manifests choose their convention name via instruction_target.
-INSTRUCTION_SOURCE="${INSTRUCTION_SOURCE:-harness-system-prompt.md}"
+INSTRUCTION_SOURCE="${INSTRUCTION_SOURCE:-baseline-prompt.md}"
 
 # Modules live under harnesses/ by default; HARNESSES_DIR can override the
 # root (used by the install behavior test to exercise add/remove in isolation).

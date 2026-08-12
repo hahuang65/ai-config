@@ -12,7 +12,7 @@ command_target="commands"
 # them into Claude's special rules/ directory would auto-load all of them.
 # Shared explicit workflows project into Claude's native commands directory.
 
-# The source is harness-system-prompt.md, not the repo-root authoring contract.
+# The source is baseline-prompt.md, not the repo-root authoring contract.
 instruction_target="CLAUDE.md"
 
 # The guardrail shim (tier B) is referenced by absolute path from settings.json,
