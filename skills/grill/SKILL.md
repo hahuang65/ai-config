@@ -23,6 +23,7 @@ Number each question and give your recommended answer using this format:
 
 Each round reshapes the design tree.
 After the user answers, update resolved terms and decisions inline, recompute the frontier, and ask the next round.
+When you give an interim recap, read and follow the [session recap protocol](references/session-recaps.md) before you ask the next question or pause the session.
 If one question depends on another question that remains open in the same round, defer the dependent question to a later round.
 Batch only independent questions; never bundle a chain of dependent decisions into one round.
 

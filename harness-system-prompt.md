@@ -17,6 +17,9 @@ read only the rule needed for the current action, before taking that action.
 - **Favor quality, simplicity, robustness, scalability, and maintainability over development cost.**
 - **Communicate clearly and concisely.**
   - Give written communication and visual artifacts enough context to stand alone.
+  - Make each progress recap understandable without the earlier conversation.
+    Use complete sentences, separate decisions from open questions, and explain each project-specific term in the recap.
+    Do not write shorthand such as “control in” or “handoff out.”
   - Use ASD-STE100 Simplified Technical English for user-facing prose in chat, Markdown, and HTML.
   - Treat `CONTEXT.md` and `CONTEXT-MAP.md` collectively as **context files**.
     **Context documentation** is the selected durable source: local context files or a linked worktree's saved Confluence context document.
