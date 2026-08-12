@@ -81,7 +81,7 @@ describe("review server bootstrap", () => {
       const connection = await ensureReviewServer(environment);
       const health = await fetchHealth(connection.baseUrl);
 
-      expect(health).toMatchObject({ app: "review-artifact", version: 4 });
+      expect(health).toMatchObject({ app: "review-artifact", version: 5 });
     } finally {
       await stopReviewServer(environment).catch(() => {});
       await rm(directory, { recursive: true, force: true });

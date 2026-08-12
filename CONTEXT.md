@@ -234,6 +234,7 @@ _Avoid_: visual companion, Markdown artifact.
 The local browser feedback loop provided by the `review-artifact` skill for a **review artifact**: the user annotates elements or text, sends feedback, makes a decision, or emits an explicit approval event while the agent polls and updates the same HTML document.
 Feedback and approval reviews start in Annotate mode; decision reviews start in Explore mode.
 The shell adopts the reviewed document's title and shares validation with the HTTP boundary for transient and durable review messages, while a serialized local per-daemon capability limits event consumption to agent commands.
+An artifact-owned decision form completes its review when submitted: a validated approval decision produces the same approved event and completion screen as Approve, while a non-approval decision produces the same ended event and completion screen as End review.
 Closing or ending the session without approval does not clear a pipeline gate.
 _Avoid_: artifact review, annotation cycle, inline `//` review.
 
@@ -323,6 +324,7 @@ _Avoid_: Same-repository change, disposable worktree, trusted author.
 **Review change report**:
 A disposable, self-contained HTML document containing intent, risk, **Findings**, validation evidence, and, in build mode, a persistent decision ledger and complete chat fallback.
 Build mode presents it as a **review artifact** through the interactive **review artifact workflow**, allowing selected repairs and explicit approval after every `ask-user` Finding has a disposition.
+Every Finding control remains associated with one decision form even when its card is outside the form element, and submitting that form completes the current browser review round.
 Standalone modes present it as read-only results by opening it once with the platform viewer, without `review-artifact`, feedback polling, or approval.
 It lives in the OS temporary directory, updates in place across build fix rounds, and never becomes a repository artifact.
 _Avoid_: Architecture review report, diff review, build artifact.

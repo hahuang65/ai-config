@@ -29,8 +29,11 @@ export function validateFrameMessage(message) {
     const prompt = validatePrompt(message.prompt);
     if (!prompt) return null;
     if (message.type === "review:submit") {
+      const completion = message.completion === undefined ? "end" : message.completion;
+      if (!new Set(["approve", "end"]).has(completion)) return null;
       return {
         type: message.type,
+        completion,
         prompt: { ...prompt, displayText: prompt.text.trim() || "Form submitted" },
       };
     }

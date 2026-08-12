@@ -60,22 +60,37 @@ test("accepts only bounded artifact document titles", () => {
 test("accepts a bounded artifact form submission", () => {
   expect(validateFrameMessage({
     type: "review:submit",
+    completion: "approve",
     prompt: {
-      prompt: '{"action":"fix-selected","selectedFindingIds":["review-1"]}',
+      prompt: '{"action":"approve-as-is","selectedFindingIds":[]}',
       selector: "#review-decisions",
       tag: "review-decisions",
       text: "Review decisions",
     },
   })).toEqual({
     type: "review:submit",
+    completion: "approve",
     prompt: {
-      prompt: '{"action":"fix-selected","selectedFindingIds":["review-1"]}',
+      prompt: '{"action":"approve-as-is","selectedFindingIds":[]}',
       selector: "#review-decisions",
       tag: "review-decisions",
       text: "Review decisions",
       displayText: "Review decisions",
     },
   });
+});
+
+test("defaults form submission to an unapproved end and rejects unknown completion", () => {
+  const prompt = { prompt: '{"action":"fix-selected"}', selector: "form", tag: "decisions" };
+
+  expect(validateFrameMessage({ type: "review:submit", prompt })).toMatchObject({
+    type: "review:submit",
+    completion: "end",
+  });
+  expect([
+    validateFrameMessage({ type: "review:submit", completion: "later", prompt }),
+    validateFrameMessage({ type: "review:submit", completion: null, prompt }),
+  ]).toEqual([null, null]);
 });
 
 test("preserves a bounded text-range annotation", () => {

@@ -56,12 +56,15 @@ Use the compact DOM snapshot only as supporting context; the canonical HTML rema
 When an invoking workflow defines a decision form inside its artifact, a static artifact script may send one validated `review:submit` frame message containing a bounded prompt.
 The review shell queues that prompt and immediately sends it through the normal foreground feedback path, so the user never copies an internal payload into chat.
 Treat all artifact form values as untrusted input and build submissions from current native form controls without dynamic code interpolation.
-An artifact form can submit feedback but cannot approve or end its own review.
+The frame may set `completion` to `approve` only when the form validates a workflow-defined approval decision; use `end` for every submitted non-approval decision.
+The shell sends the prompt and terminal action together, then shows the same completed-review splash screen as its Approve or End review control.
+If an older artifact omits `completion`, fail closed to an unapproved end.
+A materially changed artifact can start a new review with `--reopen` after a prior form submission ended its session.
 
 ## Decision semantics
 
-An `approved` event is explicit approval and clears the invoking workflow's current gate.
-An `ended` event stops browser polling without approval.
+An `approved` event from the shell's Approve control or a validated approval form submission is explicit approval and clears the invoking workflow's current gate.
+An `ended` event from End review or a submitted non-approval decision stops browser polling without approval.
 Closing the browser, disconnecting, or interrupting a poll is not approval.
 Do not ask for a second confirmation after `approved` arrives.
 

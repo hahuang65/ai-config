@@ -52,6 +52,8 @@ Never replace a line anchor with only a symbol, block name, filename, or commit 
 In mutating build modes, the user can select or add Findings, attach instructions, request fixes, or approve as-is after every `ask-user` Finding has an explicit disposition; the report updates in place after any repair round.
 Wrap all build decisions in one HTML `<form>` with a stable safe ID such as `review-decisions`.
 Place every control for an existing Finding inside that Finding's card: its selection checkbox when eligible, plain-language disposition choices, and its instruction textarea.
+Make every decision control a successful control of that one form.
+When a Finding card is not a descendant of the form element, put `form="review-decisions"` on each of its inputs, textareas, and buttons so `form.elements` and `new FormData(form)` include it.
 Keep the stable Finding ID in the control value or safe metadata, not as a label the user must interpret.
 Provide a clearly labelled section inside the form for a user-authored Finding.
 Near the end of the form, present one plain-language “What should happen next?” choice for fixing selected issues or approving the change as-is.
@@ -61,15 +63,17 @@ The form and its controls must remain readable without CSS, JavaScript, or netwo
 
 An `ask-user` Finding must have an explicit disposition before approve-as-is can be submitted in build mode.
 The static report-owned form handler validates this in the browser, and the invoking skill enforces the same rule after receiving feedback.
+For each validation failure, name the exact Finding and unmet condition or name the choices that conflict; never use one generic error for distinct failures.
 
 The form handler builds the structured decision payload in the background from current form controls, containing action, selected Finding IDs, added Findings, instructions, and dispositions.
 It must not display the structured payload or ask the user to build, copy, or paste it.
 On valid submission, send exactly one bounded frame message with type: `review:submit` and one prompt whose text is the JSON-stringified payload, whose selector identifies the form, and whose workflow-owned tag identifies Review change decisions.
+Set `completion` to `approve` only for a validated approve-as-is decision, and set `completion` to `end` for a repair request.
 Build the object from form-control values and `JSON.stringify` it at submit time; never interpolate Finding text, instructions, or other dynamic values into executable script.
-The `review-artifact` shell submits that message through the foreground review poll.
+The `review-artifact` shell submits that message through the foreground review poll and shows its completed-review splash screen.
 Chat fallback accepts the same decisions in plain conversation and does not require payload syntax.
 Never assume that changing a report control by itself authorizes a mutation; only the submitted feedback returned by the foreground review poll or explicitly stated in chat does.
-An approve-as-is form submission records the dispositions but does not manufacture browser approval; after the invoking skill validates it, the user clears the gate with the review shell's Approve control.
+A validated approve-as-is submission produces browser approval through the same terminal action as the review shell's Approve control; do not ask the user to approve a second time.
 
 Load `review-artifact` and follow the [shared review protocol](../../shared/references/review-artifact.md) for build-mode opening as a decision review, foreground polling, feedback, live reload, and explicit approval.
 Do not duplicate or guess its CLI commands in Review change.
@@ -94,7 +98,8 @@ Read-only standalone modes report results and never offer or accept fix-selected
 
 ## Update loop
 
-In a mutating build mode, after feedback requests a repair, apply mode ownership, rerun from the earliest applicable stage, rewrite the same report path from final stage state, and resume the existing foreground review poll after live reload.
+In a mutating build mode, after a submitted decision requests a repair and ends the current review, apply mode ownership, rerun from the earliest applicable stage, and rewrite the same report path from final stage state.
+Because the report materially changed, reopen it as a decision review with `--reopen` and start a new foreground poll rather than leaving the user at a completed session.
 Preserve the decision ledger across build-mode updates.
-End the build review session when the user approves or explicitly ends review; ending without approval leaves the build gate uncleared.
+Approval ends the build review and clears the gate; an ended repair-request review leaves the gate uncleared until the materially changed report is reopened and approved.
 Standalone modes have no update or approval loop and finish after opening the report.

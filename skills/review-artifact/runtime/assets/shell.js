@@ -261,7 +261,7 @@ import {
       artifact.contentWindow?.postMessage({ type: "review:set-mode", enabled: annotationMode }, "*");
     }
     if (message.type === "review:queue") queuePrompt(message.prompt);
-    if (message.type === "review:submit" && queuePrompt(message.prompt)) requestSnapshot("feedback");
+    if (message.type === "review:submit" && queuePrompt(message.prompt)) requestSnapshot(message.completion);
     if (message.type === "review:snapshot") submit(message.snapshot);
     if (message.type === "review:artifact-revision") {
       reloadController.accept({

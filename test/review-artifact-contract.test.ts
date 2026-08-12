@@ -76,10 +76,17 @@ test("review artifacts declare interaction mode and document-title intent", asyn
 
 test("build review decisions are completed in each issue card and submitted once", async () => {
   const report = await source("skills/review-change/references/report.md");
+  const context = await source("CONTEXT.md");
 
+  expect(context).toContain("An artifact-owned decision form completes its review when submitted");
+  expect(context).toContain("submitting that form completes the current browser review round");
   expect(report).toContain("one HTML `<form>`");
   expect(report).toContain("inside that Finding's card");
+  expect(report).toContain('`form="review-decisions"`');
+  expect(report).toContain("name the exact Finding");
   expect(report).toContain('type: `review:submit`');
+  expect(report).toContain("Set `completion` to `approve`");
+  expect(report).toContain("set `completion` to `end`");
   expect(report).toContain("Submit decisions");
   expect(report).toContain("builds the structured decision payload in the background");
   expect(report).toContain("must not display the structured payload");

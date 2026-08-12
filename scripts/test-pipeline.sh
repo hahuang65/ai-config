@@ -847,7 +847,7 @@ test_phase_review_change() {
   check_content_cached "$content" "$label" "dynamic value.*Untrusted.*Encode.*HTML text or attribute context.*textContent.*value.*never.*innerHTML"
   check_content_cached "$content" "$label" "Untrusted URL.*text.*validates.*https:.*report-owned local artifact URL"
   check_content_cached "$content" "$label" "select or add Findings.*attach instructions.*(request fixes|fix selected).*approve as-is.*explicit disposition.*updates in place"
-  check_content_cached "$content" "$label" "inside that Finding's card.*Submit decisions.*builds the structured decision payload in the background.*must not display the structured payload.*review:submit"
+  check_content_cached "$content" "$label" "inside that Finding's card.*form=.review-decisions..*Submit decisions.*name the exact Finding.*builds the structured decision payload in the background.*must not display the structured payload.*review:submit.*completion.*approve.*completion.*end.*completed-review splash screen"
   check_content_cached "$content" "$label" "Build mode.*database-reviewer.*fact-checker.*specs[.]html.*tasks[.]html"
   check_content_cached "$content" "$label" "fact-checker's changed-file result.*artifact changed.*restart at documentation check.*rerun lint.*cold fact-checking.*three-round limit"
   check_content_cached "$content" "$label" "second clean pass.*byte-for-byte unchanged"

@@ -52,7 +52,10 @@ function selectText(target) {
 </script></body></html>`;
 }
 
-export function decisionFormArtifact() {
+export function decisionFormArtifact(completion: "approve" | "end" = "end") {
+  const payload = completion === "approve"
+    ? '{"action":"approve-as-is","selectedFindingIds":[]}'
+    : '{"action":"fix-selected","selectedFindingIds":["review-1"]}';
   return `<!doctype html><title>Overnight Runner - Review Findings</title><main id="explore-target">Explore target</main>
 <form id="review-decisions"><button id="submit-decisions" type="submit">Submit decisions</button></form><script>
 document.querySelector("#explore-target").addEventListener("click", () => { document.body.dataset.explored = "yes"; });
@@ -60,8 +63,9 @@ document.querySelector("#review-decisions").addEventListener("submit", (event) =
   event.preventDefault();
   parent.postMessage({
     type: "review:submit",
+    completion: ${JSON.stringify(completion)},
     prompt: {
-      prompt: '{"action":"fix-selected","selectedFindingIds":["review-1"]}',
+      prompt: ${JSON.stringify(payload)},
       selector: "#review-decisions",
       tag: "review-decisions",
       text: "Review decisions",

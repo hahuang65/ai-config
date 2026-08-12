@@ -117,21 +117,58 @@ browserTest("starts decision forms in Explore mode with the artifact document ti
       return document.body.dataset.explored;
     })())`)).toBe("yes");
     await review.browser.evaluateChild(`JSON.stringify(document.querySelector("#submit-decisions").click() ?? true)`);
-    expect(await review.polling).toMatchObject({
-      status: "feedback",
-      prompts: [{
-        prompt: '{"action":"fix-selected","selectedFindingIds":["review-1"]}',
-        selector: "#review-decisions",
-        tag: "review-decisions",
-      }],
-    });
+    const feedback = await review.polling;
+    const completion = await pollForAgentEvent(review.server, review.key);
     await waitForBrowserCondition(
-      () => review.browser.evaluate(`JSON.stringify((() => {
-        const messages = document.querySelector("#messages").textContent;
-        return messages.includes("Review decisions") && !messages.includes("fix-selected");
-      })())`),
-      "Decision payload remained visible in the review conversation",
+      () => review.browser.evaluate(`JSON.stringify(document.body.dataset.session === "ended")`),
+      "Submitted decisions did not show the completed-review splash",
     );
+    expect({ feedback, completion }).toMatchObject({
+      feedback: {
+        status: "feedback",
+        prompts: [{
+          prompt: '{"action":"fix-selected","selectedFindingIds":["review-1"]}',
+          selector: "#review-decisions",
+          tag: "review-decisions",
+        }],
+      },
+      completion: { status: "ended", endedBy: "user" },
+    });
+    expect(await review.browser.evaluate(`JSON.stringify((() => {
+      const messages = document.querySelector("#messages").textContent;
+      return {
+        decisionsVisible: messages.includes("Review decisions") && !messages.includes("fix-selected"),
+        splash: getComputedStyle(document.body, "::after").content,
+      };
+    })())`)).toEqual({
+      decisionsVisible: true,
+      splash: '"Review ended without approval. Return to your agent."',
+    });
+  } finally {
+    await closeInteractiveReview(review);
+  }
+}, 15_000);
+
+browserTest("completes an approve-as-is form submission as browser approval", async () => {
+  const review = await startInteractiveReview({
+    artifactContent: decisionFormArtifact("approve"),
+    purpose: "decision",
+  });
+  try {
+    await review.browser.evaluateChild(`JSON.stringify(document.querySelector("#submit-decisions").click() ?? true)`);
+    const feedback = await review.polling;
+    const completion = await pollForAgentEvent(review.server, review.key);
+    await waitForBrowserCondition(
+      () => review.browser.evaluate(`JSON.stringify(document.body.dataset.session === "approved")`),
+      "Approve-as-is submission did not show the approved-review splash",
+    );
+    expect({ feedback, completion }).toMatchObject({
+      feedback: {
+        status: "feedback",
+        prompts: [{ prompt: '{"action":"approve-as-is","selectedFindingIds":[]}' }],
+      },
+      completion: { status: "approved", endedBy: "user" },
+    });
   } finally {
     await closeInteractiveReview(review);
   }

@@ -18,6 +18,7 @@ Resolve `bin/review-artifact.mjs` relative to this `SKILL.md`, then invoke it wi
 
 ```text
 node <skill-directory>/bin/review-artifact.mjs <html-file> --purpose <feedback|approval|decision>
+node <skill-directory>/bin/review-artifact.mjs <html-file> --purpose <feedback|approval|decision> --reopen
 node <skill-directory>/bin/review-artifact.mjs poll <html-file> --agent-reply "<brief reply>"
 node <skill-directory>/bin/review-artifact.mjs end <html-file>
 node <skill-directory>/bin/review-artifact.mjs stop
@@ -35,6 +36,7 @@ The implementation and its attribution ship inside this skill.
 3. If severe `layout_warnings` arrive, repair the artifact and let live reload re-audit it before asking the user to review.
 4. Apply every feedback item to the canonical HTML, then poll again with a concise `--agent-reply`.
 5. Repeat until the runtime returns `approved` or `ended`.
+6. When a decision submission ends the session for requested changes, update the materially changed artifact and open its next decision round with `--reopen`.
 
 Never use shell backgrounding, `nohup`, `disown`, or an untracked detached terminal for polling.
 If polling is interrupted, run it again; queued events remain durable.
