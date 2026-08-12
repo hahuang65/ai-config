@@ -49,6 +49,8 @@ Use the `tdd-guide` agent (via the Agent tool) to guide each slice's cycle.
    - **Incremental loop** — for each remaining acceptance criterion: one test → minimal code → GREEN.
    - **Refactor** (only while GREEN) — extract duplication, deepen modules; run tests after each step.
    - **Mark the slice complete** in `tasks.html` by changing each criterion's visible and `data-status` state and the slice's visible and `data-status` state to `complete`, then move on.
+     Make these changes with the harness Edit tool as exact string replacements.
+     Never rewrite the file through an inline interpreter script such as a Python heredoc; those cannot be statically analyzed and stop the run at a permission prompt.
 Stop only if a slice cannot be implemented as written.
 3. **Verification loop** — after all slices, run type check, lint, full test suite, and build per [../shared/references/tooling.md](../shared/references/tooling.md). Fix failures (via TDD where applicable) until all pass.
 4. **Post-implementation hygiene** — run the `refactorer` in hygiene mode on changed files through [../shared/references/implementation-hygiene.md](../shared/references/implementation-hygiene.md). Apply grep-verified SAFE cleanup, report higher-risk candidates, and rerun full verification after any edit. Final adversarial validation belongs to Review change, not implementation.

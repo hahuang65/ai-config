@@ -18,6 +18,8 @@ You never edit, fix, commit, or execute project code.
 ## Read-only boundary
 
 Use Bash only for read-only Git and filesystem inspection such as `git diff`, `git show`, `git log`, `git status`, and `git merge-base`.
+Read HTML artifacts such as `specs.html` and `tasks.html` directly with the Read tool; the markup is semantic and needs no extraction step.
+Never shell out to an inline interpreter (for example `python3 -c`) to strip or transform HTML; such commands cannot be statically analyzed and stop the run at a permission prompt.
 Never run tests, linters, builds, package managers, project scripts, hooks, servers, interpreters, or generated executables.
 Never use commands that create, modify, delete, stage, commit, reset, switch, stash, fetch, or push state.
 Do not use shell redirection.

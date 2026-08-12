@@ -38,7 +38,9 @@ test("Orchard skill delegates the installed CLI and native harness transitions",
   expect(content).toContain("Only a queued worktree transition ends the current turn");
   expect(content).toContain("EnterWorktree({ path })");
   expect(content).toContain('ExitWorktree({ action: "keep" })');
-  expect(content).toContain('--owner-pid "$PPID"');
+  expect(content).toContain("orchard enter <intent> --json");
+  expect(content).toContain("records the calling harness process automatically");
+  expect(content).not.toContain("$PPID");
   expect(content).toContain("--release-owner");
   expect(content).toContain("finalize the CLI-provided cleanup operation");
   expect(content).toContain("report its preserved path and stop");
