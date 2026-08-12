@@ -360,3 +360,102 @@ test("blocks a direct HEAD update with an update-ref option", () => {
 
   expect(verdict?.policy).toBe("no-orchard-branch-binding-change");
 });
+
+test("blocks a perl in-place edit of an HTML file", () => {
+  const verdict = evaluate({
+    tool: "bash",
+    command: `perl -i -pe 's/data-status="pending"/data-status="complete"/g' docs/features/tasks.html`,
+  });
+
+  expect(verdict?.policy).toBe("no-html-transform");
+});
+
+test("blocks a python one-liner that strips tags from an HTML file", () => {
+  const verdict = evaluate({
+    tool: "bash",
+    command: `python3 -c "import re; print(re.sub('<[^>]+>', '', open('docs/features/specs.html').read()))"`,
+  });
+
+  expect(verdict?.policy).toBe("no-html-transform");
+});
+
+test("blocks a python heredoc that rewrites an HTML file", () => {
+  const verdict = evaluate({
+    tool: "bash",
+    command: `python3 <<'EOF'\ntext = open("docs/features/tasks.html").read()\nopen("docs/features/tasks.html", "w").write(text.replace("pending", "complete"))\nEOF`,
+  });
+
+  expect(verdict?.policy).toBe("no-html-transform");
+});
+
+test("blocks sed against an HTML file even without in-place mode", () => {
+  const verdict = evaluate({
+    tool: "bash",
+    command: "sed 's/pending/complete/' docs/features/tasks.html",
+  });
+
+  expect(verdict?.policy).toBe("no-html-transform");
+});
+
+test("blocks an awk program over an HTML file", () => {
+  const verdict = evaluate({
+    tool: "bash",
+    command: "awk '/data-status/ {print}' docs/features/tasks.html",
+  });
+
+  expect(verdict?.policy).toBe("no-html-transform");
+});
+
+test("blocks a node eval that reads an HTML file", () => {
+  const verdict = evaluate({
+    tool: "bash",
+    command: `node -e 'console.log(require("fs").readFileSync("docs/features/specs.html", "utf8"))'`,
+  });
+
+  expect(verdict?.policy).toBe("no-html-transform");
+});
+
+test("blocks a ruby in-place edit of an HTML file", () => {
+  const verdict = evaluate({
+    tool: "bash",
+    command: `ruby -i -pe 'gsub("pending", "complete")' docs/features/tasks.html`,
+  });
+
+  expect(verdict?.policy).toBe("no-html-transform");
+});
+
+test("allows node running a script file with an HTML argument", () => {
+  const verdict = evaluate({
+    tool: "bash",
+    command: "node .claude/skills/review-artifact/bin/review-artifact.mjs docs/features/specs.html",
+  });
+
+  expect(verdict).toBeNull();
+});
+
+test("allows grep against an HTML file", () => {
+  const verdict = evaluate({
+    tool: "bash",
+    command: `grep -c 'data-status="complete"' docs/features/tasks.html`,
+  });
+
+  expect(verdict).toBeNull();
+});
+
+test("allows a perl one-liner that does not touch HTML", () => {
+  const verdict = evaluate({
+    tool: "bash",
+    command: "perl -pe 's/foo/bar/' notes.txt",
+  });
+
+  expect(verdict).toBeNull();
+});
+
+test("allows sed against a non-HTML file", () => {
+  const verdict = evaluate({
+    tool: "bash",
+    command: "sed -n '1,40p' src/main.ts",
+  });
+
+  expect(verdict).toBeNull();
+});

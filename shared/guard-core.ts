@@ -128,6 +128,50 @@ function detectSecretAccess(call: ToolCall): string | null {
   return null;
 }
 
+// ── no-html-transform ────────────────────────────────────────────────────
+
+// A stream editor's program is inline by nature, so any HTML operand trips it.
+// An interpreter trips only with inline code (eval/in-place flags or a heredoc);
+// running a script file against an HTML argument stays allowed — that is how
+// review-artifact and friends are invoked. Piping `cat page.html` into a
+// transformer stage that never names the file is not detected here; the
+// workflow rules cover that shape.
+const HTML_REFERENCE = /\.html?\b/i;
+
+const STREAM_EDITORS = new Set(["sed", "awk", "gawk", "mawk", "nawk", "ed"]);
+
+// perl/ruby: -e/-E (inline code) or -i (in-place), alone or in a cluster (-pe, -pi).
+const PERL_STYLE_INLINE_FLAG = /^-[a-zA-Z]*[eEi]/;
+const PERL_STYLE_INTERPRETERS = new Set(["perl", "ruby"]);
+
+const NODE_STYLE_EVAL_FLAGS = new Set(["-e", "--eval", "-p", "--print"]);
+const NODE_STYLE_INTERPRETERS = new Set(["node", "deno", "bun"]);
+
+const HEREDOC = /<</;
+
+function runsInlineCode(executable: string, stage: string, flags: string[]): boolean {
+  if (HEREDOC.test(stage)) return true;
+  if (PERL_STYLE_INTERPRETERS.has(executable)) return flags.some((f) => PERL_STYLE_INLINE_FLAG.test(f));
+  if (NODE_STYLE_INTERPRETERS.has(executable)) return flags.some((f) => NODE_STYLE_EVAL_FLAGS.has(f));
+  if (/^python\d*$/.test(executable)) return flags.some((f) => f === "-c" || f.startsWith("-c"));
+  return false;
+}
+
+function stageTransformsHtml(stage: string): boolean {
+  if (!HTML_REFERENCE.test(stage)) return false;
+  const executable = leadingWord(stage).replace(/^.*\//, "");
+  if (STREAM_EDITORS.has(executable)) return true;
+  const flags = tokenize(stage).filter((t) => t.startsWith("-") && t !== "--");
+  return runsInlineCode(executable, stage, flags);
+}
+
+function detectHtmlTransform(call: ToolCall): string | null {
+  if (call.command && anyPipeline(call.command, (stages) => stages.some(stageTransformsHtml))) {
+    return `Refused — command-line text transformer aimed at an HTML file; read HTML with the read tool and change it with exact edit-tool replacements: ${truncate(call.command)}`;
+  }
+  return null;
+}
+
 // ── no-git-destructive ───────────────────────────────────────────────────
 
 function isForceFlag(token: string): boolean {
@@ -363,6 +407,7 @@ const DETECTORS: Record<string, Detector> = {
   "no-secret-access": detectSecretAccess,
   "no-hardcoded-secret": detectHardcodedSecret,
   "no-shell-write": detectShellWrite,
+  "no-html-transform": detectHtmlTransform,
   "no-git-destructive": detectGitDestructive,
   "no-orchard-branch-binding-change": detectOrchardBranchBindingChange,
   "no-curl-pipe-shell": detectCurlPipeShell,

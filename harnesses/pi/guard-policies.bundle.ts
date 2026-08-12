@@ -26,6 +26,20 @@ var POLICIES = [
     counterExample: { tool: "bash", command: "echo hi > /dev/null" }
   },
   {
+    id: "no-html-transform",
+    intent: "No harness may run a command-line text transformer against an HTML file; HTML is read with the read tool and changed with exact edit-tool replacements.",
+    kind: "command",
+    floor: false,
+    example: {
+      tool: "bash",
+      command: `perl -i -pe 's/pending/complete/g' docs/features/tasks.html`
+    },
+    counterExample: {
+      tool: "bash",
+      command: "node .claude/skills/review-artifact/bin/review-artifact.mjs docs/features/specs.html"
+    }
+  },
+  {
     id: "no-git-destructive",
     intent: "No harness may run a destructive git command (force-push, hook/sign bypass, hard reset, force-clean, amend-in-place).",
     kind: "command",
@@ -469,6 +483,39 @@ function detectSecretAccess(call) {
   }
   return null;
 }
+var HTML_REFERENCE = /\.html?\b/i;
+var STREAM_EDITORS = new Set(["sed", "awk", "gawk", "mawk", "nawk", "ed"]);
+var PERL_STYLE_INLINE_FLAG = /^-[a-zA-Z]*[eEi]/;
+var PERL_STYLE_INTERPRETERS = new Set(["perl", "ruby"]);
+var NODE_STYLE_EVAL_FLAGS = new Set(["-e", "--eval", "-p", "--print"]);
+var NODE_STYLE_INTERPRETERS = new Set(["node", "deno", "bun"]);
+var HEREDOC = /<</;
+function runsInlineCode(executable, stage, flags) {
+  if (HEREDOC.test(stage))
+    return true;
+  if (PERL_STYLE_INTERPRETERS.has(executable))
+    return flags.some((f) => PERL_STYLE_INLINE_FLAG.test(f));
+  if (NODE_STYLE_INTERPRETERS.has(executable))
+    return flags.some((f) => NODE_STYLE_EVAL_FLAGS.has(f));
+  if (/^python\d*$/.test(executable))
+    return flags.some((f) => f === "-c" || f.startsWith("-c"));
+  return false;
+}
+function stageTransformsHtml(stage) {
+  if (!HTML_REFERENCE.test(stage))
+    return false;
+  const executable = leadingWord(stage).replace(/^.*\//, "");
+  if (STREAM_EDITORS.has(executable))
+    return true;
+  const flags = tokenize(stage).filter((t) => t.startsWith("-") && t !== "--");
+  return runsInlineCode(executable, stage, flags);
+}
+function detectHtmlTransform(call) {
+  if (call.command && anyPipeline(call.command, (stages) => stages.some(stageTransformsHtml))) {
+    return `Refused \u2014 command-line text transformer aimed at an HTML file; read HTML with the read tool and change it with exact edit-tool replacements: ${truncate(call.command)}`;
+  }
+  return null;
+}
 function isForceFlag(token) {
   return token === "--force" || token.startsWith("--force-with-lease") || /^-[a-zA-Z]*f[a-zA-Z]*$/.test(token);
 }
@@ -665,6 +712,7 @@ var DETECTORS = {
   "no-secret-access": detectSecretAccess,
   "no-hardcoded-secret": detectHardcodedSecret,
   "no-shell-write": detectShellWrite,
+  "no-html-transform": detectHtmlTransform,
   "no-git-destructive": detectGitDestructive,
   "no-orchard-branch-binding-change": detectOrchardBranchBindingChange,
   "no-curl-pipe-shell": detectCurlPipeShell,

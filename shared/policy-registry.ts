@@ -61,6 +61,20 @@ export const POLICIES: Policy[] = [
     counterExample: { tool: "bash", command: "echo hi > /dev/null" },
   },
   {
+    id: "no-html-transform",
+    intent: "No harness may run a command-line text transformer against an HTML file; HTML is read with the read tool and changed with exact edit-tool replacements.",
+    kind: "command",
+    floor: false,
+    example: {
+      tool: "bash",
+      command: `perl -i -pe 's/pending/complete/g' docs/features/tasks.html`,
+    },
+    counterExample: {
+      tool: "bash",
+      command: "node .claude/skills/review-artifact/bin/review-artifact.mjs docs/features/specs.html",
+    },
+  },
+  {
     id: "no-git-destructive",
     intent: "No harness may run a destructive git command (force-push, hook/sign bypass, hard reset, force-clean, amend-in-place).",
     kind: "command",
