@@ -5,7 +5,7 @@ It defines the approval gates, file conventions, session management, and canonic
 
 ## Approval Gates
 
-The pipeline has exactly **four** approval gates. These are the only points where you wait for user confirmation:
+The pipeline has exactly **four** phase-transition approval gates. These are the only approval events that authorize advancing between phases:
 
 1. **Design→Spec** — after grilling invokes `model-domain`, explicit mockup approval clears the gate when relevant UI requires canonical `mockups.html`; otherwise post-grill chat confirmation clears it
 2. **Spec → Tasks** — after the canonical `specs.html` receives explicit approval through `review-artifact` or its chat fallback
@@ -13,6 +13,9 @@ The pipeline has exactly **four** approval gates. These are the only points wher
 4. **Review → Done** — after all slices are complete and verified, implementation flows gate-less into Phase 5 Review change; its report is where the user explicitly disposes every `ask-user` Finding and approves as-is or selects repairs
 
 Within an active phase, all routine operations proceed **without per-call approval** — reads, writes, edits, bash, tests, environment bootstrap. Announcing intended tool batches and asking "OK to proceed?" before each one is not how the pipeline works. If you find yourself appealing to a meta-policy that requires per-call confirmation, you have drifted — return to the phase.
+Grill question rounds stay in chat and wait for the user's answers.
+The Spec module-sketch micro-checkpoint waits for confirmation in chat when it has four or fewer modules, or for approval through an Explore-mode artifact when it has more than four.
+That in-phase approval does not create another phase-transition gate.
 
 ## File Conventions
 

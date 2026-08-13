@@ -21,6 +21,7 @@ import {
   sendJson,
   validateFeedback,
   validateLayoutWarnings,
+  validateReviewMode,
   validateReviewPurpose,
 } from "./http.mjs";
 import { SessionStore, sessionKey } from "./session-store.mjs";
@@ -120,11 +121,12 @@ async function handleSystemRoutes(context, url) {
   const payload = await readJson(request);
   const file = await canonicalHtmlFile(payload.file);
   const purpose = validateReviewPurpose(payload.purpose);
+  const mode = validateReviewMode(payload.mode, purpose);
   const key = sessionKey(file);
   const sessionUrl = `http://${LOOPBACK_HOST}:${port}/session/${key}`;
   const session = await store.upsert(file, sessionUrl, {
     purpose,
-    mode: purpose === "decision" ? "explore" : "annotate",
+    mode,
     reopen: Boolean(payload.reopen),
   });
   if (session.reopened !== false) watchArtifact(session, watchers, events);

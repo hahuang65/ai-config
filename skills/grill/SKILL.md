@@ -21,6 +21,9 @@ Number each question and give your recommended answer using this format:
 ➡️ <your recommended answer>
 ```
 
+Keep every grill round in chat using the text format above, regardless of the number of independent questions.
+Do not turn question rounds into HTML artifacts; direct conversation is part of the interview.
+
 Each round reshapes the design tree.
 After the user answers, update resolved terms and decisions inline, recompute the frontier, and ask the next round.
 When you give an interim recap, read and follow the [session recap protocol](references/session-recaps.md) before you ask the next question or pause the session.

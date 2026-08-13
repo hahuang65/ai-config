@@ -23,7 +23,7 @@ describe("review server", () => {
 
     const response = await fetch(`${server.baseUrl}/health`);
 
-    expect(await response.json()).toEqual({ ok: true, app: "review-artifact", version: 5 });
+    expect(await response.json()).toEqual({ ok: true, app: "review-artifact", version: 6 });
   });
 
   test("opens a local HTML artifact without modifying its source", async () => {
@@ -47,6 +47,25 @@ describe("review server", () => {
     expect(session.status).toBe("open");
     expect(session.url).toContain("/session/");
     expect(await Bun.file(artifact).text()).toBe(source);
+  });
+
+  test("rejects an invalid initial review mode", async () => {
+    const directory = await mkdtemp(path.join(tmpdir(), "review-artifact-"));
+    const artifact = path.join(directory, "module-sketch.html");
+    await writeFile(artifact, "<!doctype html><main>Review me</main>");
+    const server = await startReviewServer({ port: 0, stateFile: path.join(directory, "state.json") });
+    servers.push(server);
+
+    const response = await fetch(`${server.baseUrl}/api/sessions`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ file: artifact, purpose: "approval", mode: "unknown" }),
+    });
+
+    expect(response.status).toBe(422);
+    expect(await response.json()).toEqual({
+      error: { code: "invalid_review_mode", message: "Initial review mode is invalid" },
+    });
   });
 
   test("delivers browser feedback through the agent poll", async () => {

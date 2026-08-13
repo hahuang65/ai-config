@@ -1,7 +1,7 @@
 ---
 name: review-artifact
 description: Open an existing local HTML artifact in a browser feedback surface, collect element/text annotations and messages, apply feedback with live reload, and receive explicit approval. Use whenever an HTML artifact is shown to request feedback, a decision, or approval.
-argument-hint: "[html-file] [--purpose feedback|approval|decision]"
+argument-hint: "[html-file] [--purpose feedback|approval|decision] [--mode annotate|explore]"
 compatibility: Requires Node.js 22+ and a local browser.
 ---
 
@@ -18,6 +18,7 @@ Resolve `bin/review-artifact.mjs` relative to this `SKILL.md`, then invoke it wi
 
 ```text
 node <skill-directory>/bin/review-artifact.mjs <html-file> --purpose <feedback|approval|decision>
+node <skill-directory>/bin/review-artifact.mjs <html-file> --purpose <feedback|approval|decision> --mode <annotate|explore>
 node <skill-directory>/bin/review-artifact.mjs <html-file> --purpose <feedback|approval|decision> --reopen
 node <skill-directory>/bin/review-artifact.mjs poll <html-file> --agent-reply "<brief reply>"
 node <skill-directory>/bin/review-artifact.mjs end <html-file>

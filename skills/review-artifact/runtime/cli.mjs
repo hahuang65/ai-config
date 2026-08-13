@@ -21,8 +21,8 @@ export async function runReviewCommand(argv, dependencies = {}) {
   return endArtifact(invocation.file, connection);
 }
 
-async function openArtifact({ file, purpose, reopen, noOpen }, baseUrl, dependencies) {
-  const session = await postJson(`${baseUrl}/api/sessions`, { file, purpose, reopen });
+async function openArtifact({ file, purpose, mode, reopen, noOpen }, baseUrl, dependencies) {
+  const session = await postJson(`${baseUrl}/api/sessions`, { file, purpose, mode, reopen });
   const shouldOpen = !noOpen && process.env.REVIEW_ARTIFACT_NO_OPEN !== "1";
   if (shouldOpen && session.reopened !== false) await (dependencies.openBrowser ?? launchBrowser)(session.url);
   return {

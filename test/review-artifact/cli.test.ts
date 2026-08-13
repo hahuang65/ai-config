@@ -39,8 +39,8 @@ describe("review artifact executable", () => {
     expect(await runReviewArtifact(["--help"], stateDirectory)).toEqual({
       exitCode: 0,
       stdout: `Usage:
-  review-artifact <html-file> [--no-open] [--reopen] [--purpose <purpose>]
-  review-artifact open <html-file> [--no-open] [--reopen] [--purpose <purpose>]
+  review-artifact <html-file> [--no-open] [--reopen] [--purpose <purpose>] [--mode <mode>]
+  review-artifact open <html-file> [--no-open] [--reopen] [--purpose <purpose>] [--mode <mode>]
   review-artifact poll <html-file> [--agent-reply <text>]
   review-artifact end <html-file>
   review-artifact stop
@@ -55,6 +55,7 @@ Commands:
 Defaults:
   open launches the browser unless --no-open is passed.
   purpose defaults to feedback.
+  mode defaults from purpose: decision uses explore; other purposes use annotate.
 
 Example:
   review-artifact docs/features/example/specs.html
@@ -69,7 +70,7 @@ Example:
     const stateDirectory = path.join(directory, "state");
     expect(await runReviewArtifact(["open", "--help"], stateDirectory)).toEqual({
       exitCode: 0,
-      stdout: `Usage: review-artifact open <html-file> [--no-open] [--reopen] [--purpose <purpose>]
+      stdout: `Usage: review-artifact open <html-file> [--no-open] [--reopen] [--purpose <purpose>] [--mode <mode>]
 
 Open or resume an HTML review.
 
@@ -80,11 +81,13 @@ Options:
   --no-open           Create the session without launching a browser
   --reopen            Start a new review after a prior review ended
   --purpose <purpose> Select feedback, approval, or decision
+  --mode <mode>       Start in annotate or explore mode
   --help              Show this help
 
 Defaults:
   The browser opens unless --no-open is passed.
   Purpose defaults to feedback.
+  Mode defaults from purpose: decision uses explore; other purposes use annotate.
 
 Example:
   review-artifact open docs/features/example/specs.html --no-open
@@ -381,6 +384,23 @@ describe("review command", () => {
     expect(output.session).toMatchObject({ purpose: "decision", mode: "explore" });
   });
 
+  test("opens approval reviews in an explicitly selected Explore mode", async () => {
+    const directory = await mkdtemp(path.join(tmpdir(), "review-artifact-cli-"));
+    const artifact = path.join(directory, "module-sketch.html");
+    await writeFile(artifact, "<!doctype html><title>Module Sketch - Approval</title>");
+    const server = await startReviewServer({ port: 0, stateFile: path.join(directory, "state.json") });
+    servers.push(server);
+
+    const output = await runReviewCommand([
+      artifact,
+      "--purpose", "approval",
+      "--mode", "explore",
+      "--no-open",
+    ], { ensureServer: async () => server });
+
+    expect(output.session).toMatchObject({ purpose: "approval", mode: "explore" });
+  });
+
   test("rejects an unknown review purpose", async () => {
     const directory = await mkdtemp(path.join(tmpdir(), "review-artifact-cli-"));
     const artifact = path.join(directory, "review.html");
@@ -394,6 +414,9 @@ describe("review command", () => {
     await expect(runReviewCommand([artifact, "--purpose"], {
       ensureServer: async () => server,
     })).rejects.toThrow("Review purpose is required after --purpose");
+    await expect(runReviewCommand([artifact, "--mode", "unknown", "--no-open"], {
+      ensureServer: async () => server,
+    })).rejects.toThrow("Unknown initial mode: unknown");
   });
 
   test("returns structured feedback from the active review", async () => {

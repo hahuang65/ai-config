@@ -6,7 +6,7 @@ The invoking skill generates the canonical semantic HTML; `review-artifact` owns
 ## When it applies
 
 Use `review-artifact` whenever the next user action is to inspect an HTML file and respond about its contents.
-Examples include approving a spec, refining tasks, or choosing whether to act on an architectural review finding.
+Examples include approving a spec, refining tasks, choosing whether to act on an architectural review finding, or approving a Spec sketch with more than four modules.
 Do not start a review session for HTML that is only being displayed for information with no response requested.
 
 ## Review purpose and document title
@@ -15,6 +15,8 @@ Declare the purpose when opening the review:
 
 - Feedback and approval reviews start in **Annotate** mode so element and selected-text annotation is immediately available.
 - Decision reviews start in **Explore** mode so forms, links, and other artifact controls work immediately.
+- An invoking workflow can explicitly select the other initial mode without changing the review purpose.
+  Spec module-sketch approval reviews use **Explore** mode.
 
 The user can switch modes at any time.
 Use `<document title> - <document intent>` for the HTML `<title>` so the browser tab identifies both the subject and why the document exists, such as `Overnight Runner - Spec`, `Overnight Runner - Tasks`, or `Overnight Runner - Review Findings`.
@@ -29,6 +31,14 @@ For task artifacts, identify each slice and acceptance criterion with stable `da
 
 The review runtime injects its browser bridge only into the served response.
 It never rewrites the saved artifact merely to add review controls.
+
+### Disposable module-sketch artifacts
+
+The Spec workflow may generate a temporary HTML review surface when its sketch has more than four modules.
+Keep it in the operating-system temporary directory, with no Markdown companion or hidden data model.
+It is not durable Authoritative intent: the workflow carries the accepted sketch into the canonical Spec.
+Use one bounded card per module and a final instruction that says exactly how the user approves the checkpoint.
+Update the same file for feedback within the checkpoint.
 
 ## Plain-language contract
 

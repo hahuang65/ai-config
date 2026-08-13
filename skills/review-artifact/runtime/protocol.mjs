@@ -1,9 +1,10 @@
 import { randomBytes, timingSafeEqual } from "node:crypto";
 
 export const REVIEW_ARTIFACT_APP = "review-artifact";
-export const REVIEW_ARTIFACT_RUNTIME_VERSION = 5;
+export const REVIEW_ARTIFACT_RUNTIME_VERSION = 6;
 export const AGENT_TOKEN_HEADER = "x-review-artifact-agent-token";
 export const REVIEW_PURPOSES = Object.freeze(["feedback", "approval", "decision"]);
+export const REVIEW_MODES = Object.freeze(["annotate", "explore"]);
 
 const AGENT_TOKEN_BYTES = 32;
 

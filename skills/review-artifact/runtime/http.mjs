@@ -1,10 +1,11 @@
 import { validatePrompt as validateReviewPrompt } from "./assets/message-validation.js";
-import { REVIEW_PURPOSES } from "./protocol.mjs";
+import { REVIEW_MODES, REVIEW_PURPOSES } from "./protocol.mjs";
 
 export const LOOPBACK_HOST = "127.0.0.1";
 
 const MAX_JSON_BYTES = 256 * 1024;
 const REVIEW_PURPOSE_SET = new Set(REVIEW_PURPOSES);
+const REVIEW_MODE_SET = new Set(REVIEW_MODES);
 
 export function assertAllowedHost(hostHeader, port) {
   const allowed = new Set([`${LOOPBACK_HOST}:${port}`, `localhost:${port}`, `[::1]:${port}`]);
@@ -48,6 +49,14 @@ export function validateReviewPurpose(value) {
     throw publicError(422, "invalid_review_purpose", "Review purpose is invalid");
   }
   return purpose;
+}
+
+export function validateReviewMode(value, purpose) {
+  const mode = String(value ?? (purpose === "decision" ? "explore" : "annotate"));
+  if (!REVIEW_MODE_SET.has(mode)) {
+    throw publicError(422, "invalid_review_mode", "Initial review mode is invalid");
+  }
+  return mode;
 }
 
 export function validateFeedback(payload) {

@@ -249,7 +249,8 @@ _Avoid_: visual companion, Markdown artifact.
 
 **Review artifact workflow**:
 The local browser feedback loop provided by the `review-artifact` skill for a **review artifact**: the user annotates elements or text, sends feedback, makes a decision, or emits an explicit approval event while the agent polls and updates the same HTML document.
-Feedback and approval reviews start in Annotate mode; decision reviews start in Explore mode.
+Feedback and approval reviews start in Annotate mode by default; decision reviews start in Explore mode.
+An invoking workflow can select another initial mode without changing the review purpose, and Spec module-sketch approval reviews explicitly start in Explore mode.
 The shell adopts the reviewed document's title and shares validation with the HTTP boundary for transient and durable review messages, while a serialized local per-daemon capability limits event consumption to agent commands.
 An artifact-owned decision form completes its review when submitted: a validated approval decision produces the same approved event and completion screen as Approve, while a non-approval decision produces the same ended event and completion screen as End review.
 Closing or ending the session without approval does not clear a pipeline gate.

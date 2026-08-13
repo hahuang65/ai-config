@@ -35,14 +35,22 @@ For each module, derive the test surface yourself using [../shared/references/te
 
 **Consult the domain agents when the feature touches their turf.** If the feature adds or changes REST API endpoints, run the `api-designer` agent (via the Agent tool) with the feature description — carry its endpoint contract (paths, status codes, pagination, error format) into the module sketch and Implementation Decisions. If the feature adds or restructures UI, run the `frontend-architect` agent the same way for component boundaries, state ownership, and the a11y baseline. Skip both silently for features that touch neither domain; run both for full-stack features.
 
-This is the one micro-checkpoint in this phase. Briefly confirm with the user:
+This is the one micro-checkpoint in this phase.
+Choose its presentation from the module count:
 
-> Here are the modules I think this feature needs, with the test surface I will use:
-> - **<ModuleName>** — <one-line purpose>. **Test surface:** <direct public interface / covered through higher-level interface / no product test + reason>.
->
-> Do these module boundaries and test seams match your mental model? If any boundary or public interface is wrong, tell me; otherwise I'll carry this into the spec's Testing Decisions.
+- For more than four modules, generate a temporary module-sketch HTML artifact in the operating-system temporary directory with one bounded card per module.
+  Each card contains the module name, one-line purpose, and test surface: direct public interface, covered through a higher-level interface, or no product test with the reason.
+  Load `review-artifact` with the `approval` purpose and `explore` mode by passing `--purpose approval --mode explore`, then follow the shared protocol.
+  Apply feedback to the same temporary artifact and keep its module identifiers stable until the user approves it.
+- For four or fewer modules, present the same information as a concise list in chat and wait for confirmation.
 
-Wait for the answer before continuing. If they simply confirm, use the proposed testing plan; do not ask a separate testing-ownership question.
+End either presentation with this checkpoint question:
+
+> Do these module boundaries and test seams match your mental model? Identify any module whose boundary or public interface is wrong; otherwise approve, and I will carry the accepted sketch into the Spec's Testing Decisions.
+
+This replaces the existing chat confirmation only when the artifact threshold is met; it does not add another pipeline approval gate or a separate testing-ownership question.
+If the browser runtime falls back to chat, present the module cards as a concise numbered list and preserve explicit confirmation.
+After approval or chat confirmation, use the proposed testing plan and carry the accepted module sketch into the canonical Spec; the temporary checkpoint is not a second source of Authoritative intent.
 
 ### Step 3: Write the canonical spec
 

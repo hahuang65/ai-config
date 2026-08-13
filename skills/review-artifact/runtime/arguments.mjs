@@ -1,13 +1,15 @@
-import { REVIEW_PURPOSES } from "./protocol.mjs";
+import { REVIEW_MODES, REVIEW_PURPOSES } from "./protocol.mjs";
 
 const REVIEW_PURPOSE_SET = new Set(REVIEW_PURPOSES);
+const REVIEW_MODE_SET = new Set(REVIEW_MODES);
 
 const REVIEW_COMMAND_SCHEMA = deepFreeze({
   top: {
-    shorthandUsage: "review-artifact <html-file> [--no-open] [--reopen] [--purpose <purpose>]",
+    shorthandUsage: "review-artifact <html-file> [--no-open] [--reopen] [--purpose <purpose>] [--mode <mode>]",
     defaults: [
       "  open launches the browser unless --no-open is passed.",
       "  purpose defaults to feedback.",
+      "  mode defaults from purpose: decision uses explore; other purposes use annotate.",
     ],
     example: "review-artifact docs/features/example/specs.html",
   },
@@ -32,17 +34,26 @@ const REVIEW_COMMAND_SCHEMA = deepFreeze({
           invalidError: (value) => `Unknown review purpose: ${value}`,
           help: "  --purpose <purpose> Select feedback, approval, or decision",
         },
+        "--mode": {
+          default: null,
+          duplicateError: "--mode may be provided only once",
+          missingError: "Initial mode is required after --mode",
+          validate: (value) => REVIEW_MODE_SET.has(value),
+          invalidError: (value) => `Unknown initial mode: ${value}`,
+          help: "  --mode <mode>       Start in annotate or explore mode",
+        },
       },
       positionalCount: 1,
       positionalError: "open accepts exactly one HTML file",
       help: {
-        usage: "review-artifact open <html-file> [--no-open] [--reopen] [--purpose <purpose>]",
+        usage: "review-artifact open <html-file> [--no-open] [--reopen] [--purpose <purpose>] [--mode <mode>]",
         summary: "Open or resume an HTML review; a direct <html-file> is shorthand for open.",
         description: "Open or resume an HTML review.",
         arguments: ["  html-file  Existing .html or .htm artifact"],
         defaults: [
           "  The browser opens unless --no-open is passed.",
           "  Purpose defaults to feedback.",
+          "  Mode defaults from purpose: decision uses explore; other purposes use annotate.",
         ],
         helpOption: "  --help              Show this help",
         example: "review-artifact open docs/features/example/specs.html --no-open",
@@ -137,6 +148,7 @@ export function parseReviewInvocation(argv) {
       command,
       file: parsed.positionals[0],
       purpose: parsed.values["--purpose"],
+      mode: parsed.values["--mode"],
       noOpen: parsed.booleans["--no-open"],
       reopen: parsed.booleans["--reopen"],
     };
