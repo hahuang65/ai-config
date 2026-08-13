@@ -67,7 +67,8 @@ For each validation failure, name the exact Finding and unmet condition or name 
 
 The form handler builds the structured decision payload in the background from current form controls, containing action, selected Finding IDs, added Findings, instructions, and dispositions.
 It must not display the structured payload or ask the user to build, copy, or paste it.
-On valid submission, send exactly one bounded frame message with type: `review:submit` and one prompt whose text is the JSON-stringified payload, whose selector identifies the form, and whose workflow-owned tag identifies Review change decisions.
+On valid submission, send exactly one bounded frame message with type: `review:submit` and one nested `prompt` object whose `prompt` field is the JSON-stringified payload, whose `selector` identifies the form, and whose workflow-owned `tag` identifies Review change decisions.
+Do not place the prompt text, selector, or tag beside the nested `prompt` object at the frame-message root.
 Set `completion` to `approve` only for a validated approve-as-is decision, and set `completion` to `end` for a repair request.
 Build the object from form-control values and `JSON.stringify` it at submit time; never interpolate Finding text, instructions, or other dynamic values into executable script.
 The `review-artifact` shell submits that message through the foreground review poll and shows its completed-review splash screen.

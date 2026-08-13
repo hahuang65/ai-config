@@ -75,6 +75,22 @@ document.querySelector("#review-decisions").addEventListener("submit", (event) =
 </script>`;
 }
 
+export function flatDecisionFormArtifact() {
+  return `<!doctype html><title>Connection Explainer - Review Findings</title>
+<form id="review-decisions"><button id="submit-decisions" type="submit">Submit decisions</button></form><script>
+document.querySelector("#review-decisions").addEventListener("submit", (event) => {
+  event.preventDefault();
+  parent.postMessage({
+    type: "review:submit",
+    completion: "end",
+    prompt: '{"action":"fix-selected","selectedFindings":["RC-2"]}',
+    selector: "#review-decisions",
+    tag: "review-change-decisions",
+  }, "*");
+});
+</script>`;
+}
+
 export function queueFloodArtifact() {
   return `<!doctype html><main>Queue target</main><script>
 window.addEventListener("load", () => setTimeout(() => {

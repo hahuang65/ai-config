@@ -26,7 +26,7 @@ export function validateFrameMessage(message) {
     return { type: message.type, ...(title === null ? {} : { title }) };
   }
   if (message.type === "review:queue" || message.type === "review:submit") {
-    const prompt = validatePrompt(message.prompt);
+    const prompt = validatePrompt(framePrompt(message));
     if (!prompt) return null;
     if (message.type === "review:submit") {
       const completion = message.completion === undefined ? "end" : message.completion;
@@ -70,6 +70,19 @@ export function validateFrameMessage(message) {
     return x === null || y === null ? null : { type: message.type, x, y };
   }
   return null;
+}
+
+function framePrompt(message) {
+  if (plainObject(message.prompt)) return message.prompt;
+  if (message.type !== "review:submit") return message.prompt;
+  return {
+    prompt: message.prompt,
+    selector: message.selector,
+    tag: message.tag,
+    text: message.text,
+    displayText: message.displayText,
+    target: message.target,
+  };
 }
 
 export function validateShellMessage(message) {

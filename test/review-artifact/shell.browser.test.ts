@@ -8,6 +8,7 @@ import { startReviewServer } from "../../skills/review-artifact/runtime/server.m
 import {
   annotationArtifact,
   decisionFormArtifact,
+  flatDecisionFormArtifact,
   narrowLayoutExpression,
   queueFloodArtifact,
   scrollArtifact,
@@ -143,6 +144,31 @@ browserTest("starts decision forms in Explore mode with the artifact document ti
     })())`)).toEqual({
       decisionsVisible: true,
       splash: '"Review ended without approval. Return to your agent."',
+    });
+  } finally {
+    await closeInteractiveReview(review);
+  }
+}, 15_000);
+
+browserTest("accepts a decision form that sends prompt fields at the frame-message root", async () => {
+  const review = await startInteractiveReview({
+    artifactContent: flatDecisionFormArtifact(),
+    purpose: "decision",
+  });
+  try {
+    await review.browser.evaluateChild(`JSON.stringify(document.querySelector("#submit-decisions").click() ?? true)`);
+    const feedback = await review.polling;
+    const completion = await pollForAgentEvent(review.server, review.key);
+    expect({ feedback, completion }).toMatchObject({
+      feedback: {
+        status: "feedback",
+        prompts: [{
+          prompt: '{"action":"fix-selected","selectedFindings":["RC-2"]}',
+          selector: "#review-decisions",
+          tag: "review-change-decisions",
+        }],
+      },
+      completion: { status: "ended", endedBy: "user" },
     });
   } finally {
     await closeInteractiveReview(review);

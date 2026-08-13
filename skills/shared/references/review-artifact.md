@@ -65,6 +65,21 @@ Use the compact DOM snapshot only as supporting context; the canonical HTML rema
 ## Artifact-owned forms
 
 When an invoking workflow defines a decision form inside its artifact, a static artifact script may send one validated `review:submit` frame message containing a bounded prompt.
+Put the submission fields inside the frame message's `prompt` object rather than beside it:
+
+```js
+window.parent.postMessage({
+  type: "review:submit",
+  completion: approvesWorkflowDecision ? "approve" : "end",
+  prompt: {
+    prompt: JSON.stringify(validatedPayload),
+    selector: "#decision-form",
+    tag: "workflow-decisions",
+    text: "Submitted decisions",
+  },
+}, "*");
+```
+
 The review shell queues that prompt and immediately sends it through the normal foreground feedback path, so the user never copies an internal payload into chat.
 Treat all artifact form values as untrusted input and build submissions from current native form controls without dynamic code interpolation.
 The frame may set `completion` to `approve` only when the form validates a workflow-defined approval decision; use `end` for every submitted non-approval decision.
