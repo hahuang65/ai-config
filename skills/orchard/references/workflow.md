@@ -40,7 +40,7 @@ Before entering, claim the selected task for the live Claude process through `or
 Run that command by itself, with no `--owner-pid` option and no shell variables; the CLI records the calling harness process automatically.
 For an `enter` request, use that same owner-claiming command as the initial machine command; after `new` or `convert`, make the owner-claiming `enter` call before switching.
 Then call Claude Code's native `EnterWorktree({ path })` with the existing target.
-For a local delivery return, let Orchard synchronize, rebase, and fast-forward trunk first, then call `ExitWorktree({ action: "keep" })` to restore the original main project directory without allowing Claude Code to remove the Orchard-owned worktree.
+For a local delivery return, let Orchard synchronize, rebase, and fast-forward the task's recorded base branch first, then call `ExitWorktree({ action: "keep" })` to restore the original main project directory without allowing Claude Code to remove the Orchard-owned worktree.
 Verify that the current directory matches the CLI-provided return target, release the retained claim through `orchard enter <intent> --release-owner <token> --json`, and only then finalize the CLI-provided cleanup operation using Orchard's internal `--finalize-operation` identifier.
 A person uses `orchard deliver --finalize <intent>` instead; never ask the user to copy or type an operation ID.
 Never use `EnterWorktree` with the main project directory; Claude Code rejects a primary checkout as an entry target.

@@ -20,7 +20,7 @@ Do not treat the worktree intent as commit scope.
 Stop if commit fails or leaves changes behind.
 
 Treat this explicit `/deliver` invocation as authorization to resolve a managed delivery rebase conflict.
-When delivery proves that its rebase was automatically aborted, the original task tip was restored, and synchronized trunk was preserved, run the same harness-owned rebase path as `/rebase`: invoke `orchard rebase` for the selected intent with `--resolve-conflicts --json` and require the versioned rebase outcome.
+When delivery proves that its rebase was automatically aborted, the original task tip was restored, and the synchronized base branch was preserved, run the same harness-owned rebase path as `/rebase`: invoke `orchard rebase` for the selected intent with `--resolve-conflicts --json` and require the versioned rebase outcome.
 When its status is `needs-conflict-resolution`, validate the recovery facts and exact managed worktree, enter that worktree through Orchard when required, then load the `resolve-conflicts` skill with the delivery goal and recovery facts.
 Require the resolver to complete and finalize the recorded Orchard rebase operation.
 After a `rebased` or `finalized` outcome, retry Orchard delivery with the original `$ARGUMENTS` unchanged.

@@ -1,5 +1,5 @@
 ---
-description: Synchronize trunk and rebase an Orchard task, resolving conflicts when required
+description: Synchronize the recorded base branch and rebase an Orchard task, resolving conflicts when required
 argument-hint: "[intent]"
 ---
 

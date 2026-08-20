@@ -91,13 +91,18 @@ The concise normalized task identifier Orchard uses to name and select a worktre
 _Avoid_: Branch name, worktree path.
 
 **Main project directory**:
-The primary repository checkout from which changes are integrated onto **trunk**.
+The primary repository checkout from which changes are integrated into a task's **base branch**.
 Delivery integration never runs from another linked worktree.
 _Avoid_: Main worktree, root repo, original clone.
 
 **Trunk**:
 The repository's primary integration branch, resolved from repository metadata rather than assumed to be named `main`.
 _Avoid_: Main (unless that is the branch's actual name), default branch when discussing integration policy.
+
+**Base branch**:
+The branch from which a task branch was created and into which Orchard delivers that task.
+Orchard records **trunk** for an acquired task and records a converted branch's Git creation source when it can prove that source.
+_Avoid_: Target branch (does not state the branch relationship), trunk (unless trunk is the actual base branch).
 
 **Local task branch**:
 A named feature branch worked directly in the **main project directory**.
@@ -118,7 +123,7 @@ _Avoid_: Empty worktree, spare clone.
 
 **Task worktree**:
 A **worktree pool** member exclusively assigned to one task and attached to that task's named feature branch.
-It remains task-owned while dirty or unmerged.
+It remains task-owned while dirty or not **landed**.
 _Avoid_: Leased worktree (a lease is ownership metadata, not the worktree's lifecycle role), feature clone.
 
 **Branch binding**:
@@ -135,6 +140,7 @@ _Avoid_: Refresh, unquarantine (each implies that current appearance alone is su
 
 **Convert**:
 The recoverable transition of a **local task branch** into a **task worktree** without changing branch identity.
+Conversion records the branch's Git creation source as its **base branch** when that source can be proven.
 Conversion preserves staged, unstaged, and untracked work; ignored files remain with their original working directory.
 _Avoid_: Move (ambiguous about branch and working state), migrate (implies a permanent storage change).
 
@@ -142,7 +148,7 @@ _Avoid_: Move (ambiguous about branch and working state), migrate (implies a per
 The standalone lifecycle authority installed by the Git dotfiles repository at `~/.local/bin/orchard`.
 It owns Git and filesystem transitions without depending on an AI harness and exposes a versioned structured protocol for automation.
 AI skills, prompts, and adapters invoke it as an external command rather than importing or duplicating its implementation.
-Orchard owns delivery strategy selection from trusted Git configuration, interactive commit prompting, synchronization, rebasing, local fast-forward integration, pull-request form opening, and cleanup state.
+Orchard owns **base branch** recording, delivery strategy selection from trusted Git configuration, synchronization, rebasing, local fast-forward integration, pull-request form opening, interactive commit prompting, and cleanup state.
 _Avoid_: Orchard skill (the AI workflow surface), harness adapter (the native parent-session transition layer).
 
 **Worktree transition**:
@@ -156,13 +162,14 @@ When preflight fails before acquisition, `/build` may continue on a **local task
 _Avoid_: Handoff (transfers work to an independently started session), relocation (describes only the directory change).
 
 **Landed**:
-The state in which a **task worktree**'s exact feature tip is proven integrated into **trunk**.
-Git ancestry is authoritative; read-only forge metadata is a fallback for squash or rebase merges.
-_Avoid_: Merged (ambiguous about merge strategy and whether the exact local tip was included), closed.
+The state in which a **task worktree**'s exact feature tip is proven integrated into its recorded **base branch**, or a read-only forge proves that an exact-head pull request was merged into any branch.
+Git ancestry is authoritative for local integration.
+Exact feature-tip identity is authoritative for forge evidence, including squash and rebase merges.
+_Avoid_: Merged (does not prove exact local tip identity by itself), closed.
 
 **Recycle**:
 The verified transition of a clean, **landed** **task worktree** back into an **available worktree**.
-Recycling detaches the worktree from its completed feature branch without discarding unlanded work.
+Recycling detaches the worktree from its completed feature branch without discarding work that is not landed.
 _Avoid_: Delete, reset, return (each describes only part of the transition).
 
 ### Harness-modularity & guardrail terms
