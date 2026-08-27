@@ -14,6 +14,7 @@ function registerExtension(outputs: string[], dependencyOverrides: Record<string
   let editorText = "";
   const executions: Array<{ command: string; args: string[]; cwd?: string }> = [];
   const forks: Array<{ source: string; target: string }> = [];
+  const reportedCwds: string[] = [];
   const pi = {
     registerTool: (tool: any) => tools.push(tool),
     registerCommand: (name: string, command: any) => commands.set(name, command),
@@ -27,6 +28,7 @@ function registerExtension(outputs: string[], dependencyOverrides: Record<string
       forks.push({ source, target });
       return "/sessions/fork.jsonl";
     },
+    reportCwd: (cwd: string) => reportedCwds.push(cwd),
     executeCli: async (args: string[], cwd: string) => {
       executions.push({ command: "orchard", args, cwd });
       return { stdout: outputs.shift() ?? "", stderr: "", code: 0, killed: false };
@@ -52,6 +54,7 @@ function registerExtension(outputs: string[], dependencyOverrides: Record<string
     queued,
     executions,
     forks,
+    reportedCwds,
     get editorText() { return editorText; },
     context: (cwd: string) => ({
       cwd,
@@ -237,6 +240,7 @@ test("authenticated command forks persisted history and switches the same pi ses
     target: "/home/.orchard/alpha/feature",
   }]);
   expect(switched).toEqual(["/sessions/fork.jsonl"]);
+  expect(extension.reportedCwds).toEqual(["/home/.orchard/alpha/feature"]);
   expect(continuations).toEqual(["Continue the approved slice."]);
   expect(notifications).toEqual([]);
 
@@ -330,6 +334,7 @@ test("pi delivery return releases ownership and finalizes cleanup after switchin
     ["deliver", "--finalize-operation", "cleanup-operation", "--json"],
   ]);
   expect(extension.forks.at(-1)).toEqual({ source: "/sessions/task.jsonl", target: "/projects/alpha" });
+  expect(extension.reportedCwds).toEqual(["/projects/alpha"]);
   expect(continuations).toEqual(["Continue from the main project directory."]);
 });
 

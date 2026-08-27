@@ -1,6 +1,7 @@
 import { execFile } from "node:child_process";
 import { randomUUID } from "node:crypto";
 import path from "node:path";
+import { pathToFileURL } from "node:url";
 import { promisify } from "node:util";
 
 import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
@@ -9,6 +10,8 @@ const execFileAsync = promisify(execFile);
 const PROTOCOL_VERSION = 1;
 const CLI_TIMEOUT_MS = 120_000;
 const TRANSITION_TOKEN_TTL_MS = 10 * 60 * 1_000;
+const OSC_CWD_PREFIX = "\u001b]7;";
+const OSC_TERMINATOR = "\u001b\\";
 const STRING_SCHEMA = { type: "string", "~kind": "String" };
 const ORCHARD_PARAMETERS = {
   type: "object",
@@ -73,6 +76,7 @@ interface OrchardExtensionDependencies {
   now: () => number;
   processId: number;
   forkSession: (sourceSession: string, targetCwd: string) => Promise<string> | string;
+  reportCwd: (cwd: string) => void;
   executeCli: (args: string[], cwd: string, signal?: AbortSignal) => Promise<CliResult>;
 }
 
@@ -84,6 +88,7 @@ export function createOrchardExtension(
     now: Date.now,
     processId: process.pid,
     forkSession: defaultForkSession,
+    reportCwd: defaultReportCwd,
     executeCli: defaultExecuteCli,
     ...dependencyOverrides,
   };
@@ -133,6 +138,7 @@ export function createOrchardExtension(
           transitioning = true;
           const result = await ctx.switchSession(targetSession, {
             withSession: async (replacementCtx) => {
+              dependencies.reportCwd(targetPath);
               try {
                 await completeReturnCleanup(dependencies, request, targetPath);
               } catch (error) {
@@ -342,6 +348,13 @@ function formatNonTransitionOutcome(outcome: MachineOutcome): string {
   const worktree = outcome.worktree?.path ?? outcome.transition?.targetPath ?? "unknown worktree";
   const commit = outcome.commit?.status ? `\n${outcome.commit.status}` : "";
   return `Orchard ${outcome.command} ${status} for ${worktree}.${commit}`;
+}
+
+function defaultReportCwd(cwd: string): void {
+  // Pi changes its session cwd without changing the long-lived process cwd.
+  // OSC 7 lets Herdr refresh the Space label and Git metadata after that switch.
+  if (process.env.HERDR_ENV !== "1" || !process.stdout.isTTY) return;
+  process.stdout.write(`${OSC_CWD_PREFIX}${pathToFileURL(cwd).href}${OSC_TERMINATOR}`);
 }
 
 async function defaultForkSession(sourceSession: string, targetCwd: string): Promise<string> {
