@@ -10,6 +10,10 @@ read only the rule needed for the current action, before taking that action.
   - Ordinary work stays in the current checkout on a local task branch.
   - If currently on trunk, create the task branch there.
   - Use Orchard only for `/build` or explicit lifecycle requests, passing the same `short-intent`.
+- **Keep the dotfiles superproject at `~/.dotfiles` on `main`.**
+  - This parent repository coordinates the Git submodule repositories.
+  - Never create or switch branches, or create or enter a worktree for this superproject.
+  - Apply the named feature branch rule independently in each affected submodule repository, including cross-repository work.
 - **Do not stage, commit, push, or deliver unless the user's current request explicitly invokes a workflow that owns that action.**
 - **Claude Code only: read `~/.dotfiles/ai/harnesses/claude/harness-rules.md` before running shell commands.**
 - **Treat a project as A5 only when its originating repository has effective `ai.projectFamily=a5` from global or system Git configuration.**

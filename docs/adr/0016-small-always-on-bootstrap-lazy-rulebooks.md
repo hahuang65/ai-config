@@ -20,7 +20,8 @@ global context file for both harnesses:
 - Claude Code: `~/.claude/CLAUDE.md`
 
 The bootstrap contains only the critical cross-task baseline, the shared rulebook location, and concise load triggers.
-Branch naming stays always-on so it is available before the first branch is created, and Git-write ownership stays always-on so unrelated workflows do not stage, commit, push, or deliver.
+Branch naming and the `~/.dotfiles` superproject exception stay always-on so each task branches only the affected repository before work starts, while the submodule-coordinating parent stays on `main` without another worktree.
+Git-write ownership stays always-on so unrelated workflows do not stage, commit, push, or deliver.
 Mise ownership stays always-on so tool invocations use the correct environment.
 Engineering-quality priorities, the context-files and ubiquitous-language definitions, user-facing prose guidance, confirmation semantics, HTML routing, and Markdown sentence formatting also stay always-on because they apply across planning, documentation, and implementation.
 Detailed Git policy loads only before staging, preparing a commit message, or committing.

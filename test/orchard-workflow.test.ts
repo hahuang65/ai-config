@@ -23,6 +23,15 @@ test("harness baseline keeps ordinary work local and reserves Orchard for explic
   expect(prompt).not.toContain("Review change isolation");
 });
 
+test("harness baseline keeps the dotfiles superproject on main", async () => {
+  const prompt = await source("baseline-prompt.md");
+
+  expect(prompt).toContain("Keep the dotfiles superproject at `~/.dotfiles` on `main`");
+  expect(prompt).toContain("Never create or switch branches");
+  expect(prompt).toContain("create or enter a worktree for this superproject");
+  expect(prompt).toContain("Apply the named feature branch rule independently in each affected submodule repository");
+});
+
 test("Orchard skill delegates the installed CLI and native harness transitions", async () => {
   const skill = await source("skills/orchard/SKILL.md");
   const workflow = await source("skills/orchard/references/workflow.md");
