@@ -1959,6 +1959,9 @@ test_install_behavior() {
   fi
   [[ -e "$tmphome/.claude/settings.json" ]] && pass "claude module installed" \
     || fail "install-behavior" "claude settings.json missing"
+  [[ -e "$tmphome/.claude/themes/catppuccin-mocha.json" ]] \
+    && pass "Claude Catppuccin Mocha theme installed" \
+    || fail "install-behavior" "Claude Catppuccin Mocha theme missing"
   [[ ! -e "$tmphome/.omp" ]] && pass "retired oh-my-pi harness is not installed" \
     || fail "install-behavior" "retired oh-my-pi config root was created"
   [[ -e "$tmphome/.pi/agent/settings.json" ]] && pass "pi module installed (settings.json)" \

@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
 # Claude Code status line aligned with the pi two-line footer.
 
-BLUE=$'\033[94m'
-DIM=$'\033[2m'
-PURPLE=$'\033[35m'
-RED=$'\033[31m'
+BRANCH=$'\033[38;2;203;166;247m'
+DIM=$'\033[38;2;166;173;200m'
+LOCATION=$'\033[38;2;249;226;175m'
+RED=$'\033[38;2;243;139;168m'
 RESET=$'\033[0m'
 
 input=$(cat)
@@ -41,10 +41,10 @@ terminal_width=$((terminal_width - CLAUDE_CLIP_MARGIN))
 
 display_cwd="${cwd/#"$HOME"/\~}"
 location_plain="$display_cwd"
-location_colored="${PURPLE}${display_cwd}${RESET}"
+location_colored="${LOCATION}${display_cwd}${RESET}"
 if [ -n "$branch" ]; then
   location_plain="${location_plain} (${branch})"
-  location_colored="${location_colored} (${BLUE}${branch}${RESET})"
+  location_colored="${location_colored} (${BRANCH}${branch}${RESET})"
 fi
 
 memory_status=$(bun ~/.dotfiles/ai/harnesses/claude/hooks/agentmemory-capture.ts --status "$cwd" "$(echo "$input" | jq -r '.session_id // "unknown"')" 2>/dev/null)
@@ -127,7 +127,7 @@ align_line() {
   maximum_left=$((terminal_width - right_width - 1))
   if [ "$left_width" -gt "$maximum_left" ] && [ "$maximum_left" -gt 1 ]; then
     left_plain="${left_plain:0:maximum_left-1}…"
-    left_colored="${PURPLE}${left_plain}${RESET}"
+    left_colored="${LOCATION}${left_plain}${RESET}"
     left_width=$(visible_length "$left_plain")
   fi
   padding=$((terminal_width - left_width - right_width))

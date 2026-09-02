@@ -246,7 +246,8 @@ The [`example/`](example/) directory is also a clearly labeled legacy sample.
 | Rules | Canonical `~/.dotfiles/ai/rules/` | Canonical `~/.dotfiles/ai/rules/` |
 | Guardrails | Tier-B command-hook adapter | Tier-A in-process extension |
 
-Pi uses the Catppuccin Mocha theme and gives successful `Edit` and `Write` tool rows a yellow background.
+Claude Code and pi use the Catppuccin Mocha theme.
+Pi also gives successful `Edit` and `Write` tool rows a yellow background.
 Other successful tools stay green, and failures stay red.
 
 `./install.sh` reads each module manifest, installs shared primitives into native paths, removes dangling links, links `review-change`, and configures this repository's pre-commit hook.

@@ -19,6 +19,9 @@ import {
 
 const MAX_CAPTURE_CHARS = 8_000;
 const LOOPBACK_HOSTS = new Set(["localhost", "127.0.0.1", "::1"]);
+const CATPPUCCIN_GREEN = "\u001b[38;2;166;227;161m";
+const CATPPUCCIN_RED = "\u001b[38;2;243;139;168m";
+const ANSI_RESET = "\u001b[0m";
 
 type JsonRecord = Record<string, any>;
 type CaptureEnvironment = AgentMemoryConfigurationEnvironment & {
@@ -152,8 +155,8 @@ export async function getClaudeAgentMemoryStatus(
     }
   }
   const icon = available ? "🧠" : "⚠️";
-  const color = available ? "\u001b[32m" : "\u001b[31m";
-  return `${icon} ${color}agentmemory\u001b[0m · recall ${policy.recall} · capture ${capture}`;
+  const color = available ? CATPPUCCIN_GREEN : CATPPUCCIN_RED;
+  return `${icon} ${color}agentmemory${ANSI_RESET} · recall ${policy.recall} · capture ${capture}`;
 }
 
 export async function handleClaudeCaptureHook(

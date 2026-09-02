@@ -273,6 +273,7 @@
     ]
   },
   "model": "claude-fable-5[1m]",
+  "theme": "custom:catppuccin-mocha",
   "hooks": {
     "SessionStart": [
       {
