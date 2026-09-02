@@ -27,6 +27,8 @@ Adapted from Matt Pocock's [domain-modeling skill](https://github.com/mattpocock
 Read and follow the shared [domain documentation destination](../shared/references/domain-documentation.md) protocol before reading or writing domain documentation.
 It uses local files without prompting for every non-A5 project and for an A5 main project directory.
 It persists one safe local-or-Confluence selection only for an A5 linked worktree.
+Read the [optional historical memory](../shared/references/agentmemory.md) protocol when agentmemory tools are available.
+For a Confluence destination, apply its capture control before the first Confluence read.
 
 Read and write the selected destination only.
 For Confluence, the two supplied pages are a closed destination: never create another page or write to a linked or subordinate page.
@@ -70,6 +72,10 @@ Create context files lazily: create `CONTEXT.md` when the first term resolves, `
 For a Confluence destination, read the supplied context document and decisions document before modeling.
 Treat those two designated pages as the complete durable project-wide documentation; preserve their unrelated content and existing organization.
 Do not create context-specific, contract-specific, or decision-specific pages.
+
+After reading the current context documentation, relevant decision records, and code, search optional historical memory once for prior terminology conflicts, corrections, and unresolved ambiguities in scope.
+Verify every useful result against those current sources before using it in the session.
+A recalled term never changes the ubiquitous language until the user resolves it and this skill records it in the selected context documentation.
 
 ## Standalone Session
 

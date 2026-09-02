@@ -53,6 +53,11 @@ _Avoid_: Context artifacts, context docs, glossary files.
 A durable explanation of a hard-to-reverse, surprising choice that resulted from a real trade-off.
 Local destinations use Architectural Decision Records under `docs/adr/`; Confluence destinations use linked `D-NNN` entries and cohesive Decision details.
 
+**Historical memory**:
+An optional persistent record of prior sessions, preferences, lessons, and observations that can help locate evidence but does not define current project truth.
+A workflow verifies a useful record against its current canonical source before use, and the absence of the memory service never blocks work.
+_Avoid_: Long-term memory (implies current authority), source of truth, automatic context
+
 **Domain documentation destination**:
 The local-or-Confluence choice used by `model-domain` for **context documentation** and **decision records** in an A5 linked worktree.
 The main project directory and every non-A5 project are always local and do not have a destination choice.

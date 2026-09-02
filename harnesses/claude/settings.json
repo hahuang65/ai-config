@@ -274,6 +274,28 @@
   },
   "model": "claude-fable-5[1m]",
   "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bun ~/.dotfiles/ai/harnesses/claude/hooks/agentmemory-capture.ts",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bun ~/.dotfiles/ai/harnesses/claude/hooks/agentmemory-capture.ts",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
     "PreToolUse": [
       {
         "matcher": "Read|Edit|Write|Bash",
@@ -281,6 +303,59 @@
           {
             "type": "command",
             "command": "bun ~/.dotfiles/ai/harnesses/claude/hooks/guard.ts",
+            "timeout": 10
+          }
+        ]
+      },
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bun ~/.dotfiles/ai/harnesses/claude/hooks/agentmemory-capture.ts",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bun ~/.dotfiles/ai/harnesses/claude/hooks/agentmemory-capture.ts",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "PostToolUseFailure": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bun ~/.dotfiles/ai/harnesses/claude/hooks/agentmemory-capture.ts",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bun ~/.dotfiles/ai/harnesses/claude/hooks/agentmemory-capture.ts",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "SessionEnd": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bun ~/.dotfiles/ai/harnesses/claude/hooks/agentmemory-capture.ts",
             "timeout": 10
           }
         ]

@@ -1,0 +1,1 @@
+../../../../shared/agentmemory-config.ts

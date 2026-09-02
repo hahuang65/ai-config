@@ -60,6 +60,8 @@ For each acceptance criterion:
 ## Process
 
 1. **Read context** — resolve the [domain documentation destination](../shared/references/domain-documentation.md), then read canonical `tasks.html`, its linked `specs.html`, approved `mockups.html` when present as Authoritative intent, and the selected context documentation and decision records.
+Read the [optional historical memory](../shared/references/agentmemory.md) protocol and search once before the first slice for prior bugs, failed approaches, and user corrections in the affected area.
+Verify every useful result against current code and tests; do not search again before each slice.
 Announce the plan: one slice at a time, one test at a time; confirm Slice 1's interface before writing any test.
 
 2. **For each slice (dependency order):**

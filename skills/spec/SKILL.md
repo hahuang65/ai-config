@@ -26,6 +26,7 @@ Read [../shared/references/testable-interfaces.md](../shared/references/testable
 - Read the applicable local context files and recent ADRs, or the saved Confluence context and decisions documents, especially records added this session.
 - Read approved `mockups.html` when present and treat its selected design as Authoritative intent.
 - Skim the codebase area the feature touches. The spec is grounded in the actual codebase, not assumptions.
+- After those current sources, read the [optional historical memory](../shared/references/agentmemory.md) protocol and search once when agentmemory is available. Search with the feature slug and principal domain or module terms, verify useful prior constraints and corrections, and never use memory to bypass grilling or establish approval.
 
 ### Step 2: Sketch the modules
 

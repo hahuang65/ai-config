@@ -22,11 +22,22 @@ ls -t /tmp/handoff-*.md 2>/dev/null
 
 Pull the purpose line from any candidate with `grep -m1 '^# Handoff:' <absolute-path>` — again, no shell variables, using the absolute path from the listing.
 
-**If no handoff documents exist**, tell the user:
+**If no handoff documents exist**, use the **Optional agentmemory fallback** only when `memory_timeline` or `memory_sessions` is available.
+The `/tmp/` handoff remains primary.
 
-> No handoff documents found in `/tmp/`. Run `/handoff <brief>` to create one.
+1. Read the [optional historical memory](../shared/references/agentmemory.md) protocol.
+2. Prefer project-filtered `memory_timeline` results.
+   Otherwise, list recent sessions and keep only sessions whose project exactly matches the current stable project identity.
+   Do not treat their recorded state as current.
+3. Show the most recent matching session's purpose, time, and identifier, then ask for confirmation before reading session history.
+4. After confirmation, retrieve its history, extract canonical artifact pointers and any unanswered question, and verify every pointer plus the current repository state before resuming.
 
-Then stop. Do not invent work.
+If agentmemory is unavailable or no matching session exists, tell the user:
+
+> No handoff documents found in `/tmp/`, and no matching optional session history is available. Run `/handoff <brief>` to create a routing slip before the next session.
+
+Then stop.
+Do not invent work or resume directly from unconfirmed memory.
 
 ## Selecting the Document
 

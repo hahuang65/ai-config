@@ -58,6 +58,46 @@ There are no Markdown companions.
 The final Review change report is disposable and lives in the operating-system temp directory.
 See [`skills/build/SKILL.md`](skills/build/SKILL.md) for the complete workflow contract.
 
+## Optional historical memory
+
+The workflows can use [agentmemory](https://www.agent-memory.dev/) when its standard memory tools are available.
+Agentmemory is optional historical memory, not a source of current project truth.
+A workflow reads canonical sources first, searches only at a named checkpoint, and verifies each useful result before use.
+It never takes approval, authorization, task status, or ubiquitous language from memory.
+
+The pi harness installs a managed adapter at `~/.pi/agent/extensions/agentmemory/index.ts`.
+The adapter remains inert when the local server is unavailable, never starts the service, and never injects recall automatically.
+It exposes explicit search, save, session, provenance, deletion, health, and capture-control tools using agentmemory's standard names.
+It replaces the copied pi adapter from `agentmemory connect pi`, so the external adapter's automatic recall does not also run.
+It is safe to run `agentmemory connect pi` because a separate owner restores the managed links and queues one automatic pi reload without modifying repository source.
+
+Capture and recall are independent.
+The defaults retain full session capture and allow explicit recall only:
+
+```sh
+AGENTMEMORY_CAPTURE=full       # off | metadata | full
+AGENTMEMORY_RECALL=explicit    # off | explicit
+AGENTMEMORY_EXCLUDED_TOOLS='*confluence*,*atlassian*'
+AGENTMEMORY_PROJECT_NAME='github.com/owner/repository'
+AGENTMEMORY_POLICY_PATH="$HOME/.agentmemory/capture-policy.json"
+```
+
+Set these variables in the environment that starts pi or Claude Code.
+The optional user-owned policy file supports `default` settings plus exact project entries with `capture`, `recall`, and `excludedTools` fields.
+Environment settings override the policy file.
+Use `/agentmemory-capture off` in pi before sensitive work, or let `model-domain` turn capture off before it reads a selected Confluence destination.
+The adapters always exclude agentmemory's own tools from capture.
+When no explicit project name exists, they use the normalized Git origin or a stable local repository identity shared by linked worktrees.
+Project-scoped pi recall uses agentmemory's filtered search endpoint rather than its unfiltered smart-search endpoint.
+
+Claude Code uses project-filtered MCP recall.
+Repository-managed hooks add automatic capture with no automatic recall injection.
+The hooks apply the shared identity and policy, block unfiltered recall, scope saves, and stop capture before Confluence content returns.
+Do not run `agentmemory connect claude-code --with-hooks` or install its plugin because they add upstream hooks or overlapping skills.
+The repository's existing `handoff` and `pickup` skills remain authoritative.
+
+See [`skills/shared/references/agentmemory.md`](skills/shared/references/agentmemory.md) for the verification and saving protocol.
+
 ## Standalone Review change CLI
 
 `./install.sh` links `review-change` into `~/.local/bin/`.

@@ -15,8 +15,8 @@ command_target="commands"
 # The source is baseline-prompt.md, not the repo-root authoring contract.
 instruction_target="CLAUDE.md"
 
-# The guardrail shim (tier B) is referenced by absolute path from settings.json,
-# so it needs no symlink.
+# Guardrail and historical-memory hooks are referenced by absolute paths from
+# settings.json, so they need no symlink.
 install_module() {
   # Migrate retired rule mirrors while preserving unrelated user files.
   prune_repo_rule_links "$config_root/rules"

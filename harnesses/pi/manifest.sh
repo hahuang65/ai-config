@@ -47,15 +47,35 @@ install_module() {
   ln -sf "$MOD/guard-policies.bundle.ts" "$config_root/extensions/guard-policies.ts"
   dim "  $config_root/extensions/guard-policies.ts (bundled guard)"
 
-  # local-models.ts is self-contained (type-only imports erase at transpile),
-  # so unlike the guard it needs no bundle — pi loads it fine through a symlink.
+  # Replace agentmemory's copied pi adapter with the managed explicit-recall
+  # adapter while preserving its directory for compatibility with upgrades.
+  mkdir -p "$config_root/extensions/agentmemory"
+  prune_dangling "$config_root/extensions/agentmemory"
   ln -sf \
+    "$MOD/extensions/agentmemory/client.ts" \
+    "$MOD/extensions/agentmemory/commands.ts" \
+    "$MOD/extensions/agentmemory/config.ts" \
+    "$MOD/extensions/agentmemory/events.ts" \
+    "$MOD/extensions/agentmemory/footer.ts" \
+    "$MOD/extensions/agentmemory/index.ts" \
+    "$MOD/extensions/agentmemory/runtime.ts" \
+    "$MOD/extensions/agentmemory/support.ts" \
+    "$MOD/extensions/agentmemory/tools.ts" \
+    "$MOD/extensions/agentmemory/types.ts" \
+    "$config_root/extensions/agentmemory"
+
+  # These extensions are self-contained (type-only imports erase at transpile),
+  # so unlike the guard they need no bundle — pi loads them through symlinks.
+  ln -sf \
+    "$MOD/extensions/agentmemory-owner.ts" \
     "$MOD/extensions/local-models.ts" \
     "$MOD/extensions/orchard.ts" \
     "$MOD/extensions/review-change-guard.ts" \
     "$MOD/extensions/review-change-progress.ts" \
     "$MOD/extensions/write-tool-highlights.ts" \
     "$config_root/extensions"
+  dim "  $config_root/extensions/agentmemory/index.ts (optional explicit historical memory)"
+  dim "  $config_root/extensions/agentmemory-owner.ts (agentmemory adapter repair)"
   dim "  $config_root/extensions/local-models.ts (local model auto-discovery)"
   dim "  $config_root/extensions/orchard.ts (Orchard session transitions)"
   dim "  $config_root/extensions/review-change-guard.ts (standalone Review change boundary)"

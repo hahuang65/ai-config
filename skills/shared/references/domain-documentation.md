@@ -83,7 +83,8 @@ Write the local or Confluence JSON shape only after the choice is complete.
 ## Use the Selection
 
 For local state, read and write the applicable `CONTEXT.md` / `CONTEXT-MAP.md` files and `docs/adr/` records.
-For Confluence state, read and write only the saved context document and decisions document.
+For Confluence state, first read the [optional historical memory](agentmemory.md) protocol and disable optional historical-memory capture before the first Confluence read when its capture-control tool is available.
+Then read and write only the saved context document and decisions document.
 Never create any Confluence page, including a child page, a page for a context, a page for a contract, or a page for an individual decision.
 Write glossary and context-map content only to the saved context document.
 Write contracts and decision records only to the saved decisions document.
