@@ -53,8 +53,10 @@ describe("workflow integration", () => {
     }
   });
 
-  test("pickup keeps handoff files primary and confirms a memory fallback", () => {
+  test("pickup augments a primary handoff with one targeted search and confirms a session fallback", () => {
     const skill = source("skills/pickup/SKILL.md");
+    expect(skill).toContain("After reading the selected handoff");
+    expect(skill).toContain("search optional historical memory once");
     expect(skill).toContain("Optional agentmemory fallback");
     expect(skill).toContain("ask for confirmation before reading session history");
     expect(skill).toContain("`memory_timeline`");

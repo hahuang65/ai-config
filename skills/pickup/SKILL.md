@@ -62,8 +62,13 @@ Take the **first entry** from the listing (the newest handoff) and assume it —
 Once the document is selected (and confirmed, if an argument was given):
 
 1. **Read it in full.**
-2. **Briefly restate** the purpose and any suggested skills so the user can confirm the routing.
-3. **Invoke the first suggested skill** (if the handoff names one); otherwise begin executing on the purpose directly.
-4. Treat pointer paths (specs, tasks files, ADRs, diffs) as the next things to read once work begins.
+2. **Read and verify its canonical pointers** plus the current repository state before relying on the handoff's account of the work.
+3. **Augment it with one targeted recall.**
+   After reading the selected handoff and current sources, read the [optional historical memory](../shared/references/agentmemory.md) protocol and search optional historical memory once when a project-filtered recall tool is available.
+   Search with the handoff purpose, feature slug, principal module terms, and referenced file paths.
+   Use recall only to find relevant user corrections, debugging lessons, or unresolved questions that the handoff omitted, and verify each useful result against the current sources.
+   Do not retrieve an entire prior session, and continue without comment when optional recall is unavailable.
+4. **Briefly restate** the purpose, any useful verified history, and any suggested skills so the user can confirm the routing.
+5. **Invoke the first suggested skill** (if the handoff names one); otherwise begin executing on the purpose directly.
 
 **Do not delete the handoff file** after picking it up — the user may want to re-read it or hand off again. It lives in `/tmp/`; the OS cleans it up on its own schedule.
