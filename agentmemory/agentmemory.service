@@ -1,0 +1,14 @@
+[Unit]
+Description=agentmemory persistent memory service
+After=network.target
+
+[Service]
+Type=simple
+WorkingDirectory=%h/.dotfiles/ai
+ExecStart=%h/.local/share/mise/shims/agentmemory --data-dir %h/data
+ExecStop=%h/.local/share/mise/shims/agentmemory stop
+Restart=on-failure
+RestartSec=10
+
+[Install]
+WantedBy=default.target

@@ -215,6 +215,14 @@ else
   dim "  $CLI_TARGET → skills/review-change/bin/review-change.mjs"
 fi
 
+# ── agentmemory service (shared tooling — not harness-specific) ─────────────
+
+echo ""
+green "Installing agentmemory service..."
+AI_CONFIG_REPO_DIR="$REPO_DIR" \
+AI_CONFIG_INSTALL_FORCE="$INSTALL_FORCE" \
+  bash "$REPO_DIR/agentmemory/install.sh"
+
 # ── Repository git hook (shared dev tooling — not harness-specific) ──────────
 
 echo ""

@@ -1,0 +1,2 @@
+[tools]
+"npm:@agentmemory/agentmemory" = { version = "0.9.29", trust_policy_excludes = ["@agentmemory/agentmemory@0.9.29"] }

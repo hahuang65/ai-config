@@ -65,6 +65,17 @@ Agentmemory is optional historical memory, not a source of current project truth
 A workflow reads canonical sources first, searches only at a named checkpoint, and verifies each useful result before use.
 It never takes approval, authorization, task status, or ubiquitous language from memory.
 
+The repository pins the agentmemory CLI through [`mise.toml`](mise.toml).
+Running `./install.sh` installs that version through mise, links the canonical engine template to `~/.agentmemory/iii-config.yaml`, and links `~/.local/bin/agentmemory` to the mise-managed executable.
+Agentmemory renders its machine-specific runtime configuration into `~/data/iii-config.yaml`; that generated file and the state stores under `~/data/` remain outside the repository.
+The installer does not read, replace, or link the secret-bearing `~/.agentmemory/.env` file.
+
+On macOS, the installer copies [`agentmemory/dev.agentmemory.plist`](agentmemory/dev.agentmemory.plist) to `~/Library/LaunchAgents/dev.agentmemory.plist`, then bootstraps, enables, and starts `dev.agentmemory` through launchctl.
+Launchd rejects a symlink passed to `bootstrap`, so the required LaunchAgents path is the one managed regular-file exception to the symlink installation pattern.
+On Linux, it links [`agentmemory/agentmemory.service`](agentmemory/agentmemory.service) to `~/.config/systemd/user/agentmemory.service`, reloads the user service manager, and enables and starts the unit.
+Service activation runs only for the current account's real home directory, so installation tests and alternate `HOME` projections do not change the live service manager.
+A repeated installation resolves the pinned runtime without reinstalling it and leaves an unchanged healthy service running without a restart.
+
 The pi harness installs a managed adapter at `~/.pi/agent/extensions/agentmemory/index.ts`.
 The adapter remains inert when the local server is unavailable, never starts the service, and never injects recall automatically.
 It exposes explicit search, save, session, provenance, deletion, health, and capture-control tools using agentmemory's standard names.

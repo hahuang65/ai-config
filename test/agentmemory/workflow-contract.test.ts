@@ -75,6 +75,15 @@ describe("workflow integration", () => {
     expect(readme).toContain("restores the managed links and queues one automatic pi reload");
   });
 
+  test("the main installer delegates portable agentmemory service setup", () => {
+    const installer = source("install.sh");
+    const readme = source("README.md");
+    expect(installer).toContain("agentmemory/install.sh");
+    expect(readme).toContain("~/.agentmemory/iii-config.yaml");
+    expect(readme).toContain("~/.config/systemd/user/agentmemory.service");
+    expect(readme).toContain("~/Library/LaunchAgents/dev.agentmemory.plist");
+  });
+
   test("tasks and review do not gain routine memory searches", () => {
     expect(source("skills/todo/SKILL.md")).not.toContain("agentmemory.md");
     expect(source("skills/review-change/SKILL.md")).not.toContain("agentmemory.md");
