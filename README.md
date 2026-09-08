@@ -67,7 +67,10 @@ It never takes approval, authorization, task status, or ubiquitous language from
 
 The repository pins the agentmemory CLI through [`mise.toml`](mise.toml).
 Running `./install.sh` installs that version through mise, links the canonical engine template to `~/.agentmemory/iii-config.yaml`, and links `~/.local/bin/agentmemory` to the mise-managed executable.
-Agentmemory renders its machine-specific runtime configuration into `~/data/iii-config.yaml`; that generated file and the state stores under `~/data/` remain outside the repository.
+Agentmemory renders its machine-specific runtime configuration and state into its native data directory.
+The native directory is `~/Library/Application Support/agentmemory` on macOS and `${XDG_DATA_HOME:-~/.local/share}/agentmemory` on Linux.
+The installer safely moves a recognized legacy `~/data` store when the native destination does not exist, and it refuses to move a directory that contains unrelated files.
+Generated state remains outside the repository.
 The installer does not read, replace, or link the secret-bearing `~/.agentmemory/.env` file.
 
 On macOS, the installer copies [`agentmemory/dev.agentmemory.plist`](agentmemory/dev.agentmemory.plist) to `~/Library/LaunchAgents/dev.agentmemory.plist`, then bootstraps, enables, and starts `dev.agentmemory` through launchctl.

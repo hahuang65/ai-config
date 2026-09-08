@@ -77,6 +77,7 @@ async function installService(
   fixture: Awaited<ReturnType<typeof createFixture>>,
   platform: "Darwin" | "Linux" = "Darwin",
   force = false,
+  expectedExitCode = 0,
 ) {
   const subprocess = Bun.spawn(["bash", installer], {
     cwd: repositoryRoot,
@@ -101,8 +102,9 @@ async function installService(
     subprocess.exited,
     new Response(subprocess.stderr).text(),
   ]);
-  expect(stderr).toBe("");
-  expect(exitCode).toBe(0);
+  if (expectedExitCode === 0) expect(stderr).toBe("");
+  expect(exitCode).toBe(expectedExitCode);
+  return stderr;
 }
 
 describe("agentmemory service installation", () => {
@@ -171,11 +173,28 @@ describe("agentmemory service installation", () => {
     ]);
   });
 
-  test("uses the mise shim and persistent data paths in the macOS service", async () => {
+  test("uses the mise shim and native data directory in the macOS service", async () => {
     const plist = await readFile(path.join(repositoryRoot, "agentmemory", "dev.agentmemory.plist"), "utf8");
     expect(plist).toContain("/Users/hhhuang/.local/share/mise/shims/agentmemory");
     expect(plist).toContain("/Users/hhhuang/.dotfiles/ai");
-    expect(plist).toContain("/Users/hhhuang/data");
+    expect(plist).not.toContain("--data-dir");
+  });
+
+  test("migrates the legacy macOS store to Application Support", async () => {
+    const fixture = await createFixture();
+    const legacyStore = path.join(fixture.root, "data");
+    await mkdir(path.join(legacyStore, "stream_store"), { recursive: true });
+    await Promise.all([
+      writeFile(path.join(legacyStore, "state_store.db"), "state"),
+      writeFile(path.join(legacyStore, "stream_store", "stream"), "stream"),
+    ]);
+
+    await installService(fixture);
+
+    const nativeStore = path.join(fixture.root, "Library", "Application Support", "agentmemory");
+    expect(await readFile(path.join(nativeStore, "state_store.db"), "utf8")).toBe("state");
+    expect(await readFile(path.join(nativeStore, "stream_store", "stream"), "utf8")).toBe("stream");
+    expect(await Bun.file(legacyStore).exists()).toBe(false);
   });
 
   test("installs and enables the systemd user unit on Linux", async () => {
@@ -216,11 +235,41 @@ describe("agentmemory service installation", () => {
     ]);
   });
 
-  test("uses portable home paths in the Linux service", async () => {
+  test("uses portable home paths and the native data directory in the Linux service", async () => {
     const unit = await readFile(path.join(repositoryRoot, "agentmemory", "agentmemory.service"), "utf8");
     expect(unit).toContain("WorkingDirectory=%h/.dotfiles/ai");
-    expect(unit).toContain("ExecStart=%h/.local/share/mise/shims/agentmemory --data-dir %h/data");
+    expect(unit).toContain("ExecStart=%h/.local/share/mise/shims/agentmemory");
+    expect(unit).not.toContain("--data-dir");
     expect(unit).toContain("WantedBy=default.target");
+  });
+
+  test("migrates the legacy Linux store to the XDG default", async () => {
+    const fixture = await createFixture();
+    const legacyStore = path.join(fixture.root, "data");
+    await mkdir(legacyStore);
+    await writeFile(path.join(legacyStore, "state_store.db"), "state");
+
+    await installService(fixture, "Linux");
+
+    const nativeStore = path.join(fixture.root, ".local", "share", "agentmemory");
+    expect(await readFile(path.join(nativeStore, "state_store.db"), "utf8")).toBe("state");
+    expect(await Bun.file(legacyStore).exists()).toBe(false);
+  });
+
+  test("refuses to move a legacy directory containing unrelated files", async () => {
+    const fixture = await createFixture();
+    const legacyStore = path.join(fixture.root, "data");
+    await mkdir(legacyStore);
+    await Promise.all([
+      writeFile(path.join(legacyStore, "state_store.db"), "state"),
+      writeFile(path.join(legacyStore, "unrelated.txt"), "keep"),
+    ]);
+
+    const stderr = await installService(fixture, "Darwin", false, 1);
+
+    expect(stderr).toContain("Refusing to migrate");
+    expect(await readFile(path.join(legacyStore, "unrelated.txt"), "utf8")).toBe("keep");
+    expect(await Bun.file(path.join(fixture.logDirectory, "launchctl-bootout")).exists()).toBe(false);
   });
 
   test("migrates matching regular files to canonical links", async () => {

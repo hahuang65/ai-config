@@ -13,6 +13,9 @@ AGENTMEMORY_TOOL="npm:@agentmemory/agentmemory@0.9.29"
 LAUNCHD_LABEL="dev.agentmemory"
 SYSTEMD_UNIT="agentmemory.service"
 INSTALL_STATE="$HOME/.agentmemory/service-install-state"
+MIGRATION_REQUIRED=false
+MIGRATION_SOURCE="$HOME/data"
+MIGRATION_DESTINATION=""
 
 status() { printf '  %s\n' "$1"; }
 
@@ -92,6 +95,53 @@ agentmemory_is_healthy() {
   "$HOME/.local/bin/agentmemory" status >/dev/null 2>&1
 }
 
+native_data_directory() {
+  if [ "$PLATFORM" = Darwin ]; then
+    printf '%s\n' "$HOME/Library/Application Support/agentmemory"
+    return
+  fi
+  case "${XDG_DATA_HOME:-}" in
+    /*) printf '%s\n' "$XDG_DATA_HOME/agentmemory" ;;
+    *) printf '%s\n' "$HOME/.local/share/agentmemory" ;;
+  esac
+}
+
+prepare_data_migration() {
+  MIGRATION_DESTINATION="$(native_data_directory)"
+  [ -d "$MIGRATION_SOURCE" ] || return 0
+  if [ ! -e "$MIGRATION_SOURCE/state_store.db" ] \
+      && [ ! -e "$MIGRATION_SOURCE/iii-config.yaml" ] \
+      && [ ! -e "$MIGRATION_SOURCE/stream_store" ]; then
+    return 0
+  fi
+  local entry name
+  for entry in "$MIGRATION_SOURCE"/* "$MIGRATION_SOURCE"/.[!.]* "$MIGRATION_SOURCE"/..?*; do
+    [ -e "$entry" ] || [ -L "$entry" ] || continue
+    name="${entry##*/}"
+    case "$name" in
+      .DS_Store|.cwd-relocation-warning|iii-config.yaml|state_store.db|stream_store) ;;
+      *)
+        printf 'Refusing to migrate %s because it contains unrelated entry: %s\n' \
+          "$MIGRATION_SOURCE" "$name" >&2
+        return 1
+        ;;
+    esac
+  done
+  if [ -e "$MIGRATION_DESTINATION" ] || [ -L "$MIGRATION_DESTINATION" ]; then
+    printf 'Refusing to merge legacy and native agentmemory stores: %s and %s\n' \
+      "$MIGRATION_SOURCE" "$MIGRATION_DESTINATION" >&2
+    return 1
+  fi
+  MIGRATION_REQUIRED=true
+}
+
+perform_data_migration() {
+  [ "$MIGRATION_REQUIRED" = true ] || return 0
+  mkdir -p "$(dirname "$MIGRATION_DESTINATION")"
+  mv "$MIGRATION_SOURCE" "$MIGRATION_DESTINATION"
+  status "$MIGRATION_SOURCE → $MIGRATION_DESTINATION"
+}
+
 install_runtime() {
   if [ -z "$MISE_BIN" ]; then
     printf 'mise is required to install agentmemory.\n' >&2
@@ -116,6 +166,7 @@ install_launchd_service() {
     "agentmemory/$LAUNCHD_LABEL.plist"
   should_enable_service || return 0
   [ -n "$LAUNCHCTL_BIN" ] || { printf 'launchctl is required on macOS.\n' >&2; return 1; }
+  prepare_data_migration
   install_runtime
   local domain="${AI_CONFIG_SERVICE_DOMAIN:-gui/$(id -u)}"
   local service="$domain/$LAUNCHD_LABEL"
@@ -131,6 +182,7 @@ install_launchd_service() {
     "$LAUNCHCTL_BIN" bootout "$service"
   fi
   "$HOME/.local/bin/agentmemory" stop >/dev/null 2>&1 || true
+  perform_data_migration
   "$LAUNCHCTL_BIN" bootstrap "$domain" "$plist"
   "$LAUNCHCTL_BIN" enable "$service"
   "$LAUNCHCTL_BIN" kickstart -k "$service"
@@ -146,6 +198,7 @@ install_systemd_service() {
     "agentmemory/$SYSTEMD_UNIT"
   should_enable_service || return 0
   [ -n "$SYSTEMCTL_BIN" ] || { printf 'systemctl is required on Linux.\n' >&2; return 1; }
+  prepare_data_migration
   install_runtime
   local fingerprint
   fingerprint="$(service_fingerprint "$REPOSITORY_ROOT/agentmemory/$SYSTEMD_UNIT")"
@@ -154,6 +207,11 @@ install_systemd_service() {
       && agentmemory_is_healthy; then
     status "$SYSTEMD_UNIT is already current and healthy"
     return 0
+  fi
+  if [ "$MIGRATION_REQUIRED" = true ]; then
+    "$SYSTEMCTL_BIN" --user stop "$SYSTEMD_UNIT" || true
+    "$HOME/.local/bin/agentmemory" stop >/dev/null 2>&1 || true
+    perform_data_migration
   fi
   "$SYSTEMCTL_BIN" --user daemon-reload
   "$SYSTEMCTL_BIN" --user enable "$SYSTEMD_UNIT"

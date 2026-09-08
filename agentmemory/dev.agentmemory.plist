@@ -7,8 +7,6 @@
   <key>ProgramArguments</key>
   <array>
     <string>/Users/hhhuang/.local/share/mise/shims/agentmemory</string>
-    <string>--data-dir</string>
-    <string>/Users/hhhuang/data</string>
   </array>
   <key>WorkingDirectory</key>
   <string>/Users/hhhuang/.dotfiles/ai</string>

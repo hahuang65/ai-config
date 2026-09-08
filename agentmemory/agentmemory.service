@@ -5,7 +5,7 @@ After=network.target
 [Service]
 Type=simple
 WorkingDirectory=%h/.dotfiles/ai
-ExecStart=%h/.local/share/mise/shims/agentmemory --data-dir %h/data
+ExecStart=%h/.local/share/mise/shims/agentmemory
 ExecStop=%h/.local/share/mise/shims/agentmemory stop
 Restart=on-failure
 RestartSec=10
