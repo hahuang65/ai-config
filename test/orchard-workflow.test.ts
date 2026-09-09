@@ -29,6 +29,8 @@ test("harness baseline keeps the dotfiles superproject on main", async () => {
   expect(prompt).toContain("Keep the dotfiles superproject at `~/.dotfiles` on `main`");
   expect(prompt).toContain("Never create or switch branches");
   expect(prompt).toContain("create or enter a worktree for this superproject");
+  expect(prompt).toContain("Never stage or commit changes in this superproject");
+  expect(prompt).toContain("The user alone owns its commits, including submodule pointer updates");
   expect(prompt).toContain("Apply the named feature branch rule independently in each affected submodule repository");
 });
 

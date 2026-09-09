@@ -1417,6 +1417,8 @@ test_phase_orchestrator() {
   check_content_cached "$bootstrap" "baseline-prompt.md" "passing the same .short-intent."
   check_content_cached "$bootstrap" "baseline-prompt.md" "Keep the dotfiles superproject at .*[.]dotfiles.* on .main."
   check_content_cached "$bootstrap" "baseline-prompt.md" "Never create or switch branches, or create or enter a worktree for this superproject"
+  check_content_cached "$bootstrap" "baseline-prompt.md" "Never stage or commit changes in this superproject"
+  check_content_cached "$bootstrap" "baseline-prompt.md" "The user alone owns its commits, including submodule pointer updates"
   check_content_cached "$bootstrap" "baseline-prompt.md" "Apply the named feature branch rule independently in each affected submodule repository"
   check_content_cached "$bootstrap" "baseline-prompt.md" "Treat a project as A5 only when its originating repository has effective .ai[.]projectFamily=a5. from global or system Git configuration"
   check_content_cached "$bootstrap" "baseline-prompt.md" "Use mise-managed toolchains.*invoke tools directly.*never activate or recommend rbenv, rvm, chruby, asdf, nvm, or pyenv"

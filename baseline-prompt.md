@@ -13,6 +13,8 @@ read only the rule needed for the current action, before taking that action.
 - **Keep the dotfiles superproject at `~/.dotfiles` on `main`.**
   - This parent repository coordinates the Git submodule repositories.
   - Never create or switch branches, or create or enter a worktree for this superproject.
+  - Never stage or commit changes in this superproject.
+    The user alone owns its commits, including submodule pointer updates.
   - Apply the named feature branch rule independently in each affected submodule repository, including cross-repository work.
 - **Do not stage, commit, push, or deliver unless the user's current request explicitly invokes a workflow that owns that action.**
 - **Claude Code only: read `~/.dotfiles/ai/harnesses/claude/harness-rules.md` before running shell commands.**
