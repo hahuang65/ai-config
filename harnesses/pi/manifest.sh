@@ -16,6 +16,57 @@ command_target="prompts"
 # Small always-on bootstrap: critical baseline plus lazy-rule load triggers.
 instruction_target="AGENTS.md"
 
+resolve_pi_subagent_source() {
+  local pi_bin; pi_bin="$(command -v pi 2>/dev/null)" || return 0
+  [ -n "$pi_bin" ] && [ -x "$pi_bin" ] || return 0
+
+  case "$pi_bin" in
+    /*) ;;
+    *) pi_bin="$(pwd -P)/$pi_bin" ;;
+  esac
+
+  local brew_pkg="libexec/lib/node_modules/@earendil-works/pi-coding-agent"
+  local pi_bin_dir="${pi_bin%/*}"
+  local stable_homebrew_source="${pi_bin_dir%/*}/opt/pi-coding-agent/$brew_pkg/examples/extensions/subagent"
+  if [ "${pi_bin_dir##*/}" = bin ] && [ -d "$stable_homebrew_source" ]; then
+    printf '%s\n' "$stable_homebrew_source"
+    return 0
+  fi
+
+  local pi_real; pi_real="$(readlink -f "$pi_bin" 2>/dev/null)" || pi_real="$pi_bin"
+  case "$pi_real" in
+    /*) ;;
+    *) pi_real="$(pwd -P)/$pi_real" ;;
+  esac
+
+  local dir="${pi_real%/*}"
+  while [ "$dir" != "/" ] && [ -n "$dir" ]; do
+    if [ -d "$dir/examples/extensions/subagent" ]; then
+      printf '%s\n' "$dir/examples/extensions/subagent"
+      return 0
+    fi
+    if [ -d "$dir/$brew_pkg/examples/extensions/subagent" ]; then
+      printf '%s\n' "$dir/$brew_pkg/examples/extensions/subagent"
+      return 0
+    fi
+    local parent="${dir%/*}"
+    [ "$parent" = "$dir" ] && break
+    dir="$parent"
+  done
+}
+
+remove_pi_example_agent_links() {
+  local agent link raw
+  for agent in planner reviewer scout worker; do
+    link="$config_root/agents/$agent.md"
+    [ -L "$link" ] || continue
+    raw="$(readlink "$link" 2>/dev/null || true)"
+    case "$raw" in
+      */pi-coding-agent/examples/extensions/subagent/agents/"$agent".md) rm -f "$link" ;;
+    esac
+  done
+}
+
 install_module() {
   # Remove former per-harness resources; preserve unrelated user files.
   prune_repo_rule_links "$config_root/rules"
@@ -85,42 +136,12 @@ install_module() {
   ln -sf "$MOD/themes/catppuccin-mocha.json" "$config_root/themes"
   dim "  $config_root/themes/catppuccin-mocha.json (default pi theme)"
 
-  # Subagent extension — ships as an example with pi. Symlinked if present;
-  # skipped gracefully on a system where pi is not installed. Resolves the
-  # subagent path dynamically from the pi binary's real location rather than
-  # hardcoding a filesystem path that varies by install method (Homebrew,
-  # npm -g, etc.).
-  local pi_subagent_src=""
-  local pi_bin; pi_bin="$(command -v pi 2>/dev/null)" || true
-  if [ -n "$pi_bin" ] && [ -x "$pi_bin" ]; then
-    local pi_real; pi_real="$(readlink -f "$pi_bin" 2>/dev/null)" || pi_real="$pi_bin"
-    case "$pi_real" in
-      /*) ;;
-      *) pi_real="$(pwd -P)/$pi_real" ;;
-    esac
-    # The binary's depth within the package root varies by install method: under
-    # bin/ (Homebrew/npm: .../bin/pi) or directly in the root (Linux tarball:
-    # /opt/pi-coding-agent/pi). Homebrew adds a wrinkle: Cellar/<ver>/bin/pi is
-    # a bash shim (not a symlink), so readlink -f stops outside the real npm
-    # package root, which lives in the SIBLING subtree
-    # libexec/lib/node_modules/@earendil-works/pi-coding-agent/. Walk up from
-    # the binary probing both layouts, instead of hardcoding a dirname count.
-    local dir="${pi_real%/*}"
-    local brew_pkg="libexec/lib/node_modules/@earendil-works/pi-coding-agent"
-    while [ "$dir" != "/" ] && [ -n "$dir" ]; do
-      if [ -d "$dir/examples/extensions/subagent" ]; then
-        pi_subagent_src="$dir/examples/extensions/subagent"
-        break
-      fi
-      if [ -d "$dir/$brew_pkg/examples/extensions/subagent" ]; then
-        pi_subagent_src="$dir/$brew_pkg/examples/extensions/subagent"
-        break
-      fi
-      local parent="${dir%/*}"
-      [ "$parent" = "$dir" ] && break
-      dir="$parent"
-    done
-  fi
+  # The subagent runtime ships as a pi example. Homebrew installations use the
+  # stable opt prefix so upgrades do not leave links to a removed Cellar version.
+  # Other installation methods fall back to bounded package-root discovery.
+  # Repository-managed agent definitions remain the only installed agents.
+  remove_pi_example_agent_links
+  local pi_subagent_src; pi_subagent_src="$(resolve_pi_subagent_source)"
   if [ -n "$pi_subagent_src" ] && [ -d "$pi_subagent_src" ]; then
     mkdir -p "$config_root/extensions/subagent"
     # Keep the upstream runner but adapt agent discovery locally: shared agent
@@ -134,14 +155,6 @@ install_module() {
       "$MOD/extensions/subagent/model-selection.ts" \
       "$config_root/extensions/subagent"
     dim "  $config_root/extensions/subagent/ (subagent extension + shared-agent adapter)"
-
-    # Agent definitions (scout, planner, reviewer, worker)
-    if [ -d "$pi_subagent_src/agents" ]; then
-      mkdir -p "$config_root/agents"
-      local -a agent_files=("$pi_subagent_src"/agents/*.md)
-      [ ${#agent_files[@]} -eq 0 ] || ln -sf "${agent_files[@]}" "$config_root/agents"
-      dim "    $config_root/agents/ — subagent agent definitions"
-    fi
   fi
 
 }
