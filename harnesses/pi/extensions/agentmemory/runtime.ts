@@ -22,6 +22,12 @@ import type {
   RecallMode,
 } from "./types.ts";
 
+function processPausedSessions(): Set<string> {
+  const state = globalThis as any;
+  state.__aiConfigAgentMemoryPausedSessions ??= new Set<string>();
+  return state.__aiConfigAgentMemoryPausedSessions;
+}
+
 export class AgentMemoryRuntime {
   captureMode: CaptureMode;
   recallMode: RecallMode;
@@ -29,9 +35,12 @@ export class AgentMemoryRuntime {
   private currentProject: string;
   private currentPrompt = "";
   private readonly client: AgentMemoryClient;
+  private captureTransition = Promise.resolve();
+  private pendingCaptureTransitions = 0;
   private excludedTools: string[];
   private readonly environment: AgentMemoryEnvironment;
   private readonly now: () => Date;
+  private readonly pausedSessions: Set<string>;
   private readonly projectIdentity: (cwd: string) => string;
   private readonly randomUUID: () => string;
   private serverAvailable = false;
@@ -42,6 +51,7 @@ export class AgentMemoryRuntime {
     const environment = dependencies.environment ?? process.env;
     this.environment = environment;
     this.now = dependencies.now ?? (() => new Date());
+    this.pausedSessions = dependencies.pausedSessions ?? processPausedSessions();
     this.randomUUID = dependencies.randomUUID ?? crypto.randomUUID;
     this.projectIdentity = dependencies.projectIdentity ?? ((cwd) =>
       resolveProjectIdentity(cwd, { environment, git: dependencies.git }));
@@ -58,11 +68,23 @@ export class AgentMemoryRuntime {
     );
   }
 
+  private get capturePaused(): boolean {
+    return this.pausedSessions.has(this.sessionId);
+  }
+
+  private get captureSuppressed(): boolean {
+    return this.capturePaused || this.pendingCaptureTransitions > 0 || this.captureMode === "off";
+  }
+
+  get captureStatus(): CaptureMode | "paused" {
+    return this.capturePaused && this.captureMode !== "off" ? "paused" : this.captureMode;
+  }
+
   statusText(context?: any): string {
     const icon = this.serverAvailable ? "🧠" : "⚠️";
     const color = this.serverAvailable ? "success" : "error";
     const label = context?.ui?.theme?.fg?.(color, "agentmemory") ?? "agentmemory";
-    return `${icon} ${label} · recall ${this.recallMode} · capture ${this.captureMode}`;
+    return `${icon} ${label} · recall ${this.recallMode} · capture ${this.captureStatus}`;
   }
 
   updateStatus(context: any): void {
@@ -77,9 +99,10 @@ export class AgentMemoryRuntime {
     this.recallMode = policy.recall;
     this.excludedTools = policy.excludedTools;
     const sessionFile = context.sessionManager.getSessionFile();
+    const stableSessionId = context.sessionManager.getSessionId?.();
     this.sessionId = sessionFile
       ? path.basename(sessionFile).replace(/\.[^.]+$/, "")
-      : `ephemeral-${this.randomUUID().slice(0, 8)}`;
+      : stableSessionId || `ephemeral-${this.randomUUID().slice(0, 8)}`;
     this.serverAvailable = await this.client.call("health", { method: "GET" }) !== null;
     await this.startSession();
     this.updateStatus(context);
@@ -102,27 +125,49 @@ export class AgentMemoryRuntime {
 
   async shutdown(reason: string): Promise<void> {
     if (SESSION_END_REASONS.has(reason)) await this.endSession();
+    if (reason !== "reload") this.pausedSessions.delete(this.sessionId);
   }
 
   async setCaptureMode(mode: CaptureMode, context: any): Promise<string> {
-    if (mode === "off") await this.endSession();
     this.captureMode = mode;
-    if (mode !== "off") await this.startSession();
+    this.pendingCaptureTransitions += 1;
+    const transition = this.captureTransition.then(async () => {
+      if (mode === "off") await this.endSession();
+      else await this.startSession();
+    });
+    this.captureTransition = transition.catch(() => {});
+    try {
+      await transition;
+    } finally {
+      this.pendingCaptureTransitions -= 1;
+      this.updateStatus(context);
+    }
+    return `agentmemory capture ${this.captureStatus}; recall ${this.recallMode}.`;
+  }
+
+  pauseCapture(context: any): string {
+    if (this.captureMode === "off") return `agentmemory capture off; recall ${this.recallMode}.`;
+    this.pausedSessions.add(this.sessionId);
     this.updateStatus(context);
-    return `agentmemory capture ${this.captureMode}; recall ${this.recallMode}.`;
+    return `agentmemory capture temporarily paused; ${this.captureMode} resumes after the current agent run settles.`;
+  }
+
+  resumeCapture(context: any): void {
+    if (!this.pausedSessions.delete(this.sessionId)) return;
+    this.updateStatus(context);
   }
 
   async capturePrompt(event: any): Promise<void> {
     this.currentCwd = event.systemPromptOptions?.cwd ?? this.currentCwd;
     this.currentProject = this.projectIdentity(this.currentCwd);
     this.currentPrompt = event.prompt?.trim() ?? "";
-    if (this.captureMode !== "full" || !this.currentPrompt) return;
+    if (this.captureSuppressed || this.captureMode !== "full" || !this.currentPrompt) return;
     await this.observe("prompt_submit", { prompt: this.currentPrompt });
   }
 
   async captureTool(event: any): Promise<void> {
     const excluded = this.excludedTools.some((pattern) => wildcardMatch(event.toolName ?? "", pattern));
-    if (this.captureMode === "off" || excluded) return;
+    if (this.captureSuppressed || excluded) return;
     if (this.captureMode === "metadata") {
       await this.observe("post_tool_use", {
         tool_name: event.toolName,
@@ -139,7 +184,7 @@ export class AgentMemoryRuntime {
   }
 
   async captureConversation(event: any): Promise<void> {
-    if (this.captureMode !== "full" || !this.currentPrompt) return;
+    if (this.captureSuppressed || this.captureMode !== "full" || !this.currentPrompt) return;
     const assistant = lastAssistantText(event.messages ?? []);
     if (!assistant) return;
     await this.observe("post_tool_use", {
@@ -205,7 +250,7 @@ export class AgentMemoryRuntime {
   }
 
   private async observe(hookType: string, observation: JsonRecord): Promise<void> {
-    if (!this.serverAvailable || this.captureMode === "off") return;
+    if (!this.serverAvailable || this.captureSuppressed) return;
     await this.client.call("observe", {
       body: {
         hookType,

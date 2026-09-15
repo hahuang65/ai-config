@@ -14,7 +14,7 @@ function harness(environment: Record<string, string | undefined> = {}) {
     AGENTMEMORY_POLICY_PATH: "/nonexistent-agentmemory-policy-test.json",
     ...environment,
   };
-  const disabled = new Set<string>();
+  const paused = new Set<string>();
   const fetch = async (url: string, init?: RequestInit) => {
     calls.push({ url, init });
     return { ok: true, json: async () => ({ ok: true }) } as Response;
@@ -25,12 +25,15 @@ function harness(environment: Record<string, string | undefined> = {}) {
     now: () => new Date("2026-09-02T10:00:00.000Z"),
     projectIdentity: () => "github.com/acme/service",
     state: {
-      clear: (sessionId: string) => disabled.delete(sessionId),
-      disable: (sessionId: string) => disabled.add(sessionId),
-      isDisabled: (sessionId: string) => disabled.has(sessionId),
+      clear: (sessionId: string) => paused.delete(sessionId),
+      pause: (sessionId: string) => {
+        paused.add(sessionId);
+        return true;
+      },
+      isPaused: (sessionId: string) => paused.has(sessionId),
     },
   };
-  return { calls, dependencies, disabled };
+  return { calls, dependencies, paused };
 }
 
 function body(call: FetchCall): Record<string, any> {
@@ -108,7 +111,7 @@ describe("managed Claude agentmemory capture", () => {
     });
   });
 
-  test("turns capture off before a Confluence read and keeps it off", async () => {
+  test("keeps a Confluence run paused through Stop and restores at the next prompt", async () => {
     const instance = harness();
 
     await handleClaudeCaptureHook({
@@ -125,11 +128,111 @@ describe("managed Claude agentmemory capture", () => {
     }, instance.dependencies);
     await handleClaudeCaptureHook({
       ...base,
-      hook_event_name: "UserPromptSubmit",
-      prompt: "Summarize that page",
+      hook_event_name: "Stop",
+      last_assistant_message: "A confidential summary.",
+    }, instance.dependencies);
+    await handleClaudeCaptureHook({
+      ...base,
+      hook_event_name: "PostToolUse",
+      tool_name: "Read",
+      tool_response: "A continuation with confidential data.",
     }, instance.dependencies);
 
-    expect(instance.disabled.has("claude-session-1")).toBe(true);
+    expect(instance.paused.has("claude-session-1")).toBe(true);
+    expect(instance.calls).toHaveLength(0);
+
+    await handleClaudeCaptureHook({
+      ...base,
+      hook_event_name: "UserPromptSubmit",
+      prompt: "Start unrelated work",
+    }, instance.dependencies);
+
+    expect(instance.paused.has("claude-session-1")).toBe(false);
+    expect(instance.calls).toHaveLength(1);
+    expect(body(instance.calls[0]).data.prompt).toBe("Start unrelated work");
+  });
+
+  test("restores a temporary pause after a failed sensitive run", async () => {
+    const instance = harness();
+
+    await handleClaudeCaptureHook({
+      ...base,
+      hook_event_name: "PreToolUse",
+      tool_name: "mcp__atlassian__getConfluencePage",
+    }, instance.dependencies);
+    await handleClaudeCaptureHook({
+      ...base,
+      hook_event_name: "PostToolUseFailure",
+      tool_name: "mcp__atlassian__getConfluencePage",
+      error: "access denied",
+    }, instance.dependencies);
+    await handleClaudeCaptureHook({ ...base, hook_event_name: "Stop" }, instance.dependencies);
+
+    expect(instance.paused.has("claude-session-1")).toBe(true);
+    expect(instance.calls).toHaveLength(0);
+
+    await handleClaudeCaptureHook({
+      ...base,
+      hook_event_name: "UserPromptSubmit",
+      prompt: "Continue with unrelated work",
+    }, instance.dependencies);
+
+    expect(instance.paused.has("claude-session-1")).toBe(false);
+    expect(body(instance.calls[0]).data.prompt).toBe("Continue with unrelated work");
+  });
+
+  test("clears an interrupted temporary pause at the next prompt boundary", async () => {
+    const instance = harness();
+    instance.paused.add("claude-session-1");
+
+    await handleClaudeCaptureHook({
+      ...base,
+      hook_event_name: "UserPromptSubmit",
+      prompt: "Possibly related confidential text",
+    }, instance.dependencies);
+    await handleClaudeCaptureHook({
+      ...base,
+      hook_event_name: "PostToolUse",
+      tool_name: "Read",
+      tool_response: "ordinary source",
+    }, instance.dependencies);
+
+    expect(instance.paused.has("claude-session-1")).toBe(false);
+    expect(instance.calls).toHaveLength(2);
+    expect(body(instance.calls[0]).data.prompt).toBe("Possibly related confidential text");
+    expect(body(instance.calls[1]).data.tool_name).toBe("Read");
+  });
+
+  test("blocks a sensitive tool when its temporary pause cannot be established", async () => {
+    const instance = harness();
+    instance.dependencies.state.pause = () => false;
+
+    const result = await handleClaudeCaptureHook({
+      ...base,
+      hook_event_name: "PreToolUse",
+      tool_name: "mcp__atlassian__getConfluencePage",
+    }, instance.dependencies);
+
+    expect(result).toMatchObject({
+      hookSpecificOutput: {
+        permissionDecision: "deny",
+        permissionDecisionReason: expect.stringContaining("temporary capture pause"),
+      },
+    });
+  });
+
+  test("keeps capture paused when interrupted recovery cannot clear its marker", async () => {
+    const instance = harness();
+    instance.paused.add("claude-session-1");
+    instance.dependencies.state.clear = () => false;
+
+    await handleClaudeCaptureHook({
+      ...base,
+      hook_event_name: "UserPromptSubmit",
+      prompt: "Do not capture this",
+    }, instance.dependencies);
+
+    expect(instance.paused.has("claude-session-1")).toBe(true);
     expect(instance.calls).toHaveLength(0);
   });
 
@@ -306,14 +409,15 @@ describe("managed Claude agentmemory capture", () => {
     expect(body(instance.calls[0])).toEqual({ sessionId: "claude-session-1" });
   });
 
-  test("clears sensitive capture state without sending a session event", async () => {
+  test("clears temporary capture state and ends the agentmemory session", async () => {
     const instance = harness();
-    instance.disabled.add("claude-session-1");
+    instance.paused.add("claude-session-1");
 
     await handleClaudeCaptureHook({ ...base, hook_event_name: "SessionEnd" }, instance.dependencies);
 
-    expect(instance.calls).toHaveLength(0);
-    expect(instance.disabled.has("claude-session-1")).toBe(false);
+    expect(instance.calls).toHaveLength(1);
+    expect(instance.calls[0].url).toEndWith("/session/end");
+    expect(instance.paused.has("claude-session-1")).toBe(false);
   });
 
   test("reports the same named status as pi", async () => {
@@ -325,12 +429,12 @@ describe("managed Claude agentmemory capture", () => {
       instance.dependencies,
     ))).toBe("🧠 agentmemory · recall explicit · capture full");
 
-    instance.disabled.add("claude-session-1");
+    instance.paused.add("claude-session-1");
     expect(withoutColor(await getClaudeAgentMemoryStatus(
       "/worktrees/service-one",
       "claude-session-1",
       instance.dependencies,
-    ))).toBe("🧠 agentmemory · recall explicit · capture off");
+    ))).toBe("🧠 agentmemory · recall explicit · capture paused");
   });
 
   test("is wired without installing upstream hooks or skills", () => {

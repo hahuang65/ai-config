@@ -13,13 +13,22 @@ function captureControlTool(runtime: AgentMemoryRuntime) {
   return {
     name: "memory_capture_control",
     label: "Memory Capture Control",
-    description: "Set agentmemory capture before reading sensitive content, or report its status",
-    parameters: objectSchema({ mode: { type: "string", enum: ["off", "metadata", "full", "status"], "~kind": "String" } }, ["mode"]),
+    description: "Temporarily pause agentmemory for sensitive work, set its persistent capture mode, or report status",
+    parameters: objectSchema({ mode: { type: "string", enum: ["pause", "off", "metadata", "full", "status"], "~kind": "String" } }, ["mode"]),
     async execute(_id: string, parameters: any, _signal: unknown, _update: unknown, context: any) {
       const text = parameters.mode === "status"
-        ? `agentmemory capture ${runtime.captureMode}; recall ${runtime.recallMode}.`
-        : await runtime.setCaptureMode(parameters.mode, context);
-      return { content: [{ type: "text", text }], details: { captureMode: runtime.captureMode, recallMode: runtime.recallMode } };
+        ? `agentmemory capture ${runtime.captureStatus}; recall ${runtime.recallMode}.`
+        : parameters.mode === "pause"
+          ? runtime.pauseCapture(context)
+          : await runtime.setCaptureMode(parameters.mode, context);
+      return {
+        content: [{ type: "text", text }],
+        details: {
+          captureMode: runtime.captureMode,
+          captureStatus: runtime.captureStatus,
+          recallMode: runtime.recallMode,
+        },
+      };
     },
   };
 }

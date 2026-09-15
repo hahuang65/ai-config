@@ -16,7 +16,16 @@ function response(body: unknown, ok = true): Response {
   return { ok, json: async () => body } as Response;
 }
 
-function harness(environment: AgentMemoryEnvironment = {}) {
+function harness(
+  environment: AgentMemoryEnvironment = {},
+  options: {
+    pausedSessions?: Set<string>;
+    randomUUID?: string;
+    sessionEnd?: Promise<void>;
+    sessionFile?: string | null;
+    sessionId?: string;
+  } = {},
+) {
   const isolatedEnvironment = {
     AGENTMEMORY_POLICY_PATH: "/nonexistent-agentmemory-policy-test.json",
     ...environment,
@@ -30,6 +39,7 @@ function harness(environment: AgentMemoryEnvironment = {}) {
   const footers: unknown[] = [];
   const fetch = async (url: string, init?: RequestInit) => {
     calls.push({ url, init });
+    if (url.endsWith("/session/end")) await options.sessionEnd;
     if (url.endsWith("/health")) return response({ status: "healthy", version: "0.9.29" });
     if (url.includes("/search")) {
       return response({
@@ -72,7 +82,10 @@ function harness(environment: AgentMemoryEnvironment = {}) {
       },
     },
     sessionManager: {
-      getSessionFile: () => "/sessions/session-1.jsonl",
+      getSessionFile: () => options.sessionFile === undefined
+        ? "/sessions/session-1.jsonl"
+        : options.sessionFile,
+      getSessionId: () => options.sessionId ?? "session-1",
     },
   };
 
@@ -80,8 +93,9 @@ function harness(environment: AgentMemoryEnvironment = {}) {
     fetch: fetch as typeof globalThis.fetch,
     environment: isolatedEnvironment,
     projectIdentity: () => "github.com/acme/service",
-    randomUUID: () => "random-session",
+    randomUUID: () => options.randomUUID ?? "random-session",
     now: () => new Date("2026-09-02T10:00:00.000Z"),
+    pausedSessions: options.pausedSessions ?? new Set<string>(),
   });
 
   return { handlers, tools, commands, calls, statuses, notifications, footers, context };
@@ -121,6 +135,20 @@ describe("optional agentmemory pi adapter", () => {
       "memory_smart_search",
       "memory_verify",
     ]);
+  });
+
+  test("keeps the filename-derived identity for a persisted session", async () => {
+    const instance = harness({}, {
+      sessionFile: "/sessions/2026-09-09T120000-session-uuid.jsonl",
+      sessionId: "session-uuid",
+    });
+
+    await emit(instance, "session_start", { reason: "startup" });
+
+    const sessionStart = instance.calls.find((call) => call.url.endsWith("/session/start"));
+    expect(requestBody(sessionStart!)).toMatchObject({
+      sessionId: "2026-09-09T120000-session-uuid",
+    });
   });
 
   test("captures a prompt without injecting recalled memory into the system prompt", async () => {
@@ -306,19 +334,171 @@ describe("optional agentmemory pi adapter", () => {
     expect(instance.calls).toHaveLength(0);
   });
 
-  test("capture control turns capture off before its own result can be observed", async () => {
+  test("temporarily pauses sensitive capture through agent settlement and restores it", async () => {
+    const instance = harness();
+    await emit(instance, "session_start", { reason: "startup" });
+
+    await emit(instance, "tool_call", {
+      toolName: "mcp__atlassian__getConfluencePage",
+      input: { pageId: "secret-page" },
+    });
+    await emit(instance, "tool_result", {
+      toolName: "mcp__atlassian__getConfluencePage",
+      content: [{ type: "text", text: "confidential content" }],
+    });
+    await emit(instance, "tool_result", {
+      toolName: "read",
+      content: [{ type: "text", text: "derived confidential content" }],
+    });
+    await emit(instance, "agent_end", {
+      messages: [{ role: "assistant", content: [{ type: "text", text: "A confidential summary." }] }],
+    });
+
+    expect(instance.statuses.at(-1)).toContain("capture paused");
+    expect(instance.calls.filter((call) => call.url.endsWith("/observe"))).toHaveLength(0);
+
+    await emit(instance, "agent_settled");
+    await emit(instance, "before_agent_start", {
+      prompt: "Start unrelated work",
+      systemPromptOptions: { cwd: "/worktrees/service-one" },
+    });
+
+    expect(instance.statuses.at(-1)).toContain("capture full");
+    const observations = instance.calls.filter((call) => call.url.endsWith("/observe"));
+    expect(requestBody(observations[0])).toMatchObject({ data: { prompt: "Start unrelated work" } });
+  });
+
+  test("preserves a sensitive-run pause across an extension reload", async () => {
+    const pausedSessions = new Set<string>();
+    const original = harness({}, {
+      pausedSessions,
+      randomUUID: "before-reload",
+      sessionFile: null,
+      sessionId: "stable-in-memory-session",
+    });
+    await emit(original, "session_start", { reason: "startup" });
+    await emit(original, "tool_call", { toolName: "mcp__atlassian__getConfluencePage" });
+    await emit(original, "session_shutdown", { reason: "reload" });
+
+    const reloaded = harness({}, {
+      pausedSessions,
+      randomUUID: "after-reload",
+      sessionFile: null,
+      sessionId: "stable-in-memory-session",
+    });
+    await emit(reloaded, "session_start", { reason: "reload" });
+    await emit(reloaded, "tool_result", {
+      toolName: "mcp__atlassian__getConfluencePage",
+      content: [{ type: "text", text: "confidential content" }],
+    });
+    await emit(reloaded, "agent_end", {
+      messages: [{ role: "assistant", content: [{ type: "text", text: "A confidential summary." }] }],
+    });
+
+    expect(reloaded.statuses.at(-1)).toContain("capture paused");
+    expect(reloaded.calls.filter((call) => call.url.endsWith("/observe"))).toHaveLength(0);
+
+    await emit(reloaded, "agent_settled");
+    expect(reloaded.statuses.at(-1)).toContain("capture full");
+  });
+
+  test("restores metadata capture after a temporary pause", async () => {
+    const instance = harness({ AGENTMEMORY_CAPTURE: "metadata" });
+    await emit(instance, "session_start", { reason: "startup" });
+
+    await emit(instance, "tool_call", { toolName: "mcp__atlassian__getConfluencePage" });
+    await emit(instance, "agent_settled");
+    await emit(instance, "tool_result", {
+      toolName: "read",
+      input: { path: "ordinary.md" },
+      content: [{ type: "text", text: "ordinary content" }],
+    });
+
+    expect(instance.statuses.at(-1)).toContain("capture metadata");
+    const observation = instance.calls.find((call) => call.url.endsWith("/observe"));
+    expect(requestBody(observation!)).toMatchObject({
+      data: { tool_name: "read", tool_error: false },
+    });
+    expect(JSON.stringify(requestBody(observation!))).not.toContain("ordinary content");
+  });
+
+  test("keeps a temporary pause latched when the model changes the future mode", async () => {
     const instance = harness();
     await emit(instance, "session_start", { reason: "startup" });
     const control = instance.tools.get("memory_capture_control")!;
 
-    const result = await control.execute("call-1", { mode: "off" }, undefined, undefined, instance.context);
+    await emit(instance, "tool_call", { toolName: "mcp__atlassian__getConfluencePage" });
+    await control.execute("call-1", { mode: "metadata" }, undefined, undefined, instance.context);
     await emit(instance, "tool_result", {
-      toolName: "memory_capture_control",
-      input: { mode: "off" },
-      content: result.content,
+      toolName: "read",
+      content: [{ type: "text", text: "confidential derived result" }],
+    });
+    await emit(instance, "agent_end", {
+      messages: [{ role: "assistant", content: [{ type: "text", text: "A confidential summary." }] }],
     });
 
-    expect(result.content[0].text).toContain("capture off");
+    expect(instance.statuses.at(-1)).toContain("capture paused");
+    expect(instance.calls.filter((call) => call.url.endsWith("/observe"))).toHaveLength(0);
+
+    await emit(instance, "agent_settled");
+    expect(instance.statuses.at(-1)).toContain("capture metadata");
+  });
+
+  test("serializes overlapping capture-mode changes", async () => {
+    let releaseSessionEnd = () => {};
+    const sessionEnd = new Promise<void>((resolve) => { releaseSessionEnd = resolve; });
+    const instance = harness({}, { sessionEnd });
+    await emit(instance, "session_start", { reason: "startup" });
+    const control = instance.tools.get("memory_capture_control")!;
+
+    const disabling = control.execute("call-1", { mode: "off" }, undefined, undefined, instance.context);
+    const enabling = control.execute("call-2", { mode: "full" }, undefined, undefined, instance.context);
+    await Promise.resolve();
+    await emit(instance, "tool_result", {
+      toolName: "read",
+      content: [{ type: "text", text: "result during transition" }],
+    });
+    releaseSessionEnd();
+    await Promise.all([disabling, enabling]);
+    await emit(instance, "tool_result", {
+      toolName: "read",
+      content: [{ type: "text", text: "result after transition" }],
+    });
+
+    expect(instance.calls.filter((call) => call.url.endsWith("/session/start"))).toHaveLength(2);
+    expect(instance.calls.filter((call) => call.url.endsWith("/session/end"))).toHaveLength(1);
+    const observations = instance.calls.filter((call) => call.url.endsWith("/observe"));
+    expect(observations).toHaveLength(1);
+    expect(requestBody(observations[0])).toMatchObject({
+      data: { tool_output: '[{"type":"text","text":"result after transition"}]' },
+    });
+  });
+
+  test("capture control keeps explicit off persistent without reopening a temporary pause", async () => {
+    let releaseSessionEnd = () => {};
+    const sessionEnd = new Promise<void>((resolve) => { releaseSessionEnd = resolve; });
+    const instance = harness({}, { sessionEnd });
+    await emit(instance, "session_start", { reason: "startup" });
+    const control = instance.tools.get("memory_capture_control")!;
+
+    const paused = await control.execute("call-1", { mode: "pause" }, undefined, undefined, instance.context);
+    const disabling = control.execute("call-2", { mode: "off" }, undefined, undefined, instance.context);
+    await Promise.resolve();
+    await emit(instance, "tool_result", {
+      toolName: "read",
+      content: [{ type: "text", text: "confidential concurrent result" }],
+    });
+    releaseSessionEnd();
+    const disabled = await disabling;
+    await emit(instance, "agent_settled");
+    await emit(instance, "before_agent_start", {
+      prompt: "Do not capture this",
+      systemPromptOptions: { cwd: "/worktrees/service-one" },
+    });
+
+    expect(paused.content[0].text).toContain("temporarily paused");
+    expect(disabled.content[0].text).toContain("capture off");
+    expect(instance.statuses.at(-1)).toContain("capture off");
     expect(instance.calls.filter((call) => call.url.endsWith("/observe"))).toHaveLength(0);
   });
 });

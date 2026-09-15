@@ -20,10 +20,11 @@ describe("optional historical memory protocol", () => {
     expect(memoryProtocol).toContain("Do not use unfiltered smart search");
   });
 
-  test("requires capture off before a selected Confluence destination is read", () => {
-    expect(memoryProtocol).toContain("set capture to `off` before the first Confluence read");
+  test("temporarily pauses capture around a selected Confluence destination", () => {
+    expect(memoryProtocol).toContain("temporarily pause capture before the first Confluence read");
+    expect(memoryProtocol).toContain("restores capture only after the current agent run settles");
     expect(source("skills/shared/references/domain-documentation.md")).toContain(
-      "disable optional historical-memory capture before the first Confluence read",
+      "temporarily pause optional historical-memory capture before the first Confluence read",
     );
   });
 
@@ -63,9 +64,11 @@ describe("workflow integration", () => {
     expect(skill).toContain("The `/tmp/` handoff remains primary");
   });
 
-  test("documents managed Claude capture without upstream hooks", () => {
+  test("documents managed temporary capture pauses without upstream hooks", () => {
     const readme = source("README.md");
     expect(readme).toContain("Repository-managed hooks add automatic capture");
+    expect(readme).toContain("temporarily pause capture before Confluence content returns");
+    expect(readme).toContain("restore it after the current agent run settles");
     expect(readme).toContain("Do not run `agentmemory connect claude-code --with-hooks`");
   });
 

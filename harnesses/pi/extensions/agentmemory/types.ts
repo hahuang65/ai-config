@@ -18,6 +18,7 @@ export type AdapterDependencies = {
   fetch?: typeof globalThis.fetch;
   git?: GitReader;
   now?: () => Date;
+  pausedSessions?: Set<string>;
   projectIdentity?: (cwd: string) => string;
   randomUUID?: () => string;
 };

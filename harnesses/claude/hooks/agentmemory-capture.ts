@@ -30,9 +30,9 @@ type CaptureEnvironment = AgentMemoryConfigurationEnvironment & {
   CLAUDE_PROJECT_DIR?: string;
 };
 type CaptureState = {
-  clear: (sessionId: string) => unknown;
-  disable: (sessionId: string) => unknown;
-  isDisabled: (sessionId: string) => boolean;
+  clear: (sessionId: string) => boolean;
+  pause: (sessionId: string) => boolean;
+  isPaused: (sessionId: string) => boolean;
 };
 type CaptureDependencies = {
   environment?: CaptureEnvironment;
@@ -49,25 +49,34 @@ function markerPath(sessionId: string): string {
 
 function captureState(): CaptureState {
   return {
-    isDisabled(sessionId) {
-      const state = lstatSync(markerPath(sessionId), { throwIfNoEntry: false });
-      return Boolean(state);
+    isPaused(sessionId) {
+      try {
+        return Boolean(lstatSync(markerPath(sessionId), { throwIfNoEntry: false }));
+      } catch {
+        return true;
+      }
     },
-    disable(sessionId) {
-      const target = markerPath(sessionId);
-      const directory = path.dirname(target);
-      mkdirSync(directory, { recursive: true, mode: 0o700 });
-      const directoryState = lstatSync(directory);
-      if (!directoryState.isDirectory() || directoryState.isSymbolicLink()) return;
-      const temporary = `${target}.tmp-${process.pid}-${Date.now()}`;
-      writeFileSync(temporary, "off\n", { encoding: "utf8", mode: 0o600 });
-      renameSync(temporary, target);
+    pause(sessionId) {
+      try {
+        const target = markerPath(sessionId);
+        const directory = path.dirname(target);
+        mkdirSync(directory, { recursive: true, mode: 0o700 });
+        const directoryState = lstatSync(directory);
+        if (!directoryState.isDirectory() || directoryState.isSymbolicLink()) return false;
+        const temporary = `${target}.tmp-${process.pid}-${Date.now()}`;
+        writeFileSync(temporary, "paused\n", { encoding: "utf8", mode: 0o600 });
+        renameSync(temporary, target);
+        return true;
+      } catch {
+        return false;
+      }
     },
     clear(sessionId) {
       try {
         unlinkSync(markerPath(sessionId));
-      } catch {
-        // A missing marker is already clear.
+        return true;
+      } catch (error) {
+        return (error as NodeJS.ErrnoException).code === "ENOENT";
       }
     },
   };
@@ -136,7 +145,7 @@ export async function getClaudeAgentMemoryStatus(
   ));
   const policy = resolveMemoryPolicy(projectIdentity(cwd), { environment });
   const state = dependencies.state ?? captureState();
-  const capture = state.isDisabled(sessionId) ? "off" : policy.capture;
+  const capture = state.isPaused(sessionId) && policy.capture !== "off" ? "paused" : policy.capture;
   const baseUrl = safeBaseUrl(environment);
   let available = false;
   if (baseUrl) {
@@ -175,9 +184,8 @@ export async function handleClaudeCaptureHook(
   const eventName = String(payload.hook_event_name ?? "");
 
   if (eventName === "SessionEnd") {
-    const wasDisabled = state.isDisabled(sessionId);
     state.clear(sessionId);
-    if (policy.capture === "off" || wasDisabled) return;
+    if (policy.capture === "off") return;
   }
   const toolName = String(payload.tool_name ?? "");
   if (eventName === "PreToolUse") {
@@ -215,12 +223,21 @@ export async function handleClaudeCaptureHook(
         },
       };
     }
-    if (isConfluenceTool(toolName)) {
-      state.disable(sessionId);
-      return;
+    if (isConfluenceTool(toolName) && policy.capture !== "off") {
+      if (state.pause(sessionId)) return;
+      return {
+        hookSpecificOutput: {
+          hookEventName: "PreToolUse",
+          permissionDecision: "deny",
+          permissionDecisionReason: "Could not establish the temporary capture pause required for sensitive content.",
+        },
+      };
     }
   }
-  if (policy.capture === "off" || state.isDisabled(sessionId)) return;
+  if (state.isPaused(sessionId)) {
+    if (eventName !== "UserPromptSubmit" || !state.clear(sessionId)) return;
+  }
+  if (policy.capture === "off") return;
 
   const baseUrl = safeBaseUrl(environment);
   if (!baseUrl) return;

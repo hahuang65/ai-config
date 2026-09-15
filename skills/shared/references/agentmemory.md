@@ -39,9 +39,10 @@ When no filtered tool is available or agentmemory is unavailable, skip recall an
 
 ## Sensitive Destinations
 
-When `model-domain` selects Confluence and `memory_capture_control` is available, set capture to `off` before the first Confluence read.
-A managed automatic-capture `PreToolUse` hook performs the same action before a Confluence or Atlassian tool returns content.
-Leave capture off for the rest of the session because later prompts and responses can repeat the content.
+When `model-domain` selects Confluence and `memory_capture_control` is available, temporarily pause capture before the first Confluence read.
+A managed automatic-capture hook performs the same action before a Confluence or Atlassian tool returns content.
+The pause excludes the sensitive result, later tool activity, and assistant restatements, and restores capture only after the current agent run settles.
+Use persistent capture `off` only when the user asks to disable capture beyond the current agent run.
 Do not assume that secret filtering protects ordinary company-confidential text.
 
 Do not use an external agentmemory workflow skill in place of this repository's skills.

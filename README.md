@@ -99,14 +99,16 @@ AGENTMEMORY_POLICY_PATH="$HOME/.agentmemory/capture-policy.json"
 Set these variables in the environment that starts pi or Claude Code.
 The optional user-owned policy file supports `default` settings plus exact project entries with `capture`, `recall`, and `excludedTools` fields.
 Environment settings override the policy file.
-Use `/agentmemory-capture off` in pi before sensitive work, or let `model-domain` turn capture off before it reads a selected Confluence destination.
+Use `/agentmemory-capture pause` in pi before other sensitive work.
+Both managed adapters temporarily pause capture before Confluence content returns and restore it after the current agent run settles.
+Use `/agentmemory-capture off` only when capture must remain disabled beyond the current agent run.
 The adapters always exclude agentmemory's own tools from capture.
 When no explicit project name exists, they use the normalized Git origin or a stable local repository identity shared by linked worktrees.
 Project-scoped pi recall uses agentmemory's filtered search endpoint rather than its unfiltered smart-search endpoint.
 
 Claude Code uses project-filtered MCP recall.
 Repository-managed hooks add automatic capture with no automatic recall injection.
-The hooks apply the shared identity and policy, block unfiltered recall, scope saves, and stop capture before Confluence content returns.
+The hooks apply the shared identity and policy, block unfiltered recall, and scope saves.
 Do not run `agentmemory connect claude-code --with-hooks` or install its plugin because they add upstream hooks or overlapping skills.
 The repository's existing `handoff` and `pickup` skills remain authoritative.
 

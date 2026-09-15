@@ -33,6 +33,11 @@ export function wildcardMatch(value: string, pattern: string): boolean {
   return new RegExp(`^${escaped}$`, "i").test(value);
 }
 
+export function isSensitiveTool(toolName: string): boolean {
+  const normalized = toolName.toLowerCase();
+  return normalized.includes("confluence") || normalized.includes("atlassian");
+}
+
 export function safeSerialize(value: unknown): string {
   try {
     return (typeof value === "string" ? value : JSON.stringify(value ?? "")).slice(0, MAX_OBSERVATION_CHARS);
