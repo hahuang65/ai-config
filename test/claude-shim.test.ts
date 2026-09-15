@@ -34,6 +34,32 @@ test("Claude shim denies an Edit whose new_string adds a hardcoded secret", () =
   expect(verdict?.hookSpecificOutput.permissionDecision).toBe("deny");
 });
 
+test("Claude shim always allows read-only GitHub CLI requests", () => {
+  for (const command of [
+    "gh pr view 6316 --json title,body",
+    'gh api "repos/summit-partners/crm/pulls/6316/reviews/5184143252/comments"',
+    "gh api --method GET search/issues --raw-field q=repo:acme/app",
+    "gh api -XHEAD repos/acme/app",
+  ]) {
+    const verdict = evaluateClaudePayload({ tool_name: "Bash", tool_input: { command } });
+    expect(verdict?.hookSpecificOutput.permissionDecision).toBe("allow");
+  }
+});
+
+test("Claude shim does not auto-allow GitHub CLI mutations or compound commands", () => {
+  for (const command of [
+    "gh pr comment 6316 --body approved",
+    "gh api -X POST repos/acme/app/issues",
+    "gh api --method=DELETE repos/acme/app/issues/1",
+    "gh api repos/acme/app/issues -f title=bug",
+    "gh api --method GET repos/acme/app --input request.json",
+    "gh api repos/acme/app && gh pr merge 6316",
+    "gh api repos/acme/app | sh",
+  ]) {
+    expect(evaluateClaudePayload({ tool_name: "Bash", tool_input: { command } })).toBeNull();
+  }
+});
+
 test("Claude shim stays silent on an ordinary read", () => {
   const verdict = evaluateClaudePayload({ tool_name: "Read", tool_input: { file_path: "/home/user/README.md" } });
   expect(verdict).toBeNull();

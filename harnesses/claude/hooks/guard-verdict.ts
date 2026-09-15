@@ -1,4 +1,5 @@
 import { evaluate } from "../../../shared/guard-core";
+import { isReadOnlyGitHubCommand } from "./read-only-github";
 
 interface ClaudePayload {
   cwd?: string;
@@ -19,12 +20,23 @@ export function evaluateClaudePayload(payload: unknown, home = process.env.HOME)
     cwd: payload.cwd,
     home,
   });
-  if (!verdict) return null;
+  if (verdict) {
+    return {
+      hookSpecificOutput: {
+        hookEventName: "PreToolUse",
+        permissionDecision: "deny",
+        permissionDecisionReason: verdict.reason,
+      },
+    };
+  }
+  const command = optionalString(toolInput.command);
+  if (String(payload.tool_name ?? "").toLowerCase() !== "bash" || !command) return null;
+  if (!isReadOnlyGitHubCommand(command)) return null;
   return {
     hookSpecificOutput: {
       hookEventName: "PreToolUse",
-      permissionDecision: "deny",
-      permissionDecisionReason: verdict.reason,
+      permissionDecision: "allow",
+      permissionDecisionReason: "Read-only GitHub CLI request.",
     },
   };
 }
