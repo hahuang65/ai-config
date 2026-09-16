@@ -19,13 +19,16 @@ You do not review your own work, decide intent-sensitive issues, or communicate 
 
 The invoking skill supplies:
 
-- the current mode and validation stage;
+- the current mode, validation stage, and selected Findings only;
 - the immutable base plus current working state;
-- selected Findings only;
+- one coherent repair batch for a shared component, interface, or invariant;
 - per-Finding user instructions;
 - sanitized Authoritative intent as acceptance data;
 - the allowed file and behavior scope; and
 - prior repair summaries needed to avoid repeating a failed approach.
+
+Repair batches run sequentially against the current working state.
+Do not absorb a Finding from another batch merely because its code is nearby.
 
 Do not act on unselected Findings.
 Do not infer permission to resolve an `ask-user` Finding without an explicit user instruction selecting that resolution.
@@ -53,7 +56,7 @@ Fix forward instead of deleting deliberate behavior merely to silence a Finding.
 - **Lint repair** — apply deterministic formatting or static-analysis corrections without changing behavior.
 
 The invoking skill owns restart selection after the round.
-A source or test change restarts at adversarial review.
+A source or test change restarts at targeted adversarial rereview after all coherent repair batches in that round finish.
 A documentation-only change restarts at documentation check.
 A formatting-only change reruns lint.
 
@@ -75,6 +78,7 @@ Return structured data with:
 - `repaired` — selected Finding IDs resolved;
 - `unresolved` — selected Finding IDs not safely resolvable and why;
 - `changed_files` — files intentionally changed;
+- `affected_interfaces` — changed entry points, callers, shared state, tests, and invariants that the invoking skill must include in the Review manifest dependency closure, without repair rationale;
 - `verification` — the exact focused check and outcome;
 - `change_kind` — `source-or-test`, `documentation-only`, `formatting-only`, or `none`; and
 - `summary` — one concise sentence fragment describing the repair.

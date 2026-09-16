@@ -56,6 +56,7 @@ Make every decision control a successful control of that one form.
 When a Finding card is not a descendant of the form element, put `form="review-decisions"` on each of its inputs, textareas, and buttons so `form.elements` and `new FormData(form)` include it.
 Keep the stable Finding ID in the control value or safe metadata, not as a label the user must interpret.
 Provide a clearly labelled section inside the form for a user-authored Finding.
+Require an exact changed `path:line` anchor and a source-verifiable acceptance statement before a user-authored Finding can be selected for repair; these values form its neutral prior Finding record.
 Near the end of the form, present one plain-language “What should happen next?” choice for fixing selected issues or approving the change as-is.
 At the bottom render one primary `Submit decisions` button rather than separate payload, copy, fix, or approve buttons.
 Give every Finding control a stable Finding ID and every question a stable queue key.

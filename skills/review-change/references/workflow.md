@@ -30,9 +30,16 @@ For every mode, identify the contexts touched by the reviewed scope.
 Resolve the [domain documentation destination](../../shared/references/domain-documentation.md), then read the selected context documentation before review begins.
 Use their **ubiquitous language**: the shared canonical vocabulary used by domain experts, users, documentation, tests, and code.
 Pass the relevant terms to the reviewer and use them in evidence, Findings, and the report.
-At every initial adversarial stage and every restart caused by source or test changes, dispatch a fresh `change-reviewer` with the complete immutable scope or working-state scope, Authoritative intent, changed-file list, prior decision ledger, and any normalized specialist Findings.
-Consume its structured Findings, risk, reviewed coverage, and intent coverage as the adversarial-stage result; the orchestrating session must not substitute its own review.
-Read the complete diff plus relevant surrounding code and record exactly what each stage established.
+At every initial adversarial stage, dispatch a fresh `change-reviewer` in complete mode with a Review manifest containing the complete immutable scope or working-state scope, complete changed-file list with present, deleted, or renamed path states and content identities, Authoritative intent, and any normalized specialist Findings.
+When source or test repairs follow, capture the round-start working-state identities, partition selected Findings into sequential coherent repair batches, derive the actual before/after current-round delta, then dispatch one fresh `change-reviewer` in targeted mode with the repaired Finding IDs, their neutral prior Finding records, and the dependency closure; do not run a full review between batches.
+Documentation-only and formatting-only repairs retain their documentation-check and lint restart paths without targeted adversarial rereview.
+When no further repair will run after a targeted rereview, dispatch one fresh complete `change-reviewer` for the final convergence review whether the targeted result is clean, `ask-user`, no progress, or at the round limit.
+Exclude the decision ledger, prior Finding records, and unresolved Findings from the final complete reviewer's manifest; keep them in report history.
+After the independent complete result returns, the orchestrator must reconcile prior user dispositions and stable Finding IDs against its current Findings by source-verifiable invariant, anchor lineage, and current source state, preserving them unless materially changed code created a distinct defect.
+If that final complete review finds a selected repair-eligible Finding and repair budget remains, start another repair round, use the applicable restart path, and require a new final convergence review after any source or test repair.
+At the round limit, only explicit human authorization can start a new bounded cycle.
+The orchestrating session must consume each reviewer's structured Findings, risk, reviewed coverage, Inspection ledger, and intent coverage without substituting its own review.
+Require each Change reviewer to inspect changed hunks once, request only missing surrounding code, and avoid duplicate reads of unchanged content whose identity is already in its active Inspection ledger.
 Do not repeat a full repository suite during this workflow.
 
 ## Completion

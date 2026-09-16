@@ -330,7 +330,7 @@ A substantiated issue or observation produced by a **Review change**, classified
 An absent or uncertain action fails closed to `ask-user` so intent-sensitive decisions remain human-owned.
 Severity describes impact: `error` should not merge without repair or override, `warning` may be accepted for follow-up, and `info` records context.
 Action describes who decides next: `auto-fix` is an objective low-risk build repair, `ask-user` needs a human decision, and `no-op` requests no action; standalone reports never mutate from a tag.
-Every reportable Finding has an exact changed `path:line`, uses project terminology, and defines any unavoidable new term.
+Every reportable Finding has an exact changed `path:line` and a neutral source-verifiable invariant, uses project terminology, and defines any unavoidable new term.
 _Avoid_: Comment, suggestion, concern.
 
 **Validation evidence**:
@@ -360,12 +360,42 @@ It lives in the OS temporary directory, updates in place across build fix rounds
 _Avoid_: Architecture review report, diff review, build artifact.
 
 **Change reviewer**:
-The read-only adversarial agent that performs a complete review of the current change against **Authoritative intent**.
-Each review round starts fresh with the intent and prior decision ledger, never the **Change fixer** rationale.
+The read-only adversarial agent that reviews the current change against **Authoritative intent**.
+It runs in complete mode for the initial and final convergence reviews, or in targeted mode for an intermediate repair delta and its dependency closure.
+Each invocation starts fresh with its **Review manifest**, never the **Change fixer** rationale.
+Only a targeted rereview receives the prior decision ledger; initial and final complete reviews do not.
 _Avoid_: Code reviewer, architecture reviewer.
 
+**Review manifest**:
+The routing record supplied to one **Change reviewer** invocation.
+It identifies complete or targeted review mode, immutable scope, changed-path states and content identities, and Authoritative intent provenance; a targeted manifest also identifies an objective user-decision projection, the actual before/after repair delta, neutral prior Finding records, dependency closure, and prior Inspection ledger as routing data.
+A final complete manifest excludes decision history and prior Findings so the reviewer remains independent; the orchestrator reconciles user dispositions after the result returns.
+Present, deleted, and renamed path states use explicit comparison endpoints and tombstones so complete reviews compare base with current state while targeted rereviews compare round-start with post-round state.
+Targeted manifests exclude specialist evidence and repair direction; a relevant specialist defect travels only as a neutral prior Finding record.
+It directs inspection but is not review evidence, and a mismatch with current content fails closed.
+_Avoid_: Reviewer prompt, trusted evidence, fixer summary.
+
+**Inspection ledger**:
+The structured coverage record a **Change reviewer** builds while inspecting one Review manifest.
+It records each path and content identity, the inspected range or complete-file marker, neutral interface and invariant identifiers, and any reason unchanged content was read again.
+It never carries behavior conclusions, evidence summaries, Finding judgments, or reviewer rationale.
+A targeted rereview can reuse a prior ledger for unchanged identities, while a final complete review starts a new ledger.
+_Avoid_: Chain-of-thought, review notes, session transcript.
+
+**Targeted rereview**:
+The fresh, read-only **Change reviewer** pass over one repair round's complete delta and dependency closure.
+The orchestrator derives that delta from recoverable round-start content held in a workflow-owned temporary snapshot, not from content identities alone.
+It verifies repaired Findings from neutral prior Finding records and checks repair-caused regressions without reopening unrelated unchanged scope.
+When further repair stops after source or test changes, every targeted result leads to a fresh complete final convergence review, including unresolved or round-limited results.
+_Avoid_: Partial review, final review, incremental approval.
+
+**Repair batch**:
+A coherent group of selected Findings that share a component, interface, state transition, or invariant and can be repaired under one authorized scope.
+Distinct repair batches run sequentially against the latest working state, and Review change runs one targeted rereview over their combined round delta rather than a complete review between batches.
+_Avoid_: Fixer session, parallel repair, full review round.
+
 **Change fixer**:
-The repair agent that applies selected objective **Findings** within mode ownership without sharing its rationale or session with the **Change reviewer**.
+The repair agent that applies one **Repair batch** within mode ownership without sharing its rationale or session with the **Change reviewer**.
 Build modes may invoke it within their ownership rules; standalone CLI reviews, explicit ranges, and pull requests never do.
 _Avoid_: Reviewer, refactorer.
 
