@@ -272,8 +272,9 @@
       "/tmp"
     ]
   },
-  "model": "claude-fable-5[1m]",
-  "theme": "custom:catppuccin-mocha",
+  "model": "fable[1m]",
+  "disableClaudeAiConnectors": true,
+  "disableBundledSkills": true,
   "hooks": {
     "SessionStart": [
       {
@@ -363,6 +364,9 @@
       }
     ]
   },
+  "disableRemoteControl": true,
+  "disableWorkflows": true,
+  "disableArtifact": true,
   "statusLine": {
     "type": "command",
     "command": "bash ~/.claude/statusline.sh"
@@ -377,9 +381,5 @@
     "gopls-lsp@claude-plugins-official": true
   },
   "tui": "fullscreen",
-  "disableBundledSkills": true,
-  "disableWorkflows": true,
-  "disableRemoteControl": true,
-  "disableClaudeAiConnectors": true,
-  "disableArtifact": true
+  "theme": "custom:catppuccin-mocha"
 }
