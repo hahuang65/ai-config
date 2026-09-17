@@ -10,22 +10,43 @@
 // policy layer (sandboxing is a separate, deferred concern). pi auto-discovers
 // extensions from ~/.pi/agent/extensions/.
 
+import { homedir } from "node:os";
 import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
-import { evaluate } from "../../../shared/guard-core";
+import { evaluate, resolveGuardHome } from "../../../shared/guard-core";
 
-export default function (pi: ExtensionAPI): void {
-  pi.on("tool_call", (event, ctx) => {
-    const input = (event.input ?? {}) as Record<string, unknown>;
-    const rawPath = input.path ?? input.file_path;
-    const rawContent = input.content ?? input.new_string;
-    const verdict = evaluate({
-      tool: String(event.toolName ?? ""),
-      command: input.command != null ? String(input.command) : undefined,
-      path: rawPath != null ? String(rawPath) : undefined,
-      content: rawContent != null ? String(rawContent) : undefined,
-      cwd: ctx?.cwd,
-      home: process.env.HOME,
+interface GuardHomeSource {
+  environmentHome?: string;
+  platformHome: string;
+}
+
+const UNSAFE_HOME_REASON = "Refused — a safe absolute home directory could not be established for guard evaluation.";
+
+export function createGuardPoliciesExtension(homeSource: GuardHomeSource) {
+  return function guardPolicies(pi: ExtensionAPI): void {
+    const home = resolveGuardHome(homeSource.environmentHome, homeSource.platformHome);
+    pi.on("tool_call", (event, ctx) => {
+      if (!home) return { block: true, reason: UNSAFE_HOME_REASON };
+      const input = (event.input ?? {}) as Record<string, unknown>;
+      const tool = String(event.toolName ?? "").toLowerCase();
+      const rawPath = input.path ?? input.file_path;
+      const rawContent = input.content ?? input.new_string;
+      const verdict = evaluate({
+        tool,
+        command: input.command != null ? String(input.command) : undefined,
+        path: rawPath != null ? String(rawPath) : undefined,
+        pattern: tool === "glob" && input.pattern != null ? String(input.pattern) : undefined,
+        content: rawContent != null ? String(rawContent) : undefined,
+        cwd: ctx?.cwd,
+        home,
+      });
+      if (verdict) return { block: true, reason: verdict.reason };
     });
-    if (verdict) return { block: true, reason: verdict.reason };
-  });
+  };
+}
+
+export default function guardPolicies(pi: ExtensionAPI): void {
+  createGuardPoliciesExtension({
+    environmentHome: process.env.HOME,
+    platformHome: homedir(),
+  })(pi);
 }

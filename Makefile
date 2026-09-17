@@ -2,7 +2,7 @@
 .DEFAULT_GOAL := help
 SHELL := bash
 
-.PHONY: help install bundle test test/content test/install test/guard test/meta
+.PHONY: help install bundle test test/content test/install test/guard test/meta test/macos-launchd
 
 help: ## Show this help
 	@printf '\n  \033[1mai-config\033[0m \033[2m— make targets\033[0m\n\n'
@@ -12,9 +12,13 @@ help: ## Show this help
 install: ## Symlink config into each harness root (~/.claude, ~/.pi/agent)
 	@bash install.sh
 
-bundle: ## Rebuild pi's self-contained guard extension bundle (pi can't resolve symlinked imports)
+bundle: ## Rebuild pi's self-contained extension bundles (pi can't resolve symlinked imports)
 	@bun build harnesses/pi/extensions/guard-policies.ts --target=bun --outfile harnesses/pi/guard-policies.bundle.ts >/dev/null
+	@bun build harnesses/pi/extensions/review-change-publication.ts --target=bun --outfile harnesses/pi/review-change-publication.bundle.ts >/dev/null
+	@bun review-publication/build-worker.mjs
 	@printf '  rebuilt harnesses/pi/guard-policies.bundle.ts\n'
+	@printf '  rebuilt harnesses/pi/review-change-publication.bundle.ts\n'
+	@printf '  rebuilt review-publication/review-publication-worker.bundle.mjs\n'
 
 test: ## Run every check in safe concurrent lanes
 	@bun scripts/test-suite-runner.mjs
@@ -24,6 +28,9 @@ test/content: ## Validate the shared authoring contract (skills, agents, rules)
 
 test/install: ## Validate the install system + harness modules (manifests, isolation)
 	@bash scripts/test-pipeline.sh install
+
+test/macos-launchd: ## Run the approved temporary macOS launchd integration check
+	@bash scripts/test-macos-launchd-integration.sh
 
 test/guard: ## Run the guard-core + adapter + conformance suite (bun)
 	@bun test shared/ test/

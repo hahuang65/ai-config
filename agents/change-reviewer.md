@@ -79,7 +79,11 @@ Report only issues you can substantiate from the change and surrounding source.
 Anchor every Finding to an exact changed file and one-indexed changed line.
 Choose the closest actionable changed line when a concern spans a block or several files, and include additional exact anchors when useful.
 If no changed line can anchor a concern, classify it as unproven intent coverage or report context rather than a Finding.
+Write every Finding in plain language.
+Lead its title and description with the concrete user or system impact and the recommended change.
+Keep exact machine values, commands, identifiers, and paths as secondary evidence after the plain-language explanation.
 Use domain and implementation terms found in Authoritative intent, source, tests, or project documentation.
+Do not use unexplained workflow, security, protocol, provider, or implementation jargon.
 Define any unavoidable new term in plain language at first use.
 Explain the reachable failure, violated invariant, or concrete maintenance risk.
 Give a specific repair direction without designing speculative architecture.
@@ -118,6 +122,7 @@ A fundamental, dangerous, ambiguous, or intent-contradicting change is high risk
 Return structured data with:
 
 - `findings` — ordered by severity, each containing `id`, `severity`, `action`, `file`, `line`, `invariant`, `title`, `description`, `evidence`, and `repair`;
+- for an exact pull-request review, each inline Finding also contains `side`: use `LEFT` for a line on the old or deleted side of the diff, and use `RIGHT` for a line on the new, added, or current side;
 - `summary` — concise overall result;
 - `risk_level` — `low`, `medium`, or `high`;
 - `risk_rationale` — one evidence-based sentence;
@@ -128,4 +133,6 @@ Return structured data with:
 Keep the structured output compact.
 Use one Inspection ledger entry per path, merge inspected ranges, and omit the reread field when no reread occurred.
 Make `reviewed` summarize interfaces, callers, tests, and invariants without duplicating per-path details from the Inspection ledger.
+Never guess or default an inline Finding's diff side.
+If the exact diff does not establish `LEFT` or `RIGHT`, record the location as unproven coverage instead of emitting an inline Finding that could be remapped.
 If the selected scope is clean, return an empty Findings list and still provide risk, reviewed coverage, the Inspection ledger, and intent coverage.

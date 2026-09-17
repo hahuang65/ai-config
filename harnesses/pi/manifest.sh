@@ -91,12 +91,14 @@ install_module() {
   # pi auto-discovers extensions from extensions/, but it does not
   # realpath-resolve a symlinked extension, so the adapter can't reach
   # the repo's shared/ via a relative import through a symlink. We therefore
-  # ship a committed, self-contained BUNDLE (built by `make bundle`, kept current
-  # by a gate drift-check) and symlink that: with no relative imports there is
+  # ship committed, self-contained bundles (built by `make bundle`, kept current
+  # by gate drift-checks) and symlink them: with no relative imports there is
   # nothing for pi to fail to resolve. Keeping install.sh symlink-only (no bun)
   # also keeps the install loop toolchain-free.
   ln -sf "$MOD/guard-policies.bundle.ts" "$config_root/extensions/guard-policies.ts"
+  ln -sf "$MOD/review-change-publication.bundle.ts" "$config_root/extensions/review-change-publication.ts"
   dim "  $config_root/extensions/guard-policies.ts (bundled guard)"
+  dim "  $config_root/extensions/review-change-publication.ts (trusted in-session Review publication boundary)"
 
   # Replace agentmemory's copied pi adapter with the managed explicit-recall
   # adapter while preserving its directory for compatibility with upgrades.

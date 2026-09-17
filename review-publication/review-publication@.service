@@ -1,0 +1,12 @@
+[Unit]
+Description=Review publication request
+
+[Service]
+Type=oneshot
+RuntimeMaxSec=__SERVICE_LIFETIME_SECONDS__s
+TimeoutStartSec=__SERVICE_LIFETIME_SECONDS__s
+TimeoutStopSec=__SERVICE_SHUTDOWN_TIMEOUT_SECONDS__s
+ExecStart=__NODE_EXECUTABLE__ __WORKER__ --inetd
+StandardInput=socket
+StandardOutput=socket
+StandardError=journal

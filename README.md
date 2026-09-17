@@ -116,8 +116,27 @@ See [`skills/shared/references/agentmemory.md`](skills/shared/references/agentme
 
 ## Standalone Review change CLI
 
-`./install.sh` links `review-change` into `~/.local/bin/`.
-The CLI requires Node.js 22+ and pi.
+`./install.sh` links `review-change` into `~/.local/bin/`, installs the in-session Review publication boundary, and renders a managed executable `review-publication` wrapper there.
+The installer verifies the self-contained production worker artifact and atomically copies it to the protected `~/.review-publication/review-publication-worker.mjs` path without replacing the signing key.
+The wrapper and each socket service definition use that installed worker with an absolute Node.js path, never the editable repository source.
+The installer also records the absolute GitHub CLI and operating-system confirmation executables in the protected `~/.review-publication/worker-config.json` file.
+The socket service selects no platform or executable: the worker uses the actual runtime platform and this installation-owned configuration.
+The standalone CLI parent and both in-session harness boundaries freeze the requested pull request before reviewer-authored publication claims exist.
+The pi `review_change_publication` tool freezes scope during the input event and accepts only Finding claims when it renders the signed form.
+The Claude Code `UserPromptSubmit` hook freezes scope before model work, keeps the signed value in current-session state, and supplies only bounded public identity to the reviewer.
+Its `PreToolUse` `Write` hook accepts Finding claims only and replaces them with the signed form for the latest recognized Review change invocation.
+Both harnesses use the same code to freeze the scope and verify its signature.
+Every production report-signing path requires that invocation-frozen repository, pull request, base commit, and head commit, and no production API signs unfrozen model-authored claims.
+The mandatory shared guardrails classify the complete `~/.review-publication/` directory and Claude Code's `~/.claude/review-publication-sessions/` directory as protected credential and session state, so ordinary Claude Code and pi model tools cannot read, write, edit, search, glob, copy, move, delete, or access that state through common shell utilities.
+Each saved Claude Code scope is bound to its exact session identifier, so copying a valid scope file to another session does not authorize rendering.
+The separately installed socket worker and trusted pre-model harness boundaries use this state outside model tool calls.
+This is a practical mistake-prevention boundary, not operating-system isolation: hostile code already running with unrestricted user-account access can still reach user-owned state.
+Non-pull-request prompts stay presentation-only in both harnesses.
+It also renders and manages a user-scoped launchd service definition on macOS or a systemd user service definition and socket on Linux for the local Review publisher at `127.0.0.1:4392`.
+Socket activation starts the publisher only for a request, and the publisher exits after one bounded request.
+The Review change CLI requires Node.js 22+ and pi.
+Review publication installation also requires the `gh` executable and the supported operating-system confirmation executable; installation fails instead of weakening confirmation when either executable is unavailable.
+The publisher uses the fixed loopback port `127.0.0.1:4392`; if activation fails, stop any service that already owns that port and resolve unmanaged files at the wrapper or service destinations before rerunning `./install.sh`, using `--force` only when replacement is intentional.
 It validates targets before acquisition, snapshots local state, fetches mutable local branches only in isolation, or directly acquires an explicit GitHub repository without checkout.
 It freezes the change to immutable commits, launches one foreground `pi` process as its AI backend, and remains read-only for every target.
 
@@ -181,13 +200,20 @@ Cleanup remains pending while the full-screen Summary keeps the isolated review 
 After dismissal, the parent restores the terminal, closes telemetry, removes exactly that worktree, and reports the final Cleanup outcome outside the Summary as `Removed` on success.
 The parent validates ordered stage telemetry, shows each active sub-stage as the current operational intent, retains prior sub-stages as `STEP` log entries, owns cancellation through final Summary dismissal, latches interruption while initial Glow rendering is pending, restores terminal state after interruption, and uses plain status lines when output is redirected.
 Vim-style `j`/`k` navigates stages, Ctrl-D/Ctrl-U scrolls the selected log, Enter expands or collapses lines, `f` resumes following the active stage, and Ctrl-C aborts an active run; no single-character key aborts or closes the review.
-After validation, it opens the disposable HTML report in a new Firefox window on macOS (or the platform HTML viewer elsewhere) without waiting for browser closure and includes a copyable general review comment plus separately copyable inline Finding comments inside pull-request reports, with exact locations, a severity/action legend, inset copy icons, and persistent copied-state styling.
+After validation, it opens the disposable HTML report in a new Firefox window on macOS (or the platform HTML viewer elsewhere) without waiting for browser closure.
+Reports for exact GitHub pull requests include a deterministic selection form for Review publication.
+The browser's Post review action requests publication but does not authorize it.
+After the confirmation token, selected Findings, actor, and exact pull-request scope pass validation, the publisher shows a separate bounded operating-system prompt with the exact publication identity outside model-visible channels.
+Only explicit approval in that prompt lets the GitHub publication stage begin.
+The parent freezes that scope before the model runs, and only the installation-owned absolute signer path can create the random report identity and signed form.
+Other reports remain presentation-only.
 On a successful interactive run, the parent renders its own and the assistant’s Markdown through non-interactive Glow when available, forces color when terminal color is enabled, and selects a final Summary stage within the existing pipeline/log layout rather than replacing it with a full-screen summary.
 That Summary rerenders after terminal-width changes.
 Glow failure or a Summary pane narrower than 20 columns falls back to the built-in renderer, Ctrl-U and Ctrl-D scroll the final log, and Ctrl-C exits once the review is no longer running; `q`, `x`, and Escape do not dismiss it.
 Redirected output prints the same summary normally.
 Standalone Review change does not invoke `review-artifact`, poll for feedback, or require approval.
-A disabled push URL plus the CLI-specific pi guard protect the original checkout and block structured writes, common direct mutation, staging, commits, pushes, and provider mutations.
+A disabled push URL plus the CLI-specific pi guard protect the original checkout and block structured writes, common direct mutation, staging, commits, pushes, and provider mutations while Review change runs.
+Only the separately installed local publisher can later submit the explicitly confirmed GitHub `COMMENT` review.
 Structured writes are allowed only inside a dedicated report directory whose resolved path is validated not to overlap the source checkout or clone.
 Run `review-change --help` for all options, accepted inputs, trust controls, and terminal controls.
 
@@ -261,6 +287,7 @@ The [`example/`](example/) directory is also a clearly labeled legacy sample.
 | Agents | `~/.claude/agents/` | `~/.pi/agent/agents/` |
 | Rules | Canonical `~/.dotfiles/ai/rules/` | Canonical `~/.dotfiles/ai/rules/` |
 | Guardrails | Tier-B command-hook adapter | Tier-A in-process extension |
+| In-session Review publication boundary | Trusted `UserPromptSubmit` state and Finding-only `PreToolUse` `Write` hook | Trusted input extension and structured `review_change_publication` tool |
 
 Claude Code and pi use the Catppuccin Mocha theme.
 Pi also gives successful `Edit` and `Write` tool rows a yellow background.

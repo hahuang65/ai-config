@@ -129,8 +129,10 @@ export function parsePullRequestMetadata(stdout) {
   }
   validateCommitOid(metadata.baseRefOid, "base");
   validateCommitOid(metadata.headRefOid, "head");
+  if (!isRepositoryId(metadata.id)) throw new Error("GitHub returned malformed pull-request metadata");
   const identity = parseGitHubTarget(`gh:${metadata.headRepository?.nameWithOwner}/pull/1`);
   return {
+    pullRequestId: metadata.id,
     baseRefOid: metadata.baseRefOid,
     headRefOid: metadata.headRefOid,
     headRepository: { owner: identity.owner, repository: identity.repository },

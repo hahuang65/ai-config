@@ -102,7 +102,7 @@ async function freezePullRequestTarget(cwd, githubTarget, context, executeProvid
   context.onActivity("provider", `Resolve pull-request ${number} immutable metadata`);
   const { stdout } = await executeProviderFile("gh", [
     "pr", "view", String(number), "--repo", `${owner}/${repository}`,
-    "--json", "baseRefOid,headRefOid,headRepository",
+    "--json", "id,baseRefOid,headRefOid,headRepository",
   ], {
     encoding: "utf8",
     env: { ...process.env, GH_PROMPT_DISABLED: "1", GIT_TERMINAL_PROMPT: "0" },
@@ -116,6 +116,7 @@ async function freezePullRequestTarget(cwd, githubTarget, context, executeProvid
   return {
     kind: "pull-request",
     target: `https://github.com/${owner}/${repository}/pull/${number}`,
+    pullRequestId: metadata.pullRequestId,
     immutableRange: `${metadata.baseRefOid}...${metadata.headRefOid}`,
     selectedHeadOid: metadata.headRefOid,
     headRepository: metadata.headRepository,

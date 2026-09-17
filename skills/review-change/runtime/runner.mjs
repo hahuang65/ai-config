@@ -10,6 +10,7 @@ import { isGitHubTargetInput, parseGitHubTarget } from "./github-target.mjs";
 import { buildReviewChangePrompt } from "./prompt.mjs";
 import { createReportDirectory } from "./report-directory.mjs";
 import { openReportArtifact } from "./report-viewer.mjs";
+import { createReviewPublicationMetadata } from "./review-publication-metadata.mjs";
 import { prepareDirectRemoteReview } from "./remote-lifecycle.mjs";
 import { verifyDocumentedSandbox } from "./sandbox.mjs";
 import { resolveReviewTarget } from "./target.mjs";
@@ -150,6 +151,12 @@ async function executeReviewLifecycle({ options, dependencies, environment, stat
     }
   }
   status.setScope?.(`${scopeLabel(resolvedScope.kind)} · ${resolvedScope.immutableRange ?? resolvedScope.target ?? "ask-user"}`);
+  const publicationMetadata = await createReviewPublicationMetadata(resolvedScope, state.workspace, {
+    home: environment.HOME,
+    keyLoader: dependencies.loadPublicationKey,
+    randomBytes: dependencies.randomBytes,
+    signerPath: dependencies.publicationSignerPath,
+  });
   const resolvedOptions = {
     ...options,
     target: resolvedScope.target,
@@ -158,6 +165,7 @@ async function executeReviewLifecycle({ options, dependencies, environment, stat
     immutableRange: resolvedScope.immutableRange,
     selectedHeadOid: resolvedScope.selectedHeadOid,
     headRepository: resolvedScope.headRepository,
+    publicationMetadata,
     trustClassification: resolvedScope.trustClassification,
     materializationState: state.workspace.details?.materializationState,
   };
@@ -357,6 +365,9 @@ async function runInWorkspace(options, workspace, skillDirectory, environment, d
     REVIEW_CHANGE_GATE: "1",
     REVIEW_CHANGE_GATE_ROOT: workspace.cwd,
     REVIEW_CHANGE_REPORT_ROOT: reportRoot,
+    ...(options.publicationMetadata?.signerPath
+      ? { REVIEW_CHANGE_PUBLICATION_SIGNER_PATH: options.publicationMetadata.signerPath }
+      : {}),
     ...(subagentModel ? { REVIEW_CHANGE_SUBAGENT_MODEL: subagentModel } : {}),
   };
   const spawnProcess = dependencies.spawnProcess ?? ((command, args, options) => (

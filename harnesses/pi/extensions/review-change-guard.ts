@@ -7,6 +7,7 @@ export interface ReviewChangeGateContext {
   active: boolean;
   root: string;
   tempRoot: string;
+  publicationSignerPath?: string;
 }
 
 interface ToolCall {
@@ -18,6 +19,7 @@ interface BlockVerdict {
   reason: string;
 }
 
+const PUBLICATION_FRAGMENT_SUFFIX = ".review-fragment";
 const READ_ONLY_GIT = new Set([
   "blame", "cat-file", "diff", "diff-tree", "fetch", "for-each-ref", "grep", "log",
   "ls-files", "ls-remote", "merge-base", "name-rev", "rev-list", "rev-parse", "show",
@@ -39,7 +41,7 @@ export function evaluateReviewChangeToolCall(
   if (!context.active) return null;
   const command = stringValue(call.input.command);
   if (call.toolName === "bash" && command) {
-    const mutation = classifyShellMutation(command);
+    const mutation = classifyShellMutation(command, context);
     if (mutation) return block(mutation);
   }
   if (!new Set(["write", "edit"]).has(call.toolName)) return null;
@@ -52,7 +54,7 @@ export function evaluateReviewChangeToolCall(
   return block("Standalone Review change allows structured writes only in its temporary report directory");
 }
 
-function classifyShellMutation(command: string): string | null {
+function classifyShellMutation(command: string, context: ReviewChangeGateContext): string | null {
   if (hasCommandSubstitution(command)) {
     return "Standalone Review change blocks shell command substitution";
   }
@@ -72,7 +74,7 @@ function classifyShellMutation(command: string): string | null {
     if (isDirectMutation(executable, segment.slice(1))) {
       return "Standalone Review change blocks direct mutation in its read-only workspace";
     }
-    if (!isAllowedCommand(executable, segment.slice(1))) {
+    if (!isAllowedCommand(rawSegment[0] ?? "", executable, segment.slice(1), context)) {
       return "Standalone Review change blocks an unsupported shell command";
     }
   }
@@ -207,15 +209,31 @@ function isAssignment(token: string | undefined): boolean {
   return !!token && /^[A-Za-z_][A-Za-z0-9_]*=/.test(token);
 }
 
-function isAllowedCommand(executable: string, args: string[]): boolean {
+function isAllowedCommand(
+  executablePath: string,
+  executable: string,
+  args: string[],
+  context: ReviewChangeGateContext,
+): boolean {
   if (READ_ONLY_COMMANDS.has(executable)) {
     if (executable === "find") return !args.some((token) => /^-(?:delete|exec|execdir|fls|fprint|fprintf|ok)/.test(token));
     if (executable === "sort") return !args.some((token) => /^-[^-]*o/.test(token) || token.startsWith("--output"));
     return true;
   }
   if (new Set(["git", "gh", "curl"]).has(executable)) return true;
-  if (executable === "node") return args[0] === "--test";
-  if (executable === "bun") return args[0] === "test" || (args[0] === "run" && isCheckTarget(args[1]));
+  if (executable === "review-publication") {
+    const configured = context.publicationSignerPath;
+    return !!configured
+      && path.isAbsolute(executablePath)
+      && path.resolve(executablePath) === path.resolve(configured)
+      && args[0] === "--sign"
+      && args.length === 3
+      && args[2].endsWith(PUBLICATION_FRAGMENT_SUFFIX);
+  }
+  if (executable === "node") return isSafeDirectTest(args, context, "--test");
+  if (executable === "bun") {
+    return isSafeDirectTest(args, context, "test") || (args[0] === "run" && isCheckTarget(args[1]));
+  }
   if (new Set(["npm", "pnpm", "yarn"]).has(executable)) {
     return args[0] === "test" || (args[0] === "run" && isCheckTarget(args[1]));
   }
@@ -225,6 +243,22 @@ function isAllowedCommand(executable: string, args: string[]): boolean {
   if (executable === "deno") return new Set(["check", "lint", "test"]).has(args[0]);
   if (/^pytest(?:-\d+)?$/.test(executable) || executable === "rspec" || executable === "rubocop") return true;
   return executable === "bundle" && args[0] === "exec" && new Set(["rspec", "rubocop"]).has(args[1]);
+}
+
+function isSafeDirectTest(args: string[], context: ReviewChangeGateContext, command: string): boolean {
+  if (args[0] !== command) return false;
+  for (let index = 1; index < args.length; index += 1) {
+    const argument = args[index];
+    if (new Set(["--test-name-pattern", "--timeout"]).has(argument)) {
+      index += 1;
+      if (!args[index]) return false;
+      continue;
+    }
+    if (argument.startsWith("-")) return false;
+    const candidate = path.resolve(context.root, argument);
+    if (!isWithinRoot(candidate, context.root) || isWithinRoot(candidate, context.tempRoot)) return false;
+  }
+  return true;
 }
 
 function isCheckTarget(value: string | undefined): boolean {
@@ -308,6 +342,7 @@ export default function (pi: ExtensionAPI): void {
     active: process.env.REVIEW_CHANGE_GATE === "1",
     root: process.env.REVIEW_CHANGE_GATE_ROOT ?? process.cwd(),
     tempRoot: process.env.REVIEW_CHANGE_REPORT_ROOT ?? tmpdir(),
+    publicationSignerPath: process.env.REVIEW_CHANGE_PUBLICATION_SIGNER_PATH,
   };
   if (!context.active) return;
   pi.on("tool_call", (event) => {

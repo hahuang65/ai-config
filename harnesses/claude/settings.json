@@ -287,9 +287,30 @@
         ]
       }
     ],
+    "SessionEnd": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bun ~/.claude/hooks/review-change-publication.ts",
+            "timeout": 10
+          },
+          {
+            "type": "command",
+            "command": "bun ~/.dotfiles/ai/harnesses/claude/hooks/agentmemory-capture.ts",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
     "UserPromptSubmit": [
       {
         "hooks": [
+          {
+            "type": "command",
+            "command": "bun ~/.claude/hooks/review-change-publication.ts",
+            "timeout": 30
+          },
           {
             "type": "command",
             "command": "bun ~/.dotfiles/ai/harnesses/claude/hooks/agentmemory-capture.ts",
@@ -300,7 +321,17 @@
     ],
     "PreToolUse": [
       {
-        "matcher": "Read|Edit|Write|Bash",
+        "matcher": "Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bun ~/.claude/hooks/review-change-publication.ts",
+            "timeout": 30
+          }
+        ]
+      },
+      {
+        "matcher": "Read|Edit|Write|Bash|Grep|Glob",
         "hooks": [
           {
             "type": "command",
@@ -342,17 +373,6 @@
       }
     ],
     "Stop": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "bun ~/.dotfiles/ai/harnesses/claude/hooks/agentmemory-capture.ts",
-            "timeout": 10
-          }
-        ]
-      }
-    ],
-    "SessionEnd": [
       {
         "hooks": [
           {

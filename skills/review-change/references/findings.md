@@ -6,9 +6,16 @@ Its severity is `error`, `warning`, or `info`; its action is `auto-fix`, `ask-us
 ## Required fields
 
 Every Finding contains a stable round-independent ID, severity, action, an exact one-indexed `path:line` anchor in the reviewed change, a neutral source-verifiable invariant or acceptance statement, concise title, concrete description, supporting evidence, and repair direction.
+For an exact pull-request review, every inline Finding also contains an explicit diff `side`: `LEFT` identifies an old or deleted line, and `RIGHT` identifies a new, added, or current line.
+Never guess, default, or remap a Finding side.
+If the immutable diff does not establish one side, keep the concern presentation-only as unproven coverage instead of offering it as an inline publication.
 Choose the closest actionable changed line when the concern spans a block or multiple files, and include additional `path:line` anchors when they materially help.
 If no reviewed file and line can anchor the concern, do not emit it as a Finding; record it as unproven coverage or general report context instead.
+Write every surfaced Finding in plain language.
+Lead the title and description with the concrete user or system impact and the recommended change.
+Keep exact machine values, commands, identifiers, and paths in secondary evidence instead of making the reader decode them first.
 Use terminology already present in Authoritative intent, source, tests, or project documentation.
+Do not use unexplained workflow, security, protocol, provider, or implementation jargon.
 When a new term is unavoidable, define it in plain language at first use.
 Keep IDs stable when the same defect survives a rereview.
 Assign a new ID when materially changed code creates a distinct defect.

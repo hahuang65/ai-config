@@ -2,7 +2,8 @@ import { describe, expect, test } from "bun:test";
 
 import { evaluateReviewChangeToolCall } from "../harnesses/pi/extensions/review-change-guard.ts";
 
-const outerContext = { active: true, root: "/repo", tempRoot: "/tmp" };
+const signerPath = "/Users/reviewer/.local/bin/review-publication";
+const outerContext = { active: true, root: "/repo", tempRoot: "/tmp", publicationSignerPath: signerPath };
 
 describe("Review change CLI guard", () => {
   test("does nothing outside an active CLI gate", () => {
@@ -128,6 +129,27 @@ describe("Review change CLI guard", () => {
     )).toBeNull();
   });
 
+  test("allows only bounded Review publication capability signing", () => {
+    expect(evaluateReviewChangeToolCall(
+      { toolName: "bash", input: { command: `${signerPath} --sign /tmp/claims.json /tmp/form.review-fragment` } },
+      outerContext,
+    )).toBeNull();
+    for (const command of [
+      "review-publication --sign /tmp/claims.json /tmp/form.html",
+      "/usr/local/bin/review-publication --sign /tmp/claims.json /tmp/form.html",
+      `HOME=/tmp ${signerPath} --sign /tmp/claims.json /tmp/form.review-fragment`,
+      `${signerPath} --sign /tmp/claims.json /tmp/form.html`,
+      `${signerPath} --inetd`,
+      `${signerPath} --sign claims.json extra more`,
+      `${signerPath} --sign`,
+    ]) {
+      expect(evaluateReviewChangeToolCall(
+        { toolName: "bash", input: { command } },
+        outerContext,
+      )).not.toBeNull();
+    }
+  });
+
   test("blocks common direct shell mutation in the isolated workspace", () => {
     for (const command of [
       "sed -i '' 's/a/b/' app.ts",
@@ -183,6 +205,21 @@ describe("Review change CLI guard", () => {
       { toolName: "bash", input: { command: "./write-files.sh" } },
       outerContext,
     )?.reason).toContain("unsupported shell command");
+    for (const command of [
+      "node --test /tmp/claims.test.mjs",
+      "node --test --import=/tmp/key-loader.mjs",
+      "bun test /tmp/claims.test.ts",
+      "bun test --preload /tmp/key-loader.mjs test/review-change.test.ts",
+    ]) {
+      expect(evaluateReviewChangeToolCall(
+        { toolName: "bash", input: { command } },
+        outerContext,
+      )?.reason).toContain("unsupported shell command");
+    }
+    expect(evaluateReviewChangeToolCall(
+      { toolName: "bash", input: { command: "bun test test/review-change.test.ts --test-name-pattern scope" } },
+      outerContext,
+    )).toBeNull();
     expect(evaluateReviewChangeToolCall(
       { toolName: "bash", input: { command: "make test" } },
       outerContext,

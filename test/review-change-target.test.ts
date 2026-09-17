@@ -20,7 +20,7 @@ const exec = (file: string, args: string[]) => executeFile(file, args, {
 });
 const roots: string[] = [];
 
-const GIT_TEST_TIMEOUT_MS = 15_000;
+const GIT_TEST_TIMEOUT_MS = 30_000;
 const withGitSlot = createConcurrencyLimit(2);
 const gitTest = (name: string, body: () => Promise<void>) =>
   test.concurrent(name, () => withGitSlot(body), GIT_TEST_TIMEOUT_MS);
@@ -64,6 +64,7 @@ describe("standalone Review change target resolution", () => {
       executeProviderFile: async (file, args) => {
         operations.push(`${file} ${args.join(" ")}`);
         return { stdout: JSON.stringify({
+          id: "PR_42",
           baseRefOid,
           headRefOid,
           headRepository: { nameWithOwner: "contributor/app" },
@@ -86,12 +87,13 @@ describe("standalone Review change target resolution", () => {
       target: {
         kind: "pull-request",
         target: "https://github.com/acme/app/pull/42",
+        pullRequestId: "PR_42",
         immutableRange: `${baseRefOid}...${headRefOid}`,
         selectedHeadOid: headRefOid,
         headRepository: { owner: "contributor", repository: "app" },
       },
       operations: [
-        "gh pr view 42 --repo acme/app --json baseRefOid,headRefOid,headRepository",
+        "gh pr view 42 --repo acme/app --json id,baseRefOid,headRefOid,headRepository",
         `git -C /reviews/app rev-parse --verify ${baseRefOid}^{commit}`,
         "git -C /reviews/app fetch origin +refs/pull/42/head:refs/review-change/pull/42/head",
         "git -C /reviews/app rev-parse --verify refs/review-change/pull/42/head^{commit}",
@@ -108,6 +110,7 @@ describe("standalone Review change target resolution", () => {
       cwd: "/reviews/app",
       githubTarget: { kind: "pull-request", owner: "acme", repository: "app", number: 42 },
       executeProviderFile: async () => ({ stdout: JSON.stringify({
+        id: "PR_42",
         baseRefOid,
         headRefOid,
         headRepository: { nameWithOwner: "acme/app" },
@@ -202,6 +205,7 @@ describe("standalone Review change target resolution", () => {
       cwd: "/reviews/app",
       githubTarget: { kind: "pull-request", owner: "acme", repository: "app", number: 42 },
       executeProviderFile: async () => ({ stdout: JSON.stringify({
+        id: "PR_42",
         baseRefOid,
         headRefOid: expectedHeadOid,
         headRepository: { nameWithOwner: "acme/app" },

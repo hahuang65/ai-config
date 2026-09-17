@@ -238,6 +238,73 @@ test("acquires the repository named by an explicit pull-request target outside G
   }
 });
 
+test("uses canonical provider casing in publication pull-request URLs", async () => {
+  let prompt = "";
+
+  await runReviewChange(
+    { target: "gh:acme/payments/pull/842", intent: null, piOptions: [] },
+    {
+      environment: {},
+      status: { start() {}, begin() {}, succeed() {}, fail() {}, finish() {}, setWorkspacePath() {} },
+      resolveTarget: async () => ({
+        kind: "pull-request",
+        target: "https://github.com/acme/payments/pull/842",
+      }),
+      createWorkspace: async () => ({
+        cwd: "/isolated/no-checkout",
+        sourceRoot: "/isolated/no-checkout",
+        details: {
+          providerRepository: {
+            id: "R_456",
+            owner: "Acme",
+            repository: "Payments",
+          },
+        },
+        cleanup: async () => {},
+      }),
+      resolveAcquiredTarget: async () => ({
+        kind: "pull-request",
+        target: "https://github.com/acme/payments/pull/842",
+        pullRequestId: "PR_789",
+        immutableRange: `${"a".repeat(40)}...${"b".repeat(40)}`,
+        selectedHeadOid: "b".repeat(40),
+        headRepository: { owner: "contributor", repository: "payments" },
+      }),
+      classifyTrust: async () => ({ trusted: false, reason: "untrusted" }),
+      createReportDirectory: async () => "/reports/session",
+      loadPublicationKey: async () => Buffer.alloc(32, 7),
+      randomBytes: () => Buffer.alloc(16, 9),
+      publicationSignerPath: "/Users/reviewer/.local/bin/review-publication",
+      openReport: async () => "/reports/session/review-change.html",
+      spawnProcess: async (_command, args) => {
+        prompt = args.at(-1);
+        return 0;
+      },
+    },
+  );
+
+  const invocation = JSON.parse(/^Invocation data: (.+)$/m.exec(prompt)?.[1] ?? "{}");
+  expect({
+    pullRequest: invocation.publicationMetadata.pullRequest,
+    host: invocation.publicationMetadata.host,
+    signingKeyId: invocation.publicationMetadata.signingKeyId,
+    commentTemplateVersion: invocation.publicationMetadata.commentTemplateVersion,
+    signerPath: invocation.publicationMetadata.signerPath,
+    frozenScopeParts: invocation.publicationMetadata.frozenScope.split(".").length,
+  }).toEqual({
+    pullRequest: {
+      id: "PR_789",
+      number: 842,
+      url: "https://github.com/Acme/Payments/pull/842",
+    },
+    host: "github.com",
+    signingKeyId: "review-publication-v1",
+    commentTemplateVersion: 1,
+    signerPath: "/Users/reviewer/.local/bin/review-publication",
+    frozenScopeParts: 2,
+  });
+});
+
 test("classifies every direct GitHub path before exact trusted materialization", async () => {
   const cases = [
     { name: "trusted-pr", target: "gh:acme/app/pull/42", trusted: true, kind: "pull-request" },

@@ -883,7 +883,7 @@ test_phase_review_change() {
   check_content_cached "$content" "$label" "not a sandbox.*must not execute.*A5 project.*provider CI.*ask-user"
   check_content_cached "$content" "$label" "Untrusted.*[Dd]o not run checkout.*submodule.*hooks.*content filters.*archive extraction"
   check_content_cached "$content" "$label" "path-scoped.*git worktree remove.*[Nn]ever force removal.*repository-wide worktree pruning.*cleanup fails"
-  check_content_cached "$content" "$label" "Pull-request.*never.*Change fixer.*copyable review Markdown.*never post"
+  check_content_cached "$content" "$label" "Pull-request.*never.*Change fixer.*Review publication.*selected.*confirmed.*COMMENT"
   check_content_cached "$content" "$label" "Finding card.*primary anchor.*right-aligned.*monospaced badge"
   check_content_cached "$content" "$label" "repository-relative.*path:line.*complete relative path.*basename"
   check_content_cached "$content" "$label" "copy button.*primary anchor"
@@ -891,9 +891,9 @@ test_phase_review_change() {
   check_content_cached "$content" "$label" "absolute path.*beneath.*materialized reviewed snapshot.*never.*escapes.*review root"
   check_content_cached "$content" "$label" "standalone CLI mode.*isolated.*reviewRoot.*rather than.*sourceRoot.*retain(s)?.*until.*Summary.*remove(s)?"
   check_content_cached "$content" "$label" "hidden text node.*textContent.*event-handler attribute.*persistently mark"
-  check_content_cached "$content" "$label" "pull-request copy section.*severity.*path:line.*outside.*Markdown text.*copy-icon button.*general review.*every Finding comment.*recolor or collapse"
+  check_content_cached "$content" "$label" "Review publication selection form.*Select every current Finding initially.*clear irrelevant Findings.*general comment.*signed publication envelope.*selected stable Finding ID"
   check_content_cached "$content" "$label" "legend.*severity.*error.*warning.*info.*action.*auto-fix.*ask-user.*no-op.*standalone tags never trigger a mutation"
-  check_content_cached "$content" "$label" "plain language.*ubiquitous language.*Authoritative intent.*source.*tests.*project documentation.*common technical terms"
+  check_content_cached "$content" "$label" "plain language.*every surfaced Finding.*concrete impact.*recommended change.*exact machine values.*secondary.*unexplained workflow, security, protocol, provider, or implementation jargon.*ubiquitous language.*Authoritative intent.*source.*tests.*project documentation.*common technical terms"
   check_content_cached "$content" "$label" "[Dd]efine.*(new|unfamiliar) term.*(first use|beside)"
   check_content_cached "$content" "$label" "self-contained.*HTML.*(OS|operating system).*temp.*review-artifact.*one HTML.*form.*[Cc]hat fallback"
   check_content_cached "$content" "$label" "dynamic value.*Untrusted.*Encode.*HTML text or attribute context.*textContent.*value.*never.*innerHTML"
@@ -981,7 +981,7 @@ test_review_change_cli() {
   check_content_cached "$prompt" "skills/review-change/runtime/prompt.mjs" "action step.*six words or fewer.*action log once per item.*never combine multiple items.*completion message.*Establish scope and intent.*Dispatch the fresh change-reviewer.*Validate anchors and project terminology.*Normalize Findings and risk"
   check_content_cached "$prompt" "skills/review-change/runtime/prompt.mjs" "every Finding card.*exact reviewed path:line anchor.*repository-relative path:line.*copy button.*absolute reviewed file path.*hidden text node.*textContent.*escapes reviewRoot"
   check_content_cached "$runner" "skills/review-change/runtime/runner.mjs" "reviewRoot: workspace[.]cwd"
-  check_content_cached "$prompt" "skills/review-change/runtime/prompt.mjs" "one copyable general-review Markdown block.*one copyable Markdown block per Finding.*severity and path:line outside the copied text.*copy-icon button.*persistently mark"
+  check_content_cached "$prompt" "skills/review-change/runtime/prompt.mjs" "trusted renderer.*frozenScope.*signingKeyId.*commentTemplateVersion.*Do not add an actor or report identity.*exact absolute publicationMetadata[.]signerPath.*deterministic selection form.*publication_token.*selected_finding_id.*local confirmation"
   check_content_cached "$prompt" "skills/review-change/runtime/prompt.mjs" "every severity and action tag.*legend.*who decides next.*standalone tags never trigger mutation"
   check_content_cached "$status_state" "skills/review-change/runtime/status-state.mjs" "recordProgressStep.*substage.*telemetryStepped"
   check_content_cached "$status_state" "skills/review-change/runtime/status-state.mjs" "Review the complete change against intent.*Run smallest checks that prove intent.*Check changed documentation and claims"
@@ -1032,7 +1032,7 @@ test_agent_change_reviewer() {
   check_content_cached "$content" "$label" "never receive.*fixer rationale|[Nn]ever inherit.*fixer rationale"
   check_content_cached "$content" "$label" "risk_level.*risk_rationale.*reviewed.*intent_coverage"
   check_content_cached "$content" "$label" "file.*line.*invariant.*description.*evidence.*repair"
-  check_content_cached "$content" "$label" "every Finding.*exact changed file.*one-indexed changed line.*[Uu]se domain and implementation terms.*[Dd]efine any unavoidable new term"
+  check_content_cached "$content" "$label" "every Finding.*exact changed file.*one-indexed changed line.*plain language.*concrete user or system impact.*recommended change.*exact machine values.*secondary.*[Uu]se domain and implementation terms.*unexplained workflow, security, protocol, provider, or implementation jargon.*[Dd]efine any unavoidable new term"
   check_content_cached "$content" "$label" "[Ww]hen an action is uncertain.*ask-user"
   check_content_cached "$content" "$label" "whether this is a complete or targeted review"
   check_content_cached "$content" "$label" "Review manifest.*routing data, not evidence"
@@ -1045,6 +1045,7 @@ test_agent_change_reviewer() {
   check_content_cached "$content" "$label" "[Ii]nspection ledger.*path.*content identity.*range.*interface.*invariant"
   check_content_cached "$content" "$label" "[Kk]eep.*output compact.*one Inspection ledger entry per path.*omit.*reread.*no reread.*reviewed.*without duplicat"
   check_content_cached "$content" "$label" "[Nn]ever reread unchanged content.*prior read.*incomplete.*cross-reference"
+  check_content_cached "$content" "$label" "exact pull-request review.*side.*LEFT.*old or deleted.*RIGHT.*new, added, or current.*Never guess or default"
 }
 
 test_agent_change_fixer() {
@@ -1761,28 +1762,52 @@ test_no_ttsr_frontmatter() {
 }
 
 test_pi_bundle_current() {
-  section "pi guard extension bundle is current"
-  local committed="$REPO_DIR/harnesses/pi/guard-policies.bundle.ts"
-  if [[ ! -f "$committed" ]]; then
-    fail "harnesses/pi/guard-policies.bundle.ts" "missing — run 'make bundle'"
-    return
-  fi
-  # The bundle is what pi actually loads (it can't resolve a symlinked
-  # adapter's relative imports), so it must stay in sync with the adapter +
-  # guard core. bun pins deterministically via mise, so a byte-diff is stable.
-  if ! command -v bun >/dev/null 2>&1; then
-    pass "guard bundle present (bun unavailable here; rebuild comparison skipped)"
-    return
-  fi
-  local tmp
-  tmp="$(mktemp --suffix=.ts)"
-  if bun build "$REPO_DIR/harnesses/pi/extensions/guard-policies.ts" --target=bun --outfile "$tmp" >/dev/null 2>&1 \
-     && diff -q "$tmp" "$committed" >/dev/null 2>&1; then
-    pass "harnesses/pi/guard-policies.bundle.ts matches the adapter + guard core"
+  section "pi extension bundles are current"
+  local pairs=(
+    "extensions/guard-policies.ts:guard-policies.bundle.ts"
+    "extensions/review-change-publication.ts:review-change-publication.bundle.ts"
+  )
+  local pair source committed label tmp
+  for pair in "${pairs[@]}"; do
+    source="$REPO_DIR/harnesses/pi/${pair%%:*}"
+    committed="$REPO_DIR/harnesses/pi/${pair##*:}"
+    label="harnesses/pi/${pair##*:}"
+    if [[ ! -f "$committed" ]]; then
+      fail "$label" "missing — run 'make bundle'"
+      continue
+    fi
+    if ! command -v bun >/dev/null 2>&1; then
+      pass "$label present (bun unavailable here; rebuild comparison skipped)"
+      continue
+    fi
+    tmp="$(mktemp --suffix=.ts)"
+    if bun build "$source" --target=bun --outfile "$tmp" >/dev/null 2>&1 \
+       && diff -q "$tmp" "$committed" >/dev/null 2>&1; then
+      pass "$label matches its source"
+    else
+      fail "$label" "stale — source changed without rebuild; run 'make bundle'"
+    fi
+    rm -f "$tmp"
+  done
+
+  committed="$REPO_DIR/review-publication/review-publication-worker.bundle.mjs"
+  label="review-publication/review-publication-worker.bundle.mjs"
+  if [[ ! -f "$committed" || ! -f "$committed.sha256" ]]; then
+    fail "$label" "artifact or digest missing — run 'make bundle'"
+  elif ! command -v bun >/dev/null 2>&1; then
+    pass "$label present (bun unavailable here; rebuild comparison skipped)"
   else
-    fail "harnesses/pi/guard-policies.bundle.ts" "stale — adapter/guard-core changed without rebuild; run 'make bundle'"
+    tmp="$(mktemp --suffix=.mjs)"
+    local tmp_digest="$tmp.sha256"
+    if bun "$REPO_DIR/review-publication/build-worker.mjs" "$tmp" "$tmp_digest" >/dev/null 2>&1 \
+       && diff -q "$tmp" "$committed" >/dev/null 2>&1 \
+       && diff -q "$tmp_digest" "$committed.sha256" >/dev/null 2>&1; then
+      pass "$label and digest match canonical source"
+    else
+      fail "$label" "stale — source changed without rebuild; run 'make bundle'"
+    fi
+    rm -f "$tmp" "$tmp_digest"
   fi
-  rm -f "$tmp"
 }
 
 test_advisory_rule_frontmatter() {
@@ -1812,6 +1837,20 @@ test_harness_modules() {
     pass "install.sh loops over */manifest.sh module manifests"
   else
     fail "install.sh" "generic harness loop (*/manifest.sh) not found"
+  fi
+  local duplicate_hook_keys
+  duplicate_hook_keys="$(
+    sed -n '/^  "hooks": {$/,/^  },$/p' "$REPO_DIR/harnesses/claude/settings.json" \
+      | grep -E '^    "[^"]+":' \
+      | sed -E 's/^    "([^"]+)":.*/\1/' \
+      | sort \
+      | uniq -d \
+      || true
+  )"
+  if [[ -z "$duplicate_hook_keys" ]]; then
+    pass "Claude settings declares each hook event once"
+  else
+    fail "harnesses/claude/settings.json" "duplicate hook event keys: $(echo "$duplicate_hook_keys" | tr '\n' ' ')"
   fi
   # Every harness module must satisfy the manifest contract. Validate it the
   # way install.sh consumes it — by sourcing the manifest in isolation and
@@ -1923,12 +1962,21 @@ root_leaks_into_module() {
   bun "$REPO_DIR/scripts/check-symlink-leak.mjs" "$1" "$REPO_DIR/$2"
 }
 
+run_install_fixture() {
+  local fixture_home="$1" node_executable
+  node_executable="$(node -p 'process.execPath')"
+  HOME="$fixture_home" AI_CONFIG_SERVICE_ENABLE=false \
+    AI_CONFIG_NODE_BIN="$node_executable" AI_CONFIG_GH_BIN="$node_executable" \
+    AI_CONFIG_CONFIRMATION_BIN="$node_executable" \
+    bash "$REPO_DIR/install.sh"
+}
+
 test_isolation() {
   section "Isolation: no cross-harness pollution"
   local tmphome
   tmphome="$(mktemp -d)"
 
-  if ! HOME="$tmphome" bash "$REPO_DIR/install.sh" >/dev/null 2>&1; then
+  if ! run_install_fixture "$tmphome" >/dev/null 2>&1; then
     fail "isolation" "install.sh failed under a throwaway HOME"
     rm -rf "$tmphome"
     return
@@ -1999,7 +2047,7 @@ test_install_behavior() {
   mkdir -p "$tmphome/.local/bin"
   ln -s "$REPO_DIR/skills/change-review/bin/change-review.mjs" "$tmphome/.local/bin/change-review"
 
-  if HOME="$tmphome" bash "$REPO_DIR/install.sh" >/dev/null 2>&1; then
+  if run_install_fixture "$tmphome" >/dev/null 2>&1; then
     pass "install.sh succeeds into a throwaway HOME"
   else
     fail "install-behavior" "install.sh failed"
@@ -2025,6 +2073,9 @@ test_install_behavior() {
   [[ -e "$tmphome/.pi/agent/extensions/review-change-progress.ts" ]] \
     && pass "standalone Review change progress extension installed" \
     || fail "install-behavior" "standalone Review change progress extension missing"
+  [[ -e "$tmphome/.pi/agent/extensions/review-change-publication.ts" ]] \
+    && pass "in-session Review publication boundary installed" \
+    || fail "install-behavior" "in-session Review publication boundary missing"
   [[ -e "$tmphome/.pi/agent/extensions/write-tool-highlights.ts" ]] \
     && pass "pi write tool highlight extension installed" \
     || fail "install-behavior" "pi write tool highlight extension missing"
@@ -2038,6 +2089,12 @@ test_install_behavior() {
     pass "pi guard extension is self-contained (bundled, no relative imports)"
   else
     fail "install-behavior" "pi guard extension has relative imports pi can't resolve (must be bundled)"
+  fi
+  if [[ -f "$tmphome/.pi/agent/extensions/review-change-publication.ts" ]] \
+     && ! grep -qE 'from[[:space:]]*["'\''][.][.]?/' "$tmphome/.pi/agent/extensions/review-change-publication.ts"; then
+    pass "pi Review publication extension is self-contained"
+  else
+    fail "install-behavior" "pi Review publication extension has unresolved relative imports"
   fi
   [[ -f "$tmphome/.pi/agent/AGENTS.md" ]] && pass "pi global bootstrap installed as AGENTS.md" \
     || fail "install-behavior" "pi AGENTS.md bootstrap missing"
@@ -2132,7 +2189,7 @@ test_install_behavior() {
     ln -s "$REPO_DIR/agents/$retired.md" "$tmphome/.pi/agent/agents/$retired.md"
   done
 
-  if HOME="$tmphome" bash "$REPO_DIR/install.sh" >/dev/null 2>&1 \
+  if run_install_fixture "$tmphome" >/dev/null 2>&1 \
      && [[ -e "$tmphome/.claude/settings.json" ]]; then
     pass "re-running install is idempotent"
   else
@@ -2199,14 +2256,14 @@ config_root="$HOME/.alpha-harness"
 consumed_categories=(skills)
 install_module() { :; }
 EOF
-    if HARNESSES_DIR="$tmpmods" HOME="$tmphome" bash "$REPO_DIR/install.sh" >/dev/null 2>&1 \
+    if HARNESSES_DIR="$tmpmods" run_install_fixture "$tmphome" >/dev/null 2>&1 \
         && [[ -d "$tmphome/.alpha-harness/skills" ]]; then
       printf '%s\n' add-pass
     else
       printf '%s\n' add-fail
     fi
     rm -rf "$tmpmods/alpha"
-    if HARNESSES_DIR="$tmpmods" HOME="$tmphome" bash "$REPO_DIR/install.sh" >/dev/null 2>&1; then
+    if HARNESSES_DIR="$tmpmods" run_install_fixture "$tmphome" >/dev/null 2>&1; then
       printf '%s\n' remove-pass
     else
       printf '%s\n' remove-fail

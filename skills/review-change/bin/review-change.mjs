@@ -83,8 +83,8 @@ The TTY renders Markdown with Glow when available and keeps the pipeline/log lay
 While that Summary remains open, copied Finding paths point into the retained isolated review clone.
 The clone is removed after dismissal; non-interactive output uses plain status lines and prints the textual summary normally.
 The completed HTML report opens automatically in the browser; no review-artifact approval is required.
-Pull-request reports include copyable Markdown.
-The command never stages, commits, pushes, or mutates provider state.
+Pull-request reports include a Finding selection form for an optional later Review publication.
+The command never stages, commits, pushes, or mutates provider state; only the separately confirmed local publisher can post that COMMENT review.
 `;
 
 try {

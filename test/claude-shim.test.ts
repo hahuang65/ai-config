@@ -18,9 +18,110 @@ test("Claude shim transports a credential denial over stdin and stdout", async (
   expect(out).toContain('"permissionDecision":"deny"');
 });
 
+test("Claude shim uses the platform home when HOME is absent", () => {
+  const platformHome = "/Users/platform-user";
+  const verdict = evaluateClaudePayload({
+    tool_name: "Read",
+    tool_input: { file_path: `${platformHome}/.review-publication/review-publication-worker.mjs` },
+  }, { environmentHome: undefined, platformHome });
+  expect(verdict?.hookSpecificOutput.permissionDecision).toBe("deny");
+});
+
+test("Claude shim fails closed when HOME is invalid", () => {
+  const verdict = evaluateClaudePayload({
+    tool_name: "Read",
+    tool_input: { file_path: "/tmp/ordinary-file" },
+  }, { environmentHome: "relative/home", platformHome: "/Users/platform-user" });
+  expect(verdict?.hookSpecificOutput.permissionDecision).toBe("deny");
+});
+
 test("Claude shim denies a bash credential read through the shared core", () => {
   const verdict = evaluateClaudePayload({ tool_name: "Bash", tool_input: { command: "cat ~/.aws/credentials" } });
   expect(verdict?.hookSpecificOutput.permissionDecision).toBe("deny");
+});
+
+test("Claude shim denies publication workers and protected moves", () => {
+  for (const command of [
+    "env LANG=C ~/.local/bin/review-publication --inetd",
+    "bun skills/review-change/bin/review-publication.mjs --inetd",
+    "node review-publication/review-publication-worker.bundle.mjs --inetd",
+    "mv $HOME /tmp/home",
+    "mv /tmp/replacement ~/.claude",
+  ]) {
+    const verdict = evaluateClaudePayload({
+      cwd: process.env.HOME,
+      tool_name: "Bash",
+      tool_input: { command },
+    });
+    expect(verdict?.hookSpecificOutput.permissionDecision).toBe("deny");
+  }
+});
+
+test("Claude shim denies shell-escaped publication state and worker mode", () => {
+  for (const command of [
+    "cat $HOME/\\.review\\-publication/signing-key",
+    "review\\-publication \\-\\-inetd",
+    "node review\\-publication/review\\-publication\\-worker\\.bundle\\.mjs --inetd",
+    "sh -c 'review\\-publication \\-\\-inetd'",
+    "review-publi\\\ncation --in\\\netd",
+  ]) {
+    const verdict = evaluateClaudePayload({
+      cwd: process.env.HOME,
+      tool_name: "Bash",
+      tool_input: { command },
+    });
+    expect(verdict?.hookSpecificOutput.permissionDecision, command).toBe("deny");
+  }
+});
+
+test("Claude shim preserves quoted and literal shell backslashes", () => {
+  for (const command of [
+    String.raw`"review\-publication" --inetd`,
+    String.raw`review\\-publication --inetd`,
+    String.raw`printf hello\ world`,
+  ]) {
+    expect(evaluateClaudePayload({
+      cwd: process.env.HOME,
+      tool_name: "Bash",
+      tool_input: { command },
+    }), command).toBeNull();
+  }
+});
+
+test("Claude shim tracks directory changes inside nested shell command text", () => {
+  const home = process.env.HOME!;
+  const verdict = evaluateClaudePayload({
+    cwd: `${home}/project`,
+    tool_name: "Bash",
+    tool_input: { command: "command sh -c 'cd ..; bash -c \"cd -- .review-publication && rg signing-key\"'" },
+  });
+  expect(verdict?.hookSpecificOutput.permissionDecision).toBe("deny");
+});
+
+test("Claude shim blocks protected inline interpreter access in nested shell text", () => {
+  const verdict = evaluateClaudePayload({
+    cwd: process.env.HOME,
+    tool_name: "Bash",
+    tool_input: {
+      command: `sh -c 'python3 -c "from pathlib import Path; Path.home().joinpath(\".review-publication\", \"signing-key\").read_text()"'`,
+    },
+  });
+  expect(verdict?.hookSpecificOutput.permissionDecision).toBe("deny");
+});
+
+test("Claude shim preserves unrelated nested shell commands and interpreter tests", () => {
+  for (const command of [
+    "env LANG=C sh -c 'cd /tmp && find safe -type f'",
+    "node --test test/provider.test.mjs",
+    "bun test test/review-change.test.ts --test-name-pattern scope",
+  ]) {
+    const verdict = evaluateClaudePayload({
+      cwd: process.env.HOME,
+      tool_name: "Bash",
+      tool_input: { command },
+    });
+    expect(verdict).toBeNull();
+  }
 });
 
 test("Claude shim denies an Edit whose new_string adds a hardcoded secret", () => {

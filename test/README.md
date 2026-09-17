@@ -16,6 +16,11 @@ The complete gate uses deterministic lanes so expensive evidence does not accide
 
 - `bun/rest` contains ordinary unit and integration tests.
 - `bun/browser` contains every file whose name ends with `*.browser.test.ts`.
+- `platform/macos-launchd` contains `review-publication-launchd.integration.mjs` and runs only through `make test/macos-launchd` after explicit approval to register a temporary user service.
+
+The macOS launchd lane is separate from `make test` because it mutates the current user's launchd domain.
+It fails rather than skips on non-macOS hosts, runs one check with a 35-second watchdog, and uses a unique temporary label, loopback port, home, state directory, and service definition.
+Its shell owner unloads the label and removes its temporary artifacts on normal exit, failure, interruption, and timeout.
 
 Any independently discovered suite that launches or requires real Firefox must use the `*.browser.test.ts` suffix.
 Keep its focused cases in `*.browser-cases.ts` modules when several case groups can share one Firefox process.
@@ -23,6 +28,7 @@ An ordinary `*.test.ts` file must not import the Firefox driver or start Firefox
 Browser tests must use the shared Firefox fixtures and bounded concurrency rather than creating an unbounded process pool.
 Browser case modules must share one of the bounded discovered suites instead of starting a new Firefox process per file.
 The pooled browser and ordinary Bun lanes may run together because their combined execution weight stays within the scheduler budget.
+The macOS launchd lane never shares that pool and runs one service integration check at a time.
 
 The filename is an execution contract, not only a description.
 Do not add one-off path exceptions to the test-suite runner.

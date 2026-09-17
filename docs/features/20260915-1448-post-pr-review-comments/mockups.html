@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Post Pull-request Review Comments - UI Mockup</title>
+<style>
+:root{color-scheme:dark;--bg:#0c111b;--panel:#131b29;--panel2:#192438;--line:#2b3b55;--text:#edf3fc;--muted:#9badc5;--blue:#6ea8fe;--blue2:#3678e5;--green:#63d69a;--amber:#f2c66d;--red:#ff7f91;--shadow:0 22px 70px #02050a99;--radius:16px}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at 80% -10%,#19345b 0,transparent 35%),var(--bg);color:var(--text);font:15px/1.5 ui-sans-serif,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}button,input{font:inherit}button{cursor:pointer}.page{max-width:1120px;margin:auto;padding:34px 24px 80px}.eyebrow{color:var(--blue);font-size:12px;font-weight:800;letter-spacing:.13em;text-transform:uppercase}.header{display:flex;justify-content:space-between;gap:24px;align-items:flex-start;margin-bottom:22px}.header h1{font-size:clamp(28px,4vw,46px);line-height:1.08;margin:7px 0}.header p{max-width:690px;color:var(--muted);margin:0}.scope{min-width:250px;background:#101827;border:1px solid var(--line);border-radius:13px;padding:14px}.scope strong,.scope span{display:block}.scope span{color:var(--muted);font-size:13px}.notice{display:flex;gap:12px;border:1px solid #31517d;background:#12233b;border-radius:13px;padding:13px 15px;margin:18px 0 24px}.notice b{color:#a8ccff}.state-nav{display:flex;gap:8px;flex-wrap:wrap;padding:8px;background:#0b101a;border:1px solid var(--line);border-radius:14px;margin-bottom:20px}.state-nav button{border:0;border-radius:9px;background:transparent;color:var(--muted);padding:9px 13px}.state-nav button[aria-pressed="true"]{background:var(--panel2);color:var(--text);box-shadow:inset 0 0 0 1px #385176}.screen{display:none}.screen.active{display:block}.grid{display:grid;grid-template-columns:minmax(0,1fr) 320px;gap:20px}.panel{background:linear-gradient(145deg,#151f30,#101724);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow)}.panel-head{padding:20px 22px;border-bottom:1px solid var(--line)}.panel-head h2{font-size:20px;margin:0 0 4px}.panel-head p{color:var(--muted);margin:0}.panel-body{padding:20px 22px}.finding-list{display:grid;gap:12px}.finding{position:relative;border:1px solid var(--line);border-radius:13px;background:#101827;padding:16px 16px 16px 52px}.finding:has(input:checked){border-color:#477fc5;background:#14233a}.finding input{position:absolute;left:18px;top:20px;width:19px;height:19px;accent-color:var(--blue2)}.finding label{display:block;cursor:pointer}.finding-top{display:flex;justify-content:space-between;gap:12px;align-items:center}.finding h3{font-size:16px;margin:0}.anchor{border:1px solid #52647d;border-radius:7px;color:#c7d5e9;padding:3px 7px;font:600 12px ui-monospace,SFMono-Regular,monospace;white-space:nowrap}.tags{display:flex;gap:7px;margin:8px 0}.tag{font-size:11px;font-weight:800;border-radius:999px;padding:3px 8px;text-transform:uppercase}.error{background:#4a202a;color:#ffadba}.warning{background:#493a1f;color:#ffe09a}.ask{background:#23395a;color:#afd0ff}.finding p{margin:7px 0 0;color:#becbe0}.comment-summary{color:var(--text)!important}.summary{position:sticky;top:16px}.summary-output{white-space:pre-wrap;background:#0a1019;border:1px solid var(--line);border-radius:11px;padding:14px;color:#dfe9f8;min-height:165px}.count{font-size:28px;font-weight:800}.muted{color:var(--muted)}.actions{display:flex;justify-content:flex-end;gap:10px;padding:18px 22px;border-top:1px solid var(--line)}.button{border:1px solid var(--line);border-radius:10px;background:#162136;color:var(--text);padding:10px 15px;font-weight:750}.button:hover{border-color:#6386b8}.button:focus-visible,input:focus-visible{outline:3px solid #9dc6ff;outline-offset:3px}.primary{border-color:#4b8ee8;background:linear-gradient(#4d8ee8,#2f6fcc);color:white}.danger{border-color:#864150;background:#4a202a}.confirm-grid{display:grid;grid-template-columns:1fr 1fr;gap:18px}.facts{display:grid;grid-template-columns:130px 1fr;gap:9px 12px;margin:0}.facts dt{color:var(--muted)}.facts dd{margin:0;font-weight:650}.review-preview{display:grid;gap:12px}.comment{background:#0a1019;border:1px solid var(--line);border-radius:11px;padding:14px}.comment h3{font-size:13px;color:var(--blue);margin:0 0 7px}.comment p{margin:0;white-space:pre-wrap}.terminal{display:grid;place-items:center;min-height:430px;text-align:center;padding:40px}.terminal-icon{width:64px;height:64px;border-radius:50%;display:grid;place-items:center;margin:auto auto 18px;font-size:30px}.success .terminal-icon{color:var(--green);background:#173829}.stale .terminal-icon{color:var(--red);background:#47202a}.terminal h2{font-size:27px;margin:0 0 8px}.terminal p{max-width:570px;color:var(--muted);margin:0 auto 20px}.details{display:inline-block;text-align:left;border:1px solid var(--line);border-radius:11px;background:#0a1019;padding:13px 16px;margin-bottom:20px}.system-dialog{width:min(100%,620px);border:3px solid #75849a;border-radius:12px;background:#e9edf2;color:#17202c;padding:22px;text-align:left;box-shadow:0 20px 55px #0009}.system-dialog h2{color:#17202c}.system-dialog p,.system-dialog .muted{color:#3e4a59}.system-dialog .details{display:block;background:#fff;color:#17202c;border-color:#aab4c0;overflow-wrap:anywhere}.system-dialog .actions{padding:12px 0 0;border:0}.decision{margin-top:26px;border:1px dashed #52647d;border-radius:14px;padding:17px 19px;color:#c6d3e6}.decision h2{font-size:16px;margin:0 0 6px}.decision p{margin:4px 0}.intent{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:18px}.intent div{border-left:3px solid var(--blue2);padding:5px 12px}.intent strong{display:block}.intent span{color:var(--muted)}
+@media(max-width:800px){.header{display:block}.scope{margin-top:18px}.grid,.confirm-grid,.intent{grid-template-columns:1fr}.summary{position:static}.finding-top{align-items:flex-start;flex-direction:column}.anchor{white-space:normal;overflow-wrap:anywhere}.facts{grid-template-columns:1fr}.facts dd{margin-bottom:8px}}
+</style>
+</head>
+<body>
+<main class="page" data-artifact-kind="mockup" data-artifact-version="1">
+<header class="header">
+<div><div class="eyebrow">Recommended design · UI Mockup</div><h1>Publish the review you mean to send.</h1><p>Select the Findings that belong on the pull request, inspect the selection-derived general comment, and confirm one GitHub comment review without keeping an agent poll alive.</p></div>
+<aside class="scope" aria-label="Pull request scope"><strong>acme/payments · PR #842</strong><span>Retry failed invoice exports</span><span>Base 84c31ef · Head b720a9d</span></aside>
+</header>
+<div class="notice"><span aria-hidden="true">◈</span><div><b>No background agent is waiting.</b><br><span class="muted">The local publisher starts only after you continue. This temporary report must remain available.</span></div></div>
+<nav class="state-nav" aria-label="Preview a workflow state">
+<button type="button" data-screen="selection" aria-pressed="true">1. Select Findings</button>
+<button type="button" data-screen="confirmation" aria-pressed="false">2. Review publication</button>
+<button type="button" data-screen="os-confirmation" aria-pressed="false">3. Operating-system prompt</button>
+<button type="button" data-screen="success" aria-pressed="false">Success</button>
+<button type="button" data-screen="stale" aria-pressed="false">Changed pull request</button>
+<button type="button" data-screen="error" aria-pressed="false">GitHub error</button>
+</nav>
+<section class="screen active" id="selection" aria-labelledby="selection-title">
+<form id="publication-form">
+<div class="grid">
+<section class="panel">
+<div class="panel-head"><h2 id="selection-title">Choose inline comments</h2><p>All Findings are selected initially. Clear anything that should not be published.</p></div>
+<div class="panel-body finding-list">
+<article class="finding"><input id="f1" type="checkbox" checked><label for="f1"><span class="finding-top"><h3>Retry can create duplicate exports</h3><span class="anchor">src/export/export-runner.ts:84</span></span><span class="tags"><span class="tag error">Should fix</span><span class="tag ask">Human decision</span></span><p class="comment-summary">Guard the retry transition before creating a new export so one invoice cannot receive two active exports.</p></label></article>
+<article class="finding"><input id="f2" type="checkbox" checked><label for="f2"><span class="finding-top"><h3>Failure reason is lost</h3><span class="anchor">src/export/export-status.ts:41</span></span><span class="tags"><span class="tag warning">Follow up</span><span class="tag ask">Human decision</span></span><p class="comment-summary">Keep the provider failure reason when the export changes to failed so support can distinguish authentication and data errors.</p></label></article>
+<article class="finding"><input id="f3" type="checkbox" checked><label for="f3"><span class="finding-top"><h3>Retry evidence covers only success</h3><span class="anchor">test/export/retry.test.ts:116</span></span><span class="tags"><span class="tag warning">Follow up</span><span class="tag ask">Human decision</span></span><p class="comment-summary">Add evidence for a second failed attempt so the terminal failure state and preserved reason remain protected.</p></label></article>
+</div>
+</section>
+<aside class="panel summary" aria-labelledby="general-title">
+<div class="panel-head"><h2 id="general-title">General comment</h2><p>Generated from the current selection and never edited by hand.</p></div>
+<div class="panel-body"><div><span class="count" id="selected-count">3</span> <span class="muted">inline comments selected</span></div><p class="summary-output" id="general-comment" aria-live="polite"></p><p class="muted">The general and inline comments stay read-only so the confirmed text matches the reviewed evidence.</p></div>
+<div class="actions"><button class="button primary" type="button" id="continue">Review before posting →</button></div>
+</aside>
+</div>
+</form>
+</section>
+<section class="screen" id="confirmation" aria-labelledby="confirmation-title">
+<div class="panel">
+<div class="panel-head"><div class="eyebrow">Browser review</div><h2 id="confirmation-title">Request this Review publication?</h2><p>Nothing has been posted yet. Check the account, exact pull-request scope, and selected comments. The final action opens a separate operating-system confirmation.</p></div>
+<div class="panel-body confirm-grid">
+<section><h3>Publication details</h3><dl class="facts"><dt>GitHub account</dt><dd>@reviewer</dd><dt>Destination</dt><dd>acme/payments · PR #842</dd><dt>Review type</dt><dd>Comment only</dd><dt>Selected scope</dt><dd>Base 84c31ef · Head b720a9d</dd></dl><div class="notice"><span>✓</span><div><b>Scope is still current.</b><br><span class="muted">The pull request is open and both commit IDs match this report.</span></div></div></section>
+<section><h3>Comments to publish</h3><div class="review-preview"><article class="comment"><h3>General comment</h3><p id="confirm-general"></p></article><div id="confirm-findings"></div></div></section>
+</div>
+<div class="actions"><button type="button" class="button" data-screen="selection">← Change selection</button><button type="button" class="button primary" data-screen="os-confirmation">Post review to GitHub</button></div>
+</div>
+</section>
+<section class="screen" id="os-confirmation" aria-labelledby="os-confirmation-title"><div class="panel terminal"><div class="system-dialog"><div class="eyebrow">Operating-system confirmation</div><h2 id="os-confirmation-title">Approve this GitHub Review publication?</h2><p>This prompt is outside the browser and all model-visible channels. Only Post review continues.</p><div class="details"><strong>GitHub actor:</strong> @reviewer (ID U_123)<br><strong>Repository:</strong> acme/payments (ID R_456)<br><strong>Pull request:</strong> #842 (ID PR_789)<br><strong>Base commit:</strong> 84c31ef84c31ef84c31ef84c31ef84c31ef84c3<br><strong>Head commit:</strong> b720a9db720a9db720a9db720a9db720a9db720a9d<br><strong>Selected Findings:</strong> 3<br><strong>Inline comments included:</strong> Yes</div><div class="actions"><button type="button" class="button" data-screen="selection">Cancel</button><button type="button" class="button primary" data-screen="success">Post review</button></div></div></div></section>
+<section class="screen" id="success" aria-labelledby="success-title"><div class="panel terminal success"><div><div class="terminal-icon" aria-hidden="true">✓</div><h2 id="success-title">Review posted.</h2><p>GitHub accepted one comment review with the selected inline comments. Repeating this action returns the same publication instead of creating a duplicate.</p><div class="details"><strong>acme/payments · PR #842</strong><br><span class="muted">Posted by @reviewer · Review #194205</span></div><br><button class="button primary" type="button">Open review on GitHub ↗</button></div></div></section>
+<section class="screen" id="stale" aria-labelledby="stale-title"><div class="panel terminal stale"><div><div class="terminal-icon" aria-hidden="true">!</div><h2 id="stale-title">The pull request changed.</h2><p>No comments were posted because the reviewed head commit no longer matches GitHub. Comments will not be moved to different lines.</p><div class="details"><strong>Run Review change again</strong><br><span class="muted">A new report will validate the latest lines and comments. Reviewed head: b720a9d. Current head: cf9912a.</span></div><br><button class="button" type="button" data-screen="selection">Return to report</button></div></div></section>
+<section class="screen" id="error" aria-labelledby="error-title"><div class="panel terminal stale"><div><div class="terminal-icon" aria-hidden="true">!</div><h2 id="error-title">GitHub sign-in failed.</h2><p>No comments were posted because GitHub could not verify the active account.</p><div class="details"><strong>Sign in with GitHub CLI, then try again.</strong><br><span class="muted">Error code: provider_authentication_failed</span></div></div></div></section>
+<section class="decision" id="design-decision"><h2>Design decision</h2><p><strong>Selected:</strong> A browser selection and review flow followed by a separate operating-system confirmation.</p><p><strong>Why:</strong> Finding selection stays beside the evidence, while an operating-system-owned prompt outside model-visible channels is the final authorization boundary for provider mutation.</p><p><strong>Rejected alternatives:</strong> None remained after grilling. Manual editing, automatic all-Finding publication, manual copy panels, a live agent poll, and retained per-report state are outside the agreed design.</p></section>
+<section class="intent" aria-label="Design authority"><div><strong>Authoritative intent</strong><span>Selection flow, selection-derived comments, browser review, separate operating-system confirmation, stale-scope refusal, success and error states, keyboard order, and responsive stacking.</span></div><div><strong>Directional presentation</strong><span>Exact color, spacing, type scale, sample repository, and decorative icon treatment.</span></div></section>
+</main>
+<script>
+const screens=[...document.querySelectorAll('.screen')];
+const stateButtons=[...document.querySelectorAll('[data-screen]')];
+const findingInputs=[...document.querySelectorAll('.finding input')];
+const selectedFindings=()=>findingInputs.filter(input=>input.checked).map(input=>input.closest('.finding'));
+function generalComment(findings){
+  if(!findings.length)return 'Review completed. No Findings were selected for publication.';
+  const heading=`Review found ${findings.length} ${findings.length===1?'issue':'issues'} worth addressing:`;
+  const bullets=findings.map(finding=>`- ${finding.querySelector('h3').textContent}`).join('\n');
+  return `${heading}\n\n${bullets}`;
+}
+function updateSelection(){
+  const findings=selectedFindings();
+  document.querySelector('#selected-count').textContent=String(findings.length);
+  document.querySelector('#general-comment').textContent=generalComment(findings);
+}
+function prepareConfirmation(){
+  const findings=selectedFindings();
+  document.querySelector('#confirm-general').textContent=generalComment(findings);
+  const target=document.querySelector('#confirm-findings');
+  target.replaceChildren(...findings.map(finding=>{
+    const comment=document.createElement('article');comment.className='comment';
+    const heading=document.createElement('h3');heading.textContent=finding.querySelector('.anchor').textContent;
+    const body=document.createElement('p');body.textContent=finding.querySelector('.comment-summary').textContent;
+    comment.append(heading,body);return comment;
+  }));
+}
+function showScreen(id){
+  if(id==='confirmation')prepareConfirmation();
+  screens.forEach(screen=>screen.classList.toggle('active',screen.id===id));
+  document.querySelectorAll('.state-nav button').forEach(button=>button.setAttribute('aria-pressed',String(button.dataset.screen===id)));
+  document.querySelector(`#${id} h2`)?.focus?.();
+  scrollTo({top:0,behavior:'smooth'});
+}
+findingInputs.forEach(input=>input.addEventListener('change',updateSelection));
+stateButtons.forEach(button=>button.addEventListener('click',()=>showScreen(button.dataset.screen)));
+document.querySelector('#continue').addEventListener('click',()=>showScreen('confirmation'));
+updateSelection();
+</script>
+</body>
+</html>

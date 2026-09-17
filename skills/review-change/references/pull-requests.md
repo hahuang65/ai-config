@@ -52,8 +52,16 @@ Explicit user context supplied with `/review-change` takes precedence when it co
 ## Read-only provider boundary
 
 Never edit the reviewed branch or push a repair.
-Pull-request mode never invokes the Change fixer; it generates copyable review Markdown for the user and never posts it.
-Never post comments, submit a review, approve, request changes, merge, close, label, or otherwise mutate provider state.
+Pull-request mode never invokes the Change fixer and never mutates provider state while the review runs.
+Its completed report can offer a Review publication selection form instead of manual copy panels.
+For standalone CLI reviews, use the scope frozen by the CLI parent and its exact installed signer.
+For ordinary skill reviews in pi, use only the scope and renderer supplied by the installed `review_change_publication` tool.
+For ordinary skill reviews in Claude Code, use only the signed scope supplied by the installed `UserPromptSubmit` hook and the installation-owned signer.
+Both harness boundaries use the same code to freeze the scope and verify its signature, as specified in the [report contract](report.md).
+Every production report signature requires the current invocation-frozen repository, pull request, base, and head scope; no production path signs unfrozen reviewer claims.
+All other targets remain presentation-only.
+Only the separately installed local publisher may post the user's explicitly selected and confirmed `COMMENT` review after Review change ends.
+Never approve, request changes, merge, close, label, edit the reviewed branch, or perform any other provider mutation.
 
 ## Execution trust
 

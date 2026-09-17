@@ -64,13 +64,19 @@ Reviewer and specialist subagents remain fresh and isolated where the ordinary w
 Every CLI target is read-only, including the current working state, explicit local branches and ranges, and GitHub pull requests and branches.
 The isolated clone preserves the original checkout, branch, index, untracked files, and Git metadata even if an evidence command misbehaves.
 Its credential-safe fetch URLs mirror the required source remotes when available, required branch freshness fetches only the configured matching remote in isolation, and every configured push URL is disabled.
-The CLI-specific pi guard blocks structured writes within the isolated clone, common direct shell mutation, Git staging and delivery commands, and provider mutation commands.
+The CLI-specific pi guard blocks structured writes within the isolated clone, common direct shell mutation, Git staging and delivery commands, and provider mutation commands while Review change runs.
+The only exception is an exact call to the installation-owned absolute Review publication signer path for an eligible report; a basename or `PATH` lookup remains blocked, and signing does not mutate GitHub state.
+The parent freezes the pull-request identity and exact commits in a signed scope before the model runs, and the trusted signer creates the random report identity and deterministic publication form.
 The runner allocates one dedicated report directory whose resolved path cannot overlap the source checkout or isolated clone, sets it as the child temp root, and permits structured writes only inside that directory.
 
 The report remains self-contained HTML, but it is a results surface rather than an interactive decision gate.
 After successful validation, the parent locates the single HTML report in its dedicated report root, activates Firefox and opens a `file:` URL through a macOS Apple event, or uses the platform HTML viewer elsewhere, without waiting for the browser itself to close, and records the retained path in the terminal summary.
 The child never invokes `review-artifact` or waits for approval.
-Pull-request reports include a copyable general review plus separately copyable inline Finding comments inside the HTML, and every run also prints a complete textual summary to the terminal.
+Reports for an exact GitHub pull request include a signed Review publication selection form.
+All Findings start selected, the reviewer can exclude Findings, and a separate browser confirmation page shows the actor, exact pull-request destination, regenerated general comment, and selected inline comments before any provider mutation.
+The final browser action requests publication, but only explicit approval in the publisher's separate operating-system prompt authorizes the provider stage.
+Only the separately installed local publisher can submit that immutable `COMMENT` review.
+Reports without an exact GitHub pull-request scope remain presentation-only, and every run also prints a complete textual summary to the terminal.
 No standalone CLI path offers approval, disposition, or repair actions.
 
 Cleanup removes only the exact paths recorded by the runner: the Trusted materialized worktree path when present, then the no-checkout acquisition path.

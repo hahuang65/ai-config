@@ -215,6 +215,15 @@ else
   dim "  $CLI_TARGET → skills/review-change/bin/review-change.mjs"
 fi
 
+# ── Review publication service (shared tooling — not harness-specific) ──────
+
+echo ""
+green "Installing Review publication activation..."
+AI_CONFIG_REPO_DIR="$REPO_DIR" \
+AI_CONFIG_INSTALL_FORCE="$INSTALL_FORCE" \
+AI_CONFIG_SERVICE_ENABLE="${AI_CONFIG_SERVICE_ENABLE:-auto}" \
+  bash "$REPO_DIR/review-publication/install.sh"
+
 # ── agentmemory service (shared tooling — not harness-specific) ─────────────
 
 echo ""

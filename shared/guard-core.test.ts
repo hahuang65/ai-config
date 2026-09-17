@@ -1,5 +1,23 @@
 import { test, expect } from "bun:test";
-import { evaluate } from "./guard-core";
+import { mkdir, mkdtemp, rm, symlink, writeFile } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import path from "node:path";
+
+import { evaluate, resolveGuardHome } from "./guard-core";
+
+test("resolves an absent HOME through a safe platform home", () => {
+  expect(resolveGuardHome(undefined, "/Users/platform-user")).toBe("/Users/platform-user");
+});
+
+test("rejects invalid environment and platform homes", () => {
+  for (const homes of [
+    { environmentHome: "relative/home", platformHome: "/Users/platform-user" },
+    { environmentHome: undefined, platformHome: "relative/home" },
+    { environmentHome: undefined, platformHome: "/" },
+  ]) {
+    expect(resolveGuardHome(homes.environmentHome, homes.platformHome)).toBeNull();
+  }
+});
 
 test("blocks a read of a credential file", () => {
   const verdict = evaluate({ tool: "read", path: "/home/user/.aws/credentials" });
@@ -22,6 +40,322 @@ test("blocks a credential read smuggled through process substitution", () => {
 
 test("allows a command that only mentions a credential path without reading it", () => {
   expect(evaluate({ tool: "bash", command: 'echo "see ~/.aws/credentials for setup"' })).toBeNull();
+});
+
+test("blocks normalized file-tool access to all Review publication state", () => {
+  const home = "/Users/reviewer";
+  for (const protectedPath of [
+    "~/.review-publication/review-publication-worker.mjs",
+    "~/.review-publication/worker-config.json",
+    "~/.review-publication/signing-key",
+    "$HOME/.review-publication/signing-key",
+    "${HOME}/.review-publication/signing-key",
+    "/Users/reviewer/.review-publication",
+    "/Users/reviewer/projects/../.review-publication/signing-key",
+    "~/.claude/review-publication-sessions/session.json",
+    "$HOME/.claude/review-publication-sessions/session.json",
+    "/Users/reviewer/projects/../.claude/review-publication-sessions/session.json",
+  ]) {
+    expect(evaluate({ tool: "read", path: protectedPath, cwd: home, home })?.policy).toBe(
+      "no-review-publication-credential-access",
+    );
+  }
+});
+
+test("blocks recursive file tools whose path or cwd can include Review publication state", () => {
+  const home = "/Users/reviewer";
+  for (const call of [
+    { tool: "grep", cwd: home, home },
+    { tool: "search", cwd: "/Users", home },
+    { tool: "find", path: "/", cwd: `${home}/project`, home },
+    { tool: "glob", pattern: "**/*", cwd: home, home },
+    { tool: "glob", pattern: "../**/*", cwd: `${home}/project`, home },
+    { tool: "glob", pattern: "${HOME}/**/*", cwd: `${home}/project`, home },
+    { tool: "glob", pattern: "~/.claude/review-publication-sessions/**/*.json", cwd: `${home}/project`, home },
+    { tool: "glob", pattern: "../.claude/review-publication-sessions/**/*.json", cwd: `${home}/project`, home },
+    { tool: "glob", path: `${home}/project`, pattern: "../.review-publication/**/*", cwd: "/tmp", home },
+  ]) {
+    expect(evaluate(call)?.policy).toBe("no-review-publication-credential-access");
+  }
+});
+
+test("blocks symlink aliases and aliases with nonexistent descendants for Review publication state", async () => {
+  const home = await mkdtemp(path.join(tmpdir(), "review-publication-guard-"));
+  const protectedRoot = path.join(home, ".review-publication");
+  const key = path.join(protectedRoot, "signing-key");
+  const directoryAlias = path.join(home, "innocent-directory");
+  const fileAlias = path.join(home, "innocent-file");
+  try {
+    await mkdir(protectedRoot);
+    await writeFile(key, "test-only-key");
+    await symlink(protectedRoot, directoryAlias);
+    await symlink(key, fileAlias);
+
+    for (const candidate of [
+      fileAlias,
+      path.join(directoryAlias, "signing-key"),
+      path.join(directoryAlias, "not-created-yet"),
+    ]) {
+      expect(evaluate({ tool: "read", path: candidate, cwd: home, home })?.policy).toBe(
+        "no-review-publication-credential-access",
+      );
+    }
+  } finally {
+    await rm(home, { force: true, recursive: true });
+  }
+});
+
+test("tracks literal directory changes and blocks unresolved recursive access", () => {
+  const home = "/Users/reviewer";
+  for (const command of [
+    "cd /Users/reviewer; cd .review-publication && cat signing-key",
+    "cd /Users/reviewer/project && cd ..; find . -type f",
+    "cd $HOME\nrg session",
+    "cd $TARGET && find . -type f",
+    "cd $TARGET; cat signing-key",
+  ]) {
+    expect(evaluate({ tool: "bash", command, cwd: "/tmp", home })?.policy).toBe(
+      "no-review-publication-credential-access",
+    );
+  }
+  expect(evaluate({ tool: "bash", command: "find", home })?.policy).toBe(
+    "no-review-publication-credential-access",
+  );
+  expect(evaluate({
+    tool: "bash",
+    command: "cd /tmp && rg session .; cd ./safe && pwd",
+    cwd: home,
+    home,
+  })).toBeNull();
+});
+
+test("tracks directory changes inside nested shell command text", () => {
+  const home = "/Users/reviewer";
+  for (const command of [
+    "sh -c 'cd ..; cd .review-publication && cat signing-key'",
+    "bash -c 'cd; find . -type f'",
+    "dash -c 'cd --; rg session'",
+    "zsh -c 'cd .. && cd .claude/review-publication-sessions; mv session.json /tmp/session'",
+    "env LANG=C sh -lc 'cd ..\ncd .review-publication\nfind . -type f'",
+    "command sh -c 'cd ..; env bash -c \"cd .review-publication; find . -type f\"'",
+  ]) {
+    expect(evaluate({ tool: "bash", command, cwd: `${home}/project`, home })?.policy).toBe(
+      "no-review-publication-credential-access",
+    );
+  }
+});
+
+test("allows unrelated directory changes inside nested shell command text", () => {
+  const home = "/Users/reviewer";
+  expect(evaluate({
+    tool: "bash",
+    command: "env LANG=C sh -c 'cd /tmp && rg session .; command bash -c \"cd ./safe; mv old new\"'",
+    cwd: `${home}/project`,
+    home,
+  })).toBeNull();
+});
+
+test("blocks shell access that can read or alter all Review publication state", () => {
+  const home = "/Users/reviewer";
+  expect(evaluate({
+    tool: "bash",
+    command: "ls",
+    cwd: `${home}/.claude/review-publication-sessions`,
+    home,
+  })?.policy).toBe("no-review-publication-credential-access");
+  for (const command of [
+    "cat ~/.review-publication/signing-key",
+    "cp '$HOME/.claude/review-publication-sessions/session.json' /tmp/session",
+    "mv ${HOME}/.claude/review-publication-sessions/session.json /tmp/session",
+    "rm -rf /Users/reviewer/projects/../.claude/review-publication-sessions",
+    "find \"$HOME/.review-publication\" -type f",
+    "find $HOME -name signing-key",
+    "grep -R signing-key ${HOME}",
+    "rg session",
+    "ls ~/.claude/review-publication-sessions/*.json",
+    "sh -c 'cat ~/.review-publication/signing-key'",
+    "chmod 644 --file=$HOME/.review-publication/signing-key",
+  ]) {
+    expect(evaluate({ tool: "bash", command, cwd: home, home })?.policy).toBe(
+      "no-review-publication-credential-access",
+    );
+  }
+});
+
+test("blocks inline interpreters that use filesystem and home APIs on protected publication state", () => {
+  const home = "/Users/reviewer";
+  const encodedProtectedPath = Buffer.from(".review-publication/signing-key").toString("base64");
+  const commands = [
+    `node -e "require('fs').readFileSync(require('os').homedir() + '/.review-publication/signing-key')"`,
+    `node --eval="require('fs').rmSync(process.env.HOME + '/.review-' + 'publication/signing-key')"`,
+    `bun -e "await Bun.file(process.env.HOME + '/.claude/review-publication-sessions/session.json').text()"`,
+    `bun -e "await Bun.write(process.env.HOME + '/.review-publication/worker-config.json', 'x')"`,
+    `bun --eval "require('node:fs').renameSync(require('node:os').homedir() + '/.review-publication/a', '/tmp/a')"`,
+    `python3 -c "from pathlib import Path; (Path.home() / ('.review-' + 'publication') / 'signing-key').read_text()"`,
+    `python -c "import os; open(os.path.join(os.environ['HOME'], '.claude', 'review-publication-sessions', 'session.json')).read()"`,
+    `ruby -e 'File.write(File.join(Dir.home, ".review-publication", "signing-key"), "x")'`,
+    `perl -e 'open my $fh, "<", "$ENV{HOME}/.review-publication/signing-key"'`,
+    `node -e "require('fs').openSync('/Users/reviewer/\\x2ereview\\u002dpublication/signing-key', 'r')"`,
+    `node -e "require('fs').readFileSync(Buffer.from('${encodedProtectedPath}', 'base64').toString())"`,
+    `node -e "require('fs').readFileSync(decodeURIComponent('%2ereview%2dpublication/signing-key'))"`,
+    `sh -c 'python3 -c "import os; os.remove(os.path.join(os.path.expanduser(\"~\"), \".review-publication\", \"signing-key\"))"'`,
+    `python3 <<'PY'\nfrom pathlib import Path\nPath.home().joinpath('.review-publication', 'signing-key').unlink()\nPY`,
+    `node - <<'JS'\nconst fs = require('fs');\nfs.readFileSync(process.env.HOME + '/.claude/review-publication-sessions/session.json');\nJS`,
+    `printf 'import os; open(os.path.join(os.environ["HOME"], ".review-publication", "signing-key")).read()' | python3 -`,
+  ];
+  for (const command of commands) {
+    expect(evaluate({ tool: "bash", command, cwd: `${home}/project`, home })?.policy, command).toBe(
+      "no-review-publication-credential-access",
+    );
+  }
+});
+
+test("allows inline interpreters and test commands without protected-state access", () => {
+  const home = "/Users/reviewer";
+  for (const command of [
+    `node -e "console.log(require('os').homedir())"`,
+    `bun -e "console.log(await Bun.file('/tmp/example').text())"`,
+    `python3 -c "from pathlib import Path; print(Path('/tmp/example').read_text())"`,
+    `ruby -e 'puts File.read("/tmp/example")'`,
+    `perl -e 'print "review-publication"'`,
+    "node --test test/provider.test.mjs",
+    "bun test test/review-change.test.ts --test-name-pattern scope",
+  ]) {
+    expect(evaluate({ tool: "bash", command, cwd: `${home}/project`, home }), command).toBeNull();
+  }
+});
+
+test("blocks shell-escaped protected publication paths", () => {
+  const home = "/Users/reviewer";
+  for (const command of [
+    "cat /Users/reviewer/\\.review\\-publication\\/signing\\-key",
+    "cat /Users/reviewer/.review-publi\\\ncation/signing-key",
+    "sh -c 'cat /Users/reviewer/\\.review\\-publication/signing-key'",
+  ]) {
+    expect(evaluate({ tool: "bash", command, cwd: `${home}/project`, home })?.policy, command).toBe(
+      "no-review-publication-credential-access",
+    );
+  }
+});
+
+test("blocks shell-escaped production worker names and mode flags", () => {
+  const home = "/Users/reviewer";
+  for (const command of [
+    "review\\-publication \\-\\-inetd",
+    "node review\\-publication/review\\-publication\\-worker\\.bundle\\.mjs \\-\\-inetd",
+    "review-publi\\\ncation --in\\\netd",
+    "sh -c 'review\\-publication \\-\\-inetd'",
+    String.raw`review\-publication "\-\-inetd`,
+    "review\\-publication \\-\\-inetd\\",
+  ]) {
+    expect(evaluate({ tool: "bash", command, cwd: `${home}/project`, home })?.policy, command).toBe(
+      "no-review-publication-credential-access",
+    );
+  }
+});
+
+test("preserves shell backslashes that do not resolve to protected publication state", () => {
+  const home = "/Users/reviewer";
+  for (const command of [
+    String.raw`'review\-publication' --inetd`,
+    String.raw`"review\-publication" --inetd`,
+    String.raw`review\\-publication --inetd`,
+    String.raw`cat "/Users/reviewer/.review\-publication/signing-key"`,
+    String.raw`printf hello\ world`,
+    String.raw`printf "hello\-world`,
+  ]) {
+    expect(evaluate({ tool: "bash", command, cwd: `${home}/project`, home }), command).toBeNull();
+  }
+});
+
+test("blocks every direct production Review publication worker invocation", () => {
+  const home = "/Users/reviewer";
+  for (const command of [
+    "review-publication --inetd",
+    "./review-publication --inetd",
+    "'/Users/reviewer/.local/bin/review-publication' '--inetd'",
+    "env LANG=C /Users/reviewer/.local/bin/review-publication --inetd",
+    "node skills/review-change/bin/review-publication.mjs --inetd",
+    "bun ./skills/review-change/bin/review-publication.mjs --inetd",
+    "node review-publication/review-publication-worker.bundle.mjs --inetd",
+    "bun ./review-publication/review-publication-worker.bundle.mjs --inetd",
+    "env LANG=C /Users/reviewer/.review-publication/review-publication-worker.mjs --inetd",
+    "node '/Users/reviewer/project/review-publication/review-publication-worker.bundle.mjs' '--inetd'",
+    "sh -c 'review-publication --inetd'",
+    "bash -lc \"$HOME/.local/bin/review-publication --inetd\"",
+    "sh -c 'node review-publication/review-publication-worker.bundle.mjs --inetd'",
+    "~/.local/bin/review-* --inetd",
+    "review-{publication,artifact} --inetd",
+    "review-[p]ublication --inetd",
+    "node skills/review-change/bin/review-publication.* --inetd",
+    "node review-publication/review-publication-worker.* --inetd",
+    "node review-publication/review-publication-worker.bundl?.mjs --inetd",
+    "node review-publication/review-publication-worker.[b]undle.mjs --inetd",
+  ]) {
+    expect(evaluate({ tool: "bash", command, cwd: `${home}/project`, home })?.policy).toBe(
+      "no-review-publication-credential-access",
+    );
+  }
+});
+
+test("blocks moves that intersect protected Review publication state", async () => {
+  const home = await mkdtemp(path.join(tmpdir(), "review-publication-move-"));
+  const protectedRoot = path.join(home, ".review-publication");
+  const alias = path.join(home, "state-alias");
+  try {
+    await mkdir(protectedRoot);
+    await symlink(protectedRoot, alias);
+    for (const command of [
+      "mv $HOME /tmp/home-backup",
+      "mv /tmp/replacement ~/.claude",
+      "mv /tmp/replacement ~/.review-publication",
+      "mv /tmp/replacement ~/.review-publication/config.json",
+      "mv projects/../.review-publication /tmp/state",
+      "rename ~/.review-publication /tmp/state",
+      "mv state-alias /tmp/state",
+      "mv /tmp/replacement state-alias/new-name",
+      "cd project; mv ../.review-publication /tmp/state",
+    ]) {
+      expect(evaluate({ tool: "bash", command, cwd: home, home })?.policy).toBe(
+        "no-review-publication-credential-access",
+      );
+    }
+  } finally {
+    await rm(home, { force: true, recursive: true });
+  }
+});
+
+test("allows unrelated moves and Review publication signing", () => {
+  const home = "/Users/reviewer";
+  expect(evaluate({ tool: "bash", command: "mv project/old project/new", cwd: home, home })).toBeNull();
+  expect(evaluate({
+    tool: "bash",
+    command: "review-publication --sign /tmp/claims.json /tmp/form.review-fragment",
+    cwd: home,
+    home,
+  })).toBeNull();
+});
+
+test("allows file and recursive search scopes outside Review publication state", () => {
+  const home = "/Users/reviewer";
+  expect(evaluate({
+    tool: "read",
+    path: `${home}/.review-publication-notes/README.md`,
+    home,
+  })).toBeNull();
+  expect(evaluate({ tool: "grep", cwd: `${home}/project`, home })).toBeNull();
+  expect(evaluate({
+    tool: "glob",
+    pattern: "src/**/*.ts",
+    cwd: `${home}/project`,
+    home,
+  })).toBeNull();
+  expect(evaluate({
+    tool: "bash",
+    command: "rg session project",
+    cwd: home,
+    home,
+  })).toBeNull();
 });
 
 test("blocks a force push", () => {

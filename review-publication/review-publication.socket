@@ -1,0 +1,9 @@
+[Unit]
+Description=Review publication activation socket
+
+[Socket]
+ListenStream=127.0.0.1:4392
+Accept=yes
+
+[Install]
+WantedBy=sockets.target

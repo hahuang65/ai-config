@@ -33,6 +33,10 @@ When invoked by `/build`, follow [references/build-mode.md](references/build-mod
 ## Standalone presentation
 
 For a standalone local-range, pull-request, or remote-branch invocation inside an agent session, write the completed results-only HTML report, open it once in the platform's ordinary web browser, and return the review results without starting `review-artifact` or waiting for approval.
+For an ordinary skill invocation that reviews an exact GitHub pull request, use the installed harness boundary as specified in [references/report.md](references/report.md).
+In pi, use the `review_change_publication` tool to read the invocation-frozen scope and render the signed form.
+In Claude Code, use only the public scope supplied by the trusted `UserPromptSubmit` hook, then submit Finding claims through the invocation-bound `Write` hook to render the form.
+If the pi tool or Claude Code prompt hook reports no capability, keep the report presentation-only.
 Treat the report path as data and pass it to the viewer without shell interpolation.
 When `REVIEW_CHANGE_GATE=1`, do not open the file from the child process because the parent CLI validates and opens it.
 
@@ -70,4 +74,5 @@ The parent verifies `REVIEW_CHANGE_SANDBOX` and its fixed root-owned marker befo
 
 ## Boundaries
 
-Never stage, commit, push, post comments, submit a provider review, approve a pull request, request provider-side changes, merge, or monitor delivery CI to completion.
+Review change itself never stages, commits, pushes, posts comments, submits a provider review, approves a pull request, requests provider-side changes, merges, or monitors delivery CI to completion.
+An exact GitHub pull-request report may offer a Review publication after Review change ends; only its separately installed local publisher can perform the `COMMENT` review after the user explicitly approves the separate operating-system confirmation.

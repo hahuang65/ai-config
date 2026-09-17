@@ -19,7 +19,7 @@ The report contains:
 - Validation evidence and reviewer-visible artifacts;
 - documentation and lint outcomes;
 - build-only canonical-artifact fact-check and idempotence outcomes;
-- copyable provider-review text in pull-request mode, split into one general review comment and one standalone comment per Finding; and
+- a Review publication selection form in exact GitHub pull-request mode, using validated provider identity, actor, exact base and head, and each Finding's path, line, and side; and
 - a persistent decision ledger covering every build-mode review and repair round.
 
 Render from the latest validated state after all applicable stages complete.
@@ -28,7 +28,10 @@ Encode each value for its exact HTML text or attribute context, use `textContent
 Generate control IDs from workflow-owned safe identifiers rather than user text.
 Render an Untrusted URL as text unless the workflow validates it as an expected `https:` provider URL or a report-owned local artifact URL before assigning it to a link target.
 Keep resolved Findings in history but separate them visually from current Findings.
-Write all visible report content in plain language.
+Write all visible report content, including every surfaced Finding, in plain language.
+Lead each Finding with its concrete impact and recommended change.
+Keep exact machine values, commands, identifiers, and paths secondary.
+Do not use unexplained workflow, security, protocol, provider, or implementation jargon.
 Prefer the ubiquitous language from the selected context documentation.
 Then prefer wording from Authoritative intent, source, tests, and project documentation, followed by common technical terms the user is likely to know.
 Define any unavoidable unfamiliar term beside its first use.
@@ -42,8 +45,42 @@ In standalone CLI mode, use the isolated `reviewRoot` rather than `sourceRoot`, 
 In other modes, use the active checkout or disposable pull-request worktree used to inspect the reviewed state rather than a different persistent checkout.
 Keep a disposable review root alive while its review presentation is active so copied paths remain valid.
 Store the copy value in a hidden text node, copy it through a static report-owned handler that reads `textContent`, never interpolate it into script or an event-handler attribute, and persistently mark the anchor copied after success.
-In the pull-request copy section, keep each Finding's severity and `path:line` metadata outside its Markdown text so the user knows where to create the inline comment without copying that metadata into the comment.
-Provide a compact copy-icon button inside each Markdown panel for the general review and every Finding comment; reserve enough panel padding that Markdown text never runs beneath or against the button, give it an accessible label, copy only the associated Markdown text through a static report-owned handler that reads `textContent`, never dynamic HTML, and persistently recolor or collapse the panel after a successful copy so completed actions remain visible.
+In exact GitHub pull-request mode, replace the retired manual comment-copy panels with one Review publication selection form.
+Carry each inline Finding's explicit diff `side` from the structured reviewer result: `LEFT` means an old or deleted line, and `RIGHT` means a new, added, or current line.
+Never infer, default, or remap a missing or invalid side during report assembly.
+Keep such a Finding presentation-only and explain that Review publication is unavailable for that location.
+Select every current Finding initially and let the reviewer clear irrelevant Findings through native checkboxes.
+Keep general and inline comment text read-only.
+Derive the general comment from only the selected Finding titles.
+Submit through a top-level `POST` form whose action is `http://127.0.0.1:4392/api/v1/review-publication-confirmations`: put the signed publication envelope in one hidden `publication_token` field and use `selected_finding_id` for each selected stable Finding ID.
+The browser's final Post review action requests publication but is not sufficient authority.
+After the publisher validates the signed confirmation token and exact selected content, it must show a bounded operating-system confirmation outside model-visible channels and immediately before the provider stage that can mutate.
+The prompt identifies the exact actor, repository, pull request, base commit, head commit, selected Finding count, and whether inline comments are included.
+Only explicit operating-system approval continues; cancellation, dismissal, timeout, unavailable UI, malformed response, process failure, and request cancellation fail closed without provider mutation.
+The standalone CLI parent freezes the required `github.com` host, repository and pull-request identities, exact base and head, signing-key identifier `review-publication-v1`, and comment-template version `1` in a signed scope before the model runs.
+For an ordinary skill invocation, the installed boundary in both supported harnesses recognizes the complete exact GitHub pull-request token in the user's Review change invocation.
+It validates the whole token through the shared GitHub target parser and freezes the current provider identity, base, and head before model work.
+In pi, call `review_change_publication` with `action: scope` before authoring publication claims.
+Use only the returned frozen identity; do not use review text, helper arguments, or model-authored metadata as trusted publication scope.
+Never accept, predict, or pass an operating-system approval response through the HTTP request, signed report, environment, or helper arguments.
+After the Findings are final, call `review_change_publication` with `action: render` and only the Finding ID, title, immutable body, path, line, and side.
+The pi tool does not accept a host, repository, pull request, base, head, signing-key identifier, comment-template version, actor, report identity, output path, or helper command from the reviewer.
+Embed the returned signed fragment unchanged in the completed report.
+The extension keeps the frozen scope in harness-owned memory, preserves it across steering and queued follow-up input, and supersedes it only for a new recognized Review change invocation.
+In Claude Code, the supported `UserPromptSubmit` hook stores the signed frozen scope in trusted state for the current harness session before the reviewer starts and supplies only its bounded public identity to the model.
+After the Findings are final, use the `Write` tool to write only `{"findings":[...]}` to the intended `.review-fragment` path.
+The trusted `PreToolUse` hook replaces those Finding claims with the signed form bound to the latest recognized Review change invocation in that session.
+Do not submit a frozen scope or call the publication helper in a direct Claude Code session.
+The trusted boundary generates the random report identity, resolves the current actor, rejects a pull request whose base or head changed after freezing, signs the claims against the invocation's frozen scope, and writes the deterministic shared form.
+Embed the returned `.review-fragment` file unchanged in the completed report.
+In standalone CLI mode, create the same form through the exact parent-provided absolute signer: write one bounded temporary claims file beside the report with the parent-frozen scope and every Finding's immutable body, path, line, and side, then invoke `<absolute-helper-path> --sign <claims-file> <form.review-fragment>`.
+The fixed `.review-fragment` suffix keeps the temporary form fragment outside the report viewer's `.html` count.
+Every production report-signing path requires the repository, pull request, base, and head frozen for the current invocation, and no generic production interface signs unfrozen model-authored claims.
+The signer rejects claims whose host, repository, pull request, base, head, key identifier, or comment-template version differs from the frozen trusted scope.
+The mandatory shared guardrails treat the complete `~/.review-publication/` directory, including its signing key, as protected credential state for ordinary model file and shell tools in both harnesses.
+The separately installed socket worker and trusted pre-model harness boundaries use the key outside model tool calls.
+This boundary prevents mistakes and ordinary model tool access; it does not claim operating-system isolation from hostile code with unrestricted user-account access.
+Every other standalone target remains presentation-only and contains no Review publication, selection form, signed envelope, or provider action.
 Before the Finding cards, render a concise legend with human-readable labels for every severity (`error`, `warning`, `info`) and action (`auto-fix`, `ask-user`, `no-op`), explaining impact, who decides next, and that standalone tags never trigger a mutation.
 Never replace a line anchor with only a symbol, block name, filename, or commit reference.
 
@@ -85,7 +122,8 @@ If the runtime fails to start, present the complete report in chat and preserve 
 ## Standalone presentation
 
 In pull-request, explicit-range, standalone skill, and standalone CLI modes, omit fix-selected, approval, disposition, and other mutation or decision controls.
-Retain the complete results, HTML report, and pull-request copyable Markdown.
+Retain the complete results and HTML report.
+For an exact GitHub pull request, retain its Review publication selection form without starting a publisher or agent poll until the reviewer continues.
 Opening the report is presentation only: return after successful viewer dispatch and do not poll for feedback, require approval, wait for viewer closure, or otherwise block completion on browser interaction.
 When `REVIEW_CHANGE_GATE=1`, write the report into the provided report root, report its path, and return after the report stage; the parent CLI validates and launches the single generated HTML file in a new Firefox window through a `file:` URL on macOS or uses the platform HTML viewer elsewhere.
 The parent retains the isolated review root while its final Summary is visible, then removes that root after the user dismisses the CLI.

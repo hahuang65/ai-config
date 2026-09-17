@@ -11,6 +11,10 @@
 import { POLICIES } from "./policy-registry";
 import { anyPipeline, tokenize, leadingWord } from "./bash-command";
 import { detectOrchardBranchBindingChange } from "./orchard-branch-guard";
+import { resolveGuardHome } from "./guard-home";
+import { detectReviewPublicationCredentialAccess } from "./review-publication-state-guard";
+
+export { resolveGuardHome };
 
 /** Harness-neutral shape every adapter normalizes its tool call into. */
 export interface ToolCall {
@@ -20,6 +24,8 @@ export interface ToolCall {
   command?: string;
   /** The target path, for file tools. */
   path?: string;
+  /** The search pattern, for glob tools. */
+  pattern?: string;
   /** The payload being written, for write/edit tools. */
   content?: string;
   /** The caller's working directory, for location-sensitive command policies. */
@@ -405,6 +411,7 @@ function detectBroadChmod(call: ToolCall): string | null {
 
 const DETECTORS: Record<string, Detector> = {
   "no-secret-access": detectSecretAccess,
+  "no-review-publication-credential-access": detectReviewPublicationCredentialAccess,
   "no-hardcoded-secret": detectHardcodedSecret,
   "no-shell-write": detectShellWrite,
   "no-html-transform": detectHtmlTransform,

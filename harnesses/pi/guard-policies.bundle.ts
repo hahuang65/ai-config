@@ -1,4 +1,7 @@
 // @bun
+// harnesses/pi/extensions/guard-policies.ts
+import { homedir } from "os";
+
 // shared/policy-registry.ts
 var POLICIES = [
   {
@@ -8,6 +11,14 @@ var POLICIES = [
     floor: true,
     example: { tool: "read", path: "/home/example/.aws/credentials" },
     counterExample: { tool: "bash", command: 'echo "see ~/.aws/credentials for setup"' }
+  },
+  {
+    id: "no-review-publication-credential-access",
+    intent: "No model tool may read or alter Review publication state or invoke its production worker mode.",
+    kind: "secret",
+    floor: true,
+    example: { tool: "read", path: "~/.review-publication/signing-key", home: "/home/example" },
+    counterExample: { tool: "read", path: "~/.review-publication-notes/README.md", home: "/home/example" }
   },
   {
     id: "no-hardcoded-secret",
@@ -130,38 +141,67 @@ var POLICIES = [
 ];
 
 // shared/bash-command.ts
-function tokenize(stage) {
+var DOUBLE_QUOTE_ESCAPES = new Set(["$", "`", '"', "\\", `
+`]);
+function pushToken(tokens, current, started) {
+  if (started)
+    tokens.push(current);
+}
+function tokenizeDetailed(stage) {
   const tokens = [];
   let current = "";
-  let inSingle = false;
-  let inDouble = false;
-  for (const c of stage) {
-    if (inSingle) {
-      if (c === "'")
-        inSingle = false;
+  let started = false;
+  let quote = "none";
+  let malformed = false;
+  for (let index = 0;index < stage.length; index += 1) {
+    const character = stage[index];
+    if (quote === "single") {
+      if (character === "'")
+        quote = "none";
       else
-        current += c;
-    } else if (inDouble) {
-      if (c === '"')
-        inDouble = false;
-      else
-        current += c;
-    } else if (c === "'") {
-      inSingle = true;
-    } else if (c === '"') {
-      inDouble = true;
-    } else if (/\s/.test(c)) {
-      if (current) {
-        tokens.push(current);
-        current = "";
+        current += character;
+      continue;
+    }
+    if (quote === "double" && character === '"') {
+      quote = "none";
+      continue;
+    }
+    if (character === "\\" && quote !== "backtick") {
+      const next = stage[index + 1];
+      if (next === undefined) {
+        current += character;
+        malformed = true;
+      } else if (quote === "none" || DOUBLE_QUOTE_ESCAPES.has(next)) {
+        if (next !== `
+`)
+          current += next;
+        started = true;
+        index += 1;
+      } else {
+        current += character;
       }
+      continue;
+    }
+    if (quote === "none" && character === "'") {
+      quote = "single";
+      started = true;
+    } else if (quote === "none" && character === '"') {
+      quote = "double";
+      started = true;
+    } else if (quote === "none" && /\s/.test(character)) {
+      pushToken(tokens, current, started);
+      current = "";
+      started = false;
     } else {
-      current += c;
+      current += character;
+      started = true;
     }
   }
-  if (current)
-    tokens.push(current);
-  return tokens;
+  pushToken(tokens, current, started);
+  return { malformed: malformed || quote !== "none", tokens };
+}
+function tokenize(stage) {
+  return tokenizeDetailed(stage).tokens;
 }
 function leadingWord(stage) {
   for (const token of tokenize(stage)) {
@@ -187,137 +227,81 @@ function extractSubstitutions(command) {
   }
   return found;
 }
-function splitStatements(command) {
+function escapedPairLength(command, index, quote) {
+  if (command[index] !== "\\" || quote === "single")
+    return 0;
+  const next = command[index + 1];
+  if (next === undefined)
+    return 0;
+  if (quote === "none" || quote === "backtick" || DOUBLE_QUOTE_ESCAPES.has(next))
+    return 2;
+  return 0;
+}
+function splitShell(command, separatorLength) {
   const out = [];
-  let cur = "";
-  let parens = 0, sq = false, dq = false, bt = false;
-  for (let i = 0;i < command.length; i++) {
-    const c = command[i];
-    if (sq) {
-      if (c === "'")
-        sq = false;
-      cur += c;
+  let current = "";
+  let parentheses = 0;
+  let quote = "none";
+  for (let index = 0;index < command.length; index += 1) {
+    const character = command[index];
+    const escapedLength = escapedPairLength(command, index, quote);
+    if (escapedLength > 0) {
+      current += command.slice(index, index + escapedLength);
+      index += escapedLength - 1;
       continue;
     }
-    if (dq) {
-      if (c === '"')
-        dq = false;
-      cur += c;
+    if (quote === "single") {
+      if (character === "'")
+        quote = "none";
+    } else if (quote === "double") {
+      if (character === '"')
+        quote = "none";
+    } else if (quote === "backtick") {
+      if (character === "`")
+        quote = "none";
+    } else if (character === "'")
+      quote = "single";
+    else if (character === '"')
+      quote = "double";
+    else if (character === "`")
+      quote = "backtick";
+    else if (character === "(")
+      parentheses += 1;
+    else if (character === ")")
+      parentheses -= 1;
+    if (quote !== "none" || parentheses !== 0) {
+      current += character;
       continue;
     }
-    if (bt) {
-      if (c === "`")
-        bt = false;
-      cur += c;
-      continue;
+    const length = separatorLength(command, index);
+    if (length === 0)
+      current += character;
+    else {
+      out.push(current);
+      current = "";
+      index += length - 1;
     }
-    if (c === "'") {
-      sq = true;
-      cur += c;
-      continue;
-    }
-    if (c === '"') {
-      dq = true;
-      cur += c;
-      continue;
-    }
-    if (c === "`") {
-      bt = true;
-      cur += c;
-      continue;
-    }
-    if (c === "(") {
-      parens++;
-      cur += c;
-      continue;
-    }
-    if (c === ")") {
-      parens--;
-      cur += c;
-      continue;
-    }
-    if (parens === 0) {
-      if (c === ";" || c === "&") {
-        if (command[i + 1] === c)
-          i++;
-        out.push(cur);
-        cur = "";
-        continue;
-      }
-      if (c === "|" && command[i + 1] === "|") {
-        i++;
-        out.push(cur);
-        cur = "";
-        continue;
-      }
-    }
-    cur += c;
   }
-  if (cur)
-    out.push(cur);
+  if (current)
+    out.push(current);
   return out;
 }
+function splitStatements(command, splitNewlines = false) {
+  return splitShell(command, (input, index) => {
+    const character = input[index];
+    if (character === ";" || character === "&" || splitNewlines && character === `
+`) {
+      return input[index + 1] === character ? 2 : 1;
+    }
+    return character === "|" && input[index + 1] === "|" ? 2 : 0;
+  });
+}
 function splitPipeline(statement) {
-  const out = [];
-  let cur = "";
-  let parens = 0, sq = false, dq = false, bt = false;
-  for (let i = 0;i < statement.length; i++) {
-    const c = statement[i];
-    if (sq) {
-      if (c === "'")
-        sq = false;
-      cur += c;
-      continue;
-    }
-    if (dq) {
-      if (c === '"')
-        dq = false;
-      cur += c;
-      continue;
-    }
-    if (bt) {
-      if (c === "`")
-        bt = false;
-      cur += c;
-      continue;
-    }
-    if (c === "'") {
-      sq = true;
-      cur += c;
-      continue;
-    }
-    if (c === '"') {
-      dq = true;
-      cur += c;
-      continue;
-    }
-    if (c === "`") {
-      bt = true;
-      cur += c;
-      continue;
-    }
-    if (c === "(") {
-      parens++;
-      cur += c;
-      continue;
-    }
-    if (c === ")") {
-      parens--;
-      cur += c;
-      continue;
-    }
-    if (c === "|" && parens === 0) {
-      out.push(cur);
-      cur = "";
-      if (statement[i + 1] === "&")
-        i++;
-      continue;
-    }
-    cur += c;
-  }
-  if (cur)
-    out.push(cur);
-  return out;
+  return splitShell(statement, (input, index) => {
+    if (input[index] !== "|" || input[index + 1] === "|")
+      return 0;
+    return input[index + 1] === "&" ? 2 : 1;
+  });
 }
 function anyPipeline(command, predicate) {
   for (const statement of splitStatements(command)) {
@@ -393,6 +377,455 @@ function isOrchardPath(candidate) {
   return /(^|[/\\])\.orchard(?:[/\\]|$)/.test(candidate);
 }
 
+// shared/guard-home.ts
+import path2 from "path";
+function resolveGuardHome(environmentHome, platformHome) {
+  const candidate = environmentHome === undefined ? platformHome : environmentHome;
+  if (!candidate || candidate.includes("\x00") || !path2.isAbsolute(candidate))
+    return null;
+  const normalized = path2.normalize(candidate);
+  if (normalized === path2.parse(normalized).root)
+    return null;
+  return normalized;
+}
+
+// shared/review-publication-state-guard.ts
+import { realpathSync } from "fs";
+import path4 from "path";
+
+// shared/inline-program-state-guard.ts
+import path3 from "path";
+var NODE_INTERPRETERS = new Set(["node", "bun"]);
+var RUBY_PERL_INTERPRETERS = new Set(["ruby", "perl"]);
+var FILESYSTEM_ACCESS = /\b(?:bun\s*\.\s*(?:file|write)|delete|file\s*\.\s*(?:delete|open|read|rename|unlink|write)|io\s*\.\s*(?:read|write)|open(?:sync)?|readfile(?:sync)?|read_text|remove(?:sync)?|rename(?:sync)?|rmdir(?:sync)?|rmtree|rm(?:sync)?|unlink(?:sync)?|writefile(?:sync)?|write_text)\b/i;
+var PROTECTED_NAME = /(?:^|[^A-Za-z0-9_-])\.review-publication(?![A-Za-z0-9_-])|(?:^|[^A-Za-z0-9_-])review-publication-sessions(?![A-Za-z0-9_-])/i;
+var SHELL_INPUT_PRODUCERS = new Set(["echo", "printf"]);
+function inlineProgramAccessesProtectedState(command) {
+  const directSource = inlineProgramSource(command);
+  if (directSource !== null && sourceAccessesProtectedState(directSource))
+    return true;
+  return anyPipeline(command, (stages) => stages.some((stage, index) => {
+    const source = inlineProgramSource(stage) ?? pipedProgramSource(stages, index);
+    return source !== null && sourceAccessesProtectedState(source);
+  }));
+}
+function inlineProgramSource(stage) {
+  const tokens = tokenize(stage);
+  const executableIndex = commandExecutableIndex(tokens);
+  if (executableIndex < 0)
+    return null;
+  const executable = path3.basename(tokens[executableIndex]);
+  if (!isSupportedInterpreter(executable))
+    return null;
+  const heredoc = heredocBody(stage);
+  if (heredoc !== null)
+    return heredoc;
+  const hereString = /<<<\s*([\s\S]+)$/.exec(stage);
+  if (hereString)
+    return hereString[1];
+  return flaggedProgram(executable, tokens.slice(executableIndex + 1));
+}
+function flaggedProgram(executable, args) {
+  for (let index = 0;index < args.length; index += 1) {
+    const argument = args[index];
+    const assignment = /^(?:--eval|--print|-c|-e|-p)=(.*)$/s.exec(argument);
+    if (assignment && flagSupported(executable, argument.slice(0, argument.indexOf("="))))
+      return assignment[1];
+    if (flagSupported(executable, argument))
+      return args[index + 1] ?? "";
+    if (RUBY_PERL_INTERPRETERS.has(executable) && /^-[A-Za-z]*[eE][A-Za-z]*$/.test(argument)) {
+      return args[index + 1] ?? "";
+    }
+    if (/^python\d*$/.test(executable) && argument.startsWith("-c") && argument.length > 2) {
+      return argument.slice(2);
+    }
+  }
+  return null;
+}
+function flagSupported(executable, flag) {
+  if (NODE_INTERPRETERS.has(executable))
+    return ["-e", "--eval", "-p", "--print"].includes(flag);
+  if (/^python\d*$/.test(executable))
+    return flag === "-c";
+  return RUBY_PERL_INTERPRETERS.has(executable) && ["-e", "-E"].includes(flag);
+}
+function pipedProgramSource(stages, interpreterIndex) {
+  if (interpreterIndex === 0)
+    return null;
+  const interpreterTokens = tokenize(stages[interpreterIndex]);
+  const executableIndex = commandExecutableIndex(interpreterTokens);
+  if (executableIndex < 0 || !isSupportedInterpreter(path3.basename(interpreterTokens[executableIndex])))
+    return null;
+  const args = interpreterTokens.slice(executableIndex + 1);
+  if (args.length > 0 && !args.includes("-"))
+    return null;
+  const producerTokens = tokenize(stages[interpreterIndex - 1]);
+  const producerIndex = commandExecutableIndex(producerTokens);
+  if (producerIndex < 0 || !SHELL_INPUT_PRODUCERS.has(path3.basename(producerTokens[producerIndex])))
+    return null;
+  return producerTokens.slice(producerIndex + 1).filter((token) => !token.startsWith("-")).join(" ");
+}
+function heredocBody(stage) {
+  const marker = /<<-?\s*(['"]?)([A-Za-z_][A-Za-z0-9_]*)\1[^\n]*\n/.exec(stage);
+  if (!marker)
+    return null;
+  const bodyStart = marker.index + marker[0].length;
+  const terminator = new RegExp(`(?:^|\\n)${escapeExpression(marker[2])}(?:\\n|$)`).exec(stage.slice(bodyStart));
+  return terminator ? stage.slice(bodyStart, bodyStart + terminator.index) : stage.slice(bodyStart);
+}
+function sourceAccessesProtectedState(source) {
+  if (!FILESYSTEM_ACCESS.test(source))
+    return false;
+  return sourceRepresentations(source).some((representation) => PROTECTED_NAME.test(representation));
+}
+function sourceRepresentations(source) {
+  const decoded = decodeOrdinaryEscapes(source).replace(/(['"])\s*(?:\+|\.)\s*(['"])/g, "").replace(/(['"])\s+(['"])/g, "");
+  const representations = [decoded];
+  const encodedLiterals = [...source.matchAll(/(['"])([A-Fa-f0-9]{16,}|[A-Za-z0-9+/]{16,}={0,2})\1/g)];
+  for (const match of encodedLiterals) {
+    const context = source.slice(Math.max(0, match.index - 80), match.index + match[0].length + 80);
+    const encoding = /(?:fromhex|['"]hex['"])/i.test(context) ? "hex" : /(?:atob|base64|b64decode)/i.test(context) ? "base64" : null;
+    if (!encoding)
+      continue;
+    try {
+      representations.push(Buffer.from(match[2], encoding).toString("utf8"));
+    } catch {}
+  }
+  return representations;
+}
+function decodeOrdinaryEscapes(source) {
+  return source.replace(/\\u\{([0-9a-f]{1,6})\}/gi, (_match, value) => safeCodePoint(value)).replace(/\\u([0-9a-f]{4})/gi, (_match, value) => safeCodePoint(value)).replace(/\\x([0-9a-f]{2})/gi, (_match, value) => safeCodePoint(value)).replace(/%([0-9a-f]{2})/gi, (_match, value) => safeCodePoint(value));
+}
+function safeCodePoint(value) {
+  const codePoint = Number.parseInt(value, 16);
+  return Number.isSafeInteger(codePoint) && codePoint <= 1114111 ? String.fromCodePoint(codePoint) : "";
+}
+function isSupportedInterpreter(executable) {
+  return NODE_INTERPRETERS.has(executable) || RUBY_PERL_INTERPRETERS.has(executable) || /^python\d*$/.test(executable);
+}
+function commandExecutableIndex(tokens) {
+  let index = tokens.findIndex((token) => !/^[A-Za-z_][A-Za-z0-9_]*=/.test(token));
+  while (index >= 0 && ["command", "env"].includes(path3.basename(tokens[index]))) {
+    index += 1;
+    while (index < tokens.length && (tokens[index].startsWith("-") || /^[A-Za-z_][A-Za-z0-9_]*=/.test(tokens[index])))
+      index += 1;
+    if (index >= tokens.length)
+      return -1;
+  }
+  return index;
+}
+function escapeExpression(value) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+// shared/review-publication-state-guard.ts
+var PROTECTED_STATE_DIRECTORIES = [
+  ".review-publication",
+  path4.join(".claude", "review-publication-sessions")
+];
+var RECURSIVE_FILE_TOOLS = new Set(["find", "glob", "grep", "list", "search"]);
+var RECURSIVE_SHELL_UTILITIES = new Set(["du", "find", "rg", "tar"]);
+var PATH_CHANGING_UTILITIES = new Set(["mv", "rename"]);
+var SHELL_WRAPPERS = new Set(["bash", "dash", "ksh", "sh", "zsh"]);
+var PUBLICATION_WORKER_NAMES = [
+  "review-publication",
+  "review-publication.mjs",
+  "review-publication-worker.bundle.mjs",
+  "review-publication-worker.mjs"
+];
+var GLOB_MAGIC = /[*?{\[]/;
+var UNRESOLVED_DIRECTORY = Symbol("unresolved-directory");
+function detectReviewPublicationCredentialAccess(call) {
+  const preparedCall = {
+    ...call,
+    protectedRoots: protectedRoots(call).map((lexical) => ({
+      canonical: canonicalProtectedRoot(lexical),
+      lexical
+    }))
+  };
+  const targetsProtectedState = !!call.path && isProtectedStatePath(call.path, preparedCall);
+  const shellRunsInsideProtectedState = call.tool.toLowerCase() === "bash" && !!call.cwd && isProtectedStatePath(call.cwd, preparedCall);
+  if (targetsProtectedState || shellRunsInsideProtectedState || recursiveFileToolCanReachProtectedState(preparedCall) || shellReferencesProtectedPublicationState(preparedCall)) {
+    return "Refused \u2014 Review publication state and production worker mode are protected from model tool access.";
+  }
+  return null;
+}
+function protectedRoots(call) {
+  if (!call.home)
+    return [];
+  return PROTECTED_STATE_DIRECTORIES.map((directory) => path4.resolve(call.home, directory));
+}
+function normalizedCandidate(candidate, call, cwd = call.cwd) {
+  const optionValue = candidate.includes("=") ? candidate.slice(candidate.indexOf("=") + 1) : candidate;
+  const unquoted = optionValue.replace(/^[<>]+/, "").replace(/^(['"])(.*)\1$/, "$2");
+  if (!call.home) {
+    if (/^(?:~|\$HOME|\$\{HOME\})(?:\/|$)/.test(unquoted) || !cwd && !path4.isAbsolute(unquoted))
+      return null;
+    return path4.resolve(cwd ?? path4.parse(unquoted).root, unquoted);
+  }
+  const expanded = unquoted.replace(/^~(?=\/|$)/, call.home).replace(/^(?:\$HOME|\$\{HOME\})(?=\/|$)/, call.home);
+  return path4.resolve(cwd ?? call.home, expanded);
+}
+function canonicalizeExistingPath(candidate) {
+  let existing = candidate;
+  const missingSegments = [];
+  while (true) {
+    try {
+      return path4.join(realpathSync.native(existing), ...missingSegments.reverse());
+    } catch (error) {
+      if (!["ENOENT", "ENOTDIR"].includes(error.code ?? ""))
+        return null;
+      const parent = path4.dirname(existing);
+      if (parent === existing)
+        return null;
+      missingSegments.push(path4.basename(existing));
+      existing = parent;
+    }
+  }
+}
+function canonicalProtectedRoot(root) {
+  try {
+    return realpathSync.native(root);
+  } catch {
+    return null;
+  }
+}
+function isProtectedStatePath(candidate, call) {
+  const normalized = normalizedCandidate(candidate, call);
+  if (normalized === null)
+    return false;
+  return protectedRootEntries(call).some(({ lexical: root, canonical: canonicalRoot }) => {
+    if (isPathWithin(normalized, root))
+      return true;
+    if (!canonicalRoot)
+      return false;
+    const canonicalCandidate = canonicalizeExistingPath(normalized);
+    return canonicalCandidate !== null && isPathWithin(canonicalCandidate, canonicalRoot);
+  });
+}
+function pathScopeIntersectsProtectedState(candidate, call, cwd = call.cwd) {
+  const normalized = normalizedCandidate(candidate, call, cwd);
+  if (normalized === null)
+    return false;
+  return protectedRootEntries(call).some(({ lexical: root, canonical: canonicalRoot }) => {
+    if (scopesIntersect(normalized, root))
+      return true;
+    if (!canonicalRoot)
+      return false;
+    const canonicalCandidate = canonicalizeExistingPath(normalized);
+    return canonicalCandidate !== null && scopesIntersect(canonicalCandidate, canonicalRoot);
+  });
+}
+function protectedRootEntries(call) {
+  return call.protectedRoots ?? protectedRoots(call).map((lexical) => ({
+    canonical: canonicalProtectedRoot(lexical),
+    lexical
+  }));
+}
+function scopesIntersect(first, second) {
+  return isPathWithin(first, second) || isPathWithin(second, first);
+}
+function isPathWithin(candidate, root) {
+  const relative = path4.relative(root, candidate);
+  return relative === "" || !relative.startsWith(`..${path4.sep}`) && relative !== ".." && !path4.isAbsolute(relative);
+}
+function recursiveFileToolCanReachProtectedState(call) {
+  if (!RECURSIVE_FILE_TOOLS.has(call.tool.toLowerCase()))
+    return false;
+  const searchRoot = call.path ?? call.cwd;
+  if (!searchRoot)
+    return !!call.home;
+  if (pathScopeIntersectsProtectedState(searchRoot, call))
+    return true;
+  if (call.tool.toLowerCase() !== "glob" || !call.pattern)
+    return false;
+  const normalizedRoot = normalizedCandidate(searchRoot, call);
+  if (!normalizedRoot)
+    return false;
+  return pathScopeIntersectsProtectedState(fixedGlobPrefix(call.pattern, call), call, normalizedRoot);
+}
+function fixedGlobPrefix(pattern, call) {
+  const expanded = pattern.replace(/^~(?=\/|$)/, call.home ?? "~").replace(/^(?:\$HOME|\$\{HOME\})(?=\/|$)/, call.home ?? "$HOME");
+  const magicIndex = expanded.search(GLOB_MAGIC);
+  if (magicIndex < 0)
+    return expanded;
+  const fixed = expanded.slice(0, magicIndex);
+  if (fixed.endsWith(path4.sep))
+    return fixed;
+  const separator = fixed.lastIndexOf(path4.sep);
+  return separator < 0 ? "." : fixed.slice(0, separator + 1);
+}
+function shellReferencesProtectedPublicationState(call) {
+  if (!call.command)
+    return false;
+  if (inlineProgramAccessesProtectedState(call.command))
+    return true;
+  let effectiveCwd = call.cwd ?? UNRESOLVED_DIRECTORY;
+  let resolutionLost = false;
+  for (const statement of splitStatements(call.command, true)) {
+    const scopedCall = {
+      ...call,
+      cwd: effectiveCwd === UNRESOLVED_DIRECTORY ? undefined : effectiveCwd
+    };
+    if (pipelineReferencesProtectedState(statement, scopedCall))
+      return true;
+    const directoryChange = isDirectoryChange(statement);
+    if (resolutionLost && !directoryChange && tokenize(statement).length > 0)
+      return true;
+    effectiveCwd = changedDirectory(statement, scopedCall, effectiveCwd);
+    if (directoryChange)
+      resolutionLost = effectiveCwd === UNRESOLVED_DIRECTORY;
+  }
+  return false;
+}
+function pipelineReferencesProtectedState(statement, call) {
+  return anyPipeline(statement, (stages) => stages.some((stage) => {
+    const tokens = publicationCheckTokens(stage);
+    const referencesState = tokens.some((token) => [token, ...token.split(/\s+/)].some((part) => isProtectedStatePath(part, call) || globScopeIntersectsProtectedState(part, call)));
+    return referencesState || invokesProductionWorker(tokens) || pathChangingOperationIntersectsProtectedState(tokens, call) || shellWrapperReferencesProtectedState(tokens, call) || recursivelyTraversesShellPath(tokens, call);
+  }));
+}
+function publicationCheckTokens(stage) {
+  const tokenization = tokenizeDetailed(stage);
+  if (!tokenization.malformed)
+    return tokenization.tokens;
+  return tokenization.tokens.map((token) => token.replace(/\\([\s\S])/g, "$1").replace(/\\$/, ""));
+}
+function invokesProductionWorker(tokens) {
+  const parts = tokens.flatMap((token) => token.split(/\s+/)).filter(Boolean);
+  return parts.includes("--inetd") && parts.some(isPublicationWorkerToken);
+}
+function isPublicationWorkerToken(token) {
+  const basename = path4.basename(token.replace(/^["']|["']$/g, ""));
+  if (PUBLICATION_WORKER_NAMES.includes(basename))
+    return true;
+  if (!GLOB_MAGIC.test(basename))
+    return false;
+  return expandBracePatterns(basename).some((pattern) => {
+    try {
+      const expression = new RegExp(`^${pattern.replace(/[.+^$()|{}\\]/g, "\\$&").replaceAll("*", ".*").replaceAll("?", ".")}$`);
+      return PUBLICATION_WORKER_NAMES.some((name) => expression.test(name));
+    } catch {
+      return false;
+    }
+  });
+}
+function expandBracePatterns(pattern) {
+  const match = /\{([^{}]+)\}/.exec(pattern);
+  if (!match)
+    return [pattern];
+  return match[1].split(",").flatMap((choice) => expandBracePatterns(`${pattern.slice(0, match.index)}${choice}${pattern.slice(match.index + match[0].length)}`));
+}
+function pathChangingOperationIntersectsProtectedState(tokens, call) {
+  const executableIndex = commandExecutableIndex2(tokens);
+  if (executableIndex < 0)
+    return false;
+  const executable = path4.basename(tokens[executableIndex]);
+  if (!PATH_CHANGING_UTILITIES.has(executable))
+    return false;
+  const operands = tokens.slice(executableIndex + 1).filter((token) => token !== "--" && !/^-[^-]/.test(token));
+  return operands.some((operand) => pathScopeIntersectsProtectedState(operand, call));
+}
+function shellWrapperReferencesProtectedState(tokens, call) {
+  const executableIndex = commandExecutableIndex2(tokens);
+  if (executableIndex < 0 || !SHELL_WRAPPERS.has(path4.basename(tokens[executableIndex])))
+    return false;
+  const args = tokens.slice(executableIndex + 1);
+  const commandFlag = args.findIndex((argument) => /^-[A-Za-z]*c[A-Za-z]*$/.test(argument));
+  const nestedCommand = commandFlag < 0 ? undefined : args[commandFlag + 1];
+  return !!nestedCommand && shellReferencesProtectedPublicationState({
+    ...call,
+    command: nestedCommand
+  });
+}
+function commandExecutableIndex2(tokens) {
+  let index = tokens.findIndex((token) => !/^[A-Za-z_][A-Za-z0-9_]*=/.test(token));
+  while (index >= 0 && ["command", "env"].includes(path4.basename(tokens[index]))) {
+    index += 1;
+    while (index < tokens.length && (tokens[index].startsWith("-") || /^[A-Za-z_][A-Za-z0-9_]*=/.test(tokens[index]))) {
+      index += 1;
+    }
+    if (index >= tokens.length)
+      return -1;
+  }
+  return index;
+}
+function isDirectoryChange(statement) {
+  let stages = [];
+  anyPipeline(statement, (candidateStages) => {
+    stages = candidateStages;
+    return true;
+  });
+  if (stages.length !== 1)
+    return false;
+  const tokens = tokenize(stages[0]);
+  const executable = tokens.find((token) => !/^[A-Za-z_][A-Za-z0-9_]*=/.test(token));
+  return executable?.replace(/^.*\//, "") === "cd";
+}
+function changedDirectory(statement, call, current) {
+  let stages = [];
+  anyPipeline(statement, (candidateStages) => {
+    stages = candidateStages;
+    return true;
+  });
+  if (stages.length !== 1)
+    return current;
+  const tokens = tokenize(stages[0]);
+  const executableIndex = tokens.findIndex((token) => !/^[A-Za-z_][A-Za-z0-9_]*=/.test(token));
+  if (executableIndex < 0 || tokens[executableIndex].replace(/^.*\//, "") !== "cd")
+    return current;
+  const args = tokens.slice(executableIndex + 1).filter((token) => token !== "--");
+  if (args.length === 0)
+    return call.home ?? UNRESOLVED_DIRECTORY;
+  if (args.length !== 1 || !isSafeDirectoryLiteral(args[0]))
+    return UNRESOLVED_DIRECTORY;
+  const homeRelative = /^(?:\$HOME|\$\{HOME\}|~)(?:\/|$)/.test(args[0]);
+  if (current === UNRESOLVED_DIRECTORY && !path4.isAbsolute(args[0]) && !homeRelative) {
+    return UNRESOLVED_DIRECTORY;
+  }
+  return normalizedCandidate(args[0], call, call.cwd) ?? UNRESOLVED_DIRECTORY;
+}
+function isSafeDirectoryLiteral(candidate) {
+  if (["-", ".", ".."].includes(candidate))
+    return true;
+  if (/^(?:\$HOME|\$\{HOME\}|~)(?:\/|$)/.test(candidate))
+    return !GLOB_MAGIC.test(candidate);
+  return !/[`$*?{\[]/.test(candidate);
+}
+function globScopeIntersectsProtectedState(candidate, call) {
+  if (!GLOB_MAGIC.test(candidate))
+    return false;
+  return pathScopeIntersectsProtectedState(fixedGlobPrefix(candidate, call), call);
+}
+function recursivelyTraversesShellPath(tokens, call) {
+  const executableIndex = tokens.findIndex((token) => !/^[A-Za-z_][A-Za-z0-9_]*=/.test(token));
+  if (executableIndex < 0)
+    return false;
+  const executable = tokens[executableIndex].replace(/^.*\//, "");
+  const args = tokens.slice(executableIndex + 1);
+  const recursiveFlag = args.some((token) => /^-[A-Za-z]*[aArR][A-Za-z]*$/.test(token) || ["--archive", "--recursive"].includes(token));
+  if (!RECURSIVE_SHELL_UTILITIES.has(executable) && !recursiveFlag)
+    return false;
+  if (args.some((token) => !token.startsWith("-") && pathScopeIntersectsProtectedState(token, call))) {
+    return true;
+  }
+  if (!recursiveShellUsesWorkingDirectory(executable, args, recursiveFlag))
+    return false;
+  return !call.cwd ? !!call.home : pathScopeIntersectsProtectedState(call.cwd, call);
+}
+function recursiveShellUsesWorkingDirectory(executable, args, recursiveFlag) {
+  if (executable === "find")
+    return args.length === 0 || args[0].startsWith("-");
+  const positional = args.filter((token) => !token.startsWith("-"));
+  if (executable === "rg")
+    return positional.length <= 1;
+  if (executable === "grep" && recursiveFlag)
+    return positional.length <= 1;
+  if (executable === "du")
+    return positional.length === 0;
+  return positional.length === 0;
+}
+
 // shared/guard-core.ts
 function truncate(s, max = 80) {
   return s.length > max ? `${s.slice(0, max)}\u2026` : s;
@@ -432,8 +865,8 @@ var CREDENTIAL_PATTERNS = [
   /\.secrets([./]|$)/,
   /(^|[/\\"'])credentials(\.|$|[/\\"'])/
 ];
-function isCredentialPath(path2) {
-  return CREDENTIAL_PATTERNS.some((p) => p.test(path2));
+function isCredentialPath(path5) {
+  return CREDENTIAL_PATTERNS.some((p) => p.test(path5));
 }
 var CREDENTIAL_READERS = new Set([
   "cat",
@@ -710,6 +1143,7 @@ function detectBroadChmod(call) {
 }
 var DETECTORS = {
   "no-secret-access": detectSecretAccess,
+  "no-review-publication-credential-access": detectReviewPublicationCredentialAccess,
   "no-hardcoded-secret": detectHardcodedSecret,
   "no-shell-write": detectShellWrite,
   "no-html-transform": detectHtmlTransform,
@@ -737,23 +1171,38 @@ function evaluate(call) {
 }
 
 // harnesses/pi/extensions/guard-policies.ts
-function guard_policies_default(pi) {
-  pi.on("tool_call", (event, ctx) => {
-    const input = event.input ?? {};
-    const rawPath = input.path ?? input.file_path;
-    const rawContent = input.content ?? input.new_string;
-    const verdict = evaluate({
-      tool: String(event.toolName ?? ""),
-      command: input.command != null ? String(input.command) : undefined,
-      path: rawPath != null ? String(rawPath) : undefined,
-      content: rawContent != null ? String(rawContent) : undefined,
-      cwd: ctx?.cwd,
-      home: process.env.HOME
+var UNSAFE_HOME_REASON = "Refused \u2014 a safe absolute home directory could not be established for guard evaluation.";
+function createGuardPoliciesExtension(homeSource) {
+  return function guardPolicies(pi) {
+    const home = resolveGuardHome(homeSource.environmentHome, homeSource.platformHome);
+    pi.on("tool_call", (event, ctx) => {
+      if (!home)
+        return { block: true, reason: UNSAFE_HOME_REASON };
+      const input = event.input ?? {};
+      const tool = String(event.toolName ?? "").toLowerCase();
+      const rawPath = input.path ?? input.file_path;
+      const rawContent = input.content ?? input.new_string;
+      const verdict = evaluate({
+        tool,
+        command: input.command != null ? String(input.command) : undefined,
+        path: rawPath != null ? String(rawPath) : undefined,
+        pattern: tool === "glob" && input.pattern != null ? String(input.pattern) : undefined,
+        content: rawContent != null ? String(rawContent) : undefined,
+        cwd: ctx?.cwd,
+        home
+      });
+      if (verdict)
+        return { block: true, reason: verdict.reason };
     });
-    if (verdict)
-      return { block: true, reason: verdict.reason };
-  });
+  };
+}
+function guardPolicies(pi) {
+  createGuardPoliciesExtension({
+    environmentHome: process.env.HOME,
+    platformHome: homedir()
+  })(pi);
 }
 export {
-  guard_policies_default as default
+  guardPolicies as default,
+  createGuardPoliciesExtension
 };

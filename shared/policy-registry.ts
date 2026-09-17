@@ -45,6 +45,14 @@ export const POLICIES: Policy[] = [
     counterExample: { tool: "bash", command: 'echo "see ~/.aws/credentials for setup"' },
   },
   {
+    id: "no-review-publication-credential-access",
+    intent: "No model tool may read or alter Review publication state or invoke its production worker mode.",
+    kind: "secret",
+    floor: true,
+    example: { tool: "read", path: "~/.review-publication/signing-key", home: "/home/example" },
+    counterExample: { tool: "read", path: "~/.review-publication-notes/README.md", home: "/home/example" },
+  },
+  {
     id: "no-hardcoded-secret",
     intent: "No harness may write a hardcoded secret literal into a file.",
     kind: "content",

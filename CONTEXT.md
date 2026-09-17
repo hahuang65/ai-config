@@ -359,6 +359,20 @@ Standalone modes present it as read-only results by opening it once with the pla
 It lives in the OS temporary directory, updates in place across build fix rounds, and never becomes a repository artifact.
 _Avoid_: Architecture review report, diff review, build artifact.
 
+**Review publication**:
+A GitHub `COMMENT` review produced from a pull-request **Review change report** after a separate operating-system confirmation.
+The browser's Post review action requests publication but does not authorize provider mutation.
+After the signed confirmation token and exact selected content pass validation, the socket-activated publisher shows a bounded operating-system prompt outside model-visible channels with the exact actor, repository, pull request, base commit, head commit, selected Finding count, and inline-comment presence.
+Only explicit approval continues; every other prompt outcome fails closed before GitHub mutation.
+The publication contains a selection-derived general comment and the reviewer-selected Finding comments, preserves their validated inline locations, and remains bound to the report's exact pull-request scope.
+Every production report signature requires the repository, pull request, base commit, and head commit frozen by the current invocation boundary.
+The complete managed `~/.review-publication/` directory and Claude Code's `~/.claude/review-publication-sessions/` directory are protected credential and session state under the mandatory cross-harness guardrails, while the separately installed socket worker and trusted pre-model harness boundaries can use them outside model tool calls.
+The socket worker is a self-contained, integrity-verified artifact that is atomically installed under `~/.review-publication/`; wrappers and service definitions never run its editable repository source.
+The socket worker derives the platform from its runtime and reads its absolute GitHub CLI and operating-system confirmation executable paths from protected installation-owned configuration; model tool calls cannot select those values or invoke worker mode.
+Each saved Claude Code publication scope is bound to the exact session identifier, so a valid scope file copied to another session is rejected.
+This practical trust boundary prevents mistakes and ordinary model tool access but does not provide operating-system isolation from hostile code that already has unrestricted user-account access.
+_Avoid_: Automatic posting, browser authorization, approval, change request, operating-system-isolated signer
+
 **Change reviewer**:
 The read-only adversarial agent that reviews the current change against **Authoritative intent**.
 It runs in complete mode for the initial and final convergence reviews, or in targeted mode for an intermediate repair delta and its dependency closure.
@@ -421,6 +435,7 @@ A CLI-specific guard blocks target writes, staging, commits, pushes, and provide
 Interactive output shows the review pipeline, bounded credential-redacted logs, Findings, and the final Summary; redirected output uses plain status lines.
 The final Summary keeps the isolated clone and telemetry available until dismissal, then cleanup removes exactly the recorded review paths.
 The CLI opens a disposable HTML report but never starts `review-artifact`, posts a provider review, or waits for approval.
+A pull-request report can request the same socket-activated publisher used by direct pi and Claude Code reports, but no report or model-visible channel can supply the operating-system approval response.
 Detailed input, trust, and terminal behavior belongs to the CLI workflow references and `review-change --help`, not this glossary.
 _Avoid_: no-mistakes remote, delivery gate, pi session.
 
@@ -466,6 +481,9 @@ _Avoid_: refactoring (unqualified — hides the directed-vs-hygiene split).
 >
 > **Dev**: And `security.md` — I never want any harness reading my `.env`. Same deal, just share the rule?
 > **Expert**: No — that's the split. `security.md` as *guidance* is an **advisory rule** and shares fine. But "never read secrets" as an *enforced* constraint is a **guardrail policy**: it gets an ID in the **policy registry**, the detection lives once in the **guard core** (`isSecretPath`), and each **harness module** wires that core in via its **enforcement tier** — pi runs it in-process (tier A), while Claude runs it through a stdin/stdout shim (tier B). The **conformance test** proves both harnesses cover it because `no-secret-access` is in the **mandatory policy floor**.
+>
+> **Dev**: This pull-request report has five Findings, but I only want to send three of them.
+> **Expert**: Select those three in the report. The **Review publication** will regenerate its general comment from that selection, show the complete review for confirmation, and post only those inline comments.
 >
 > **Dev**: Should this small fix get a worktree now, in case it grows?
 > **Expert**: No. Start with a **local task branch** unless you explicitly want isolation; `/build` is the exception and must run in a linked worktree. It continues inside an existing linked worktree without adopting it, or acquires a **task worktree** through Orchard when started from the **main project directory**. If an ordinary task grows, convert its branch without changing its identity.

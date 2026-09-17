@@ -14,6 +14,8 @@ import {
   scrollArtifact,
 } from "./browser-fixtures";
 import { createConcurrencyLimit } from "../concurrency-limit";
+import { registerReviewPublicationBrowserCases } from "../review-change/review-publication.browser-cases";
+import { registerEmptyReviewPublicationBrowserCase } from "../review-change/review-publication-empty.browser-cases";
 import { startFirefoxBidiPool } from "./firefox-bidi";
 
 const macFirefox = "/Applications/Firefox.app/Contents/MacOS/firefox";
@@ -53,6 +55,9 @@ afterAll(async () => {
     await rm(browserPoolDirectory, { recursive: true, force: true });
   }
 }, BROWSER_TEST_TIMEOUT_MS);
+
+registerReviewPublicationBrowserCases({ browserTest, browserPool: () => browserPool });
+registerEmptyReviewPublicationBrowserCase({ browserTest, browserPool: () => browserPool });
 
 browserTest("completes annotations through the rendered browser surface", async () => {
   const review = await startBrowserReview({ artifactContent: annotationArtifact() });
