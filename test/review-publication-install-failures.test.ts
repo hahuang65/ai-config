@@ -6,6 +6,10 @@ import { fileURLToPath } from "node:url";
 
 import { validateManagedPublicationState } from "../review-publication/check-managed-state.mjs";
 import { loadPublicationKey } from "../skills/review-change/runtime/review-publication-state.mjs";
+import {
+  isolatedInstallerEnvironment,
+  type FixtureServicePlatform,
+} from "./review-publication-install-fixture";
 
 const repositoryRoot = fileURLToPath(new URL("..", import.meta.url));
 
@@ -130,19 +134,19 @@ async function managedInstallationSnapshot(home: string) {
   ])));
 }
 
-async function runInstaller(home: string, platform: string, additionalEnvironment: Record<string, string> = {}) {
+async function runInstaller(
+  home: string,
+  platform: FixtureServicePlatform,
+  additionalEnvironment: Record<string, string> = {},
+) {
+  const environment = await isolatedInstallerEnvironment({
+    home,
+    repositoryRoot,
+    platform,
+    additionalEnvironment,
+  });
   const processRef = Bun.spawn(["bash", path.join(repositoryRoot, "review-publication", "install.sh")], {
-    env: {
-      ...process.env,
-      HOME: home,
-      AI_CONFIG_REPO_DIR: repositoryRoot,
-      AI_CONFIG_SERVICE_ENABLE: "false",
-      AI_CONFIG_SERVICE_PLATFORM: platform,
-      AI_CONFIG_NODE_BIN: process.execPath,
-      AI_CONFIG_GH_BIN: process.execPath,
-      AI_CONFIG_CONFIRMATION_BIN: process.execPath,
-      ...additionalEnvironment,
-    },
+    env: environment,
     stdout: "pipe",
     stderr: "pipe",
   });

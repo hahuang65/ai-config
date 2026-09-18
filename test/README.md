@@ -34,6 +34,14 @@ The filename is an execution contract, not only a description.
 Do not add one-off path exceptions to the test-suite runner.
 If a new workload category needs different isolation or scheduling, add one classifier rule and direct contract coverage for the new category.
 
+## Platform boundaries
+
+Portable tests can render macOS and Linux service definitions or use fake service managers on either host.
+They must inject deterministic listener checks and service-manager executables, so the host's active services and installed commands cannot select a test path.
+A test that invokes real `launchctl` runs only in the `platform/macos-launchd` lane.
+A future test that invokes real `systemctl` must use a separate Linux-only lane and must not run on macOS.
+Linux must not run the macOS lane, and macOS must not run a native Linux lane.
+
 ## Authoring workflow
 
 1. Choose the least expensive evidence that proves the behavior.

@@ -9,6 +9,10 @@ import {
   TOTAL_SERVICE_LIFETIME_SECONDS,
 } from "../skills/review-change/runtime/review-publication-lifetime.mjs";
 import { loadPublicationKey } from "../skills/review-change/runtime/review-publication-state.mjs";
+import {
+  isolatedInstallerEnvironment,
+  type FixtureServicePlatform,
+} from "./review-publication-install-fixture";
 
 const repositoryRoot = fileURLToPath(new URL("..", import.meta.url));
 
@@ -58,17 +62,9 @@ test("repeated installation preserves the signing key without activating under a
   const home = await mkdtemp(path.join(tmpdir(), "review-publication-install-"));
   try {
     const install = async () => {
+      const environment = await isolatedInstallerEnvironment({ home, repositoryRoot, platform: "Linux" });
       const processRef = Bun.spawn(["bash", path.join(repositoryRoot, "review-publication", "install.sh")], {
-        env: {
-          ...process.env,
-          HOME: home,
-          AI_CONFIG_REPO_DIR: repositoryRoot,
-          AI_CONFIG_SERVICE_ENABLE: "false",
-          AI_CONFIG_SERVICE_PLATFORM: "Linux",
-          AI_CONFIG_NODE_BIN: process.execPath,
-          AI_CONFIG_GH_BIN: process.execPath,
-          AI_CONFIG_CONFIRMATION_BIN: process.execPath,
-        },
+        env: environment,
         stdout: "pipe",
         stderr: "pipe",
       });
@@ -314,17 +310,9 @@ test("rejects a symlinked macOS LaunchAgent without changing its target", async 
     await writeFile(outside, "unrelated state");
     await symlink(outside, path.join(launchAgents, "dev.review-publication.plist"));
 
+    const environment = await isolatedInstallerEnvironment({ home, repositoryRoot, platform: "Darwin" });
     const processRef = Bun.spawn(["bash", path.join(repositoryRoot, "review-publication", "install.sh")], {
-      env: {
-        ...process.env,
-        HOME: home,
-        AI_CONFIG_REPO_DIR: repositoryRoot,
-        AI_CONFIG_SERVICE_ENABLE: "false",
-        AI_CONFIG_SERVICE_PLATFORM: "Darwin",
-        AI_CONFIG_NODE_BIN: process.execPath,
-        AI_CONFIG_GH_BIN: process.execPath,
-        AI_CONFIG_CONFIRMATION_BIN: process.execPath,
-      },
+      env: environment,
       stdout: "pipe",
       stderr: "pipe",
     });
@@ -387,23 +375,19 @@ async function runRenderer(home: string, mode: string, template: string, destina
   return { status, stderr };
 }
 
-async function runInstaller(home: string, platform: string, additionalEnvironment: Record<string, string> = {}) {
-  const portCheck = path.join(home, "available-port-check");
-  await writeFile(portCheck, `#!${process.execPath}\nprocess.exit(0);\n`);
-  await chmod(portCheck, 0o755);
+async function runInstaller(
+  home: string,
+  platform: FixtureServicePlatform,
+  additionalEnvironment: Record<string, string> = {},
+) {
+  const environment = await isolatedInstallerEnvironment({
+    home,
+    repositoryRoot,
+    platform,
+    additionalEnvironment,
+  });
   const processRef = Bun.spawn(["bash", path.join(repositoryRoot, "review-publication", "install.sh")], {
-    env: {
-      ...process.env,
-      HOME: home,
-      AI_CONFIG_REPO_DIR: repositoryRoot,
-      AI_CONFIG_SERVICE_ENABLE: "false",
-      AI_CONFIG_SERVICE_PLATFORM: platform,
-      AI_CONFIG_NODE_BIN: process.execPath,
-      AI_CONFIG_GH_BIN: process.execPath,
-      AI_CONFIG_CONFIRMATION_BIN: process.execPath,
-      AI_CONFIG_PORT_CHECK_BIN: portCheck,
-      ...additionalEnvironment,
-    },
+    env: environment,
     stdout: "pipe",
     stderr: "pipe",
   });

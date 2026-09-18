@@ -4,6 +4,8 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
+import { isolatedInstallerEnvironment } from "./review-publication-install-fixture";
+
 const repositoryRoot = fileURLToPath(new URL("..", import.meta.url));
 const installedWorkerRelativePath = path.join(".review-publication", "review-publication-worker.mjs");
 const nodeExecutable = Bun.which("node");
@@ -130,17 +132,14 @@ async function createRepositoryFixture() {
 }
 
 async function runInstaller(home: string, fixtureRoot: string) {
+  const environment = await isolatedInstallerEnvironment({
+    home,
+    repositoryRoot: fixtureRoot,
+    platform: "Linux",
+    nodeExecutable,
+  });
   const processRef = Bun.spawn(["bash", path.join(fixtureRoot, "review-publication", "install.sh")], {
-    env: {
-      ...process.env,
-      HOME: home,
-      AI_CONFIG_REPO_DIR: fixtureRoot,
-      AI_CONFIG_SERVICE_ENABLE: "false",
-      AI_CONFIG_SERVICE_PLATFORM: "Linux",
-      AI_CONFIG_NODE_BIN: nodeExecutable,
-      AI_CONFIG_GH_BIN: process.execPath,
-      AI_CONFIG_CONFIRMATION_BIN: process.execPath,
-    },
+    env: environment,
     stdout: "pipe",
     stderr: "pipe",
   });

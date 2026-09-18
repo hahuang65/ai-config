@@ -1963,11 +1963,14 @@ root_leaks_into_module() {
 }
 
 run_install_fixture() {
-  local fixture_home="$1" node_executable
+  local fixture_home="$1" node_executable port_check
   node_executable="$(node -p 'process.execPath')"
+  port_check="$fixture_home/review-publication-port-available"
+  printf '#!%s\nprocess.exit(0);\n' "$node_executable" >"$port_check"
+  chmod 700 "$port_check"
   HOME="$fixture_home" AI_CONFIG_SERVICE_ENABLE=false \
     AI_CONFIG_NODE_BIN="$node_executable" AI_CONFIG_GH_BIN="$node_executable" \
-    AI_CONFIG_CONFIRMATION_BIN="$node_executable" \
+    AI_CONFIG_CONFIRMATION_BIN="$node_executable" AI_CONFIG_PORT_CHECK_BIN="$port_check" \
     bash "$REPO_DIR/install.sh"
 }
 

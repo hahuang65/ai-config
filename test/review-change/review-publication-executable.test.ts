@@ -5,6 +5,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 import { validateGitHubCliPath } from "../../skills/review-change/runtime/review-publication-executable.mjs";
+import { isolatedInstallerEnvironment } from "../review-publication-install-fixture";
 
 const repositoryRoot = fileURLToPath(new URL("../..", import.meta.url));
 const temporaryRoots: string[] = [];
@@ -92,17 +93,14 @@ async function writeExecutable(destination: string) {
 }
 
 async function runInstaller(home: string, ghExecutable: string) {
+  const environment = await isolatedInstallerEnvironment({
+    home,
+    repositoryRoot,
+    platform: "Linux",
+    githubExecutable: ghExecutable,
+  });
   const processRef = Bun.spawn(["bash", path.join(repositoryRoot, "review-publication", "install.sh")], {
-    env: {
-      ...process.env,
-      HOME: home,
-      AI_CONFIG_REPO_DIR: repositoryRoot,
-      AI_CONFIG_SERVICE_ENABLE: "false",
-      AI_CONFIG_SERVICE_PLATFORM: "Linux",
-      AI_CONFIG_NODE_BIN: process.execPath,
-      AI_CONFIG_GH_BIN: ghExecutable,
-      AI_CONFIG_CONFIRMATION_BIN: process.execPath,
-    },
+    env: environment,
     stdout: "pipe",
     stderr: "pipe",
   });
