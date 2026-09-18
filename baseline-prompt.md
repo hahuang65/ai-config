@@ -49,6 +49,7 @@ preload the whole directory.
 
 Load rules when their domain becomes relevant:
 
+- `a5.md` — in an A5 project, before authenticating AWS services, renewing IAM credentials, or managing local development containers
 - `git-commit.md` — before staging files, preparing a commit message, or committing
 - `mise.md` — before invoking a language or package-manager tool
 - `coding-style.md` — before writing or modifying source code

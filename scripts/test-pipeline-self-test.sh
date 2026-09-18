@@ -811,7 +811,7 @@ test_cli_ergonomics_missing_outcome_fails() {
 test_cli_ergonomics_readme_inventory_drift_fails() {
   local rel="README.md"
   fixture_replace "$rel"
-  awk '{ sub(/Rules \(7 advisory files\)/, "Rules (6 advisory files)"); print }' \
+  awk '{ sub(/Rules \(9 advisory files\)/, "Rules (8 advisory files)"); print }' \
     "$TMPDIR/$rel" >"$TMPDIR/$rel.tmp"
   mv "$TMPDIR/$rel.tmp" "$TMPDIR/$rel"
 

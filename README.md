@@ -262,7 +262,7 @@ Maintainer-facing composition rules are in [`AGENTS.md`](AGENTS.md).
 ├── commands/               Shared explicit aliases and compositions (deliver, rebase)
 ├── skills/                 Shared workflow capabilities and guides
 ├── agents/                 Shared specialist subagents
-├── rules/                  7 on-demand advisory rules
+├── rules/                  9 on-demand advisory rules
 ├── harnesses/              Claude Code and pi modules
 ├── shared/                 Guardrail policy registry and detection core
 ├── baseline-prompt.md
@@ -298,16 +298,18 @@ Detailed installation behavior lives under [`harnesses/`](harnesses/).
 
 ## Rules and guardrails
 
-Rules (7 advisory files) guide behavior and load only when relevant.
+Rules (9 advisory files) guide behavior and load only when relevant.
 They do not enforce policy.
 
 | Rule | Guidance |
 |---|---|
+| `a5` | A5 shortcuts for AWS access and local development containers. |
 | `coding-style` | Maintainable source structure and naming. |
 | `testing` | Behavior-focused TDD and test isolation. |
 | `performance` | Measurement, caching, pagination, and timeouts. |
 | `cli-ergonomics` | Bounded, deterministic Agent-facing CLIs. |
 | `git-commit` | Commit format, staging, and integration. |
+| `html-routing` | Safe routing for opening and presenting HTML files. |
 | `mise` | Mise-managed toolchains. |
 | `security` | Input, output, authorization, and logging safety. |
 

@@ -1730,8 +1730,8 @@ test_cli_ergonomics_rule_inventory() {
   local readme context
   readme="$(<"$REPO_DIR/README.md")"
   context="$(<"$REPO_DIR/CONTEXT.md")"
-  check_content_cached "$readme" "README.md" "Rules [(]7 advisory files[)]"
-  check_content_cached "$readme" "README.md" "rules/.*7 on-demand advisory rules"
+  check_content_cached "$readme" "README.md" "Rules [(]9 advisory files[)]"
+  check_content_cached "$readme" "README.md" "rules/.*9 on-demand advisory rules"
   check_content_cached "$readme" "README.md" '[|] `cli-ergonomics` [|]'
   check_content_cached "$readme" "README.md" "kunchenguid/axi/tree/93c5f334d6ec074c29ca8d74fa629530dd298a43"
   check_content_cached "$context" "CONTEXT.md" "cli-ergonomics"
