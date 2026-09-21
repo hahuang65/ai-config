@@ -215,6 +215,21 @@ else
   dim "  $CLI_TARGET → skills/review-change/bin/review-change.mjs"
 fi
 
+WORK_LOG_CLI_SOURCE="$REPO_DIR/skills/record-work/bin/work-log.mjs"
+WORK_LOG_CLI_TARGET="$CLI_BIN_DIR/work-log"
+if [ -e "$WORK_LOG_CLI_TARGET" ] || [ -L "$WORK_LOG_CLI_TARGET" ]; then
+  current_work_log_target="$(readlink "$WORK_LOG_CLI_TARGET" 2>/dev/null || true)"
+  if [ "$current_work_log_target" != "$WORK_LOG_CLI_SOURCE" ] && [ "$INSTALL_FORCE" != true ]; then
+    dim "  $WORK_LOG_CLI_TARGET — exists, skipping (--force to overwrite)"
+  else
+    ln -sfn "$WORK_LOG_CLI_SOURCE" "$WORK_LOG_CLI_TARGET"
+    dim "  $WORK_LOG_CLI_TARGET → skills/record-work/bin/work-log.mjs"
+  fi
+else
+  ln -s "$WORK_LOG_CLI_SOURCE" "$WORK_LOG_CLI_TARGET"
+  dim "  $WORK_LOG_CLI_TARGET → skills/record-work/bin/work-log.mjs"
+fi
+
 # ── Review publication service (shared tooling — not harness-specific) ──────
 
 echo ""

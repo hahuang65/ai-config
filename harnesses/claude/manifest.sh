@@ -24,11 +24,12 @@ install_module() {
 
   ln -sf "$MOD/settings.json" "$MOD/statusline.sh" "$MOD/hooks.json" "$config_root"
   mkdir -p "$config_root/hooks" "$config_root/themes"
-  ln -sf "$MOD/hooks/review-change-publication.ts" "$config_root/hooks/"
+  ln -sf "$MOD/hooks/review-change-publication.ts" "$MOD/hooks/work-log-reconcile.ts" "$config_root/hooks/"
   ln -sf "$MOD/themes/catppuccin-mocha.json" "$config_root/themes/"
   dim "  $config_root/settings.json"
   dim "  $config_root/statusline.sh"
   dim "  $config_root/hooks.json"
   dim "  $config_root/hooks/review-change-publication.ts (trusted in-session Review publication boundary)"
+  dim "  $config_root/hooks/work-log-reconcile.ts (Work log checkpoint safety net)"
   dim "  $config_root/themes/catppuccin-mocha.json"
 }

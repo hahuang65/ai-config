@@ -66,6 +66,8 @@
       "Bash(curl -sS *)",
       "Bash(docker compose *)",
       "Bash(command -v orchard)",
+      "Bash(command -v work-log)",
+      "Bash(work-log *)",
       "Bash(orchard)",
       "Bash(orchard *)",
       "EnterWorktree",
@@ -299,6 +301,11 @@
             "type": "command",
             "command": "bun ~/.dotfiles/ai/harnesses/claude/hooks/agentmemory-capture.ts",
             "timeout": 10
+          },
+          {
+            "type": "command",
+            "command": "bun ~/.claude/hooks/work-log-reconcile.ts",
+            "timeout": 10
           }
         ]
       }
@@ -375,6 +382,16 @@
             "timeout": 10
           }
         ]
+      },
+      {
+        "matcher": "Edit|Write|Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bun ~/.claude/hooks/work-log-reconcile.ts",
+            "timeout": 10
+          }
+        ]
       }
     ],
     "PostToolUseFailure": [
@@ -394,6 +411,15 @@
           {
             "type": "command",
             "command": "bun ~/.dotfiles/ai/harnesses/claude/hooks/agentmemory-capture.ts",
+            "timeout": 10
+          }
+        ]
+      },
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bun ~/.claude/hooks/work-log-reconcile.ts",
             "timeout": 10
           }
         ]

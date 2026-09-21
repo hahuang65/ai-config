@@ -58,6 +58,32 @@ There are no Markdown companions.
 The final Review change report is disposable and lives in the operating-system temp directory.
 See [`skills/build/SKILL.md`](skills/build/SKILL.md) for the complete workflow contract.
 
+## Universal Work log
+
+The Work log is one hidden, host-local, append-only record shared by every configured harness and repository.
+Repository identity associates and filters work but does not limit access to the universal store.
+`record-work` creates work items and immutable checkpoints for planned, active, paused, completed, and abandoned work.
+`summarize-work` queries Open work, timelines, period summaries, and work-item history through the packaged DuckDB views.
+Open work is an unordered bag with no priority or semantic ordering.
+
+`./install.sh` links the `work-log` agent-facing CLI into `~/.local/bin/` and installs the Claude Code and pi reconciliation adapters.
+The default store is `$XDG_DATA_HOME/work-log` when configured, or `~/.local/share/work-log` otherwise.
+Successful automatic checkpoints are quiet.
+Harness reconciliation requests a follow-up only when observed meaningful activity lacks a checkpoint.
+
+Typical agent-facing operations are:
+
+```text
+work-log open --json
+work-log digest
+work-log timeline --from 2026-09-01 --to 2026-09-18 --json
+work-log summary --from 2026-09-01 --to 2026-09-18
+work-log history work_<id> --json
+```
+
+Collection commands return at most 100 items by default and report returned, total, and truncation metadata in JSON.
+Use `--limit` for another bounded result or explicit `--all` when the complete collection is necessary.
+
 ## Optional historical memory
 
 The workflows can use [agentmemory](https://www.agent-memory.dev/) when its standard memory tools are available.
@@ -247,6 +273,8 @@ Run `review-change --help` for all options, accepted inputs, trust controls, and
 | `orchard` | Manage reusable, branch-bound worktrees. |
 | `commit` | Create one focused checkout-local commit. |
 | `resolve-conflicts` | Resolve supported merge, rebase, or restoration conflicts. |
+| `record-work` | Create work items and append meaningful lifecycle checkpoints. |
+| `summarize-work` | Query Open work, timelines, period summaries, and work-item history. |
 
 ### Commands
 
@@ -288,12 +316,13 @@ The [`example/`](example/) directory is also a clearly labeled legacy sample.
 | Rules | Canonical `~/.dotfiles/ai/rules/` | Canonical `~/.dotfiles/ai/rules/` |
 | Guardrails | Tier-B command-hook adapter | Tier-A in-process extension |
 | In-session Review publication boundary | Trusted `UserPromptSubmit` state and Finding-only `PreToolUse` `Write` hook | Trusted input extension and structured `review_change_publication` tool |
+| Work log integration | Session digest plus `PostToolUse` and `Stop` reconciliation hooks | Session digest plus tool-result and settled-agent reconciliation events |
 
 Claude Code and pi use the Catppuccin Mocha theme.
 Pi also gives successful `Edit` and `Write` tool rows a yellow background.
 Other successful tools stay green, and failures stay red.
 
-`./install.sh` reads each module manifest, installs shared primitives into native paths, removes dangling links, links `review-change`, and configures this repository's pre-commit hook.
+`./install.sh` reads each module manifest, installs shared primitives into native paths, removes dangling links, links `review-change` and `work-log`, and configures this repository's pre-commit hook.
 Detailed installation behavior lives under [`harnesses/`](harnesses/).
 
 ## Rules and guardrails

@@ -108,6 +108,8 @@ Apply it to review-specific side effects:
 
 ### 4. Execute (handoff)
 
+Read the [Work log protocol](../shared/references/work-log.md) and record the selected architecture outcome or explicit no-action decision as a meaningful checkpoint.
+
 When a grilled candidate is ready to happen, hand it off — this skill never edits code:
 
 - A **scoped deepening** (boundaries agreed, behavior preserved) → run `/refactor` with the agreed transformation as the goal.

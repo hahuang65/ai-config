@@ -1766,6 +1766,7 @@ test_pi_bundle_current() {
   local pairs=(
     "extensions/guard-policies.ts:guard-policies.bundle.ts"
     "extensions/review-change-publication.ts:review-change-publication.bundle.ts"
+    "extensions/work-log-reconcile.ts:work-log-reconcile.bundle.ts"
   )
   local pair source committed label tmp
   for pair in "${pairs[@]}"; do

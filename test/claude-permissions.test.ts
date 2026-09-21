@@ -22,6 +22,14 @@ test("Claude can run ESLint through npx without prompting", async () => {
   expect(allowed).toContain("Bash(npx eslint *)");
 });
 
+test("Claude can use the Work log without prompting", async () => {
+  const settings = JSON.parse(await readFile(SETTINGS_PATH, "utf8"));
+  const allowed = settings.permissions.allow as string[];
+
+  expect(allowed).toContain("Bash(command -v work-log)");
+  expect(allowed).toContain("Bash(work-log *)");
+});
+
 test("Claude can run the approved A5 commands without prompting", async () => {
   const settings = JSON.parse(await readFile(SETTINGS_PATH, "utf8"));
   const allowed = settings.permissions.allow as string[];

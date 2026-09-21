@@ -47,6 +47,8 @@ Pair with `/handoff` when the prototype needs its own focused session: hand off 
 
 ## When Done
 
+Read the [Work log protocol](../shared/references/work-log.md) and record the resolved answer as a meaningful checkpoint, even when the prototype produced no durable artifact.
+
 The _answer_ is the only thing worth keeping from a prototype. Capture it somewhere durable (commit message, ADR, issue, or a `NOTES.md` next to the prototype) along with the question it was answering. If the user is around, that capture is a quick conversation; if not, leave the placeholder so they (or you, on the next pass) can fill in the verdict before deleting the prototype.
 
 If the answer changes the project's ubiquitous language or crystallises a durable decision, load and follow [model-domain](../model-domain/SKILL.md).

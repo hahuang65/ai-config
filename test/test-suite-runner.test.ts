@@ -33,9 +33,9 @@ test("removes inherited Git controls from isolated Git lanes", () => {
   expect(isolatedGitEnvironment({ GIT_TEMPLATE_DIR: "/external/templates" })).not.toHaveProperty("GIT_TEMPLATE_DIR");
 });
 
-test("fits the pooled browser and ordinary Bun lanes within the execution budget", () => {
+test("keeps browser and ordinary Bun lanes from sharing the execution budget", () => {
   expect(BUN_TEST_EXECUTION_WEIGHTS.browser + BUN_TEST_EXECUTION_WEIGHTS.rest)
-    .toBeLessThanOrEqual(MAX_EXECUTION_WEIGHT);
+    .toBeGreaterThan(MAX_EXECUTION_WEIGHT);
 });
 
 test("starts the longest lanes that fit the available execution weight", async () => {

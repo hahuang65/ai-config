@@ -15,9 +15,11 @@ install: ## Symlink config into each harness root (~/.claude, ~/.pi/agent)
 bundle: ## Rebuild pi's self-contained extension bundles (pi can't resolve symlinked imports)
 	@bun build harnesses/pi/extensions/guard-policies.ts --target=bun --outfile harnesses/pi/guard-policies.bundle.ts >/dev/null
 	@bun build harnesses/pi/extensions/review-change-publication.ts --target=bun --outfile harnesses/pi/review-change-publication.bundle.ts >/dev/null
+	@bun build harnesses/pi/extensions/work-log-reconcile.ts --target=bun --outfile harnesses/pi/work-log-reconcile.bundle.ts >/dev/null
 	@bun review-publication/build-worker.mjs
 	@printf '  rebuilt harnesses/pi/guard-policies.bundle.ts\n'
 	@printf '  rebuilt harnesses/pi/review-change-publication.bundle.ts\n'
+	@printf '  rebuilt harnesses/pi/work-log-reconcile.bundle.ts\n'
 	@printf '  rebuilt review-publication/review-publication-worker.bundle.mjs\n'
 
 test: ## Run every check in safe concurrent lanes

@@ -60,6 +60,12 @@ For relevant UI, create the directory after grilling and before invoking `mockup
 For work without relevant UI, create it after post-grill chat confirmation at the start of Phase 2.
 Reuse the directory through all later phases and pass it to each invoked skill.
 
+## Work log checkpoints
+
+Read and follow the [Work log protocol](work-log.md) throughout the pipeline.
+Create or activate the parent work item before Phase 1, record resolved grilling decisions and artifact approvals as checkpoints, create child work items for independently actionable implementation slices, and complete the parent only after approved Review change.
+Successful automatic checkpoints remain quiet.
+
 ## Testable Interface Thread
 
 The spec, tasks, and implementation phases share the same testing contract in [testable-interfaces.md](testable-interfaces.md): tests attach to stable public interfaces of deep modules. `/spec` proposes the test surface with the module sketch, `/todo` carries it into each vertical slice, and `/code` / `/coach` write one behavior test at a time through that seam. Do not ask the user to decide from scratch which modules need tests; ask only to correct module boundaries or public-interface choices.

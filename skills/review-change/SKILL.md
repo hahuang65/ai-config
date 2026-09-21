@@ -27,6 +27,7 @@ Use [references/evidence.md](references/evidence.md) for focused Validation evid
 Use [references/repair-loop.md](references/repair-loop.md) for role isolation, bounded repairs, restart selection, and rereview.
 Use [references/pull-requests.md](references/pull-requests.md) for GitHub scope resolution, disposable worktrees, trust classification, and provider boundaries.
 Use [references/report.md](references/report.md) for portable HTML, build-mode `review-artifact` interaction and decision controls, and standalone one-shot opening without approval.
+Read the [Work log protocol](../shared/references/work-log.md) and record the terminal review outcome for matched work; complete a Build parent only after report approval.
 When `REVIEW_CHANGE_GATE=1`, follow [references/cli-mode.md](references/cli-mode.md) for process ownership, argument safety, repair eligibility, and terminal behavior.
 When invoked by `/build`, follow [references/build-mode.md](references/build-mode.md) for feature scope, specialist review, artifact synchronization, and the Review-to-done gate.
 

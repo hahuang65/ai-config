@@ -97,8 +97,10 @@ install_module() {
   # also keeps the install loop toolchain-free.
   ln -sf "$MOD/guard-policies.bundle.ts" "$config_root/extensions/guard-policies.ts"
   ln -sf "$MOD/review-change-publication.bundle.ts" "$config_root/extensions/review-change-publication.ts"
+  ln -sf "$MOD/work-log-reconcile.bundle.ts" "$config_root/extensions/work-log-reconcile.ts"
   dim "  $config_root/extensions/guard-policies.ts (bundled guard)"
   dim "  $config_root/extensions/review-change-publication.ts (trusted in-session Review publication boundary)"
+  dim "  $config_root/extensions/work-log-reconcile.ts (Work log checkpoint safety net)"
 
   # Replace agentmemory's copied pi adapter with the managed explicit-recall
   # adapter while preserving its directory for compatibility with upgrades.

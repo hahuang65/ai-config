@@ -17,6 +17,9 @@ Before staging or writing a commit message, read both:
 
 Do not rely on memory for the commit format. Do not invent a different format.
 
+Read the [Work log protocol](../shared/references/work-log.md).
+After a successful commit related to active work, record the commit identifier as checkpoint evidence without declaring the work complete unless completion is independently true.
+
 ## Checkout selection
 
 Use the current checkout by default.

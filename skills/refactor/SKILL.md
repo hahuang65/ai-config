@@ -102,6 +102,8 @@ If any step fails, fix the issue and repeat the loop until all 4 pass cleanly. S
 
 ### Step 8: Report
 
+Read the [Work log protocol](../shared/references/work-log.md) and record the verified refactoring outcome as a meaningful checkpoint.
+
 Summarize the refactoring results:
 
 - Transformations completed (and any that were skipped/reverted)

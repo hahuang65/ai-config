@@ -9,6 +9,7 @@ argument-hint: "[operation-goal-or-intent]"
 Resolve a supported Git conflict context without inventing behavior or discarding either side's intent silently.
 
 Read [the resolution workflow](references/workflow.md) before changing a conflicted file.
+Read the [Work log protocol](../shared/references/work-log.md) and record the resolved operation as a meaningful checkpoint without declaring the owning work complete.
 When incompatible hunks remain, also read [the conflict decision review](references/conflict-review.md).
 
 Treat a supplied operation goal or intent as context for recovering the competing changes' intent.

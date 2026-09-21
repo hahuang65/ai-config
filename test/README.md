@@ -27,8 +27,8 @@ Keep its focused cases in `*.browser-cases.ts` modules when several case groups 
 An ordinary `*.test.ts` file must not import the Firefox driver or start Firefox indirectly.
 Browser tests must use the shared Firefox fixtures and bounded concurrency rather than creating an unbounded process pool.
 Browser case modules must share one of the bounded discovered suites instead of starting a new Firefox process per file.
-The pooled browser and ordinary Bun lanes may run together because their combined execution weight stays within the scheduler budget.
-The macOS launchd lane never shares that pool and runs one service integration check at a time.
+The browser and ordinary Bun lanes do not run together because Git fixtures, DuckDB subprocesses, and Firefox now exceed the scheduler budget when combined.
+The macOS launchd lane never shares either lane and runs one service integration check at a time.
 
 The filename is an execution contract, not only a description.
 Do not add one-off path exceptions to the test-suite runner.

@@ -43,6 +43,9 @@ See [references/handoff-template.md](references/handoff-template.md) for the doc
 
 ## After Writing
 
+When the handoff pauses an active work item, read the [Work log protocol](../shared/references/work-log.md) and record the paused state with the next-session goal as its next action.
+Do not mark work paused when the handoff only delegates unrelated work and the current work continues.
+
 Tell the user:
 
 > Handoff document at `<absolute-path>`.

@@ -230,6 +230,35 @@ The check that every harness covers the **mandatory policy floor** and that ever
 The subset of guardrail policies every harness must enforce (at tier A/B/C/D strength) to be admitted to the fleet — e.g. `no-secret-access`. A harness that cannot meet the floor must be **sandboxed or rejected**.
 _Avoid_: baseline.
 
+### Work-log terms
+
+**Work log**:
+The single hidden, host-local, append-only, authoritative record of planned and performed work that every configured harness and repository can access.
+Repository identity is metadata for association and filtering, not an access boundary or separate store.
+Every work item belongs to a Git repository.
+A normalized Git origin identifies the repository when available; otherwise a persisted identity for the resolved common Git directory keeps linked worktrees together and remains stable if an origin is added later.
+It contains **work items** and their **checkpoints** and is distinct from **historical memory**.
+_Avoid_: Devlog, development log, task database, repository-free work area.
+
+**Work item**:
+One concrete unit of work with a stable identifier, an optional parent work item, and a current **work state** derived from its checkpoints.
+A `/build` goal is one parent work item, while independently actionable implementation slices are child work items.
+
+**Checkpoint**:
+An immutable UTC-timestamped event that records a work item's creation, state transition, meaningful progress, or evidence such as a Git commit.
+File activity is evidence for a checkpoint rather than a work item by itself.
+
+**Work state**:
+The current lifecycle position of a **work item**, derived from its checkpoint history: planned, active, paused, completed, or abandoned.
+Completed and abandoned are terminal; later work uses a linked follow-up work item instead of rewriting history.
+_Avoid_: Jira status, GitHub status.
+
+**Open work**:
+The derived, unordered collection of planned, active, and paused **work items** in the **work log**.
+It has no priority or semantic ordering and is not a separate store or source of truth.
+Requests can call it a task queue, task log, or workload, but durable records use **Open work**.
+_Avoid_: Task queue, task log, workload, backlog, ordered queue, prioritized list, to-do file.
+
 ### Build-pipeline terms
 
 **UI mockup**:
@@ -490,3 +519,6 @@ _Avoid_: refactoring (unqualified — hides the directed-vs-hygiene split).
 >
 > **Dev**: The feature is delivered. Can I remove its task worktree now?
 > **Expert**: Let Orchard apply the configured delivery strategy. Local delivery from the **main project directory** recycles immediately when safe; pull-request delivery retains the task until landing is proven and explicit recycling is safe.
+>
+> **Dev**: Add improving the installer to my task queue, but do not start it now.
+> **Expert**: I will create a planned **work item**. It will appear in **Open work**, and later **checkpoints** will record when it starts, pauses, completes, or is abandoned.

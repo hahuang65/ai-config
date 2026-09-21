@@ -11,5 +11,6 @@ Guide one physical part from requirements to adjustable source, printable export
 This is a standalone workflow and does not use the software Build workflow.
 
 Read and follow the [3D design workflow](references/workflow.md).
+Read the [Work log protocol](../shared/references/work-log.md) and record approved design checkpoints and final completion.
 Load the [FDM design guidance](references/fdm-design.md) when dimensions, geometry, material, orientation, or validation decisions become relevant.
 Load the [model review sheet contract](references/model-review-sheet.md) before presenting a checkpoint for feedback or approval.

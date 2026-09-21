@@ -59,6 +59,8 @@ Take the **first entry** from the listing (the newest handoff) and assume it —
 
 ## Resuming
 
+When pickup resumes a paused work item, read the [Work log protocol](../shared/references/work-log.md), match the explicit work-item identifier when present, and record the transition to active before continuing.
+
 Once the document is selected (and confirmed, if an argument was given):
 
 1. **Read it in full.**
