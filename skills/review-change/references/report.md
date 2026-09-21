@@ -2,7 +2,9 @@
 
 Write one self-contained HTML Review change report to the operating system temp directory.
 Use `<change title> - Review Findings` in its `<title>` so the browser tab identifies the reviewed change and the document intent.
-Resolve the temp directory from `$TMPDIR`, then the platform temp convention, and name the file with a stable scope identity so build repair rounds update the same path.
+In standalone CLI mode, use the exact parent-created `reportRoot` from Invocation data without trying to discover it through an environment or shell command.
+In other modes, resolve the temp directory from `$TMPDIR`, then the platform temp convention.
+Name the file with a stable scope identity so build repair rounds update the same path.
 Never write this disposable report into the repository or feature directory.
 Build mode presents the report through `review-artifact` for its interactive decision loop.
 Standalone modes open the completed report with the ordinary platform web browser and do not start a `review-artifact` session or wait for approval.
@@ -125,7 +127,7 @@ In pull-request, explicit-range, standalone skill, and standalone CLI modes, omi
 Retain the complete results and HTML report.
 For an exact GitHub pull request, retain its Review publication selection form without starting a publisher or agent poll until the reviewer continues.
 Opening the report is presentation only: return after successful viewer dispatch and do not poll for feedback, require approval, wait for viewer closure, or otherwise block completion on browser interaction.
-When `REVIEW_CHANGE_GATE=1`, write the report into the provided report root, report its path, and return after the report stage; the parent CLI validates and launches the single generated HTML file in a new Firefox window through a `file:` URL on macOS or uses the platform HTML viewer elsewhere.
+When `REVIEW_CHANGE_GATE=1`, write the report directly beneath the exact `reportRoot` in Invocation data, report its path, and return after the report stage; the parent CLI validates and launches the single generated HTML file in a new Firefox window through a `file:` URL on macOS or uses the platform HTML viewer elsewhere.
 The parent retains the isolated review root while its final Summary is visible, then removes that root after the user dismisses the CLI.
 In an ordinary agent session, open the completed HTML file once with the platform's normal file opener and return the review results in chat.
 If opening fails, report the path and failure so the user can open the retained HTML manually.

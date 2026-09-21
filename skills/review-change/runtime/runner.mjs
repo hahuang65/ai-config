@@ -353,6 +353,7 @@ async function runInWorkspace(options, workspace, skillDirectory, environment, d
     ...options,
     sourceRoot: workspace.sourceRoot,
     reviewRoot: workspace.cwd,
+    reportRoot,
     requestedRepositorySshUrl: workspace.details?.requestedRepositorySshUrl,
     materializationState: workspace.details?.materializationState,
     skillDirectory,

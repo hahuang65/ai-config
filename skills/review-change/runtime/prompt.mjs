@@ -4,6 +4,7 @@ export function buildReviewChangePrompt({
   scopeKind,
   sourceRoot,
   reviewRoot,
+  reportRoot,
   requestedRepositorySshUrl,
   immutableRange,
   selectedHeadOid,
@@ -20,6 +21,7 @@ export function buildReviewChangePrompt({
     scopeKind,
     sourceRoot,
     reviewRoot,
+    reportRoot,
     requestedRepositorySshUrl,
     immutableRange,
     selectedHeadOid,
@@ -40,6 +42,7 @@ export function buildReviewChangePrompt({
     "The recorded immutable range is authoritative; never replace it with mutable branch refs, and emit ask-user if target is null.",
     "When scopeKind is working-state, review the frozen committed range plus every staged, unstaged, deleted, and untracked change present in the isolated snapshot.",
     "Run the complete standalone read-only workflow now and produce its HTML report plus terminal summary.",
+    "The parent-created reportRoot in Invocation data is the exact authorized output directory. Use that literal path directly for the report HTML, claims JSON, and form fragment; do not discover it from environment variables or shell commands.",
     "Use review_change_status to mark start and completion or failure for review, evidence, documentation, lint, and report in that exact order; call it alone and wait for its successful result before issuing any work for that stage.",
     "Within every active stage, announce each current sub-stage with action step before performing it; keep each sub-stage message to six words or fewer, and use action log only for concise observable items within the announced sub-stage.",
     "When a sub-stage produces Findings, missing evidence, documentation issues, or any other item collection, call action log once per item using six words or fewer; never combine multiple items in one message, repeat the stage or sub-stage label, or summarize the collection in the stage completion message.",
@@ -52,7 +55,7 @@ export function buildReviewChangePrompt({
     "Explain every severity and action tag in a concise legend before the Findings, including who decides next and that standalone tags never trigger mutation.",
     "Progress messages must describe observable actions and outcomes only, never hidden reasoning or chain-of-thought; include structured findings and risk whenever they become known.",
     "Do not invoke Change fixer or modify repository files.",
-    "Do not invoke review-artifact or wait for approval; write the completed self-contained HTML report into the provided temporary report root, report its path, and exit so the parent process opens it for the user.",
+    "Do not invoke review-artifact or wait for approval; write the completed self-contained HTML report directly beneath reportRoot, report its path, and exit so the parent process opens it for the user.",
     "Do not use build mode and do not repeat the repository's broad test suite.",
     "Do not invoke the review-change executable; this process already owns the active gate.",
     "Never stage, commit, push, or mutate provider state.",
@@ -62,7 +65,7 @@ export function buildReviewChangePrompt({
 
 function publicationReportInstruction(scopeKind) {
   if (scopeKind === "pull-request") {
-    return "Build the Review publication section only through the trusted renderer named in publicationMetadata.signerPath. Write one bounded temporary claims JSON file in the provided report root containing the frozenScope, host, signingKeyId, commentTemplateVersion, repository, pullRequest, scope, and each Finding's stable ID, title, immutable comment body, exact path, line, and side. Carry side from the structured reviewer result: LEFT means an old or deleted line, and RIGHT means a new, added, or current line. Never guess, default, or remap a Finding side; keep a Finding with missing or invalid side presentation-only. Do not add an actor or report identity. Run the exact absolute publicationMetadata.signerPath as --sign <claims-file> <form.review-fragment>; the helper rejects metadata that differs from the parent-frozen scope, creates the signed publication envelope, removes the claims file, and writes the deterministic selection form. Embed that rendered fragment unchanged in the report. It selects all Findings initially, lets the reviewer exclude irrelevant Findings, derives the general comment from the selection, and posts only publication_token and selected_finding_id fields to http://127.0.0.1:4392/api/v1/review-publication-confirmations. The review remains GitHub-read-only; only the later local confirmation can publish.";
+    return "Build the Review publication section only through the trusted renderer named in publicationMetadata.signerPath. Write one bounded temporary claims JSON file directly beneath reportRoot containing the frozenScope, host, signingKeyId, commentTemplateVersion, repository, pullRequest, scope, and each Finding's stable ID, title, immutable comment body, exact path, line, and side. Carry side from the structured reviewer result: LEFT means an old or deleted line, and RIGHT means a new, added, or current line. Never guess, default, or remap a Finding side; keep a Finding with missing or invalid side presentation-only. Do not add an actor or report identity. Run the exact absolute publicationMetadata.signerPath as --sign <claims-file> <form.review-fragment>; the helper rejects metadata that differs from the parent-frozen scope, creates the signed publication envelope, removes the claims file, and writes the deterministic selection form. Embed that rendered fragment unchanged in the report. It selects all Findings initially, lets the reviewer exclude irrelevant Findings, derives the general comment from the selection, and posts only publication_token and selected_finding_id fields to http://127.0.0.1:4392/api/v1/review-publication-confirmations. The review remains GitHub-read-only; only the later local confirmation can publish.";
   }
   return "This report is presentation-only: include no Review publication, selection form, signed publication envelope, or provider action.";
 }

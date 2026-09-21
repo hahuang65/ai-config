@@ -285,6 +285,9 @@ test("uses canonical provider casing in publication pull-request URLs", async ()
 
   const invocation = JSON.parse(/^Invocation data: (.+)$/m.exec(prompt)?.[1] ?? "{}");
   expect({
+    reportRoot: invocation.reportRoot,
+    usesLiteralReportRoot: prompt.includes("Use that literal path directly"),
+    avoidsEnvironmentDiscovery: prompt.includes("do not discover it from environment variables or shell commands"),
     pullRequest: invocation.publicationMetadata.pullRequest,
     host: invocation.publicationMetadata.host,
     signingKeyId: invocation.publicationMetadata.signingKeyId,
@@ -292,6 +295,9 @@ test("uses canonical provider casing in publication pull-request URLs", async ()
     signerPath: invocation.publicationMetadata.signerPath,
     frozenScopeParts: invocation.publicationMetadata.frozenScope.split(".").length,
   }).toEqual({
+    reportRoot: "/reports/session",
+    usesLiteralReportRoot: true,
+    avoidsEnvironmentDiscovery: true,
     pullRequest: {
       id: "PR_789",
       number: 842,
