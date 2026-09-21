@@ -8,6 +8,9 @@ const [platform, home, serviceManager, domain = ""] = process.argv.slice(2);
 const FAILURE = "Review publication cannot verify that 127.0.0.1:4392 belongs to the managed Review publication service. Stop the unrelated listener or repair the managed user service, then try again.";
 const QUERY_TIMEOUT_MS = 5_000;
 const MAX_QUERY_OUTPUT_BYTES = 128 * 1024;
+const ACTIVE_LAUNCHD_STATE = /^[ \t]*state = (?:waiting|running)[ \t]*$/m;
+const IDLE_LAUNCHD_STATE = /^[ \t]*state = not running[ \t]*$/m;
+const PASSIVE_REVIEW_LISTENER = /["']?Listener["']?\s*=\s*\{[\s\S]*?service name = 4392[\s\S]*?passive = 1\b/;
 
 try {
   if (!["Darwin", "Linux"].includes(platform) || !path.isAbsolute(home) || !path.isAbsolute(serviceManager)) {
@@ -36,9 +39,11 @@ async function verifyLaunchdListener() {
   }
   const target = `${domain}/dev.review-publication`;
   const output = serviceQuery(["print", target]);
+  const activeService = ACTIVE_LAUNCHD_STATE.test(output);
+  const idleSocket = IDLE_LAUNCHD_STATE.test(output) && PASSIVE_REVIEW_LISTENER.test(output);
   if (!output.includes(`${target} = {`)
     || !output.includes(`path = ${definition}`)
-    || !/state = (?:waiting|running)/.test(output)
+    || (!activeService && !idleSocket)
     || !/["']?Listener["']?\s*=\s*\{[^}]*service name = 4392/s.test(output)) {
     throw new Error(FAILURE);
   }

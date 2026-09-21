@@ -30,6 +30,39 @@ test("enabled repeat installation accepts only the exact managed listener on mac
   }
 }, 15_000);
 
+test("enabled repeat installation accepts an idle macOS socket-activated listener", async () => {
+  const fixture = await serviceFixture("Darwin");
+  try {
+    expect(await fixture.install()).toMatchObject({ status: 0 });
+
+    const installation = await fixture.install({
+      AI_CONFIG_FIXTURE_LAUNCHD_STATE: "not running",
+      AI_CONFIG_FIXTURE_LAUNCHD_PASSIVE: "1",
+    });
+
+    expect({ status: installation.status, stderr: installation.stderr, listening: await fixture.isListening() })
+      .toEqual({ status: 0, stderr: "", listening: true });
+  } finally {
+    await fixture.cleanup();
+  }
+}, 15_000);
+
+test("enabled repeat installation rejects an idle macOS listener without a passive socket", async () => {
+  const fixture = await serviceFixture("Darwin");
+  try {
+    expect(await fixture.install()).toMatchObject({ status: 0 });
+
+    const installation = await fixture.install({ AI_CONFIG_FIXTURE_LAUNCHD_STATE: "not running" });
+
+    expect({
+      status: installation.status,
+      corrective: installation.stderr.includes("cannot verify that 127.0.0.1:4392 belongs to the managed"),
+    }).toEqual({ status: 1, corrective: true });
+  } finally {
+    await fixture.cleanup();
+  }
+}, 15_000);
+
 test("enabled repeat installation rejects unrelated and ambiguous listener ownership", async () => {
   for (const platform of platforms) {
     for (const owner of ["unrelated", "ambiguous"] as const) {
@@ -188,8 +221,10 @@ if (${JSON.stringify(platform)} === "Darwin") {
   if (args[0] === "print") {
     event("print");
     if (owner === "unrelated") process.exit(113);
-    const socket = owner === "exact" ? 'sockets = { "Listener" = { service name = 4392 } }' : "sockets = unknown";
-    console.log(args[1] + " = {\\n path = " + ${JSON.stringify(definition)} + "\\n state = waiting\\n " + socket + "\\n}");
+    const state = process.env.AI_CONFIG_FIXTURE_LAUNCHD_STATE || "waiting";
+    const passive = process.env.AI_CONFIG_FIXTURE_LAUNCHD_PASSIVE === "1" ? " passive = 1" : "";
+    const socket = owner === "exact" ? 'sockets = { "Listener" = { service name = 4392' + passive + ' } }' : "sockets = unknown";
+    console.log(args[1] + " = {\\n path = " + ${JSON.stringify(definition)} + "\\n state = " + state + "\\n " + socket + "\\n}");
   } else if (args[0] === "bootout") { fs.rmSync(${JSON.stringify(listener)}, { force: true }); event("bootout"); }
   else if (args[0] === "bootstrap") activate("bootstrap", "bootstrap-failed");
   else if (args[0] === "enable") event("enable");
