@@ -10,6 +10,8 @@ import {
   temporaryDirectory,
 } from "./support.ts";
 
+const HOUR_MILLISECONDS = 60 * 60 * 1_000;
+
 afterEach(cleanupTemporaryDirectories);
 
 describe("work-log queries", () => {
@@ -135,11 +137,43 @@ describe("work-log queries", () => {
     expect(JSON.parse(open.stdout).items[0].title).toBe("Correct title");
   });
 
-  test("derives active and elapsed time from lifecycle checkpoints", () => {
+  test("derives continuing active and elapsed time for active work", () => {
+    const cwd = repository();
+    const store = temporaryDirectory("work-log-store-");
+    const startedAt = new Date(Date.now() - (2 * HOUR_MILLISECONDS)).toISOString();
+    const started = runWorkLog(cwd, store, {
+      action: "start", title: "Active timed work", summary: "Keep this work active.",
+    }, startedAt);
+    const workItemId = JSON.parse(started.stdout).work_item_id;
+
+    const timedQuery = queryTimedWorkItem(cwd, store, workItemId);
+
+    expectDurationWithinQueryWindow(timedQuery.workItem.active_seconds, startedAt, timedQuery);
+    expectDurationWithinQueryWindow(timedQuery.workItem.elapsed_seconds, startedAt, timedQuery);
+  });
+
+  test("stops active time while paused but continues elapsed time", () => {
+    const cwd = repository();
+    const store = temporaryDirectory("work-log-store-");
+    const now = Date.now();
+    const startedAt = new Date(now - (3 * HOUR_MILLISECONDS)).toISOString();
+    const started = runWorkLog(cwd, store, {
+      action: "start", title: "Paused timed work", summary: "Start before pausing.",
+    }, startedAt);
+    const workItemId = JSON.parse(started.stdout).work_item_id;
+    transition(cwd, store, workItemId, "pause", new Date(now - (2 * HOUR_MILLISECONDS)).toISOString());
+
+    const timedQuery = queryTimedWorkItem(cwd, store, workItemId);
+
+    expect(timedQuery.workItem.active_seconds).toBe(3600);
+    expectDurationWithinQueryWindow(timedQuery.workItem.elapsed_seconds, startedAt, timedQuery);
+  });
+
+  test("freezes active and elapsed time when work completes", () => {
     const cwd = repository();
     const store = temporaryDirectory("work-log-store-");
     const started = runWorkLog(cwd, store, {
-      action: "start", title: "Timed work", summary: "Start the first interval.",
+      action: "start", title: "Completed timed work", summary: "Start the first interval.",
     }, "2026-09-18T10:00:00.000Z");
     const workItemId = JSON.parse(started.stdout).work_item_id;
     transition(cwd, store, workItemId, "pause", "2026-09-18T11:00:00.000Z");
@@ -148,8 +182,27 @@ describe("work-log queries", () => {
 
     const workItem = JSON.parse(query(cwd, store, "item", workItemId, "--json").stdout);
 
-    expect(workItem.active_seconds).toBe(7200);
-    expect(workItem.elapsed_seconds).toBe(10800);
+    expect({
+      active_seconds: workItem.active_seconds,
+      elapsed_seconds: workItem.elapsed_seconds,
+    }).toEqual({ active_seconds: 7200, elapsed_seconds: 10800 });
+  });
+
+  test("freezes absolute active and elapsed time across offset changes when work is abandoned", () => {
+    const cwd = repository();
+    const store = temporaryDirectory("work-log-store-");
+    const started = runWorkLog(cwd, store, {
+      action: "start", title: "Abandoned timed work", summary: "Start before abandoning.",
+    }, "2026-03-08T01:30:00.000-08:00");
+    const workItemId = JSON.parse(started.stdout).work_item_id;
+    transition(cwd, store, workItemId, "abandon", "2026-03-08T03:30:00.000-07:00");
+
+    const workItem = JSON.parse(query(cwd, store, "item", workItemId, "--json").stdout);
+
+    expect({
+      active_seconds: workItem.active_seconds,
+      elapsed_seconds: workItem.elapsed_seconds,
+    }).toEqual({ active_seconds: 3600, elapsed_seconds: 3600 });
   });
 
   test("renders a compact repository-scoped session digest", () => {
@@ -189,6 +242,29 @@ function query(cwd: string, store: string, ...argumentsOrEnvironment: any[]) {
     encoding: "utf8",
     env: { ...process.env, WORK_LOG_DIR: store, TZ: "UTC", ...extraEnvironment },
   });
+}
+
+function queryTimedWorkItem(cwd: string, store: string, workItemId: string) {
+  const queryStartedAt = Date.now();
+  const invocation = query(cwd, store, "item", workItemId, "--json");
+  const queryFinishedAt = Date.now();
+  return {
+    workItem: JSON.parse(invocation.stdout),
+    queryStartedAt,
+    queryFinishedAt,
+  };
+}
+
+function expectDurationWithinQueryWindow(
+  actualSeconds: number,
+  checkpointAt: string,
+  queryWindow: { queryStartedAt: number; queryFinishedAt: number },
+) {
+  const checkpointMilliseconds = new Date(checkpointAt).valueOf();
+  const minimumSeconds = Math.round((queryWindow.queryStartedAt - checkpointMilliseconds) / 1_000);
+  const maximumSeconds = Math.round((queryWindow.queryFinishedAt - checkpointMilliseconds) / 1_000);
+  expect(actualSeconds).toBeGreaterThanOrEqual(minimumSeconds);
+  expect(actualSeconds).toBeLessThanOrEqual(maximumSeconds);
 }
 
 function transition(cwd: string, store: string, workItemId: string, action: string, now: string) {

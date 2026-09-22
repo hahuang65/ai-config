@@ -50,20 +50,21 @@ FROM work_log_effective_checkpoints
 WHERE state IS NOT NULL;
 
 CREATE OR REPLACE VIEW work_log_item_durations AS
+-- DuckDB 1.5.5 rewrites direct epoch subtraction to age(DOUBLE, DOUBLE), which cannot bind.
 SELECT
   work_item.work_item_id,
   CAST(round(sum(
     CASE WHEN interval.state = 'active'
-      THEN epoch(coalesce(interval.next_state_at, current_timestamp) - interval.state_at)
+      THEN epoch(coalesce(interval.next_state_at, current_timestamp)) + (-epoch(interval.state_at))
       ELSE 0
     END
   )) AS BIGINT) AS active_seconds,
-  CAST(round(epoch(
-    CASE WHEN work_item.state IN ('completed', 'abandoned')
-      THEN work_item.updated_at - work_item.created_at
-      ELSE current_timestamp - work_item.created_at
-    END
-  )) AS BIGINT) AS elapsed_seconds
+  CAST(round(
+    epoch(CASE WHEN work_item.state IN ('completed', 'abandoned')
+      THEN work_item.updated_at
+      ELSE current_timestamp
+    END) + (-epoch(work_item.created_at))
+  ) AS BIGINT) AS elapsed_seconds
 FROM work_log_items AS work_item
 JOIN work_log_state_intervals AS interval USING (work_item_id)
 GROUP BY work_item.work_item_id, work_item.state, work_item.created_at, work_item.updated_at;
