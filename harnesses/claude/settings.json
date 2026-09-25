@@ -290,7 +290,7 @@
       "/tmp"
     ]
   },
-  "model": "fable[1m]",
+  "model": "opus",
   "disableClaudeAiConnectors": true,
   "disableBundledSkills": true,
   "hooks": {
