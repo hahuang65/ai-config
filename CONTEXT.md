@@ -1,13 +1,17 @@
 # ai-config
 
-A single configuration source that powers Claude Code and pi. Skills, commands, agents, and rules are authored once and installed into each via `install.sh`.
+This repository is the currently installed configuration source for ordinary Claude Code and Pi.
+Its managed resources are declared by root `manifest.json` and linked by an explicitly invoked Rust `ai-config` operation.
+The former Orchard, `/build`, and review-pipeline vocabulary below is retained as historical context, not as installation or current workflow instructions.
+See [`README.md`](README.md) for the current installation contract, and [`docs/review-change-cli.md`](docs/review-change-cli.md) for the retained review-risk limit.
 
 ## Language
 
 ### Core concepts
 
 **Harness**:
-The runtime program that drives an LLM through tool calls, system prompts, and a session UI — Claude Code and pi are the two this repo configures. Per-harness config lives in a self-contained **harness module** under `harnesses/` — `harnesses/claude/` and `harnesses/pi/` (see [`modular-harness-modules-and-isolation`](docs/adr/0010-modular-harness-modules-and-isolation.md)).
+The runtime program that drives an LLM through tool calls, system prompts, and a session UI — Claude Code and Pi are the two this repo configures.
+Host-specific adapters live under `harnesses/claude/` and `harnesses/pi/`, with shared resources at the project root.
 _Avoid_: Tool (overloaded with the Bash/Read/Edit primitives a harness gives the model), assistant, agent (overloaded with subagent), AI coding tool.
 
 **Tool**:
@@ -20,23 +24,25 @@ Its automation output is a public contract distinct from a harness **Tool**.
 _Avoid_: AXI, agent tool, machine-only CLI.
 
 **Skill**:
-A file-backed capability pack discoverable by name, defined by `<root>/skills/<name>/SKILL.md`.
+A file-backed capability pack discoverable by name, authored at `skills/<name>/SKILL.md` and linked into each harness's normal skill directory.
 It is loaded as lightweight metadata in the system prompt and read on demand, and it is shared across all harnesses without per-harness translation.
 Pi can resolve a matching request to a skill from its advertised name and description, while `/skill:<name>` remains available to force explicit invocation.
 Therefore a shared skill does not need a same-purpose prompt merely to reproduce Claude Code's `/<name>` spelling in pi.
 
 **Command**:
-An explicit slash-workflow prompt authored at `<root>/commands/<name>.md`.
+An explicit slash-workflow prompt authored under `commands/<name>.md`.
 A command either aliases a differently named skill or composes multiple skills, and may not duplicate a same-named skill.
 It exists only when the shortcut or composition adds value beyond automatic skill discovery.
 Claude Code consumes commands from `~/.claude/commands/`, while pi consumes the same files as prompt templates from `~/.pi/agent/prompts/`.
 
 **Agent** (subagent):
-A specialized sub-runtime invoked by the main session through its subagent tool. Defined in `<root>/agents/<name>.md` with a tool allowlist in frontmatter.
+A specialized sub-runtime invoked by the main session through its subagent tool.
+Shared role definitions live under `agents/` and restrict their tools in frontmatter.
 _Avoid_: Worker, child session.
 
 **Rule**:
-A `<root>/rules/<name>.md` file holding guidance the harness pulls into context on demand. Claude and pi read the canonical `~/.dotfiles/ai/rules/` files directly. See [`small-always-on-bootstrap-lazy-rulebooks`](docs/adr/0016-small-always-on-bootstrap-lazy-rulebooks.md).
+A `rules/<name>.md` file holding guidance either harness reads on demand relative to the absolute source of its linked global instruction file.
+It is distinct from mechanically enforced guard policies.
 
 **Context files**:
 The collective name for local `CONTEXT.md` and `CONTEXT-MAP.md` files.
@@ -74,22 +80,27 @@ _Avoid_: Domain language, project vocabulary, `CONTEXT.md` vocabulary.
 ### Harness-specific terms
 
 **`.claude` / `~/.claude/`**:
-Claude Code's config root. This repo's `harnesses/claude/` module contains `settings.json`, `statusline.sh`, `hooks.json`, the tier-B guard shim `hooks/guard.ts`, and a `manifest.sh`, all symlinked into `~/.claude/` by `install.sh`. Skills and agents use their conventional directories; shared commands install into `~/.claude/commands/` and expose `/<name>`. Detailed rules remain at the canonical `~/.dotfiles/ai/rules/` path so Claude does not auto-inject them, and `~/.claude/CLAUDE.md` supplies the small global bootstrap.
+Claude Code's normal config root.
+The replacement links only declared resources into `~/.claude/`, retains unrelated resources, login, model preferences, saved conversations, and project trust, and supplies its small bootstrap through `~/.claude/CLAUDE.md`.
+The replacement's Claude adapter sources are under `harnesses/claude/`, with shared rules, skills, and agents under root `rules/`, `skills/`, and `agents/`.
 
 **`.pi` / `~/.pi/agent/`**:
-pi's config root. This repo's `harnesses/pi/` module contains settings, extensions, a bundled tier-A guard adapter, and a `manifest.sh`. Skills and agents use their conventional directories; shared commands install as prompt templates in `~/.pi/agent/prompts/` and expose `/<name>`. Detailed rules remain at the canonical `~/.dotfiles/ai/rules/` path, and `~/.pi/agent/AGENTS.md` supplies the small global bootstrap.
+Pi's normal config root.
+The replacement links only declared resources into `~/.pi/agent/`, retains unrelated resources and private state, and supplies its small bootstrap through `~/.pi/agent/AGENTS.md`.
+The replacement's Pi adapter sources are under `harnesses/pi/`, with shared rules, skills, and agents under root `rules/`, `skills/`, and `agents/`.
 
 ### Lifecycle terms
 
 **Always-on context**:
-Content the harness injects into every conversation's system prompt without the model having to ask for it. This repo keeps that surface to `baseline-prompt.md` for Claude and pi: a critical baseline plus shared project classification and rule-loading triggers. Claude Code would also auto-load `~/.claude/rules/*.md`, so this repo deliberately leaves detailed rules only at the canonical source path.
+Content the harness injects into every conversation's system prompt without the model having to ask for it.
+The replacement keeps its shared global bootstrap at root `baseline.md`; both harnesses link to it under their native instruction filenames and read its advisory rules only when relevant.
 
 **A5 project**:
 A repository whose originating repository has effective global or system Git configuration `ai.projectFamily=a5`.
 Repository-local configuration cannot grant this classification.
 The Git dotfiles A5 include is the machine-readable source, so linked worktrees, disposable review copies, Orchard, and harness workflows share one classification.
 
-### Worktree lifecycle terms
+### Historical Orchard worktree lifecycle terms
 
 **Worktree intent**:
 The concise normalized task identifier Orchard uses to name and select a worktree independently of its assigned branch name.
@@ -179,28 +190,54 @@ _Avoid_: Delete, reset, return (each describes only part of the transition).
 
 ### Harness-modularity & guardrail terms
 
+**Configuration source**:
+The AI configuration directory that owns the managed resources for both Claude Code and Pi.
+The shared setup at `~/.dotfiles/ai` is the current live source after an explicitly authorized cutover; the evaluation checkout is retained but no longer supplies ordinary global instructions.
+Ordinary development sessions retain normal user and project resource discovery.
+_Avoid_: Alternative active source, reversible switch.
+
+**Herdr configuration**:
+The independently owned terminal workspace configuration used by both AI setups.
+It stays in the Herdr configuration repository and is not changed by the AI cutover.
+
+**Native runner**:
+A review or specialist execution adapter that uses the caller's harness without requiring the other harness or its authentication.
+Claude Code and Pi use independent native runners with shared role instructions and equivalent safety requirements.
+
+**Task conversation**:
+The harness-specific conversation associated with a task worktree.
+The agreed behavior is to carry the current conversation into a new task and resume the saved conversation for an existing task, without conversion between Claude Code and Pi.
+The inactive Pi adapter has runtime evidence for those transitions; the corresponding Claude adapter is still required before claiming parity.
+
 **Harness module**:
-A self-contained directory holding everything specific to one harness — its runtime config file(s), its guardrail adapter, and a declaration of which **config root** it installs into and which shared categories it consumes. Adding or removing a harness is adding or removing one module; `install.sh` is a generic loop over the modules that exist.
+The harness-specific adapters under `harnesses/claude/` or `harnesses/pi/`.
+The root `manifest.json` declares which managed resources enter each **config root**; there is no per-harness installer or automatic discovery allowlist.
 _Avoid_: harness folder, plugin, per-harness block.
 
 **Config root**:
-The home-directory location a harness reads its config from — `~/.claude/` or `~/.pi/agent/`. Each config root is owned **exclusively** by one harness module.
+The normal home-directory location for one harness: `~/.claude/` for Claude Code or `~/.pi/agent/` for Pi.
+A cutover changes managed configuration in both roots while retaining each harness's login, model preferences, and saved conversations.
 
 **Isolation invariant**:
-The guarantee that each harness sees only its own module's files plus the curated shared set — never content leaked from a sibling harness. Verified by the **isolation test**. Distinct from **sandboxing** (runtime VM isolation of a harness process — a different, orthogonal concept).
+The guarantee that installer-managed resources come only from the harness's own module and curated shared set, never a sibling harness's module.
+It does not disable normal user or project discovery in development sessions and is distinct from runtime sandboxing and restricted-reviewer isolation.
 
 **Isolation test**:
-The check asserting each config root contains only `{its module's files} ∪ {the curated shared set}` — no symlink may resolve into a sibling harness's directory. A leak fails CI.
+The check asserting that installer-managed resources in each config root come only from its own module and the curated shared set; no managed symlink may resolve into a sibling harness's directory.
+A leak fails CI.
 
 **Advisory rule**:
 A `rules/*.md` file that is pure guidance the model reads — shares verbatim across harnesses like a skill, with no mechanical enforcement. After the guardrail consolidation (ADR-0012), **`rules/` is advisory-only**: `a5`, `coding-style`, `testing`, `performance`, `cli-ergonomics`, `git-commit`, `html-routing`, `mise`, and `security` (its non-blockable principles). All *enforcement* moved to the **guard core**. Distinct from a **Guardrail policy**.
 _Avoid_: rule (unqualified — the bare word hides the advisory-vs-guardrail split).
 
 **Rule projection**:
-How advisory rules reach a harness. **Claude** and **pi** read ordinary files from the canonical `~/.dotfiles/ai/rules/` directory and share the same small always-on bootstrap for routing. Enforcement, by contrast, travels through the **guard core**, not rule projection. (ADR-0016)
+How advisory rules reach a harness.
+Claude Code and Pi locate root `rules/` beside the absolute symlink target of their shared global instruction bootstrap and read the relevant files on demand.
+Enforcement, by contrast, travels through the **guard core** rather than through advisory rule text.
 
 **Global instruction bootstrap**:
-The small harness-neutral `baseline-prompt.md` installed as Claude's `~/.claude/CLAUDE.md` and pi's `~/.pi/agent/AGENTS.md`. It contains only critical cross-task constraints, rulebook locations, and load triggers. It is distinct from the repo-root `AGENTS.md`, which is this repository's authoring contract and is never installed globally.
+The small harness-neutral root `baseline.md` linked as Claude Code's `~/.claude/CLAUDE.md` and Pi's `~/.pi/agent/AGENTS.md`.
+It contains critical cross-task constraints, rulebook locations, and load triggers, and differs from the repository-root `AGENTS.md` authoring instructions.
 
 **Context file** (pi):
 A file pi loads at startup: global `~/.pi/agent/AGENTS.md` (the bootstrap) and `SYSTEM.md` (replaces the system prompt), plus project `AGENTS.md`/`CLAUDE.md` discovered walking up from cwd. Pi reads named context files, not arbitrary rule directories, so detailed rule loading remains an explicit model action.
@@ -210,10 +247,10 @@ A security/safety constraint with a *shared intent* but a *per-harness enforceme
 _Avoid_: rule, permission (a permission is the native allow/deny knob a policy may *project onto*, not the canonical constraint itself).
 
 **Policy registry**:
-The canonical, harness-neutral list of guardrail policies in `shared/policy-registry.ts` — one entry per policy: an **ID**, intent, enforcement metadata (check kind: `command` / `path` / `content` / `secret`; `floor` flag), and boundary examples (a violating `example` + benign `counterExample`). The single source of truth for *what* must be enforced.
+The canonical, harness-neutral list of guardrail policies in `guard/policy-registry.ts` — one entry per policy: an **ID**, intent, enforcement metadata (check kind: `command` / `path` / `content` / `secret`; `floor` flag), and boundary examples (a violating `example` + benign `counterExample`). The single source of truth for *what* must be enforced.
 
 **Guard core**:
-The shared TypeScript module implementing the *detection* logic for guardrail policies over a normalized tool call (`tool`, `command`, `path`, and write **`content`**) — `isSecretPath`, `isCurlPipeShell`, `isHardcodedSecret`, …, imported unchanged by every harness whose hook API can run it. The single source of truth for *how* a policy is detected.
+The shared TypeScript module `guard/guard-core.ts` implementing the *detection* logic for guardrail policies over a normalized tool call (`tool`, `command`, `path`, and write **`content`**) — `isSecretPath`, `isCurlPipeShell`, `isHardcodedSecret`, …, imported unchanged by every harness whose hook API can run it. The single source of truth for *how* a policy is detected.
 _Avoid_: hook (a harness's event surface), matcher.
 
 **Enforcement tier** (a.k.a. **adapter archetype**):
@@ -233,12 +270,12 @@ _Avoid_: baseline.
 ### Work-log terms
 
 **Work log**:
-The single hidden, host-local, append-only, authoritative record of planned and performed work that every configured harness and repository can access.
-Repository identity is metadata for association and filtering, not an access boundary or separate store.
-Every work item belongs to a Git repository.
-A normalized Git origin identifies the repository when available; otherwise a persisted identity for the resolved common Git directory keeps linked worktrees together and remains stable if an origin is added later.
-It contains **work items** and their **checkpoints** and is distinct from **historical memory**.
+The host-local, append-only short-term reminder list and work history shared across configured harnesses at `~/.worklog/`.
+Repository identity associates tasks across linked worktrees, while explicitly requested unassigned work can have no project.
+Work log records tasks and progress entries but is not a durable backlog or **historical memory**.
 _Avoid_: Devlog, development log, task database, repository-free work area.
+
+The remaining entries in this section describe the previous Work log design and are retained only as historical vocabulary.
 
 **Work item**:
 One concrete unit of work with a stable identifier, an optional parent work item, and a current **work state** derived from its checkpoints.
@@ -259,7 +296,7 @@ It has no priority or semantic ordering and is not a separate store or source of
 Requests can call it a task queue, task log, or workload, but durable records use **Open work**.
 _Avoid_: Task queue, task log, workload, backlog, ordered queue, prioritized list, to-do file.
 
-### Build-pipeline terms
+### Historical build-pipeline terms
 
 **UI mockup**:
 A canonical, self-contained `mockups.html` review artifact that lets a user assess a proposed browser or terminal interface before the **Spec** records its design decisions.
@@ -503,7 +540,7 @@ _Avoid_: clean up / refactor cleanup (the two former review-chain step names who
 A user-named structural transformation — extract, inline, move, rename, restructure, decouple — run through the `/refactor` skill: goal → numbered transformation plan → explicit user approval → the `refactorer` agent executes incrementally in plan mode, testing between steps and reverting on failure. Distinct from a **hygiene sweep** by trigger (user goal vs automatic), scope (whatever the goal touches vs changed files), and gate (plan approval vs none).
 _Avoid_: refactoring (unqualified — hides the directed-vs-hygiene split).
 
-## Example dialogue
+## Historical example dialogue
 
 > **Dev**: I want to add `/refactor` so it works in both harnesses.
 > **Expert**: Put the reusable workflow in `skills/refactor/SKILL.md`. Claude registers that skill as `/refactor`, while pi registers it as `/skill:refactor`; no wrapper is needed.

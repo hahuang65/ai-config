@@ -9,11 +9,9 @@ while IFS= read -r variable; do
   unset "$variable"
 done < <(git rev-parse --local-env-vars)
 
-# Run every check before each commit: content, install, guard, and meta
-# (same as `make test`).
-if [[ -f "$REPO_DIR/Makefile" ]]; then
-  make -s -C "$REPO_DIR" test
-elif [[ -f "$REPO_DIR/scripts/test-pipeline.sh" ]]; then
-  bash "$REPO_DIR/scripts/test-pipeline.sh"
-  bash "$REPO_DIR/scripts/test-pipeline-self-test.sh"
+# Fail closed if the native package's verification gate is unavailable.
+if [[ ! -f "$REPO_DIR/Makefile" ]]; then
+  printf 'No native package verification gate in %s\n' "$REPO_DIR" >&2
+  exit 1
 fi
+make -s -C "$REPO_DIR" lint test

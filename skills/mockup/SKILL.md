@@ -1,38 +1,35 @@
 ---
 name: mockup
-description: Create and review a canonical UI mockup before the Spec when a feature adds or materially changes an end-user browser or terminal interface.
-argument-hint: [feature-description-or-directory]
+description: Create and review a self-contained HTML mockup for a browser or terminal interface when layout, interaction, or visual states need a concrete design.
 ---
 
-# UI Mockup
+# Mockup
 
-Create canonical `mockups.html` in the Feature directory for a material end-user interface change.
-Use the selected context documentation and agreed feature scope to keep the design grounded in the project's ubiquitous language.
+Start from the user's design question, relevant context, and the existing interface.
+No spec or implementation workflow is required.
+Clarify only uncertainty that would change the design.
+For a visual-only question, use a mockup; use [prototype](../prototype/SKILL.md) when runnable host behavior is the question.
+Neither is a prerequisite for the other.
 
-Run for a new or materially changed layout, interaction flow, information hierarchy, responsive behavior, or visual state in a browser or terminal interface.
-Skip internal changes, exact copy replacements, mechanical styling repairs, and small defect fixes that require no design decision.
-Ask about relevance only when the agreed scope and existing interface leave it genuinely ambiguous.
+1. Inspect nearby screens, terminology, constraints, and existing components.
+   Identify the users, actions, important states, responsive behavior, and accessibility needs.
+2. Write one self-contained HTML file with inline styles and representative synthetic content.
+   Follow the project's artifact location convention; otherwise use `docs/features/<feature-name>/mockup.html`.
+   Use semantic structure, readable contrast, keyboard-accessible controls, and stable section identifiers.
+   Show relevant loading, empty, error, disabled, and success states, not only the happy path.
+   Show terminal layouts as clearly labeled simulations, not functioning terminals.
+3. Keep assets local or embedded; do not fetch external resources or connect to production services.
+   Escape any source text included as HTML.
+   Use only minimal local interaction needed to explain the design, and label simulated behavior.
+   Do not maintain a hidden duplicate model or a second canonical mockup.
+4. State the recommended design and its known trade-offs.
+   Show alternatives only when they help settle a real decision; never invent approval or rationale.
+5. Use [review-artifact](../review-artifact/SKILL.md) for feedback and explicit approval.
+   Apply feedback to the same HTML file.
+   A material revision needs review again; closing the browser is not approval.
+   If the review tool is unavailable, report the limit and ask how to proceed without claiming browser approval.
 
-## Resolve the Feature Directory
-
-After relevance confirms that a mockup is needed, resolve its output location deterministically:
-
-- If `$ARGUMENTS` names a path under `docs/features/`, reuse it as the supplied Feature directory.
-- Otherwise, treat `$ARGUMENTS` as a feature description and follow the [shared Feature directory conventions](../shared/references/build-pipeline.md#file-conventions) to derive `docs/features/<YYYYMMDD-HHMM>-<slug>/`.
-
-Create the resolved directory if needed before writing `mockups.html`.
-
-Read and follow the [UI mockup contract](references/mockup-contract.md) to inspect the existing interface and generate the canonical artifact.
-
-## Process
-
-1. Resolve the [domain documentation destination](../shared/references/domain-documentation.md), then read the agreed feature scope, selected context documentation and decision records, and the existing interface area.
-2. Apply the relevance test above; when no mockup is relevant, report why and return to the invoking workflow without creating an artifact.
-3. Generate or update `mockups.html` through the artifact contract. Before any approval review, one recommended design must be visibly selected with its rationale.
-4. When unresolved alternatives remain, load `review-artifact` and use a feedback or decision interaction to settle the selection. Do not request or accept approval while the selection is unresolved.
-5. After the selection settles, update the same `mockups.html` with a visible decision record that names the selected design, its rationale, and the rejected alternatives.
-6. Only after the decision record is complete, start or resume the approval review through the [shared review protocol](../shared/references/review-artifact.md).
-7. Apply approval feedback to the same live artifact, and keep the decision record current.
-8. Continue only after explicit approval; it is the Design→Spec signal, and ending or closing review is not approval.
-
-When feedback changes or exposes a domain concept, load and follow [model-domain](../model-domain/SKILL.md) before continuing.
+Use [model-domain](../model-domain/SKILL.md) when the design exposes an unresolved domain term or agreed durable decision.
+Report the artifact path, review outcome, and unresolved questions.
+Record meaningful progress once through [work-log](../work-log/SKILL.md).
+Approval accepts this design; it does not authorize implementation or start another skill.

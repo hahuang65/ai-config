@@ -1,14 +1,11 @@
-# Claude Code Harness Rules
+# Claude Code shell commands
 
-These rules apply only in the Claude Code harness.
-They exist because Claude Code approves shell commands by matching permission rules against literal command text.
-A command that cannot be statically analyzed skips the allow rules and stops the session at a permission prompt.
+Read this rule before running a shell command in an ordinary Claude Code session.
+Claude Code matches permissions against literal command text.
+A command that cannot be statically analyzed may stop at a permission prompt.
 
-## Compose statically analyzable commands
-
-- Do not use `git -C`.
-  Change into the repository with `cd` and run plain `git` subcommands, so permission rules can match them.
-  Exception: use `git -C <absolute-repository-path>` when a guard requires it for a cross-repository branch change.
-- Do not embed shell variables such as `$?` or `$PPID` in commands.
-  A variable expansion makes a command statically unanalyzable, so no permission rule can match it.
-  The harness already reports each command's exit code; run probes as separate commands or chain them with `&&`.
+- Do not use `git -C` by default.
+  Change to the repository directory and run a plain Git command so the permission rule can match it.
+  Use `git -C <absolute-repository-path>` only when a guard requires it for a cross-repository branch change.
+- Do not embed shell variables such as `$?` or `$PPID` in a command.
+  Run checks separately or chain commands with `&&`; the harness reports each command's exit code.

@@ -1,62 +1,44 @@
 ---
-description: Git commit and branch-integration conventions — message format, staging, rebasing, and the A5 project exception. Read before any git add, git commit, or branch integration.
+description: Read before staging, preparing a commit message, committing, pushing, or integrating.
 ---
 
-# Git Commit
+# Git commit and integration
 
-Policy for staging and committing.
-The `no-git-destructive` guardrail policy in the shared guard core blocks force-push, `--no-verify`, hard reset, and related unsafe operations.
-This rule defines what a normal commit contains and how its message reads.
+Stage, commit, push, or deliver only when the current user request explicitly owns that action.
+Never branch, stage, or commit in the `~/.dotfiles` parent repository, which stays on `main`.
+Apply the named task-branch rule independently in each affected submodule.
+Never stage credentials, secrets, `.env` files, or private configuration.
 
-## Commit message format
+## Message and scope
 
-**Authoritative source: `@~/.gitmessage`.** Before writing a commit message, read that file and follow its template exactly — it defines the section order (subject, body, annotations), the allowed `TYPE` set, and the formatting rules. If the file does not exist, fall back to the summary below.
+Before preparing a commit message, read `~/.gitmessage` and use its exact section order, allowed types, and formatting.
+If that file is absent, use an imperative, capitalized `TYPE: description` subject of at most 72 characters with no trailing period.
+The fallback types are `FEATURE`, `FIX`, `REFACTOR`, `STYLE`, `DOCS`, `TEST`, and `CHORE`.
+Leave a blank line before the body, which explains what changed and why.
+Put optional issue or reference URLs on separate lines without a section heading.
+Do not add an AI coauthor.
 
-Fallback summary (used only when `~/.gitmessage` is absent):
+Inspect the current branch, staged and unstaged diffs, and relevant untracked files.
+Choose one logical change and prefer explicit paths when staging.
+Do not use `git add .` unless the user explicitly asks for every changed file and the inspected status shows that it is safe.
+Inspect the final staged diff before committing, and do not bypass checks with `--no-verify`.
+In ordinary projects, include related, non-ignored context files, `docs/adr/**`, and intentional `docs/features/**` artifacts in the focused commit.
+Do not infer ownership over unrelated or already staged work.
 
-- Subject line: `TYPE: imperative-mood description`, capitalized, no trailing period, ≤ 72 chars.
-- Blank line, then a body that answers *what* this change is and *why* it is being made.
-- Blank line, then links to issue-tracker tickets or helpful articles, one URL per line, with no section header. If there are no links, omit this section entirely.
-- Allowed types: `FEATURE`, `FIX`, `REFACTOR`, `STYLE`, `DOCS`, `TEST`, `CHORE`.
-- Use the body to explain what and why, not how. Bullets with `-` are fine.
-- NEVER auto-add the agent name as a co-author.
+## A5 staging exception
 
-## Branch integration
+A project is A5 only when its originating repository has effective `ai.projectFamily=a5` from global or system Git configuration.
+Repository-local configuration cannot grant A5 status.
+In an A5 project, never explicitly stage `CONTEXT.md`, `docs/adr/**`, or `docs/features/**`, even by exact path.
+Do not add these paths to a tracked `.gitignore`; leave them untracked where appropriate.
+Never force-add a linked worktree's ignored root `domain-documentation.json`.
+Confluence context and decisions documents have no local companions to stage.
 
-- Rebase local feature branches onto the current target branch before integration.
-- Never create merge commits.
-- Advance the target branch by fast-forward only.
-- If a rebase fails, abort it and preserve both branches unless the user explicitly asks to resolve the conflicts.
+## Integration and conflict boundaries
 
-### Conflict resolution
-
-- Mutate an in-progress conflict only when the user explicitly asks to resolve it, including by invoking `/resolve-conflicts`, or when the active user-requested workflow already owns conflict resolution.
-- Once resolution is explicit, follow the `resolve-conflicts` skill instead of aborting as a substitute for investigating the competing intents.
-- The `/rebase` workflow explicitly owns resolution only for a conflict that Orchard preserves with durable recovery metadata.
-- Preserve the no-merge-commit policy.
-  If an in-progress merge can finish only by creating a merge commit, report that incompatibility before changing conflicted files.
-- Before staging resolved paths or continuing a Git operation, apply this rule's normal staging and commit-message policy.
-- A workflow-owned working-state restoration conflict does not authorize a commit or rebase continuation.
-  Return its resolved paths to the owning workflow so it can reconstruct and verify the captured staged, unstaged, and untracked state.
-
-## Staging policy
-
-- Commit early and often. Small, focused commits are easier to review and revert.
-- Each commit should be a single logical change. Don't mix refactoring with feature work.
-- Never commit secrets, credentials, or `.env` files.
-- Check for related local context files, ADRs, canonical `mockups.html`, `specs.html`, `tasks.html`, and intentional feature visuals.
-  In ordinary projects, include them unless Git ignores them.
-  These artifacts are part of the feature history.
-  In A5 projects, follow the exception below instead.
-- A linked worktree's ignored root `domain-documentation.json` is private worktree state, not a project artifact.
-  Never force-add, stage, or commit it.
-  Confluence context and decisions documents remain in Confluence and have no local companions to stage.
-
-### A5 project exception
-
-For any A5 project identified by the harness baseline:
-
-- NEVER explicitly stage `CONTEXT.md`, `docs/adr/**`, or `docs/features/**`, even by exact path. Explicit `git add <path>` bypasses excludes — the directive is what stops the agent from working around the git layer.
-- NEVER propose adding these to a tracked `.gitignore`; teammates have not opted in.
-- If `git status` lists them as untracked, leave them untracked.
-- They are already excluded by the A5-specific global Git configuration. The Git layer is the safety net; this rule is the agent-side enforcement.
+Rebase a task branch on its current target branch and integrate by fast-forward only; never create a merge commit.
+A failed ordinary rebase must preserve both branches unless the user explicitly authorized conflict resolution.
+Resolve an in-progress conflict only under an explicit user request or an active workflow that already owns that resolution.
+Follow the conflict-resolution skill before staging resolved paths or continuing an operation.
+A working-state restoration conflict does not authorize a commit or rebase continuation.
+Never force-push, hard-reset, or amend as a workaround for a failed operation.

@@ -1,21 +1,22 @@
 ---
 name: resolve-conflicts
-description: Resolve an in-progress Git rebase or merge conflict, resume a validated Orchard rebase after its resolutions are staged, or resolve a workflow-owned working-state restoration conflict by recovering both changes' intent. Use when Git reports unresolved entries in a supported context, Orchard records a rebase awaiting continuation, or the user invokes /resolve-conflicts.
-argument-hint: "[operation-goal-or-intent]"
+description: Resolve conflicts in an already-running Git rebase, preserve both changes' intent, verify the result, stage resolved paths, continue that rebase, and obtain change review. Does not start a rebase or handle merges or stash restoration.
 ---
 
-# Resolve Conflicts
+# Resolve conflicts
 
-Resolve a supported Git conflict context without inventing behavior or discarding either side's intent silently.
+Use only for an explicitly requested resolution of an existing rebase conflict.
+A request to inspect or discuss conflicts is read-only.
+An explicit resolution request includes checks, staging resolved paths, and continuation of that same rebase, unless the user limits the request to edits or another narrower scope.
+It does not authorize an unrelated commit, push, integration, or cleanup.
 
-Read [the resolution workflow](references/workflow.md) before changing a conflicted file.
-Read the [Work log protocol](../shared/references/work-log.md) and record the resolved operation as a meaningful checkpoint without declaring the owning work complete.
-When incompatible hunks remain, also read [the conflict decision review](references/conflict-review.md).
+Read [the resolution workflow](references/workflow.md) before editing.
+Inspect the current Git operation and recover both changes' intent from source evidence.
+Preserve compatible intent; ask in chat for a decision when the intended behaviors conflict.
+Do not blindly select a side, invent behavior, or change unrelated work.
 
-Treat a supplied operation goal or intent as context for recovering the competing changes' intent.
-Require unresolved entries from either an in-progress rebase or merge, a validated Orchard rebase recovery whose active operation awaits continuation, or a working-state restoration conflict owned by a trusted active workflow with durable recovery metadata.
-Do not accept a user-supplied stash identifier or path as proof of restoration ownership.
-If no supported context is active, report the current Git state and stop without starting one.
-If completing the active operation would violate an applicable Git policy, report that incompatibility before changing files and wait for user direction.
-
-This skill adapts Matt Pocock's [`resolving-merge-conflicts`](https://github.com/mattpocock/skills/blob/main/skills/engineering/resolving-merge-conflicts/SKILL.md) workflow.
+Run the project's checks and continue only the verified active rebase.
+After it finishes, use [review-change](../review-change/SKILL.md) for the complete rebased task, including any remaining task edits.
+Review findings do not authorize automatic repairs.
+In coach mode, preserve user ownership instead of taking over implementation.
+Record the operation outcome through [work-log](../work-log/SKILL.md); resolving a rebase does not by itself complete the owning task.

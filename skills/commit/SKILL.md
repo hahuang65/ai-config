@@ -1,78 +1,36 @@
 ---
 name: commit
-description: Create a focused git commit using the repository git-commit rule and the user's ~/.gitmessage template. Use when the user asks to commit, stage and commit, or prepare a commit message.
+description: Create one focused Git commit with the user's message template and staging policy. Use only when asked to commit, stage and commit, or prepare a commit message.
 argument-hint: [scope-or-instructions]
 ---
 
 # Commit
 
-Create one focused git commit that follows the user's commit-message template and this repo's staging policy.
+Commit only when the user explicitly requests a commit.
+Preparing a message or staging files alone does not authorize a commit.
 
-## Mandatory inputs
+Before staging or preparing a message, read the `git-commit.md` rule resolved from the absolute global instruction symlink target as the baseline instructs, and read `~/.gitmessage` if it exists.
+Use the rule's fallback format only if the template is absent.
+Do not resolve rules against the current project or the old configuration source.
 
-Before staging or writing a commit message, read both:
+Use the current checkout; do not change worktrees or accept an arbitrary checkout path.
 
-1. `~/.dotfiles/ai/rules/git-commit.md` — staging policy, docs/features handling, and the A5 project exception.
-2. `~/.gitmessage` — authoritative commit-message format. If it is absent, use the fallback format in the Git rule.
+1. Run `git status --short --branch`, `git diff`, and `git diff --cached` in the current checkout.
+   Respect any explicit scope and pre-existing staged work.
+2. Choose one logical change.
+   If unrelated changes or ambiguous scope remain, ask which change to commit.
+3. Stage only the selected paths under the resolved Git rule, including its A5 exception.
+   Inspect the staged diff, run relevant checks, and never bypass a failing hook.
+4. Prepare a temporary message file from the user's template.
+   Explain what changed and why, and omit an empty links section.
+5. Show the staged-file summary and the message.
+   Run `git commit -F <message-file>` only if the user explicitly requested a commit, the staged scope is unambiguous, and checks passed; otherwise ask before committing.
+6. Verify the commit and remaining working state.
+   For active work, use `worklog list --state open --all --json` from the current checkout to find one strong matching task in its project; the default list omits open tasks after the first 20.
+   If there is one match, use `worklog commit --task <id> --hash <hash> --subject <subject> --json` to record the commit without completing the task.
+   If the full list is too large to inspect safely, report that the checkpoint is unverified; do not guess a task ID, switch stores, or write to a different project.
+   If recording fails, report it; never repeat or undo a successful commit to repair the log.
 
-Do not rely on memory for the commit format. Do not invent a different format.
-
-Read the [Work log protocol](../shared/references/work-log.md).
-After a successful commit related to active work, record the commit identifier as checkpoint evidence without declaring the work complete unless completion is independently true.
-
-## Checkout selection
-
-Use the current checkout by default.
-An already-active Orchard delivery caller may supply an already-validated managed worktree path from a supported, versioned `needs-commit` outcome.
-Require the caller to state that it validated the path as the exact Git root of the named active managed task before loading this skill.
-Use path-scoped Git commands against that checkout without invoking Orchard or changing the current session directory, branch, or worktree lifecycle.
-Reject every other externally supplied checkout path.
-
-## Process
-
-1. **Inspect state**
-   - Run `git status --short --branch` against the selected checkout.
-   - Review its `git diff --cached` and `git diff`.
-   - If `$ARGUMENTS` specifies a scope, limit the commit to that scope.
-
-2. **Choose one logical change**
-   - Commit only one logical change.
-   - If the working tree contains multiple unrelated changes, stop and ask which one to commit first.
-   - If there are already staged files, treat them as intentional but still verify they form one logical change.
-
-3. **Stage safely**
-   - Follow the resolved Git rule exactly, including the `docs/features/` policy and the A5 project exception.
-   - Prefer explicit paths. Do not use broad staging commands like `git add .` unless the user explicitly asked for every changed file and the status confirms that is safe.
-   - Never stage secrets, credentials, `.env` files, or files blocked by the rule.
-
-4. **Write the message from `~/.gitmessage`**
-   - Build the commit message in a temporary file.
-   - Follow the template's section order, allowed `TYPE` set, and formatting rules exactly.
-   - The body should explain what changed and why, not narrate implementation steps.
-   - For links, put each URL on its own line with no section header. If there are no links, omit the links section entirely.
-
-5. **Commit**
-   - Show a concise summary of staged files and the commit message.
-   - If the user invoked this skill with an explicit commit request and the staged set is unambiguous, run `git commit -F <temp-message-file>`.
-   - Otherwise, ask for confirmation before committing.
-
-## Checkout-local boundary
-
-- Never invoke Orchard.
-- Never change branches or worktree lifecycle.
-- Never merge, rebase, or push.
-- Never choose or invoke a follow-on workflow from inside this skill.
-
-A standalone commit ends after the commit and requires a separate explicit delivery action.
-When an already-active workflow such as the deliver prompt loaded this skill as its commit step, return control to that caller after the successful commit so it can retry Orchard delivery.
-The commit skill itself remains local to the selected checkout and owns no integration behavior.
-
-## Hard stops
-
-Stop and ask the user instead of committing when:
-
-- Changes span multiple logical commits.
-- The requested scope is ambiguous.
-- Staging would violate the resolved Git rule.
-- `~/.gitmessage` is missing and the fallback format is insufficient for the repository.
-- The commit would require `--no-verify`, `--amend`, force-push, reset, or other destructive git behavior.
+A commit does not by itself complete the work item.
+This skill never changes branches, rebases, merges, pushes, or selects a follow-on workflow.
+Stop rather than invent scope, force a commit, amend, reset, or override a policy conflict.

@@ -1,41 +1,38 @@
-# ai-config — developer tasks. Run `make` (or `make help`) to list targets.
+# Ordinary Claude and Pi resources. Installing into a real home is an explicit,
+# separate Rust command; this Makefile never retargets the live installation.
 .DEFAULT_GOAL := help
-SHELL := bash
+.PHONY: help build test lint
 
-.PHONY: help install bundle test test/content test/install test/guard test/meta test/macos-launchd
+help:
+	@printf 'build  Bundle the Pi guard and build the four Rust tools (offline).\n'
+	@printf 'test   Run the native package, review, worktree, worklog, and artifact tests.\n'
+	@printf 'lint   Check Rust formatting and lints.\n'
+	@printf 'Install only with tools/evaluation/target/release/ai-config --root "$$(pwd -P)" install\n'
 
-help: ## Show this help
-	@printf '\n  \033[1mai-config\033[0m \033[2m— make targets\033[0m\n\n'
-	@awk 'BEGIN{FS=":.*## "} /^[a-zA-Z0-9_\/-]+:.*## /{printf "  \033[36m%-15s\033[0m %s\n",$$1,$$2}' $(MAKEFILE_LIST)
-	@printf '\n  \033[2mtip: VERBOSE=1 make test/content  shows every check\033[0m\n\n'
+build:
+	bun build harnesses/pi/guard-policies.ts --target node --format esm --outfile harnesses/pi/guard-policies.bundle.ts
+	bun tools/build-status-footer.mjs
+	cargo build --locked --offline --release --manifest-path tools/worktree/Cargo.toml
+	cargo build --locked --offline --release --manifest-path tools/worklog/Cargo.toml
+	cargo build --locked --offline --release --manifest-path tools/artifact-review/Cargo.toml
+	cargo build --locked --offline --release --manifest-path tools/evaluation/Cargo.toml
 
-install: ## Symlink config into each harness root (~/.claude, ~/.pi/agent)
-	@bash install.sh
+test: build
+	cargo build --locked --offline --manifest-path tools/evaluation/Cargo.toml
+	bun test $(wildcard test/package-*.test.ts) test/reviewer-runtime.test.ts test/guards.test.ts test/cli-links.test.ts test/resolve-conflicts.test.ts
+	cargo test --locked --offline --manifest-path tools/worktree/Cargo.toml
+	cargo build --locked --offline --manifest-path tools/worktree/Cargo.toml
+	python tools/worktree/tests/rust_parity.py
+	cargo test --locked --offline --manifest-path tools/worklog/Cargo.toml
+	cargo test --locked --offline --manifest-path tools/artifact-review/Cargo.toml
+	cargo test --locked --offline --manifest-path tools/evaluation/Cargo.toml --lib --tests
+	cargo build --locked --offline --manifest-path tools/artifact-review/Cargo.toml
+	node --test --test-concurrency=1 tools/artifact-review/tests/integration.mjs
 
-bundle: ## Rebuild pi's self-contained extension bundles (pi can't resolve symlinked imports)
-	@bun build harnesses/pi/extensions/guard-policies.ts --target=bun --outfile harnesses/pi/guard-policies.bundle.ts >/dev/null
-	@bun build harnesses/pi/extensions/review-change-publication.ts --target=bun --outfile harnesses/pi/review-change-publication.bundle.ts >/dev/null
-	@bun build harnesses/pi/extensions/work-log-reconcile.ts --target=bun --outfile harnesses/pi/work-log-reconcile.bundle.ts >/dev/null
-	@bun review-publication/build-worker.mjs
-	@printf '  rebuilt harnesses/pi/guard-policies.bundle.ts\n'
-	@printf '  rebuilt harnesses/pi/review-change-publication.bundle.ts\n'
-	@printf '  rebuilt harnesses/pi/work-log-reconcile.bundle.ts\n'
-	@printf '  rebuilt review-publication/review-publication-worker.bundle.mjs\n'
-
-test: ## Run every check in safe concurrent lanes
-	@bun scripts/test-suite-runner.mjs
-
-test/content: ## Validate the shared authoring contract (skills, agents, rules)
-	@bash scripts/test-pipeline.sh content
-
-test/install: ## Validate the install system + harness modules (manifests, isolation)
-	@bash scripts/test-pipeline.sh install
-
-test/macos-launchd: ## Run the approved temporary macOS launchd integration check
-	@bash scripts/test-macos-launchd-integration.sh
-
-test/guard: ## Run the guard-core + adapter + conformance suite (bun)
-	@bun test shared/ test/
-
-test/meta: ## Verify the validation pipeline catches planted errors
-	@bash scripts/test-pipeline-self-test.sh
+lint:
+	$(MAKE) -C tools/worktree lint
+	$(MAKE) -C tools/worklog lint
+	cargo fmt --check --manifest-path tools/evaluation/Cargo.toml
+	cargo clippy --all-targets --locked --offline --manifest-path tools/evaluation/Cargo.toml -- -D warnings
+	cargo fmt --check --manifest-path tools/artifact-review/Cargo.toml
+	cargo clippy --all-targets --locked --offline --manifest-path tools/artifact-review/Cargo.toml -- -D warnings

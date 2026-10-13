@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Review artifact</title>
+  <link rel="stylesheet" href="/shell.css">
+  <script src="/shell.js" defer></script>
+</head>
+<body data-status="open">
+  <header class="toolbar"><strong>Review artifact</strong><span id="connection">Connecting…</span></header>
+  <main class="layout">
+    <section class="artifact-panel" aria-label="Document">
+      <p class="hint">Click an element or select text to comment. Document scripts and external resources are disabled.</p>
+      <iframe id="artifact" title="Artifact snapshot" sandbox="allow-same-origin" referrerpolicy="no-referrer"></iframe>
+    </section>
+    <aside class="conversation" aria-label="Feedback panel">
+      <h1>Feedback</h1>
+      <div id="messages" role="log" aria-label="Review conversation"></div>
+      <div id="queued" aria-label="Unsent annotations"></div>
+      <section id="annotation-editor" hidden>
+        <label for="annotation-comment" id="annotation-target">Annotation</label>
+        <textarea id="annotation-comment" maxlength="4000" placeholder="Comment on this target"></textarea>
+        <div class="annotation-actions"><button id="add-annotation">Add annotation</button><button id="cancel-annotation">Cancel</button></div>
+      </section>
+      <div class="composer">
+        <label for="message">General feedback</label>
+        <textarea id="message" maxlength="8000" placeholder="What should change?"></textarea>
+      </div>
+      <p id="notice" role="status" aria-live="polite"></p>
+      <button id="retry" hidden>Retry submission</button>
+      <div class="actions">
+        <button id="approve" disabled>Approve</button>
+        <button id="decline" disabled>Decline</button>
+        <button id="send" disabled>Send feedback</button>
+      </div>
+    </aside>
+  </main>
+</body>
+</html>

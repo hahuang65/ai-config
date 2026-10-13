@@ -4,3 +4,7 @@
 # leak one into a commit.
 test-self-test-*
 *.test-self-test-bak
+
+# Native package build artifacts and private runtime state.
+target/
+.state/

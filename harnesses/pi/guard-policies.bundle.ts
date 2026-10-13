@@ -1,8 +1,7 @@
-// @bun
-// harnesses/pi/extensions/guard-policies.ts
-import { homedir } from "os";
+// harnesses/pi/guard-policies.ts
+import { homedir } from "node:os";
 
-// shared/policy-registry.ts
+// guard/policy-registry.ts
 var POLICIES = [
   {
     id: "no-secret-access",
@@ -57,22 +56,6 @@ var POLICIES = [
     floor: true,
     example: { tool: "bash", command: "git push --force origin main" },
     counterExample: { tool: "bash", command: "git push origin main" }
-  },
-  {
-    id: "no-orchard-branch-binding-change",
-    intent: "No harness may directly change a managed Orchard worktree's branch binding.",
-    kind: "command",
-    floor: true,
-    example: {
-      tool: "bash",
-      command: "git switch accidental-branch",
-      cwd: "/home/example/.orchard/alpha/task"
-    },
-    counterExample: {
-      tool: "bash",
-      command: "git switch feature-branch",
-      cwd: "/home/example/projects/alpha"
-    }
   },
   {
     id: "no-curl-pipe-shell",
@@ -140,7 +123,7 @@ var POLICIES = [
   }
 ];
 
-// shared/bash-command.ts
+// guard/bash-command.ts
 var DOUBLE_QUOTE_ESCAPES = new Set(["$", "`", '"', "\\", `
 `]);
 function pushToken(tokens, current, started) {
@@ -315,86 +298,24 @@ function anyPipeline(command, predicate) {
   return false;
 }
 
-// shared/orchard-branch-guard.ts
-import path from "path";
-function detectOrchardBranchBindingChange(call) {
-  if (!call.command || !call.cwd)
-    return null;
-  let currentDirectory = call.cwd;
-  for (const statement of splitStatements(call.command)) {
-    const changedDirectory = readDirectoryChange(statement, currentDirectory, call.home);
-    if (changedDirectory) {
-      currentDirectory = changedDirectory;
-      continue;
-    }
-    if (anyPipeline(statement, (stages) => stages.some((stage) => changesBranchInOrchard(tokenize(stage), currentDirectory, call.home)))) {
-      return "Refused \u2014 changing a branch binding beneath Orchard can quarantine the managed worktree. For cross-repository branch changes, use git -C <absolute-repository-path>.";
-    }
-  }
-  return null;
-}
-function changesBranchInOrchard(tokens, callerDirectory, homeDirectory) {
-  const gitIndex = tokens.findIndex((token) => token === "git" || token.endsWith("/git"));
-  if (gitIndex === -1)
-    return false;
-  const gitArguments = tokens.slice(gitIndex + 1);
-  const hasExplicitDirectory = gitArguments[0] === "-C" && Boolean(gitArguments[1]);
-  const targetDirectory = hasExplicitDirectory ? resolveTargetDirectory(callerDirectory, gitArguments[1], homeDirectory) : callerDirectory;
-  const commandIndex = hasExplicitDirectory ? 2 : 0;
-  if (!isOrchardPath(targetDirectory))
-    return false;
-  const gitCommand = gitArguments[commandIndex];
-  const commandArguments = gitArguments.slice(commandIndex + 1);
-  if (commandArguments.includes("--help"))
-    return false;
-  if (gitCommand === "switch")
-    return true;
-  if (gitCommand === "branch") {
-    return commandArguments.includes("-m") || commandArguments.includes("-M");
-  }
-  if (gitCommand === "symbolic-ref") {
-    return commandArguments[0] === "HEAD" && Boolean(commandArguments[1]);
-  }
-  if (gitCommand === "update-ref") {
-    const headIndex = commandArguments.indexOf("HEAD");
-    return headIndex >= 0 && Boolean(commandArguments[headIndex + 1]);
-  }
-  return gitCommand === "checkout" && !commandArguments.includes("--");
-}
-function resolveTargetDirectory(callerDirectory, target, homeDirectory) {
-  if (homeDirectory && (target === "~" || target.startsWith("~/"))) {
-    return path.resolve(homeDirectory, target.slice(2));
-  }
-  return path.resolve(callerDirectory, target);
-}
-function readDirectoryChange(statement, currentDirectory, homeDirectory) {
-  const tokens = tokenize(statement);
-  if (tokens[0] !== "cd" || !tokens[1])
-    return;
-  return resolveTargetDirectory(currentDirectory, tokens[1], homeDirectory);
-}
-function isOrchardPath(candidate) {
-  return /(^|[/\\])\.orchard(?:[/\\]|$)/.test(candidate);
-}
-
-// shared/guard-home.ts
-import path2 from "path";
+// guard/guard-home.ts
+import path from "node:path";
 function resolveGuardHome(environmentHome, platformHome) {
   const candidate = environmentHome === undefined ? platformHome : environmentHome;
-  if (!candidate || candidate.includes("\x00") || !path2.isAbsolute(candidate))
+  if (!candidate || candidate.includes("\x00") || !path.isAbsolute(candidate))
     return null;
-  const normalized = path2.normalize(candidate);
-  if (normalized === path2.parse(normalized).root)
+  const normalized = path.normalize(candidate);
+  if (normalized === path.parse(normalized).root)
     return null;
   return normalized;
 }
 
-// shared/review-publication-state-guard.ts
-import { realpathSync } from "fs";
-import path4 from "path";
+// guard/review-publication-state-guard.ts
+import { realpathSync } from "node:fs";
+import path3 from "node:path";
 
-// shared/inline-program-state-guard.ts
-import path3 from "path";
+// guard/inline-program-state-guard.ts
+import path2 from "node:path";
 var NODE_INTERPRETERS = new Set(["node", "bun"]);
 var RUBY_PERL_INTERPRETERS = new Set(["ruby", "perl"]);
 var FILESYSTEM_ACCESS = /\b(?:bun\s*\.\s*(?:file|write)|delete|file\s*\.\s*(?:delete|open|read|rename|unlink|write)|io\s*\.\s*(?:read|write)|open(?:sync)?|readfile(?:sync)?|read_text|remove(?:sync)?|rename(?:sync)?|rmdir(?:sync)?|rmtree|rm(?:sync)?|unlink(?:sync)?|writefile(?:sync)?|write_text)\b/i;
@@ -414,7 +335,7 @@ function inlineProgramSource(stage) {
   const executableIndex = commandExecutableIndex(tokens);
   if (executableIndex < 0)
     return null;
-  const executable = path3.basename(tokens[executableIndex]);
+  const executable = path2.basename(tokens[executableIndex]);
   if (!isSupportedInterpreter(executable))
     return null;
   const heredoc = heredocBody(stage);
@@ -454,14 +375,14 @@ function pipedProgramSource(stages, interpreterIndex) {
     return null;
   const interpreterTokens = tokenize(stages[interpreterIndex]);
   const executableIndex = commandExecutableIndex(interpreterTokens);
-  if (executableIndex < 0 || !isSupportedInterpreter(path3.basename(interpreterTokens[executableIndex])))
+  if (executableIndex < 0 || !isSupportedInterpreter(path2.basename(interpreterTokens[executableIndex])))
     return null;
   const args = interpreterTokens.slice(executableIndex + 1);
   if (args.length > 0 && !args.includes("-"))
     return null;
   const producerTokens = tokenize(stages[interpreterIndex - 1]);
   const producerIndex = commandExecutableIndex(producerTokens);
-  if (producerIndex < 0 || !SHELL_INPUT_PRODUCERS.has(path3.basename(producerTokens[producerIndex])))
+  if (producerIndex < 0 || !SHELL_INPUT_PRODUCERS.has(path2.basename(producerTokens[producerIndex])))
     return null;
   return producerTokens.slice(producerIndex + 1).filter((token) => !token.startsWith("-")).join(" ");
 }
@@ -505,7 +426,7 @@ function isSupportedInterpreter(executable) {
 }
 function commandExecutableIndex(tokens) {
   let index = tokens.findIndex((token) => !/^[A-Za-z_][A-Za-z0-9_]*=/.test(token));
-  while (index >= 0 && ["command", "env"].includes(path3.basename(tokens[index]))) {
+  while (index >= 0 && ["command", "env"].includes(path2.basename(tokens[index]))) {
     index += 1;
     while (index < tokens.length && (tokens[index].startsWith("-") || /^[A-Za-z_][A-Za-z0-9_]*=/.test(tokens[index])))
       index += 1;
@@ -518,10 +439,10 @@ function escapeExpression(value) {
   return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
-// shared/review-publication-state-guard.ts
+// guard/review-publication-state-guard.ts
 var PROTECTED_STATE_DIRECTORIES = [
   ".review-publication",
-  path4.join(".claude", "review-publication-sessions")
+  path3.join(".claude", "review-publication-sessions")
 ];
 var RECURSIVE_FILE_TOOLS = new Set(["find", "glob", "grep", "list", "search"]);
 var RECURSIVE_SHELL_UTILITIES = new Set(["du", "find", "rg", "tar"]);
@@ -546,39 +467,39 @@ function detectReviewPublicationCredentialAccess(call) {
   const targetsProtectedState = !!call.path && isProtectedStatePath(call.path, preparedCall);
   const shellRunsInsideProtectedState = call.tool.toLowerCase() === "bash" && !!call.cwd && isProtectedStatePath(call.cwd, preparedCall);
   if (targetsProtectedState || shellRunsInsideProtectedState || recursiveFileToolCanReachProtectedState(preparedCall) || shellReferencesProtectedPublicationState(preparedCall)) {
-    return "Refused \u2014 Review publication state and production worker mode are protected from model tool access.";
+    return "Refused — Review publication state and production worker mode are protected from model tool access.";
   }
   return null;
 }
 function protectedRoots(call) {
   if (!call.home)
     return [];
-  return PROTECTED_STATE_DIRECTORIES.map((directory) => path4.resolve(call.home, directory));
+  return PROTECTED_STATE_DIRECTORIES.map((directory) => path3.resolve(call.home, directory));
 }
 function normalizedCandidate(candidate, call, cwd = call.cwd) {
   const optionValue = candidate.includes("=") ? candidate.slice(candidate.indexOf("=") + 1) : candidate;
   const unquoted = optionValue.replace(/^[<>]+/, "").replace(/^(['"])(.*)\1$/, "$2");
   if (!call.home) {
-    if (/^(?:~|\$HOME|\$\{HOME\})(?:\/|$)/.test(unquoted) || !cwd && !path4.isAbsolute(unquoted))
+    if (/^(?:~|\$HOME|\$\{HOME\})(?:\/|$)/.test(unquoted) || !cwd && !path3.isAbsolute(unquoted))
       return null;
-    return path4.resolve(cwd ?? path4.parse(unquoted).root, unquoted);
+    return path3.resolve(cwd ?? path3.parse(unquoted).root, unquoted);
   }
   const expanded = unquoted.replace(/^~(?=\/|$)/, call.home).replace(/^(?:\$HOME|\$\{HOME\})(?=\/|$)/, call.home);
-  return path4.resolve(cwd ?? call.home, expanded);
+  return path3.resolve(cwd ?? call.home, expanded);
 }
 function canonicalizeExistingPath(candidate) {
   let existing = candidate;
   const missingSegments = [];
   while (true) {
     try {
-      return path4.join(realpathSync.native(existing), ...missingSegments.reverse());
+      return path3.join(realpathSync.native(existing), ...missingSegments.reverse());
     } catch (error) {
       if (!["ENOENT", "ENOTDIR"].includes(error.code ?? ""))
         return null;
-      const parent = path4.dirname(existing);
+      const parent = path3.dirname(existing);
       if (parent === existing)
         return null;
-      missingSegments.push(path4.basename(existing));
+      missingSegments.push(path3.basename(existing));
       existing = parent;
     }
   }
@@ -626,8 +547,8 @@ function scopesIntersect(first, second) {
   return isPathWithin(first, second) || isPathWithin(second, first);
 }
 function isPathWithin(candidate, root) {
-  const relative = path4.relative(root, candidate);
-  return relative === "" || !relative.startsWith(`..${path4.sep}`) && relative !== ".." && !path4.isAbsolute(relative);
+  const relative = path3.relative(root, candidate);
+  return relative === "" || !relative.startsWith(`..${path3.sep}`) && relative !== ".." && !path3.isAbsolute(relative);
 }
 function recursiveFileToolCanReachProtectedState(call) {
   if (!RECURSIVE_FILE_TOOLS.has(call.tool.toLowerCase()))
@@ -650,9 +571,9 @@ function fixedGlobPrefix(pattern, call) {
   if (magicIndex < 0)
     return expanded;
   const fixed = expanded.slice(0, magicIndex);
-  if (fixed.endsWith(path4.sep))
+  if (fixed.endsWith(path3.sep))
     return fixed;
-  const separator = fixed.lastIndexOf(path4.sep);
+  const separator = fixed.lastIndexOf(path3.sep);
   return separator < 0 ? "." : fixed.slice(0, separator + 1);
 }
 function shellReferencesProtectedPublicationState(call) {
@@ -696,7 +617,7 @@ function invokesProductionWorker(tokens) {
   return parts.includes("--inetd") && parts.some(isPublicationWorkerToken);
 }
 function isPublicationWorkerToken(token) {
-  const basename = path4.basename(token.replace(/^["']|["']$/g, ""));
+  const basename = path3.basename(token.replace(/^["']|["']$/g, ""));
   if (PUBLICATION_WORKER_NAMES.includes(basename))
     return true;
   if (!GLOB_MAGIC.test(basename))
@@ -720,7 +641,7 @@ function pathChangingOperationIntersectsProtectedState(tokens, call) {
   const executableIndex = commandExecutableIndex2(tokens);
   if (executableIndex < 0)
     return false;
-  const executable = path4.basename(tokens[executableIndex]);
+  const executable = path3.basename(tokens[executableIndex]);
   if (!PATH_CHANGING_UTILITIES.has(executable))
     return false;
   const operands = tokens.slice(executableIndex + 1).filter((token) => token !== "--" && !/^-[^-]/.test(token));
@@ -728,7 +649,7 @@ function pathChangingOperationIntersectsProtectedState(tokens, call) {
 }
 function shellWrapperReferencesProtectedState(tokens, call) {
   const executableIndex = commandExecutableIndex2(tokens);
-  if (executableIndex < 0 || !SHELL_WRAPPERS.has(path4.basename(tokens[executableIndex])))
+  if (executableIndex < 0 || !SHELL_WRAPPERS.has(path3.basename(tokens[executableIndex])))
     return false;
   const args = tokens.slice(executableIndex + 1);
   const commandFlag = args.findIndex((argument) => /^-[A-Za-z]*c[A-Za-z]*$/.test(argument));
@@ -740,7 +661,7 @@ function shellWrapperReferencesProtectedState(tokens, call) {
 }
 function commandExecutableIndex2(tokens) {
   let index = tokens.findIndex((token) => !/^[A-Za-z_][A-Za-z0-9_]*=/.test(token));
-  while (index >= 0 && ["command", "env"].includes(path4.basename(tokens[index]))) {
+  while (index >= 0 && ["command", "env"].includes(path3.basename(tokens[index]))) {
     index += 1;
     while (index < tokens.length && (tokens[index].startsWith("-") || /^[A-Za-z_][A-Za-z0-9_]*=/.test(tokens[index]))) {
       index += 1;
@@ -780,7 +701,7 @@ function changedDirectory(statement, call, current) {
   if (args.length !== 1 || !isSafeDirectoryLiteral(args[0]))
     return UNRESOLVED_DIRECTORY;
   const homeRelative = /^(?:\$HOME|\$\{HOME\}|~)(?:\/|$)/.test(args[0]);
-  if (current === UNRESOLVED_DIRECTORY && !path4.isAbsolute(args[0]) && !homeRelative) {
+  if (current === UNRESOLVED_DIRECTORY && !path3.isAbsolute(args[0]) && !homeRelative) {
     return UNRESOLVED_DIRECTORY;
   }
   return normalizedCandidate(args[0], call, call.cwd) ?? UNRESOLVED_DIRECTORY;
@@ -826,21 +747,7 @@ function recursiveShellUsesWorkingDirectory(executable, args, recursiveFlag) {
   return positional.length === 0;
 }
 
-// shared/guard-core.ts
-function truncate(s, max = 80) {
-  return s.length > max ? `${s.slice(0, max)}\u2026` : s;
-}
-var SHELL_WRITE_PATTERNS = [
-  /\b(?:echo|printf|cat)\b[^;&|<>\n]*>>?\s*(?!\/dev\/(?:null|stderr|stdout|fd)\b|&\d)[^\s|&>]/,
-  /\btee\s+(?:-\S+\s+)*(?!\/dev\/(?:null|stderr|stdout|fd)\b)[^\s|&>-]/
-];
-function detectShellWrite(call) {
-  const command = call.command;
-  if (command && SHELL_WRITE_PATTERNS.some((p) => p.test(command))) {
-    return "Refused \u2014 writing a file via shell redirection bypasses per-file approval. Use the write/edit tool instead.";
-  }
-  return null;
-}
+// guard/credential-guard.ts
 var SECRET_LITERAL_PATTERNS = [
   /\bsk-[A-Za-z0-9_-]{20,}/,
   /\b(?:AKIA|ASIA)[0-9A-Z]{16}\b/,
@@ -851,7 +758,7 @@ var SECRET_LITERAL_PATTERNS = [
 function detectHardcodedSecret(call) {
   const content = call.content;
   if (content && SECRET_LITERAL_PATTERNS.some((p) => p.test(content))) {
-    return "Refused \u2014 hardcoded secret literal in written content. Use an environment variable or a secrets manager; never commit a key. If one was staged, rotate it.";
+    return "Refused — hardcoded secret literal in written content. Use an environment variable or a secrets manager; never commit a key. If one was staged, rotate it.";
   }
   return null;
 }
@@ -863,10 +770,10 @@ var CREDENTIAL_PATTERNS = [
   /\.pgpass(\b|$)/,
   /\.npmrc(\b|$)/,
   /\.secrets([./]|$)/,
-  /(^|[/\\"'])credentials(\.|$|[/\\"'])/
+  /(^|[\\/\\"'])credentials(\.|$|[\\/\\"'])/
 ];
-function isCredentialPath(path5) {
-  return CREDENTIAL_PATTERNS.some((p) => p.test(path5));
+function isCredentialPath(path4) {
+  return CREDENTIAL_PATTERNS.some((pattern) => pattern.test(path4));
 }
 var CREDENTIAL_READERS = new Set([
   "cat",
@@ -899,20 +806,37 @@ function readsCredentialFile(tokens) {
   if (i >= tokens.length || !CREDENTIAL_READERS.has(tokens[i]))
     return false;
   for (let j = i + 1;j < tokens.length; j++) {
-    const t = tokens[j];
-    if (t.startsWith("-") && t !== "--")
+    const token = tokens[j];
+    if (token.startsWith("-") && token !== "--")
       continue;
-    if (isCredentialPath(t))
+    if (isCredentialPath(token))
       return true;
   }
   return false;
 }
 function detectSecretAccess(call) {
   if (call.path && isCredentialPath(call.path)) {
-    return `Refused \u2014 credential file read: ${call.path.slice(0, 80)}`;
+    return `Refused — credential file read: ${call.path.slice(0, 80)}`;
   }
-  if (call.command && anyPipeline(call.command, (stages) => stages.some((s) => readsCredentialFile(tokenize(s))))) {
-    return `Refused \u2014 bash command reads a credential file: ${truncate(call.command)}`;
+  if (call.command && anyPipeline(call.command, (stages) => stages.some((stage) => readsCredentialFile(tokenize(stage))))) {
+    const command = call.command;
+    return `Refused — bash command reads a credential file: ${command.length > 80 ? `${command.slice(0, 80)}…` : command}`;
+  }
+  return null;
+}
+
+// guard/guard-core.ts
+function truncate(s, max = 80) {
+  return s.length > max ? `${s.slice(0, max)}…` : s;
+}
+var SHELL_WRITE_PATTERNS = [
+  /\b(?:echo|printf|cat)\b[^;&|<>\n]*>>?\s*(?!\/dev\/(?:null|stderr|stdout|fd)\b|&\d)[^\s|&>]/,
+  /\btee\s+(?:-\S+\s+)*(?!\/dev\/(?:null|stderr|stdout|fd)\b)[^\s|&>-]/
+];
+function detectShellWrite(call) {
+  const command = call.command;
+  if (command && SHELL_WRITE_PATTERNS.some((p) => p.test(command))) {
+    return "Refused — writing a file via shell redirection bypasses per-file approval. Use the write/edit tool instead.";
   }
   return null;
 }
@@ -945,7 +869,7 @@ function stageTransformsHtml(stage) {
 }
 function detectHtmlTransform(call) {
   if (call.command && anyPipeline(call.command, (stages) => stages.some(stageTransformsHtml))) {
-    return `Refused \u2014 command-line text transformer aimed at an HTML file; read HTML with the read tool and change it with exact edit-tool replacements: ${truncate(call.command)}`;
+    return `Refused — command-line text transformer aimed at an HTML file; read HTML with the read tool and change it with exact edit-tool replacements: ${truncate(call.command)}`;
   }
   return null;
 }
@@ -971,7 +895,7 @@ function isGitDestructive(tokens) {
 }
 function detectGitDestructive(call) {
   if (call.command && anyPipeline(call.command, (stages) => stages.some((s) => isGitDestructive(tokenize(s))))) {
-    return `Refused \u2014 destructive git command rewrites history or destroys work; make a new commit / hand off to the user: ${truncate(call.command)}`;
+    return `Refused — destructive git command rewrites history or destroys work; make a new commit / hand off to the user: ${truncate(call.command)}`;
   }
   return null;
 }
@@ -1018,7 +942,7 @@ function interpreterProcessSubstitutesCurl(stage) {
 }
 function detectCurlPipeShell(call) {
   if (call.command && anyPipeline(call.command, (stages) => curlPipedToInterpreter(stages) || stages.some(interpreterProcessSubstitutesCurl))) {
-    return `Refused \u2014 remote download piped to an interpreter: ${truncate(call.command)}`;
+    return `Refused — remote download piped to an interpreter: ${truncate(call.command)}`;
   }
   return null;
 }
@@ -1074,14 +998,14 @@ function detectBroadRm(call) {
     const tokens = tokenize(s);
     return rmHitsBroadTarget(tokens) || findDeletesBroadTarget(tokens);
   }))) {
-    return `Refused \u2014 recursive delete against a broad target: ${truncate(call.command)}`;
+    return `Refused — recursive delete against a broad target: ${truncate(call.command)}`;
   }
   return null;
 }
 var SUDO_PATTERN = /\bsudo\s/;
 function detectSudo(call) {
   if (call.command && SUDO_PATTERN.test(call.command)) {
-    return `Refused \u2014 sudo privilege escalation: ${truncate(call.command)}`;
+    return `Refused — sudo privilege escalation: ${truncate(call.command)}`;
   }
   return null;
 }
@@ -1098,7 +1022,7 @@ var CLOUD_DESTROY_PATTERNS = [
 ];
 function detectCloudDestroy(call) {
   const command = call.command;
-  return commandMatches(command, CLOUD_DESTROY_PATTERNS) ? `Refused \u2014 destroys shared infrastructure; hand the command to the user (or produce a plan to review): ${truncate(command)}` : null;
+  return commandMatches(command, CLOUD_DESTROY_PATTERNS) ? `Refused — destroys shared infrastructure; hand the command to the user (or produce a plan to review): ${truncate(command)}` : null;
 }
 var DEPLOY_PATTERNS = [
   /make\s+(?:apply|deploy[a-z-]*|push-(?:to-prod|staging|live|release)[a-z-]*)\b/,
@@ -1114,7 +1038,7 @@ var DEPLOY_PATTERNS = [
 ];
 function detectDeploy(call) {
   const command = call.command;
-  return commandMatches(command, DEPLOY_PATTERNS) ? `Refused \u2014 changes a production/shared environment; the user should run the deploy: ${truncate(command)}` : null;
+  return commandMatches(command, DEPLOY_PATTERNS) ? `Refused — changes a production/shared environment; the user should run the deploy: ${truncate(command)}` : null;
 }
 var DB_MUTATION_PATTERNS = [
   /\b(?:psql|mysql|mariadb|sqlite3?|mongo(?:sh)?|redis-cli)\b[^|;&\n]*\b(?:DROP|TRUNCATE|ALTER\s+TABLE|DELETE\s+FROM)\b/i,
@@ -1123,7 +1047,7 @@ var DB_MUTATION_PATTERNS = [
 ];
 function detectDbMutation(call) {
   const command = call.command;
-  return commandMatches(command, DB_MUTATION_PATTERNS) ? `Refused \u2014 mutates shared database state via a CLI; use a migration tool or hand the statement to the user: ${truncate(command)}` : null;
+  return commandMatches(command, DB_MUTATION_PATTERNS) ? `Refused — mutates shared database state via a CLI; use a migration tool or hand the statement to the user: ${truncate(command)}` : null;
 }
 var DD_DISK_PATTERNS = [
   /\bdd\s[^|;&\n]*\bof=\/dev\//,
@@ -1131,7 +1055,7 @@ var DD_DISK_PATTERNS = [
 ];
 function detectDdDisk(call) {
   const command = call.command;
-  return commandMatches(command, DD_DISK_PATTERNS) ? `Refused \u2014 dd against a raw device can overwrite a disk irreversibly; the user should run it after checking the device name: ${truncate(command)}` : null;
+  return commandMatches(command, DD_DISK_PATTERNS) ? `Refused — dd against a raw device can overwrite a disk irreversibly; the user should run it after checking the device name: ${truncate(command)}` : null;
 }
 var BROAD_CHMOD_PATTERNS = [
   /\bchmod\s+-[a-zA-Z]*[Rr][a-zA-Z]*\s+\S+\s+(?:\/|~|\$HOME|\/etc|\/usr|\/var|\/opt|\/Users|\/home)\/?(?:\s|$)/,
@@ -1139,7 +1063,7 @@ var BROAD_CHMOD_PATTERNS = [
 ];
 function detectBroadChmod(call) {
   const command = call.command;
-  return commandMatches(command, BROAD_CHMOD_PATTERNS) ? `Refused \u2014 recursive chmod against a broad target can brick the system; name the exact path(s) instead: ${truncate(command)}` : null;
+  return commandMatches(command, BROAD_CHMOD_PATTERNS) ? `Refused — recursive chmod against a broad target can brick the system; name the exact path(s) instead: ${truncate(command)}` : null;
 }
 var DETECTORS = {
   "no-secret-access": detectSecretAccess,
@@ -1148,7 +1072,6 @@ var DETECTORS = {
   "no-shell-write": detectShellWrite,
   "no-html-transform": detectHtmlTransform,
   "no-git-destructive": detectGitDestructive,
-  "no-orchard-branch-binding-change": detectOrchardBranchBindingChange,
   "no-curl-pipe-shell": detectCurlPipeShell,
   "no-broad-rm": detectBroadRm,
   "no-sudo": detectSudo,
@@ -1170,14 +1093,14 @@ function evaluate(call) {
   return null;
 }
 
-// harnesses/pi/extensions/guard-policies.ts
-var UNSAFE_HOME_REASON = "Refused \u2014 a safe absolute home directory could not be established for guard evaluation.";
+// harnesses/pi/guard-policies.ts
+var UNSAFE_HOME = "Refused — a safe absolute home directory could not be established for guard evaluation.";
 function createGuardPoliciesExtension(homeSource) {
   return function guardPolicies(pi) {
     const home = resolveGuardHome(homeSource.environmentHome, homeSource.platformHome);
     pi.on("tool_call", (event, ctx) => {
       if (!home)
-        return { block: true, reason: UNSAFE_HOME_REASON };
+        return { block: true, reason: UNSAFE_HOME };
       const input = event.input ?? {};
       const tool = String(event.toolName ?? "").toLowerCase();
       const rawPath = input.path ?? input.file_path;
@@ -1197,10 +1120,7 @@ function createGuardPoliciesExtension(homeSource) {
   };
 }
 function guardPolicies(pi) {
-  createGuardPoliciesExtension({
-    environmentHome: process.env.HOME,
-    platformHome: homedir()
-  })(pi);
+  createGuardPoliciesExtension({ environmentHome: process.env.HOME, platformHome: homedir() })(pi);
 }
 export {
   guardPolicies as default,

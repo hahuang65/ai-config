@@ -1,2 +1,4 @@
 [tools]
-"npm:@agentmemory/agentmemory" = { version = "0.9.29", trust_policy_excludes = ["@agentmemory/agentmemory@0.9.29"] }
+rust = "1.99.0"
+shellcheck = "0.11.0"
+ty = "0.0.85"

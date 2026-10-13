@@ -1,56 +1,31 @@
 ---
 name: handoff
-description: Write a handoff document for another agent session — summarise the current work so a fresh session (or a different AI tool) can continue it. Output is disposable, written to the OS temp dir. To resume a handoff, use /pickup. Based on Matt Pocock's handoff skill.
-argument-hint: "What will the next session focus on?"
+description: Write a selective, private handoff outside the repository so another conversation can resume a specific purpose from verified sources and explicit scope.
 ---
 
 # Handoff
 
-Summarise the current conversation into a handoff document so a fresh agent session can continue the work. The output is **disposable** — a working routing slip, not permanent documentation.
+Write a selective routing summary for the next conversation, not a transcript or durable source of truth.
+Confirm the next purpose if it is unclear.
+Read [the shared handoff format](references/format.md) and use its metadata so [pickup](../pickup/SKILL.md) can match the current project safely.
 
-This is the **write** side of the handoff split. To **resume** a handoff in a new session, use **`/pickup`** (it reads what this skill produces).
+1. Inspect current Git identity, branch, HEAD, and uncommitted changes without switching or changing them.
+   Include only state relevant to the next purpose; distinguish your work from unrelated changes.
+2. Create a uniquely named private `handoff-<random>` directory in the OS temp directory, outside the repository, with owner-only access.
+   Write `handoff.md` inside it with owner-only access and exclusive creation.
+   Do not reuse or follow an existing directory or file symlink, or overwrite an existing handoff.
+3. Fill in the metadata and concise sections from the format.
+   Reference authoritative documents; do not duplicate their contents or create a hidden duplicate source.
+   Include unresolved questions, exact focused check results, and the next proposed action.
+   Separate verified facts, user decisions, and assumptions.
+4. Exclude secrets, credentials, private customer data, raw transcripts, and environment dumps.
+   Sanitize command examples and URLs, and omit irrelevant history.
+   Review the summary for sensitive content before writing it.
+5. Tell the user its absolute path, purpose, and suggested next step.
+   They can request pickup with that path or use `/skill:pickup` in the same project.
 
-## When to Use
-
-- An out-of-scope task surfaces during the current session and you don't want to derail
-- You want to prototype something without bloating the current context
-- Work needs to move between different AI coding tools (e.g. from Claude Code to pi)
-- You want to keep the current session pure and focused
-
-Unlike `/compact` (which summarizes the entire conversation for a *new* session of the same chat), `/handoff` selectively transfers context so two independent sessions can stay focused on their own concerns.
-
-## Where the Handoff Document Lives
-
-Write to **`/tmp/`** — a literal, OS-temp location that exists on Linux and macOS. Do not use `$TMPDIR` or any shell variable; a command containing shell expansion (`$VAR`, `${VAR}`, `$(...)`, backticks) can trip a harness's safety gate and force a permission prompt even when the surrounding pattern is allowlisted. Hardcoding `/tmp/` keeps `/pickup`'s listing command simple and prompt-free on any harness.
-
-Pick a name like `handoff-<short-slug>-<YYYYMMDD-HHMM>.md` — so the full path is e.g. `/tmp/handoff-curl-jq-perms-20260527-1335.md`.
-
-Handoff docs are disposable; they should not pollute the repo. The OS cleans `/tmp/` on its own schedule.
-
-Tell the user the absolute path so they can pass it to the next session.
-
-## Document Structure
-
-See [references/handoff-template.md](references/handoff-template.md) for the document structure.
-
-## Rules
-
-1. **Reference, don't duplicate.** If a spec already says X, link to the spec. The handoff is a routing slip, not a copy.
-2. **Tailor to the next session's purpose.** If `$ARGUMENTS` is provided, treat it as the brief for the next session and shape the document accordingly. Skip anything the next session won't need.
-3. **Redact sensitive content.** API keys, passwords, tokens, PII — strip them. Even though the doc is in the OS temp dir, anyone with file-system access can read it.
-4. **Suggest skills explicitly.** The next agent reads the handoff fresh. Naming the skills (`/grill`, `/spec`, `/todo`, `/code`, `/refactor`, `/review-code`, `/prototype`) lets it spin up directly.
-5. **Disposable, not durable.** Don't add the temp file to git. If something turns out to be worth keeping, it belongs in the spec, an ADR, or a commit message — not the handoff.
-
-## After Writing
-
-When the handoff pauses an active work item, read the [Work log protocol](../shared/references/work-log.md) and record the paused state with the next-session goal as its next action.
-Do not mark work paused when the handoff only delegates unrelated work and the current work continues.
-
-Tell the user:
-
-> Handoff document at `<absolute-path>`.
->
-> Suggested next session: `<one-line summary>`.
-> To pick it up in a new session, run `/pickup` — with no argument it resumes this one (the most recent), or pass a slug/topic to target a specific handoff.
-
-Do NOT continue work on the handed-off task in the current session — that defeats the purpose of the split.
+Do not launch a session, change worktrees, automatically invoke another skill, or continue the handed-off work by implication.
+Do not delete handoffs or clean up source files.
+The temp file is disposable and may disappear; durable knowledge belongs in the referenced project documents.
+If this handoff pauses active work, record that meaningful checkpoint through [work-log](../work-log/SKILL.md), including the next action.
+Do not mark continuing or unrelated work paused, and do not maintain another Work log store.

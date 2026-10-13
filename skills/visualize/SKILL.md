@@ -1,93 +1,44 @@
 ---
 name: visualize
-description: Generate beautiful, self-contained HTML pages that visually explain systems, code changes, plans, and data. Use when the user asks for a diagram, architecture overview, diff review, plan review, project recap, comparison table, or any visual explanation of technical concepts. Also use proactively when you are about to render a complex ASCII table (4+ rows or 3+ columns) — present it as a styled HTML page instead.
-license: MIT
-compatibility: Requires a browser to view generated HTML files. Optional surf-cli for AI image generation.
-metadata:
-  author: nicobailon
-  version: "0.4.4"
+description: Explain a system, plan, data set, or scoped code change in self-contained HTML, including before-and-after comparisons grounded in current sources.
 ---
 
-# Visual Explainer
+# Visualize
 
-Generate self-contained HTML files for technical diagrams, visualizations, and data tables. Always open the result in the browser. Never fall back to ASCII art.
+Clarify the question the visual should answer and inspect relevant context and current sources.
+Choose a simple diagram, table, timeline, or comparison that makes the facts easier to understand.
+Do not impose a design system, slide deck, or large report when a small page is enough.
+Use the project's language and define unfamiliar terms.
 
-**Proactive table rendering:** If you're about to render an ASCII table with 4+ rows or 3+ columns, generate an HTML page instead. Don't wait to be asked.
+## Explain a change
 
-## Workflow
+Establish an explicit base, target, and file scope before comparing changes.
+Ask when a branch, commit, range, or working-tree target is ambiguous; do not assume a default branch.
+For working-tree scope, distinguish staged, unstaged, and relevant untracked files.
+Read both the before and after code plus the nearby interfaces needed to understand the change.
+Do not switch branches, modify sources, or fetch remote content merely to create a diagram.
 
-Read the reference files before generating — don't memorize them.
+Show the problem, before-and-after behavior or structure, affected interfaces, and important invariants.
+Reference source paths and authoritative decisions so the explanation can be checked.
+Describe actual test evidence separately from intended coverage or checks not run.
+Do not fabricate rationale, rejected alternatives, measurements, review findings, or evidence.
+If a reason is unknown, say so; label any useful interpretation as inference, not an agreed decision.
+This explanation is not a substitute for [change review](../review-change/SKILL.md) and does not claim approval.
 
-### 1. Think
+## Render and present
 
-Commit to a direction. Pick an aesthetic and vary from recent generations. See [references/diagram-types.md](references/diagram-types.md) for aesthetic directions and constraints.
+Write one self-contained HTML file with inline CSS and semantic elements.
+For feedback, decisions, or approval through `review-artifact`, build diagrams with static HTML/CSS or a supported raster image (PNG, JPEG, WebP, or GIF) confined to the HTML directory or embedded as bounded data.
+The review sanitizer removes SVG; never ask the user to approve a diagram that will not appear there.
+Use inline SVG only for informational pages opened in the ordinary browser, not for `review-artifact` decisions.
+No external resources or scripts: avoid remote fonts, libraries, analytics, and executable page scripts.
+Escape source text, keep labels readable, use useful captions, and do not rely on color alone.
+Check narrow layouts, reading order, contrast, and overflow.
+Do not hide a second content model or fabricate screenshots.
 
-**Constrained aesthetics (prefer):** Blueprint, Editorial, Paper/ink, Monochrome terminal.
-**Flexible (use with caution):** IDE-inspired (commit to a real palette: Dracula, Nord, etc.), Data-dense.
-**Forbidden:** Neon dashboard, gradient mesh, Inter + violet/indigo accents.
-
-### 2. Structure
-
-Resolve the [domain documentation destination](../shared/references/domain-documentation.md) before reading project language.
-Write visible content in plain language.
-Prefer the project's ubiquitous language from the selected context documentation, then common technical terms the user is likely to know.
-Never make internal workflow values or unexplained source identifiers the main explanation.
-
-Choose a rendering approach based on content type. See the approach table in [references/diagram-types.md](references/diagram-types.md).
-
-**Read templates before writing:**
-- Architecture overviews → `./templates/architecture.html`
-- Flowcharts, sequence, ER, state machines → `./templates/mermaid-flowchart.html`
-- Data tables → `./templates/data-table.html`
-- Slide decks → `./templates/slide-deck.html` + `./references/slide-patterns.md`
-
-**Read CSS references as needed:**
-- `./references/css-core.md` — always read (theme, cards, code blocks, overflow)
-- `./references/css-mermaid.md` — when using Mermaid diagrams
-- `./references/css-components.md` — when using grids, KPI cards, prose elements
-- `./references/libraries.md` — font pairings, Mermaid/Chart.js theming
-- `./references/responsive-nav.md` — for pages with 4+ sections
-
-**Mermaid rules:**
-- Use `theme: 'base'` with custom `themeVariables`
-- Center with `display: flex; justify-content: center`
-- Add zoom controls to every `.mermaid-wrap`
-- Prefer `flowchart TD` over `LR` for complex diagrams
-- Never define `.node` as a page-level CSS class (collides with Mermaid internals)
-- For 10+ nodes: increase fontSize, use hybrid pattern for 15+
-
-### 3. Style
-
-See [references/anti-patterns.md](references/anti-patterns.md) for forbidden patterns.
-
-**Typography:** Pick distinctive font pairings from `./references/libraries.md`. Never Inter, Roboto, Arial, or Helvetica alone.
-**Color:** Use CSS custom properties with semantic names. Support both themes. Build depth through subtle lightness shifts (2-4%).
-**Surfaces:** Vary card depth (hero → elevated → default → recessed). Don't make everything pop.
-**Animation:** Staggered fade-ins are good. Forbidden: glowing shadows, pulsing effects, continuous animations.
-
-### 4. Deliver
-
-**Output location:** Write to `docs/features/<YYYYMMDD-HHMM>-<slug>/` if a feature directory exists.
-For pipeline artifacts, write canonical `specs.html`, `tasks.html`, or informational `diff-review.html` as requested.
-For standalone visuals, use a descriptive name such as `diagram.html` or `slides.html`.
-
-**Open informational HTML:** use `xdg-open <path>` on Linux or `open <path>` on macOS.
-
-**Tell the user** the file path so they can reopen or share it.
-
-## Diagram Types
-
-See [references/diagram-types.md](references/diagram-types.md) for detailed rendering guidance for each type:
-- Architecture, Flowcharts, Sequence, Data Flow, ER/Schema, State Machines, Mind Maps, Data Tables, Timelines, Dashboards, Implementation Plans, Documentation
-
-## Slide Deck Mode
-
-Opt-in only — request slides explicitly (the `--slides` flag, or natural language like "as a slide deck"). See [references/slide-patterns.md](references/slide-patterns.md) for full guidance. Slides are not pages reformatted — each slide is one viewport (100dvh), no scrolling. Cover all source content.
-
-## Quality Checks
-
-See [references/quality-checks.md](references/quality-checks.md) for the verification checklist.
-
-## Anti-Patterns
-
-See [references/anti-patterns.md](references/anti-patterns.md) for explicitly forbidden patterns (AI slop test, typography, colors, layouts).
+Follow the project's artifact convention, otherwise use a descriptive file in an agreed documentation or OS temp location.
+Do not overwrite an existing authoritative artifact without permission.
+Open informational output in the ordinary browser with the platform's normal opener and give the absolute path.
+If requesting feedback, a decision, or approval, use [review-artifact](../review-artifact/SKILL.md) instead and update the same file.
+If browser tools are unavailable, state that limit; never claim the page was inspected or approved.
+A request for visualization does not authorize implementation or publication.

@@ -1,376 +1,60 @@
-# ai-config
+# Claude and Pi configuration source
 
-Shared configuration for Claude Code and pi.
-Skills, commands, agents, and rules are authored once and consumed by both harnesses.
-The installer projects skills, commands, and agents into native paths; rules stay at their canonical source.
+This checkout is the currently installed ordinary Claude Code and Pi configuration source.
+Keep its source and built release tools available while installed links point here.
+The evaluation checkout is retained as the former source, not the live bootstrap.
+Do not run the removed legacy installer or change the parent `~/.dotfiles` submodule pointer as part of this package work.
 
-> Contributors: read [`AGENTS.md`](AGENTS.md) before changing a primitive.
-> Run `make test` before every commit.
+## First-pass package
 
-## Quick start
+`manifest.json` declares the installation-owned resources.
+Shared resources live directly in `skills/`, `agents/`, `commands/`, `rules/`, and `guard/`, with `baseline.md` at the root.
+Harness-specific source lives in `harnesses/claude/` and `harnesses/pi/`; the standalone Rust tools live in `tools/`.
+The restricted reviewer also uses root `reviewer.md` and `harnesses/pi/review-scope.ts` as checked support files, not ordinary installed resources.
 
-```sh
-git clone <repo> ~/.dotfiles/ai
-cd ~/.dotfiles/ai
-./install.sh
-```
+The installer links these resources:
 
-Examples in this document use Claude Code's `/name` syntax.
-In pi, request a skill naturally or use `/skill:name`.
-The shared `/deliver` and `/rebase` prompts use `/name` in both harnesses.
+- Shared baseline instructions and guarded tool-call adapters for both harnesses.
+- The familiar two-line Claude and Pi status displays and Catppuccin themes, without agentmemory.
+- Claude's feature-disable settings and selected LSP plugins; a local `ty server`/`ruby-lsp` plugin provides Python and Ruby LSP without Astral's or Ruby's skill bundles or auto-installing launchers. Server tools remain independently provisioned through mise.
+- Explicit `/deliver` and `/rebase` commands in both harnesses; `/resolve-conflicts` is the shared skill for a rebase already in progress.
+- The shared local skill set from `pi-evaluation` under `skills/`; the review-change skill selects the current harness's independently restricted reviewer.
+- The evaluation's specialist roles: API designer, change reviewer, database reviewer, fact checker, and frontend architect.
+- Bundled `wt`/`worktree` and `wl`/`worklog` commands, plus the Rust browser-review and change-review commands needed by the retained skills.
 
-## Build workflow
+TypeSafe and Herdr remain independently configured.
+Worklog data stays in its existing private store; no old Work log history is queried or imported.
+Ordinary user and project resources remain discoverable, while restricted reviewers use isolated snapshots.
+The installer changes only recorded owned links and narrow guardrail settings; it preserves unrelated resources, login, models, sessions, and project trust.
+It never provisions tools, touches services, or deletes private state.
 
-`build` is the primary feature-development workflow.
-It has five phases and four approval gates.
+Before a repository edit, use a verified task worktree; `skills/worktree/SKILL.md` describes safe creation, entry, and cleanup with `wt` or `worktree`.
+A direct-checkout exception requires the user's up-front choice for one self-contained change and commit authorization.
+Creating a worktree does not move a running conversation; resume or start one in the new checkout before editing.
+Claude uses its native `/resume` when a previous task conversation is needed.
+This package does not install automatic Claude or Pi task-conversation adapters, a Pi language-server client, or the former agentmemory and background publication services.
+The commands do not push or clean worktrees automatically; local delivery integrates a reviewed task by verified fast-forward, while a GitHub-delivery task remains for a separately authorized PR workflow.
+Dated historical decision records may describe retired experiments; they are not part of this package.
 
-```text
-/build "feature"
-  1. /grill                         domain decisions and ubiquitous language
-     └─ /mockup when UI is relevant approved mockups.html
-         ↓ Design→Spec
-  2. /spec                          approved specs.html
-         ↓ Spec→Tasks
-  3. /todo                          approved vertical slices in tasks.html
-         ↓ Tasks→Implement
-  4. /code or /coach                vertical-slice TDD and verification
-  5. /review-change                 evidence, Findings, and final report
-         ↓ Review→Done
-```
+## Build and verify
 
-- `/code` lets the AI write tests and implementation.
-- `/coach` makes the AI write one test at a time while the user writes implementation.
-- Relevant UI runs through `/mockup`; otherwise post-grill confirmation clears the same Design→Spec gate.
-- A prototype can use a mockup before or after a host application experiment, but it stays outside the build pipeline.
-- No phase commits changes.
-
-Project-wide context files record the ubiquitous language.
-Project-wide ADRs live in `docs/adr/`.
-Each build stores its canonical HTML feature artifacts under `docs/features/<YYYYMMDD-HHMM>-<slug>/`:
-
-```text
-mockups.html   # conditional approved UI intent
-specs.html     # approved feature spec
-tasks.html     # approved slices and completion state
-```
-
-There are no Markdown companions.
-The final Review change report is disposable and lives in the operating-system temp directory.
-See [`skills/build/SKILL.md`](skills/build/SKILL.md) for the complete workflow contract.
-
-## Universal Work log
-
-The Work log is one hidden, host-local, append-only record shared by every configured harness and repository.
-Repository identity associates and filters work but does not limit access to the universal store.
-`record-work` creates work items and immutable checkpoints for planned, active, paused, completed, and abandoned work.
-`summarize-work` queries Open work, timelines, period summaries, and work-item history through the packaged DuckDB views.
-Open work is an unordered bag with no priority or semantic ordering.
-
-`./install.sh` links the `work-log` agent-facing CLI into `~/.local/bin/` and installs the Claude Code and pi reconciliation adapters.
-The default store is `$XDG_DATA_HOME/work-log` when configured, or `~/.local/share/work-log` otherwise.
-Successful automatic checkpoints are quiet.
-Harness reconciliation requests a follow-up only when observed meaningful activity lacks a checkpoint.
-
-Typical agent-facing operations are:
-
-```text
-work-log open --json
-work-log digest
-work-log timeline --from 2026-09-01 --to 2026-09-18 --json
-work-log summary --from 2026-09-01 --to 2026-09-18
-work-log history work_<id> --json
-```
-
-Collection commands return at most 100 items by default and report returned, total, and truncation metadata in JSON.
-Use `--limit` for another bounded result or explicit `--all` when the complete collection is necessary.
-
-## Optional historical memory
-
-The workflows can use [agentmemory](https://www.agent-memory.dev/) when its standard memory tools are available.
-Agentmemory is optional historical memory, not a source of current project truth.
-A workflow reads canonical sources first, searches only at a named checkpoint, and verifies each useful result before use.
-It never takes approval, authorization, task status, or ubiquitous language from memory.
-
-The repository pins the agentmemory CLI through [`mise.toml`](mise.toml).
-Running `./install.sh` installs that version through mise, links the canonical engine template to `~/.agentmemory/iii-config.yaml`, and links `~/.local/bin/agentmemory` to the mise-managed executable.
-Agentmemory renders its machine-specific runtime configuration and state into its native data directory.
-The native directory is `~/Library/Application Support/agentmemory` on macOS and `${XDG_DATA_HOME:-~/.local/share}/agentmemory` on Linux.
-The installer safely moves a recognized legacy `~/data` store when the native destination does not exist, and it refuses to move a directory that contains unrelated files.
-Generated state remains outside the repository.
-The installer does not read, replace, or link the secret-bearing `~/.agentmemory/.env` file.
-
-On macOS, the installer copies [`agentmemory/dev.agentmemory.plist`](agentmemory/dev.agentmemory.plist) to `~/Library/LaunchAgents/dev.agentmemory.plist`, then bootstraps, enables, and starts `dev.agentmemory` through launchctl.
-Launchd rejects a symlink passed to `bootstrap`, so the required LaunchAgents path is the one managed regular-file exception to the symlink installation pattern.
-On Linux, it links [`agentmemory/agentmemory.service`](agentmemory/agentmemory.service) to `~/.config/systemd/user/agentmemory.service`, reloads the user service manager, and enables and starts the unit.
-Service activation runs only for the current account's real home directory, so installation tests and alternate `HOME` projections do not change the live service manager.
-A repeated installation resolves the pinned runtime without reinstalling it and leaves an unchanged healthy service running without a restart.
-
-The pi harness installs a managed adapter at `~/.pi/agent/extensions/agentmemory/index.ts`.
-The adapter remains inert when the local server is unavailable, never starts the service, and never injects recall automatically.
-It exposes explicit search, save, session, provenance, deletion, health, and capture-control tools using agentmemory's standard names.
-It replaces the copied pi adapter from `agentmemory connect pi`, so the external adapter's automatic recall does not also run.
-It is safe to run `agentmemory connect pi` because a separate owner restores the managed links and queues one automatic pi reload without modifying repository source.
-
-Capture and recall are independent.
-The defaults retain full session capture and allow explicit recall only:
+Use the versions pinned in `mise.toml` directly; do not install tools as a testing side effect.
 
 ```sh
-AGENTMEMORY_CAPTURE=full       # off | metadata | full
-AGENTMEMORY_RECALL=explicit    # off | explicit
-AGENTMEMORY_EXCLUDED_TOOLS='*confluence*,*atlassian*'
-AGENTMEMORY_PROJECT_NAME='github.com/owner/repository'
-AGENTMEMORY_POLICY_PATH="$HOME/.agentmemory/capture-policy.json"
+make build
+make lint
+make test
 ```
 
-Set these variables in the environment that starts pi or Claude Code.
-The optional user-owned policy file supports `default` settings plus exact project entries with `capture`, `recall`, and `excludedTools` fields.
-Environment settings override the policy file.
-Use `/agentmemory-capture pause` in pi before other sensitive work.
-Both managed adapters temporarily pause capture before Confluence content returns and restore it after the current agent run settles.
-Use `/agentmemory-capture off` only when capture must remain disabled beyond the current agent run.
-The adapters always exclude agentmemory's own tools from capture.
-When no explicit project name exists, they use the normalized Git origin or a stable local repository identity shared by linked worktrees.
-Project-scoped pi recall uses agentmemory's filtered search endpoint rather than its unfiltered smart-search endpoint.
+`make build` creates the Pi guard and status-footer bundles and Rust release binaries offline; it **does not install**.
+Tests use disposable homes and fake providers, not the live harness state.
 
-Claude Code uses project-filtered MCP recall.
-Repository-managed hooks add automatic capture with no automatic recall injection.
-The hooks apply the shared identity and policy, block unfiltered recall, and scope saves.
-Do not run `agentmemory connect claude-code --with-hooks` or install its plugin because they add upstream hooks or overlapping skills.
-The repository's existing `handoff` and `pickup` skills remain authoritative.
-
-See [`skills/shared/references/agentmemory.md`](skills/shared/references/agentmemory.md) for the verification and saving protocol.
-
-## Standalone Review change CLI
-
-`./install.sh` links `review-change` into `~/.local/bin/`, installs the in-session Review publication boundary, and renders a managed executable `review-publication` wrapper there.
-The installer verifies the self-contained production worker artifact and atomically copies it to the protected `~/.review-publication/review-publication-worker.mjs` path without replacing the signing key.
-The wrapper and each socket service definition use that installed worker with an absolute Node.js path, never the editable repository source.
-The installer also records the absolute GitHub CLI and operating-system confirmation executables in the protected `~/.review-publication/worker-config.json` file.
-The socket service selects no platform or executable: the worker uses the actual runtime platform and this installation-owned configuration.
-The standalone CLI parent and both in-session harness boundaries freeze the requested pull request before reviewer-authored publication claims exist.
-The pi `review_change_publication` tool freezes scope during the input event and accepts only Finding claims when it renders the signed form.
-The Claude Code `UserPromptSubmit` hook freezes scope before model work, keeps the signed value in current-session state, and supplies only bounded public identity to the reviewer.
-Its `PreToolUse` `Write` hook accepts Finding claims only and replaces them with the signed form for the latest recognized Review change invocation.
-Both harnesses use the same code to freeze the scope and verify its signature.
-Every production report-signing path requires that invocation-frozen repository, pull request, base commit, and head commit, and no production API signs unfrozen model-authored claims.
-The mandatory shared guardrails classify the complete `~/.review-publication/` directory and Claude Code's `~/.claude/review-publication-sessions/` directory as protected credential and session state, so ordinary Claude Code and pi model tools cannot read, write, edit, search, glob, copy, move, delete, or access that state through common shell utilities.
-Each saved Claude Code scope is bound to its exact session identifier, so copying a valid scope file to another session does not authorize rendering.
-The separately installed socket worker and trusted pre-model harness boundaries use this state outside model tool calls.
-This is a practical mistake-prevention boundary, not operating-system isolation: hostile code already running with unrestricted user-account access can still reach user-owned state.
-Non-pull-request prompts stay presentation-only in both harnesses.
-It also renders and manages a user-scoped launchd service definition on macOS or a systemd user service definition and socket on Linux for the local Review publisher at `127.0.0.1:4392`.
-Socket activation starts the publisher only for a request, and the publisher exits after one bounded request.
-The Review change CLI requires Node.js 22+ and pi.
-Review publication installation also requires the `gh` executable and the supported operating-system confirmation executable; installation fails instead of weakening confirmation when either executable is unavailable.
-The publisher uses the fixed loopback port `127.0.0.1:4392`; if activation fails, stop any service that already owns that port and resolve unmanaged files at the wrapper or service destinations before rerunning `./install.sh`, using `--force` only when replacement is intentional.
-It validates targets before acquisition, snapshots local state, fetches mutable local branches only in isolation, or directly acquires an explicit GitHub repository without checkout.
-It freezes the change to immutable commits, launches one foreground `pi` process as its AI backend, and remains read-only for every target.
+After a disposable-home rehearsal and **separate approval for a live home**, the explicit installer is:
 
 ```sh
-review-change
-review-change --intent "Preserve the public API while adding cache invalidation"
-review-change feature/cache-invalidation --intent "Review this branch read-only"
-review-change origin/feature/cache-invalidation --intent "Review the freshest branch descendant"
-review-change main...HEAD --intent "Review this historical range read-only"
-review-change pull/123 --intent "Validate the pull request against its stated intent"
-review-change 123 --intent "Validate the pull request against its stated intent"
-review-change 'https://github.com/acme/app/pull/123/changes?diff=split#discussion'
-review-change gh:acme/app/pull/123
-review-change https://github.com/acme/app/tree/feature/cache-invalidation
-review-change gh:acme/app/tree/feature/cache-invalidation
-review-change gh:acme/app/pull/123 --sandbox
-review-change main...HEAD --provider openai --model gpt-5 --thinking high
+tools/evaluation/target/release/ai-config --root "$(pwd -P)" install
 ```
 
-With no target, the CLI requires a local Git repository, resolves its current branch pull request or branch point, then snapshots the current working state for review.
-An explicit local target can be a local branch, `origin/<branch>`, or a Git range.
-It can also be `pull/<number>` shorthand or a bare number from 1 through 2147483647; an exact local branch wins before either shorthand form.
-Shorthand selects the GitHub origin, or the only GitHub remote when `origin` is not GitHub, and stops if no unique GitHub remote exists.
-Remote discovery accepts only a documented GitHub SSH or HTTPS remote with no credentials, normalization-sensitive raw path segments, or a non-default port.
-An explicit GitHub pull-request target can be a URL with an optional suffix, query, or fragment, such as `https://github.com/owner/repository/pull/59/changes?diff=split#discussion`, or the exact `gh:owner/repository/pull/59` identifier.
-Every browser target requires the canonical GitHub HTTPS origin without credentials, a nonstandard port, or endpoint ambiguity.
-An explicit GitHub branch target can be a `tree/<branch>` URL or the exact `gh:owner/repository/tree/feature/branch` identifier, including a slash-bearing branch name.
-For a tree URL, Review change resolves the longest existing branch prefix before any repository path suffix; `gh:` identifiers reject URL suffixes, queries, and fragments.
-A mutable local branch requires an isolated fetch from its configured matching remote, whose name it captures before isolation.
-Review change reads that remote URL as one raw Git output record, removes only one terminator, and rejects every remaining C0, C1, or DEL control before URL normalization or fetch.
-It configures the credential-safe URL in the workspace, selects the descendant of the local and fetched matching-remote tips, and uses the fetched repository default branch from that remote as its base.
-Before child evidence, the parent materializes that exact selected local head in the disposable workspace and replays the source snapshot's captured tracked patch and untracked files.
-Untracked replay rejects a symbolic link in every destination ancestor, verifies each existing parent resolves beneath the workspace, and uses no-follow exclusive file handles with replacement checks where Node permits.
-It preserves only captured relative symbolic links whose lexical target stays inside isolation.
-A replay conflict, unsafe symbolic link, path replacement, or unsafe untracked path stops with corrective cleanup instead of running stale evidence.
-Explicit `origin/<branch>` continues to use `origin`; diverged tips or fetch failure stop resolution, while an immutable explicit range does not fetch, depend on origin availability, or rematerialize.
-Every explicit GitHub pull-request or branch target directly acquires its named repository without checkout regardless of the current directory and therefore works outside a Git repository.
-For a direct branch target, the parent strictly resolves read-only provider `id` and canonical `nameWithOwner` metadata before cloning.
-After the no-checkout clone, it queries that immutable provider node ID for current canonical metadata plus selected and default branch OIDs, then requires exact equality with the clone's corresponding OIDs.
-Git transport cannot attest clone repository node identity, so this is content equivalence, not cryptographic repository-ID binding.
-An A→B→A name-reuse race is safe when both OID pairs match; any provider failure, malformed response, missing ref, ID mismatch, or OID mismatch fails closed and cleans only recorded paths.
-The requested identity only selects acquisition, and post-acquisition canonical provider metadata supplies `headRepository`.
-Direct-branch A5 classification occurs only after these checks.
-The frozen range uses only the verified selected/default OIDs, and materialization receives only the exact selected OID, so unrelated clone refs cannot influence scope, trust, or execution.
-A directly acquired remote change is Untrusted by default and remains unmaterialized and unexecuted.
-`--trust-remote` explicitly trusts one direct GitHub target; A5 trust applies only when effective global or system Git configuration classifies the canonical SSH identity from immutable-ID provider metadata, and repository-local configuration cannot grant trust.
-The parent runs A5 classification in a recorded base-independent temporary Git context outside the acquired repository and removes exactly that context.
-`--sandbox` selects the documented sandbox route only when the standalone process already runs inside the documented sandbox.
-The sandbox runtime must set `REVIEW_CHANGE_SANDBOX=review-change-gondolin-v1` and provide the immutable root-owned marker `/run/review-change/sandbox-v1` with the same version line.
-The parent verifies the signal, marker ownership, permissions, exact path, and content before exact-OID materialization; the sandbox flag alone is not general trust outside that environment.
-Every mode remains read-only.
-Review-owned clones and worktrees live under `~/.review-orchard/`, separate from development worktrees under `~/.orchard/`.
-Provider, model, and thinking overrides pass directly to `pi` as argument-array values rather than through a shell; the selected model also reaches mandatory Review change subagents.
-In a sufficiently wide TTY, the CLI displays a color-coded left-right view: the pipeline occupies the left pane and the selected stage log occupies the right pane; narrow terminals retain the stacked layout.
-Stage states and log outcomes use distinct terminal colors, with `NO_COLOR` support for monochrome output.
-Each pipeline stage lists its purpose and recorded sub-stages vertically beneath it with a live or completed elapsed timer beside every sub-stage, shortening left-pane sub-stage labels to at most six words while retaining the bounded original telemetry text in the navigable, credential-redacted right-pane log alongside observable lifecycle actions, commands, durations, and outcomes.
-Collected Findings, missing evidence, documentation issues, and similar results appear as one concise line per item beneath their sub-stage; successful completion text is not repeated in the sidebar.
-The header keeps the isolated review worktree path, immutable scope, risk, and open Findings visible.
-Resolve target and Create isolation use concise pipeline outcomes rather than repeating the GitHub URL, workspace path, report path, or untracked-file details already available in the header and selected-stage log.
-Cleanup remains pending while the full-screen Summary keeps the isolated review worktree and full log available.
-After dismissal, the parent restores the terminal, closes telemetry, removes exactly that worktree, and reports the final Cleanup outcome outside the Summary as `Removed` on success.
-The parent validates ordered stage telemetry, shows each active sub-stage as the current operational intent, retains prior sub-stages as `STEP` log entries, owns cancellation through final Summary dismissal, latches interruption while initial Glow rendering is pending, restores terminal state after interruption, and uses plain status lines when output is redirected.
-Vim-style `j`/`k` navigates stages, Ctrl-D/Ctrl-U scrolls the selected log, Enter expands or collapses lines, `f` resumes following the active stage, and Ctrl-C aborts an active run; no single-character key aborts or closes the review.
-After validation, it opens the disposable HTML report in a new Firefox window on macOS (or the platform HTML viewer elsewhere) without waiting for browser closure.
-Reports for exact GitHub pull requests include a deterministic selection form for Review publication.
-The browser's Post review action requests publication but does not authorize it.
-After the confirmation token, selected Findings, actor, and exact pull-request scope pass validation, the publisher shows a separate bounded operating-system prompt with the exact publication identity outside model-visible channels.
-Only explicit approval in that prompt lets the GitHub publication stage begin.
-The parent freezes that scope before the model runs, and only the installation-owned absolute signer path can create the random report identity and signed form.
-Other reports remain presentation-only.
-On a successful interactive run, the parent renders its own and the assistant’s Markdown through non-interactive Glow when available, forces color when terminal color is enabled, and selects a final Summary stage within the existing pipeline/log layout rather than replacing it with a full-screen summary.
-That Summary rerenders after terminal-width changes.
-Glow failure or a Summary pane narrower than 20 columns falls back to the built-in renderer, Ctrl-U and Ctrl-D scroll the final log, and Ctrl-C exits once the review is no longer running; `q`, `x`, and Escape do not dismiss it.
-Redirected output prints the same summary normally.
-Standalone Review change does not invoke `review-artifact`, poll for feedback, or require approval.
-A disabled push URL plus the CLI-specific pi guard protect the original checkout and block structured writes, common direct mutation, staging, commits, pushes, and provider mutations while Review change runs.
-Only the separately installed local publisher can later submit the explicitly confirmed GitHub `COMMENT` review.
-Structured writes are allowed only inside a dedicated report directory whose resolved path is validated not to overlap the source checkout or clone.
-Run `review-change --help` for all options, accepted inputs, trust controls, and terminal controls.
-
-## Capabilities
-
-### Build and design
-
-| Skill | Purpose |
-|---|---|
-| `build` | Run the complete five-phase workflow. |
-| `grill` | Stress-test a feature in dependency-aware interview rounds. |
-| `model-domain` | Build, augment, or audit the ubiquitous language and qualifying ADRs. |
-| `mockup` | Approve a material browser or terminal UI before specification. |
-| `spec` | Write and review canonical `specs.html`. |
-| `todo` | Turn an approved spec into canonical vertical slices in `tasks.html`. |
-| `code` | Implement approved slices with AI-driven vertical-slice TDD. |
-| `coach` | Guide user-driven implementation one test at a time. |
-| `review-change` | Validate a change against Authoritative intent. |
-
-### Standalone workflows
-
-| Skill | Purpose |
-|---|---|
-| `3d` | Design and review parameterized 3D-printable parts and document each 3D print project. |
-| `refactor` | Run a directed refactor or a scoped hygiene sweep. |
-| `review-code` | Explore architectural deepening opportunities without editing code. |
-| `prototype` | Build throwaway code to answer one logic, state, or integration question. |
-| `handoff` / `pickup` | Move focused context between independent sessions. |
-| `review-artifact` | Review local HTML with annotations, live reload, and explicit approval. |
-| `visualize` / `visualize-diff` | Create self-contained technical visuals and visual diff reviews. |
-| `orchard` | Manage reusable, branch-bound worktrees. |
-| `commit` | Create one focused checkout-local commit. |
-| `resolve-conflicts` | Resolve supported merge, rebase, or restoration conflicts. |
-| `record-work` | Create work items and append meaningful lifecycle checkpoints. |
-| `summarize-work` | Query Open work, timelines, period summaries, and work-item history. |
-
-### Commands
-
-- `deliver` routes managed worktrees through Orchard, resolves managed delivery rebase conflicts through the shared conflict workflow, and routes ordinary branches directly through Git.
-- `/rebase` composes Orchard rebasing with conflict resolution.
-
-Maintainer-facing composition rules are in [`AGENTS.md`](AGENTS.md).
-
-## Repository structure
-
-```text
-.
-├── commands/               Shared explicit aliases and compositions (deliver, rebase)
-├── skills/                 Shared workflow capabilities and guides
-├── agents/                 Shared specialist subagents
-├── rules/                  9 on-demand advisory rules
-├── harnesses/              Claude Code and pi modules
-├── shared/                 Guardrail policy registry and detection core
-├── baseline-prompt.md
-├── docs/adr/               Architectural decisions
-├── docs/features/          Per-feature canonical HTML artifacts
-├── test/ and scripts/      Validation and self-tests
-└── install.sh              Harness-neutral installer
-```
-
-The dated Markdown files already under `docs/features/` are historical development records.
-Current pipeline artifacts are `mockups.html`, `specs.html`, and `tasks.html` with no Markdown companions.
-Optional informational visuals can live beside them.
-The [`example/`](example/) directory is also a clearly labeled legacy sample.
-
-## Harness support
-
-| Aspect | Claude Code | pi |
-|---|---|---|
-| Config root | `~/.claude/` | `~/.pi/agent/` |
-| Skills | `~/.claude/skills/` as `/<name>` | `~/.pi/agent/skills/` as `/skill:<name>` |
-| Commands | `~/.claude/commands/` | `~/.pi/agent/prompts/` |
-| Agents | `~/.claude/agents/` | `~/.pi/agent/agents/` |
-| Rules | Canonical `~/.dotfiles/ai/rules/` | Canonical `~/.dotfiles/ai/rules/` |
-| Guardrails | Tier-B command-hook adapter | Tier-A in-process extension |
-| In-session Review publication boundary | Trusted `UserPromptSubmit` state and Finding-only `PreToolUse` `Write` hook | Trusted input extension and structured `review_change_publication` tool |
-| Work log integration | Session digest plus `PostToolUse` and `Stop` reconciliation hooks | Session digest plus tool-result and settled-agent reconciliation events |
-
-Claude Code and pi use the Catppuccin Mocha theme.
-Pi also gives successful `Edit` and `Write` tool rows a yellow background.
-Other successful tools stay green, and failures stay red.
-
-`./install.sh` reads each module manifest, installs shared primitives into native paths, removes dangling links, links `review-change` and `work-log`, and configures this repository's pre-commit hook.
-Detailed installation behavior lives under [`harnesses/`](harnesses/).
-
-## Rules and guardrails
-
-Rules (9 advisory files) guide behavior and load only when relevant.
-They do not enforce policy.
-
-| Rule | Guidance |
-|---|---|
-| `a5` | A5 shortcuts for AWS access and local development containers. |
-| `coding-style` | Maintainable source structure and naming. |
-| `testing` | Behavior-focused TDD and test isolation. |
-| `performance` | Measurement, caching, pagination, and timeouts. |
-| `cli-ergonomics` | Bounded, deterministic Agent-facing CLIs. |
-| `git-commit` | Commit format, staging, and integration. |
-| `html-routing` | Safe routing for opening and presenting HTML files. |
-| `mise` | Mise-managed toolchains. |
-| `security` | Input, output, authorization, and logging safety. |
-
-The shared guard core mechanically blocks unsafe operations in both harnesses.
-The mandatory floor covers secret access and writes, unsafe Git operations, Orchard worktree branch rebinding, privilege escalation, destructive infrastructure or database commands, deploys, raw-disk writes, and broad deletion or permission changes.
-`no-shell-write` also blocks shell-redirection file writes.
-See [`shared/policy-registry.ts`](shared/policy-registry.ts) for the authoritative policy list and run `make test/guard` to verify conformance.
-
-## Development
-
-Run `make` to list developer tasks.
-Run `make test` before every commit.
-It validates content, installation behavior, guardrail conformance, and the validation pipeline's self-tests.
-
-SourceHut CI mirrors the repository to GitHub on push.
-
-## Acknowledgements
-
-- [Boris Tane's workflow](https://boristane.com/blog/how-i-use-claude-code/) inspired the original research-first pipeline and review discipline.
-- [Matt Pocock's skills-TDD pipeline](https://www.aihero.dev/skills-tdd) and [skills repository](https://github.com/mattpocock/skills) inspired the grill, spec, todo, TDD, handoff, prototype, review-code, model-domain, and `resolve-conflicts` workflows.
-- Nicolas Chourrout of [Flowful.ai](https://flowful.ai), the [flowful-ai/cad-skill repository](https://github.com/flowful-ai/cad-skill), and the article [“I Taught Claude to Design 3D-Printable Parts. Here's How”](https://medium.com/@nchourrout/i-taught-claude-to-design-3d-printable-parts-heres-how-675f644af78a) provided selective inspiration for the `3d` skill's interactive checkpoints and evidence discipline.
-  This repository contains an original implementation under MIT and does not copy the upstream code or substantial prose, which use PolyForm Noncommercial 1.0.0.
-- [nicobailon/visual-explainer](https://github.com/nicobailon/visual-explainer) is the source of the `visualize` skill.
-- [kunchenguid/no-mistakes](https://github.com/kunchenguid/no-mistakes) inspired Review change's independent reviewer/fixer roles and evidence-first Findings.
-- [kunchenguid/lavish-axi](https://github.com/kunchenguid/lavish-axi) inspired the local browser review loop; see [`skills/review-artifact/ATTRIBUTION.md`](skills/review-artifact/ATTRIBUTION.md).
-- [kunchenguid/axi at revision 93c5f334](https://github.com/kunchenguid/axi/tree/93c5f334d6ec074c29ca8d74fa629530dd298a43) inspired the `cli-ergonomics` rule.
-- [everything-claude-code](https://github.com/affaan-m/everything-claude-code) informed several rules and specialist agents.
-- [oh-my-pi](https://github.com/can1357/oh-my-pi) informed the earlier guardrail architecture before its retirement.
-- [pi](https://pi.dev) is the second supported harness.
-
-See individual `ATTRIBUTION.md` files and ADRs for implementation-specific history.
-
-## License
-
-MIT — see [LICENSE](LICENSE).
+The installer switches only declared links and settings and records ownership under `~/.local/state/ai-config/installation.json`.
+A Git revert cannot retarget already installed links; recovery needs another explicit operation.
+Do not delete `pi-evaluation`, stage, commit, push, or change the parent submodule pointer by implication.

@@ -1,96 +1,54 @@
 ---
 name: coach
-description: Coach the user through approved vertical slices from canonical tasks.html. The AI writes ONE test at a time and waits for the user to implement; never batches tests upfront.
-argument-hint: [feature-dir-or-slug]
+description: Coach a clear request, issue, spec, or plan with one AI-written failing test at a time; the user owns implementation, refactoring, and selected review repairs.
 ---
 
-# Implementation Coaching Phase
+# Coach
 
-Coach the user through approved vertical-slice tasks **one slice at a time, one test at a time**. You write the test; the user writes the code; you verify.
+Accept a clear request, issue, spec, or plan as intent.
+No mandatory artifact or specialist agent is needed.
+Read the relevant current sources, tests, context, and project rules.
+Agree on scope and acceptance criteria, then propose the public interface to test and wait for the user's confirmation.
+Do not force work through a new document or every application layer.
+Record the starting revision and prior edits so review accounts for both committed and uncommitted task changes without absorbing unrelated work.
 
-## Prerequisites
+The user owns implementation, refactoring, and source changes throughout coaching.
+The AI writes one test at a time and verifies when the user is ready.
 
-- An approved canonical `tasks.html` in a feature directory under `docs/features/`.
-Resolve it from `$ARGUMENTS` (a path or slug), or with no argument find the most recent `docs/features/*/tasks.html` and confirm it.
-- The user has explicitly approved the tasks (do not assume approval).
-- The selected context documentation and relevant decision records have been read.
+## One behavior at a time
 
-See [../shared/references/build-pipeline.md](../shared/references/build-pipeline.md) for file conventions and canonical HTML synchronization rules. See [../shared/references/testable-interfaces.md](../shared/references/testable-interfaces.md) for how spec Testing Decisions and task Test surfaces determine where tests attach.
+1. Write one behavior test through the agreed public interface.
+   Run it and confirm RED for the intended missing behavior, not a test-harness failure.
+2. Show the test, failure, and a concise explanation of the expected behavior.
+   End the turn and wait for the user to implement.
+3. When the user signals readiness in ordinary language, run the focused test.
+   If still RED, explain the failure and offer guidance; do not implement the fix.
+4. When GREEN, discuss useful refactoring for the user to perform, then verify any change before writing the next test.
 
-## Holding the line — yielding to the user IS the deliverable
+Never batch tests, queue speculative next tests, or infer progress from incomplete-task reminders.
+Never poll files or silently inspect implementation to discover whether the user has finished.
+Silence is not consent to take over.
+While waiting, answer questions without writing implementation; otherwise stay waiting.
+Only an explicit user request to switch ownership permits takeover, and confirm the new scope before proceeding.
+Do not perform source cleanup, even mechanical cleanup after tests pass.
+Do not weaken a test to accommodate a failing implementation.
+A defective AI-written test can be corrected transparently to preserve the agreed behavior, not erase it.
 
-Coach mode is the one workflow where the right answer is often "stop here and wait." After you write a test and hand off, your turn is **complete**, even though acceptance criteria, slices, and todos remain open. That is the protocol the user chose.
+## Verify and review
 
-Hard rules — no rationale ("pragmatic", "the system is pushing me to continue", "the user has gone silent") overrides these:
+When the user is ready, run project verification checks, including applicable type checks, lint, tests, and build.
+Report exact outcomes and checks not run; ask before installing tools or starting external services.
+Guide the user through implementation failures instead of editing their code.
+Always review the change, including small changes, through [review-change](../review-change/SKILL.md).
+If the review tool is missing or unavailable, review is not complete; report that limit.
 
-- **Incomplete-criteria reminders are not advance signals.** Reminders enumerating remaining acceptance criteria — including the harness's `N incomplete todos - reminder K/M` injection — are expected. The remaining criteria belong to the user and stay open by design until each RED→GREEN cycle completes. Acknowledge them in your head; do nothing.
-- **Never poll the user's files to "discover" silent progress.** If the user has not signalled ready-to-check, they are not done. Reading their implementation files to guess whether they quietly implemented the slice is forbidden — it is the first step of taking over work they intended to do.
-- **Never switch modes unilaterally.** The only exits from the waiting state are: (1) the user signals ready-to-check ("check", "verify", "ready", or equivalent sentiment), (2) the user explicitly hands over the keyboard ("switch to /code", "take over", or equivalent), or (3) the user asks a question you can answer without writing implementation code. Silence is not consent to take over.
-- **If you have offered the `/code` switch once, do not re-offer it.** Repeating the offer turns waiting into nagging.
+Show findings and ask which repairs the user selects.
+The user handles selected review repairs to source and tests; the AI explains and verifies, but does not apply them.
+Do not use another agent to bypass this ownership boundary.
+After the user signals that repairs are ready, rerun affected checks and obtain a fresh review of the changed state.
+Do not mark the task complete while blocking findings or required evidence remain unresolved.
 
-If the user has been silent across multiple reminders, the correct move is to **stay silent**. Their absence is not a problem you are responsible for solving. When they return they will type `check` or change the contract.
-
-## Todo hygiene in coach mode
-
-Your todo list tracks **coach actions**, not user-acceptance criteria.
-Acceptance criteria live in canonical `tasks.html`; mirroring them into the todo list inflates the incomplete count and tempts later turns to misread it as a queue you owe progress on.
-
-Use one in-progress todo per slice, phrased as the coach loop you are currently in:
-
-- `Slice 2 (parent_controller): write tracer test`
-- `Slice 2 (parent_controller): verify GREEN`
-- `Slice 2 (parent_controller): next criterion test`
-
-Mark each done as you finish *your* half of the cycle. The user's pending implementation is **not** a todo on your list.
-
-## TDD Protocol
-
-Run strict vertical-slice TDD — see [../shared/references/tdd-protocol.md](../shared/references/tdd-protocol.md) for the philosophy and per-cycle rules, and [../shared/references/testable-interfaces.md](../shared/references/testable-interfaces.md) for deep-module test-surface decisions. The coaching variant of the loop:
-
-```
-For each acceptance criterion:
-  AI:   write ONE test         → it fails (RED)
-  USER: implement minimum      → test passes (GREEN)
-  Together: refactor if useful → tests still pass
-  → next criterion
-```
-
-**Reject the anti-pattern:** "write all tests upfront, then have the user implement." Do NOT write all tests upfront — batched tests describe imagined behavior, not actual behavior, and let the user outrun their headlights.
-
-## Process
-
-1. **Read context** — resolve the [domain documentation destination](../shared/references/domain-documentation.md), then read canonical `tasks.html`, its linked `specs.html`, approved `mockups.html` when present as Authoritative intent, and the selected context documentation and decision records.
-Read the [optional historical memory](../shared/references/agentmemory.md) protocol and search once before the first slice for prior bugs, failed approaches, and user corrections in the affected area.
-Verify every useful result against current code and tests; do not search again before each slice.
-Announce the plan: one slice at a time, one test at a time; confirm Slice 1's interface before writing any test.
-
-2. **For each slice (dependency order):**
-   - **Confirm interface** — present the proposed public interface from the slice's Test surface and the spec's Testing Decisions (deep, not shallow). This is a seam check, not a request for the user to decide whether tests are needed. Wait for the user's confirmation before writing any test.
-   - **Tracer bullet** — write ONE failing test (end-to-end happy path) through that interface using the ubiquitous language. Run it to confirm it fails for the right reason. Show the user the test and failure output; wait for them to implement.
-   - **Verify** — when the user signals they're done (any "ready to check" sentiment, not a specific keyword), run the test. If GREEN, move to the next criterion. If RED, show the failure and guide debugging — **do not write the fix**.
-   - **Incremental loop** — for each remaining criterion: write ONE next test → wait for the user → verify. **One test at a time. NEVER queue up multiple tests. Do NOT preview future tests.**
-   - **Refactor together** (only while GREEN) — offer refactor candidates; guide one step at a time, re-running tests after each.
-   - **Mark complete** in `tasks.html` by changing the slice and criterion visible statuses plus their `data-status` attributes to `complete`, then move on.
-
-3. **Verification loop** — after all slices, run type check, lint, full test suite, and build per [../shared/references/tooling.md](../shared/references/tooling.md). Guide the user through any fixes until all pass.
-
-4. **Post-implementation hygiene** — run the `refactorer` in hygiene mode through [../shared/references/implementation-hygiene.md](../shared/references/implementation-hygiene.md). Apply grep-verified SAFE cleanup directly and surface CAREFUL/RISKY candidates for the user to decide. Rerun full verification after any edit. Final adversarial validation belongs to Review change, where coached ownership of source and tests still applies.
-
-## Material UI Synchronization
-
-Stop the affected slice when implementation feedback or a requested correction materially redesigns the approved UI.
-Update canonical `mockups.html` and review the same artifact through `review-artifact` until it receives explicit approval, then synchronize `specs.html` and `tasks.html` with the approved design.
-Renew each approval invalidated by the changed intent, including Spec or Tasks approval when its approved content changes.
-Resume coaching the affected slice only after the canonical artifacts and approvals are synchronized; the user remains the source-code implementer.
-
-## Completion
-
-Wrap up per [../shared/references/implementation-completion.md](../shared/references/implementation-completion.md) — report what was accomplished and surface the `/refactor` and `/review-code` pointers.
-
-## Key Principles
-
-1. **One test at a time. Never write tests in batches.**
-2. **Guide, don't implement.** During the slice loop you write tests; the user writes code. Provide hints, explain APIs, point at examples — but do not write the fix.
-3. **Test through the interface.** Behavior, not implementation.
-4. **Be patient — silently.** Wait for the user. Do not write the next test, do not poll their files for hidden progress, do not switch to `/code` because reminders fire or the room goes quiet. The only exit from the waiting state is an explicit user signal (see *Holding the line*).
-5. **Post-completion hygiene is AI-driven** — once tests pass and verification is clean, the AI applies SAFE mechanical cleanup; Review change later handles final Findings, documentation, and visuals while preserving coached ownership of source and tests.
+Summarize behavior, test evidence, review outcome, and remaining limits.
+Update an existing plan only from verified evidence, and use [work-log](../work-log/SKILL.md) for meaningful progress once.
+Do not stage, commit, push, merge, or publish by implication.
+Do not automatically start another task or change coaching mode.

@@ -1,46 +1,36 @@
 ---
 name: review-artifact
-description: Open an existing local HTML artifact in a browser feedback surface, collect element/text annotations and messages, apply feedback with live reload, and receive explicit approval. Use whenever an HTML artifact is shown to request feedback, a decision, or approval.
-argument-hint: "[html-file] [--purpose feedback|approval|decision] [--mode annotate|explore]"
-compatibility: Requires Node.js 22+ and a local browser.
+description: Review a local HTML document with element or selected-text comments, general side-panel feedback, live updates, and whole-document approval or decline.
 ---
 
-# Review Artifact
+# Review artifact
 
-Present an existing HTML file as a durable local review session.
-This skill reviews artifacts; it does not generate them.
+Review an existing HTML artifact; the calling task owns writing its content.
+Use only the replacement-owned `../../tools/artifact-review/target/release/artifact-review`, resolved from this skill's absolute source path.
+Read its `--help` and the relevant command help for the implemented interface.
+Do not fall back to the original review runtime or install an external package.
+If the executable is absent, state that browser review is not available yet and ask for direction rather than claiming review succeeded.
 
-Read the shared [review artifact protocol](../shared/references/review-artifact.md) before starting.
+Keep the familiar document view and feedback side panel.
+Support element and selected-text comments, general feedback, brief agent replies, and live reload without losing submitted feedback.
+Use readable semantic HTML, plain language, and stable section identifiers.
+Do not add change badges, comparison overlays, pipeline metadata, or custom decision forms.
+Keep review controls in the review shell, not in the saved artifact.
 
-## Runtime
+Apply feedback to the same HTML file, describe the changes briefly, and continue receiving feedback until the user approves or declines.
+Address all submitted comments; ask about incompatible requests instead of choosing silently.
+Use `poll` in the foreground with the last processed cursor; process returned events before advancing that cursor.
+Continue immediately when a page has `more: true`, or when an open review's bounded wait expires.
+Retry an interrupted reply with the same reply ID and content, so it is not duplicated.
+Do not background a wait that cannot resume this agent turn.
 
-Resolve `bin/review-artifact.mjs` relative to this `SKILL.md`, then invoke it with Node.js:
+- **Send feedback** keeps the review open.
+- **Approve** approves only the version the user reviewed, with no second confirmation.
+- **Decline** ends the review without approval.
+- Closing a tab, disconnecting, or a timeout is neither approval nor decline.
 
-```text
-node <skill-directory>/bin/review-artifact.mjs <html-file> --purpose <feedback|approval|decision>
-node <skill-directory>/bin/review-artifact.mjs <html-file> --purpose <feedback|approval|decision> --mode <annotate|explore>
-node <skill-directory>/bin/review-artifact.mjs <html-file> --purpose <feedback|approval|decision> --reopen
-node <skill-directory>/bin/review-artifact.mjs poll <html-file> --agent-reply "<brief reply>"
-node <skill-directory>/bin/review-artifact.mjs end <html-file>
-node <skill-directory>/bin/review-artifact.mjs stop
-node <skill-directory>/bin/review-artifact.mjs --help
-```
-
-Omitting `--purpose` defaults to `feedback` for backward compatibility.
-Do not call `lavish-axi`, `npx`, or any upstream runtime.
-The implementation and its attribution ship inside this skill.
-
-## Workflow
-
-1. Open the existing artifact with the matching `--purpose`.
-2. Immediately run `poll` in the foreground and leave it attached to the active turn.
-3. If severe `layout_warnings` arrive, repair the artifact and let live reload re-audit it before asking the user to review.
-4. Apply every feedback item to the canonical HTML, then poll again with a concise `--agent-reply`.
-5. When the runtime returns `waiting` with a renewal instruction, immediately run `poll` again in the same turn.
-   This is a normal foreground lease renewal, not an interruption or a reason to fall back to chat.
-6. Repeat until the runtime returns `approved` or `ended`.
-7. When a decision submission ends the session for requested changes, update the materially changed artifact and open its next decision round with `--reopen`.
-
-Never use shell backgrounding, `nohup`, `disown`, or an untracked detached terminal for polling.
-If polling is interrupted, run it again; queued events remain durable.
-Do not reopen a user-approved or user-ended session unless the user requests another review or the artifact materially changed and requires renewed attention.
+Material changes after approval require another review.
+An `approved` status is historical when `needs_review` is true; do not accept it as approval of the current file.
+Require matching current and approved revisions before advancing.
+Do not advance another workflow merely because the browser closed or an operation returned successfully.
+The calling task records the review outcome through [work-log](../work-log/SKILL.md), without a duplicate progress entry here.
