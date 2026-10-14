@@ -30,6 +30,7 @@ Claude fits the display to `COLUMNS` (up to 4096) with the existing four-column 
 TypeSafe and Herdr remain independently configured.
 Worklog data stays in its existing private store; no old Work log history is queried or imported.
 Ordinary user and project resources remain discoverable, while restricted reviewers use isolated snapshots.
+Failed change reviews retain [bounded, credential-safe diagnostics](docs/review-change-cli.md#reviewer-failures), not raw provider output or a publishable report.
 The installer changes only recorded owned links and narrow guardrail settings; it preserves unrelated resources, login, models, sessions, and project trust.
 It never provisions tools, touches services, or deletes private state.
 

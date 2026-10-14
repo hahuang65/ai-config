@@ -7,7 +7,7 @@ use crate::{
     reviewer,
 };
 use anyhow::{Context, Result};
-use std::{ffi::OsString, io::IsTerminal, path::Path};
+use std::{ffi::OsString, io::IsTerminal, os::unix::fs::PermissionsExt, path::Path};
 
 pub fn main() -> i32 {
     let arguments = std::env::args_os()
@@ -62,6 +62,7 @@ fn review(paths: &Paths, args: &Args) -> Result<()> {
     let pending = tempfile::Builder::new()
         .prefix("review-")
         .tempdir_in(&store.root)?;
+    std::fs::set_permissions(pending.path(), std::fs::Permissions::from_mode(0o700))?;
     let (digest, patch) = snapshot::save(pending.path(), &evidence)?;
     let frozen_lines = snapshot::lines(&patch)?;
     let mut proven = frozen_lines.clone();
@@ -70,13 +71,17 @@ fn review(paths: &Paths, args: &Args) -> Result<()> {
         proven.retain(|line| provider_lines.contains(line));
         crate::change_provider::check(&evidence.scope)?;
     }
-    let (answer, reads) = response(
+    let response = response(
         paths,
         args,
         &pending.path().join("snapshot"),
         &repo,
         patch.is_empty(),
-    )?;
+    );
+    let (answer, reads) = match response {
+        Ok(response) => response,
+        Err(error) => return Err(retain_failure(pending, error)),
+    };
     for finding in &answer.findings {
         anyhow::ensure!(
             finding.kind.is_defect()
@@ -85,6 +90,35 @@ fn review(paths: &Paths, args: &Args) -> Result<()> {
         );
     }
     let report = assemble(args, evidence, digest, answer, reads, &proven);
+    save_report(&store, pending, report, args)
+}
+
+fn retain_failure(pending: tempfile::TempDir, error: anyhow::Error) -> anyhow::Error {
+    let Some(diagnostic) = error.downcast_ref::<crate::reviewer_diagnostics::Failure>() else {
+        return error;
+    };
+    let saved = serde_json::to_vec(diagnostic)
+        .map_err(anyhow::Error::from)
+        .and_then(|bytes| crate::change_store::write(&pending.path().join("failure.json"), &bytes));
+    if let Err(reason) = saved {
+        return error.context(format!(
+            "Cannot retain reviewer failure diagnostic: {reason}"
+        ));
+    }
+    let directory = pending.keep();
+    eprintln!(
+        "Failure diagnostic: {}",
+        change_html::terminal(&directory.join("failure.json").display().to_string())
+    );
+    error
+}
+
+fn save_report(
+    store: &Store,
+    pending: tempfile::TempDir,
+    report: Report,
+    args: &Args,
+) -> Result<()> {
     let html = change_html::render(&report);
     let report = Report {
         html_digest: change_store_hash(html.as_bytes()),
@@ -98,7 +132,7 @@ fn review(paths: &Paths, args: &Args) -> Result<()> {
         && std::io::stdin().is_terminal()
         && std::io::stdout().is_terminal()
     {
-        crate::change_post::post(&store, &directory.join("report.html"))?;
+        crate::change_post::post(store, &directory.join("report.html"))?;
     }
     Ok(())
 }
@@ -166,19 +200,18 @@ fn response(
         prompt.into(),
     ];
     options.extend(args.model.iter().map(Into::into));
-    let response = reviewer::collect(paths, reviewer::parse(&options)?.excluding(repository))?;
+    let response = reviewer::collect(
+        paths,
+        reviewer::parse(&options)?
+            .excluding(repository)
+            .requiring_reads(&["scope.json", "patch.diff"]),
+    )?;
     let answer = change_types::answer(
         response["response"]
             .as_str()
             .context("Missing reviewer response")?,
     )?;
     let reads: Vec<String> = serde_json::from_value(response["filesRead"].clone())?;
-    anyhow::ensure!(
-        ["scope.json", "patch.diff"]
-            .iter()
-            .all(|path| reads.iter().any(|read| read == path)),
-        "Reviewer did not inspect the frozen scope and diff"
-    );
     Ok((answer, reads))
 }
 

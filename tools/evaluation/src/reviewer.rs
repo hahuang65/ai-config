@@ -2,6 +2,7 @@
 use crate::{
     option_pairs,
     paths::{Paths, is_text, real_directory},
+    reviewer_diagnostics::{Category, Failure},
     reviewer_process, reviewer_stream, settings,
 };
 use anyhow::{Context, Result, ensure};
@@ -36,6 +37,7 @@ Only snapshot file reads are available. No shell, edits, WT tools, skills, or pr
 Returns compact protocol-version-1 JSON with response text and successful file-read paths.
 The caller must validate the response as findings before rendering or posting anything.
 Uses existing harness authentication and model definitions through temporary links; never copies credentials or installs a lasting profile.
+Failures report allowlisted completion or process metadata on stderr, never raw provider text or stderr.
 Exit codes: 0 verified completed response, 1 operational failure, 2 invalid invocation.
 ";
 
@@ -52,6 +54,7 @@ pub struct Request {
     model_options: Vec<OsString>,
     timeout: u64,
     excluded: Vec<PathBuf>,
+    required_reads: &'static [&'static str],
     agent: String,
 }
 
@@ -63,6 +66,11 @@ impl Request {
         );
         self.agent = name.into();
         Ok(self)
+    }
+
+    pub(crate) fn requiring_reads(mut self, paths: &'static [&'static str]) -> Self {
+        self.required_reads = paths;
+        self
     }
 
     pub fn excluding(mut self, directory: &Path) -> Self {
@@ -120,6 +128,7 @@ pub fn parse(arguments: &[OsString]) -> Result<Request> {
         model_options: model_options(&fields)?,
         timeout,
         excluded: vec![],
+        required_reads: &[],
         agent: "change-reviewer".into(),
     })
 }
@@ -338,11 +347,44 @@ pub fn collect(paths: &Paths, request: Request) -> Result<serde_json::Value> {
         )?,
         Engine::Claude => configure_claude(&mut command, paths, &request, &snapshot)?,
     }
-    let output = reviewer_process::run(command, request.timeout);
+    let output = reviewer_process::run_captured(command, request.timeout);
     drop(profile); // Keep Pi's temporary authentication links alive until the child exits.
-    let output = output?;
-    match request.engine {
-        Engine::Pi => reviewer_stream::validate(&output, &snapshot),
-        Engine::Claude => crate::reviewer_claude_stream::validate(&output, &snapshot),
+    completed(output, request.engine, &snapshot, request.required_reads)
+}
+
+fn completed(
+    output: Result<reviewer_process::Output>,
+    engine: Engine,
+    snapshot: &Path,
+    required_reads: &[&str],
+) -> Result<serde_json::Value> {
+    let name = match engine {
+        Engine::Pi => "pi",
+        Engine::Claude => "claude",
+    };
+    let output = output.map_err(|error| Failure::process(error, name))?;
+    if output.evidence.exit_code != Some(0) {
+        return Err(Failure::annotate(
+            Failure::new(Category::ProcessExit, None).into(),
+            name,
+            output.evidence,
+        ));
     }
+    let result = match engine {
+        Engine::Pi => reviewer_stream::validate(&output.bytes, snapshot),
+        Engine::Claude => crate::reviewer_claude_stream::validate(&output.bytes, snapshot),
+    };
+    let result = result.and_then(|response| {
+        let reads = response["filesRead"]
+            .as_array()
+            .context("Missing reviewer read evidence")?;
+        ensure!(
+            required_reads
+                .iter()
+                .all(|path| reads.iter().any(|read| read.as_str() == Some(*path))),
+            "Reviewer did not inspect required snapshot evidence"
+        );
+        Ok(response)
+    });
+    result.map_err(|error| Failure::annotate(error, name, output.evidence))
 }

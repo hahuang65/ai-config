@@ -19,6 +19,7 @@ mod option_pairs;
 pub mod paths;
 pub mod reviewer;
 mod reviewer_claude_stream;
+mod reviewer_diagnostics;
 mod reviewer_process;
 mod reviewer_stream;
 pub mod settings;

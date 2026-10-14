@@ -11,6 +11,7 @@ Local includes tracked and non-ignored untracked files against HEAD; range compa
 Excluded private, binary, symlink and submodule files are reported; oversized snapshots fail, never truncate silently.
 Reports contain untrusted reviewer claims, not test execution evidence. Source code is never executed.
 JSON mode never prompts or opens a browser. Reviews never post automatically.
+Runner failures leave stdout empty and print a private failure.json path on stderr; raw provider text is never retained.
 Post requires a retained report and a human terminal; no automatic approval flag exists.
 Exit codes: 0 completed, 1 operational failure, 2 invalid invocation.
 ";

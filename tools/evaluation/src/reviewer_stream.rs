@@ -1,4 +1,5 @@
 //! Validate Pi's JSONL completion, not its process status alone.
+use crate::reviewer_diagnostics::{Category, Failure};
 use anyhow::{Context, Result, ensure};
 use serde_json::{Value, json};
 use std::collections::{BTreeMap, BTreeSet};
@@ -31,10 +32,17 @@ pub(crate) fn read_path(path: &str, root: &Path) -> Result<String> {
 }
 
 fn final_text(message: &Value) -> Result<String> {
-    ensure!(
-        message["stopReason"] == "stop",
-        "Reviewer did not finish successfully"
-    );
+    let failure = match message["stopReason"].as_str() {
+        Some("stop") => None,
+        Some("error") => Some((Category::ModelApiError, Some("error"))),
+        Some("length") => Some((Category::ModelOutputLimit, Some("length"))),
+        Some("aborted") => Some((Category::ModelAborted, Some("aborted"))),
+        Some("toolUse") => Some((Category::UnfinishedToolWork, Some("toolUse"))),
+        _ => Some((Category::UnknownStopReason, None)),
+    };
+    if let Some((category, reason)) = failure {
+        return Err(Failure::new(category, reason).into());
+    }
     let blocks = message["content"]
         .as_array()
         .context("Reviewer response has no content")?;
