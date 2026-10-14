@@ -158,6 +158,8 @@ function shellReferencesProtectedPublicationState(call: PublicationStateCall): b
   if (inlineProgramAccessesProtectedState(call.command)) return true;
   let effectiveCwd: string | typeof UNRESOLVED_DIRECTORY = call.cwd ?? UNRESOLVED_DIRECTORY;
   let resolutionLost = false;
+  let safePrefix = true;
+  let assignment: { name: string; value: string } | null = null;
   for (const statement of splitStatements(call.command, true)) {
     const scopedCall = {
       ...call,
@@ -166,8 +168,22 @@ function shellReferencesProtectedPublicationState(call: PublicationStateCall): b
     if (pipelineReferencesProtectedState(statement, scopedCall)) return true;
     const directoryChange = isDirectoryChange(statement);
     if (resolutionLost && !directoryChange && tokenize(statement).length > 0) return true;
-    effectiveCwd = changedDirectory(statement, scopedCall, effectiveCwd);
-    if (directoryChange) resolutionLost = effectiveCwd === UNRESOLVED_DIRECTORY;
+    const nextAssignment = safePrefix ? safeDirectoryAssignment(statement) : null;
+    effectiveCwd = changedDirectory(statement, scopedCall, effectiveCwd, safePrefix ? assignment : null);
+    if (directoryChange) {
+      if (effectiveCwd !== UNRESOLVED_DIRECTORY && isProtectedStatePath(effectiveCwd, scopedCall)) return true;
+      resolutionLost = effectiveCwd === UNRESOLVED_DIRECTORY;
+      safePrefix = false;
+      assignment = null;
+    } else if (safePrefix && statement.trim() === "set -eu") {
+      assignment = null;
+    } else if (nextAssignment) {
+      // Only standalone static assignments before the first directory change can be trusted.
+      assignment = nextAssignment;
+    } else if (tokenize(statement).length > 0) {
+      safePrefix = false;
+      assignment = null;
+    }
   }
   return false;
 }
@@ -269,10 +285,19 @@ function isDirectoryChange(statement: string): boolean {
   return executable?.replace(/^.*\//, "") === "cd";
 }
 
+function safeDirectoryAssignment(statement: string): { name: string; value: string } | null {
+  const match = /^\s*([A-Za-z_][A-Za-z0-9_]*)=(?:"([^"]*)"|([^'"\s]+))\s*$/.exec(statement);
+  if (!match || match[1] === "HOME" || match[2]?.startsWith("~")) return null;
+  const value = match[2] ?? match[3];
+  if (!/^(?:\/[A-Za-z0-9_./-]*|(?:\$HOME|\$\{HOME\}|~)(?:\/[A-Za-z0-9_./-]*)?)$/.test(value)) return null;
+  return { name: match[1], value };
+}
+
 function changedDirectory(
   statement: string,
   call: PublicationStateCall,
   current: string | typeof UNRESOLVED_DIRECTORY,
+  assignment: { name: string; value: string } | null,
 ): string | typeof UNRESOLVED_DIRECTORY {
   let stages: string[] = [];
   anyPipeline(statement, (candidateStages) => {
@@ -285,12 +310,15 @@ function changedDirectory(
   if (executableIndex < 0 || tokens[executableIndex].replace(/^.*\//, "") !== "cd") return current;
   const args = tokens.slice(executableIndex + 1).filter((token) => token !== "--");
   if (args.length === 0) return call.home ?? UNRESOLVED_DIRECTORY;
-  if (args.length !== 1 || !isSafeDirectoryLiteral(args[0])) return UNRESOLVED_DIRECTORY;
-  const homeRelative = /^(?:\$HOME|\$\{HOME\}|~)(?:\/|$)/.test(args[0]);
-  if (current === UNRESOLVED_DIRECTORY && !path.isAbsolute(args[0]) && !homeRelative) {
+  const variable = /^\s*cd\s+(?:"\$([A-Za-z_][A-Za-z0-9_]*)"|\$([A-Za-z_][A-Za-z0-9_]*))\s*$/.exec(statement);
+  const candidate = assignment && variable && (variable[1] ?? variable[2]) === assignment.name
+    ? assignment.value : args[0];
+  if (args.length !== 1 || !isSafeDirectoryLiteral(candidate)) return UNRESOLVED_DIRECTORY;
+  const homeRelative = /^(?:\$HOME|\$\{HOME\}|~)(?:\/|$)/.test(candidate);
+  if (current === UNRESOLVED_DIRECTORY && !path.isAbsolute(candidate) && !homeRelative) {
     return UNRESOLVED_DIRECTORY;
   }
-  return normalizedCandidate(args[0], call, call.cwd) ?? UNRESOLVED_DIRECTORY;
+  return normalizedCandidate(candidate, call, call.cwd) ?? UNRESOLVED_DIRECTORY;
 }
 
 function isSafeDirectoryLiteral(candidate: string): boolean {

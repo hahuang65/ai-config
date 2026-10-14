@@ -583,6 +583,8 @@ function shellReferencesProtectedPublicationState(call) {
     return true;
   let effectiveCwd = call.cwd ?? UNRESOLVED_DIRECTORY;
   let resolutionLost = false;
+  let safePrefix = true;
+  let assignment = null;
   for (const statement of splitStatements(call.command, true)) {
     const scopedCall = {
       ...call,
@@ -593,9 +595,22 @@ function shellReferencesProtectedPublicationState(call) {
     const directoryChange = isDirectoryChange(statement);
     if (resolutionLost && !directoryChange && tokenize(statement).length > 0)
       return true;
-    effectiveCwd = changedDirectory(statement, scopedCall, effectiveCwd);
-    if (directoryChange)
+    const nextAssignment = safePrefix ? safeDirectoryAssignment(statement) : null;
+    effectiveCwd = changedDirectory(statement, scopedCall, effectiveCwd, safePrefix ? assignment : null);
+    if (directoryChange) {
+      if (effectiveCwd !== UNRESOLVED_DIRECTORY && isProtectedStatePath(effectiveCwd, scopedCall))
+        return true;
       resolutionLost = effectiveCwd === UNRESOLVED_DIRECTORY;
+      safePrefix = false;
+      assignment = null;
+    } else if (safePrefix && statement.trim() === "set -eu") {
+      assignment = null;
+    } else if (nextAssignment) {
+      assignment = nextAssignment;
+    } else if (tokenize(statement).length > 0) {
+      safePrefix = false;
+      assignment = null;
+    }
   }
   return false;
 }
@@ -683,7 +698,16 @@ function isDirectoryChange(statement) {
   const executable = tokens.find((token) => !/^[A-Za-z_][A-Za-z0-9_]*=/.test(token));
   return executable?.replace(/^.*\//, "") === "cd";
 }
-function changedDirectory(statement, call, current) {
+function safeDirectoryAssignment(statement) {
+  const match = /^\s*([A-Za-z_][A-Za-z0-9_]*)=(?:"([^"]*)"|([^'"\s]+))\s*$/.exec(statement);
+  if (!match || match[1] === "HOME" || match[2]?.startsWith("~"))
+    return null;
+  const value = match[2] ?? match[3];
+  if (!/^(?:\/[A-Za-z0-9_./-]*|(?:\$HOME|\$\{HOME\}|~)(?:\/[A-Za-z0-9_./-]*)?)$/.test(value))
+    return null;
+  return { name: match[1], value };
+}
+function changedDirectory(statement, call, current, assignment) {
   let stages = [];
   anyPipeline(statement, (candidateStages) => {
     stages = candidateStages;
@@ -698,13 +722,15 @@ function changedDirectory(statement, call, current) {
   const args = tokens.slice(executableIndex + 1).filter((token) => token !== "--");
   if (args.length === 0)
     return call.home ?? UNRESOLVED_DIRECTORY;
-  if (args.length !== 1 || !isSafeDirectoryLiteral(args[0]))
+  const variable = /^\s*cd\s+(?:"\$([A-Za-z_][A-Za-z0-9_]*)"|\$([A-Za-z_][A-Za-z0-9_]*))\s*$/.exec(statement);
+  const candidate = assignment && variable && (variable[1] ?? variable[2]) === assignment.name ? assignment.value : args[0];
+  if (args.length !== 1 || !isSafeDirectoryLiteral(candidate))
     return UNRESOLVED_DIRECTORY;
-  const homeRelative = /^(?:\$HOME|\$\{HOME\}|~)(?:\/|$)/.test(args[0]);
-  if (current === UNRESOLVED_DIRECTORY && !path3.isAbsolute(args[0]) && !homeRelative) {
+  const homeRelative = /^(?:\$HOME|\$\{HOME\}|~)(?:\/|$)/.test(candidate);
+  if (current === UNRESOLVED_DIRECTORY && !path3.isAbsolute(candidate) && !homeRelative) {
     return UNRESOLVED_DIRECTORY;
   }
-  return normalizedCandidate(args[0], call, call.cwd) ?? UNRESOLVED_DIRECTORY;
+  return normalizedCandidate(candidate, call, call.cwd) ?? UNRESOLVED_DIRECTORY;
 }
 function isSafeDirectoryLiteral(candidate) {
   if (["-", ".", ".."].includes(candidate))

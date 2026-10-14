@@ -33,6 +33,42 @@ for (const [tool, input] of [
   });
 }
 
+test("both native guards permit a known safe directory assignment before cd", () => {
+  const input = { command: 'set -eu\nrepo="$HOME/.dotfiles/ai"\ncd "$repo"\ngit status --short' };
+  expect(evaluateClaudePayload({ tool_name: "Bash", tool_input: input, cwd: "/tmp/project" },
+    { environmentHome: home, platformHome: home })).toBeNull();
+  expect(piVerdict("Bash", input)).toBeUndefined();
+});
+
+test("both native guards keep variable-based cd fail-closed when its destination is uncertain", () => {
+  const commands = [
+    'repo="$HOME/.review-publication"\ncd "$repo"\ngit status --short',
+    'repo=$(printf /tmp/project)\ncd "$repo"\ngit status --short',
+    'repo="$HOME/.dotfiles/ai"\ncd \'$repo\'\ngit status --short',
+    'repo="$HOME/.dotfiles/ai"\nrepo=$(printf /tmp/project)\ncd "$repo"\ngit status --short',
+    'HOME=$(printf /tmp/project)\nrepo="$HOME/.dotfiles/ai"\ncd "$repo"\ngit status --short',
+    'repo="~/safe"\ncd "$repo"\ngit status --short',
+  ];
+  for (const command of commands) {
+    const input = { command };
+    expect(evaluateClaudePayload({ tool_name: "Bash", tool_input: input, cwd: "/tmp/project" },
+      { environmentHome: home, platformHome: home })?.hookSpecificOutput.permissionDecision).toBe("deny");
+    expect((piVerdict("Bash", input) as { block?: boolean })?.block).toBe(true);
+  }
+});
+
+test("both native guards refuse a static directory alias to protected state", () => {
+  const disposableHome = mkdtempSync(join(tmpdir(), "publication-guard-home-"));
+  try {
+    mkdirSync(join(disposableHome, ".review-publication"));
+    symlinkSync(join(disposableHome, ".review-publication"), join(disposableHome, "alias"));
+    const input = { command: `repo="${disposableHome}/alias"\ncd "$repo"\ngit status --short` };
+    expect(evaluateClaudePayload({ tool_name: "Bash", tool_input: input, cwd: "/tmp/project" },
+      { environmentHome: disposableHome, platformHome: disposableHome })?.hookSpecificOutput.permissionDecision).toBe("deny");
+    expect((piVerdict("Bash", input, "/tmp/project", disposableHome) as { block?: boolean })?.block).toBe(true);
+  } finally { rmSync(disposableHome, { recursive: true, force: true }); }
+});
+
 test("both native guards permit an ordinary file read", () => {
   const input = { file_path: "/tmp/project/README.md" };
   expect(evaluateClaudePayload({ tool_name: "Read", tool_input: input },
