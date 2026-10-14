@@ -46,6 +46,11 @@ The `~/.dotfiles` parent remains on `main` and never gains a branch, worktree, s
 
 ## Finish
 
-Do not clean, delete, or switch tasks automatically when work ends.
-Only a separate explicit cleanup request permits `wt clean`; run its non-destructive check first and respect dirty files, locks, and integration proof.
+Do not clean, delete, or switch tasks automatically merely because work ends.
+An explicit cleanup request or the post-integration phase of an explicit delivery request permits `wt clean`; run its non-destructive check first and respect dirty files, locks, and integration proof.
+Use `/wt leave` to carry the current conversation back to the primary directory without cleanup.
+Follow the [native transition instructions](../../docs/worktree-transitions.md) and verify the actual harness directory before removing its former task worktree.
+Cleanup deletes the local task branch only when its exact tip is integrated into the recorded local target; remote branches are never deleted.
+PR preparation alone is not successful integration and must retain the worktree and branch.
+Report integration, session return, worktree removal, and branch removal separately when any step fails.
 Report the checkout and branch used, whether the current session entered it, and any work that must wait.

@@ -28,6 +28,10 @@ test("delivery checks and integrates the task without starting a provider review
   expect(instructions).toContain("Do not start a provider review during delivery");
   expect(instructions).not.toContain("review-change");
   expect(instructions).not.toContain("reviewed feature tip");
+  expect(instructions).toContain("wt clean TASK --check --json");
+  expect(instructions).toContain("Verify its actual directory, repository, and integration branch before removing anything");
+  expect(instructions).toContain("Then run `wt clean TASK --json` from primary");
+  expect(instructions).toContain("PR preparation is not integration and does not authorize cleanup");
 });
 
 test("installed package README describes checked delivery and separate review", () => {

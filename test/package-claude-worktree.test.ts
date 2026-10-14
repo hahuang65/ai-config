@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import { mkdirSync, mkdtempSync, realpathSync, rmSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, realpathSync, rmSync, unlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { Worktrees } from "../harnesses/worktree-client";
@@ -32,6 +32,21 @@ test("Claude transitions retain conversation checks without locking or owning ma
     // Manual sessions are not claimed or rejected just because a task has a saved conversation.
     hook("PreToolUse", task.path, other, { tool_name: "Write" });
     hook("PreToolUse", task.path, session, { tool_name: "Write" });
+    hook("PreToolUse", task.path, session, { tool_name: "Write" });
+    expect(() => hook("PreToolUse", root, session, { tool_name: "Write" })).toThrow("working directory");
+    for (const cwd of [task.path, root]) {
+      writeFileSync(join(cwd, "notes.txt"), "retain changes");
+      expect(() => hook("PreToolUse", task.path, session, { tool_name: "ExitWorktree", tool_input: { action: "keep" } }))
+        .toThrow("changes");
+      unlinkSync(join(cwd, "notes.txt"));
+    }
+    hook("PreToolUse", task.path, session, { tool_name: "ExitWorktree", tool_input: { action: "keep" } });
+    // Only a verified native exit allows this saved conversation to use primary tools.
+    hook("PostToolUse", root, session, { tool_name: "ExitWorktree", tool_input: { action: "keep" } });
+    hook("PreToolUse", root, session, { tool_name: "Bash" });
+    expect(wt.session(root, "inspect", "feature", "claude").conversation).toBe(session);
+    hook("PreToolUse", root, session, { tool_name: "EnterWorktree", tool_input: { path: task.path } });
+    hook("PostToolUse", task.path, session, { tool_name: "EnterWorktree" });
     hook("PreToolUse", task.path, session, { tool_name: "Write" });
     expect(() => hook("PreToolUse", root, session, { tool_name: "Write" })).toThrow("working directory");
     expect(() => hook("WorktreeRemove", task.path)).toThrow("wt clean");

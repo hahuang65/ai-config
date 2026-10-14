@@ -13,6 +13,16 @@ test("the package owns both task adapters and all Claude lifecycle hooks", () =>
   expect(events).toEqual(["PreToolUse", "PostToolUse", "WorktreeCreate", "WorktreeRemove"]);
 });
 
+test("Claude owns a wt command for native leave without shadowing Pi's extension command", () => {
+  const manifest = JSON.parse(readFileSync(resolve("manifest.json"), "utf8"));
+  expect(manifest.links).toContainEqual({ destination: ".claude/commands/wt.md", target: "harnesses/claude/commands/wt.md" });
+  expect(manifest.links.some(link => link.destination === ".pi/agent/prompts/wt.md")).toBe(false);
+  const command = readFileSync(resolve("harnesses/claude/commands/wt.md"), "utf8");
+  expect(command).toContain("ExitWorktree");
+  expect(command).toContain("keep");
+  expect(command).toContain("without cleanup");
+});
+
 export function project() {
   const home = realpathSync(mkdtempSync(join(tmpdir(), "task-conversation-")));
   const cwd = join(home, "project");

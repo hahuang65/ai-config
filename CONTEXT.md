@@ -211,7 +211,10 @@ The agreed behavior is to carry the current conversation into a new task and res
 The Pi adapter uses native session replacement and verifies destination tools and context.
 The Claude adapter uses native worktree entry and `/resume`, with saved-conversation and directory checks.
 WT stores only harness-specific conversation references in Git administrative metadata, never transcript content.
-A transition is verified only after the host's working directory, task branch, repository, and conversation agree.
+A task entry is verified only after the host's working directory, task branch, repository, and conversation agree.
+A leave transition returns the current conversation to the verified primary directory without cleanup.
+Pi carries a fork while preserving the saved task reference; Claude retains its conversation identity and records the verified primary location until native re-entry.
+An explicitly requested successful local delivery returns the harness before cleaning the worktree; cleanup deletes its local branch only when integrated into the recorded local integration branch.
 A saved conversation is a resume reference, not exclusive ownership of a worktree.
 Adapters do not claim sessions, track process ownership, or acquire session locks; manual work remains independent.
 

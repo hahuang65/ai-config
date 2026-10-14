@@ -57,7 +57,7 @@ fn worktree_hook(event: &str) -> Value {
     let mut value = serde_json::json!({"hooks": [{"type": "command",
         "command": "bun ~/.claude/hooks/worktree.ts", "timeout": if event == "WorktreeCreate" { 120 } else { 15 }}]});
     if event == "PostToolUse" {
-        value["matcher"] = Value::from("EnterWorktree");
+        value["matcher"] = Value::from("EnterWorktree|ExitWorktree");
     }
     value
 }

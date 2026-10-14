@@ -72,12 +72,16 @@ The default limit is 50; use `--all` for every worktree.
 `clean` checks all managed tasks, removes eligible ones, and reports why others remain.
 `--check` never removes anything.
 If invoked inside the worktree being removed, cleanup requests a return to the main checkout instead of deleting the current directory.
-Return through the harness's native controls, then request cleanup separately.
-The branch is retained; there is no forced branch deletion.
+Return through the harness's native controls before cleanup; the native cleanup flow can perform both steps under one explicit cleanup or local delivery request.
+After removing the worktree, WT deletes the local task branch only when its exact tip is integrated into the recorded local integration branch.
+A squash-merged PR can permit worktree removal without permitting local branch deletion.
+No remote branch is deleted, and branch deletion is never forced.
+Successful removal adds `branchRemoved` to JSON output; retained branches include `branchReason`.
+If branch deletion fails after worktree removal, `cleanupIncomplete` is true and the command exits nonzero, preserving the branch and reporting the partial result.
 
 All commands support `--json` for protocol-version-1 output.
 Diagnostics stay on standard error.
-Exit codes are 0 for success, 1 for an operational failure or incomplete batch cleanup, 2 for invalid arguments, and 130 for interruption.
+Exit codes are 0 for success, 1 for an operational failure or incomplete single/batch cleanup, 2 for invalid arguments, and 130 for interruption.
 A successful empty batch explicitly reports zero managed tasks.
 
 ## Starting branch
@@ -145,6 +149,9 @@ The AI package installs native Pi and Claude adapters alongside the Rust `wt` an
 See [native task transitions](../../docs/worktree-transitions.md) for carrying a conversation into a new task, resuming a saved task, and destination checks.
 `wt session --help` describes the JSON-only adapter protocol.
 Standalone `new` and `enter` still only print paths; they cannot change a running session.
+The harness command `/wt leave` returns to the primary directory with conversation continuity but without removing the task or branch.
+Pi's `/wt clean TASK` verifies a native return before cleanup; Claude uses native `ExitWorktree` with `keep` followed by WT cleanup.
+An explicit local delivery request includes this sequence only after successful integration.
 WT does not alter Herdr configuration or migrate its sessions.
 
 ## Limits and recovery

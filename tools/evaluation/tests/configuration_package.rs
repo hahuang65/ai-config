@@ -136,6 +136,7 @@ fn ordinary_package_installs_the_selected_host_resources_and_cli_dependencies_on
                     | ".claude/plugins/ai-local-lsp"
                     | ".claude/commands/deliver.md"
                     | ".claude/commands/rebase.md"
+                    | ".claude/commands/wt.md"
                     | ".pi/agent/prompts/deliver.md"
                     | ".pi/agent/prompts/rebase.md"
                     | ".local/bin/wt"

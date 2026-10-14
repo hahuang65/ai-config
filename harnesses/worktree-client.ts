@@ -5,6 +5,7 @@ import { fileURLToPath } from "node:url";
 
 export type Task = { task: string; path: string; branch: string; managed: boolean };
 export type Reply = { protocolVersion: number; worktree: Task; conversation: string | null;
+  atPrimary: boolean; removed: boolean; branchRemoved: boolean; branchReason?: string;
   project: { root: string }; worktrees: Task[] };
 
 /** WT validates task identity and stores saved conversation references. */
@@ -16,7 +17,12 @@ export class Worktrees {
       output = execFileSync(this.executable, args, { cwd, env: { ...process.env }, encoding: "utf8", timeout: 120_000,
         maxBuffer: 1024 * 1024, stdio: ["ignore", "pipe", "pipe"] });
     } catch (error) {
-      const failure = error as { stderr?: string; message?: string };
+      const failure = error as { stdout?: string; stderr?: string; message?: string };
+      let partial: { protocolVersion?: number; cleanupIncomplete?: boolean; removed?: boolean; branchReason?: string } = {};
+      try { partial = JSON.parse(failure.stdout || "{}"); } catch { /* Not a structured WT result. */ }
+      if (partial?.protocolVersion === 1 && partial.cleanupIncomplete && partial.removed) {
+        throw new Error(`Worktree removed; local branch retained: ${partial.branchReason || "inspect Git state before retrying"}`);
+      }
       throw new Error(failure.stderr?.trim() || failure.message || "WT failed");
     }
     const reply = JSON.parse(output);

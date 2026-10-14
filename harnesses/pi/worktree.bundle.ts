@@ -27,6 +27,13 @@ class Worktrees {
       });
     } catch (error) {
       const failure = error;
+      let partial = {};
+      try {
+        partial = JSON.parse(failure.stdout || "{}");
+      } catch {}
+      if (partial?.protocolVersion === 1 && partial.cleanupIncomplete && partial.removed) {
+        throw new Error(`Worktree removed; local branch retained: ${partial.branchReason || "inspect Git state before retrying"}`);
+      }
       throw new Error(failure.stderr?.trim() || failure.message || "WT failed");
     }
     const reply = JSON.parse(output);
@@ -100,28 +107,35 @@ function worktree(pi) {
       return { block: true, reason: "Submit the prepared /wt command or run /wt cancel before continuing." };
   });
   pi.registerCommand("wt", {
-    description: "new TASK [--local]: carry this conversation; enter TASK: resume its saved Pi conversation",
+    description: "new TASK [--local], enter TASK, leave (carry to primary), clean TASK (leave before cleanup)",
     handler: async (args, ctx) => {
       pending = false;
       if (args.trim() === "cancel")
         return;
-      await transition(args, ctx);
+      if (args.trim() === "leave")
+        await leave(ctx);
+      else if (new RegExp(`^clean ${taskNamePattern}$`).test(args.trim()))
+        await clean(args.trim().slice(6), ctx);
+      else
+        await transition(args, ctx);
     }
   });
   pi.registerTool({
     name: "worktree_transition",
     label: "Task worktree",
-    description: "Prepare a native Pi task transition. New tasks carry this conversation; existing tasks resume their saved Pi conversation. The user presses Enter once. Do not edit until the transition completes.",
+    description: "Prepare a native Pi worktree command. new carries, enter resumes, leave carries back to primary without cleanup, clean leaves before safely removing an integrated task. clean requires explicit cleanup or delivery authorization. Press Enter once; do not edit until the transition completes.",
     parameters: Type.Object({
-      action: Type.Union([Type.Literal("new"), Type.Literal("enter")]),
-      task: Type.String({ pattern: `^${taskNamePattern}$`, minLength: 1, maxLength: 64 })
+      action: Type.Union([Type.Literal("new"), Type.Literal("enter"), Type.Literal("leave"), Type.Literal("clean")]),
+      task: Type.Optional(Type.String({ pattern: `^${taskNamePattern}$`, minLength: 1, maxLength: 64 }))
     }),
     async execute(_id, args, _signal, _update, ctx) {
       if (ctx.mode !== "tui" || !ctx.hasUI)
         throw new Error("Native transitions require interactive Pi.");
       if (ctx.ui.getEditorText().trim())
         throw new Error("The editor contains a draft. Preserve it; submit or clear it before transitioning.");
-      ctx.ui.setEditorText(`/wt ${args.action} ${args.task}`);
+      if (args.action === "leave" ? args.task !== undefined : !args.task)
+        throw new Error("leave takes no task; other actions require a task.");
+      ctx.ui.setEditorText(`/wt ${args.action}${args.task ? ` ${args.task}` : ""}`);
       pending = true;
       return {
         content: [{ type: "text", text: "Press Enter to enter the task, or /wt cancel to stay here. No transition has happened yet." }],
@@ -131,10 +145,56 @@ function worktree(pi) {
     }
   });
 }
+async function clean(task, ctx) {
+  if (ctx.mode !== "tui")
+    throw new Error("Cleanup requires Pi's interactive command context.");
+  await ctx.waitForIdle();
+  wt.run(ctx.cwd, ["clean", task, "--check", "--json"]);
+  await leave(ctx, (fresh) => {
+    try {
+      const result = wt.run(fresh.cwd, ["clean", task, "--json"]);
+      if (!result.removed)
+        throw new Error("WT did not remove the task.");
+      fresh.ui.notify(`Removed ${task}. ${result.branchRemoved ? "Local branch deleted." : `Branch retained: ${result.branchReason}`}`, "info");
+    } catch (error) {
+      fresh.ui.notify(`Returned to primary; cleanup incomplete. Inspect wt list before retrying: ${String(error)}`, "error");
+      throw error;
+    }
+  });
+}
+async function leave(ctx, after) {
+  if (ctx.mode !== "tui")
+    throw new Error("Task transitions require Pi's interactive command context.");
+  await ctx.waitForIdle();
+  const inventory = wt.run(ctx.cwd, ["list", "--all", "--json"]);
+  const root = inventory.project.root;
+  if (realpathSync2(ctx.cwd) === root) {
+    after?.(ctx);
+    ctx.ui.notify(`Primary directory: ${root}`, "info");
+    return;
+  }
+  const task = inventory.worktrees.find((t) => t.managed && t.path === realpathSync2(ctx.cwd));
+  if (!task)
+    throw new Error("Leave requires the primary directory or a verified task root.");
+  requireClean(ctx.cwd);
+  requireClean(root);
+  const branch = inventory.worktrees.find((t) => t.path === root)?.branch;
+  const file = carry(ctx, root);
+  const switched = await ctx.switchSession(file, { withSession: async (fresh) => {
+    const current = wt.run(fresh.cwd, ["list", "--all", "--json"]);
+    if (conversation(fresh) !== file || realpathSync2(fresh.cwd) !== root || realpathSync2(fresh.sessionManager.getCwd()) !== root || current.project.root !== root || current.worktrees.find((t) => t.path === root)?.branch !== branch) {
+      throw new Error("Pi did not return to the verified primary checkout. Worktree retained; inspect the session before cleanup.");
+    }
+    fresh.ui.notify(`Primary directory: ${root}; conversation carried, task retained.`, "info");
+    after?.(fresh);
+  } });
+  if (switched.cancelled)
+    throw new Error("Native return cancelled. Worktree and branch retained; cleanup did not run.");
+}
 async function transition(args, ctx) {
   const match = new RegExp(`^(new|enter) (${taskNamePattern})( --local)?$`).exec(args.trim());
   if (!match || match[1] === "enter" && match[3])
-    throw new Error("Usage: /wt new TASK [--local] or /wt enter TASK");
+    throw new Error("Usage: /wt new TASK [--local], /wt enter TASK, /wt leave, or /wt clean TASK");
   if (ctx.mode !== "tui")
     throw new Error("Task transitions require Pi's interactive command context.");
   await ctx.waitForIdle();

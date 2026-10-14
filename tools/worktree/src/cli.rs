@@ -44,9 +44,14 @@ pub fn main() -> Result<i32> {
         render(&result)
     };
     std::io::stdout().write_all(&text::encode(&output))?;
-    Ok(i32::from(result["results"].as_array().is_some_and(
-        |items| items.iter().any(|item| item.get("reason").is_some()),
-    )))
+    Ok(i32::from(
+        result["cleanupIncomplete"] == true
+            || result["results"].as_array().is_some_and(|items| {
+                items
+                    .iter()
+                    .any(|item| item.get("reason").is_some() || item["cleanupIncomplete"] == true)
+            }),
+    ))
 }
 
 fn ascii_json(value: &Value) -> Result<String> {
@@ -152,7 +157,12 @@ fn render_clean(result: &Value) -> String {
     let task = text(&result["worktree"], "task");
     let proof = text(result, "proof");
     if result["removed"] == true {
-        return format!("Removed {task}; {proof}. Branch retained.\n");
+        let branch = if result["branchRemoved"] == true {
+            "Local branch deleted.".to_string()
+        } else {
+            format!("Branch retained: {}", text(result, "branchReason"))
+        };
+        return format!("Removed {task}; {proof}. {branch}\n");
     }
     if result["transition"]["kind"] == "return-main" {
         return format!(

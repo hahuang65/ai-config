@@ -14,6 +14,7 @@
     { "destination": ".pi/agent/extensions/status-footer.ts", "target": "harnesses/pi/status-footer.bundle.ts" },
     { "destination": ".pi/agent/themes/catppuccin-mocha.json", "target": "harnesses/pi/themes/catppuccin-mocha.json" },
     { "destination": ".claude/commands/deliver.md", "target": "commands/deliver.md" },
+    { "destination": ".claude/commands/wt.md", "target": "harnesses/claude/commands/wt.md" },
     { "destination": ".claude/commands/rebase.md", "target": "commands/rebase.md" },
     { "destination": ".pi/agent/prompts/deliver.md", "target": "commands/deliver.md" },
     { "destination": ".pi/agent/prompts/rebase.md", "target": "commands/rebase.md" },
@@ -72,7 +73,7 @@
   ],
   "settings": [
     { "destination": ".claude/settings.json", "path": ["hooks", "PreToolUse"], "mode": "array_entry", "value": { "hooks": [{ "type": "command", "command": "bun ~/.claude/hooks/worktree.ts", "timeout": 15 }] } },
-    { "destination": ".claude/settings.json", "path": ["hooks", "PostToolUse"], "mode": "array_entry", "value": { "matcher": "EnterWorktree", "hooks": [{ "type": "command", "command": "bun ~/.claude/hooks/worktree.ts", "timeout": 15 }] } },
+    { "destination": ".claude/settings.json", "path": ["hooks", "PostToolUse"], "mode": "array_entry", "value": { "matcher": "EnterWorktree|ExitWorktree", "hooks": [{ "type": "command", "command": "bun ~/.claude/hooks/worktree.ts", "timeout": 15 }] } },
     { "destination": ".claude/settings.json", "path": ["hooks", "WorktreeCreate"], "mode": "array_entry", "value": { "hooks": [{ "type": "command", "command": "bun ~/.claude/hooks/worktree.ts", "timeout": 120 }] } },
     { "destination": ".claude/settings.json", "path": ["hooks", "WorktreeRemove"], "mode": "array_entry", "value": { "hooks": [{ "type": "command", "command": "bun ~/.claude/hooks/worktree.ts", "timeout": 15 }] } },
     { "destination": ".claude/settings.json", "path": ["hooks", "PreToolUse"], "mode": "array_entry", "value": { "hooks": [{ "type": "command", "command": "bun ~/.claude/hooks/guard.ts", "timeout": 10 }] } },

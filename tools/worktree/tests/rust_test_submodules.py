@@ -51,6 +51,6 @@ class SubmoduleCheckoutTest(RustFixture):
         self.assertTrue(tree.is_dir())
         self.wt("clean", "feature", "--json")
         self.assertFalse(tree.exists())
-        self.git("show-ref", "--verify", "refs/heads/tu/feature")
+        self.assertEqual(self.git("branch", "--list", "tu/feature"), "")
         self.assertEqual(self.git("rev-parse", "HEAD", cwd=self.parent), self.parent_head)
         self.assertEqual(self.git("status", "--porcelain", cwd=self.parent), "")

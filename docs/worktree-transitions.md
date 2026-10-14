@@ -24,6 +24,14 @@ Ordinary startup and manual session switches do not acquire a task or require a 
 Pi 1.1.0's native session replacement API is required.
 Print and RPC modes do not silently substitute a child process.
 
+`/wt leave` forks the current selected conversation into the verified primary directory and replaces the native session there.
+It does not resume an older primary conversation, overwrite the saved task reference, or remove anything.
+Both source and destination must be clean; running it at primary is a no-op.
+`/wt enter TASK` can still resume the saved task conversation after leaving.
+`/wt clean TASK` requires explicit cleanup or successful-local-delivery authorization: it checks cleanup safety, carries the conversation to primary, verifies the replacement session, then reruns WT cleanup there.
+A cancelled or failed transition never runs cleanup.
+The model-facing transition tool supports `leave` without a task and `clean` with an exact task, in addition to `new` and `enter`.
+
 ## Claude Code
 
 For a new task, call native `EnterWorktree` with `name: TASK`.
@@ -51,6 +59,14 @@ Native resume restores its worktree before `PreToolUse` verifies the saved conve
 No startup or shutdown hook tracks a session owner.
 A manual conversation that is not a saved task reference is not rejected merely because it uses a task checkout.
 
+The Claude-only `/wt leave` command guides native `ExitWorktree` with `action: keep`, preserving the conversation without cleanup.
+The `PostToolUse` exit hook verifies primary-directory arrival before `wt session depart TASK --harness claude --conversation ID` records `atPrimary: true` on that saved reference.
+Ordinary tool calls then verify primary instead of the former task directory; an unverified directory drift still blocks tools.
+Re-entering that same task by native path binds the same conversation back to its task location.
+After a departed conversation is resumed at primary, `/wt enter TASK` guides that path entry; entering a different task still requires `/branch`.
+A failed departure record leaves the old location checks in force; stop and inspect the actual directory and saved reference rather than manually overwriting it.
+For authorized delivery cleanup, verify native exit and then run `wt clean TASK --json` from primary.
+
 ## Saved references and recovery
 
 Each task has separate `wt-session-pi.json` and `wt-session-claude.json` references in its Git administrative directory.
@@ -67,7 +83,8 @@ No adapter moves, stashes, resets, or copies working changes.
 Missing conversations, altered task branches, invalid saved references, and directory mismatches stop the transition.
 An `enter` request never invents a replacement for a missing saved conversation.
 Successful native task entry records the first reference; a direct manual session remains independent unless its reference is explicitly saved with `wt session bind` from the task root.
-Bindings cannot be overwritten through the session protocol.
+Conversation identities cannot be overwritten through the session protocol.
+Claude's verified native departure and re-entry update only the saved expected location, not the conversation identity.
 Conversation discovery skips unreadable references with a CLI stderr diagnostic instead of blocking unrelated manual conversations.
 Explicitly inspecting, binding, or verifying the affected task still rejects a damaged or symlinked reference without replacing it.
 
@@ -75,7 +92,10 @@ Cancelled, failed, and interrupted transitions cannot leave session locks becaus
 A newly created worktree or forked conversation can remain after cancellation; inspect it rather than cleaning it automatically.
 If native replacement fails after it starts, verify the actual host directory and conversation before retrying.
 Do not clean a worktree to repair a conversation problem.
-Claude native removal is blocked, including exit-time cleanup; only a separately authorized `wt clean` may remove a task after its ordinary checks.
+Claude native removal is blocked, including exit-time cleanup; only an explicitly authorized `wt clean` or successful local delivery may remove a task after its ordinary checks.
+The running harness must reach primary first; a shell command cannot prove that transition.
+Cleanup removes integrated local task branches too, but preserves branches not integrated into the recorded local target (including a squash-merged PR's original tip).
+A worktree removal followed by a branch-deletion failure is reported as partial cleanup with a nonzero exit status; never force the branch deletion.
 
 ## Verification and installation
 

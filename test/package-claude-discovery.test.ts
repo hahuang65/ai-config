@@ -138,6 +138,7 @@ installedTest("public MVP installation loads the five evaluation agents and skil
     }
     expect(init?.slash_commands).toContain("deliver");
     expect(init?.slash_commands).toContain("rebase");
+    expect(init?.slash_commands).toContain("wt");
     for (const name of ["api-designer", "change-reviewer", "database-reviewer",
       "fact-checker", "frontend-architect"]) {
       expect(init?.agents).toContain(name);

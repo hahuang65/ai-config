@@ -6,7 +6,7 @@ import { startFakeClaudeApi, toolResults } from "./fixtures/claude-api";
 
 const claude = Bun.which("claude");
 const runtimeTest = process.platform === "darwin" && claude && existsSync("/usr/bin/sandbox-exec") ? test : test.skip;
-runtimeTest("native Claude enters a WT task and resumes its saved conversation in the task directory", async () => {
+runtimeTest.each(["external", "native"])("native Claude carries, leaves, and checks re-entry permissions for %s task paths", async (layout) => {
   const home = realpathSync(mkdtempSync(join(tmpdir(), "claude-transition-")));
   const root = join(home, "project");
   mkdirSync(root);
@@ -23,7 +23,9 @@ runtimeTest("native Claude enters a WT task and resumes its saved conversation i
   writeFileSync(join(home, ".claude/settings.json"), JSON.stringify({ hooks }));
   writeFileSync(join(home, ".claude.json"), JSON.stringify({ hasCompletedOnboarding: true,
     projects: { [root]: { hasTrustDialogAccepted: true } } }));
-  const env = { HOME: home, CLAUDE_CONFIG_DIR: join(home, ".claude"), WT_ROOT: join(home, "trees"),
+  const treeRoot = layout === "native" ? join(root, ".claude/worktrees") : join(home, "trees");
+  const target = join(treeRoot, "project/feature");
+  const env = { HOME: home, CLAUDE_CONFIG_DIR: join(home, ".claude"), WT_ROOT: treeRoot,
     PATH: `${dirname(realpathSync(Bun.which("bun")!))}:/opt/homebrew/bin:/usr/bin:/bin`,
     ANTHROPIC_API_KEY: "disposable-fixture", CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC: "1",
     DISABLE_AUTOUPDATER: "1", DISABLE_TELEMETRY: "1", DISABLE_ERROR_REPORTING: "1",
@@ -32,6 +34,7 @@ runtimeTest("native Claude enters a WT task and resumes its saved conversation i
     ["config", "user.email", "test@example.invalid"], ["commit", "--allow-empty", "-m", "initial"]]) {
     expect(Bun.spawnSync(["git", ...args], { cwd: root, env }).exitCode).toBe(0);
   }
+  writeFileSync(join(root, ".git/info/exclude"), ".claude/worktrees/\n");
   const profile = `(version 1)(allow default)(deny network*)
     (allow network-inbound (local ip "localhost:*"))(allow network-outbound (remote ip "localhost:*"))
     (deny file-write* (subpath ${JSON.stringify(homedir())}))
@@ -39,7 +42,7 @@ runtimeTest("native Claude enters a WT task and resumes its saved conversation i
       .map(p => `(subpath ${JSON.stringify(join(homedir(), p))})`).join(" ")})`;
   async function run(port: number, args: string[]) {
     const child = Bun.spawn(["/usr/bin/sandbox-exec", "-p", profile, claude!, "--permission-mode", "dontAsk",
-      "--allowedTools", "EnterWorktree,Bash", "--model", "claude-sonnet-4-6", "--verbose", "--output-format", "stream-json",
+      "--allowedTools", "EnterWorktree,ExitWorktree,Bash", "--model", "claude-sonnet-4-6", "--verbose", "--output-format", "stream-json",
       ...args], { cwd: root, env: { ...env, ANTHROPIC_BASE_URL: `http://127.0.0.1:${port}` }, stdout: "pipe", stderr: "pipe" });
     const timer = setTimeout(() => child.kill("SIGKILL"), 45_000);
     try {
@@ -58,7 +61,7 @@ runtimeTest("native Claude enters a WT task and resumes its saved conversation i
       const results = toolResults(first.requests.at(-1)!);
       expect(results).toHaveLength(2);
       for (const result of results) expect(result.is_error, JSON.stringify(results)).not.toBe(true);
-      expect(JSON.stringify(results.at(-1))).toContain(join(home, "trees/project/feature"));
+      expect(JSON.stringify(results.at(-1))).toContain(target);
     } finally { first.server.stop(true); }
     const saved = Bun.spawnSync([join(source, "tools/worktree/target/release/wt"), "session", "inspect", "feature", "--harness", "claude"], { cwd: root, env });
     expect(saved.exitCode, saved.stderr.toString()).toBe(0);
@@ -70,7 +73,35 @@ runtimeTest("native Claude enters a WT task and resumes its saved conversation i
       const results = toolResults(second.requests.at(-1)!);
       expect(results).toHaveLength(3);
       expect(results.at(-1)?.is_error, JSON.stringify(results)).not.toBe(true);
-      expect(JSON.stringify(results.at(-1))).toContain(join(home, "trees/project/feature"));
+      expect(JSON.stringify(results.at(-1))).toContain(target);
     } finally { second.server.stop(true); }
+    const leaveCalls = [...calls, { name: "Bash", input: { command: "pwd -P" } },
+      { name: "ExitWorktree", input: { action: "keep" } }, { name: "Bash", input: { command: "pwd -P" } }];
+    const leave = startFakeClaudeApi(leaveCalls);
+    try {
+      await run(leave.server.port, ["--resume", id!, "-p", "LEAVE_CLAUDE_HISTORY"]);
+      const results = toolResults(leave.requests.at(-1)!);
+      expect(results).toHaveLength(5);
+      expect(results.at(-1)?.is_error, JSON.stringify(results)).not.toBe(true);
+      expect(JSON.stringify(results.at(-1))).toContain(root);
+      expect(existsSync(target)).toBe(true);
+    } finally { leave.server.stop(true); }
+    const reenter = startFakeClaudeApi([...leaveCalls,
+      { name: "EnterWorktree", input: { path: target } },
+      { name: "Bash", input: { command: "pwd -P" } }]);
+    try {
+      await run(reenter.server.port, ["--resume", id!, "-p", "REENTER_CLAUDE_HISTORY"]);
+      const results = toolResults(reenter.requests.at(-1)!);
+      expect(results).toHaveLength(7);
+      if (layout === "external") {
+        expect(results.at(-2)?.is_error).toBe(true);
+        expect(JSON.stringify(results.at(-2))).toContain("Permission to use EnterWorktree has been denied");
+      } else {
+        expect(results.at(-2)?.is_error, JSON.stringify(results)).not.toBe(true);
+      }
+      expect(results.at(-1)?.is_error, JSON.stringify(results)).not.toBe(true);
+      expect(JSON.stringify(results.at(-1))).toContain(layout === "external" ? root : target);
+      expect(JSON.stringify(reenter.requests)).toContain("LEAVE_CLAUDE_HISTORY");
+    } finally { reenter.server.stop(true); }
   } finally { rmSync(home, { recursive: true, force: true }); }
-}, 100_000);
+}, 200_000);

@@ -14,7 +14,8 @@ Only a single self-contained change may skip the worktree when the user explicit
 Keep the `~/.dotfiles` parent repository on `main`; do not branch, stage, commit, or make a worktree there.
 Use a task branch independently in each affected submodule.
 Do not stage, commit, push, or deliver unless the current request explicitly authorizes that action.
-Never clean a worktree automatically.
+Never clean a worktree merely because work ends.
+An explicit delivery request includes safe cleanup after proven local integration and a verified native session return to the primary directory; otherwise cleanup requires an explicit request.
 Do not change the installed AI configuration while testing a replacement package.
 Use mise-managed tools directly by name; do not activate another version manager.
 Keep TypeSafe and Herdr independently configured.

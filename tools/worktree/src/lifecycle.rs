@@ -272,7 +272,67 @@ fn clean_one(repo: &Repository, task: &str, check: bool) -> Result<Value> {
     }
     git::git(&repo.root, &["worktree", "remove", &entry.path])?;
     result["removed"] = json!(true);
+    match remove_branch(repo, &entry, &head) {
+        Ok(removed) => {
+            result["branchRemoved"] = json!(removed);
+            if !removed {
+                result["branchReason"] =
+                    json!("The exact branch tip is not integrated into the local target branch.");
+            }
+        }
+        Err(error) => {
+            result["branchRemoved"] = json!(false);
+            result["branchReason"] = json!(error.to_string());
+            result["cleanupIncomplete"] = json!(true);
+        }
+    }
     Ok(result)
+}
+
+fn remove_branch(repo: &Repository, entry: &Entry, head: &str) -> Result<bool> {
+    let reference = format!("refs/heads/{}", entry.branch);
+    if git::commit(&repo.root, &reference)?.as_deref() != Some(head) {
+        return Err(Error::new(
+            "The task branch changed during cleanup. Inspect it before deleting it.",
+        ));
+    }
+    let base = format!("refs/heads/{}", entry.base);
+    let Some(integrated) = git::commit(&repo.root, &base)? else {
+        return Ok(false);
+    };
+    if !git::ancestor(&repo.root, head, &integrated)? {
+        return Ok(false);
+    }
+    // Unlike branch -d, use the recorded target rather than an unrelated upstream.
+    // Check Git's checkout protection, then compare-and-delete the proven exact tip.
+    if git::inventory(&repo.root)?
+        .iter()
+        .any(|item| item.get("branch") == Some(&reference))
+    {
+        return Err(Error::new(
+            "The task branch is checked out elsewhere. Branch retained.",
+        ));
+    }
+    git::git(&repo.root, &["update-ref", "-d", &reference, head])?;
+    remove_branch_config(repo, entry);
+    Ok(true)
+}
+
+fn remove_branch_config(repo: &Repository, entry: &Entry) {
+    match git::result(
+        &repo.root,
+        &[
+            "config",
+            "--local",
+            "--remove-section",
+            &format!("branch.{}", entry.branch),
+        ],
+    ) {
+        Ok(output) if output.code == 0 || output.code == 128 => {} // No section is normal.
+        _ => eprintln!(
+            "wt: Local branch deleted, but its optional Git configuration could not be removed."
+        ),
+    }
 }
 
 pub fn clean(repo: &Repository, task: Option<&str>, check: bool) -> Result<Value> {

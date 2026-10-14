@@ -16,8 +16,10 @@ function savedConversation(wt: Worktrees, origin: string, task: Task, id: string
 function verifySaved(event: Hook, wt: Worktrees, origin: string) {
   const expected = locate(wt, origin, event.session_id);
   if (!expected) return; // An ordinary/manual conversation is not a task-ownership request.
-  if (realpathSync(event.cwd) !== expected.path) {
-    throw new Error(`Claude's working directory is not its saved task: ${expected.path}. Resume the task before using tools.`);
+  const saved = wt.session(origin, "inspect", expected.task, "claude");
+  const directory = saved.atPrimary ? saved.project.root : expected.path;
+  if (realpathSync(event.cwd) !== directory) {
+    throw new Error(`Claude's working directory is not its saved location: ${directory}. Resume the task before using tools.`);
   }
   wt.session(event.cwd, "verify", expected.task, "claude", event.session_id);
 }
@@ -31,8 +33,13 @@ function selectedPath(wt: Worktrees, origin: string, path: string): Task {
 
 function beforeEntry(event: Hook, wt: Worktrees, origin: string) {
   requireClean(event.cwd);
-  if (locate(wt, origin, event.session_id)) {
-    throw new Error("Fork this task conversation with native /branch, then ExitWorktree with action keep before starting another task.");
+  const current = locate(wt, origin, event.session_id);
+  if (current) {
+    const saved = wt.session(origin, "inspect", current.task, "claude");
+    if (!saved.atPrimary || realpathSync(event.cwd) !== saved.project.root ||
+        !event.tool_input?.path || realpathSync(event.tool_input.path) !== current.path) {
+      throw new Error("Fork this task conversation with native /branch before starting another task; re-enter its saved task by path.");
+    }
   }
   if (event.tool_input?.path) savedConversation(wt, origin, selectedPath(wt, origin, event.tool_input.path), event.session_id);
 }
@@ -52,11 +59,21 @@ export function handleWorktreeHook(event: Hook, wt: Worktrees, origin = event.cw
     if (event.tool_name === "EnterWorktree") beforeEntry(event, wt, origin);
     else if (event.tool_name === "ExitWorktree") {
       if (event.tool_input?.action !== "keep") throw new Error("Use ExitWorktree with action keep. Only explicit wt clean may remove a task.");
+      verifySaved(event, wt, origin);
+      requireClean(event.cwd);
+      requireClean(wt.run(origin, ["list", "--all", "--json"]).project.root);
     } else verifySaved(event, wt, origin);
-  } else if (event.hook_event_name === "PostToolUse" && event.tool_name === "EnterWorktree") {
-    const target = selectedPath(wt, origin, event.cwd);
-    wt.session(event.cwd, "bind", target.task, "claude", event.session_id);
-    verifySaved(event, wt, origin);
+  } else if (event.hook_event_name === "PostToolUse") {
+    if (event.tool_name === "EnterWorktree") {
+      const target = selectedPath(wt, origin, event.cwd);
+      wt.session(event.cwd, "bind", target.task, "claude", event.session_id);
+      verifySaved(event, wt, origin);
+    } else if (event.tool_name === "ExitWorktree") {
+      if (event.tool_input?.action !== "keep") throw new Error("Only a native keep exit may record departure.");
+      const task = locate(wt, origin, event.session_id);
+      if (task) wt.session(event.cwd, "depart", task.task, "claude", event.session_id);
+      verifySaved(event, wt, origin);
+    }
   }
   return "";
 }

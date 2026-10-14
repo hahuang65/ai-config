@@ -46,7 +46,7 @@ class OutputParityTest(RustFixture):
         original = self.command(("clean", "rust-task"), original=True)
         self.assertEqual(original.returncode, 0, original.stderr)
 
-    def test_empty_and_partial_batch_outputs_match_and_branches_are_retained(self):
+    def test_empty_and_check_outputs_match_and_cleanup_deletes_only_integrated_branches(self):
         self.assert_parity("clean")
         self.assert_parity("clean", "--json")
         good = Path(self.create("good")["worktree"]["path"])
@@ -58,7 +58,8 @@ class OutputParityTest(RustFixture):
         self.assertEqual([item["removed"] for item in result["results"]], [False, True])
         self.assertFalse(good.exists())
         self.assertTrue(dirty.exists())
-        self.git("show-ref", "--verify", "refs/heads/tu/good")
+        self.assertEqual(self.git("branch", "--list", "tu/good"), "")
+        self.git("show-ref", "--verify", "refs/heads/tu/dirty")
 
     def test_inventory_and_reminder_limits_match_the_full_list_escape(self):
         for index in range(51):

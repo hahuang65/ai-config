@@ -13,6 +13,15 @@ import test_remote
 # The adapter also covers the original concurrent Popen test, not just fixture.wt().
 test_cli.CLI = Path(__file__).with_name("rust_cli_adapter.py")
 
+
+def assert_cleaned_branch(self):
+    self.assertEqual(self.git("branch", "--list", "tu/feature"), "")
+
+
+# Intentional lifecycle change: retain the scenario's dirtiness/ignored-file
+# assertions, but assert branch deletion instead of historical Python retention.
+test_cli.WorktreeTest.assert_cleaned_branch = assert_cleaned_branch
+
 # These cases call Python internals. Equivalent Rust/process cases are separate.
 PYTHON_INTERNALS = {
     "test_delivery_defaults_local_and_repository_family_cannot_enable_github",

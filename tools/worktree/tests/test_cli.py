@@ -99,7 +99,12 @@ class WorktreeTest(unittest.TestCase):
         self.assertIn("untracked", result.stderr)
         self.assertTrue((tree / "notes.txt").exists())
 
-    def test_cleanup_disposes_ignored_files_after_integration_and_retains_branch(self):
+    def assert_cleaned_branch(self):
+        # The historical Python CLI retains branches; the Rust runner supplies
+        # the current integrated-branch deletion contract for this same scenario.
+        self.git("show-ref", "--verify", "refs/heads/tu/feature")
+
+    def test_cleanup_disposes_ignored_files_after_integration(self):
         created = self.create()
         tree = Path(created["worktree"]["path"])
         self.commit_work(tree)
@@ -109,7 +114,7 @@ class WorktreeTest(unittest.TestCase):
         outcome = json.loads(self.wt("clean", "feature", "--json").stdout)
         self.assertFalse(tree.exists())
         self.assertEqual(outcome["transition"]["kind"], "none")
-        self.git("show-ref", "--verify", "refs/heads/tu/feature")
+        self.assert_cleaned_branch()
 
     def test_cleanup_from_current_worktree_requests_return_without_deletion(self):
         tree = Path(self.create()["worktree"]["path"])
