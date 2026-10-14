@@ -52,12 +52,24 @@ make test
 `make build` creates the Pi guard, status-footer, and worktree bundles and Rust release binaries offline; it **does not install**.
 Tests use disposable homes and fake providers, not the live harness state.
 
-After a disposable-home rehearsal and **separate approval for a live home**, the explicit installer is:
+## Install
+
+After a disposable-home rehearsal and **separate approval for a live home**, run:
 
 ```sh
-tools/evaluation/target/release/ai-config --root "$(pwd -P)" install
+./install.sh
 ```
 
+`install.sh` runs `make build` in its own checkout, then delegates to `tools/evaluation/target/release/ai-config --root <canonical-checkout> install`.
+It works when invoked by path from another directory and stops before installation if the build fails.
+It requires Bash, make, the mise-managed Bun and Rust build tools, and cached dependencies for the offline build; it does not provision them.
+Run `./install.sh --help` for help without building or installing; other arguments, including the retired `--force`, are rejected before effects.
+The destination is the absolute `HOME` directory inherited by the Rust installer, not the caller's working directory.
+Use a disposable `HOME` for rehearsals and retain access to the already provisioned build tools and dependency caches.
+`make build`, `make lint`, and `make test` never install into the live home; installation remains a separate explicit action.
+
+The Rust installer remains responsible for ownership, conflict checks, settings preservation, and rollback.
+The manifest and installed resource set are unchanged by this entry point.
 The installer switches only declared links and settings and records ownership under `~/.local/state/ai-config/installation.json`.
 A Git revert cannot retarget already installed links; recovery needs another explicit operation.
 Do not run the removed legacy installer, delete `pi-evaluation`, stage, commit, push, or change the parent submodule pointer by implication.

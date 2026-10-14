@@ -1,7 +1,8 @@
 # ai-config
 
 This repository is the currently installed configuration source for ordinary Claude Code and Pi.
-Its managed resources are declared by root `manifest.json` and linked by an explicitly invoked Rust `ai-config` operation.
+Its managed resources are declared by root `manifest.json` and linked by the Rust `ai-config` installer.
+The explicit installation entry point, `./install.sh`, builds its own checkout before delegating to that installer; `make build` alone does not install.
 The former Orchard, `/build`, and review-pipeline vocabulary below is retained as historical context, not as installation or current workflow instructions.
 See [`README.md`](README.md) for the current installation contract, and [`docs/review-change-cli.md`](docs/review-change-cli.md) for the retained review-risk limit.
 

@@ -1,13 +1,13 @@
 # Ordinary Claude and Pi resources. Installing into a real home is an explicit,
-# separate Rust command; this Makefile never retargets the live installation.
+# separate ./install.sh invocation; this Makefile never retargets the live installation.
 .DEFAULT_GOAL := help
 .PHONY: help build test lint
 
 help:
 	@printf 'build  Bundle the Pi guard and build the four Rust tools (offline).\n'
 	@printf 'test   Run the native package, review, worktree, worklog, and artifact tests.\n'
-	@printf 'lint   Check Rust formatting and lints.\n'
-	@printf 'Install only with tools/evaluation/target/release/ai-config --root "$$(pwd -P)" install\n'
+	@printf 'lint   Check install.sh and Rust formatting and lints.\n'
+	@printf 'Install explicitly with ./install.sh (builds first; live home requires separate approval).\n'
 
 build:
 	bun build harnesses/pi/guard-policies.ts --target node --format esm --outfile harnesses/pi/guard-policies.bundle.ts
@@ -31,6 +31,7 @@ test: build
 	node --test --test-concurrency=1 tools/artifact-review/tests/integration.mjs
 
 lint:
+	shellcheck install.sh
 	$(MAKE) -C tools/worktree lint
 	$(MAKE) -C tools/worklog lint
 	cargo fmt --check --manifest-path tools/evaluation/Cargo.toml

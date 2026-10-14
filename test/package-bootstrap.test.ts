@@ -64,6 +64,15 @@ test("current documentation retains the review risk without temporary cutover pl
   expect(readme).toContain("separate approval for a live home");
 });
 
+test("current installation guidance names the build-and-install entry point", () => {
+  const source = fileURLToPath(new URL("../", import.meta.url));
+  for (const document of ["README.md", "AGENTS.md", "CONTEXT.md"]) {
+    expect(readFileSync(join(source, document), "utf8")).toContain("./install.sh");
+  }
+  const makefile = readFileSync(join(source, "Makefile"), "utf8");
+  expect(makefile).toContain("./install.sh");
+});
+
 test("Claude's shell guidance is available without the former harness directory", () => {
   withDisposableInstallation((home) => {
     const link = join(home, ".claude/CLAUDE.md");
