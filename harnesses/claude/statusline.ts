@@ -3,15 +3,18 @@ import { isAbsolute, sep } from "node:path";
 
 const MAX_INPUT_BYTES = 1024 * 1024;
 const MIN_WIDTH = 5;
-const MAX_WIDTH = 240;
+const MAX_WIDTH = 4096;
 const GIT_TIMEOUT_MS = 300;
 const COLOR = { location: "\u001b[38;2;249;226;175m", branch: "\u001b[38;2;203;166;247m",
   dim: "\u001b[38;2;166;173;200m", reset: "\u001b[0m" };
 
 type Status = {
   cwd?: unknown;
+  session_name?: unknown;
   terminal_width?: unknown;
   thinking_level?: unknown;
+  effort?: { level?: unknown };
+  thinking?: { enabled?: unknown };
   model?: { display_name?: unknown; id?: unknown; thinking_level?: unknown; is_subscription?: unknown;
     context_window?: unknown };
   cost?: { total_cost_usd?: unknown; is_subscription?: unknown };
@@ -35,7 +38,7 @@ function number(value: unknown, maximum: number): number | undefined {
 }
 
 function environmentColumns(value: string | undefined): number | undefined {
-  if (!value || !/^[1-9]\d{0,2}$/.test(value)) return undefined;
+  if (!value || !/^[1-9]\d{0,3}$/.test(value)) return undefined;
   const columns = Number(value);
   return columns >= MIN_WIDTH && columns <= MAX_WIDTH ? columns : undefined;
 }
@@ -127,12 +130,17 @@ async function main(): Promise<void> {
     ?? environmentColumns(process.env.COLUMNS) ?? 80;
   const width = Math.max(MIN_WIDTH, columns) - 4;
   const model = safeText(input.model?.display_name ?? input.model?.id, 60) || "no model";
-  const thinking = safeText(input.thinking_level ?? input.model?.thinking_level, 20);
+  const thinking = input.thinking?.enabled === false ? "thinking off"
+    : safeText(input.effort?.level ?? input.thinking_level ?? input.model?.thinking_level, 20)
+      || (input.thinking?.enabled === true ? "thinking on" : "");
   const modelStatus = `${model}${thinking ? ` • ${thinking}` : ""}`;
   const directory = location(cwd);
-  const firstPlain = `${directory}${branch ? ` (${branch})` : ""}`;
-  const first = branch && Bun.stringWidth(firstPlain) <= width
-    ? `${COLOR.location}${directory}${COLOR.reset} (${COLOR.branch}${branch}${COLOR.reset})`
+  const name = safeText(input.session_name, 100);
+  const firstPlain = `${directory}${branch ? ` (${branch})` : ""}${name ? ` • ${name}` : ""}`;
+  const firstStyled = `${COLOR.location}${directory}${COLOR.reset}`
+    + (branch ? ` (${COLOR.branch}${branch}${COLOR.reset})` : "")
+    + (name ? `${COLOR.dim} • ${name}${COLOR.reset}` : "");
+  const first = Bun.stringWidth(firstPlain) <= width ? firstStyled
     : `${COLOR.location}${clip(firstPlain, width)}${COLOR.reset}`;
   const stats = usage(input);
   const modelWidth = Bun.stringWidth(modelStatus);

@@ -21,6 +21,12 @@ The installed package provides:
 - The evaluation's specialist roles: API designer, change reviewer, database reviewer, fact checker, and frontend architect.
 - Bundled `wt`/`worktree` and `wl`/`worklog` commands, plus the Rust browser-review and change-review commands needed by the retained skills.
 
+Both status displays place the directory, Git branch, and available session name on the first row, with token/cache usage, cost, context, and model/thinking on the second.
+Claude uses the current [status-line input](https://code.claude.com/docs/en/statusline): `session_name`, `effort.level`, and `thinking.enabled`, retaining the older `thinking_level` fallback.
+Disabled thinking displays `thinking off`; enabled thinking without an effort value displays `thinking on`; missing thinking data stays omitted.
+The displays use each harness's supplied usage data, not identical accounting: Claude falls back to the latest request's cache counts when cumulative counts are absent, while Pi sums its conversation branch.
+Claude fits the display to `COLUMNS` (up to 4096) with the existing four-column host margin; it does not read transcripts or restore agentmemory.
+
 TypeSafe and Herdr remain independently configured.
 Worklog data stays in its existing private store; no old Work log history is queried or imported.
 Ordinary user and project resources remain discoverable, while restricted reviewers use isolated snapshots.

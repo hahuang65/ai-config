@@ -38,6 +38,81 @@ test("Claude retains the older token, cache, context, cost, and model display wi
   } finally { rmSync(home, { recursive: true, force: true }); }
 });
 
+async function renderStatus(input: object, columns = "120"): Promise<string[]> {
+  const home = realpathSync(mkdtempSync(join(tmpdir(), "claude-status-native-")));
+  try {
+    const child = Bun.spawn([Bun.which("bun")!, statusline], {
+      env: { HOME: home, PATH: "/usr/bin:/bin", TERM: "dumb", COLUMNS: columns },
+      stdin: "pipe", stdout: "pipe", stderr: "pipe",
+    });
+    child.stdin.write(JSON.stringify({ cwd: home, ...input }));
+    child.stdin.end();
+    const [output, errors, status] = await Promise.all([
+      new Response(child.stdout).text(), new Response(child.stderr).text(), child.exited,
+    ]);
+    expect(status, errors).toBe(0);
+    return output.trimEnd().split("\n");
+  } finally { rmSync(home, { recursive: true, force: true }); }
+}
+
+test("Claude shows the native reasoning effort beside the model", async () => {
+  const rows = await renderStatus({ model: { display_name: "Opus" },
+    effort: { level: "high" }, thinking: { enabled: true }, thinking_level: "low" });
+  expect(rows[1]).toContain("Opus • high");
+});
+
+test("Claude shows disabled thinking instead of a retained effort setting", async () => {
+  const rows = await renderStatus({ model: { display_name: "Opus" },
+    effort: { level: "high" }, thinking: { enabled: false }, thinking_level: "medium" });
+  expect(rows[1]).toContain("Opus • thinking off");
+});
+
+test("Claude shows enabled thinking when a model has no effort parameter", async () => {
+  const rows = await renderStatus({ model: { display_name: "Sonnet" }, thinking: { enabled: true } });
+  expect(rows[1]).toContain("Sonnet • thinking on");
+});
+
+test("Claude shows the session name on the location row like Pi", async () => {
+  const rows = await renderStatus({ session_name: "Statusline parity", model: { display_name: "Opus" } });
+  expect(rows[0].replace(/\u001b\[[0-9;]*m/g, "")).toBe("~ • Statusline parity");
+  expect(rows[1]).not.toContain("Statusline parity");
+});
+
+test("Claude uses wide terminal columns instead of falling back to an 80-column display", async () => {
+  const rows = await renderStatus({ model: { display_name: "Opus" }, effort: { level: "high" },
+    context_window: { total_input_tokens: 12_000, total_output_tokens: 2_000,
+      current_usage: { input_tokens: 1_000, cache_read_input_tokens: 5_000,
+        cache_creation_input_tokens: 500 }, used_percentage: 42, context_window_size: 200_000 },
+    cost: { total_cost_usd: 0.123 } }, "300");
+  expect(Bun.stringWidth(rows[1])).toBe(296);
+  expect(rows[1]).toContain("↑12k ↓2.0k 📚5.0k 💾500 🎯76.9% $0.123 42.0%/200k (auto)");
+  expect(rows[1]).toContain("Opus • high");
+});
+
+test("Claude sanitizes and clips native session and effort text", async () => {
+  const rows = await renderStatus({ session_name: `Task\n\u001b[31m\u202e${"📁".repeat(100)}`,
+    model: { display_name: "Opus" }, effort: { level: "high\n\u001b[31m\u202e" } }, "42");
+  expect(rows).toHaveLength(2);
+  expect(rows.every((row) => Bun.stringWidth(row) <= 38)).toBe(true);
+  expect(rows[0]).toContain("…");
+  expect(rows[1]).toContain("Opus • high");
+  expect(rows.join("\n")).not.toContain("\u001b[31m");
+  expect(rows.join("\n")).not.toContain("\u202e");
+});
+
+test.each([["4096", 4092], ["4097", 76], ["999999999", 76]] as const)(
+  "Claude bounds output for COLUMNS=%s", async (columns, width) => {
+    const rows = await renderStatus({ model: { display_name: "Opus" } }, columns);
+    expect(Bun.stringWidth(rows[1])).toBe(width);
+  },
+);
+
+test("Claude does not invent a thinking state when native and legacy data are absent", async () => {
+  const rows = await renderStatus({ model: { display_name: "Opus" } });
+  expect(rows[1]).not.toContain("•");
+  expect(rows[1]).not.toContain("thinking");
+});
+
 test("Claude status clips to display columns and strips untrusted terminal controls", async () => {
   const home = realpathSync(mkdtempSync(join(tmpdir(), "claude-status-columns-")));
   try {
