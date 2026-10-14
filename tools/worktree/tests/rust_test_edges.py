@@ -57,12 +57,13 @@ class UnixBoundaryTest(RustFixture):
         self.assert_parity("clean", "feature", "--json")
         self.assertTrue(tree.is_dir())
 
-    def test_unicode_decimal_session_pid_retains_the_owned_check_exception(self):
+    def test_unicode_decimal_session_pid_has_no_lock_exception(self):
         tree = Path(self.create()["worktree"]["path"])
         owner = str(os.getpid()).translate(str.maketrans("0123456789", "٠١٢٣٤٥٦٧٨٩"))
         self.env["WT_SESSION_PID"] = owner
         self.git("worktree", "lock", "--reason", f"wt-pi:{owner}", str(tree))
         self.assert_parity("clean", "feature", "--check", "--json", cwd=tree)
+        self.wt("clean", "feature", "--check", "--json", cwd=tree, ok=False)
         self.assertTrue(tree.is_dir())
 
 

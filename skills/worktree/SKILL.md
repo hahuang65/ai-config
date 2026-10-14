@@ -8,7 +8,10 @@ description: Before a repository task adds, edits, or removes files, verify or e
 Follow the shared bootstrap's write-before-worktree policy.
 Use only the replacement-owned `../../tools/worktree/target/release/wt`, resolved from this skill's absolute source path.
 The installed `wt` and `worktree` aliases invoke this executable; read its command help before an unfamiliar operation.
-WT manages Git worktrees, not conversations.
+WT manages Git worktrees and harness-specific saved-conversation references.
+Task transitions do not acquire session locks or require an exclusive session owner.
+The native harness adapter moves the current session; a child shell cannot.
+Read [native task transitions](../../docs/worktree-transitions.md) before creating or entering a task through a harness.
 
 ## Before the first repository write
 
@@ -16,8 +19,11 @@ WT manages Git worktrees, not conversations.
    Check the current branch, staged/unstaged/untracked state, and Git worktree inventory.
    Never branch, stage, commit, or make a worktree in the `~/.dotfiles` parent; keep it on `main` and change its files only when explicitly requested.
 2. If already in a verified task worktree on a named task branch, reuse it; do not create a nested or duplicate task.
-   Respect an existing WT task lock and another session's ownership; ask rather than editing concurrently.
-3. Otherwise, for a user-requested edit in a clean checkout, choose a short task name and run `wt new TASK` using the validated executable.
+   Respect explicit Git worktree locks; do not acquire a session lock or infer exclusive session ownership.
+3. Otherwise, for a user-requested edit in a clean checkout, choose a short task name and use the native adapter described in [native task transitions](../../docs/worktree-transitions.md).
+   The adapter uses `wt new TASK` through the validated executable and carries the current conversation into the task.
+   For an existing task, resume its saved conversation for the current harness; never replace it with the incoming conversation.
+   Without an installed adapter, run `wt new TASK` only to create the checkout and stop for a manual session transition.
    Ordinary permission to edit authorizes creating that task worktree, but not staging, committing, fetching by another command, pushing, or cleanup.
    WT may fetch its configured integration branch as part of creation; if that fails, stop rather than silently choosing `--local` or a different base.
    Use `wt enter TASK` to find an existing managed task; verify the returned repository and task branch before use.
@@ -26,7 +32,8 @@ WT manages Git worktrees, not conversations.
 5. Confirm that the **current session** runs in the chosen task checkout before editing.
    WT prints a path but cannot change the parent shell or a running session's working directory.
    Without a verified session transition, report the path and ask the user to open or resume a session there; never keep editing the original checkout via absolute paths or a temporary shell `cd`.
-   Do not claim conversations automatically transfer or resume between worktrees.
+   Confirm the adapter verified the repository, task branch, saved conversation, and actual working directory before continuing after a transition.
+   Conversations stay harness-specific; do not convert them or infer success from a printed path.
 
 ## Narrow direct-checkout exception
 

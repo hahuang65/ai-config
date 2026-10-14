@@ -72,7 +72,7 @@ class AdditionalSafetyTest(RustFixture):
                 path.unlink()
         self.assertTrue(tree.is_dir())
 
-    def test_foreign_dead_and_overflow_session_owners_cannot_bypass_locks(self):
+    def test_legacy_session_pid_values_do_not_override_git_locks(self):
         tree = Path(self.create()["worktree"]["path"])
         for owner in ("not-a-pid", "9" * 100, str(os.getpid())):
             with self.subTest(owner=owner):

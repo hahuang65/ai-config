@@ -10,10 +10,13 @@ use serde_json::Value;
 use std::io::Write;
 
 pub fn main() -> Result<i32> {
-    let values = std::env::args_os()
+    let values: Vec<String> = std::env::args_os()
         .skip(1)
         .map(|value| text::from_os(&value))
         .collect();
+    if values.first().is_some_and(|value| value == "session") {
+        return crate::sessions::main(&values[1..]);
+    }
     let args = match args::parse(values) {
         Parse::Run(args) => args,
         Parse::Exit(code) => return Ok(code),

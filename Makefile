@@ -12,6 +12,7 @@ help:
 build:
 	bun build harnesses/pi/guard-policies.ts --target node --format esm --outfile harnesses/pi/guard-policies.bundle.ts
 	bun tools/build-status-footer.mjs
+	bun build harnesses/pi/worktree.ts --target node --format esm --external @earendil-works/pi-coding-agent --external @sinclair/typebox --outfile harnesses/pi/worktree.bundle.ts
 	cargo build --locked --offline --release --manifest-path tools/worktree/Cargo.toml
 	cargo build --locked --offline --release --manifest-path tools/worklog/Cargo.toml
 	cargo build --locked --offline --release --manifest-path tools/artifact-review/Cargo.toml

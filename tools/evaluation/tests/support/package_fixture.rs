@@ -44,6 +44,11 @@ pub fn populate(root: &Path) {
         "baseline.md",
         "reviewer.md",
         "harnesses/pi/review-scope.ts",
+        "harnesses/worktree-client.ts",
+        "docs/worktree-transitions.md",
+        "harnesses/claude/worktree.ts",
+        "harnesses/pi/worktree.ts",
+        "harnesses/pi/worktree.bundle.ts",
         "commands/deliver.md",
         "commands/rebase.md",
         "skills/commit/SKILL.md",
@@ -132,6 +137,8 @@ pub fn manifest(root: &Path) {
         {"destination": ".claude/CLAUDE.md", "target": "baseline.md"},
         {"destination": ".pi/agent/AGENTS.md", "target": "baseline.md"},
         {"destination": ".claude/hooks/guard.ts", "target": "harnesses/claude/guard.ts"},
+        {"destination": ".claude/hooks/worktree.ts", "target": "harnesses/claude/worktree.ts"},
+        {"destination": ".pi/agent/extensions/worktree.ts", "target": "harnesses/pi/worktree.bundle.ts"},
         {"destination": ".claude/statusline.ts", "target": "harnesses/claude/statusline.ts"},
         {"destination": ".claude/themes/catppuccin-mocha.json", "target": "harnesses/claude/themes/catppuccin-mocha.json"},
         {"destination": ".claude/plugins/ai-local-lsp", "target": "harnesses/claude/plugins/ai-local-lsp"},
@@ -152,6 +159,19 @@ pub fn manifest(root: &Path) {
         {"destination": ".local/bin/review-change-eval", "target": "tools/evaluation/target/release/review-change-eval"}
     ]});
     let settings = value["settings"].as_array_mut().unwrap();
+    let package: serde_json::Value =
+        serde_json::from_slice(include_bytes!("../../../../manifest.json")).unwrap();
+    settings.extend(
+        package["settings"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .filter(|setting| {
+                setting["path"][0] == "hooks"
+                    && setting["value"]["hooks"][0]["command"] == "bun ~/.claude/hooks/worktree.ts"
+            })
+            .cloned(),
+    );
     settings.extend([
         json!({"destination": ".claude/settings.json", "path": ["theme"], "mode": "value", "value": "custom:catppuccin-mocha"}),
         json!({"destination": ".claude/settings.json", "path": ["statusLine", "type"], "mode": "value", "value": "command"}),

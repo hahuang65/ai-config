@@ -207,7 +207,12 @@ Claude Code and Pi use independent native runners with shared role instructions 
 **Task conversation**:
 The harness-specific conversation associated with a task worktree.
 The agreed behavior is to carry the current conversation into a new task and resume the saved conversation for an existing task, without conversion between Claude Code and Pi.
-The inactive Pi adapter has runtime evidence for those transitions; the corresponding Claude adapter is still required before claiming parity.
+The Pi adapter uses native session replacement and verifies destination tools and context.
+The Claude adapter uses native worktree entry and `/resume`, with saved-conversation and directory checks.
+WT stores only harness-specific conversation references in Git administrative metadata, never transcript content.
+A transition is verified only after the host's working directory, task branch, repository, and conversation agree.
+A saved conversation is a resume reference, not exclusive ownership of a worktree.
+Adapters do not claim sessions, track process ownership, or acquire session locks; manual work remains independent.
 
 **Harness module**:
 The harness-specific adapters under `harnesses/claude/` or `harnesses/pi/`.

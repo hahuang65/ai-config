@@ -18,6 +18,11 @@ const REQUIRED: &[(&str, &str)] = &[
     (".claude/CLAUDE.md", "baseline.md"),
     (".pi/agent/AGENTS.md", "baseline.md"),
     (".claude/hooks/guard.ts", "harnesses/claude/guard.ts"),
+    (".claude/hooks/worktree.ts", "harnesses/claude/worktree.ts"),
+    (
+        ".pi/agent/extensions/worktree.ts",
+        "harnesses/pi/worktree.bundle.ts",
+    ),
     (".claude/statusline.ts", "harnesses/claude/statusline.ts"),
     (
         ".claude/themes/catppuccin-mocha.json",
@@ -55,6 +60,9 @@ const BUNDLED_TOOLS: &[(&str, &str)] = &[
     ),
 ];
 const SUPPORT: &[&str] = &[
+    "harnesses/worktree-client.ts",
+    "docs/worktree-transitions.md",
+    "harnesses/pi/worktree.ts",
     "harnesses/pi/review-scope.ts",
     "reviewer.md",
     "harnesses/pi/guard-policies.ts",

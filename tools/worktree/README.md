@@ -12,7 +12,8 @@ Orchard is not required and existing Orchard worktrees are left alone.
 
 The user approved a Rust rewrite, recorded in [ADR 0002](docs/adr/0002-reimplement-the-cli-in-rust.md).
 The Rust implementation is built in this checkout; installing or switching the ai-config source is a separate explicit operation.
-The previous Python implementation remains as a compatibility reference, with its original tests unchanged.
+The previous Python implementation remains as a compatibility reference.
+Shared regression tests track deliberate behavior changes, including removal of the legacy PID-based session-lock exception.
 Rust 1.99.0 is pinned through mise.
 The Rust checks cover existing command behavior, saved ownership-record compatibility, and cleanup safety.
 
@@ -57,7 +58,8 @@ It never switches or changes files in the main checkout.
 A command cannot change its parent shell's directory; use `cd` as shown, or the Pi adapter.
 
 `enter` prints an existing managed task's path.
-A locked task must be resumed through its existing Pi tab rather than opened for concurrent editing.
+An explicitly Git-locked task is not entered by this standalone command; inspect its lock reason before changing that protection.
+Native session transitions do not acquire or release Git locks.
 
 `list` shows this project's registered Git worktrees, including unmanaged ones.
 For a submodule, the main checkout is its working directory, not the administrative directory under the parent repository's `.git/modules`.
@@ -70,7 +72,7 @@ The default limit is 50; use `--all` for every worktree.
 `clean` checks all managed tasks, removes eligible ones, and reports why others remain.
 `--check` never removes anything.
 If invoked inside the worktree being removed, cleanup requests a return to the main checkout instead of deleting the current directory.
-The Pi adapter completes that return before invoking cleanup again.
+Return through the harness's native controls, then request cleanup separately.
 The branch is retained; there is no forced branch deletion.
 
 All commands support `--json` for protocol-version-1 output.
@@ -132,15 +134,17 @@ Git's inventory remains the list of worktrees; a small record in each Git admini
 There is no global task database or watcher.
 WT cannot detect every external editor or shell writing into a worktree.
 Stop other work before requesting cleanup.
-WT does not move or lock Pi or Claude conversations.
-If an existing worktree has a Git lock, verify its owner has stopped before manually running `git worktree unlock PATH`.
+WT's `session` protocol stores separate Pi and Claude conversation references, with no session claims, PID tracking, or session locks.
+The harness adapter, not WT, moves or resumes conversations.
+An existing Git lock is explicit protection; inspect its reason before manually running `git worktree unlock PATH`.
 WT does not reclaim locks automatically.
 
 ## Harness sessions
 
-The AI package installs the Rust `wt` and `worktree` commands, but no automatic Pi or Claude conversation adapter.
-Create, enter, and clean task worktrees explicitly with WT.
-Start or resume a harness conversation in the chosen directory using that harness's ordinary session controls.
+The AI package installs native Pi and Claude adapters alongside the Rust `wt` and `worktree` commands.
+See [native task transitions](../../docs/worktree-transitions.md) for carrying a conversation into a new task, resuming a saved task, and destination checks.
+`wt session --help` describes the JSON-only adapter protocol.
+Standalone `new` and `enter` still only print paths; they cannot change a running session.
 WT does not alter Herdr configuration or migrate its sessions.
 
 ## Limits and recovery

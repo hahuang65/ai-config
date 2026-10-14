@@ -160,7 +160,7 @@ pub fn enter(repo: &Repository, task: &str) -> Result<Value> {
     let entry = repo.selected(task)?;
     if entry.locked {
         return Err(Error::new(
-            "This worktree is locked, possibly by another Pi session. Resume its existing tab instead.",
+            "This worktree is locked by Git. Inspect its reason before changing that protection.",
         ));
     }
     Ok(outcome(
@@ -176,48 +176,12 @@ fn current_inside(repo: &Repository, entry: &Entry) -> bool {
     repo.cwd.starts_with(text::pathbuf(&entry.path))
 }
 
-fn own_check_lock(repo: &Repository, entry: &Entry, check: bool) -> bool {
-    let owner = std::env::var("WT_SESSION_PID").unwrap_or_default();
-    if !check
-        || !current_inside(repo, entry)
-        || owner.is_empty()
-        || entry.lock_reason != format!("wt-pi:{owner}")
-    {
-        return false;
-    }
-    let Some(pid) = session_pid(&owner) else {
-        return false;
-    };
-    // SAFETY: signal zero only probes process existence/permission, never signals it.
-    unsafe { libc::kill(pid, 0) == 0 }
-}
-
-fn session_pid(owner: &str) -> Option<libc::pid_t> {
-    // Unicode decimal zeroes in Python 3.11's Unicode 14 database.
-    const ZEROES: &[u32] = &[
-        0x30, 0x660, 0x6f0, 0x7c0, 0x966, 0x9e6, 0xa66, 0xae6, 0xb66, 0xbe6, 0xc66, 0xce6, 0xd66,
-        0xde6, 0xe50, 0xed0, 0xf20, 0x1040, 0x1090, 0x17e0, 0x1810, 0x1946, 0x19d0, 0x1a80, 0x1a90,
-        0x1b50, 0x1bb0, 0x1c40, 0x1c50, 0xa620, 0xa8d0, 0xa900, 0xa9d0, 0xa9f0, 0xaa50, 0xabf0,
-        0xff10, 0x104a0, 0x10d30, 0x11066, 0x110f0, 0x11136, 0x111d0, 0x112f0, 0x11450, 0x114d0,
-        0x11650, 0x116c0, 0x11730, 0x118e0, 0x11950, 0x11c50, 0x11d50, 0x11da0, 0x16a60, 0x16ac0,
-        0x16b50, 0x1d7ce, 0x1d7d8, 0x1d7e2, 0x1d7ec, 0x1d7f6, 0x1e140, 0x1e2f0, 0x1e950, 0x1fbf0,
-    ];
-    owner.chars().try_fold(0_i32, |pid, character| {
-        let digit = ZEROES.iter().find_map(|zero| {
-            (character as u32)
-                .checked_sub(*zero)
-                .filter(|digit| *digit < 10)
-        })?;
-        pid.checked_mul(10)?.checked_add(digit as i32)
-    })
-}
-
-fn validate_clean(repo: &Repository, task: &str, check: bool) -> Result<(Entry, String, String)> {
+fn validate_clean(repo: &Repository, task: &str) -> Result<(Entry, String, String)> {
     let entry = repo.selected(task)?;
     let path = &text::pathbuf(&entry.path);
-    if entry.locked && !own_check_lock(repo, &entry, check) {
+    if entry.locked {
         return Err(Error::new(
-            "The worktree is locked. Close its Pi session first. Stale locks require manual review.",
+            "This worktree is locked by Git. Inspect its reason before changing that protection.",
         ));
     }
     validate_status(path)?;
@@ -284,7 +248,7 @@ fn local_proof(repo: &Repository, metadata: &Metadata, head: &str) -> Result<Str
 }
 
 fn clean_one(repo: &Repository, task: &str, check: bool) -> Result<Value> {
-    let (entry, head, proof) = validate_clean(repo, task, check)?;
+    let (entry, head, proof) = validate_clean(repo, task)?;
     let inside = current_inside(repo, &entry);
     let mut result = outcome(
         repo,

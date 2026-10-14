@@ -1,0 +1,47 @@
+import { execFileSync, spawnSync } from "node:child_process";
+import { realpathSync } from "node:fs";
+import { dirname, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
+
+export type Task = { task: string; path: string; branch: string; managed: boolean };
+export type Reply = { protocolVersion: number; worktree: Task; conversation: string | null;
+  project: { root: string }; worktrees: Task[] };
+
+/** WT validates task identity and stores saved conversation references. */
+export class Worktrees {
+  constructor(readonly executable: string) {}
+  run(cwd: string, args: string[]): Reply {
+    let output: string;
+    try {
+      output = execFileSync(this.executable, args, { cwd, env: { ...process.env }, encoding: "utf8", timeout: 120_000,
+        maxBuffer: 1024 * 1024, stdio: ["ignore", "pipe", "pipe"] });
+    } catch (error) {
+      const failure = error as { stderr?: string; message?: string };
+      throw new Error(failure.stderr?.trim() || failure.message || "WT failed");
+    }
+    const reply = JSON.parse(output);
+    if (reply.protocolVersion !== 1) throw new Error("Unsupported WT protocol; rebuild the package.");
+    return reply;
+  }
+  isRepository(cwd: string): boolean {
+    const result = spawnSync("git", ["rev-parse", "--show-toplevel"], { cwd, timeout: 10_000 });
+    if (result.error) throw result.error;
+    return result.status === 0;
+  }
+  session(cwd: string, action: string, task: string, harness: "pi" | "claude", conversation?: string): Reply {
+    return this.run(cwd, ["session", action, task, "--harness", harness,
+      ...(conversation ? ["--conversation", conversation] : [])]);
+  }
+}
+
+export function packageWorktrees(moduleUrl: string): Worktrees {
+  // Both adapters (and the bundled Pi entry) live two levels below the source root.
+  const source = realpathSync(fileURLToPath(moduleUrl));
+  return new Worktrees(resolve(dirname(source), "../../tools/worktree/target/release/wt"));
+}
+
+export function requireClean(cwd: string) {
+  const status = execFileSync("git", ["status", "--porcelain=v1", "--untracked-files=all"],
+    { cwd, encoding: "utf8", timeout: 10_000 });
+  if (status.trim()) throw new Error("The current checkout has changes. Leave them in place and ask before switching tasks.");
+}

@@ -29,9 +29,11 @@ It never provisions tools, touches services, or deletes private state.
 
 Before a repository edit, use a verified task worktree; `skills/worktree/SKILL.md` describes safe creation, entry, and cleanup with `wt` or `worktree`.
 A direct-checkout exception requires the user's up-front choice for one self-contained change and commit authorization.
-Creating a worktree does not move a running conversation; resume or start one in the new checkout before editing.
-Claude uses its native `/resume` when a previous task conversation is needed.
-This package does not install automatic Claude or Pi task-conversation adapters, a Pi language-server client, or the former agentmemory and background publication services.
+[Native task adapters](docs/worktree-transitions.md) carry the current conversation into a new task and resume a saved task conversation without converting between harnesses.
+Pi uses `/wt` and its native session replacement; Claude uses `EnterWorktree` and native `/resume` with conversation and directory checks.
+Neither adapter claims exclusive use of a worktree, checks process ownership, or acquires session locks.
+Creating a worktree through the standalone CLI still does not move a running conversation.
+This package does not install a Pi language-server client or the former agentmemory and background publication services.
 The commands do not push or clean worktrees automatically.
 Local delivery requires project checks and a verified fast-forward; provider review is a separate, explicitly requested workflow.
 GitHub delivery retains the branch and worktree for a separately authorized PR workflow.
@@ -47,7 +49,7 @@ make lint
 make test
 ```
 
-`make build` creates the Pi guard and status-footer bundles and Rust release binaries offline; it **does not install**.
+`make build` creates the Pi guard, status-footer, and worktree bundles and Rust release binaries offline; it **does not install**.
 Tests use disposable homes and fake providers, not the live harness state.
 
 After a disposable-home rehearsal and **separate approval for a live home**, the explicit installer is:

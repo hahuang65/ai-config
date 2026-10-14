@@ -2,7 +2,9 @@
 
 Worktree (WT) manages persistent Git worktrees for independent tasks.
 Agents use `worktree`; `wt` is the shell shortcut to the same executable.
-It does not commit, publish, merge, or manage agent conversations.
+It does not commit, publish, merge, or read agent transcripts.
+It stores harness-specific saved-conversation references; native harness adapters perform conversation transitions.
+References do not confer exclusive session ownership or require session locks.
 
 ## Terms
 
@@ -22,6 +24,6 @@ A different starting revision does not change this destination.
 Ignored files are disposable.
 The branch remains available after cleanup.
 
-**Active-session lock** is a normal Git worktree lock held by the Pi adapter while a task conversation is open.
-WT will not remove a locked worktree.
-An interrupted session may leave a lock that needs manual review.
+**Git worktree lock** is an explicit Git protection against moving or removing a worktree.
+Native harness adapters do not acquire or release it.
+WT's ordinary entry and cleanup commands respect existing Git locks without treating them as proof of an active session.

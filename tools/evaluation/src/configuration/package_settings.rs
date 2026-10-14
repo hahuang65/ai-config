@@ -46,8 +46,42 @@ fn retained_safety_settings(manifest: &Manifest) -> Result<()> {
     Ok(())
 }
 
+const WORKTREE_EVENTS: &[&str] = &[
+    "PreToolUse",
+    "PostToolUse",
+    "WorktreeCreate",
+    "WorktreeRemove",
+];
+
+fn worktree_hook(event: &str) -> Value {
+    let mut value = serde_json::json!({"hooks": [{"type": "command",
+        "command": "bun ~/.claude/hooks/worktree.ts", "timeout": if event == "WorktreeCreate" { 120 } else { 15 }}]});
+    if event == "PostToolUse" {
+        value["matcher"] = Value::from("EnterWorktree");
+    }
+    value
+}
+
+fn is_worktree_hook(claim: &crate::configuration::Setting) -> bool {
+    claim.destination == Path::new(".claude/settings.json")
+        && claim.mode == Mode::ArrayEntry
+        && claim.path.len() == 2
+        && claim.path[0] == "hooks"
+        && WORKTREE_EVENTS.contains(&claim.path[1].as_str())
+        && claim.value == worktree_hook(&claim.path[1])
+}
+
 pub(super) fn check(manifest: &Manifest) -> Result<()> {
     retained_safety_settings(manifest)?;
+    for event in WORKTREE_EVENTS {
+        ensure!(
+            manifest
+                .settings
+                .iter()
+                .any(|claim| is_worktree_hook(claim) && claim.path[1] == *event),
+            "Native package lacks the Claude task hook: {event}"
+        );
+    }
     for claim in &manifest.settings {
         let claude = claim.destination == Path::new(".claude/settings.json");
         let selected_ui = claude
@@ -93,6 +127,7 @@ pub(super) fn check(manifest: &Manifest) -> Result<()> {
         ensure!(
             selected_ui
                 || pi_theme
+                || is_worktree_hook(claim)
                 || (claude
                     && (claim.path == ["hooks", "PreToolUse"]
                         || (claim.path.len() == 2 && claim.path[0] == "permissions"))),

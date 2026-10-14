@@ -126,6 +126,8 @@ fn ordinary_package_installs_the_selected_host_resources_and_cli_dependencies_on
                 ".claude/CLAUDE.md"
                     | ".pi/agent/AGENTS.md"
                     | ".claude/hooks/guard.ts"
+                    | ".claude/hooks/worktree.ts"
+                    | ".pi/agent/extensions/worktree.ts"
                     | ".pi/agent/extensions/guard-policies.ts"
                     | ".pi/agent/extensions/status-footer.ts"
                     | ".claude/statusline.ts"

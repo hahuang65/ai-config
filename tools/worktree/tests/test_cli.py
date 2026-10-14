@@ -122,13 +122,13 @@ class WorktreeTest(unittest.TestCase):
         self.wt("clean", "feature", "--check", "--json")
         self.assertTrue(tree.exists())
 
-    def test_locks_block_cleanup_but_current_pi_can_check_its_own_lock(self):
+    def test_locks_block_cleanup_without_a_session_pid_exception(self):
         tree = Path(self.create()["worktree"]["path"])
         reason = f"wt-pi:{os.getpid()}"
         self.git("worktree", "lock", "--reason", reason, str(tree))
         self.wt("clean", "feature", "--check", ok=False)
         self.env["WT_SESSION_PID"] = str(os.getpid())
-        self.wt("clean", "feature", "--check", "--json", cwd=tree)
+        self.wt("clean", "feature", "--check", "--json", cwd=tree, ok=False)
         self.wt("clean", "feature", "--json", ok=False)
         self.assertTrue(tree.exists())
 

@@ -6,6 +6,7 @@ mod lifecycle;
 mod process;
 mod records;
 mod repository;
+mod sessions;
 mod text;
 
 use std::fmt;

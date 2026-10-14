@@ -1,6 +1,5 @@
 """Explicit worktree creation and conservative removal; never commit or publish."""
 import json
-import os
 from pathlib import Path
 import re
 import sys
@@ -70,7 +69,7 @@ def new(repo, task, base, local):
 def enter(repo, task):
     entry = repo.selected(task)
     if entry["locked"]:
-        raise WtError("This worktree is locked, possibly by another Pi session. Resume its existing tab instead.")
+        raise WtError("This worktree is locked by Git. Inspect its reason before changing that protection.")
     return outcome(repo, "enter", entry, "enter-worktree", entry["path"])
 
 
@@ -78,24 +77,11 @@ def current_inside(repo, entry):
     return repo.cwd.is_relative_to(Path(entry["path"]))
 
 
-def own_check_lock(repo, entry, check):
-    owner = os.environ.get("WT_SESSION_PID", "")
-    if not check or not current_inside(repo, entry) or not owner.isdecimal():
-        return False
-    if entry["lockReason"] != f"wt-pi:{owner}":
-        return False
-    try:
-        os.kill(int(owner), 0)
-    except (OSError, ValueError, OverflowError):
-        return False
-    return True
-
-
-def validate_clean(repo, task, check=False):
+def validate_clean(repo, task):
     entry = repo.selected(task)
     path = Path(entry["path"])
-    if entry["locked"] and not own_check_lock(repo, entry, check):
-        raise WtError("The worktree is locked. Close its Pi session first. Stale locks require manual review.")
+    if entry["locked"]:
+        raise WtError("This worktree is locked by Git. Inspect its reason before changing that protection.")
     status = git(path, "status", "--porcelain=v1", "--untracked-files=all", "--ignore-submodules=none")
     if status:
         raise WtError("The worktree has modified tracked or non-ignored untracked files. Save them before cleanup.")
@@ -118,7 +104,7 @@ def validate_clean(repo, task, check=False):
 
 
 def clean_one(repo, task, check=False):
-    entry, head, proof = validate_clean(repo, task, check)
+    entry, head, proof = validate_clean(repo, task)
     inside = current_inside(repo, entry)
     result = outcome(repo, "clean", entry, "return-main" if inside else "none", repo.root if inside else repo.cwd)
     result["proof"] = proof
