@@ -58,6 +58,8 @@ runtimeTest.each(["external", "native"])("native Claude carries, leaves, and che
     try {
       const events = await run(first.server.port, ["-p", "CARRY_CLAUDE_HISTORY"]);
       id = events.find(e => e.subtype === "init").session_id;
+      expect(first.requests).toHaveLength(3); // Initial turn, automatic post-entry turn, post-Bash turn.
+      expect(JSON.stringify(first.requests[1]).split("[WT continuation v1]").length - 1).toBe(1);
       const results = toolResults(first.requests.at(-1)!);
       expect(results).toHaveLength(2);
       for (const result of results) expect(result.is_error, JSON.stringify(results)).not.toBe(true);
@@ -70,6 +72,8 @@ runtimeTest.each(["external", "native"])("native Claude carries, leaves, and che
     try {
       await run(second.server.port, ["--resume", id!, "-p", "RESUME_CLAUDE_HISTORY"]);
       expect(JSON.stringify(second.requests)).toContain("CARRY_CLAUDE_HISTORY");
+      expect(second.requests).toHaveLength(2); // Resume itself must not replay a continuation.
+      expect(JSON.stringify(second.requests.at(-1)).split("[WT continuation v1]").length - 1).toBe(1);
       const results = toolResults(second.requests.at(-1)!);
       expect(results).toHaveLength(3);
       expect(results.at(-1)?.is_error, JSON.stringify(results)).not.toBe(true);
@@ -80,6 +84,8 @@ runtimeTest.each(["external", "native"])("native Claude carries, leaves, and che
     const leave = startFakeClaudeApi(leaveCalls);
     try {
       await run(leave.server.port, ["--resume", id!, "-p", "LEAVE_CLAUDE_HISTORY"]);
+      expect(leave.requests).toHaveLength(3);
+      expect(JSON.stringify(leave.requests[1]).split("[WT continuation v1]").length - 1).toBe(2);
       const results = toolResults(leave.requests.at(-1)!);
       expect(results).toHaveLength(5);
       expect(results.at(-1)?.is_error, JSON.stringify(results)).not.toBe(true);
@@ -91,6 +97,9 @@ runtimeTest.each(["external", "native"])("native Claude carries, leaves, and che
       { name: "Bash", input: { command: "pwd -P" } }]);
     try {
       await run(reenter.server.port, ["--resume", id!, "-p", "REENTER_CLAUDE_HISTORY"]);
+      expect(reenter.requests).toHaveLength(3);
+      expect(JSON.stringify(reenter.requests[1]).split("[WT continuation v1]").length - 1)
+        .toBe(layout === "external" ? 2 : 3); // Permission denial adds no continuation.
       const results = toolResults(reenter.requests.at(-1)!);
       expect(results).toHaveLength(7);
       if (layout === "external") {

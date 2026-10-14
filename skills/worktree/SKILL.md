@@ -34,6 +34,10 @@ Read [native task transitions](../../docs/worktree-transitions.md) before creati
    Without a verified session transition, report the path and ask the user to open or resume a session there; never keep editing the original checkout via absolute paths or a temporary shell `cd`.
    Confirm the adapter verified the repository, task branch, saved conversation, and actual working directory before continuing after a transition.
    Conversations stay harness-specific; do not convert them or infer success from a printed path.
+6. After verified native completion, continue only the work already requested in the destination conversation without waiting for another “continue”.
+   Follow the shared continuation contract in the transition instructions, including failure, cancellation, and no-op behavior.
+   If the harness cannot start a turn in that mode (notably Claude's interactive `/resume`), explicitly explain the limitation and the manual step before handing control back.
+   Continuation never grants new commit, cleanup, installation, or publication authorization.
 
 ## Narrow direct-checkout exception
 

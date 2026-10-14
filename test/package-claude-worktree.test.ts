@@ -23,12 +23,29 @@ test("Claude transitions retain conversation checks without locking or owning ma
       hook_event_name: event, cwd, session_id: id, ...extra }, wt, root);
     hook("PreToolUse", root, session, { tool_name: "EnterWorktree", tool_input: { path: task.path } });
     // The native host, not the hook, moves the current directory and retains the conversation ID.
-    hook("PostToolUse", task.path, session, { tool_name: "EnterWorktree" });
+    const entered = JSON.parse(hook("PostToolUse", task.path, session, { tool_name: "EnterWorktree" }));
+    expect(entered.hookSpecificOutput.hookEventName).toBe("PostToolUse");
+    expect(entered.hookSpecificOutput.additionalContext).toContain("[WT continuation v1]");
+    expect(entered.hookSpecificOutput.additionalContext).toContain("no new authorization");
+    for (const event of ["SessionStart", "PostToolUseFailure", "PreToolUse"]) {
+      expect(hook(event, task.path, session, { tool_name: "Bash" })).toBe("");
+    }
+    expect(() => hook("PostToolUse", root, session, { tool_name: "EnterWorktree" })).toThrow("verified WT task");
     expect(wt.session(root, "inspect", "feature", "claude").conversation).toBe(session);
     expect(wt.run(root, ["enter", "feature", "--json"]).worktree.path).toBe(task.path);
     const other = "22222222-2222-4222-8222-222222222222";
     expect(() => hook("PreToolUse", root, other, { tool_name: "EnterWorktree", tool_input: { path: task.path } }))
       .toThrow(`/resume ${session}`);
+    // A native /branch fork keeps history but has no saved task binding of its own.
+    const exit = { tool_name: "ExitWorktree", tool_input: { action: "keep" } };
+    hook("PreToolUse", task.path, other, exit);
+    const forkLeft = hook("PostToolUse", root, other, exit);
+    expect(forkLeft).toContain("[WT continuation v1]");
+    expect(JSON.parse(forkLeft).hookSpecificOutput.additionalContext).toBe(entered.hookSpecificOutput.additionalContext);
+    expect(wt.session(root, "inspect", "feature", "claude")).toMatchObject({ conversation: session, atPrimary: false });
+    expect(wt.run(root, ["session", "locate", "--harness", "claude", "--conversation", other]).worktree).toBeNull();
+    expect(() => hook("PostToolUse", task.path, other, exit)).toThrow("primary");
+    expect(hook("PostToolUseFailure", root, other, exit)).toBe("");
     // Manual sessions are not claimed or rejected just because a task has a saved conversation.
     hook("PreToolUse", task.path, other, { tool_name: "Write" });
     hook("PreToolUse", task.path, session, { tool_name: "Write" });
@@ -42,7 +59,8 @@ test("Claude transitions retain conversation checks without locking or owning ma
     }
     hook("PreToolUse", task.path, session, { tool_name: "ExitWorktree", tool_input: { action: "keep" } });
     // Only a verified native exit allows this saved conversation to use primary tools.
-    hook("PostToolUse", root, session, { tool_name: "ExitWorktree", tool_input: { action: "keep" } });
+    const left = JSON.parse(hook("PostToolUse", root, session, { tool_name: "ExitWorktree", tool_input: { action: "keep" } }));
+    expect(left.hookSpecificOutput.additionalContext).toBe(entered.hookSpecificOutput.additionalContext);
     hook("PreToolUse", root, session, { tool_name: "Bash" });
     expect(wt.session(root, "inspect", "feature", "claude").conversation).toBe(session);
     hook("PreToolUse", root, session, { tool_name: "EnterWorktree", tool_input: { path: task.path } });

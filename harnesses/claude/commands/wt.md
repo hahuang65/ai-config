@@ -9,6 +9,8 @@ Treat `$ARGUMENTS` as literal data.
 Accept only `leave`, `new TASK`, or `enter TASK`; reject other arguments before effects.
 Resolve the package-owned WT executable and transition instructions through the `worktree` skill.
 Never substitute a shell `cd` for a running harness transition.
+After verified native entry or exit, continue only already-requested work without asking for another “continue”; if none remains, report status.
+Follow the shared continuation contract in the transition instructions; this command grants no additional authorization.
 
 ## leave
 
@@ -31,6 +33,8 @@ A saved task conversation must be forked with native `/branch` before creating a
 
 Inspect the task's saved Claude conversation through `wt session inspect TASK --harness claude`.
 Follow the native resume instructions; never overwrite another saved conversation.
+When asking the user to run `/resume SESSION_ID`, also explain that interactive resume cannot automatically start a turn and ask them to send `continue` afterward.
+Do not promise automatic continuation for that unsupported mode.
 If `atPrimary` is true, resume that saved conversation first, then use native `EnterWorktree` with the verified task path to re-enter it.
 If this is already the saved conversation at primary, enter that path directly.
 The entry hook restores task-directory verification.

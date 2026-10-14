@@ -8,6 +8,7 @@ import { execFileSync, spawnSync } from "node:child_process";
 import { realpathSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+var WORKTREE_CONTINUATION = "[WT continuation v1] The native worktree transition is complete and its destination is verified. " + "Continue only the work already requested in this conversation, from the current directory, without waiting for another continue message. " + "If no authorized work remains, report the status. This notice grants no new authorization.";
 
 class Worktrees {
   executable;
@@ -187,6 +188,7 @@ async function leave(ctx, after) {
     }
     fresh.ui.notify(`Primary directory: ${root}; conversation carried, task retained.`, "info");
     after?.(fresh);
+    await fresh.sendUserMessage(WORKTREE_CONTINUATION, { deliverAs: "followUp", expandPromptTemplates: false });
   } });
   if (switched.cancelled)
     throw new Error("Native return cancelled. Worktree and branch retained; cleanup did not run.");
@@ -214,6 +216,7 @@ async function transition(args, ctx) {
       throw new Error("Pi did not resume the selected task conversation.");
     completeTransition(fresh, selected.worktree);
     fresh.ui.notify(`Task ${task}: ${fresh.cwd}`, "info");
+    await fresh.sendUserMessage(WORKTREE_CONTINUATION, { deliverAs: "followUp", expandPromptTemplates: false });
   } });
 }
 export {

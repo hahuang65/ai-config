@@ -2,7 +2,7 @@ import { expect, test } from "bun:test";
 import { mkdirSync, mkdtempSync, readFileSync, realpathSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
-import { installedSdkFile } from "./fixtures/installed-pi-sdk";
+import { installedAiFile, installedSdkFile } from "./fixtures/installed-pi-sdk";
 
 test("the package owns both task adapters and all Claude lifecycle hooks", () => {
   const manifest = JSON.parse(readFileSync(resolve("manifest.json"), "utf8"));
@@ -41,8 +41,9 @@ export function project() {
 test.each(["feature", "Task_123-xyz", `A${"_".repeat(63)}`])("native Pi carries and resumes task %s with destination tools", async (task) => {
   const p = project();
   try {
-    const run = Bun.spawn(["node", resolve("test/fixtures/worktree-pi.mjs"), installedSdkFile(), p.cwd,
-      resolve("harnesses/pi/worktree.bundle.ts"), task], { cwd: p.cwd, env: p.env, stdout: "pipe", stderr: "pipe" });
+    const sdkFile = installedSdkFile();
+    const run = Bun.spawn(["node", resolve("test/fixtures/worktree-pi.mjs"), sdkFile, p.cwd,
+      resolve("harnesses/pi/worktree.bundle.ts"), task, installedAiFile(sdkFile)], { cwd: p.cwd, env: p.env, stdout: "pipe", stderr: "pipe" });
     const [output, errors, status] = await Promise.all([new Response(run.stdout).text(),
       new Response(run.stderr).text(), run.exited]);
     expect(status, errors).toBe(0);

@@ -2,7 +2,7 @@ import type { ExtensionAPI, ExtensionCommandContext, ExtensionContext } from "@e
 import { SessionManager } from "@earendil-works/pi-coding-agent";
 import { Type } from "@sinclair/typebox";
 import { existsSync, realpathSync, unlinkSync } from "node:fs";
-import { packageWorktrees, requireClean, type Task } from "../worktree-client.ts";
+import { packageWorktrees, requireClean, WORKTREE_CONTINUATION, type Task } from "../worktree-client.ts";
 
 const wt = packageWorktrees(import.meta.url);
 const taskNamePattern = "[A-Za-z0-9][A-Za-z0-9_-]{0,63}";
@@ -109,6 +109,7 @@ async function leave(ctx: ExtensionCommandContext, after?: (fresh: ExtensionCont
     }
     fresh.ui.notify(`Primary directory: ${root}; conversation carried, task retained.`, "info");
     after?.(fresh);
+    await fresh.sendUserMessage(WORKTREE_CONTINUATION, { deliverAs: "followUp", expandPromptTemplates: false });
   } });
   if (switched.cancelled) throw new Error("Native return cancelled. Worktree and branch retained; cleanup did not run.");
 }
@@ -133,5 +134,7 @@ async function transition(args: string, ctx: ExtensionCommandContext) {
     if (conversation(fresh) !== file) throw new Error("Pi did not resume the selected task conversation.");
     completeTransition(fresh, selected.worktree);
     fresh.ui.notify(`Task ${task}: ${fresh.cwd}`, "info");
+    // Unlike custom-message turns, the native prompt pipeline refreshes destination instructions.
+    await fresh.sendUserMessage(WORKTREE_CONTINUATION, { deliverAs: "followUp", expandPromptTemplates: false });
   } });
 }

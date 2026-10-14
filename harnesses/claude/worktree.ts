@@ -1,5 +1,5 @@
 import { realpathSync } from "node:fs";
-import { packageWorktrees, requireClean, type Task, type Worktrees } from "../worktree-client.ts";
+import { packageWorktrees, requireClean, WORKTREE_CONTINUATION, type Task, type Worktrees } from "../worktree-client.ts";
 
 type Hook = { hook_event_name: string; cwd: string; session_id: string; agent_id?: string;
   tool_name?: string; tool_input?: { path?: string; name?: string; action?: string }; name?: string };
@@ -68,14 +68,24 @@ export function handleWorktreeHook(event: Hook, wt: Worktrees, origin = event.cw
       const target = selectedPath(wt, origin, event.cwd);
       wt.session(event.cwd, "bind", target.task, "claude", event.session_id);
       verifySaved(event, wt, origin);
+      return continuation();
     } else if (event.tool_name === "ExitWorktree") {
       if (event.tool_input?.action !== "keep") throw new Error("Only a native keep exit may record departure.");
+      // Forked conversations have no saved binding, but still require a verified native return.
+      const root = wt.run(origin, ["list", "--all", "--json"]).project.root;
+      if (realpathSync(event.cwd) !== root) throw new Error("Claude did not return to the verified primary directory.");
       const task = locate(wt, origin, event.session_id);
       if (task) wt.session(event.cwd, "depart", task.task, "claude", event.session_id);
       verifySaved(event, wt, origin);
+      return continuation();
     }
   }
   return "";
+}
+
+function continuation(): string {
+  // Native tool completion already advances the agent loop; do not enqueue a second turn.
+  return JSON.stringify({ hookSpecificOutput: { hookEventName: "PostToolUse", additionalContext: WORKTREE_CONTINUATION } });
 }
 
 if (import.meta.main) {

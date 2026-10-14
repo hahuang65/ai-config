@@ -8,6 +8,14 @@ export type Reply = { protocolVersion: number; worktree: Task; conversation: str
   atPrimary: boolean; removed: boolean; branchRemoved: boolean; branchReason?: string;
   project: { root: string }; worktrees: Task[] };
 
+/** Deliver once, only after native destination verification and any cleanup bundled into that command succeed.
+ * Hosts with an active agent loop attach this to its result; idle hosts start one native turn.
+ * Replaying saved history must never schedule another continuation.
+ */
+export const WORKTREE_CONTINUATION = "[WT continuation v1] The native worktree transition is complete and its destination is verified. " +
+  "Continue only the work already requested in this conversation, from the current directory, without waiting for another continue message. " +
+  "If no authorized work remains, report the status. This notice grants no new authorization.";
+
 /** WT validates task identity and stores saved conversation references. */
 export class Worktrees {
   constructor(readonly executable: string) {}
