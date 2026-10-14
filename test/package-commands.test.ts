@@ -19,3 +19,22 @@ test("explicit deliver and rebase prompts are shared by Claude and Pi without Or
   expect(readFileSync(`${root}/commands/deliver.md`, "utf8"))
     .toContain("git merge --ff-only");
 });
+
+test("delivery checks and integrates the task without starting a provider review", () => {
+  const instructions = readFileSync(`${root}/commands/deliver.md`, "utf8");
+  expect(instructions).toContain("stop before integration if required checks fail or remain incomplete");
+  expect(instructions).toContain("git merge --ff-only");
+  expect(instructions).toContain("prove its tip equals the verified tip");
+  expect(instructions).toContain("Do not start a provider review during delivery");
+  expect(instructions).not.toContain("review-change");
+  expect(instructions).not.toContain("reviewed feature tip");
+});
+
+test("installed package README describes checked delivery and separate review", () => {
+  const readme = readFileSync(`${root}/README.md`, "utf8");
+  expect(readme).toContain("## Installed package");
+  expect(readme).toContain("The installed package provides:");
+  expect(readme).toContain("Local delivery requires project checks and a verified fast-forward");
+  expect(readme).toContain("provider review is a separate, explicitly requested workflow");
+  expect(readme).not.toContain("reviewed task");
+});
