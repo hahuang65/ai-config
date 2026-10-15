@@ -85,8 +85,7 @@ impl Store {
             return Err("Review is closed. Use open FILE for another review.");
         }
         self.validate_finding_decision(paths, submission)?;
-        if submission.action == "approve" && model::snapshot(paths)?.revision != submission.revision
-        {
+        if submission.action == "approve" && model::revision(paths)? != submission.revision {
             return Err("Artifact changed. Review the current version before approval.");
         }
         self.append(submission)
@@ -116,6 +115,18 @@ impl Store {
             .map_err(|_| "Cannot read event cursor.")
     }
 
+    pub fn has_update(&self, cursor: u64) -> Result<bool> {
+        let latest = self.latest()?;
+        if cursor > latest {
+            return Err("Cursor is ahead of this review history.");
+        }
+        Ok(cursor < latest
+            || self.status()? != "open"
+            || self
+                .finding_review(None)?
+                .is_some_and(|review| review.complete()))
+    }
+
     pub fn page(&self, cursor: u64, paths: &Paths) -> Result<Page> {
         let latest = self.latest()?;
         if cursor > latest {
@@ -138,9 +149,7 @@ impl Store {
         }
         let cursor = events.last().map_or(cursor, |event| event.cursor);
         let (mut status, approved_revision) = self.review_state()?;
-        let current_revision = model::snapshot(paths)
-            .ok()
-            .map(|snapshot| snapshot.revision);
+        let current_revision = model::revision(paths).ok();
         let needs_review = approved_revision.is_none() || current_revision != approved_revision;
         let finding_review = self.finding_review(current_revision.as_deref())?;
         if status == "open"

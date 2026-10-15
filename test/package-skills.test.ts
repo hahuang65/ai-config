@@ -103,7 +103,10 @@ test("change-review decisions authorize only accepted findings without replacing
   expect(artifact).toContain("--findings REPORT.json");
   expect(artifact).toContain("Only the human");
   expect(artifact).toContain("Do not end the agent turn while the review is open");
-  expect(artifact).toContain("poll --reply");
+  expect(artifact).toContain("wait --reply");
+  expect(artifact).toContain("no inactivity cutoff");
+  expect(artifact).toContain("last processed cursor");
+  expect(artifact).toContain("resume waiting");
 });
 
 test("skill binaries resolve within the replacement checkout", () => {

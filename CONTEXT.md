@@ -60,6 +60,13 @@ _Avoid_: Context artifacts, context docs, glossary files.
 A durable explanation of a hard-to-reverse, surprising choice that resulted from a real trade-off.
 Local destinations use Architectural Decision Records under `docs/adr/`; Confluence destinations use linked `D-NNN` entries and cohesive Decision details.
 
+**Review wait**:
+An active agent turn waiting for saved artifact-review feedback, with no inactivity cutoff.
+Feedback returns control to the agent, which handles it and resumes waiting while the review is open.
+Transport heartbeats do not end this logical wait, and silence grants no approval.
+After an exception interrupts the turn, an explicit request can resume waiting on the same review from the last processed cursor.
+This does not require a harness to wake an already-ended turn automatically.
+
 **Finding decision**:
 A human's Accept or Reject for one finding in a specific retained change-review report.
 Accept authorizes repairing that finding; Reject and undecided findings authorize no repairs.

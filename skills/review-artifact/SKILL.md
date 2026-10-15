@@ -23,13 +23,20 @@ Finding-review controls appear inside their corresponding rendered finding cards
 For ordinary artifacts, apply feedback to the same HTML file, describe the changes briefly, and continue receiving feedback until the user approves or declines.
 For retained change reports, use the finding-review mode below instead; never edit the signed report.
 Address all submitted comments; ask about incompatible requests instead of choosing silently.
-Use `poll` in the foreground with the last processed cursor; process returned events before advancing that cursor.
-Continue immediately when a page has `more: true`, or when an open review's bounded wait expires.
+Use `wait FILE --cursor CURSOR` in the foreground with the last processed cursor; process returned events before advancing that cursor.
+The logical wait has no inactivity cutoff: keep the agent turn active until feedback arrives, then handle it and wait again while the review remains open.
+Use no shell-tool timeout when the harness supports that; do not replace the wait with repeated bounded model/tool calls.
+Continue immediately when a page has `more: true`; the command handles empty transport heartbeats and connection timeouts internally.
+`poll --timeout 0` remains available for an explicit one-shot status check, not as the live feedback loop.
 Retry an interrupted reply with the same reply ID and content, so it is not duplicated.
 Do not background a wait that cannot resume this agent turn.
 Do not end the agent turn while the review is open merely to announce progress or ask a clarification question.
-Send questions through `poll --reply` and keep listening until a terminal decision or an explicit user pause; ordinary Send feedback must not require a chat ping.
-Polling receives live feedback only while this foreground loop runs; do not claim the browser can wake an ended or interrupted turn.
+Send questions through `wait --reply` and keep listening until a terminal decision or an explicit user pause; ordinary Send feedback must not require a chat ping.
+An error, cancellation, or harness execution limit is an interruption, never approval or a reason to discard saved feedback.
+If interrupted, the user can ask to resume waiting on the same review with the last processed cursor and any pending reply ID.
+Report a stopped or incompatible server explicitly; do not silently reopen a terminal review or install an update.
+If this executable lacks `wait`, explain the limitation rather than quietly falling back to a busy polling loop.
+No automatic mechanism to wake an ended agent turn is required or claimed.
 
 - **Send feedback** keeps the review open.
 - **Approve** approves only the version the user reviewed, with no second confirmation.
@@ -51,7 +58,7 @@ Comments and drafts accompany the clicked decision, and response-loss retries pr
 A saved decision cannot be overwritten, including by reopening the same report.
 Explicit chat clarification is required to revise a decision; a later rejection cannot undo repairs already performed.
 
-Poll uses the same cursor contract and includes `finding_review` with `revision`, `report_digest`, `items` (ID, title, decision), and `needs_review`.
+`wait` and `poll` use the same cursor contract and include `finding_review` with `revision`, `report_digest`, `items` (ID, title, decision), and `needs_review`.
 `accept` and `reject` events carry `finding` and `revision`; undecided items have a null decision.
 `status: "decided"` means every finding has a decision, not that every finding was accepted or the code is approved.
 An empty findings list grants no repair authority.

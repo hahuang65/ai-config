@@ -101,6 +101,10 @@ impl Review {
     }
 
     pub fn submit_payload(&self, payload: &Value) -> reqwest::blocking::Response {
+        self.request("/submit", Some(payload))
+    }
+
+    pub fn request(&self, route: &str, payload: Option<&Value>) -> reqwest::blocking::Response {
         let directory = fs::read_dir(self.root.join("state"))
             .unwrap()
             .next()
@@ -110,15 +114,19 @@ impl Review {
         let descriptor: Value =
             serde_json::from_slice(&fs::read(directory.join("server.json")).unwrap()).unwrap();
         let origin = format!("http://127.0.0.1:{}", descriptor["port"]);
-        Client::builder()
+        let client = Client::builder()
             .no_proxy()
             .timeout(HTTP_GUARD)
             .build()
-            .unwrap()
-            .post(format!("{origin}/submit"))
+            .unwrap();
+        let url = format!("{origin}{route}");
+        let request = match payload {
+            Some(payload) => client.post(url).json(payload),
+            None => client.get(url),
+        };
+        request
             .header("Origin", &origin)
             .bearer_auth(descriptor["capability"].as_str().unwrap())
-            .json(payload)
             .send()
             .unwrap()
     }

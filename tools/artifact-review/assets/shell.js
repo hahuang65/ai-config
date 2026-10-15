@@ -5,6 +5,7 @@ const STORAGE = 'artifact-review-draft';
 const MAX_ANNOTATIONS = 16;
 const MAX_TEXT = 2000;
 const RELOAD_MS = 700;
+const EVENT_WAIT_MS = 30000;
 let capability = location.hash.slice(1);
 if (capability) sessionStorage.setItem('artifact-review-capability', capability);
 else capability = sessionStorage.getItem('artifact-review-capability') || '';
@@ -17,6 +18,8 @@ let busy = false;
 let queued = [];
 let target = null;
 let pending = null;
+let listening = false;
+let eventsConnected = true;
 const findings = new FindingControls(frame, (action, id) => submit(action, id));
 const annotationPopover = new AnnotationPopover(frame);
 
@@ -26,12 +29,12 @@ function excerpt(text, limit) {
   return new TextDecoder().decode(new TextEncoder().encode(text).slice(0, limit - 3));
 }
 
-async function request(route, body) {
+async function request(route, body, timeout = 4000) {
   const response = await fetch(route, {
     method: body ? 'POST' : 'GET',
     headers: { Authorization: `Bearer ${capability}`, 'Content-Type': 'application/json' },
     body: body ? JSON.stringify(body) : undefined,
-    signal: AbortSignal.timeout(4000),
+    signal: AbortSignal.timeout(timeout),
     cache: 'no-store',
   });
   const payload = await response.json();
@@ -196,10 +199,13 @@ function renderEvent(event) {
   $('#messages').append(row);
 }
 
-async function refreshEvents() {
+async function refreshEvents(wait = false) {
   let more = true;
   while (more) {
-    const page = await request(`/events?cursor=${cursor}`);
+    const page = await request(`/events?cursor=${cursor}${wait ? `&wait_ms=${EVENT_WAIT_MS}` : ''}`, undefined, wait ? EVENT_WAIT_MS + 4000 : 4000);
+    eventsConnected = true;
+    wait = false;
+    if (page.cursor < cursor) return;
     // A submission and a refresh can finish together; each event is rendered once.
     for (const event of page.events) {
       if (event.cursor <= cursor) continue;
@@ -217,8 +223,9 @@ async function refreshEvents() {
 
 async function refreshSnapshot() {
   if (status !== 'open' && frame.dataset.revision) return;
+  const current = await request('/revision');
+  if (current.revision === frame.dataset.revision) { ready = true; return; }
   const snapshot = await request('/snapshot');
-  if (snapshot.revision === frame.dataset.revision) { ready = true; return; }
   // The previous revision no longer describes the iframe once replacement begins.
   frame.dataset.revision = '';
   ready = false;
@@ -243,11 +250,26 @@ async function refreshSnapshot() {
   });
 }
 
+async function listen() {
+  while (status === 'open') {
+    try { await refreshEvents(true); }
+    catch {
+      eventsConnected = false;
+      $('#connection').textContent = 'Disconnected — retrying';
+      await new Promise(resolve => setTimeout(resolve, RELOAD_MS));
+    }
+  }
+  listening = false;
+}
+
 async function refresh() {
   try {
-    await refreshEvents();
+    if (!listening) {
+      await refreshEvents();
+      if (status === 'open') { listening = true; void listen(); }
+    }
     await refreshSnapshot();
-    $('#connection').textContent = status === 'open' ? 'Connected' : 'Review closed';
+    $('#connection').textContent = !eventsConnected ? 'Disconnected — retrying' : status === 'open' ? 'Connected' : 'Review closed';
   } catch {
     ready = false;
     $('#connection').textContent = 'Disconnected — retrying';

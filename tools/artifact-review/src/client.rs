@@ -40,14 +40,35 @@ impl Session {
         };
         let response = request.bearer_auth(&self.descriptor.capability).header("Origin", self.origin())
             .send().map_err(|_| "Local review unavailable. Use open FILE to reconnect; reuse your cursor and reply ID.")?;
-        if !response.status().is_success() {
-            return Err(
-                "Local review rejected the request. Check the cursor, reply ID, and review state.",
-            );
+        decode_response(response)
+    }
+
+    fn events(&self, cursor: u64, wait: Duration) -> Result<Option<Value>> {
+        let url = format!(
+            "{}/events?cursor={cursor}&wait_ms={}",
+            self.origin(),
+            wait.as_millis()
+        );
+        let response = self
+            .client
+            .get(url)
+            .bearer_auth(&self.descriptor.capability)
+            .header("Origin", self.origin())
+            .timeout(wait + Duration::from_secs(3))
+            .send();
+        match response {
+            Ok(response) if !response.status().is_success() => decode_response(response).map(Some),
+            Ok(response) => match response.json() {
+                Ok(value) => Ok(Some(value)),
+                Err(error) if error.is_timeout() && !wait.is_zero() => Ok(None),
+                Err(_) => Err("Invalid local review response."),
+            },
+            // A bounded connection timeout is not an end to the logical foreground wait.
+            Err(error) if error.is_timeout() && !wait.is_zero() => Ok(None),
+            Err(_) => Err(
+                "Local review unavailable. Use open FILE to reconnect; reuse your cursor and reply ID.",
+            ),
         }
-        response
-            .json()
-            .map_err(|_| "Invalid local review response.")
     }
 
     fn browse(&self) -> Result<()> {
@@ -87,7 +108,7 @@ pub fn open(
 ) -> Result<Value> {
     paths.read_artifact()?;
     if let Some(binding) = binding
-        && crate::model::snapshot(paths)?.revision != binding.revision
+        && crate::model::revision(paths)? != binding.revision
     {
         return Err("Findings report does not match the artifact revision.");
     }
@@ -148,7 +169,7 @@ fn start(paths: &Paths) -> Result<Session> {
 pub fn poll(
     paths: &Paths,
     cursor: u64,
-    timeout: u64,
+    timeout: Option<u64>,
     reply: Option<(String, String)>,
 ) -> Result<Value> {
     let session = Session::connect(paths)?;
@@ -166,16 +187,35 @@ pub fn poll(
             Some(&serde_json::to_value(submission).map_err(|_| "Cannot encode reply.")?),
         )?;
     }
-    let deadline = Instant::now() + Duration::from_secs(timeout);
+    let deadline = timeout.map(|seconds| Instant::now() + Duration::from_secs(seconds));
     loop {
-        let response = session.request(&format!("/events?cursor={cursor}"), None)?;
+        let maximum = Duration::from_millis(crate::event_wait::MAX_WAIT_MS);
+        let wait = deadline.map_or(maximum, |deadline| {
+            maximum.min(deadline.saturating_duration_since(Instant::now()))
+        });
+        let Some(response) = session.events(cursor, wait)? else {
+            continue;
+        };
         let page: Page =
             serde_json::from_value(response.clone()).map_err(|_| "Invalid event page.")?;
-        if !page.events.is_empty() || page.status != "open" || Instant::now() >= deadline {
+        if !page.events.is_empty()
+            || page.status != "open"
+            || deadline.is_some_and(|deadline| Instant::now() >= deadline)
+        {
             return Ok(response);
         }
-        std::thread::sleep(TICK.min(deadline.saturating_duration_since(Instant::now())));
     }
+}
+
+fn decode_response(response: reqwest::blocking::Response) -> Result<Value> {
+    if !response.status().is_success() {
+        return Err(
+            "Local review rejected the request. Check the cursor, reply ID, and review state.",
+        );
+    }
+    response
+        .json()
+        .map_err(|_| "Invalid local review response.")
 }
 
 pub fn stop(paths: &Paths) -> Result<Value> {

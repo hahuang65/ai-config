@@ -1,4 +1,6 @@
+mod artifact;
 mod client;
+mod event_wait;
 mod finding_store;
 mod findings;
 mod images;
@@ -48,6 +50,17 @@ enum Operation {
         #[arg(long, requires = "reply")]
         id: Option<String>,
     },
+    /// Wait indefinitely in the foreground for saved feedback or a closed review.
+    Wait {
+        file: PathBuf,
+        #[arg(long, default_value_t = 0)]
+        cursor: u64,
+        /// Post a reply with a stable ID; process its returned event before waiting again.
+        #[arg(long, requires = "id")]
+        reply: Option<String>,
+        #[arg(long, requires = "reply")]
+        id: Option<String>,
+    },
     /// Stop the server without approving, declining, or deleting events.
     Stop { file: PathBuf },
     #[command(name = "_serve", hide = true)]
@@ -57,7 +70,7 @@ enum Operation {
 fn main() {
     let arguments = Arguments::parse();
     if let Err(message) = validate(&arguments) {
-        eprintln!("{message} See artifact-review poll --help.");
+        eprintln!("{message} See artifact-review poll --help or wait --help.");
         std::process::exit(2);
     }
     // All session files, including SQLite journals, are private from creation.
@@ -79,6 +92,11 @@ fn validate(arguments: &Arguments) -> Result<()> {
         reply: Some(reply),
         id: Some(id),
         ..
+    }
+    | Operation::Wait {
+        reply: Some(reply),
+        id: Some(id),
+        ..
     } = &arguments.command
         && (reply.len() > model::MAX_MESSAGE || reply.trim().is_empty() || !model::valid_id(id))
     {
@@ -87,14 +105,15 @@ fn validate(arguments: &Arguments) -> Result<()> {
     Ok(())
 }
 
-fn execute(arguments: Arguments) -> Result<Option<serde_json::Value>> {
-    let file = match &arguments.command {
+fn review_paths(command: &Operation) -> Result<(Paths, Option<findings::Binding>)> {
+    let file = match command {
         Operation::Open { file, .. }
         | Operation::Poll { file, .. }
+        | Operation::Wait { file, .. }
         | Operation::Stop { file }
         | Operation::Serve { file } => file,
     };
-    let binding = match &arguments.command {
+    let binding = match command {
         Operation::Open {
             findings: Some(record),
             ..
@@ -106,7 +125,11 @@ fn execute(arguments: Arguments) -> Result<Option<serde_json::Value>> {
     {
         return Err("Findings report does not match the artifact revision.");
     }
-    let paths = Paths::resolve(file)?;
+    Ok((Paths::resolve(file)?, binding))
+}
+
+fn execute(arguments: Arguments) -> Result<Option<serde_json::Value>> {
+    let (paths, binding) = review_paths(&arguments.command)?;
     let output = match arguments.command {
         Operation::Open { no_browser, .. } => client::open(&paths, no_browser, binding.as_ref())?,
         Operation::Poll {
@@ -115,7 +138,10 @@ fn execute(arguments: Arguments) -> Result<Option<serde_json::Value>> {
             reply,
             id,
             ..
-        } => client::poll(&paths, cursor, timeout, reply.zip(id))?,
+        } => client::poll(&paths, cursor, Some(timeout), reply.zip(id))?,
+        Operation::Wait {
+            cursor, reply, id, ..
+        } => client::poll(&paths, cursor, None, reply.zip(id))?,
         Operation::Stop { .. } => client::stop(&paths)?,
         Operation::Serve { .. } => {
             let runtime = tokio::runtime::Builder::new_multi_thread()

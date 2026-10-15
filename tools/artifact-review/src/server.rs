@@ -11,7 +11,7 @@ use fs2::FileExt;
 use serde_json::json;
 use std::sync::{Arc, Mutex};
 use std::time::Duration;
-use tokio::sync::Notify;
+use tokio::sync::{Notify, watch};
 use tower_http::timeout::TimeoutLayer;
 
 const MAX_BODY: usize = 128 * 1024;
@@ -25,6 +25,7 @@ struct Service {
     origin: String,
     host: String,
     shutdown: Arc<Notify>,
+    updates: watch::Sender<bool>,
 }
 
 pub async fn serve(paths: Paths) -> Result<()> {
@@ -52,23 +53,22 @@ pub async fn serve(paths: Paths) -> Result<()> {
         origin: format!("http://127.0.0.1:{port}"),
         host: format!("127.0.0.1:{port}"),
         shutdown: shutdown.clone(),
+        updates: watch::channel(false).0,
     };
     paths.save_descriptor(&Descriptor {
         pid: std::process::id(),
         port,
         capability,
     })?;
+    let updates = service.updates.clone();
     let app = routes()
         .layer(DefaultBodyLimit::max(MAX_BODY))
-        .layer(TimeoutLayer::with_status_code(
-            StatusCode::REQUEST_TIMEOUT,
-            Duration::from_secs(5),
-        ))
         .layer(middleware::from_fn_with_state(service.clone(), boundary))
         .with_state(service);
     axum::serve(listener, app)
         .with_graceful_shutdown(async move {
             tokio::select! { _ = shutdown.notified() => {}, _ = tokio::signal::ctrl_c() => {} }
+            updates.send_replace(true);
         })
         .await
         .map_err(|_| "Review server stopped unexpectedly.")?;
@@ -114,11 +114,22 @@ fn routes() -> Router<Service> {
     }
     router
         .route("/snapshot", get(read_snapshot))
-        .route("/events", get(events))
+        .route("/revision", get(read_revision))
         .route("/submit", post(submit))
         .route("/findings", post(configure_findings))
         .route("/reopen", post(reopen))
         .route("/stop", post(stop))
+        .layer(TimeoutLayer::with_status_code(
+            StatusCode::REQUEST_TIMEOUT,
+            Duration::from_secs(5),
+        ))
+        .route(
+            "/events",
+            get(events).layer(TimeoutLayer::with_status_code(
+                StatusCode::REQUEST_TIMEOUT,
+                Duration::from_millis(crate::event_wait::MAX_WAIT_MS) + Duration::from_secs(5),
+            )),
+        )
 }
 
 fn asset(content_type: &'static str, source: &'static str) -> Response {
@@ -180,6 +191,18 @@ async fn boundary(State(service): State<Service>, request: Request, next: Next) 
     response
 }
 
+async fn read_revision(State(service): State<Service>) -> Response {
+    let revision =
+        tokio::task::spawn_blocking(move || crate::model::revision(&service.paths)).await;
+    match revision {
+        Ok(Ok(revision)) => Json(json!({"revision": revision})).into_response(),
+        _ => failure(
+            StatusCode::SERVICE_UNAVAILABLE,
+            "Cannot load artifact. Approval is unavailable.",
+        ),
+    }
+}
+
 async fn read_snapshot(State(service): State<Service>) -> Response {
     let snapshot = tokio::task::spawn_blocking(move || snapshot(&service.paths)).await;
     match snapshot {
@@ -192,13 +215,32 @@ async fn read_snapshot(State(service): State<Service>) -> Response {
 }
 
 async fn events(State(service): State<Service>, request: Request) -> Response {
-    let query = request.uri().query().unwrap_or("cursor=0");
-    let Some(cursor) = query
-        .strip_prefix("cursor=")
-        .and_then(|value| value.parse::<u64>().ok())
-    else {
-        return failure(StatusCode::BAD_REQUEST, "Use one unsigned cursor.");
+    let (cursor, duration) = match crate::event_wait::query(request.uri().query()) {
+        Ok(query) => query,
+        Err(message) => return failure(StatusCode::BAD_REQUEST, message),
     };
+    match tokio::time::timeout(
+        duration + Duration::from_secs(5),
+        event_page(service, cursor, duration),
+    )
+    .await
+    {
+        Ok(response) => response,
+        Err(_) => failure(StatusCode::REQUEST_TIMEOUT, "Review request timed out."),
+    }
+}
+
+async fn event_page(service: Service, cursor: u64, duration: Duration) -> Response {
+    if let Err(message) = crate::event_wait::wait(
+        service.store.clone(),
+        service.updates.subscribe(),
+        cursor,
+        duration,
+    )
+    .await
+    {
+        return failure(StatusCode::BAD_REQUEST, message);
+    }
     let page = tokio::task::spawn_blocking(move || {
         service
             .store
@@ -237,7 +279,10 @@ async fn submit(
         .expect("store lock")
         .submit(&service.paths, &submission)
     {
-        Ok(cursor) => Json(json!({"cursor": cursor})).into_response(),
+        Ok(cursor) => {
+            service.updates.send_modify(|_| {});
+            Json(json!({"cursor": cursor})).into_response()
+        }
         Err(message) => failure(StatusCode::CONFLICT, message),
     }
 }
@@ -258,19 +303,26 @@ async fn configure_findings(
         .expect("store lock")
         .configure_findings(&service.paths, &binding)
     {
-        Ok(()) => Json(json!({"status": "configured"})).into_response(),
+        Ok(()) => {
+            service.updates.send_modify(|_| {});
+            Json(json!({"status": "configured"})).into_response()
+        }
         Err(message) => failure(StatusCode::CONFLICT, message),
     }
 }
 
 async fn reopen(State(service): State<Service>) -> Response {
     match service.store.lock().expect("store lock").reopen() {
-        Ok(()) => Json(json!({"status": "open"})).into_response(),
+        Ok(()) => {
+            service.updates.send_modify(|_| {});
+            Json(json!({"status": "open"})).into_response()
+        }
         Err(message) => failure(StatusCode::CONFLICT, message),
     }
 }
 
 async fn stop(State(service): State<Service>) -> Response {
+    service.updates.send_replace(true);
     service.shutdown.notify_one();
     Json(json!({"status": "stopped"})).into_response()
 }

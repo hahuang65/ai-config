@@ -15,6 +15,14 @@ These are local warm-run measurements, not cold-build or cross-platform performa
 All adjusted settings below match their source constants; production deadlines are unchanged, and this audit makes no further timing reductions.
 The 150ms interrupt-start hold is intentionally retained because shortening it still needs an observable readiness proof.
 
+## Artifact-review waiting checkpoint (#105)
+
+A local macOS debug-build fixture with 2,500 repeated HTML sections and no images measured seven event requests per one-second idle CLI poll before the change, and one held request afterward (three samples each).
+Twenty warm revision-only requests took 1,106 ms while rebuilding snapshots and 127 ms with one-entry render reuse.
+These are bounded local fixture measurements, not release-build, cold-cache, or cross-platform guarantees.
+The browser regression independently verifies that an open idle review holds its event request and does not repeatedly download unchanged snapshots.
+Every current revision and approval still hashes current HTML and displayed image bytes, including same-size/same-mtime image replacements.
+
 ## Worklog
 
 | Check | Constant | Current value | Source |
@@ -95,6 +103,9 @@ Each case removes its user context before the next starts; failed cleanup stops 
 | Evaluation `reviewer_process.rs` | `PROCESS_GUARD_SECONDS` | 2s | Bound fixture execution; normal completion returns immediately |
 | Artifact `tests/support/mod.rs` | `COMMAND_GUARD` / `COMMAND_POLL` | 15s / 5ms | Bound finding-decision CLI processes and poll for observed exit |
 | Artifact `tests/support/mod.rs` | `HTTP_GUARD` | 5s | Bound local finding-decision requests |
+| Artifact `tests/wait.rs` | `IDLE_OBSERVATION` / `RESPONSE_GUARD` | 150ms / 5s | Observe an actually held response, then bound event delivery without waiting for the 30s heartbeat |
+| Artifact `tests/support/waiter.rs` | `EXIT_GUARD` / `EXIT_POLL` | 5s / 5ms | Bound test-only foreground wait children and reap them on failure |
+| Artifact `tests/support/event_peer.rs` | `PEER_GUARD` / `ACCEPT_POLL` | 5s / 5ms | Observe heartbeat renewal using a synthetic local peer without sleeping through production heartbeat periods |
 | Browser `finding-decisions.mjs` | `STATE_GUARD_MS` / `STATE_POLL_MS` | 10s / 20ms | Bound observable decision/retry readiness, not fixed sleeps |
 | Browser `integration.mjs` | `BROWSER_STATE_GUARD_MS` | 10s | Unchanged readiness watchdog, not a fixed wait |
 | Browser `firefox-process.mjs` | `SHUTDOWN_GRACE_MS` | 300ms | Unchanged graceful-stop budget before forced cleanup |

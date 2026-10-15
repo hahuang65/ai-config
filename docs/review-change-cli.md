@@ -30,7 +30,7 @@ Use the exact retained paths returned by review JSON:
 
 ```text
 artifact-review open /absolute/report.html --findings /absolute/report.json
-artifact-review poll /absolute/report.html --cursor 0 --timeout 20
+artifact-review wait /absolute/report.html --cursor 0
 ```
 
 Each rendered finding card contains its own Accept and Reject controls.
@@ -42,7 +42,9 @@ End review and closing the browser do not undo earlier accepts or authorize unde
 An explicit request in chat is needed to change a decision; already-performed repairs are not undone automatically.
 
 The artifact-review process stores the bound finding list and decisions separately, leaving the retained HTML, JSON, and publication signatures unchanged.
-`poll` returns per-finding decisions under `finding_review`; its `needs_review` flag means the report revision changed or cannot be read, not that every finding has a decision.
+`wait` keeps the foreground agent turn active without an inactivity cutoff; empty transport heartbeats do not return control to the model.
+After interruption, resume with the same report and last processed cursor, without manufacturing a decision or reopening a terminal review.
+`wait` and bounded `poll` return per-finding decisions under `finding_review`; its `needs_review` flag means the report revision changed or cannot be read, not that every finding has a decision.
 Only a specific saved accept with matching event/current/bound revisions can authorize repair, and only when that flag is false.
 Before mapping IDs to the retained record, verify its SHA-256 equals `finding_review.report_digest`.
 The ordinary top-level `approved_revision` and `needs_review` fields are for whole-document approval, not finding decisions.

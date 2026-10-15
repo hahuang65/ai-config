@@ -1,14 +1,6 @@
-use crate::{
-    images,
-    paths::{Paths, Result},
-};
-use base64::{Engine, engine::general_purpose::STANDARD};
+pub use crate::artifact::{revision, snapshot};
+use crate::paths::Result;
 use serde::{Deserialize, Serialize};
-use sha2::{Digest, Sha256};
-use std::{
-    borrow::Cow,
-    sync::{Arc, Mutex},
-};
 
 pub const MAX_MESSAGE: usize = 8000;
 pub const MAX_ANNOTATIONS: usize = 16;
@@ -113,88 +105,8 @@ pub struct Page {
     pub finding_review: Option<crate::findings::Review>,
 }
 
-#[derive(Serialize)]
+#[derive(Clone, Serialize)]
 pub struct Snapshot {
     pub revision: String,
     pub html: String,
-}
-
-struct ImageState {
-    digest: Sha256,
-    count: usize,
-    total: usize,
-    error: Option<&'static str>,
-}
-
-pub fn snapshot(paths: &Paths) -> Result<Snapshot> {
-    let source = paths.read_artifact()?;
-    let state = Arc::new(Mutex::new(ImageState {
-        digest: Sha256::new_with_prefix(source.as_bytes()),
-        count: 0,
-        total: 0,
-        error: None,
-    }));
-    let images = Arc::clone(&state);
-    let artifact = paths.artifact.clone();
-    let html = ammonia::Builder::default()
-        .add_tags(
-            ["style", "section", "main", "article", "aside"]
-                .iter()
-                .copied(),
-        )
-        .rm_clean_content_tags(["style"].iter().copied())
-        .add_clean_content_tags(["title"].iter().copied())
-        .add_generic_attributes(["id", "class", "style"].iter().copied())
-        .rm_tag_attributes("a", ["href", "target"].iter().copied())
-        .rm_tag_attributes("img", ["srcset"].iter().copied())
-        .add_url_schemes(&["data"])
-        .attribute_filter(move |element, attribute, value| {
-            if element != "img" || attribute != "src" {
-                return Some(Cow::Borrowed(value));
-            }
-            let mut state = images.lock().expect("render state lock");
-            if state.error.is_some() {
-                return None;
-            }
-            match images::prepare(&artifact, value) {
-                Ok(Some((mime, bytes))) => {
-                    if state.count >= images::MAX_IMAGES
-                        || state.total.saturating_add(bytes.len()) > images::MAX_TOTAL_BYTES
-                    {
-                        state.error = Some("Too many render bytes. Approval is unavailable.");
-                        return None;
-                    }
-                    state.count += 1;
-                    state.total += bytes.len();
-                    state.digest.update(b"\0render\0");
-                    state.digest.update(mime.as_bytes());
-                    state.digest.update((bytes.len() as u64).to_le_bytes());
-                    state.digest.update(&bytes);
-                    Some(Cow::Owned(format!(
-                        "data:{mime};base64,{}",
-                        STANDARD.encode(bytes)
-                    )))
-                }
-                Ok(None) => None,
-                Err(error) => {
-                    state.error = Some(error);
-                    None
-                }
-            }
-        })
-        .link_rel(None)
-        .clean(&source)
-        .to_string();
-    let state = state.lock().expect("render state lock");
-    if let Some(error) = state.error {
-        return Err(error);
-    }
-    let revision = format!("{:x}", state.digest.clone().finalize());
-    let policy = "default-src 'none'; script-src 'none'; style-src 'unsafe-inline'; img-src data:; form-action 'none'; base-uri 'none'";
-    Ok(Snapshot {
-        revision,
-        html: format!(
-            "<!doctype html><html><head><meta http-equiv=\"Content-Security-Policy\" content=\"{policy}\"></head><body>{html}</body></html>"
-        ),
-    })
 }

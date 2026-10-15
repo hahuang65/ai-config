@@ -14,6 +14,7 @@ import { firefoxSuite } from './firefox-suite.mjs';
 import { registerFirefoxIsolationCases } from './firefox-isolation.mjs';
 import { registerFindingDecisionCases } from './finding-decisions.mjs';
 import { registerAnnotationPopoverCases } from './annotation-popover.mjs';
+import { registerLiveWaitCases } from './live-wait.mjs';
 
 const browsers = firefoxSuite();
 const firefox = () => browsers.open();
@@ -22,6 +23,7 @@ registerFirefoxIsolationCases(browsers);
 registerChangeReportCase(firefox);
 registerFindingDecisionCases(firefox);
 registerAnnotationPopoverCases({ fixture, eventually });
+registerLiveWaitCases({ fixture, eventually });
 
 const executable = resolve(import.meta.dirname, '../target/debug/artifact-review');
 const exec = promisify(execFile);

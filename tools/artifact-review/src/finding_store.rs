@@ -10,7 +10,7 @@ use std::collections::BTreeMap;
 impl Store {
     pub fn configure_findings(&mut self, paths: &Paths, binding: &Binding) -> Result<()> {
         binding.validate()?;
-        if model::snapshot(paths)?.revision != binding.revision {
+        if model::revision(paths)? != binding.revision {
             return Err("Findings report does not match the artifact revision.");
         }
         let transaction = self
@@ -138,9 +138,7 @@ impl Store {
                 "Finding already decided. A saved authorization cannot be silently replaced.",
             );
         }
-        if review.revision != submission.revision
-            || model::snapshot(paths)?.revision != review.revision
-        {
+        if review.revision != submission.revision || model::revision(paths)? != review.revision {
             return Err("Report changed. Obtain a fresh review before deciding findings.");
         }
         Ok(())

@@ -12,8 +12,8 @@ Use the mise-managed Rust 1.99 toolchain.
 cargo build --manifest-path tools/artifact-review/Cargo.toml --locked
 ./tools/artifact-review/target/debug/artifact-review --help
 ./tools/artifact-review/target/debug/artifact-review open /absolute/document.html
-./tools/artifact-review/target/debug/artifact-review poll /absolute/document.html --cursor 0 --timeout 20
-./tools/artifact-review/target/debug/artifact-review poll /absolute/document.html --cursor 12 --timeout 20 \
+./tools/artifact-review/target/debug/artifact-review wait /absolute/document.html --cursor 0
+./tools/artifact-review/target/debug/artifact-review wait /absolute/document.html --cursor 12 \
   --reply 'Updated the wording.' --id 01234567-89ab-cdef-0123-456789abcdef
 ./tools/artifact-review/target/debug/artifact-review stop /absolute/document.html
 ```
@@ -34,9 +34,16 @@ A successful command does not itself mean approval.
 Treat the current file as approved only when `needs_review` is false: `current_revision` then matches `approved_revision`.
 Later file changes are not approved by that event.
 
-`poll` waits in the foreground for at most 0–60 seconds, plus a bounded local request timeout of 3 seconds.
-Its default wait is 20 seconds.
-It returns `events`, `cursor`, `status`, `more`, `approved_revision`, `current_revision`, and `needs_review`.
+`wait` waits indefinitely in the foreground until saved feedback is available after the cursor or the review is terminal.
+Silence never ends the logical wait or grants approval.
+The server holds a request until a durable state change or a bounded transport heartbeat; the command renews empty waits internally, without returning control to the model.
+Connection timeouts retry internally; other connection errors, server shutdown, cancellation, and harness execution limits interrupt the command without consuming history.
+Resume an interrupted wait using the same report and last processed cursor; a stopped or incompatible server needs explicit recovery, not silent reopening of a terminal review.
+No automatic wake of an already-ended agent turn is provided.
+
+`poll` remains the bounded interface: 0–60 seconds, default 20, plus a bounded local request allowance of 3 seconds.
+`poll --timeout 0` checks immediately.
+Both commands return `events`, `cursor`, `status`, `more`, `approved_revision`, `current_revision`, and `needs_review`.
 `approved_revision` is null unless the current review outcome is approval.
 `current_revision` binds the current HTML and any displayed render bytes, or is null when the artifact or a referenced local render cannot be read safely.
 `needs_review` is true when the current bytes do not have approval, including when the file is unreadable.
@@ -46,7 +53,8 @@ Pages contain at most 50 events; use the returned cursor to continue while `more
 Save the cursor only after processing the returned events.
 Interrupted waits do not consume events; retry with the last processed cursor.
 Empty events with `status: "open"` mean no feedback arrived, not approval.
-The agent must continue foreground polling while the review is open, including after asking questions through replies.
+The agent must keep a foreground `wait` active while the review is open, including after asking questions through replies.
+Use no shell-tool timeout when supported, and report harness-imposed interruptions honestly rather than claiming indefinite host execution.
 Send feedback is received through that active loop; the browser does not itself wake an ended agent turn.
 A reply requires a caller-generated stable ID of 16–80 letters, digits, or hyphens.
 Retry an interrupted reply with the same ID and content.
@@ -78,7 +86,7 @@ An exact retry returns the original cursor, even after restart or completion.
 A different payload with the same submission ID is refused, as is a second decision for an already-decided finding.
 Explicit chat clarification is needed to change a decision; a later rejection cannot undo work already performed.
 
-`poll` adds `finding_review` containing:
+`wait` and `poll` add `finding_review` containing:
 
 - `revision`: the fixed report revision for this finding list.
 - `report_digest`: SHA-256 of the exact imported JSON bytes, to verify before mapping IDs to repairs.
@@ -118,7 +126,9 @@ Send feedback keeps the review open.
 Decline ends it without approval.
 Closing the tab, losing the connection, stopping the server, and timing out are not approval or decline.
 
-The shell polls for live document updates and agent replies.
+For an open review, the shell holds an event request for replies and decisions rather than repeatedly fetching history.
+It separately checks `/revision` every 700 ms after each completed check, fetching `/snapshot` only when the displayed revision differs or has not loaded.
+Tabs showing a closed review retain the previous bounded refresh behavior to observe reopening; no browser timer is an approval signal.
 Submitted annotations remain in the conversation even if their target changes or disappears.
 Each annotation retains its original target text, selector, and revision.
 A restored element draft can highlight the same target only at the matching revision.
@@ -175,7 +185,7 @@ There is no automatic history pruning or opaque history rewrite.
 Storage defaults to this evaluation's `.state/reviews`, resolved from the crate's build-time project location.
 Set `AR_ROOT` to a private directory for isolated tests or an explicitly relocated installation.
 Each file path, with its parent directory canonicalized and its final filename unchanged, maps to a SHA-256 directory with mode 0700.
-Replacing the final file with a symlink does not change session identity: `poll` and `stop` still reach the original session.
+Replacing the final file with a symlink does not change session identity: `wait`, `poll`, and `stop` still reach the original session.
 Artifact reads reject final symlinks and non-regular files.
 Server records and event storage use mode 0600.
 A per-file lock prevents duplicate server ownership.
@@ -202,6 +212,29 @@ Coverage includes process-level cursor replay, interrupted waits, abrupt server 
 Rust process tests in `tests/findings.rs` cover independent decisions, revision changes, ordinary-artifact separation, whole-report approval refusal, input bounds, persistence, and retries.
 A real generated change report passes through the same bounded Firefox suite to exercise Accept/Reject, comments, response-loss recovery across reload, completed-state restoration, inert finding titles, narrow layout, and unchanged report bytes.
 Real Firefox cases cover element and selected-text comments, general feedback, agent replies, live reload, retained annotations, response-loss retries, draft inclusion in terminal decisions, stale-page rejection, post-approval edit and reload, decline, closing without approval, class-based layout and styles, local render visibility, decode failures and revision binding, script isolation, text-only feedback rendering, and narrow layout.
+
+## Waiting and render reuse
+
+`/events?cursor=N&wait_ms=M` accepts one unsigned cursor and an optional wait of 0–30000 ms.
+The server subscribes before checking the durable cursor, broadcasts after successful persistence, and releases waiters during shutdown.
+Neither a dropped connection nor a missed notification loses history: the cursor remains authoritative and reconnects replay saved events.
+Pages retain the 50-event bound and existing authorization/origin checks.
+The event route permits its requested hold plus a five-second service allowance, capped at 35 seconds; immediate event reads and other routes retain their five-second deadline.
+CLI requests use the requested hold plus three seconds, and browser event requests use the hold plus four seconds.
+These transport budgets are not logical review inactivity limits.
+
+Each process caches at most one successful rendered artifact, keyed by its absolute path and exact HTML bytes, with the existing 2 MiB HTML, 24-image, and 8 MiB decoded-image bounds.
+Every revision check still reads the HTML and safely rereads, validates, and hashes the displayed image dependencies in their original order; size and modification time are never freshness proofs.
+Unchanged HTML reuses the sanitizer-derived dependency list instead of parsing/sanitizing/encoding the full snapshot again.
+A changed image requires a new render before its snapshot is served, while unchanged HTML and image bytes can reuse the previous inert snapshot.
+A changed path or HTML replaces the single cache entry only after successful rendering.
+Failures cannot authorize reuse: missing, symlinked, invalid, or oversized inputs still fail closed.
+Approval and finding decisions always compute a fresh revision; neither outcomes nor current revisions are cached.
+The revision algorithm and retained report bytes are unchanged.
+
+Rust process tests in `tests/wait.rs` cover held requests, saved-event delivery, empty heartbeats, interruption/replay, shutdown, and byte-fresh revision checks.
+The bounded browser case in `tests/live-wait.mjs` counts idle requests and exercises feedback, replies, and document refresh without duplicate history or repeated snapshot downloads.
+See `test/timings.md` at the package root for measured local evidence and test watchdogs.
 
 ## Attribution
 

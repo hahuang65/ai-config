@@ -34,7 +34,7 @@ Ordinary session skill discovery remains enabled; the reviewer itself is isolate
    The report must still describe the relevant code; unrelated source changes require a fresh review, while earlier authorized repairs in the same batch remain explicit context.
    Process comments within the accepted finding's scope; ask about conflicting instructions, and preserve user ownership of source and tests in coach mode.
    Never submit accept/reject events yourself, infer acceptance from feedback or a closed browser, or repair a finding twice after event replay.
-   Record handled cursors and repair outcomes; continue foreground polling until all findings are decided or the user ends the review.
+   Record handled cursors and repair outcomes; continue indefinite foreground `wait` calls until all findings are decided or the user ends the review.
    Saved decisions are final for that report; requests to change them need explicit chat clarification, not fabricated replacement events.
    Verify accepted repairs and request a fresh review of the whole changed task, at a new retained report path.
    Never rewrite the retained report, its JSON, or signatures to record decisions or fixes.
