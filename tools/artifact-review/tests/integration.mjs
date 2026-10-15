@@ -1,4 +1,4 @@
-import { test } from 'node:test';
+import { after, test } from 'node:test';
 import assert from 'node:assert/strict';
 import { spawn, execFile } from 'node:child_process';
 import { promisify } from 'node:util';
@@ -6,10 +6,17 @@ import { mkdtemp, writeFile, readFile, readdir, rm, stat, symlink } from 'node:f
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { setTimeout as sleep } from 'node:timers/promises';
-import { firefox } from './firefox.mjs';
 import { interruptBrowserDelivery } from './delivery.mjs';
 import { registerChangeReportCase } from '../../../test/change-report.browser-cases.mjs';
+import './firefox-process.test.mjs';
+import './firefox-suite.test.mjs';
+import { firefoxSuite } from './firefox-suite.mjs';
+import { registerFirefoxIsolationCases } from './firefox-isolation.mjs';
 
+const browsers = firefoxSuite();
+const firefox = () => browsers.open();
+after(() => browsers.close());
+registerFirefoxIsolationCases(browsers);
 registerChangeReportCase(firefox);
 
 const executable = resolve(import.meta.dirname, '../target/debug/artifact-review');
@@ -31,11 +38,13 @@ async function fixture(t) {
   };
   let browser;
   t.after(async () => {
-    await browser?.close();
-    await cli('stop', file).catch(() => {});
-    await rm(root, { recursive: true, force: true });
+    try { await browser?.close(); }
+    finally {
+      await cli('stop', file).catch(() => {});
+      await rm(root, { recursive: true, force: true });
+    }
   });
-  const startBrowser = async () => { browser = await firefox(join(root, 'firefox')); return browser; };
+  const startBrowser = async () => { browser = await firefox(); return browser; };
   await cli('open', file, '--no-browser');
   const descriptor = async () => {
     const [directory] = await readdir(env.AR_ROOT);
@@ -150,11 +159,16 @@ const submission = (revision, action = 'feedback', message = 'Useful feedback') 
   id: crypto.randomUUID(), action, revision, message, annotations: [],
 });
 
+// Test-only readiness polling; see test/timings.md.
+const BROWSER_STATE_POLL_MS = 20;
+const BROWSER_STATE_GUARD_MS = 10000;
+const INTERRUPT_START_HOLD_MS = 150;
+
 async function eventually(predicate) {
-  const deadline = Date.now() + 10000;
+  const deadline = Date.now() + BROWSER_STATE_GUARD_MS;
   while (Date.now() < deadline) {
     if (await predicate()) return;
-    await sleep(100);
+    await sleep(BROWSER_STATE_POLL_MS);
   }
   assert.fail('Expected browser state did not arrive');
 }
@@ -164,7 +178,7 @@ async function eventually(predicate) {
   const snapshot = await (await f.api('/snapshot')).json();
   const initial = await f.cli('poll', f.file, '--timeout', '0');
   const waiter = spawn(executable, ['poll', f.file, '--cursor', String(initial.cursor), '--timeout', '10'], { env: f.env, stdio: 'ignore' });
-  await sleep(150);
+  await sleep(INTERRUPT_START_HOLD_MS);
   waiter.kill('SIGTERM');
   const request = submission(snapshot.revision);
   const accepted = await (await f.api('/submit', request)).json();
@@ -173,7 +187,7 @@ async function eventually(predicate) {
   assert.equal((await f.api('/submit', { ...request, message: 'Different' })).status, 409);
   const { pid } = await f.descriptor();
   process.kill(pid, 'SIGKILL');
-  await sleep(200);
+  await eventually(() => f.api('/snapshot').then(() => false, () => true));
   await f.cli('open', f.file, '--no-browser');
   const feedback = await f.cli('poll', f.file, '--cursor', String(initial.cursor), '--timeout', '0');
   assert.equal(feedback.events.filter(event => event.action === 'feedback').length, 1);
@@ -256,14 +270,12 @@ test('process poll and stop retain session identity after source replacement wit
   }
 });
 
-test('real Firefox fixture evaluates values and promises without exposing exception details', async t => {
-  const profile = await mkdtemp(join(tmpdir(), 'artifact-review-firefox-'));
-  let browser;
-  t.after(async () => {
-    await browser?.close();
-    await rm(profile, { recursive: true, force: true });
-  });
-  browser = await firefox(profile);
+test('isolated Firefox case uses one blank tab and evaluates promises without exposing exception details', async t => {
+  const browser = await firefox();
+  t.after(() => browser.close());
+  const contexts = await browser.contexts();
+  assert.equal(contexts.length, 1, 'each isolated case must start with exactly one tab');
+  assert.equal(contexts[0].url, 'about:blank');
   assert.equal(await browser.evaluate('return true;'), true);
   assert.deepEqual(await browser.evaluate("return await Promise.resolve({ value: 'ready' });"), { value: 'ready' });
   await assert.rejects(browser.evaluate("throw new Error('private exception details');"), {

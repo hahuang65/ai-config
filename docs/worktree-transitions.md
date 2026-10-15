@@ -142,7 +142,7 @@ It also checks cancellation, verification and cleanup failures, no-op leave, and
 `test/package-claude-worktree-runtime.test.ts` exercises native Claude entry and CLI resume on macOS with a bounded sandbox and synthetic provider.
 It verifies one notice in the automatic post-entry/post-exit request, no duplicate turn, no replay on CLI resume, and no new notice after denied entry.
 Its prompted CLI resume does not prove automatic interactive `/resume`; that mode remains explicitly unsupported.
-`tools/worktree/tests/sessions.rs` checks the session protocol through its process boundary.
+`tools/worktree/tests/cases/sessions.rs`, included by `tests/cli.rs`, checks the session protocol through its process boundary.
 The package build bundles local Pi imports; the installed loader supplies its own SDK and TypeBox exports.
 Normal user/project discovery remains enabled.
 Building and testing never retarget installed links; installing these adapters into the live home requires separate approval.

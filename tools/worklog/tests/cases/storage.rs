@@ -161,7 +161,7 @@ fn failed_storage_and_corrupt_entries_fail_closed_without_dumping_content() {
 }
 
 #[test]
-fn lock_wait_is_bounded_and_a_released_lock_allows_recovery() {
+fn a_cli_writer_reports_success_and_preserves_history_after_external_lock_release() {
     let world = World::new();
     world.ok(&["note", "Before lock"]);
     let lock = fs::OpenOptions::new()
@@ -170,11 +170,26 @@ fn lock_wait_is_bounded_and_a_released_lock_allows_recovery() {
         .open(world.root.join(".lock"))
         .unwrap();
     lock.lock_exclusive().unwrap();
-    let started = std::time::Instant::now();
-    assert_eq!(world.fail(&["note", "Blocked"]).status.code(), Some(1));
-    assert!(started.elapsed() < std::time::Duration::from_secs(10));
+    // store_locking.rs proves contention/retry and timeout behavior directly.
+    // This CLI check makes no claim about when the child reaches acquisition.
+    let writer = world
+        .command(&["note", "Recovered"])
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .spawn()
+        .unwrap();
+    let before_release = fs::read_dir(world.root.join("events")).unwrap().count();
     FileExt::unlock(&lock).unwrap();
-    world.ok(&["note", "Recovered"]);
+    let output = writer.wait_with_output().unwrap();
+    assert_eq!(before_release, 1);
+    assert!(
+        output.status.success(),
+        "{}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    assert!(output.stderr.is_empty());
+    let entry: serde_json::Value = serde_json::from_slice(&output.stdout).unwrap();
+    assert_eq!(entry["entry"]["id"], 2);
     assert_eq!(world.ok(&["history"])["total"], 2);
 }
 

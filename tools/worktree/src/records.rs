@@ -103,7 +103,7 @@ impl Repository {
             return Ok(None);
         }
         for name in [&metadata.branch, &metadata.base] {
-            if !git::valid_branch(&self.root, name)? {
+            if !self.branch_names.valid(name)? {
                 return Ok(None);
             }
         }

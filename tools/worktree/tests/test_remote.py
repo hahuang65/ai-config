@@ -9,6 +9,7 @@ import unittest
 from unittest.mock import patch
 
 import test_cli
+from repository_fixture import INITIAL_REPOSITORIES
 from wt.repository import Repository, task_name
 
 
@@ -29,11 +30,7 @@ class GitFixture(unittest.TestCase):
         self.env.update(HOME=str(self.home), GIT_CONFIG_NOSYSTEM="1",
                         GIT_CONFIG_GLOBAL=str(self.home / "global.gitconfig"),
                         WT_ROOT=str(self.home / "trees"), GIT_TERMINAL_PROMPT="0")
-        self.git("init", "-b", "main")
-        self.git("config", "user.name", "Test User")
-        self.git("config", "user.email", "test@example.invalid")
-        self.git("config", "commit.gpgsign", "false")
-        self.git("commit", "--allow-empty", "-m", "Initialize fixture")
+        INITIAL_REPOSITORIES.prepare(self.repo, self.git)
 
     def record_path(self, tree):
         return Path(self.git("rev-parse", "--path-format=absolute", "--git-path", "wt.json", cwd=tree))

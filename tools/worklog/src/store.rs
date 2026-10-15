@@ -13,6 +13,7 @@ const MAX_ENTRY_BYTES: u64 = 32 * 1024;
 
 pub struct Store {
     root: PathBuf,
+    lock_timeout: Duration,
 }
 
 impl Store {
@@ -34,7 +35,10 @@ impl Store {
         if !root.is_absolute() {
             return Err(Error::usage("WL_ROOT must be an absolute directory path"));
         }
-        Ok(Self { root })
+        Ok(Self {
+            root,
+            lock_timeout: LOCK_TIMEOUT,
+        })
     }
 
     pub fn read(&self) -> Result<Log> {
@@ -66,13 +70,22 @@ impl Store {
         build: impl Fn(&Log) -> Result<Entry>,
         initialize: impl FnOnce(&Path) -> Result<()>,
     ) -> Result<Entry> {
+        self.append_observing_contention(build, initialize, || {})
+    }
+
+    fn append_observing_contention(
+        &self,
+        build: impl Fn(&Log) -> Result<Entry>,
+        initialize: impl FnOnce(&Path) -> Result<()>,
+        on_contention: impl FnMut(),
+    ) -> Result<Entry> {
         let mut preview = self.read()?;
         preview.apply(build(&preview)?)?;
         initialize(&self.root)?;
         let lock_path = self.root.join(".lock");
         check_regular_if_present(&lock_path)?;
         let lock = private_options().create(true).open(lock_path)?;
-        acquire_lock(&lock)?;
+        acquire_lock(&lock, self.lock_timeout, on_contention)?;
         let mut log = self.read()?;
         let entry = build(&log)?;
         log.apply(entry.clone())?;
@@ -138,15 +151,15 @@ fn finish_publish(events: &Path, pending: &Path, root: &Path) -> Result<()> {
     })
 }
 
-fn acquire_lock(file: &File) -> Result<()> {
+fn acquire_lock(file: &File, timeout: Duration, mut on_contention: impl FnMut()) -> Result<()> {
     let started = Instant::now();
     loop {
         match FileExt::try_lock_exclusive(file) {
             Ok(()) => return Ok(()),
-            Err(error) if error.kind() == std::io::ErrorKind::WouldBlock => (),
+            Err(error) if error.kind() == std::io::ErrorKind::WouldBlock => on_contention(),
             Err(error) => return Err(error.into()),
         }
-        if started.elapsed() >= LOCK_TIMEOUT {
+        if started.elapsed() >= timeout {
             return Err(Error::busy());
         }
         thread::sleep(LOCK_POLL);
@@ -212,6 +225,10 @@ fn ensure_directory_with(
 #[cfg(test)]
 #[path = "../tests/cases/store_initialization.rs"]
 mod initialization_tests;
+
+#[cfg(test)]
+#[path = "../tests/cases/store_locking.rs"]
+mod locking_tests;
 
 fn private_options() -> OpenOptions {
     let mut options = OpenOptions::new();

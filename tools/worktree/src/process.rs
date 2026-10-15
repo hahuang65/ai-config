@@ -37,6 +37,15 @@ pub struct Output {
 }
 
 pub fn run(cwd: &Path, arguments: &[&str], check: bool, seconds: u64) -> Result<Output> {
+    run_with_timeout(cwd, arguments, check, Duration::from_secs(seconds))
+}
+
+fn run_with_timeout(
+    cwd: &Path,
+    arguments: &[&str],
+    check: bool,
+    timeout: Duration,
+) -> Result<Output> {
     if interrupted() {
         return Err(Error::new("Interrupted"));
     }
@@ -45,7 +54,7 @@ pub fn run(cwd: &Path, arguments: &[&str], check: bool, seconds: u64) -> Result<
     let stderr = child.stderr.take().expect("piped stderr");
     let reader = thread::spawn(move || capture(stdout));
     let errors = thread::spawn(move || std::io::copy(&mut { stderr }, &mut std::io::sink()));
-    let result = wait(&mut child, &reader, &errors, seconds);
+    let result = wait(&mut child, &reader, &errors, timeout);
     if result.is_err() {
         terminate_group(&mut child)?;
     }
@@ -103,9 +112,9 @@ fn wait(
     child: &mut Child,
     reader: &JoinHandle<std::io::Result<Vec<u8>>>,
     errors: &JoinHandle<std::io::Result<u64>>,
-    seconds: u64,
+    timeout: Duration,
 ) -> Result<i32> {
-    let deadline = Instant::now() + Duration::from_secs(seconds);
+    let deadline = Instant::now() + timeout;
     loop {
         if interrupted() || Instant::now() >= deadline {
             return Err(Error::new("Interrupted or timed out"));
@@ -182,108 +191,5 @@ fn capture(mut pipe: impl Read) -> std::io::Result<Vec<u8>> {
 }
 
 #[cfg(test)]
-mod tests {
-    use super::run;
-    use std::path::Path;
-    use std::time::{Duration, Instant};
-
-    #[test]
-    fn subprocess_deadlines_also_cover_inherited_output_pipes() {
-        let started = Instant::now();
-        // Static shell fixture; production execution never uses a shell.
-        let result = run(Path::new("/"), &["sh", "-c", "sleep 2 & exit 0"], false, 1);
-        assert!(result.is_err());
-        assert!(started.elapsed() < Duration::from_millis(1800));
-    }
-
-    #[test]
-    fn cancellation_prevents_a_descendant_from_writing_after_the_lock_is_released() {
-        let directory = tempfile::tempdir().unwrap();
-        let marker = directory.path().join("late-write");
-        // The leader exits immediately while its child keeps the output pipe open.
-        let result = run(
-            Path::new("/"),
-            &[
-                "sh",
-                "-c",
-                "(sleep 1.2; printf late > \"$1\") & exit 0",
-                "sh",
-                marker.to_str().unwrap(),
-            ],
-            false,
-            1,
-        );
-        assert!(result.is_err());
-        std::thread::sleep(Duration::from_millis(600));
-        assert!(
-            !marker.exists(),
-            "a cancelled command left a live descendant"
-        );
-    }
-
-    #[test]
-    fn successful_leader_exit_stops_redirected_descendants_before_returning() {
-        let directory = tempfile::tempdir().unwrap();
-        let marker = directory.path().join("late-write");
-        let output = run(
-            Path::new("/"),
-            &[
-                "sh",
-                "-c",
-                "(sleep 0.4; printf late > \"$1\") >/dev/null 2>&1 & exit 0",
-                "sh",
-                marker.to_str().unwrap(),
-            ],
-            true,
-            2,
-        );
-        assert_eq!(output.unwrap().code, 0);
-        std::thread::sleep(Duration::from_millis(650));
-        assert!(
-            !marker.exists(),
-            "a completed command left a live descendant"
-        );
-    }
-
-    #[test]
-    fn failed_leader_exit_stops_redirected_descendants_before_returning() {
-        let directory = tempfile::tempdir().unwrap();
-        let marker = directory.path().join("late-write");
-        let result = run(
-            Path::new("/"),
-            &[
-                "sh",
-                "-c",
-                "(sleep 0.4; printf late > \"$1\") >/dev/null 2>&1 & exit 7",
-                "sh",
-                marker.to_str().unwrap(),
-            ],
-            true,
-            2,
-        );
-        assert_eq!(
-            result.unwrap_err().to_string(),
-            "sh -c failed (exit 7). Check repository access and state, then retry."
-        );
-        std::thread::sleep(Duration::from_millis(650));
-        assert!(!marker.exists(), "a failed command left a live descendant");
-    }
-
-    #[test]
-    fn provider_errors_never_echo_stdout_or_stderr() {
-        let result = run(
-            Path::new("/"),
-            &[
-                "sh",
-                "-c",
-                "printf fixture-secret; printf fixture-secret >&2; exit 1",
-            ],
-            true,
-            2,
-        );
-        assert_eq!(
-            result.unwrap_err().to_string(),
-            "sh -c failed (exit 1). Check repository access and state, then retry."
-        );
-    }
-}
+#[path = "../tests/support/process.rs"]
+mod tests;

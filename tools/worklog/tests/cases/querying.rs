@@ -16,9 +16,7 @@ fn empty_queries_and_help_do_not_create_state() {
 #[test]
 fn queries_are_bounded_with_explicit_omission_and_period_filters() {
     let world = World::new();
-    for index in 0..23 {
-        world.ok(&["note", &format!("Reminder {index}")]);
-    }
+    world.seed_notes(23);
     let page = world.ok(&["list"]);
     assert_eq!(
         (

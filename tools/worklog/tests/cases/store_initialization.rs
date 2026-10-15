@@ -31,6 +31,7 @@ fn interrupted_first_initializer_is_synced_by_the_following_writer() {
     let home = tempfile::tempdir().unwrap();
     let store = Store {
         root: home.path().join("state"),
+        lock_timeout: LOCK_TIMEOUT,
     };
     let interrupted = store.append_with_initializer(note, |path| {
         ensure_directory_with(path, create_private_directory, interrupted_sync)
@@ -59,6 +60,7 @@ fn a_create_race_is_synced_before_the_writer_acknowledges_publication() {
     let home = tempfile::tempdir().unwrap();
     let store = Store {
         root: home.path().join("state"),
+        lock_timeout: LOCK_TIMEOUT,
     };
     let mut synced = Vec::new();
     let entry = store
@@ -81,6 +83,7 @@ fn every_writer_rejects_a_parent_sync_failure_without_publishing() {
         let home = tempfile::tempdir().unwrap();
         let store = Store {
             root: home.path().join("state"),
+            lock_timeout: LOCK_TIMEOUT,
         };
         if existing {
             create_private_directory(&store.root).unwrap();

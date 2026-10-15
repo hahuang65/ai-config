@@ -1,5 +1,8 @@
 mod support;
 
+#[path = "cases/fixtures.rs"]
+mod fixtures;
+
 #[path = "cases/lifecycle.rs"]
 mod lifecycle;
 #[path = "cases/projects.rs"]

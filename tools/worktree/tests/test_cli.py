@@ -7,6 +7,8 @@ import sys
 import tempfile
 import unittest
 
+from repository_fixture import INITIAL_REPOSITORIES
+
 CLI = Path(__file__).resolve().parents[1] / "bin" / "wt"
 
 
@@ -20,13 +22,7 @@ class WorktreeTest(unittest.TestCase):
         self.env = {**os.environ, "HOME": str(self.home), "GIT_CONFIG_NOSYSTEM": "1",
                     "GIT_CONFIG_GLOBAL": os.devnull, "WT_ROOT": str(self.home / "trees"),
                     "GIT_TERMINAL_PROMPT": "0"}
-        self.git("init", "-b", "main")
-        self.git("config", "user.name", "Test User")
-        self.git("config", "user.email", "test@example.invalid")
-        self.git("config", "commit.gpgsign", "false")
-        (self.repo / ".gitignore").write_text("generated/\n")
-        self.git("add", ".gitignore")
-        self.git("commit", "-m", "TEST: Initialize disposable repository")
+        INITIAL_REPOSITORIES.prepare(self.repo, self.git, ignored=True)
 
     def git(self, *args, cwd=None, ok=True):
         result = subprocess.run(["git", "-C", str(cwd or self.repo), *args],

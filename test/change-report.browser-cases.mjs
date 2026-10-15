@@ -1,7 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { rm } from 'node:fs/promises';
-import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { fixture, execute, changeBinary, modelServer, configureModel, repository, calls, answer } from './fixtures/reviewer.mjs';
 
@@ -20,7 +19,7 @@ export function registerChangeReportCase(firefox) {
         '--intent', 'Replace before with after', '--provider', 'reviewer-fixture', '--model', 'fixture-model', '--thinking', 'off', '--json'],
         { cwd: f.root, env: f.env, timeout: 20000, maxBuffer: 1024 * 1024 });
       const report = JSON.parse(stdout).report;
-      browser = await firefox(join(f.root, 'firefox'));
+      browser = await firefox();
       await browser.navigate(pathToFileURL(report).href);
       const desktop = await browser.evaluate(`return {
         active: document.querySelectorAll('script,img,iframe,form,link').length,
@@ -39,9 +38,11 @@ export function registerChangeReportCase(firefox) {
       await browser.narrow();
       assert.equal(await browser.evaluate('return document.documentElement.scrollWidth > document.documentElement.clientWidth;'), false);
     } finally {
-      await browser?.close();
-      server.closeAllConnections();
-      await new Promise(resolve => server.close(() => resolve()));
+      try { await browser?.close(); }
+      finally {
+        server.closeAllConnections();
+        await new Promise(resolve => server.close(() => resolve()));
+      }
     }
   });
 }

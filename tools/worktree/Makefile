@@ -1,4 +1,5 @@
 .PHONY: build test reference-test rust-test lint
+WT_TEST_JOBS ?= 4
 
 build:
 	cargo build --release --locked
@@ -11,7 +12,8 @@ reference-test:
 rust-test:
 	cargo test --locked
 	cargo build --locked
-	python tests/rust_parity.py
+	python -m unittest discover -s tests -p parallel_runner_tests.py -v
+	python tests/rust_parity.py --jobs $(WT_TEST_JOBS)
 
 lint:
 	cargo fmt --check

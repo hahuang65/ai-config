@@ -1,11 +1,12 @@
 import { spawn } from 'node:child_process';
 import { mkdir } from 'node:fs/promises';
 import { setTimeout as sleep } from 'node:timers/promises';
+import { stopProcessGroup } from './firefox-process.mjs';
 
 const TIMEOUT = 15000;
 
 // Standalone WebDriver BiDi fixture; no review runtime or browser package imports.
-export async function firefox(profile) {
+export async function launchFirefox(profile) {
   await mkdir(profile, { recursive: true });
   const child = spawn(process.env.FIREFOX_BIN || '/Applications/Firefox.app/Contents/MacOS/firefox',
     ['--headless', '--no-remote', '--profile', profile, '--remote-debugging-port', '0', 'about:blank'],
@@ -13,31 +14,18 @@ export async function firefox(profile) {
   let socket;
   const close = async () => {
     socket?.close();
-    try { process.kill(-child.pid, 'SIGTERM'); } catch {}
-    await sleep(300);
-    try { process.kill(-child.pid, 'SIGKILL'); } catch {}
+    await stopProcessGroup(child.pid);
   };
   try {
     const endpoint = await discover(child);
     socket = await connect(`${endpoint}/session`);
     const request = requester(socket);
     await request('session.new', { capabilities: { alwaysMatch: {} } });
-    const { context } = await request('browsingContext.create', { type: 'tab' });
-    await request('browsingContext.setViewport', { context, viewport: { width: 1280, height: 900 } });
-    return {
-      close,
-      navigate: url => request('browsingContext.navigate', { context, url, wait: 'complete' }),
-      reload: () => request('browsingContext.reload', { context, wait: 'complete' }),
-      evaluate: async expression => {
-        const response = await request('script.evaluate', {
-          expression: `(async () => { ${expression} })().then(value => JSON.stringify(value))`,
-          target: { context }, awaitPromise: true,
-        });
-        if (response.type !== 'success') throw new Error('Firefox evaluation failed');
-        return JSON.parse(response.result.value);
-      },
-      narrow: () => request('browsingContext.setViewport', { context, viewport: { width: 420, height: 900 } }),
-    };
+    const contexts = async () => (await request('browsingContext.getTree', { maxDepth: 0 })).contexts;
+    const initial = await contexts();
+    if (initial.length !== 1 || initial[0].url !== 'about:blank') throw new Error('Expected one blank startup tab');
+    // Keep the pristine default tab as an anchor; cases use disposable user contexts.
+    return { request, close, processId: child.pid };
   } catch {
     await close();
     throw new Error('Firefox fixture could not start');

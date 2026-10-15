@@ -280,42 +280,5 @@ fn collected(status: ExitStatus, stdout: Reader, stderr: Reader) -> Result<Outpu
 }
 
 #[cfg(test)]
-mod tests {
-    use super::run;
-    use std::{process::Command, thread, time::Duration};
-
-    #[test]
-    fn completed_reviewer_stops_redirected_descendants_before_returning() {
-        let directory = tempfile::tempdir().unwrap();
-        let marker = directory.path().join("late-write");
-        let mut command = Command::new("sh");
-        command.args([
-            "-c",
-            "(sleep 0.4; printf late > \"$1\") >/dev/null 2>&1 & exit 0",
-            "sh",
-            marker.to_str().unwrap(),
-        ]);
-        assert!(run(command, 2).is_ok());
-        thread::sleep(Duration::from_millis(650));
-        assert!(
-            !marker.exists(),
-            "a completed reviewer left a live descendant"
-        );
-    }
-
-    #[test]
-    fn failed_reviewer_stops_redirected_descendants_before_returning() {
-        let directory = tempfile::tempdir().unwrap();
-        let marker = directory.path().join("late-write");
-        let mut command = Command::new("sh");
-        command.args([
-            "-c",
-            "(sleep 0.4; printf late > \"$1\") >/dev/null 2>&1 & exit 7",
-            "sh",
-            marker.to_str().unwrap(),
-        ]);
-        assert!(run(command, 2).is_err());
-        thread::sleep(Duration::from_millis(650));
-        assert!(!marker.exists(), "a failed reviewer left a live descendant");
-    }
-}
+#[path = "../tests/support/reviewer_process.rs"]
+mod tests;

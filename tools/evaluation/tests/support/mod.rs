@@ -2,6 +2,7 @@
 pub mod change;
 pub mod consult;
 pub mod package_fixture;
+pub mod reviewer;
 use serde_json::{Value, json};
 use std::fs;
 use std::os::unix::fs::PermissionsExt;

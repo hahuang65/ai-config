@@ -25,6 +25,7 @@ pub struct Repository {
     pub directory: PathBuf,
     pub remote: Option<String>,
     pub base: String,
+    pub branch_names: git::BranchNames,
 }
 
 impl Repository {
@@ -52,20 +53,11 @@ impl Repository {
             ));
         }
         let worktree_root = worktree_root(&cwd, &home)?;
-        let configured = git::config(&root, "wt.project")?;
-        let name = if configured.is_empty() {
-            text::from_os(root.file_name().unwrap_or_default())
-        } else {
-            configured
-        };
-        if !task_name(&name) {
-            return Err(Error::new(
-                "Set git config wt.project to a short, safe project name.",
-            ));
-        }
+        let name = project_name(&root)?;
         let directory = worktree_root.join(&name);
         let remote = find_remote(&root)?;
-        let base = find_base(&root, remote.as_deref())?;
+        let branch_names = git::BranchNames::new(&root);
+        let base = find_base(&root, remote.as_deref(), &branch_names)?;
         Ok(Self {
             cwd,
             common,
@@ -75,6 +67,7 @@ impl Repository {
             directory,
             remote,
             base,
+            branch_names,
         })
     }
 
@@ -217,7 +210,22 @@ fn find_remote(root: &Path) -> Result<Option<String>> {
     ))
 }
 
-fn find_base(root: &Path, remote: Option<&str>) -> Result<String> {
+fn project_name(root: &Path) -> Result<String> {
+    let configured = git::config(root, "wt.project")?;
+    let name = if configured.is_empty() {
+        text::from_os(root.file_name().unwrap_or_default())
+    } else {
+        configured
+    };
+    if !task_name(&name) {
+        return Err(Error::new(
+            "Set git config wt.project to a short, safe project name.",
+        ));
+    }
+    Ok(name)
+}
+
+fn find_base(root: &Path, remote: Option<&str>, names: &git::BranchNames) -> Result<String> {
     let configured = git::config(root, "wt.base")?;
     let base = if !configured.is_empty() {
         configured
@@ -245,7 +253,7 @@ fn find_base(root: &Path, remote: Option<&str>) -> Result<String> {
         }
         candidates[0].into()
     };
-    if !git::valid_branch(root, &base)? {
+    if !names.valid(&base)? {
         return Err(Error::new(
             "wt.base must name a branch, not an arbitrary revision.",
         ));

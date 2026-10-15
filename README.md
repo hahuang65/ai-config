@@ -64,6 +64,9 @@ make test
 
 `make build` creates the Pi guard, status-footer, and worktree bundles and Rust release binaries offline; it **does not install**.
 Tests use disposable homes and fake providers, not the live harness state.
+Use the [focused test targets](test/README.md#focused-checks) during iteration instead of rerunning unrelated suites; `make test` and the commit hook still run the complete gate.
+WT parity uses at most four isolated case workers; `WT_TEST_JOBS=1` selects serial execution without changing coverage.
+The Pi and native Claude runtime files each run separately with at most two concurrent cases; those groups never overlap, and other Bun tests and browser integration stay serial.
 
 ## Install
 

@@ -3,6 +3,8 @@ use std::path::{Path, PathBuf};
 use std::process::{Command, Output};
 use tempfile::TempDir;
 
+mod repository;
+
 pub struct World {
     pub home: TempDir,
     pub repo: PathBuf,
@@ -14,9 +16,26 @@ impl World {
         let home = tempfile::tempdir().unwrap();
         let repo = home.path().join("project");
         std::fs::create_dir(&repo).unwrap();
-        git(&repo, &["init", "-q"]);
+        repository::initialize(&repo);
         let root = home.path().join("state");
         Self { home, repo, root }
+    }
+
+    // Query fixtures need valid history, not repeated process-level write checks.
+    // Derive its schema/project/timestamp from one real write, then copy only data.
+    pub fn seed_notes(&self, count: u64) {
+        assert!(count > 0 && !self.root.exists());
+        let mut entry = self.ok(&["note", "Reminder 0"])["entry"].clone();
+        for id in 2..=count {
+            entry["id"] = id.into();
+            entry["task"] = id.into();
+            entry["text"] = format!("Reminder {}", id - 1).into();
+            std::fs::write(
+                self.root.join("events").join(format!("{id:020}.json")),
+                serde_json::to_vec(&entry).unwrap(),
+            )
+            .unwrap();
+        }
     }
 
     pub fn command(&self, args: &[&str]) -> Command {

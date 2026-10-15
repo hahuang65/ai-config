@@ -1,6 +1,7 @@
 //! Git inventory and exclusive repository operation locks.
 use crate::{Error, Result, process, text};
-use std::collections::BTreeMap;
+use std::cell::RefCell;
+use std::collections::{BTreeMap, BTreeSet};
 use std::fs::{File, OpenOptions};
 use std::os::fd::AsRawFd;
 use std::os::unix::fs::OpenOptionsExt;
@@ -118,9 +119,55 @@ pub fn repository_lock(common: &Path) -> Result<File> {
     Ok(lock)
 }
 
-pub fn valid_branch(cwd: &Path, name: &str) -> Result<bool> {
-    Ok(!name.is_empty()
-        && !name.starts_with('-')
-        && text::encodable(name)
-        && result(cwd, &["check-ref-format", &format!("refs/heads/{name}")])?.code == 0)
+const MAX_BRANCH_NAMES: usize = 64;
+const MAX_BRANCH_NAME_BYTES: usize = 1024;
+
+// One repository in one CLI invocation; never retained across commands.
+// Only successful, pure syntax checks are reused, not mutable Git evidence.
+pub struct BranchNames {
+    root: PathBuf,
+    names: RefCell<BTreeSet<String>>,
 }
+
+impl BranchNames {
+    pub fn new(root: &Path) -> Self {
+        Self {
+            root: root.to_owned(),
+            names: RefCell::default(),
+        }
+    }
+
+    pub fn valid(&self, name: &str) -> Result<bool> {
+        self.validate(name, || {
+            let output = result(
+                &self.root,
+                &["check-ref-format", &format!("refs/heads/{name}")],
+            )?;
+            Ok(output.code == 0)
+        })
+    }
+
+    fn validate(&self, name: &str, check: impl FnOnce() -> Result<bool>) -> Result<bool> {
+        if name.is_empty() || name.starts_with('-') || !text::encodable(name) {
+            return Ok(false);
+        }
+        if process::interrupted() {
+            return Err(Error::new("Interrupted"));
+        }
+        if self.names.borrow().contains(name) {
+            return Ok(true);
+        }
+        let valid = check()?;
+        if valid
+            && name.len() <= MAX_BRANCH_NAME_BYTES
+            && self.names.borrow().len() < MAX_BRANCH_NAMES
+        {
+            self.names.borrow_mut().insert(name.to_owned());
+        }
+        Ok(valid)
+    }
+}
+
+#[cfg(test)]
+#[path = "../tests/support/branch_names.rs"]
+mod branch_name_tests;
