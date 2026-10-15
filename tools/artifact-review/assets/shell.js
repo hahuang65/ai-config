@@ -17,6 +17,8 @@ let busy = false;
 let queued = [];
 let target = null;
 let pending = null;
+const findings = new FindingControls(frame, (action, id) => submit(action, id));
+const annotationPopover = new AnnotationPopover(frame);
 
 function notice(message) { $('#notice').textContent = message; }
 function byteLength(text) { return new TextEncoder().encode(text).length; }
@@ -73,30 +75,34 @@ function controls() {
   if (status === 'approved') notice(unapproved
     ? 'Displayed version is not approved. Open another review.'
     : 'Review approved. Later file changes need another review.');
+  const findingNotice = findings.controls(closed || busy || !!pending, ready, status);
+  if (findingNotice) notice(findingNotice);
+  annotationPopover.update(target);
 }
 
-function showTarget() {
-  $('#annotation-editor').hidden = !target;
+function showTarget(anchor) {
   $('#annotation-target').textContent = target ? `${target.kind === 'selection' ? 'Selected text' : 'Element'}: ${target.text}` : 'Annotation';
+  annotationPopover.update(target, anchor);
 }
 
-function chooseTarget(next) {
+function chooseTarget(next, anchor) {
   if (busy || pending || status !== 'open') return;
   if (target && $('#annotation-comment').value.trim()) {
     notice('Add or cancel the current annotation first.');
     return;
   }
   target = next;
-  showTarget();
+  showTarget(anchor);
   persist();
-  $('#annotation-comment').focus();
+  $('#annotation-comment').focus({ preventScroll: true });
 }
 
 function selector(element) {
   if (element.id) return excerpt(`#${CSS.escape(element.id)}`, 1000);
   const parts = [];
   while (element?.tagName && parts.length < 8) {
-    const siblings = [...(element.parentElement?.children || [])].filter(node => node.tagName === element.tagName);
+    if (!element.parentElement) { parts.unshift(element.tagName.toLowerCase()); break; }
+    const siblings = [...element.parentElement.children].filter(node => node.tagName === element.tagName);
     parts.unshift(`${element.tagName.toLowerCase()}:nth-of-type(${siblings.indexOf(element) + 1})`);
     element = element.parentElement;
   }
@@ -105,19 +111,22 @@ function selector(element) {
 
 function attachAnnotations(revision) {
   const doc = frame.contentDocument;
+  annotationPopover.attach();
   doc.addEventListener('click', event => {
+    if (event.target.closest('[data-finding-controls]')) return;
     event.preventDefault();
     if (doc.getSelection()?.toString().trim()) return;
     const element = event.target.closest('body *');
     if (!element) return;
-    chooseTarget({ kind: 'element', target: selector(element), text: excerpt(element.textContent.trim(), MAX_TEXT), revision });
+    chooseTarget({ kind: 'element', target: selector(element), text: excerpt(element.textContent.trim(), MAX_TEXT), revision }, element);
   }, true);
   doc.addEventListener('submit', event => event.preventDefault(), true);
-  doc.addEventListener('mouseup', () => {
+  doc.addEventListener('mouseup', event => {
+    if (event.target.closest?.('[data-finding-controls]')) return;
     const selection = doc.getSelection();
     if (!selection?.toString().trim()) return;
     const element = selection.anchorNode.nodeType === Node.ELEMENT_NODE ? selection.anchorNode : selection.anchorNode.parentElement;
-    chooseTarget({ kind: 'selection', target: selector(element), text: excerpt(selection.toString(), MAX_TEXT), revision });
+    chooseTarget({ kind: 'selection', target: selector(element), text: excerpt(selection.toString(), MAX_TEXT), revision }, selection.getRangeAt(0).cloneRange());
   });
 }
 
@@ -168,7 +177,9 @@ function renderEvent(event) {
   row.className = `message ${event.action === 'reply' ? 'agent' : 'user'}`;
   const title = document.createElement('strong');
   const labels = { feedback: 'Feedback', approve: 'Approved', decline: 'Declined', reply: 'Agent', reopen: 'New review' };
-  title.textContent = labels[event.action] || 'Review';
+  title.textContent = event.finding
+    ? `${event.finding} · ${event.action === 'accept' ? 'Accepted — repair authorized' : 'Rejected — no repair authorized'}`
+    : labels[event.action] || 'Review';
   const message = document.createElement('p');
   message.textContent = event.message;
   row.append(title, message);
@@ -197,6 +208,7 @@ async function refreshEvents() {
     }
     status = page.status;
     approvedRevision = page.approved_revision;
+    findings.update(page.finding_review);
     more = page.more;
   }
   if (status === 'declined') notice('Review ended without approval.');
@@ -244,7 +256,7 @@ async function refresh() {
   setTimeout(refresh, RELOAD_MS);
 }
 
-async function submit(action) {
+async function submit(action, finding) {
   if (busy || pending || status !== 'open') return;
   try {
     const draft = annotationDraft();
@@ -252,7 +264,8 @@ async function submit(action) {
     const message = $('#message').value.trim();
     if (annotations.length > MAX_ANNOTATIONS || byteLength(message) > 8000) throw new Error('Feedback exceeds the input limit.');
     if (action === 'feedback' && !message && !annotations.length) throw new Error('Write feedback before sending.');
-    pending = { id: crypto.randomUUID(), action, revision: frame.dataset.revision, message, annotations };
+    pending = { id: crypto.randomUUID(), action, revision: frame.dataset.revision, message, annotations,
+      ...(finding ? { finding } : {}) };
     persist();
   } catch (error) { pending = null; notice(error.message); return; }
   await sendPending();

@@ -20,6 +20,7 @@ The installed package provides:
 - Curated shared skills under `skills/`; the optional `review-change` skill selects the current harness's independently restricted reviewer.
 - The evaluation's specialist roles: API designer, change reviewer, database reviewer, fact checker, and frontend architect.
 - Bundled `wt`/`worktree` and `wl`/`worklog` commands, plus the Rust browser-review and change-review commands needed by the retained skills.
+- Change-review annotations and per-finding Accept/Reject controls in the artifact-review shell: Accept authorizes that finding's repair only; commits and publication remain separate.
 
 Both status displays place the directory, Git branch, and available session name on the first row, with token/cache usage, cost, context, and model/thinking on the second.
 Claude uses the current [status-line input](https://code.claude.com/docs/en/statusline): `session_name`, `effort.level`, and `thinking.enabled`, retaining the older `thinking_level` fallback.

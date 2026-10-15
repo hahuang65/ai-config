@@ -60,6 +60,14 @@ _Avoid_: Context artifacts, context docs, glossary files.
 A durable explanation of a hard-to-reverse, surprising choice that resulted from a real trade-off.
 Local destinations use Architectural Decision Records under `docs/adr/`; Confluence destinations use linked `D-NNN` entries and cohesive Decision details.
 
+**Finding decision**:
+A human's Accept or Reject for one finding in a specific retained change-review report.
+Accept authorizes repairing that finding; Reject and undecided findings authorize no repairs.
+Decisions and annotations are stored separately from the immutable report and remain bound to its revision and retained record.
+A decision never authorizes commits, installation, delivery, or publication, and rejection is not evidence of a fix.
+An all-decided report is not blanket approval of the code.
+This is the current review-change workflow, distinct from the historical build-pipeline decision forms below.
+
 **Historical memory**:
 An optional persistent record of prior sessions, preferences, lessons, and observations that can help locate evidence but does not define current project truth.
 A workflow verifies a useful record against its current canonical source before use, and the absence of the memory service never blocks work.

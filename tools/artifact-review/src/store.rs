@@ -4,7 +4,7 @@ use rusqlite::{Connection, OptionalExtension, params};
 
 const MAX_EVENTS: u64 = 10_000;
 
-pub struct Store(Connection);
+pub struct Store(pub(crate) Connection);
 
 impl Store {
     pub fn open(paths: &Paths) -> Result<Self> {
@@ -17,6 +17,9 @@ impl Store {
              CREATE TABLE IF NOT EXISTS events (
                cursor INTEGER PRIMARY KEY AUTOINCREMENT,
                id TEXT NOT NULL UNIQUE, payload TEXT NOT NULL, action TEXT NOT NULL
+             );
+             CREATE TABLE IF NOT EXISTS configuration (
+               id INTEGER PRIMARY KEY CHECK(id=1), findings TEXT NOT NULL
              );",
             )
             .map_err(|_| "Cannot initialize event history.")?;
@@ -53,6 +56,7 @@ impl Store {
             revision: String::new(),
             message: String::new(),
             annotations: vec![],
+            finding: None,
         };
         self.append(&submission)?;
         Ok(())
@@ -80,6 +84,7 @@ impl Store {
         if submission.action != "reply" && self.status()? != "open" {
             return Err("Review is closed. Use open FILE for another review.");
         }
+        self.validate_finding_decision(paths, submission)?;
         if submission.action == "approve" && model::snapshot(paths)?.revision != submission.revision
         {
             return Err("Artifact changed. Review the current version before approval.");
@@ -132,11 +137,19 @@ impl Store {
             events.push(Event { cursor, submission });
         }
         let cursor = events.last().map_or(cursor, |event| event.cursor);
-        let (status, approved_revision) = self.review_state()?;
+        let (mut status, approved_revision) = self.review_state()?;
         let current_revision = model::snapshot(paths)
             .ok()
             .map(|snapshot| snapshot.revision);
         let needs_review = approved_revision.is_none() || current_revision != approved_revision;
+        let finding_review = self.finding_review(current_revision.as_deref())?;
+        if status == "open"
+            && finding_review
+                .as_ref()
+                .is_some_and(|review| review.complete())
+        {
+            status = "decided".into();
+        }
         Ok(Page {
             cursor,
             status,
@@ -145,6 +158,7 @@ impl Store {
             needs_review,
             events,
             more: cursor < latest,
+            finding_review,
         })
     }
 }

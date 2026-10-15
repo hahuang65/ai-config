@@ -76,38 +76,47 @@ pub async fn serve(paths: Paths) -> Result<()> {
     Ok(())
 }
 
+const ASSETS: &[(&str, &str, &str)] = &[
+    (
+        "/",
+        "text/html; charset=utf-8",
+        include_str!("../assets/index.html"),
+    ),
+    (
+        "/shell.js",
+        "text/javascript; charset=utf-8",
+        include_str!("../assets/shell.js"),
+    ),
+    (
+        "/shell.css",
+        "text/css; charset=utf-8",
+        include_str!("../assets/shell.css"),
+    ),
+    (
+        "/findings.js",
+        "text/javascript; charset=utf-8",
+        include_str!("../assets/findings.js"),
+    ),
+    (
+        "/annotations.js",
+        "text/javascript; charset=utf-8",
+        include_str!("../assets/annotations.js"),
+    ),
+];
+
 fn routes() -> Router<Service> {
-    Router::new()
-        .route(
-            "/",
-            get(|| async {
-                asset(
-                    "text/html; charset=utf-8",
-                    include_str!("../assets/index.html"),
-                )
-            }),
-        )
-        .route(
-            "/shell.js",
-            get(|| async {
-                asset(
-                    "text/javascript; charset=utf-8",
-                    include_str!("../assets/shell.js"),
-                )
-            }),
-        )
-        .route(
-            "/shell.css",
-            get(|| async {
-                asset(
-                    "text/css; charset=utf-8",
-                    include_str!("../assets/shell.css"),
-                )
-            }),
-        )
+    let mut router = Router::new();
+    for &(path, content_type, source) in ASSETS {
+        router = router.route(
+            path,
+            get(move || async move { asset(content_type, source) }),
+        );
+    }
+    router
         .route("/snapshot", get(read_snapshot))
         .route("/events", get(events))
         .route("/submit", post(submit))
+        .route("/findings", post(configure_findings))
         .route("/reopen", post(reopen))
         .route("/stop", post(stop))
 }
@@ -132,7 +141,9 @@ fn authorize(
     if header("origin").is_some_and(|origin| origin != service.origin) {
         return Err((StatusCode::FORBIDDEN, "Origin is not allowed."));
     }
-    let public = ["/", "/shell.js", "/shell.css"].contains(&request.uri().path());
+    let public = ASSETS
+        .iter()
+        .any(|(path, _, _)| *path == request.uri().path());
     let authorized =
         header("authorization") == Some(format!("Bearer {}", service.capability).as_str());
     if !public && !authorized {
@@ -227,6 +238,27 @@ async fn submit(
         .submit(&service.paths, &submission)
     {
         Ok(cursor) => Json(json!({"cursor": cursor})).into_response(),
+        Err(message) => failure(StatusCode::CONFLICT, message),
+    }
+}
+
+async fn configure_findings(
+    State(service): State<Service>,
+    body: std::result::Result<
+        Json<crate::findings::Binding>,
+        axum::extract::rejection::JsonRejection,
+    >,
+) -> Response {
+    let Ok(Json(binding)) = body else {
+        return failure(StatusCode::BAD_REQUEST, "Invalid finding configuration.");
+    };
+    match service
+        .store
+        .lock()
+        .expect("store lock")
+        .configure_findings(&service.paths, &binding)
+    {
+        Ok(()) => Json(json!({"status": "configured"})).into_response(),
         Err(message) => failure(StatusCode::CONFLICT, message),
     }
 }

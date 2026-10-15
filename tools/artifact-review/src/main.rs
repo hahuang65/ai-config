@@ -1,4 +1,6 @@
 mod client;
+mod finding_store;
+mod findings;
 mod images;
 mod model;
 mod paths;
@@ -28,6 +30,9 @@ enum Operation {
         /// Start the server without launching a browser. Never prints the capability.
         #[arg(long)]
         no_browser: bool,
+        /// Review each finding from this matching change-review report JSON.
+        #[arg(long)]
+        findings: Option<PathBuf>,
     },
     /// Wait in the foreground; replay events after a saved cursor (no destructive reads).
     Poll {
@@ -89,9 +94,21 @@ fn execute(arguments: Arguments) -> Result<Option<serde_json::Value>> {
         | Operation::Stop { file }
         | Operation::Serve { file } => file,
     };
+    let binding = match &arguments.command {
+        Operation::Open {
+            findings: Some(record),
+            ..
+        } => Some(findings::Binding::read(record)?),
+        _ => None,
+    };
+    if let Some(binding) = &binding
+        && paths::hash(paths::read_artifact(file)?.as_bytes()) != binding.revision
+    {
+        return Err("Findings report does not match the artifact revision.");
+    }
     let paths = Paths::resolve(file)?;
     let output = match arguments.command {
-        Operation::Open { no_browser, .. } => client::open(&paths, no_browser)?,
+        Operation::Open { no_browser, .. } => client::open(&paths, no_browser, binding.as_ref())?,
         Operation::Poll {
             cursor,
             timeout,

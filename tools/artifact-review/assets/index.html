@@ -5,24 +5,23 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Review artifact</title>
   <link rel="stylesheet" href="/shell.css">
+  <script src="/findings.js" defer></script>
+  <script src="/annotations.js" defer></script>
   <script src="/shell.js" defer></script>
 </head>
 <body data-status="open">
   <header class="toolbar"><strong>Review artifact</strong><span id="connection">Connecting…</span></header>
   <main class="layout">
     <section class="artifact-panel" aria-label="Document">
-      <p class="hint">Click an element or select text to comment. Document scripts and external resources are disabled.</p>
+      <p class="hint">Click an element or select text to comment. Document scripts and external resources are disabled.
+        <span id="finding-policy" hidden>Accept authorizes repairing that finding; Reject and undecided findings authorize nothing. Neither action authorizes commits or publication.</span>
+      </p>
       <iframe id="artifact" title="Artifact snapshot" sandbox="allow-same-origin" referrerpolicy="no-referrer"></iframe>
     </section>
     <aside class="conversation" aria-label="Feedback panel">
       <h1>Feedback</h1>
       <div id="messages" role="log" aria-label="Review conversation"></div>
       <div id="queued" aria-label="Unsent annotations"></div>
-      <section id="annotation-editor" hidden>
-        <label for="annotation-comment" id="annotation-target">Annotation</label>
-        <textarea id="annotation-comment" maxlength="4000" placeholder="Comment on this target"></textarea>
-        <div class="annotation-actions"><button id="add-annotation">Add annotation</button><button id="cancel-annotation">Cancel</button></div>
-      </section>
       <div class="composer">
         <label for="message">General feedback</label>
         <textarea id="message" maxlength="8000" placeholder="What should change?"></textarea>
@@ -36,5 +35,13 @@
       </div>
     </aside>
   </main>
+  <div id="annotation-highlight" aria-hidden="true" hidden></div>
+  <section id="annotation-editor" role="dialog" aria-labelledby="annotation-heading" hidden>
+    <h2 id="annotation-heading">Add a comment</h2>
+    <label for="annotation-comment" id="annotation-target">Annotation</label>
+    <p id="annotation-position-note" role="status" hidden></p>
+    <textarea id="annotation-comment" maxlength="4000" placeholder="Comment on this target"></textarea>
+    <div class="annotation-actions"><button id="add-annotation">Add annotation</button><button id="cancel-annotation">Cancel</button></div>
+  </section>
 </body>
 </html>

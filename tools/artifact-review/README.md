@@ -46,15 +46,73 @@ Pages contain at most 50 events; use the returned cursor to continue while `more
 Save the cursor only after processing the returned events.
 Interrupted waits do not consume events; retry with the last processed cursor.
 Empty events with `status: "open"` mean no feedback arrived, not approval.
+The agent must continue foreground polling while the review is open, including after asking questions through replies.
+Send feedback is received through that active loop; the browser does not itself wake an ended agent turn.
 A reply requires a caller-generated stable ID of 16–80 letters, digits, or hyphens.
 Retry an interrupted reply with the same ID and content.
 Reusing an ID for different content is rejected.
+
+## Finding-review mode
+
+```sh
+./tools/artifact-review/target/debug/artifact-review open /absolute/report.html \
+  --findings /absolute/report.json
+```
+
+This explicit mode imports the retained version-1 change-review record, not arbitrary decision markup embedded in HTML.
+It requires a matching HTML digest, at most 50 sequential F1–F50 finding IDs, and titles of 1–500 UTF-8 bytes using the change-review title contract.
+The record must be a regular, non-symlink UTF-8 JSON file no larger than 2 MiB.
+Malformed or mismatched input is refused before starting a server; revision checks repeat at configuration and decision time.
+The private SQLite configuration stores only the fixed IDs/titles, bound HTML revision, and SHA-256 of the exact input record.
+It does not modify the retained HTML, JSON, or publication signatures.
+No installed resources or dependencies are added by this mode.
+
+The shell replaces whole-document Approve with Accept/Reject buttons inside each corresponding rendered finding card.
+The sidebar remains for annotations, general feedback, and conversation.
+The parent review runtime adds these controls after loading the inert snapshot, without enabling document scripts or changing the saved report.
+Missing or ambiguous finding anchors disable decisions rather than attaching controls to the wrong content.
+Accept immediately authorizes repair of that finding; Reject and undecided findings authorize nothing.
+Each decision includes drafts and saves an `accept` or `reject` event containing `finding`, `revision`, message, and annotations.
+Only the human chooses decisions; agent workflows must not manufacture these events.
+An exact retry returns the original cursor, even after restart or completion.
+A different payload with the same submission ID is refused, as is a second decision for an already-decided finding.
+Explicit chat clarification is needed to change a decision; a later rejection cannot undo work already performed.
+
+`poll` adds `finding_review` containing:
+
+- `revision`: the fixed report revision for this finding list.
+- `report_digest`: SHA-256 of the exact imported JSON bytes, to verify before mapping IDs to repairs.
+- `items`: ID, title, and `decision` (`accept`, `reject`, or null for undecided).
+- `needs_review`: true when current artifact bytes differ from the bound report or cannot be read safely.
+
+That nested flag describes revision validity, not whether every finding has been decided.
+Only matching event/current/bound revisions with a false nested flag and a saved accept authorize the corresponding repair.
+The ordinary top-level approval fields still describe whole-document approval and remain independent.
+When every item has a decision, status becomes `decided`; this does not mean every finding was accepted or the code approved.
+Zero findings produce no repair authority.
+The server rejects whole-document approval in this mode and refuses decisions for unknown IDs, ordinary artifacts, closed reviews, or changed reports.
+Missing/symlinked source files leave history available but cannot receive new decisions.
+
+End review closes the session without undoing saved accepts.
+Reopening preserves decisions and can resume undecided findings; completion never resets the list.
+An existing ordinary review with feedback cannot be converted into finding authority.
+A different record cannot replace a configured list at the same artifact path, even if the HTML digest happens to match.
+Use a new retained report path for a fresh review after repairs; do not edit or re-sign the old report.
+If a server from an older executable lacks this mode, report the error rather than silently falling back to whole-report approval.
+
+The calling workflow owns source relevance checks, repair execution, cursor handling, and avoiding replayed repairs.
+No decision authorizes commits, installation, delivery, or publication.
+Same-user programs remain trusted: this local record is not proof against tampering by an agent with arbitrary same-user filesystem access.
 
 ## Browser behavior
 
 The shell keeps the document beside a feedback panel, with a stacked layout on narrow screens.
 Click an element or select text to write an annotation.
-Add annotations to the queue, write general feedback, and use **Send feedback**, **Approve**, or **Decline**.
+The selected target receives a visible outline, and a floating comment editor appears beside it rather than in the sidebar.
+The outline and editor follow scrolling and resize within the visible document area; the editor flips or clamps near viewport edges.
+Add annotation queues the comment and clears the selection; Cancel or Escape dismisses the unqueued draft.
+General feedback and queued/submitted comments remain in the sidebar.
+Use **Send feedback**, **Approve**, or **Decline** to submit the queued comments.
 All three actions include unsent annotation comments and general feedback.
 Send feedback keeps the review open.
 Decline ends it without approval.
@@ -63,6 +121,9 @@ Closing the tab, losing the connection, stopping the server, and timing out are 
 The shell polls for live document updates and agent replies.
 Submitted annotations remain in the conversation even if their target changes or disappears.
 Each annotation retains its original target text, selector, and revision.
+A restored element draft can highlight the same target only at the matching revision.
+If its target is offscreen, a text range cannot be reconstructed, or the document revision changes, the draft is retained without pretending that a different target is selected; the editor explains the missing location.
+Selection outlines and the floating editor are owned by the review runtime and never change saved artifact bytes.
 Unsent drafts and the exact pending submission are kept in that tab's session storage.
 If a response is interrupted, **Retry submission** sends the same ID and content.
 Server persistence precedes acknowledgement; retries do not create duplicate events.
@@ -94,6 +155,7 @@ Document scripts are intentionally disabled and removed.
 Forms, links, embedded frames, and active content are removed or made inert.
 Content Security Policy blocks external resources and navigation targets; the shell also cancels artifact clicks and form submission.
 Inline CSS and class attributes are retained, including class-based layout and styles.
+Document title metadata is removed from the snapshot rather than leaking as plain body text; visible headings and the original file's title remain unchanged.
 Local PNG, JPEG, WebP, and GIF renders in the HTML directory (including plain relative subpaths) and embedded base64 images of those types are copied into the inert snapshot.
 Referenced local paths must stay inside that directory without symlinks; a missing, unsupported, malformed, or oversized local render prevents approval rather than showing an incomplete design.
 Each render is limited to 2 MiB, with at most 24 images and 8 MiB of decoded image bytes per snapshot.
@@ -137,6 +199,8 @@ node --test --test-concurrency=1 tools/artifact-review/tests/integration.mjs
 ```
 
 Coverage includes process-level cursor replay, interrupted waits, abrupt server restart, idempotent replies and submissions, authentication, origin checks, stale approval, current-versus-approved revisions, symlink replacement with retained history and shutdown, input limits, private storage, and CLI validation.
+Rust process tests in `tests/findings.rs` cover independent decisions, revision changes, ordinary-artifact separation, whole-report approval refusal, input bounds, persistence, and retries.
+A real generated change report passes through the same bounded Firefox suite to exercise Accept/Reject, comments, response-loss recovery across reload, completed-state restoration, inert finding titles, narrow layout, and unchanged report bytes.
 Real Firefox cases cover element and selected-text comments, general feedback, agent replies, live reload, retained annotations, response-loss retries, draft inclusion in terminal decisions, stale-page rejection, post-approval edit and reload, decline, closing without approval, class-based layout and styles, local render visibility, decode failures and revision binding, script isolation, text-only feedback rendering, and narrow layout.
 
 ## Attribution

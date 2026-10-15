@@ -1,6 +1,6 @@
 ---
 name: review-change
-description: Review an explicit local change, Git range, or GitHub pull request through a restricted runner and an HTML report. Publication requires separate human terminal confirmation.
+description: Review an explicit local change, Git range, or GitHub pull request through a restricted runner, then collect annotations and per-finding repair decisions. Publication requires separate human terminal confirmation.
 ---
 
 # Review a change
@@ -24,11 +24,25 @@ Ordinary session skill discovery remains enabled; the reviewer itself is isolate
    The runners freeze bounded source evidence and restrict the reviewer's tools to snapshot reads.
    Do not execute reviewed code or fill evidence gaps without authorization.
 3. Read the bounded JSON result and present the HTML report path, scope, findings, and limits.
-   Follow the shared `html-routing` rule when opening the report in the ordinary browser.
    Distinguish defects from changed-code refactoring and existing-code reuse.
-   Ask the user to select repairs; in coach mode, preserve user ownership of source and tests.
-   Verify selected repairs and request a fresh review of the changed state.
-   Unavailable review is incomplete, never a clean result.
+   For repair decisions, use [review-artifact](../review-artifact/SKILL.md) with `open REPORT.html --findings REPORT.json`, using the exact returned paths.
+   The shell places Accept/Reject inside each rendered finding, with annotations and general feedback in the sidebar.
+   Accept authorizes repairing that finding; Reject and undecided findings authorize no repairs.
+   Only process saved accept events whose revision matches `current_revision` and `finding_review.revision`, with `finding_review.needs_review` false.
+   Verify the retained JSON's SHA-256 equals `finding_review.report_digest` before mapping its IDs to repairs.
+   Reject mismatched, missing, or changed evidence; request a fresh review rather than transferring IDs or decisions between reports.
+   The report must still describe the relevant code; unrelated source changes require a fresh review, while earlier authorized repairs in the same batch remain explicit context.
+   Process comments within the accepted finding's scope; ask about conflicting instructions, and preserve user ownership of source and tests in coach mode.
+   Never submit accept/reject events yourself, infer acceptance from feedback or a closed browser, or repair a finding twice after event replay.
+   Record handled cursors and repair outcomes; continue foreground polling until all findings are decided or the user ends the review.
+   Saved decisions are final for that report; requests to change them need explicit chat clarification, not fabricated replacement events.
+   Verify accepted repairs and request a fresh review of the whole changed task, at a new retained report path.
+   Never rewrite the retained report, its JSON, or signatures to record decisions or fixes.
+   Rejection is not a verified fix, and an all-decided report is not blanket code approval.
+   Browser decisions never authorize staging, commits, installation, delivery, or publication.
+   For an explicitly informational request, present the report normally without soliciting decisions.
+   If the browser workflow is unavailable, report the limitation and ask to collect explicit finding-ID decisions in chat; never silently substitute whole-report approval.
+   Unavailable restricted review is incomplete, never a clean result.
 4. If the user wants to publish pull-request findings, give them `review-change-eval post REPORT` for their own terminal.
    Never call posting through an agent shell, create a pseudo-terminal, supply confirmation, or treat a browser action as approval.
    The human selects findings, previews the exact request, and confirms afresh; the CLI sends `COMMENT` only.

@@ -12,12 +12,16 @@ import './firefox-process.test.mjs';
 import './firefox-suite.test.mjs';
 import { firefoxSuite } from './firefox-suite.mjs';
 import { registerFirefoxIsolationCases } from './firefox-isolation.mjs';
+import { registerFindingDecisionCases } from './finding-decisions.mjs';
+import { registerAnnotationPopoverCases } from './annotation-popover.mjs';
 
 const browsers = firefoxSuite();
 const firefox = () => browsers.open();
 after(() => browsers.close());
 registerFirefoxIsolationCases(browsers);
 registerChangeReportCase(firefox);
+registerFindingDecisionCases(firefox);
+registerAnnotationPopoverCases({ fixture, eventually });
 
 const executable = resolve(import.meta.dirname, '../target/debug/artifact-review');
 const exec = promisify(execFile);

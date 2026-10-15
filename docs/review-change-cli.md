@@ -20,8 +20,43 @@ Neither mode imports evaluation `.state/pi` or historical agentmemory data.
 Retained private reports and signatures default to `~/.local/state/ai-config/change-reviews`.
 `--state-dir` selects a separate private location, including when reviewing this source checkout.
 JSON mode never opens a browser or posts.
-A normal terminal review opens the escaped, self-contained HTML report in the ordinary browser, while artifact approval remains a separate workflow.
+A normal terminal review opens the escaped, self-contained HTML report in the ordinary browser.
+The shared review-change skill separately opens artifact-review's finding mode when collecting repair decisions; the CLI does not start that feedback loop itself.
 The report states successful file reads, exclusions, uncertainty, and that tests were not run by the restricted reviewer.
+
+## Finding decisions and repairs
+
+Use the exact retained paths returned by review JSON:
+
+```text
+artifact-review open /absolute/report.html --findings /absolute/report.json
+artifact-review poll /absolute/report.html --cursor 0 --timeout 20
+```
+
+Each rendered finding card contains its own Accept and Reject controls.
+The review sidebar holds element/selected-text annotations, general feedback, and conversation; the saved report remains unchanged.
+Accept saves immediate authorization to repair that finding; Reject and undecided findings authorize no repairs.
+A click includes unsent comments and drafts, and interrupted submissions retry with the same ID.
+Decisions cannot be silently replaced or reset by reopening the report.
+End review and closing the browser do not undo earlier accepts or authorize undecided findings.
+An explicit request in chat is needed to change a decision; already-performed repairs are not undone automatically.
+
+The artifact-review process stores the bound finding list and decisions separately, leaving the retained HTML, JSON, and publication signatures unchanged.
+`poll` returns per-finding decisions under `finding_review`; its `needs_review` flag means the report revision changed or cannot be read, not that every finding has a decision.
+Only a specific saved accept with matching event/current/bound revisions can authorize repair, and only when that flag is false.
+Before mapping IDs to the retained record, verify its SHA-256 equals `finding_review.report_digest`.
+The ordinary top-level `approved_revision` and `needs_review` fields are for whole-document approval, not finding decisions.
+`status: "decided"` means all findings have decisions, including rejected ones; an empty report grants no repair authority.
+
+The calling workflow checks source relevance, applies only accepted repairs within its ownership rules, avoids replaying already-applied repairs, and reruns verification and review.
+Unrelated source changes require a fresh review; earlier authorized repairs in the same batch are explicit context, not a reason to transfer finding IDs to a new report.
+Keep prior reports immutable and review the changed task into a new retained report with new decisions.
+Informational reviews can still use the plain browser view, and an unavailable finding-review mode requires an explicit chat fallback rather than treating whole-report approval as repair authorization.
+Neither finding decisions nor an all-decided report authorize staging, commits, installation, delivery, provider publication, or blanket approval of the code.
+
+These local decisions share artifact-review's same-user trust boundary; they are not tamper-resistant proof against a program running as the same operating-system user.
+They do not replace the separate human-terminal confirmation for posting.
+See [artifact-review's contract](../tools/artifact-review/README.md#finding-review-mode) for bounds, persistence, and recovery.
 
 ## Reviewer failures
 

@@ -12,7 +12,8 @@ Tests use disposable homes and fake providers; they must not install into the li
 - `package-review-gate.test.ts` checks the complete and focused gates, shared executable build prerequisites, bounded WT worker selection, and grouped evaluation case wiring.
 - Rust tests and `tools/worktree/tests/rust_parity.py` check the standalone worktree CLI, including the process-level ownership, cleanup, interruption, and submodule cases; Rust tests also check Worklog.
 - The original Python worktree CLI's reference-only tests are not part of the replacement gate; the parity runner executes their applicable cases against the Rust CLI.
-- `tools/artifact-review/tests/` checks local review storage and the bounded Firefox integration after an explicit offline debug CLI build.
+- `tools/artifact-review/tests/` checks local review storage, revision-bound per-finding repair decisions through the Rust CLI, and the bounded Firefox integration after an explicit offline debug CLI build.
+  Its real change-report case covers Accept/Reject, annotations, retry after response loss and reload, and preservation of the retained HTML; ordinary artifact approval keeps its existing coverage.
 
 The native Pi and Claude task-conversation runtime checks remain in the package suite.
 The package does not install a Pi language-server client.

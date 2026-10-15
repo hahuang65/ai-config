@@ -89,6 +89,23 @@ test("review-change is one shared skill that selects the current harness's restr
   expect(instructions).toContain("do not fall back");
 });
 
+test("change-review decisions authorize only accepted findings without replacing retained reports", () => {
+  const instructions = readFileSync(join(directory, "review-change/SKILL.md"), "utf8");
+  expect(instructions).toContain("open REPORT.html --findings REPORT.json");
+  expect(instructions).toContain("Accept authorizes repairing that finding");
+  expect(instructions).toContain("Reject and undecided findings authorize no repairs");
+  expect(instructions).toContain("finding_review.report_digest");
+  expect(instructions).toContain("finding_review.needs_review");
+  expect(instructions).toContain("Never rewrite the retained report");
+  expect(instructions).toContain("Never submit accept/reject events yourself");
+  expect(instructions).toContain("coach mode");
+  const artifact = readFileSync(join(directory, "review-artifact/SKILL.md"), "utf8");
+  expect(artifact).toContain("--findings REPORT.json");
+  expect(artifact).toContain("Only the human");
+  expect(artifact).toContain("Do not end the agent turn while the review is open");
+  expect(artifact).toContain("poll --reply");
+});
+
 test("skill binaries resolve within the replacement checkout", () => {
   const targets: Record<string, string> = {
     "work-log": "../../tools/worklog/target/release/wl",

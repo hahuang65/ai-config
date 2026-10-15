@@ -38,7 +38,9 @@ Always review the change, including small changes, through [review-change](../re
 Use explicit scope and authoritative intent for the review; tests alone do not replace it.
 If the review tool is missing or unavailable, review is not complete; report the block rather than substituting an unsupported approval.
 
-Present findings and ask the user to select repairs or explicitly authorize a defined repair set.
+Present findings through the review-change finding-decision workflow.
+A saved Accept authorizes that finding's repair; rejected and undecided findings are not repair scope.
+Use explicit chat selections only when the user chooses that fallback or directly names repairs.
 Apply only selected findings, preserving approved intent and adding a regression test where needed.
 Resolve intent-sensitive findings with the user before changing behavior.
 After repairs, rerun affected project checks and obtain a fresh review of the changed state.

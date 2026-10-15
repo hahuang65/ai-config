@@ -32,14 +32,28 @@ pub struct Submission {
     pub revision: String,
     pub message: String,
     pub annotations: Vec<Annotation>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub finding: Option<String>,
 }
 
 impl Submission {
     pub fn validate(&self) -> Result<()> {
         if !valid_id(&self.id)
-            || !["feedback", "approve", "decline", "reply"].contains(&self.action.as_str())
+            || ![
+                "feedback", "approve", "decline", "reply", "accept", "reject",
+            ]
+            .contains(&self.action.as_str())
         {
             return Err("Invalid submission ID or action.");
+        }
+        let decision = matches!(self.action.as_str(), "accept" | "reject");
+        if decision != self.finding.is_some()
+            || self
+                .finding
+                .as_ref()
+                .is_some_and(|id| !(1..=50).any(|n| *id == format!("F{n}")))
+        {
+            return Err("Accept or reject requires exactly one finding ID (F1–F50).");
         }
         if self.message.len() > MAX_MESSAGE || self.annotations.len() > MAX_ANNOTATIONS {
             return Err("Feedback exceeds the input limit.");
@@ -95,6 +109,8 @@ pub struct Page {
     pub needs_review: bool,
     pub events: Vec<Event>,
     pub more: bool,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub finding_review: Option<crate::findings::Review>,
 }
 
 #[derive(Serialize)]
@@ -127,6 +143,7 @@ pub fn snapshot(paths: &Paths) -> Result<Snapshot> {
                 .copied(),
         )
         .rm_clean_content_tags(["style"].iter().copied())
+        .add_clean_content_tags(["title"].iter().copied())
         .add_generic_attributes(["id", "class", "style"].iter().copied())
         .rm_tag_attributes("a", ["href", "target"].iter().copied())
         .rm_tag_attributes("img", ["srcset"].iter().copied())

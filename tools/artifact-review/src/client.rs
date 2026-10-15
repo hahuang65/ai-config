@@ -80,8 +80,17 @@ impl Session {
     }
 }
 
-pub fn open(paths: &Paths, no_browser: bool) -> Result<Value> {
+pub fn open(
+    paths: &Paths,
+    no_browser: bool,
+    binding: Option<&crate::findings::Binding>,
+) -> Result<Value> {
     paths.read_artifact()?;
+    if let Some(binding) = binding
+        && crate::model::snapshot(paths)?.revision != binding.revision
+    {
+        return Err("Findings report does not match the artifact revision.");
+    }
     let session = match Session::connect(paths).and_then(|session| {
         session.request("/events?cursor=0", None)?;
         Ok(session)
@@ -89,11 +98,18 @@ pub fn open(paths: &Paths, no_browser: bool) -> Result<Value> {
         Ok(session) => session,
         Err(_) => start(paths)?,
     };
+    if let Some(binding) = binding {
+        session.request(
+            "/findings",
+            Some(&serde_json::to_value(binding).map_err(|_| "Cannot encode findings.")?),
+        )?;
+    }
     session.request("/reopen", Some(&json!({})))?;
     if !no_browser {
         session.browse()?;
     }
-    Ok(json!({"status": "open", "browser": !no_browser}))
+    let state = session.request("/events?cursor=0", None)?;
+    Ok(json!({"status": state["status"], "browser": !no_browser}))
 }
 
 fn start(paths: &Paths) -> Result<Session> {
@@ -143,6 +159,7 @@ pub fn poll(
             action: "reply".into(),
             revision: String::new(),
             annotations: vec![],
+            finding: None,
         };
         session.request(
             "/submit",

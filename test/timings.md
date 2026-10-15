@@ -6,9 +6,9 @@ The values below are the current settings, not promises that lower values will b
 Update this list whenever a setting changes.
 Checked rows mean the documented setting was audited against source and retained through the full gate, not that further reductions are safe.
 
-## Verification checkpoint
+## Test-gate speed checkpoint (#121)
 
-The final macOS check passed `make lint` and the complete `make test` gate with Rust 1.99.0, Python 3.11.4, and Bun 1.3.14.
+That task's final macOS check passed `make lint` and the complete `make test` gate with Rust 1.99.0, Python 3.11.4, and Bun 1.3.14.
 The warm full gate took 146.3 seconds, versus the earlier successful 348.9-second warm serial baseline: about 58% less elapsed time.
 It reported 539 cases: 537 passed and the same two filesystem-dependent filename cases skipped.
 These are local warm-run measurements, not cold-build or cross-platform performance guarantees.
@@ -93,6 +93,9 @@ Each case removes its user context before the next starts; failed cleanup stops 
 | WT `rust_test_repository.py` | `FIXTURE_GUARD_SECONDS` | 20s | Bound the fresh-interpreter fixture reuse check |
 | WT `rust_test_repository.py` | `GIT_GUARD_SECONDS` | 10s | Bound fixture-regression Git calls, matching the existing executable fixtures |
 | Evaluation `reviewer_process.rs` | `PROCESS_GUARD_SECONDS` | 2s | Bound fixture execution; normal completion returns immediately |
+| Artifact `tests/support/mod.rs` | `COMMAND_GUARD` / `COMMAND_POLL` | 15s / 5ms | Bound finding-decision CLI processes and poll for observed exit |
+| Artifact `tests/support/mod.rs` | `HTTP_GUARD` | 5s | Bound local finding-decision requests |
+| Browser `finding-decisions.mjs` | `STATE_GUARD_MS` / `STATE_POLL_MS` | 10s / 20ms | Bound observable decision/retry readiness, not fixed sleeps |
 | Browser `integration.mjs` | `BROWSER_STATE_GUARD_MS` | 10s | Unchanged readiness watchdog, not a fixed wait |
 | Browser `firefox-process.mjs` | `SHUTDOWN_GRACE_MS` | 300ms | Unchanged graceful-stop budget before forced cleanup |
 | Browser `firefox-isolation.mjs` | `ACTIVITY_GUARD_MS` | 3s | Bound waiting for a worker request to connect/disconnect; return immediately on the event |

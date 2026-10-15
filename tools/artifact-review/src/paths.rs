@@ -52,26 +52,7 @@ impl Paths {
     }
 
     pub fn read_artifact(&self) -> Result<String> {
-        let file = OpenOptions::new()
-            .read(true)
-            .custom_flags(libc::O_NOFOLLOW | libc::O_NONBLOCK)
-            .open(&self.artifact)
-            .map_err(|_| "Cannot read artifact.")?;
-        if !file
-            .metadata()
-            .map_err(|_| "Cannot read artifact metadata.")?
-            .is_file()
-        {
-            return Err("Artifact must remain a regular file.");
-        }
-        let mut source = String::new();
-        file.take(MAX_ARTIFACT + 1)
-            .read_to_string(&mut source)
-            .map_err(|_| "Artifact must contain UTF-8 HTML.")?;
-        if source.len() as u64 > MAX_ARTIFACT {
-            return Err("Artifact exceeds the 2 MiB limit.");
-        }
-        Ok(source)
+        read_artifact(&self.artifact)
     }
 
     pub fn descriptor(&self) -> Result<Descriptor> {
@@ -95,6 +76,29 @@ impl Paths {
         )
         .map_err(|_| "Cannot publish private server record.")
     }
+}
+
+pub fn read_artifact(path: &Path) -> Result<String> {
+    let file = OpenOptions::new()
+        .read(true)
+        .custom_flags(libc::O_NOFOLLOW | libc::O_NONBLOCK)
+        .open(path)
+        .map_err(|_| "Cannot read artifact.")?;
+    if !file
+        .metadata()
+        .map_err(|_| "Cannot read artifact metadata.")?
+        .is_file()
+    {
+        return Err("Artifact must remain a regular file.");
+    }
+    let mut source = String::new();
+    file.take(MAX_ARTIFACT + 1)
+        .read_to_string(&mut source)
+        .map_err(|_| "Artifact must contain UTF-8 HTML.")?;
+    if source.len() as u64 > MAX_ARTIFACT {
+        return Err("Artifact exceeds the 2 MiB limit.");
+    }
+    Ok(source)
 }
 
 fn private_directory(path: &Path) -> Result<()> {
