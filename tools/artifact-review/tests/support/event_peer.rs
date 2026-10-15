@@ -55,6 +55,8 @@ impl EventPeer {
                 Err(error) => panic!("{error}"),
             }
         };
+        // macOS inherits the listener's nonblocking mode; read timeouts do not reset it.
+        stream.set_nonblocking(false).unwrap();
         stream.set_read_timeout(Some(PEER_GUARD)).unwrap();
         stream.set_write_timeout(Some(PEER_GUARD)).unwrap();
         let mut request = Vec::new();
