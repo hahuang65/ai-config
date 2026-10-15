@@ -7,6 +7,13 @@ Tests use disposable homes and fake providers; they must not install into the li
 - `reviewer-runtime.test.ts` checks the restricted Pi reviewer with a synthetic provider and a private source snapshot.
 - `guards.test.ts` checks shared guard behavior.
 - `cli-links.test.ts` checks executable link ownership in disposable homes.
+- `package-install-*.test.ts` exercises the shell installer with disposable homes and source copies, fake build/tool executables, and real jq/coreutils processes.
+  It covers missing dependencies, source/HOME separation, exact numeric preservation, ownership refusals, recorded alias upgrades, live lock contention, rollback, concurrent-edit refusal, and private record permissions.
+  Transaction failure tests inject a failing rename; the lock test waits for a real process barrier, not an elapsed-time guess.
+  GNU coreutils are required; the macOS system find is also exercised.
+  Retained Rust configuration tests still run during the installer migration; they are not substitutes for shell-process coverage.
+- `package-tool-inventory.test.ts` checks catalogue coverage for manifest CLI aliases, the current Rust executable source layout, literal Pi tool registrations, and bare Claude tool denials.
+  It does not contact MCP servers or assert that a documented host tool is active in every session.
 - `resolve-conflicts.test.ts` checks the rebase-only skill contract.
 - Every `tools/evaluation/tests/*.rs` integration suite runs, including package validation, configuration ownership, frozen evidence, restricted reviewers, consultations, and human-confirmed comment-only publication with disposable fixtures and fake providers; no hand-maintained suite allowlist can omit new safety tests.
 - `package-review-gate.test.ts` checks the complete and focused gates, shared executable build prerequisites, bounded WT worker selection, and grouped evaluation case wiring.
@@ -63,9 +70,9 @@ Run the group with `cargo test --locked --offline --manifest-path tools/evaluati
 Add a module-name filter such as `change_post_safety::` to focus it, or append `-- --test-threads=1` for serial debugging.
 The reviewer and consult cases similarly share `tests/runners.rs` rather than four separate integration binaries.
 Their case modules are `cases/{consult,reviewer,reviewer_claude,reviewer_diagnostics}.rs`; the fake reviewer script lives in `support/reviewer.rs`.
-All 35 cases retain their assertions, deadlines, and separate disposable homes, repositories, provider state, and output files.
+All cases retain their assertions, deadlines, and separate disposable homes, repositories, provider state, and output files.
 Run them with `cargo test --locked --offline --manifest-path tools/evaluation/Cargo.toml --test runners`, optionally filtering a module such as `reviewer_diagnostics::` or appending `-- --test-threads=1`.
-Installer and configuration cases share `tests/configuration.rs` rather than 17 separate integration binaries, retaining all 120 cases and the existing Rust test-thread limit.
+Installer and configuration cases share `tests/configuration.rs` rather than separate integration binaries, retaining their cases and the existing Rust test-thread limit.
 They live in `cases/configuration_*.rs` and `cases/package_*.rs`; resource-validation cases were split out as `configuration_package_resources.rs` to keep the files small without changing test bodies.
 Every case retains its separate disposable installation source, home, ownership record, lock, and output files; shared package inputs remain read-only.
 Run the group with `cargo test --locked --offline --manifest-path tools/evaluation/Cargo.toml --test configuration`, optionally filtering a module such as `configuration_inventory_safety::` or appending `-- --test-threads=1`.

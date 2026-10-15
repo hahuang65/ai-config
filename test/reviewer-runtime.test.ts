@@ -1,7 +1,7 @@
 import { afterEach, expect, test } from "bun:test";
 import { existsSync, readFileSync, rmSync } from "node:fs";
 import { join } from "node:path";
-import { fixture as createFixture, execute, binary, changeBinary, modelServer, configureModel, put, repository, calls, answer } from "./fixtures/reviewer.mjs";
+import { fixture as createFixture, execute, binary, changeBinary, consultBinary, modelServer, configureModel, put, repository, calls, answer } from "./fixtures/reviewer.mjs";
 
 const roots: string[] = [];
 afterEach(() => { for (const root of roots.splice(0)) rmSync(root, { recursive: true, force: true }); });
@@ -79,7 +79,7 @@ for (const agent of ["api-designer", "frontend-architect", "database-reviewer", 
     try {
       await new Promise<void>(resolve => server.listen(0, "127.0.0.1", resolve));
       configureModel(f.profile, (server.address() as { port: number }).port);
-      const { stdout } = await execute(binary, ["--root", f.evaluation, "consult", "--agent", agent, "--repo", repo,
+      const { stdout } = await execute(consultBinary, ["--root", f.evaluation, "--agent", agent, "--repo", repo,
         "--prompt", "Inspect the design", "--provider", "reviewer-fixture", "--model", "fixture-model", "--thinking", "off", "--timeout", "20"],
         { cwd: f.root, env: f.env, timeout: 25000, maxBuffer: 1024 * 1024 });
       const result = JSON.parse(stdout);

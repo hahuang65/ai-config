@@ -79,7 +79,15 @@ impl Trial {
     }
 
     pub fn command(&self) -> Command {
-        let mut command = Command::new(&self.binary);
+        self.configured_command(&self.binary)
+    }
+
+    pub fn consult_command(&self) -> Command {
+        self.configured_command(env!("CARGO_BIN_EXE_consult"))
+    }
+
+    fn configured_command(&self, binary: impl AsRef<std::ffi::OsStr>) -> Command {
+        let mut command = Command::new(binary);
         command
             .env("HOME", &self.home)
             .env(

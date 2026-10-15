@@ -68,8 +68,7 @@
     { "destination": ".local/bin/worktree", "target": "tools/worktree/target/release/wt" },
     { "destination": ".local/bin/wl", "target": "tools/worklog/target/release/wl" },
     { "destination": ".local/bin/worklog", "target": "tools/worklog/target/release/wl" },
-    { "destination": ".local/bin/artifact-review", "target": "tools/artifact-review/target/release/artifact-review" },
-    { "destination": ".local/bin/review-change-eval", "target": "tools/evaluation/target/release/review-change-eval" }
+    { "destination": ".local/bin/review-change", "target": "tools/evaluation/target/release/review-change" }
   ],
   "settings": [
     { "destination": ".claude/settings.json", "path": ["hooks", "PreToolUse"], "mode": "array_entry", "value": { "hooks": [{ "type": "command", "command": "bun ~/.claude/hooks/worktree.ts", "timeout": 15 }] } },

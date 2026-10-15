@@ -97,8 +97,7 @@ fn production_manifest_is_relocatable_and_covers_both_complete_harness_catalogue
         ".pi/agent/prompts/rebase.md",
         ".local/bin/wt",
         ".local/bin/wl",
-        ".local/bin/artifact-review",
-        ".local/bin/review-change-eval",
+        ".local/bin/review-change",
     ] {
         assert!(links.contains(&Path::new(destination)));
     }
@@ -106,6 +105,10 @@ fn production_manifest_is_relocatable_and_covers_both_complete_harness_catalogue
         ".pi/agent/extensions/lsp.ts",
         ".pi/agent/extensions/wt.ts",
         ".claude/plugins/ai-worktree",
+        ".local/bin/artifact-review",
+        ".local/bin/review-artifact",
+        ".local/bin/consult",
+        ".local/bin/review-change-eval",
     ] {
         assert!(!links.contains(&Path::new(destination)));
     }

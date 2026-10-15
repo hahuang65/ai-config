@@ -90,6 +90,7 @@ fn confirm_and_submit(
     report: &Report,
 ) -> Result<()> {
     let nonce = format!("{:032x}", rand::random::<u128>());
+    // Persisted marker namespace: a CLI rename must not break post reconciliation.
     let marker = format!(
         "review-change-eval:{}:{nonce}",
         directory

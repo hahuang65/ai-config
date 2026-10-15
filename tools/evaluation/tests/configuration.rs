@@ -38,6 +38,8 @@ mod configuration_settings_numbers;
 mod configuration_settings_rollback;
 #[path = "cases/configuration_settings_safety.rs"]
 mod configuration_settings_safety;
+#[path = "cases/package_command_migration.rs"]
+mod package_command_migration;
 #[path = "cases/package_config_cli.rs"]
 mod package_config_cli;
 #[path = "cases/package_install.rs"]

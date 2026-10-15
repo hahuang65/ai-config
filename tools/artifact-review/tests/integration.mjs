@@ -25,7 +25,7 @@ registerFindingDecisionCases(firefox);
 registerAnnotationPopoverCases({ fixture, eventually });
 registerLiveWaitCases({ fixture, eventually });
 
-const executable = resolve(import.meta.dirname, '../target/debug/artifact-review');
+const executable = resolve(import.meta.dirname, '../target/debug/review-artifact');
 const exec = promisify(execFile);
 const artifact = label => `<!doctype html><html><head><style>body { color: rgb(20, 30, 40) }</style></head>
 <body><h1 id="title">${label}</h1><p id="paragraph">Select these words for feedback.</p>

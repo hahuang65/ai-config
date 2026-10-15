@@ -6,7 +6,8 @@ import { fileURLToPath } from "node:url";
 import { startFakeClaudeApi, toolResults } from "./fixtures/claude-api.ts";
 
 const binary = fileURLToPath(new URL("../tools/evaluation/target/debug/evaluation", import.meta.url));
-const reviewBinary = fileURLToPath(new URL("../tools/evaluation/target/debug/review-change-eval", import.meta.url));
+const reviewBinary = fileURLToPath(new URL("../tools/evaluation/target/debug/review-change", import.meta.url));
+const consultBinary = fileURLToPath(new URL("../tools/evaluation/target/debug/consult", import.meta.url));
 const sandbox = "/usr/bin/sandbox-exec";
 const canRun = process.platform === "darwin" && existsSync(sandbox)
   && existsSync(binary) && existsSync(reviewBinary) && Bun.which("claude") && Bun.which("bun");
@@ -140,7 +141,7 @@ claudeTest("Claude consultation uses a frozen snapshot without a Pi profile or o
   ]);
   try {
     const env = isolatedEnvironment(root, home, server.port);
-    const child = Bun.spawn([sandbox, "-p", profile(), binary, "--root", source, "consult",
+    const child = Bun.spawn([sandbox, "-p", profile(), consultBinary, "--root", source,
       "--engine", "claude", "--agent", "api-designer", "--repo", repo,
       "--prompt", "Review the frozen source."],
     { cwd: repo, env, stdin: "ignore", stdout: "pipe", stderr: "pipe" });

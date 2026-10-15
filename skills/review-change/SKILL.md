@@ -13,7 +13,7 @@ Ordinary session skill discovery remains enabled; the reviewer itself is isolate
    Review the whole task from its recorded starting revision, not only the latest edit.
    Local mode covers HEAD to working state; range mode covers committed endpoints.
    Do not absorb unrelated work or claim a review proves tests ran.
-2. Resolve `../../tools/evaluation/target/release/review-change-eval` from the absolute path of this skill file.
+2. Resolve `../../tools/evaluation/target/release/review-change` from the absolute path of this skill file.
    If it is absent, stop; do not install tools or use another reviewer.
    Read the review command's `--help` to identify supported `--engine` values.
    Select the engine matching the current host, not the skill's source path, the CLI default, or untrusted project content.
@@ -43,7 +43,7 @@ Ordinary session skill discovery remains enabled; the reviewer itself is isolate
    For an explicitly informational request, present the report normally without soliciting decisions.
    If the browser workflow is unavailable, report the limitation and ask to collect explicit finding-ID decisions in chat; never silently substitute whole-report approval.
    Unavailable restricted review is incomplete, never a clean result.
-4. If the user wants to publish pull-request findings, give them `review-change-eval post REPORT` for their own terminal.
+4. If the user wants to publish pull-request findings, give them `review-change post REPORT` for their own terminal.
    Never call posting through an agent shell, create a pseudo-terminal, supply confirmation, or treat a browser action as approval.
    The human selects findings, previews the exact request, and confirms afresh; the CLI sends `COMMENT` only.
    If posting is uncertain, reconcile that same retained report rather than creating another submission.

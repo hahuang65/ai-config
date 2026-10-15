@@ -104,7 +104,8 @@ installedTest("public MVP installation loads the five evaluation agents and skil
     const source = join(root, "replacement");
     copyPackageFiles(source);
     for (const binary of ["tools/worktree/target/release/wt", "tools/worklog/target/release/wl",
-      "tools/artifact-review/target/release/artifact-review", "tools/evaluation/target/release/review-change-eval"]) {
+      "tools/artifact-review/target/release/review-artifact", "tools/evaluation/target/release/review-change",
+      "tools/evaluation/target/release/consult"]) {
       const path = join(source, binary);
       mkdirSync(dirname(path), { recursive: true });
       writeFileSync(path, "#!/bin/sh\nexit 0\n");

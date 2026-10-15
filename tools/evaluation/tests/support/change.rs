@@ -2,7 +2,7 @@ use super::*;
 
 pub fn command(trial: &Trial) -> Command {
     let original = trial.command();
-    let mut review = Command::new(env!("CARGO_BIN_EXE_review-change-eval"));
+    let mut review = Command::new(env!("CARGO_BIN_EXE_review-change"));
     for (key, value) in original.get_envs() {
         match value {
             Some(value) => {
@@ -105,7 +105,7 @@ pub fn terminal(trial: &Trial, provider: &Path, report: &str, actions: &[&str]) 
         .env("CHANGE_PROVIDER", provider)
         .env("TTY_ACTIONS", serde_json::to_string(actions).unwrap())
         .arg(script)
-        .arg(env!("CARGO_BIN_EXE_review-change-eval"))
+        .arg(env!("CARGO_BIN_EXE_review-change"))
         .arg("--root")
         .arg(&trial.root)
         .args(["post", report])

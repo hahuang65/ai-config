@@ -15,7 +15,7 @@ use std::path::PathBuf;
 
 #[derive(Parser)]
 #[command(
-    name = "artifact-review",
+    name = "review-artifact",
     version,
     about = "Review one local HTML file with durable browser feedback."
 )]
@@ -70,7 +70,7 @@ enum Operation {
 fn main() {
     let arguments = Arguments::parse();
     if let Err(message) = validate(&arguments) {
-        eprintln!("{message} See artifact-review poll --help or wait --help.");
+        eprintln!("{message} See review-artifact poll --help or wait --help.");
         std::process::exit(2);
     }
     // All session files, including SQLite journals, are private from creation.

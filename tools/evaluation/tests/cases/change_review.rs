@@ -71,7 +71,13 @@ fn invalid_model_output_cannot_create_a_publishable_report() {
 #[test]
 fn help_and_invalid_invocations_have_no_state_or_provider_side_effects() {
     let trial = Trial::new();
-    success(command(&trial).arg("--help").output().unwrap());
+    let help = command(&trial).arg("--help").output().unwrap();
+    success(help.clone());
+    assert!(
+        String::from_utf8(help.stdout)
+            .unwrap()
+            .contains("Usage: review-change ")
+    );
     for args in [
         vec!["review"],
         vec!["review", "range", "a...b"],

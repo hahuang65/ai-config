@@ -5,7 +5,7 @@ import { join, resolve } from 'node:path';
 import { setTimeout as sleep } from 'node:timers/promises';
 import { fixture, execute, changeBinary, modelServer, configureModel, repository, calls, answer } from '../../../test/fixtures/reviewer.mjs';
 
-const artifactBinary = resolve(import.meta.dirname, '../target/debug/artifact-review');
+const artifactBinary = resolve(import.meta.dirname, '../target/debug/review-artifact');
 const STATE_GUARD_MS = 10000;
 const STATE_POLL_MS = 20;
 

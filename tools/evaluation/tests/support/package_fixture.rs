@@ -119,8 +119,9 @@ pub fn populate(root: &Path) {
     for relative in [
         "tools/worktree/target/release/wt",
         "tools/worklog/target/release/wl",
-        "tools/artifact-review/target/release/artifact-review",
-        "tools/evaluation/target/release/review-change-eval",
+        "tools/artifact-review/target/release/review-artifact",
+        "tools/evaluation/target/release/review-change",
+        "tools/evaluation/target/release/consult",
     ] {
         let binary = root.join(relative);
         fs::create_dir_all(binary.parent().unwrap()).unwrap();
@@ -157,8 +158,7 @@ pub fn manifest(root: &Path) {
         {"destination": ".local/bin/worktree", "target": "tools/worktree/target/release/wt"},
         {"destination": ".local/bin/wl", "target": "tools/worklog/target/release/wl"},
         {"destination": ".local/bin/worklog", "target": "tools/worklog/target/release/wl"},
-        {"destination": ".local/bin/artifact-review", "target": "tools/artifact-review/target/release/artifact-review"},
-        {"destination": ".local/bin/review-change-eval", "target": "tools/evaluation/target/release/review-change-eval"}
+        {"destination": ".local/bin/review-change", "target": "tools/evaluation/target/release/review-change"}
     ]});
     let settings = value["settings"].as_array_mut().unwrap();
     let package: serde_json::Value =

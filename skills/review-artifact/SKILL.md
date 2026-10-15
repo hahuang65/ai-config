@@ -6,7 +6,8 @@ description: Review local HTML with annotations and revision-bound approval, or 
 # Review artifact
 
 Review an existing HTML artifact; the calling task owns writing its content.
-Use only the replacement-owned `../../tools/artifact-review/target/release/artifact-review`, resolved from this skill's absolute source path.
+Use only the replacement-owned `../../tools/artifact-review/target/release/review-artifact`, resolved from this skill's absolute source path.
+This is a source-local helper with no shell PATH alias; do not resolve an unrelated executable by name.
 Read its `--help` and the relevant command help for the implemented interface.
 Do not fall back to the original review runtime or install an external package.
 If the executable is absent, state that browser review is not available yet and ask for direction rather than claiming review succeeded.

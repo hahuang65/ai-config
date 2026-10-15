@@ -141,8 +141,7 @@ fn ordinary_package_installs_the_selected_host_resources_and_cli_dependencies_on
                     | ".local/bin/worktree"
                     | ".local/bin/wl"
                     | ".local/bin/worklog"
-                    | ".local/bin/artifact-review"
-                    | ".local/bin/review-change-eval"
+                    | ".local/bin/review-change"
             ) && !path.starts_with(".claude/skills/")
                 && !path.starts_with(".pi/agent/skills/")
                 && !path.starts_with(".claude/agents/")
@@ -245,11 +244,15 @@ fn guarded_package_preserves_preferences_and_installs_both_adapters_in_a_disposa
     }
     assert!(home.join(".claude/themes/catppuccin-mocha.json").exists());
     assert!(home.join(".pi/agent/themes/catppuccin-mocha.json").exists());
-    for cli in ["wt", "worktree", "wl", "worklog", "artifact-review"] {
-        let output = Command::new(home.join(".local/bin").join(cli))
-            .arg("--help")
-            .output()
-            .unwrap();
+    let public = ["wt", "worktree", "wl", "worklog", "review-change"]
+        .map(|cli| home.join(".local/bin").join(cli));
+    let private = [
+        "tools/artifact-review/target/release/review-artifact",
+        "tools/evaluation/target/release/consult",
+    ]
+    .map(|helper| package.source.join(helper));
+    for executable in public.into_iter().chain(private) {
+        let output = Command::new(executable).arg("--help").output().unwrap();
         assert!(output.status.success());
         assert_eq!(output.stdout, b"disposable help\n");
     }

@@ -41,7 +41,7 @@ impl Review {
     pub fn command(&self, args: &[&str]) -> Output {
         let stdout = self.root.join("stdout");
         let stderr = self.root.join("stderr");
-        let mut child = Command::new(env!("CARGO_BIN_EXE_artifact-review"))
+        let mut child = Command::new(env!("CARGO_BIN_EXE_review-artifact"))
             .args(args)
             .env("AR_ROOT", self.root.join("state"))
             .stdin(Stdio::null())
@@ -57,7 +57,7 @@ impl Review {
             if Instant::now() >= deadline {
                 child.kill().unwrap();
                 child.wait().unwrap();
-                panic!("artifact-review exceeded COMMAND_GUARD");
+                panic!("review-artifact exceeded COMMAND_GUARD");
             }
             std::thread::sleep(COMMAND_POLL);
         };

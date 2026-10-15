@@ -15,11 +15,11 @@ fn prepared() -> Trial {
 }
 
 fn request(trial: &Trial, agent: &str, prompt: &str) -> Command {
-    let mut command = trial.command();
+    let mut command = trial.consult_command();
     command
         .arg("--root")
         .arg(&trial.root)
-        .args(["consult", "--agent", agent, "--repo"])
+        .args(["--agent", agent, "--repo"])
         .arg(trial.temporary.path().join("repo"))
         .args(["--prompt", prompt]);
     command
@@ -53,6 +53,25 @@ fn assert_no_consultation(directory: &Path) {
             .to_string_lossy()
             .starts_with("consult-")
     }));
+}
+
+#[test]
+fn standalone_consultation_accepts_a_question_without_a_subcommand() {
+    let trial = prepared();
+    let advice = result(
+        trial
+            .consult_command()
+            .arg("--root")
+            .arg(&trial.root)
+            .args(["--agent", "api-designer", "--repo"])
+            .arg(trial.temporary.path().join("repo"))
+            .args(["--prompt", "Suggest an API"]),
+    );
+    assert_eq!(advice["agent"], "api-designer");
+    assert_eq!(
+        advice["response"],
+        "Prefer a small interface. No tests executed."
+    );
 }
 
 #[test]
@@ -252,12 +271,12 @@ fn rejects_invalid_arguments_before_creating_state_or_starting_a_provider() {
         assert_usage_error(&mut request(&trial, "api-designer", &prompt));
     }
     for args in [
-        &["consult"][..],
-        &["consult", "--help", "--model", "test"][..],
-        &["consult", "--agent", "api-designer", "--prompt", "Inspect"][..],
-        &["consult", "--agent", "api-designer", "--repo", "/missing"][..],
+        &[][..],
+        &["--help", "--model", "test"][..],
+        &["--agent", "api-designer", "--prompt", "Inspect"][..],
+        &["--agent", "api-designer", "--repo", "/missing"][..],
     ] {
-        assert_usage_error(trial.command().args(args));
+        assert_usage_error(trial.consult_command().args(args));
     }
     assert!(!trial.log.exists());
     assert!(!trial.root.join(".state").exists());
@@ -363,7 +382,7 @@ fn rejects_pi_only_options_for_claude_before_creating_review_state() {
 #[test]
 fn help_explains_the_committed_repository_requirement_without_installing() {
     let trial = Trial::new();
-    let output = trial.run(&["consult", "--help"]);
+    let output = trial.consult_command().arg("--help").output().unwrap();
     success(output.clone());
     let help = String::from_utf8(output.stdout).unwrap();
     assert!(help.contains("committed Git repository"));

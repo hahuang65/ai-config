@@ -1,0 +1,22 @@
+{
+  "deny": [
+    "Bash(aws * delete-*)", "Bash(aws * terminate-*)", "Bash(aws ec2 terminate-instances *)",
+    "Bash(curl * | bash*)", "Bash(curl * | node*)", "Bash(curl * | perl*)", "Bash(curl * | python*)",
+    "Bash(curl * | ruby*)", "Bash(curl * | sh*)", "Bash(curl * | sudo*)", "Bash(curl * | zsh*)",
+    "Bash(git clean -f *)", "Bash(git push)", "Bash(git push *)", "Bash(git publish)", "Bash(git publish *)",
+    "Bash(git -C * push)", "Bash(git -C * push *)", "Bash(git push --force *)", "Bash(git push -f *)",
+    "Bash(git reset --hard *)", "Bash(make apply)", "Bash(make deploy*)", "Bash(make push*)",
+    "Bash(rm *)", "Bash(rm -rf *)", "Bash(echo *>*)", "Bash(echo *>>*)",
+    "Bash(terraform apply)", "Bash(terraform apply *)", "Bash(terraform destroy *)",
+    "Read(**/.aws/credentials)", "Read(**/credentials*)", "Read(*.secrets.*)",
+    "EnterPlanMode", "ExitPlanMode", "DesignSync", "NotebookEdit", "SendMessage", "PushNotification",
+    "RemoteTrigger", "ReportFindings", "ScheduleWakeup", "AskUserQuestion", "CronCreate", "CronDelete", "CronList"
+  ],
+  "ask": [
+    "Bash(git clean *)", "Read(*.env)", "Read(*.env.*)", "Bash(cat *.env*)", "Bash(head *.env*)",
+    "Bash(tail *.env*)", "Bash(grep * .env*)", "Bash(sed * .env*)", "Bash(cat *.pem*)",
+    "Bash(head *.pem*)", "Bash(tail *.pem*)", "Bash(cat *.key*)", "Bash(head *.key*)", "Bash(tail *.key*)"
+  ],
+  "additionalDirectories": ["~/.claude", "~/.config", "~/.dotfiles", "~/Projects/a5", "/tmp"],
+  "allow": ["Read(CONTEXT.md)", "Edit(CONTEXT.md)", "Read(docs/adr/**)", "Read(docs/features/**)", "Edit(**)", "Read(~/.gitmessage)"]
+}

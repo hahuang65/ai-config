@@ -28,7 +28,7 @@ impl Waiter {
         let prefix = format!("wait-{:032x}", rand::random::<u128>());
         let stdout = review.root.join(format!("{prefix}.stdout"));
         let stderr = review.root.join(format!("{prefix}.stderr"));
-        let child = Command::new(env!("CARGO_BIN_EXE_artifact-review"))
+        let child = Command::new(env!("CARGO_BIN_EXE_review-artifact"))
             .arg(operation)
             .arg(&review.file)
             .args(args)

@@ -21,7 +21,7 @@ pub fn main() -> i32 {
         Ok(args) => args,
         Err(error) => {
             eprintln!(
-                "review-change-eval: {}",
+                "review-change: {}",
                 change_html::terminal(&format!("{error:#}"))
             );
             return 2;
@@ -35,7 +35,7 @@ pub fn main() -> i32 {
         Ok(()) => 0,
         Err(error) => {
             eprintln!(
-                "review-change-eval: {}",
+                "review-change: {}",
                 change_html::terminal(&format!("{error:#}"))
             );
             1

@@ -45,7 +45,8 @@ fn prepared_package_refuses_missing_non_executable_or_cross_wired_bundled_tools(
     for relative in [
         "tools/worktree/target/release/wt",
         "tools/worklog/target/release/wl",
-        "tools/artifact-review/target/release/artifact-review",
+        "tools/artifact-review/target/release/review-artifact",
+        "tools/evaluation/target/release/consult",
     ] {
         let fixture = fixture();
         manifest(fixture.path());
@@ -223,8 +224,7 @@ fn prepared_package_requires_every_ordinary_harness_resource_link() {
         ".pi/agent/extensions/guard-policies.ts",
         ".local/bin/wt",
         ".local/bin/wl",
-        ".local/bin/artifact-review",
-        ".local/bin/review-change-eval",
+        ".local/bin/review-change",
         ".claude/skills/review-change",
         ".pi/agent/skills/review-change",
     ] {

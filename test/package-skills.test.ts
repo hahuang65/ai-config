@@ -112,8 +112,8 @@ test("change-review decisions authorize only accepted findings without replacing
 test("skill binaries resolve within the replacement checkout", () => {
   const targets: Record<string, string> = {
     "work-log": "../../tools/worklog/target/release/wl",
-    "review-artifact": "../../tools/artifact-review/target/release/artifact-review",
-    "review-change": "../../tools/evaluation/target/release/review-change-eval",
+    "review-artifact": "../../tools/artifact-review/target/release/review-artifact",
+    "review-change": "../../tools/evaluation/target/release/review-change",
   };
   for (const [skill, target] of Object.entries(targets)) {
     const file = join(directory, skill, "SKILL.md");
@@ -128,7 +128,7 @@ test("copied skills execute validated Rust binaries without any auxiliary bin li
     const source = join(home, "replacement");
     for (const [skill, target] of [
       ["work-log", "tools/worklog/target/release/wl"],
-      ["review-artifact", "tools/artifact-review/target/release/artifact-review"],
+      ["review-artifact", "tools/artifact-review/target/release/review-artifact"],
     ]) {
       const destination = join(source, "skills", skill, "SKILL.md");
       const binary = join(source, target);

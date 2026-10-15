@@ -1,0 +1,16 @@
+{
+  "name": "ai-local-lsp",
+  "description": "Python and Ruby language servers only; no skills or prompts",
+  "author": { "name": "ai-config" },
+  "version": "1.0.0",
+  "lspServers": {
+    "ty": {
+      "command": "ty", "args": ["server"],
+      "extensionToLanguage": { ".py": "python", ".pyi": "python" }
+    },
+    "ruby": {
+      "command": "ruby-lsp", "args": [],
+      "extensionToLanguage": { ".rb": "ruby", ".erb": "erb", ".rake": "ruby", ".gemspec": "ruby", ".ru": "ruby" }
+    }
+  }
+}

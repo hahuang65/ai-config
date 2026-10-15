@@ -2,8 +2,8 @@ use crate::change_types::text;
 use anyhow::{Context, Result, bail, ensure};
 use std::{collections::BTreeSet, path::PathBuf};
 
-pub const HELP: &str = "Usage: review-change-eval [--root EVALUATION] review local|range BASE..HEAD|pr URL --intent TEXT [options]
-       review-change-eval [--root EVALUATION] post REPORT [--state-dir DIR]
+pub const HELP: &str = "Usage: review-change [--root SOURCE] review local|range BASE..HEAD|pr URL --intent TEXT [options]
+       review-change [--root SOURCE] post REPORT [--state-dir DIR]
 Options: --repo DIR, --path LITERAL_RELATIVE_PATH, --state-dir DIR, --engine pi|claude (default pi),
          --provider NAME, --model ID, --thinking LEVEL,
          --timeout SECONDS (1..3600), --json, --no-browser.

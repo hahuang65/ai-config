@@ -147,7 +147,7 @@ test("installer and configuration cases share one Cargo test target with every c
     "configuration_package", "configuration_package_resources", "configuration_package_settings", "configuration_package_themes",
     "configuration_safety", "configuration_settings", "configuration_settings_numbers",
     "configuration_settings_rollback", "configuration_settings_safety",
-    "package_config_cli", "package_install", "package_manifest",
+    "package_command_migration", "package_config_cli", "package_install", "package_manifest",
   ];
   expectGroupedEvaluationCases("configuration", groups, /^(configuration|package)_.*\.rs$/);
 });

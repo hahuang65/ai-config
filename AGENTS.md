@@ -21,7 +21,9 @@ Do not stage, commit, push, or update the parent submodule pointer without separ
    Browser tests must use the bounded browser harness, not unbounded parallel launches.
 5. `make build` creates release artifacts offline; it does not install.
    Installation requires a separate explicit `./install.sh` invocation and separate approval for a live home.
-   That entry point builds this checkout before delegating ownership and settings changes to the Rust `ai-config` installer; it does not provision build tools or dependencies.
+   That entry point builds this checkout and performs ownership, link, and settings transactions itself, using the JSON-only filters and catalogue in `tools/install/`.
+   It requires jq and GNU coreutils but does not provision build tools or dependencies.
+   Never bypass a retained transaction lock or incomplete rollback; inspect and recover explicitly.
    Preserve the live ownership record, model/authentication choices, conversations, independent TypeSafe and Herdr settings, and unrelated resources.
 
 For rule-loading and safety guidance, follow `baseline.md`, installed through each harness's global instruction link, and its root `rules/` directory.

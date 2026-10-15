@@ -10,6 +10,8 @@ The evaluation checkout is retained as the former source, not the live bootstrap
 Shared resources live directly in `skills/`, `agents/`, `commands/`, `rules/`, and `guard/`, with `baseline.md` at the root.
 Harness-specific source lives in `harnesses/claude/` and `harnesses/pi/`; the standalone Rust tools live in `tools/`.
 The restricted reviewer also uses root `reviewer.md` and `harnesses/pi/review-scope.ts` as checked support files, not ordinary installed resources.
+See the [tool inventory](docs/tool-inventory.md) for executable entry points, aliases, installer responsibilities, installed-state limits, and the selected pruning work.
+Its [harness inventory](docs/harness-tool-inventory.md) distinguishes model tools from skills, hooks, language servers, and independently configured integrations.
 
 The installed package provides:
 
@@ -19,7 +21,7 @@ The installed package provides:
 - Explicit `/deliver` and `/rebase` commands in both harnesses; `/resolve-conflicts` is the shared skill for a rebase already in progress.
 - Curated shared skills under `skills/`; the optional `review-change` skill selects the current harness's independently restricted reviewer.
 - The evaluation's specialist roles: API designer, change reviewer, database reviewer, fact checker, and frontend architect.
-- Bundled `wt`/`worktree` and `wl`/`worklog` commands, plus the Rust browser-review and change-review commands needed by the retained skills.
+- Public `wt`/`worktree`, `wl`/`worklog`, and `review-change` symlinks, plus source-local `review-artifact` and `consult` helpers resolved by their consumers without PATH aliases.
 - Change-review annotations and per-finding Accept/Reject controls in the artifact-review shell: Accept authorizes that finding's repair only; commits and publication remain separate.
 - Event-driven foreground artifact-review waits without an inactivity cutoff, plus revision-only refreshes that preserve current HTML/image hashing and approval safety.
 
@@ -78,16 +80,23 @@ After a disposable-home rehearsal and **separate approval for a live home**, run
 ./install.sh
 ```
 
-`install.sh` runs `make build` in its own checkout, then delegates to `tools/evaluation/target/release/ai-config --root <canonical-checkout> install`.
+`install.sh` runs `make build` in its own checkout, then performs ownership validation, link placement, settings merging, and rollback itself.
 It works when invoked by path from another directory and stops before installation if the build fails.
-It requires Bash, make, the mise-managed Bun and Rust build tools, and cached dependencies for the offline build; it does not provision them.
+It requires Bash, jq, GNU coreutils on PATH, make, iconv, find, the mise-managed Bun and Rust build tools, and cached dependencies for the offline build; it does not provision them.
+Missing jq or required GNU coreutils commands produce a clear error before building or installing.
+The system find on macOS is supported; GNU findutils is not required.
 Run `./install.sh --help` for help without building or installing; other arguments, including the retired `--force`, are rejected before effects.
-The destination is the absolute `HOME` directory inherited by the Rust installer, not the caller's working directory.
+The destination is the absolute `HOME` directory, not the caller's working directory; installation into the configuration source is refused.
 Use a disposable `HOME` for rehearsals and retain access to the already provisioned build tools and dependency caches.
 `make build`, `make lint`, and `make test` never install into the live home; installation remains a separate explicit action.
 
-The Rust installer remains responsible for ownership, conflict checks, settings preservation, and rollback.
-The manifest and installed resource set are unchanged by this entry point.
-The installer switches only declared links and settings and records ownership under `~/.local/state/ai-config/installation.json`.
+JSON-only filters and the package catalogue live under `tools/install/`; they do not perform installation or filesystem changes.
+Settings retain unrelated fields, exact unknown numeric tokens, and existing permissions; duplicate JSON keys, redirected files, and unrecorded collisions are refused.
+The installer switches only declared links and settings and records ownership privately under `~/.local/state/ai-config/installation.json`.
+An atomic `install.lock.d` directory serializes transactions; an existing lock is never automatically broken.
+Handled failures restore completed changes only when their current bytes, targets, and modes still match the transaction.
+Concurrent edits or incomplete rollback retain private recovery files and the lock for human inspection.
+This is not crash-atomic installation: after an uncatchable termination, inspect the lock's `workspace` reference and saved transaction before manually recovering; do not simply delete the lock and retry.
+Retirement of the old Rust installation entry points remains part of the in-progress pruning work; do not run them alongside `install.sh`.
 A Git revert cannot retarget already installed links; recovery needs another explicit operation.
 Do not run the removed legacy installer, delete `pi-evaluation`, stage, commit, push, or change the parent submodule pointer by implication.

@@ -47,7 +47,8 @@ test("the installed MVP keeps ordinary Pi skills, its guard, and project discove
     writeFileSync(join(project, ".pi/extensions/project.ts"), "export default function () {}\n");
     copyPackageFiles(source);
     for (const binary of ["tools/worktree/target/release/wt", "tools/worklog/target/release/wl",
-      "tools/artifact-review/target/release/artifact-review", "tools/evaluation/target/release/review-change-eval"]) {
+      "tools/artifact-review/target/release/review-artifact", "tools/evaluation/target/release/review-change",
+      "tools/evaluation/target/release/consult"]) {
       const path = join(source, binary);
       mkdirSync(dirname(path), { recursive: true });
       writeFileSync(path, "#!/bin/sh\nexit 0\n");

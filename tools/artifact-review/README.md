@@ -2,7 +2,8 @@
 
 A standalone Rust executable for browser review of one local HTML file.
 The runtime does not import the original review runtime, Node.js, or Pi.
-The root `ai-config` installer owns the `.local/bin/artifact-review` link to this Rust executable.
+The executable is named `review-artifact` and remains inside this package's build directory.
+It has no installed shell PATH alias; harness skills resolve it from their absolute configuration source.
 
 ## Build and commands
 
@@ -10,12 +11,12 @@ Use the mise-managed Rust 1.99 toolchain.
 
 ```sh
 cargo build --manifest-path tools/artifact-review/Cargo.toml --locked
-./tools/artifact-review/target/debug/artifact-review --help
-./tools/artifact-review/target/debug/artifact-review open /absolute/document.html
-./tools/artifact-review/target/debug/artifact-review wait /absolute/document.html --cursor 0
-./tools/artifact-review/target/debug/artifact-review wait /absolute/document.html --cursor 12 \
+./tools/artifact-review/target/debug/review-artifact --help
+./tools/artifact-review/target/debug/review-artifact open /absolute/document.html
+./tools/artifact-review/target/debug/review-artifact wait /absolute/document.html --cursor 0
+./tools/artifact-review/target/debug/review-artifact wait /absolute/document.html --cursor 12 \
   --reply 'Updated the wording.' --id 01234567-89ab-cdef-0123-456789abcdef
-./tools/artifact-review/target/debug/artifact-review stop /absolute/document.html
+./tools/artifact-review/target/debug/review-artifact stop /absolute/document.html
 ```
 
 `open --no-browser` starts the tracked server without opening a browser or printing a secret URL.
@@ -63,7 +64,7 @@ Reusing an ID for different content is rejected.
 ## Finding-review mode
 
 ```sh
-./tools/artifact-review/target/debug/artifact-review open /absolute/report.html \
+./tools/artifact-review/target/debug/review-artifact open /absolute/report.html \
   --findings /absolute/report.json
 ```
 

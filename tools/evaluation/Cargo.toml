@@ -7,8 +7,12 @@ publish = false
 default-run = "evaluation"
 
 [[bin]]
-name = "review-change-eval"
+name = "review-change"
 path = "src/change_main.rs"
+
+[[bin]]
+name = "consult"
+path = "src/consult_main.rs"
 
 [dependencies]
 anyhow = "1"

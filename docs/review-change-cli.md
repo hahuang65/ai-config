@@ -1,13 +1,13 @@
 # Change review CLI
 
-Build the Rust binaries with `make build`, then invoke `tools/evaluation/target/release/review-change-eval` (also linked at `~/.local/bin/review-change-eval` after approved package installation).
+Build the Rust binaries with `make build`, then invoke `tools/evaluation/target/release/review-change` (also linked at `~/.local/bin/review-change` after approved package installation).
 Neither review nor posting runs as part of the package installer.
 
 ```text
-review-change-eval review local --repo DIR --intent TEXT --engine pi --json
-review-change-eval review range BASE..HEAD --repo DIR --intent TEXT --engine pi --json
-review-change-eval review pr https://github.com/OWNER/REPO/pull/NUMBER --repo DIR --intent TEXT --engine pi --json
-review-change-eval post /absolute/report.html [--state-dir DIR]
+review-change review local --repo DIR --intent TEXT --engine pi --json
+review-change review range BASE..HEAD --repo DIR --intent TEXT --engine pi --json
+review-change review pr https://github.com/OWNER/REPO/pull/NUMBER --repo DIR --intent TEXT --engine pi --json
+review-change post /absolute/report.html [--state-dir DIR]
 ```
 
 The reviewed repository must be explicit and the review intent must describe its intended behavior.
@@ -29,10 +29,12 @@ The report states successful file reads, exclusions, uncertainty, and that tests
 Use the exact retained paths returned by review JSON:
 
 ```text
-artifact-review open /absolute/report.html --findings /absolute/report.json
-artifact-review wait /absolute/report.html --cursor 0
+tools/artifact-review/target/release/review-artifact open /absolute/report.html --findings /absolute/report.json
+tools/artifact-review/target/release/review-artifact wait /absolute/report.html --cursor 0
 ```
 
+`review-artifact` is a source-local helper, not a shell PATH command.
+Resolve the executable from the installed configuration source before invoking it.
 Each rendered finding card contains its own Accept and Reject controls.
 The review sidebar holds element/selected-text annotations, general feedback, and conversation; the saved report remains unchanged.
 Accept saves immediate authorization to repair that finding; Reject and undecided findings authorize no repairs.
@@ -89,4 +91,5 @@ That confirmation alone cannot establish that a saved report was never altered; 
 For GitHub pull requests, posting uses a separately selected, retained report; no review command grants posting authority.
 Only the human runs `post REPORT` in an interactive terminal, confirms the exact preview, and sends comments (`COMMENT`, not `APPROVE` or `REQUEST_CHANGES`).
 A failed or uncertain post must be reconciled from the same retained report, not bypassed with an independent request.
-Read `review-change-eval --help` for current argument limits and error codes.
+Read `review-change --help` for current argument limits and error codes.
+The CLI rename preserves retained report formats, store ownership, and publication markers so existing reports can still be reconciled; those internal identifiers are not additional executables.

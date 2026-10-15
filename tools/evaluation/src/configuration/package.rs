@@ -51,13 +51,13 @@ const BUNDLED_TOOLS: &[(&str, &str)] = &[
     (".local/bin/wl", "tools/worklog/target/release/wl"),
     (".local/bin/worklog", "tools/worklog/target/release/wl"),
     (
-        ".local/bin/artifact-review",
-        "tools/artifact-review/target/release/artifact-review",
+        ".local/bin/review-change",
+        "tools/evaluation/target/release/review-change",
     ),
-    (
-        ".local/bin/review-change-eval",
-        "tools/evaluation/target/release/review-change-eval",
-    ),
+];
+const PRIVATE_TOOLS: &[&str] = &[
+    "tools/artifact-review/target/release/review-artifact",
+    "tools/evaluation/target/release/consult",
 ];
 const SUPPORT: &[&str] = &[
     "harnesses/worktree-client.ts",
@@ -223,6 +223,12 @@ fn check_bundled_tools(manifest: &Manifest) -> Result<()> {
             }),
             "Native package lacks a bundled tool: {destination}"
         );
+    }
+    for target in BUNDLED_TOOLS
+        .iter()
+        .map(|(_, target)| *target)
+        .chain(PRIVATE_TOOLS.iter().copied())
+    {
         check_support_file(&manifest.source, target)?;
         let path = manifest.source.join(target);
         let c_path = CString::new(path.as_os_str().as_bytes())?;

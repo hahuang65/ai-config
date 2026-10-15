@@ -47,6 +47,20 @@ fn rust_installer_loads_a_package_without_an_evaluation_profile_or_herdr() {
             ))
         );
     }
+    for name in ["artifact-review", "review-artifact", "consult"] {
+        assert!(
+            canonical_home
+                .join(format!(".local/bin/{name}"))
+                .symlink_metadata()
+                .is_err()
+        );
+    }
+    for helper in [
+        "tools/artifact-review/target/release/review-artifact",
+        "tools/evaluation/target/release/consult",
+    ] {
+        assert!(root.join(helper).is_file());
+    }
     let repeated = Command::new(env!("CARGO_BIN_EXE_ai-config"))
         .args(["--root", root.to_str().unwrap(), "install"])
         .env("HOME", &canonical_home)
