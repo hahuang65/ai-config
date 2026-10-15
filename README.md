@@ -40,14 +40,11 @@ It never provisions tools, touches services, or deletes private state.
 
 Before a repository edit, use a verified task worktree; `skills/worktree/SKILL.md` describes safe creation, entry, and cleanup with `wt` or `worktree`.
 A direct-checkout exception requires the user's up-front choice for one self-contained change and commit authorization.
-[Native task adapters](docs/worktree-transitions.md) carry the current conversation into a new task and resume a saved task conversation without converting between harnesses.
-Pi uses `/wt` and its native session replacement; Claude uses `EnterWorktree` and native `/resume` with conversation and directory checks.
+[Native task adapters](docs/worktree-transitions.md) own the entry, resume, return, and cleanup procedures for each harness, including conversation verification and unsupported modes.
+They carry the current conversation into a new task and resume the saved task conversation for an existing one, without converting between harnesses.
 The [shared continuation contract](docs/worktree-transitions.md#shared-continuation-contract) resumes already-requested work once after verified native completion, without new authorization.
-Pi starts a destination turn; Claude attaches the same notice to its existing native tool loop.
-Claude's interactive `/resume` cannot start a turn through hooks and explicitly requires a subsequent `continue` message; it is not advertised as automatic.
-Both provide `/wt leave` to carry the current conversation back to the primary directory without cleanup; Claude's `/wt` command guides native tool use.
-Neither adapter claims exclusive use of a worktree, checks process ownership, or acquires session locks.
-Creating a worktree through the standalone CLI still does not move a running conversation.
+Claude's interactive `/resume` still requires a subsequent `continue` message.
+Creating a worktree through the standalone CLI does not move a running conversation; use the documented native transition.
 This package does not install a Pi language-server client or the former agentmemory and background publication services.
 The commands never push automatically or clean merely because work ends.
 Local delivery requires project checks and a verified fast-forward; provider review is a separate, explicitly requested workflow.

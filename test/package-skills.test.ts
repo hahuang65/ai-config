@@ -94,13 +94,14 @@ test("change-review decisions authorize only accepted findings without replacing
   expect(instructions).toContain("open REPORT.html --findings REPORT.json");
   expect(instructions).toContain("Accept authorizes repairing that finding");
   expect(instructions).toContain("Reject and undecided findings authorize no repairs");
-  expect(instructions).toContain("finding_review.report_digest");
-  expect(instructions).toContain("finding_review.needs_review");
+  expect(instructions).toContain("read and follow [review-artifact](../review-artifact/SKILL.md)");
   expect(instructions).toContain("Never rewrite the retained report");
   expect(instructions).toContain("Never submit accept/reject events yourself");
   expect(instructions).toContain("coach mode");
   const artifact = readFileSync(join(directory, "review-artifact/SKILL.md"), "utf8");
   expect(artifact).toContain("--findings REPORT.json");
+  expect(artifact).toContain("finding_review.report_digest");
+  expect(artifact).toContain("finding_review.needs_review");
   expect(artifact).toContain("Only the human");
   expect(artifact).toContain("Do not end the agent turn while the review is open");
   expect(artifact).toContain("wait --reply");

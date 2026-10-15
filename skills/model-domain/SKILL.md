@@ -14,13 +14,8 @@ Use the project's documented language consistently in conversation, tests, and c
 - Check relationships, identity, ownership, lifecycle, and important domain rules with concrete scenarios.
 - Investigate contradictions between the user's description, documentation, and code.
   Ask which behavior is intended rather than silently treating one source as correct.
-- Write agreed terms, relationships, and domain rules to `CONTEXT.md` as they become clear.
-  Keep it concise; do not turn it into a specification, implementation guide, or transcript.
-- Use `CONTEXT-MAP.md` only when separate domains genuinely need a map.
-  Follow an existing map without reading every unrelated context.
-- Write significant architecture choices to `docs/adr/` using the documentation rule's criteria.
-  Include the problem, decision, alternatives, rationale, and consequences.
-  Follow existing numbering and status conventions; preserve the history of superseded decisions.
+- Record agreed domain knowledge and significant architecture choices as they become clear.
+  Follow the documentation rule for context-file navigation, record contents, and decision criteria; preserve the history of superseded decisions.
 
 Do not invent decisions or present unresolved proposals as agreed facts.
 Create files only when there is useful content to record.

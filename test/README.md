@@ -4,6 +4,9 @@ Run `make test` from the package checkout.
 Tests use disposable homes and fake providers; they must not install into the live home, import old Work log history, contact a real provider, or read saved credentials.
 
 - `package-*.test.ts` verifies the retained skills, specialist roles, ordinary Claude and Pi discovery, guard adapters, shared commands, status displays, themes, LSP plugin separation, and review boundaries.
+- `package-instruction-routing.test.ts` follows consolidated instructions through disposable manifest-declared skill and bootstrap links for both harnesses.
+  It checks that finding-decision safeguards and documentation conventions remain reachable from their source-owned references, and that the package overview points to the full native transition contract.
+  These are routing and content checks, not proof that a model will obey the instructions.
 - `reviewer-runtime.test.ts` checks the restricted Pi reviewer with a synthetic provider and a private source snapshot.
 - `guards.test.ts` checks shared guard behavior.
 - `cli-links.test.ts` checks executable link ownership in disposable homes.

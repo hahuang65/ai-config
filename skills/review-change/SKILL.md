@@ -25,17 +25,14 @@ Ordinary session skill discovery remains enabled; the reviewer itself is isolate
    Do not execute reviewed code or fill evidence gaps without authorization.
 3. Read the bounded JSON result and present the HTML report path, scope, findings, and limits.
    Distinguish defects from changed-code refactoring and existing-code reuse.
-   For repair decisions, use [review-artifact](../review-artifact/SKILL.md) with `open REPORT.html --findings REPORT.json`, using the exact returned paths.
-   The shell places Accept/Reject inside each rendered finding, with annotations and general feedback in the sidebar.
+   For repair decisions, read and follow [review-artifact](../review-artifact/SKILL.md), including its finding-review mode, with `open REPORT.html --findings REPORT.json` and the exact returned paths.
+   That skill owns foreground waiting, cursor and reply retries, revision/digest validation, and saved-decision finality.
+   Apply its evidence checks before mapping accepted finding IDs to repairs; request a fresh review for mismatched, missing, or changed evidence.
    Accept authorizes repairing that finding; Reject and undecided findings authorize no repairs.
-   Only process saved accept events whose revision matches `current_revision` and `finding_review.revision`, with `finding_review.needs_review` false.
-   Verify the retained JSON's SHA-256 equals `finding_review.report_digest` before mapping its IDs to repairs.
-   Reject mismatched, missing, or changed evidence; request a fresh review rather than transferring IDs or decisions between reports.
    The report must still describe the relevant code; unrelated source changes require a fresh review, while earlier authorized repairs in the same batch remain explicit context.
    Process comments within the accepted finding's scope; ask about conflicting instructions, and preserve user ownership of source and tests in coach mode.
    Never submit accept/reject events yourself, infer acceptance from feedback or a closed browser, or repair a finding twice after event replay.
-   Record handled cursors and repair outcomes; continue indefinite foreground `wait` calls until all findings are decided or the user ends the review.
-   Saved decisions are final for that report; requests to change them need explicit chat clarification, not fabricated replacement events.
+   Record handled cursors and repair outcomes while following that skill's wait lifecycle.
    Verify accepted repairs and request a fresh review of the whole changed task, at a new retained report path.
    Never rewrite the retained report, its JSON, or signatures to record decisions or fixes.
    Rejection is not a verified fix, and an all-decided report is not blanket code approval.
