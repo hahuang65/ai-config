@@ -48,5 +48,6 @@ Do not call the work complete with unresolved blocking findings or missing requi
 
 Summarize changed behavior, verification, review outcome, and remaining limits.
 Record a meaningful checkpoint through [work-log](../work-log/SKILL.md) without duplicate entries.
+After a checkpoint or sub-workflow, return to the next authorized step under the shared bootstrap's [continuation policy](../../baseline.md#keep-work-moving); a progress summary does not end unfinished work.
 Do not stage, commit, push, merge, or publish by implication; those actions require a separate explicit request.
 Do not start an unrelated skill or a new task merely because implementation finished.

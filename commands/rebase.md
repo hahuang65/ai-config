@@ -19,7 +19,8 @@ Use the bundled `worktree` CLI (`worktree list --json`) and Git; do not use anot
    Do not fetch, pull, reset, or move the integration branch implicitly.
    On conflict, load `resolve-conflicts` in the same checkout; do not discard either side or silently abort.
 4. Verify the completed branch, ancestry, working state, and project checks.
-   Request separate approval before a real-provider `review-change`; report an incomplete review honestly.
+   A real-provider `review-change` is a separate workflow, not implicit in this rebase.
+   If that review is needed, request approval only when it is not already explicitly authorized for this scope; report an incomplete review honestly.
 
 Never push, delete a branch, integrate, or clean a worktree here.
 Report the target, original and new tips, checks, and any state left for the user.

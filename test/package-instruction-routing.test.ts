@@ -23,6 +23,58 @@ function withInstalledInstructions(check: (home: string, source: string) => void
   } finally { rmSync(home, { recursive: true, force: true }); }
 }
 
+test("both installed bootstraps keep authorized work moving across checkpoints without widening permission", () => {
+  withInstalledInstructions((home, source) => {
+    for (const bootstrap of [".claude/CLAUDE.md", ".pi/agent/AGENTS.md"]) {
+      const entry = join(home, bootstrap);
+      expect(realpathSync(entry)).toBe(realpathSync(join(source, "baseline.md")));
+      const instructions = readFileSync(entry, "utf8");
+      const continuation = instructions.match(/## Keep work moving\n([\s\S]*?)(?=\n## |$)/)?.[1] ?? "";
+      for (const requirement of [
+        "Continue the current authorized task until it is complete",
+        "user approval, decision, or required manual action",
+        "progress update, worklog checkpoint, or completed workflow step is not a stopping point",
+        "take the next safe, authorized step instead of waiting for another “continue”",
+        "same still-valid scope",
+        "changed scope or evidence invalidates that approval",
+        "workflow requires fresh approval",
+        "Investigate failures within the authorized scope",
+        "concrete blocker and the smallest user action needed",
+        "explicit pause, cancellation, or handoff",
+        "Do not bypass permissions, execution limits, native transition steps, or approval gates",
+        "Do not start another task",
+      ]) expect(continuation).toContain(requirement);
+      expect(instructions).toContain("Do not stage, commit, push, or deliver unless the current request explicitly authorizes that action");
+      expect(instructions).toContain("Never clean a worktree merely because work ends");
+      expect(instructions).toContain("Do not change the installed AI configuration while testing a replacement package");
+    }
+  });
+});
+
+test("installed code and work-log skills return from checkpoints to the shared continuation policy", () => {
+  withInstalledInstructions((home, source) => {
+    for (const harness of harnesses) {
+      for (const skill of ["code", "work-log"]) {
+        const entry = realpathSync(join(home, harness, "skills", skill, "SKILL.md"));
+        const caller = readFileSync(entry, "utf8");
+        const reference = caller.match(/\[continuation policy\]\(([^)#]+)#keep-work-moving\)/);
+        expect(reference).not.toBeNull();
+        const policyPath = resolve(dirname(entry), reference![1]);
+        expect(policyPath).toBe(realpathSync(join(source, "baseline.md")));
+        expect(readFileSync(policyPath, "utf8")).toContain("## Keep work moving");
+        expect(caller).toContain("next authorized step");
+        expect(caller).not.toContain("## Keep work moving");
+      }
+      const worklog = readFileSync(join(home, harness, "skills/work-log/SKILL.md"), "utf8");
+      expect(worklog).toContain("A logging failure does not block otherwise authorized work");
+      expect(worklog).toContain("Never start it automatically");
+      const code = readFileSync(join(home, harness, "skills/code/SKILL.md"), "utf8");
+      expect(code).toContain("Do not stage, commit, push, merge, or publish by implication");
+      expect(code).toContain("rejected and undecided findings are not repair scope");
+    }
+  });
+});
+
 test("installed change-review skills load one source-owned finding-decision protocol", () => {
   withInstalledInstructions((home, source) => {
     for (const harness of harnesses) {

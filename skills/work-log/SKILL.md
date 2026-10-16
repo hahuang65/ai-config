@@ -38,6 +38,8 @@ Look for a clear existing task before adding one, and ask rather than merging am
 Keep records concise and synthesized; exclude secrets, raw transcripts, environment dumps, and private customer data.
 Do not infer progress from file activity or create separate entry quotas.
 Avoid duplicate entries when one skill calls another for the same outcome.
+After recording a checkpoint, return to the caller's next authorized step under the shared bootstrap's [continuation policy](../../baseline.md#keep-work-moving).
+A logging failure does not block otherwise authorized work; report the failed record without repeatedly retrying it.
 
 ## Recall and suggest
 

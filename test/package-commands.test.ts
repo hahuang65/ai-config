@@ -34,6 +34,14 @@ test("delivery checks and integrates the task without starting a provider review
   expect(instructions).toContain("PR preparation is not integration and does not authorize cleanup");
 });
 
+test("rebase asks for a separate provider review only when needed authorization is missing", () => {
+  const instructions = readFileSync(`${root}/commands/rebase.md`, "utf8");
+  expect(instructions).toContain("not implicit in this rebase");
+  expect(instructions).toContain("only when it is not already explicitly authorized for this scope");
+  expect(instructions).toContain("report an incomplete review honestly");
+  expect(instructions).toContain("Never push, delete a branch, integrate, or clean a worktree here");
+});
+
 test("installed package README describes checked delivery and separate review", () => {
   const readme = readFileSync(`${root}/README.md`, "utf8");
   expect(readme).toContain("## Installed package");

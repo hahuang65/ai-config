@@ -40,6 +40,10 @@ Failed change reviews retain [bounded, credential-safe diagnostics](docs/review-
 The installer changes only recorded owned links and narrow guardrail settings; it preserves unrelated resources, login, models, sessions, and project trust.
 It never provisions tools, touches services, or deletes private state.
 
+The [ordinary-work continuation policy](baseline.md#keep-work-moving) keeps authorized tasks moving after progress updates, worklog checkpoints, and completed workflow steps.
+Completion, explicit user pauses, required decisions/approvals/manual actions, or forced interruptions are stopping points; a checkpoint does not renew or widen authorization.
+This is shared instruction guidance, not a background restart mechanism or a guarantee of model compliance.
+
 Before a repository edit, use a verified task worktree; `skills/worktree/SKILL.md` describes safe creation, entry, and cleanup with `wt` or `worktree`.
 A direct-checkout exception requires the user's up-front choice for one self-contained change and commit authorization.
 [Native task adapters](docs/worktree-transitions.md) own the entry, resume, return, and cleanup procedures for each harness, including conversation verification and unsupported modes.

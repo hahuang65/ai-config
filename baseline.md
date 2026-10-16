@@ -20,6 +20,18 @@ Do not change the installed AI configuration while testing a replacement package
 Use mise-managed tools directly by name; do not activate another version manager.
 Keep TypeSafe and Herdr independently configured.
 
+## Keep work moving
+
+Continue the current authorized task until it is complete or blocked on user approval, decision, or required manual action.
+A progress update, worklog checkpoint, or completed workflow step is not a stopping point when authorized work remains.
+After reporting or recording progress, take the next safe, authorized step instead of waiting for another “continue”.
+Before ending a turn, check the remaining requested work and any explicit approvals already given for the same still-valid scope; do not ask again merely because a checkpoint or phase ended.
+If changed scope or evidence invalidates that approval, or a workflow requires fresh approval, obtain it rather than reusing an inapplicable approval.
+Investigate failures within the authorized scope; when blocked, state the concrete blocker and the smallest user action needed, not a generic offer to continue.
+Respect an explicit pause, cancellation, or handoff.
+Do not bypass permissions, execution limits, native transition steps, or approval gates to keep going; report forced interruptions honestly.
+Do not start another task or expand scope merely because the current work is complete.
+
 ## Communicate clearly
 
 Use the project's documented terms consistently and define unfamiliar terms when needed.
