@@ -35,6 +35,9 @@ export function installFixture() {
       cwd: temporary, encoding: "utf8", timeout: 30_000,
       env: environment(env),
     }),
+    runFrom: (selectedSource: string, env: Record<string, string> = {}) => spawnSync(join(selectedSource, "install.sh"), [], {
+      cwd: temporary, encoding: "utf8", timeout: 30_000, env: environment(env),
+    }),
     launch: (env: Record<string, string> = {}) => spawn(join(source, "install.sh"), [], {
       cwd: temporary, env: environment(env), detached: true, stdio: ["ignore", "pipe", "pipe"],
     }),

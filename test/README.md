@@ -10,13 +10,20 @@ Tests use disposable homes and fake providers; they must not install into the li
   `package-commands.test.ts` checks that a needed provider review asks only for missing scope-specific authorization while delivery still cannot start a provider review.
   These are routing and content checks, not proof that a model will obey the instructions.
 - `reviewer-runtime.test.ts` checks the restricted Pi reviewer with a synthetic provider and a private source snapshot.
+  Its process entry is the test-only Cargo example `reviewer-fixture`, backed by the shared runner library, not a production or installed command.
+  `make build-evaluation-debug` builds this driver for package/Rust tests; `make build` does not build or install it.
+  The native Claude reviewer suite uses the same driver and skips only for missing host capabilities, never because a build artifact is absent.
 - `guards.test.ts` checks shared guard behavior.
 - `cli-links.test.ts` checks executable link ownership in disposable homes.
+  The retired WT Python install/repeat/uninstall test was replaced by `package-install-entrypoints.test.ts`, which exercises foreign regular files and dangling links through the real shell installer and rejects the removed uninstall interface without side effects.
+  Shell installation/repeat tests and the WT CLI suites retain successful installation, repeat ownership, and executable behavior coverage.
 - `package-install-*.test.ts` exercises the shell installer with disposable homes and source copies, fake build/tool executables, and real jq/coreutils processes.
   It covers missing dependencies, source/HOME separation, exact numeric preservation, ownership refusals, recorded alias upgrades, live lock contention, rollback, concurrent-edit refusal, and private record permissions.
   Transaction failure tests inject a failing rename; the lock test waits for a real process barrier, not an elapsed-time guess.
   GNU coreutils are required; the macOS system find is also exercised.
-  Retained Rust configuration tests still run during the installer migration; they are not substitutes for shell-process coverage.
+  Applicable Rust installation-library scenarios have moved to these suites; unrecorded-adoption cases and private implementation tests are deliberately retired, not counted as retained coverage.
+  See the [coverage migration](installer-migration.md) for the behavior-to-suite mapping.
+  Former `ai-config` and generic `evaluation` installation consumers now invoke the real shell installer through a disposable-package helper; both native harness discovery checks use the same shell fixture, without skipping when an obsolete binary is absent.
 - `package-tool-inventory.test.ts` checks catalogue coverage for manifest CLI aliases, the current Rust executable source layout, literal Pi tool registrations, and bare Claude tool denials.
   It does not contact MCP servers or assert that a documented host tool is active in every session.
 - `resolve-conflicts.test.ts` checks the rebase-only skill contract.
@@ -80,14 +87,14 @@ Add a module-name filter such as `change_post_safety::` to focus it, or append `
 The reviewer and consult cases similarly share `tests/runners.rs` rather than four separate integration binaries.
 Their case modules are `cases/{consult,reviewer,reviewer_claude,reviewer_diagnostics}.rs`; the fake reviewer script lives in `support/reviewer.rs`.
 All cases retain their assertions, deadlines, and separate disposable homes, repositories, provider state, and output files.
-Run them with `cargo test --locked --offline --manifest-path tools/evaluation/Cargo.toml --test runners`, optionally filtering a module such as `reviewer_diagnostics::` or appending `-- --test-threads=1`.
-Installer and configuration cases share `tests/configuration.rs` rather than separate integration binaries, retaining their cases and the existing Rust test-thread limit.
-They live in `cases/configuration_*.rs` and `cases/package_*.rs`; resource-validation cases were split out as `configuration_package_resources.rs` to keep the files small without changing test bodies.
+First run `make build-evaluation-debug` to build the test-only reviewer driver, then run `cargo test --locked --offline --manifest-path tools/evaluation/Cargo.toml --test runners`, optionally filtering a module such as `reviewer_diagnostics::` or appending `-- --test-threads=1`.
+Shell-backed package and installation cases share `tests/configuration.rs` and the existing Rust test-thread limit.
+They live in `cases/configuration_package*.rs` and `cases/package_*.rs`; no Rust installation library remains.
+The package-manifest helper runs `install.sh` in a disposable home and reads its completed ownership record rather than duplicating validation or effects.
 Every case retains its separate disposable installation source, home, ownership record, lock, and output files; shared package inputs remain read-only.
-Run the group with `cargo test --locked --offline --manifest-path tools/evaluation/Cargo.toml --test configuration`, optionally filtering a module such as `configuration_inventory_safety::` or appending `-- --test-threads=1`.
+Run the group with `cargo test --locked --offline --manifest-path tools/evaluation/Cargo.toml --test configuration`, optionally filtering a module such as `configuration_package_resources::` or appending `-- --test-threads=1`.
 The complete evaluation gate still discovers integration targets automatically, including future targets outside these groups.
-The library lock-lifetime regression in `tools/evaluation/tests/unit/installation_lock.rs` uses a real fork and a blocked child, bounded by a five-second watchdog and unconditional child cleanup.
-It proves an active installer still excludes contenders and that success/error returns release its lock while the child's inherited handles remain open; no sleeps, retries, or serial-test workaround establish correctness.
+The retired Rust file-lock/fork regression does not apply to the replacement lock-directory protocol, which has its own shell-process contention and release checks.
 
 WT parity runs independent cases in at most four spawned worker processes, preserving their disposable fixtures and grouping output by case.
 It discovers the same cases as serial execution, retains skips and all failure outcomes, and fails if a worker crashes.

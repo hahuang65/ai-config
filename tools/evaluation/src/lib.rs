@@ -12,8 +12,6 @@ mod change_selection;
 mod change_snapshot;
 mod change_store;
 mod change_types;
-pub mod configuration;
-pub mod configuration_install;
 pub mod consult;
 mod option_pairs;
 pub mod paths;

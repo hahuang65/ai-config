@@ -12,11 +12,17 @@ Public commands remain symlinks to built binaries in the installed source, prese
 | Source-local `consult` | `tools/evaluation/target/release/consult`; [source](../tools/evaluation/src/consult_main.rs) | Harness-invoked specialist advice, including before a change exists. |
 
 WT and WL retain their existing alias pairs and targets listed below.
-The agreed installer is `install.sh` alone, not a wrapper around a Rust/Python installer; retirement of `ai-config`, `evaluation`, and alternate installers is still pending implementation.
+The agreed installer is `install.sh` alone, not a wrapper around a Rust/Python installer.
+The `ai-config` executable has been removed and its fixture consumers now invoke the shell installer.
+The separate WT Python installer has also been removed; component Makefiles still cannot install or uninstall package links.
+The generic `evaluation` executable and Rust installation library are removed; the shared restricted runner remains internal, with a test-only process driver.
+The user explicitly retired unrecorded legacy adoption; version-one and version-two recorded upgrades remain supported.
+See [ADR 0041](adr/0041-retire-unrecorded-installation-adoption.md) and the [coverage migration](../test/installer-migration.md).
+The current installation contract is [manifest.json](../manifest.json), validated by the shell installer and [JSON catalogue](../tools/install/manifest.jq).
 `install.sh` now performs the transaction itself, using JSON-only filters under `tools/install/` rather than invoking an installer binary.
 The user approved jq and GNU coreutils as required dependencies; their absence produces a clear error before building or installing.
 The shell installer uses an atomic lock directory and retains private recovery files when rollback cannot safely restore concurrent edits.
-It is not crash-atomic, and its lock must not be bypassed or combined with the retiring Rust entry points.
+It is not crash-atomic, and its lock must not be bypassed or combined with stale Rust installation binaries retained in other checkouts.
 Orchard, agentmemory, and the old review-publication service are selected for retirement, with cross-repository changes and protected live cleanup handled separately.
 Existing worktrees, private histories, retained review formats, and publication reconciliation must be preserved.
 Human CLI ergonomics are separate follow-up work.
@@ -33,7 +39,7 @@ The broader cross-harness implementation checklist belongs to separate work.
 ## Scope and evidence
 
 Source baseline: `13cad372b1da00ad8c57025951065cecf0e56d63`, inspected on 2026-10-15.
-The installation contract is [manifest.json](../manifest.json), checked by the Rust [package validator](../tools/evaluation/src/configuration/package.rs) and [resource catalogue](../tools/evaluation/src/configuration/package_catalogue.rs).
+At that baseline, `manifest.json` was checked by `tools/evaluation/src/configuration/package.rs` and `package_catalogue.rs`; those historical source files are now removed.
 Source references below describe that checkout, not a promise that an existing executable was rebuilt from it.
 
 Use the existing [domain terms](../CONTEXT.md#core-concepts): a **Tool** is a model-callable operation exposed by a harness; an **Agent-facing CLI** is an executable consumed through the shell tool.
@@ -82,10 +88,10 @@ They are not hidden model tools.
 
 | Binary | Source | Invocation | Purpose and why executable code |
 | --- | --- | --- | --- |
-| `evaluation` | [tools/evaluation/src/main.rs](../tools/evaluation/src/main.rs) | `tools/evaluation/target/release/evaluation [--root SOURCE] reviewer --snapshot DIR --prompt TEXT [--engine pi\|claude]` | Low-level restricted runner over an existing snapshot; shared process isolation, bounded output, diagnostics, and provider selection. Usually reached through higher-level review. |
+| `evaluation` | `tools/evaluation/src/main.rs` (removed) | `tools/evaluation/target/release/evaluation [--root SOURCE] reviewer --snapshot DIR --prompt TEXT [--engine pi\|claude]` | Low-level restricted runner over an existing snapshot; shared process isolation, bounded output, diagnostics, and provider selection. Usually reached through higher-level review. |
 | `evaluation` | [consult.rs](../tools/evaluation/src/consult.rs), [specialists](specialists.md) | `tools/evaluation/target/release/evaluation --root SOURCE consult --agent ROLE --repo REPO --prompt TEXT [--engine pi\|claude]` | Read-only specialist consultation with a bounded snapshot and explicit trusted role. Not the required HTML change review, not an automatic team, and not permission to edit. Model calls need explicit approval. |
-| `evaluation` | [configuration_install.rs](../tools/evaluation/src/configuration_install.rs) | `tools/evaluation/target/release/evaluation --root SOURCE native-install [explicit historical paths]` | Retained adoption/migration entry point, including `--check` with complete historical path groups. Unlike the ordinary installer, it can explicitly adopt exact legacy resources. Do not run it as a test or routine installation shortcut. |
-| `ai-config` | [tools/evaluation/src/bin/ai-config.rs](../tools/evaluation/src/bin/ai-config.rs) | `tools/evaluation/target/release/ai-config --root CANONICAL_SOURCE install` | Narrow ordinary installer: validates the selected package and delegates owned link/settings changes to the shared Rust transaction. Separate live-home authorization required. |
+| `evaluation` | `configuration_install.rs` (removed) | `tools/evaluation/target/release/evaluation --root SOURCE native-install [explicit historical paths]` | Retained adoption/migration entry point, including `--check` with complete historical path groups. Unlike the ordinary installer, it can explicitly adopt exact legacy resources. Do not run it as a test or routine installation shortcut. |
+| `ai-config` | `tools/evaluation/src/bin/ai-config.rs` (removed) | `tools/evaluation/target/release/ai-config --root CANONICAL_SOURCE install` | Narrow ordinary installer: validates the selected package and delegates owned link/settings changes to the shared Rust transaction. Separate live-home authorization required. |
 
 Both reviewer-facing binaries accept explicit Pi or Claude selection; the default engine is Pi, not automatic detection of the caller.
 The workflow supplies the caller's engine when required.
@@ -101,7 +107,7 @@ Several executable surfaces have installation-related names, with different owne
 | `./install.sh` | Package Bash entry point; [source](../install.sh) | Builds its own canonical checkout with offline `make build`, then runs that checkout's `ai-config --root ... install` against inherited absolute `HOME`. Help does neither. | Supported human installation entry point; not a competing installer implementation. |
 | `ai-config ... install` | Package Rust CLI | Validates resources, manages owned symlinks/settings and the installation record, refuses conflicts, and uses the shared transaction/rollback machinery. Does not provision dependencies or services. | Implementation behind `install.sh`; keep the build wrapper and ownership engine distinct. |
 | `evaluation ... native-install` | Retained package Rust migration CLI | Fresh/repeat installation plus explicit historical adoption and adoption preflight. | Real overlap with `ai-config`, but additional migration authority and compatibility tests make deletion a separate decision. |
-| `tools/worktree/install.py` | Retained Python reference installer; [source](../tools/worktree/install.py) | Can create/remove only its own Python `wt` launcher link and refuses unrelated entries. | Not in the package manifest; retained with Python parity/reference code, not the production Rust installer. Not run for this inventory. |
+| `tools/worktree/install.py` | Former Python reference installer; `tools/worktree/install.py` (removed) | Can create/remove only its own Python `wt` launcher link and refuses unrelated entries. | Not in the package manifest; retained with Python parity/reference code, not the production Rust installer. Not run for this inventory. |
 | `make install` / `make uninstall` in WT or WL | Unsupported component targets; [test](../test/cli-links.test.ts) | Component Makefiles intentionally cannot install or remove Rust-owned links. | Not alternatives to the package installer. |
 | `pi install SOURCE` | Upstream Pi package-manager command | Installs npm/Git/local Pi packages and changes user or project package declarations. | Not this repository's cross-harness installer, not a default model tool, and not permission to switch live links. |
 | `claude install` | Upstream harness installation command | Installs/manages Claude Code itself according to its CLI. | Not ai-config resource ownership; do not confuse installing the harness with configuring it. |

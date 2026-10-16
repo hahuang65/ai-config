@@ -12,7 +12,7 @@ The repository pins Rust through mise.
 Run `make build` to produce `target/release/wl`.
 Run `make test` for the process-level CLI integration suite.
 The component Makefile does not install or remove links.
-For a separately approved installation or source switch, run the root `tools/evaluation/target/release/ai-config --root "$(pwd -P)" install` to install the owned link into `~/.local/bin/wl`.
+For a separately approved installation or source switch, run the package-root `./install.sh` to build the selected checkout and install the owned link into `~/.local/bin/wl`.
 
 The default store is `$HOME/.worklog/`, not the source repository or invocation directory.
 Without an override, `HOME` must be nonempty and absolute; invalid values fail before storage access.

@@ -63,6 +63,30 @@ test("installer settings refuse adoption, modified or duplicated claims, and cha
   }
 });
 
+test("installer settings retain personal order and raw numbers across switch, repeat and removal", () => {
+  const unknown = '{"numbers":[-0,0.12345678901234567890123456789,1e-99999999999999999999999999999999999999999999999999999,184467440737095516170123456789],"object":{"$serde_json::private::Number":"literal","nested":[true,null,"string"]}}';
+  let current = `{"unknown":${unknown},"permissions":{"allow":["personal","A","personal","B","last"]}}`;
+  let previous = [entry("A"), entry("B")];
+  for (const desired of [[entry("B"), entry("C")], [entry("B"), entry("C")], []]) {
+    const result = merge(current, previous, desired);
+    expect(result.status, result.stderr).toBe(0);
+    expect(result.stdout).toContain(`"unknown":${unknown}`);
+    expect(JSON.parse(result.stdout).permissions.allow)
+      .toEqual(desired.length ? ["personal", "personal", "B", "last", "C"] : ["personal", "personal", "last"]);
+    previous = desired;
+    current = result.stdout;
+  }
+  const claim = '[{"path":["hooks","PreToolUse"],"mode":"array_entry","value":{"timeout":51.248178375505404}}]';
+  const installed = mergeRaw("{}", "[]", claim);
+  expect(installed.status).toBe(0);
+  const repeated = mergeRaw(installed.stdout, claim, claim);
+  expect(repeated.status).toBe(0);
+  expect(repeated.stdout).toBe(installed.stdout);
+  const removed = mergeRaw(repeated.stdout, claim, "[]");
+  expect(removed.status).toBe(0);
+  expect(removed.stdout.trim()).toBe('{"hooks":{"PreToolUse":[]}}');
+});
+
 test("installer numeric ownership compares equivalent spellings without rounding distinct integers", () => {
   const claim = (number: string) => `[{"path":["hooks","PreToolUse"],"mode":"array_entry","value":{"timeout":${number}}}]`;
   for (const spelling of ["1e0", "1.00", "100e-2", "0.001e3"]) {

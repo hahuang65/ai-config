@@ -1,5 +1,5 @@
 use crate::support::package_fixture;
-use evaluation::configuration::prepared_manifest;
+use crate::support::package_manifest::prepared_manifest;
 use package_fixture::{fixture, manifest};
 use serde_json::json;
 use std::fs;

@@ -5,12 +5,12 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { startFakeClaudeApi, toolResults } from "./fixtures/claude-api.ts";
 
-const binary = fileURLToPath(new URL("../tools/evaluation/target/debug/evaluation", import.meta.url));
+const binary = fileURLToPath(new URL("../tools/evaluation/target/debug/examples/reviewer-fixture", import.meta.url));
 const reviewBinary = fileURLToPath(new URL("../tools/evaluation/target/debug/review-change", import.meta.url));
 const consultBinary = fileURLToPath(new URL("../tools/evaluation/target/debug/consult", import.meta.url));
 const sandbox = "/usr/bin/sandbox-exec";
 const canRun = process.platform === "darwin" && existsSync(sandbox)
-  && existsSync(binary) && existsSync(reviewBinary) && Bun.which("claude") && Bun.which("bun");
+  && Bun.which("claude") && Bun.which("bun");
 
 function profile(): string {
   const actualHome = homedir();

@@ -2,7 +2,9 @@
 pub mod change;
 pub mod consult;
 pub mod package_fixture;
+pub mod package_manifest;
 pub mod reviewer;
+pub mod shell_install;
 use serde_json::{Value, json};
 use std::fs;
 use std::os::unix::fs::PermissionsExt;
@@ -35,12 +37,19 @@ impl Trial {
         let base = fs::canonicalize(temporary.path()).unwrap();
         let root = base.join("native trial π ' space");
         let home = base.join("native home π ' space");
-        let binary = root.join("tools/evaluation/target/debug/evaluation");
+        let binary = root.join("tools/evaluation/target/debug/reviewer-fixture");
         let fake_bin = base.join("fake-bin");
         let log = base.join("calls.jsonl");
         fs::create_dir_all(binary.parent().unwrap()).unwrap();
         fs::create_dir_all(&fake_bin).unwrap();
-        fs::copy(env!("CARGO_BIN_EXE_evaluation"), &binary).unwrap();
+        let test_binary =
+            std::env::current_exe().expect("Locate the running Cargo test executable");
+        let profile = test_binary
+            .parent()
+            .and_then(Path::parent)
+            .expect("Cargo tests must run beneath the selected profile's deps directory");
+        fs::copy(profile.join("examples/reviewer-fixture"), &binary)
+            .expect("Build reviewer-fixture with cargo build --example reviewer-fixture in the same target directory and profile first");
         package_fixture::populate(&root);
         package_fixture::manifest(&root);
         put(root.join("reviewer.md"), "restricted review fixture\n");
@@ -64,11 +73,7 @@ impl Trial {
     }
 
     pub fn install(&self) {
-        let output = Command::new(env!("CARGO_BIN_EXE_ai-config"))
-            .env("HOME", &self.home)
-            .args(["--root"])
-            .arg(&self.root)
-            .arg("install")
+        let output = shell_install::command(&self.root, &self.home)
             .output()
             .unwrap();
         success(output);

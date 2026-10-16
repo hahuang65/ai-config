@@ -242,6 +242,11 @@ _Avoid_: harness folder, plugin, per-harness block.
 The normal home-directory location for one harness: `~/.claude/` for Claude Code or `~/.pi/agent/` for Pi.
 A cutover changes managed configuration in both roots while retaining each harness's login, model preferences, and saved conversations.
 
+**Installation ownership record**:
+The private `~/.local/state/ai-config/installation.json` declaration of links and settings the installer may upgrade.
+Version-one and version-two records remain supported; matching unrecorded resources are not owned and are not adopted automatically.
+The former explicit legacy-adoption operation is retired.
+
 **Isolation invariant**:
 The guarantee that installer-managed resources come only from the harness's own module and curated shared set, never a sibling harness's module.
 It does not disable normal user or project discovery in development sessions and is distinct from runtime sandboxing and restricted-reviewer isolation.

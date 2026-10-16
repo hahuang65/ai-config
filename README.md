@@ -100,6 +100,9 @@ An atomic `install.lock.d` directory serializes transactions; an existing lock i
 Handled failures restore completed changes only when their current bytes, targets, and modes still match the transaction.
 Concurrent edits or incomplete rollback retain private recovery files and the lock for human inspection.
 This is not crash-atomic installation: after an uncatchable termination, inspect the lock's `workspace` reference and saved transaction before manually recovering; do not simply delete the lock and retry.
-Retirement of the old Rust installation entry points remains part of the in-progress pruning work; do not run them alongside `install.sh`.
+The generic `evaluation` and `ai-config` executables, Rust installation library, WT Python installer, and one-time unrecorded adoption mode are retired.
+Version-one and version-two ownership-record upgrades remain supported; matching but unrecorded resources are still refused.
+See [the adoption decision](docs/adr/0041-retire-unrecorded-installation-adoption.md) and [coverage migration](test/installer-migration.md).
+Other checkouts may retain stale compiled installation binaries; do not run them alongside `install.sh` or treat source retirement as live cleanup.
 A Git revert cannot retarget already installed links; recovery needs another explicit operation.
 Do not run the removed legacy installer, delete `pi-evaluation`, stage, commit, push, or change the parent submodule pointer by implication.

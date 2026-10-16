@@ -16,7 +16,7 @@ make lint
 ```
 
 The component Makefile does not install or remove links.
-Only the package-root `tools/evaluation/target/release/ai-config --root "$(pwd -P)" install` operation installs `~/.local/bin/wl`, records ownership, and refuses unrelated existing paths.
+Only the package-root `./install.sh`, run with separate live-home approval, installs `~/.local/bin/wl`, records ownership, and refuses unrelated existing paths.
 Keep the selected source checkout available.
 The default store is `~/.worklog/`, regardless of the source checkout or invoking project.
 Set `WL_ROOT` to an absolute path for isolated tests or controlled cutover.

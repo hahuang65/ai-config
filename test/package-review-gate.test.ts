@@ -44,6 +44,21 @@ test("focused and full browser checks build every dependency once before use", (
   }
 });
 
+test("reviewer process fixtures are built for tests but not production builds", () => {
+  const fixture = "cargo build --locked --offline --manifest-path tools/evaluation/Cargo.toml --example reviewer-fixture";
+  for (const target of ["test-package", "test-evaluation", "test"]) {
+    const preview = Bun.spawnSync(["make", "-n", target], { cwd: root, stdout: "pipe", stderr: "pipe" });
+    expect(preview.exitCode, preview.stderr.toString()).toBe(0);
+    const commands = preview.stdout.toString().split("\n");
+    expect(commands.filter(line => line === fixture)).toHaveLength(1);
+    const firstTest = commands.findIndex(line => line.startsWith("bun test ") || line.startsWith("cargo test "));
+    expect(commands.indexOf(fixture)).toBeLessThan(firstTest);
+  }
+  const production = Bun.spawnSync(["make", "-n", "build"], { cwd: root, stdout: "pipe", stderr: "pipe" });
+  expect(production.exitCode, production.stderr.toString()).toBe(0);
+  expect(production.stdout.toString()).not.toContain("reviewer-fixture");
+});
+
 test("offline gate builds and runs process-level worktree parity", () => {
   const preview = Bun.spawnSync(["make", "-n", "test"], {
     cwd: root, stdout: "pipe", stderr: "pipe",
@@ -140,13 +155,9 @@ test("reviewer and consult cases share one Cargo test target with every case mod
   expectGroupedEvaluationCases("runners", ["consult", "reviewer", "reviewer_claude", "reviewer_diagnostics"], /^(consult|reviewer)(?:_.*)?\.rs$/);
 });
 
-test("installer and configuration cases share one Cargo test target with every case module wired once", () => {
+test("shell installation and package cases share one Cargo test target with every case module wired once", () => {
   const groups = [
-    "configuration_adoption", "configuration_adoption_rollback", "configuration_adoption_safety",
-    "configuration_inventory", "configuration_inventory_safety", "configuration_links",
     "configuration_package", "configuration_package_resources", "configuration_package_settings", "configuration_package_themes",
-    "configuration_safety", "configuration_settings", "configuration_settings_numbers",
-    "configuration_settings_rollback", "configuration_settings_safety",
     "package_command_migration", "package_config_cli", "package_install", "package_manifest",
   ];
   expectGroupedEvaluationCases("configuration", groups, /^(configuration|package)_.*\.rs$/);

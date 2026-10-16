@@ -1,9 +1,9 @@
-use crate::support::package_fixture;
+use crate::support::{package_fixture, shell_install};
 use std::fs;
 use std::process::Command;
 
 #[test]
-fn rust_installer_loads_a_package_without_an_evaluation_profile_or_herdr() {
+fn shell_installer_loads_a_package_without_an_evaluation_profile_or_herdr() {
     let package = package_fixture::fixture();
     package_fixture::manifest(package.path());
     assert!(!package.path().join("profile").exists());
@@ -11,9 +11,7 @@ fn rust_installer_loads_a_package_without_an_evaluation_profile_or_herdr() {
     let home = tempfile::tempdir().unwrap();
     let root = package.path().canonicalize().unwrap();
     let canonical_home = home.path().canonicalize().unwrap();
-    let output = Command::new(env!("CARGO_BIN_EXE_ai-config"))
-        .args(["--root", root.to_str().unwrap(), "install"])
-        .env("HOME", &canonical_home)
+    let output = shell_install::command(&root, &canonical_home)
         .output()
         .unwrap();
     assert!(
@@ -61,9 +59,7 @@ fn rust_installer_loads_a_package_without_an_evaluation_profile_or_herdr() {
     ] {
         assert!(root.join(helper).is_file());
     }
-    let repeated = Command::new(env!("CARGO_BIN_EXE_ai-config"))
-        .args(["--root", root.to_str().unwrap(), "install"])
-        .env("HOME", &canonical_home)
+    let repeated = shell_install::command(&root, &canonical_home)
         .output()
         .unwrap();
     assert!(
@@ -80,14 +76,15 @@ fn rust_installer_loads_a_package_without_an_evaluation_profile_or_herdr() {
 }
 
 #[test]
-fn retained_reviewer_cli_does_not_offer_trial_profile_or_service_installation() {
-    let output = Command::new(env!("CARGO_BIN_EXE_evaluation"))
+fn public_review_cli_does_not_offer_trial_profile_or_service_installation() {
+    let output = Command::new(env!("CARGO_BIN_EXE_review-change"))
         .arg("--help")
         .output()
         .unwrap();
     assert!(output.status.success());
     let help = String::from_utf8(output.stdout).unwrap();
-    assert!(help.contains("reviewer"));
+    assert!(help.contains("review local"));
+    assert!(!help.contains("native-install"));
     assert!(!help.contains("herdr"));
     assert!(!help.contains("pi-minimal"));
     assert!(!help.contains("install|uninstall"));
@@ -150,7 +147,7 @@ fn this_checkout_prepares_the_mvp_catalogue_from_release_builds() {
         .join("../..")
         .canonicalize()
         .unwrap();
-    let manifest = evaluation::configuration::prepared_manifest(&source).unwrap();
+    let manifest = crate::support::package_manifest::prepared_manifest(&source).unwrap();
     assert!(
         manifest
             .links
@@ -191,22 +188,19 @@ fn recorded_source_switch_removes_the_retired_extension_and_preserves_personal_s
     links.push(serde_json::json!({
         "destination": ".pi/agent/extensions/local-models.ts", "target": "harnesses/pi/local-models.ts"
     }));
-    let old_manifest: evaluation::configuration::Manifest =
-        serde_json::from_value(previous).unwrap();
+    fs::write(file, previous.to_string()).unwrap();
     let next = package_fixture::fixture();
     package_fixture::manifest(next.path());
     let home = tempfile::tempdir().unwrap();
     let canonical_home = home.path().canonicalize().unwrap();
-    evaluation::configuration::switch_configuration(&canonical_home, &old_manifest).unwrap();
+    crate::support::success(
+        shell_install::command(&old_root, &canonical_home)
+            .output()
+            .unwrap(),
+    );
     let personal = canonical_home.join(".pi/agent/extensions/personal.ts");
     fs::write(&personal, "// Personal; never replace.\n").unwrap();
-    let output = Command::new(env!("CARGO_BIN_EXE_ai-config"))
-        .args([
-            "--root",
-            next.path().canonicalize().unwrap().to_str().unwrap(),
-            "install",
-        ])
-        .env("HOME", &canonical_home)
+    let output = shell_install::command(&next.path().canonicalize().unwrap(), &canonical_home)
         .output()
         .unwrap();
     assert!(

@@ -34,8 +34,9 @@ make test
 ```
 
 The component Makefile never installs or removes links.
-Only `tools/evaluation/target/release/ai-config --root "$(pwd -P)" install`, run deliberately from the package root, owns installation into `~/.local/bin/wt` and refuses unrelated paths.
-Keep the selected source checkout available; do not remove existing launchers outside the Rust ownership operation.
+Only the package-root `./install.sh`, run with separate live-home approval, owns installation into `~/.local/bin/wt` and refuses unrelated paths.
+It builds that checkout and records ownership itself; the standalone Python installer is retired.
+Keep the selected source checkout available; do not remove existing launchers outside the package ownership operation.
 Cargo resolves pinned build dependencies from `Cargo.lock`; the installed executable needs no Python or Node runtime.
 No shell startup changes or background services are installed.
 

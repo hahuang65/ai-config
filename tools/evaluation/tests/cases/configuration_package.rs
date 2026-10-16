@@ -1,5 +1,5 @@
 use crate::support::package_fixture;
-use evaluation::configuration::{prepared_manifest, switch_configuration};
+use crate::support::{package_manifest::prepared_manifest, shell_install, success};
 use package_fixture::{fixture, manifest};
 use serde_json::json;
 use std::fs;
@@ -211,7 +211,11 @@ fn guarded_package_preserves_preferences_and_installs_both_adapters_in_a_disposa
     .unwrap();
     fs::write(&pi, r#"{"defaultModel":"saved"}"#).unwrap();
     let package = prepared_manifest(&fixture.path().canonicalize().unwrap()).unwrap();
-    switch_configuration(&home, &package).unwrap();
+    success(
+        shell_install::command(&package.source, &home)
+            .output()
+            .unwrap(),
+    );
     let settings: serde_json::Value = serde_json::from_slice(&fs::read(&claude).unwrap()).unwrap();
     assert_eq!(settings["model"], "saved");
     assert_eq!(settings["permissions"]["allow"][0], "Read(personal/**)");

@@ -1,6 +1,9 @@
 #[allow(dead_code)]
-use crate::{shared_legacy, support::package_fixture};
-use evaluation::configuration::prepared_manifest;
+use crate::support::{
+    package_fixture,
+    package_manifest::{Mode, prepared_manifest},
+    shell_install,
+};
 use std::fs;
 use std::path::{Path, PathBuf};
 
@@ -119,10 +122,7 @@ fn production_manifest_is_relocatable_and_covers_both_complete_harness_catalogue
 fn production_manifest_retains_captured_claude_denials_and_confirmation_rules() {
     let package = relocated_package();
     let manifest = prepared_manifest(&package.path().canonicalize().unwrap()).unwrap();
-    let legacy: serde_json::Value = serde_json::from_slice(include_bytes!(
-        "../../src/configuration/legacy_defaults/claude.json"
-    ))
-    .unwrap();
+    let legacy = package_fixture::legacy_claude_settings();
     for group in ["deny", "ask", "additionalDirectories"] {
         for value in legacy["permissions"][group].as_array().unwrap() {
             if group == "additionalDirectories" && value == "~/.orchard" {
@@ -132,7 +132,7 @@ fn production_manifest_retains_captured_claude_denials_and_confirmation_rules() 
                 manifest.settings.iter().any(|claim| {
                     claim.destination == Path::new(".claude/settings.json")
                         && claim.path == ["permissions", group]
-                        && claim.mode == evaluation::configuration::Mode::ArrayEntry
+                        && claim.mode == Mode::ArrayEntry
                         && &claim.value == value
                 }),
                 "lost captured Claude permissions.{group} rule: {value}"
@@ -186,11 +186,7 @@ fn public_installer_links_the_real_relocated_package_without_changing_private_st
         fs::write(path, contents).unwrap();
     }
     let install = || {
-        std::process::Command::new(env!("CARGO_BIN_EXE_evaluation"))
-            .env("HOME", &home_path)
-            .arg("--root")
-            .arg(&source)
-            .arg("native-install")
+        shell_install::command(&source, &home_path)
             .output()
             .unwrap()
     };
@@ -239,61 +235,4 @@ fn public_installer_links_the_real_relocated_package_without_changing_private_st
             }
         );
     }
-}
-
-#[test]
-fn public_installer_adopts_the_captured_old_setup_into_the_real_package() {
-    let old = shared_legacy::SharedLegacyFixture::new();
-    old.install_projection();
-    let earlier_services = fs::read(old.source.join("service-calls")).unwrap();
-    let old_pi_settings = fs::read(old.home.join(".pi/agent/settings.json")).unwrap();
-    let package = relocated_package();
-    let source = package.path().canonicalize().unwrap();
-    let output = std::process::Command::new(env!("CARGO_BIN_EXE_evaluation"))
-        .env("HOME", &old.home)
-        .arg("--root")
-        .arg(&source)
-        .arg("native-install")
-        .arg("--legacy-shared")
-        .arg(&old.source)
-        .arg("--legacy-pi-subagents")
-        .arg(&old.upstream)
-        .arg("--legacy-agentmemory")
-        .arg(&old.agentmemory)
-        .output()
-        .unwrap();
-    assert!(
-        output.status.success(),
-        "{}",
-        String::from_utf8_lossy(&output.stderr)
-    );
-    let manifest = prepared_manifest(&source).unwrap();
-    for link in &manifest.links {
-        assert_eq!(
-            fs::read_link(old.home.join(&link.destination)).unwrap(),
-            source.join(&link.target)
-        );
-    }
-    assert_eq!(
-        fs::read(old.source.join("service-calls")).unwrap(),
-        earlier_services
-    );
-    let pi: serde_json::Value =
-        serde_json::from_slice(&fs::read(old.home.join(".pi/agent/settings.json")).unwrap())
-            .unwrap();
-    let before: serde_json::Value = serde_json::from_slice(&old_pi_settings).unwrap();
-    assert_eq!(pi["defaultProvider"], before["defaultProvider"]);
-    assert_eq!(pi["defaultThinkingLevel"], before["defaultThinkingLevel"]);
-    let repeat = std::process::Command::new(env!("CARGO_BIN_EXE_evaluation"))
-        .env("HOME", &old.home)
-        .arg("--root")
-        .arg(&source)
-        .arg("native-install")
-        .output()
-        .unwrap();
-    assert!(
-        repeat.status.success(),
-        "{}",
-        String::from_utf8_lossy(&repeat.stderr)
-    );
 }

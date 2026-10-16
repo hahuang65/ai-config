@@ -46,6 +46,36 @@ test("shell installer rejects unsafe paths, duplicate declarations, and unrelate
   expect(validate(duplicate, "record").status).not.toBe(0);
 });
 
+test("shell record validation rejects private destinations, preference ownership and invalid setting shapes", () => {
+  for (const destination of ["../outside", "/tmp/outside", ".claude/settings.json", ".pi/agent/settings.json",
+    ".claude/projects/history", ".pi/agent/sessions/history", ".pi/agent/trust.json",
+    ".local/state/ai-config/installation.json"]) {
+    const value = packageManifest();
+    value.links.push({ destination, target: "baseline.md" });
+    expect(validate(value, "record").status, destination).not.toBe(0);
+  }
+  for (const [destination, path] of [
+    ...["defaultModel", "defaultProvider", "defaultThinkingLevel", "enabledModels", "defaultProjectTrust", "sessionDir"]
+      .map(name => [".pi/agent/settings.json", [name]]),
+    [".claude/settings.json", ["model"]], [".claude/settings.json", ["env", "ANTHROPIC_API_KEY"]],
+    [".pi/agent/auth.json", ["theme"]], [".claude.json", ["theme"]],
+  ]) {
+    const value = packageManifest();
+    value.settings.push({ destination, path, mode: "value", value: "not-owned" });
+    expect(validate(value, "record").status, JSON.stringify(path)).not.toBe(0);
+  }
+  for (const claim of [
+    { path: ["theme"], mode: "value", value: true },
+    { path: ["theme"], mode: "value", value: { unrelated: "value" } },
+    { path: ["permissions"], mode: "array_entry", value: "Read(example)" },
+  ]) {
+    const value = packageManifest();
+    value.settings.push({ destination: ".claude/settings.json", ...claim });
+    expect(validate(value, "record").status).not.toBe(0);
+  }
+  expect(validate({ ...packageManifest(), version: 1 }, "record").status).not.toBe(0);
+});
+
 test("shell installer retains permission floors and native guard and task hooks", () => {
   const original = packageManifest();
   for (let index = 0; index < original.settings.length; index++) {

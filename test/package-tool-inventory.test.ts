@@ -1,5 +1,7 @@
 import { expect, test } from "bun:test";
+import { execFileSync } from "node:child_process";
 import { existsSync, readFileSync, readdirSync } from "node:fs";
+import { fileURLToPath } from "node:url";
 
 const root = new URL("../", import.meta.url);
 const read = (path: string) => readFileSync(new URL(path, root), "utf8");
@@ -14,6 +16,15 @@ test("tool inventory accounts for every installed CLI alias and its executable",
     expect(row, `Missing CLI catalogue row: ${link.destination}`).toBeDefined();
     expect(row).toContain(`\`${link.target}\``);
   }
+});
+
+test("Cargo exposes only review-change and consult, not retired installation entry points", () => {
+  const metadata = JSON.parse(execFileSync("cargo", ["metadata", "--locked", "--offline", "--no-deps",
+    "--format-version", "1", "--manifest-path", fileURLToPath(new URL("tools/evaluation/Cargo.toml", root))],
+  { encoding: "utf8", timeout: 30_000 }));
+  const binaries = metadata.packages.flatMap((entry: { targets: { name: string; kind: string[] }[] }) =>
+    entry.targets.filter(target => target.kind.includes("bin")).map(target => target.name));
+  expect(binaries.sort()).toEqual(["consult", "review-change"]);
 });
 
 // Include Cargo's implicit main.rs and src/bin targets, not just [[bin]].

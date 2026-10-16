@@ -1,10 +1,10 @@
 import { expect, test } from "bun:test";
-import { chmodSync, cpSync, mkdirSync, mkdtempSync, readFileSync, realpathSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
+import { cpSync, mkdirSync, mkdtempSync, readFileSync, realpathSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { installedSdkFile } from "./fixtures/installed-pi-sdk";
-import { copyPackageFiles } from "./fixtures/inactive-package";
+import { installFixture } from "./fixtures/install-script";
 
 test("the Node-compatible Pi guard bundle matches the reviewed source", async () => {
   const source = fileURLToPath(new URL("../harnesses/pi/guard-policies.ts", import.meta.url));
@@ -33,33 +33,19 @@ test("the Pi SDK follows its installed CLI package through a launcher without as
 });
 
 test("the installed MVP keeps ordinary Pi skills, its guard, and project discovery", async () => {
-  const root = realpathSync(mkdtempSync(join(tmpdir(), "native-pi-package-")));
+  const setup = installFixture();
   try {
-    const home = join(root, "home");
+    const { home } = setup;
     const project = join(home, "project");
     const agentDir = join(home, ".pi/agent");
-    const source = join(root, "replacement");
     mkdirSync(join(project, ".pi/extensions"), { recursive: true });
     mkdirSync(join(agentDir, "skills/personal"), { recursive: true });
     mkdirSync(join(agentDir, "themes"), { recursive: true });
     writeFileSync(join(agentDir, "skills/personal/SKILL.md"),
       "---\nname: personal\ndescription: Disposable personal skill.\n---\nTest only.\n");
     writeFileSync(join(project, ".pi/extensions/project.ts"), "export default function () {}\n");
-    copyPackageFiles(source);
-    for (const binary of ["tools/worktree/target/release/wt", "tools/worklog/target/release/wl",
-      "tools/artifact-review/target/release/review-artifact", "tools/evaluation/target/release/review-change",
-      "tools/evaluation/target/release/consult"]) {
-      const path = join(source, binary);
-      mkdirSync(dirname(path), { recursive: true });
-      writeFileSync(path, "#!/bin/sh\nexit 0\n");
-      chmodSync(path, 0o755);
-    }
-    const executable = fileURLToPath(new URL("../tools/evaluation/target/debug/ai-config", import.meta.url));
-    const installed = Bun.spawnSync([executable, "--root", realpathSync(source), "install"], {
-      env: { HOME: home, PATH: "/usr/bin:/bin", LANG: "en_US.UTF-8" },
-      stdout: "pipe", stderr: "pipe",
-    });
-    expect(installed.exitCode, installed.stderr.toString()).toBe(0);
+    const installed = setup.run();
+    expect(installed.status, installed.stderr).toBe(0);
     const run = Bun.spawn(["node", fileURLToPath(new URL("./fixtures/package-pi-discovery.mjs", import.meta.url)),
       installedSdkFile(), agentDir, project], {
       cwd: project, stdin: "ignore", stdout: "pipe", stderr: "pipe",
@@ -92,7 +78,7 @@ test("the installed MVP keeps ordinary Pi skills, its guard, and project discove
     expect(discovered.themes).toContain("catppuccin-mocha");
     expect(discovered.denied).toBe(true);
     expect(discovered.leaked).toBe(false);
-  } finally { rmSync(root, { recursive: true, force: true }); }
+  } finally { setup.clean(); }
 }, 20_000);
 
 test("ordinary Pi discovers a linked guard and shared commit skill without the old source or a provider", async () => {

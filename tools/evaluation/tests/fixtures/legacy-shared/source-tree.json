@@ -1,5 +1,0 @@
-{
-  "skills": ["3d", "build", "coach", "code", "commit", "grill", "handoff", "mockup", "model-domain", "orchard", "pickup", "prototype", "record-work", "refactor", "resolve-conflicts", "review-artifact", "review-change", "review-code", "shared", "spec", "summarize-work", "todo", "visualize", "visualize-diff"],
-  "agents": ["api-designer.md", "architecture-reviewer.md", "change-fixer.md", "change-reviewer.md", "database-reviewer.md", "fact-checker.md", "frontend-architect.md", "refactorer.md", "tdd-guide.md"],
-  "commands": ["deliver.md", "rebase.md"]
-}

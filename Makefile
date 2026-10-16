@@ -30,6 +30,7 @@ test: test-package test-worktree test-worklog test-artifact test-evaluation test
 
 build-evaluation-debug:
 	cargo build --locked --offline --manifest-path tools/evaluation/Cargo.toml
+	cargo build --locked --offline --manifest-path tools/evaluation/Cargo.toml --example reviewer-fixture
 
 build-artifact-debug:
 	cargo build --locked --offline --manifest-path tools/artifact-review/Cargo.toml

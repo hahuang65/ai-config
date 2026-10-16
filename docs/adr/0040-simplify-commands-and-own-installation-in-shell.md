@@ -15,6 +15,7 @@ Expose `wt`/`worktree`, `wl`/`worklog`, and `review-change` as symlinks to binar
 Keep `review-artifact` and `consult` inside that source without PATH aliases; consumers resolve them from the installed configuration source, not arbitrary task checkouts.
 The restricted reviewer remains shared internal code rather than a generic `evaluation` command.
 Retire `evaluation`, `ai-config`, and alternative installation entry points once their consumers and verification are migrated.
+[ADR 0041](0041-retire-unrecorded-installation-adoption.md) settles the remaining adoption boundary: retain recorded upgrades, retire unrecorded legacy adoption.
 
 `install.sh` builds its own checkout and owns filesystem changes, settings transactions, locking, and handled-failure rollback.
 It does not delegate installation to Rust, Python, Make, or another executable.

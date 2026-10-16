@@ -4,7 +4,7 @@ version = "0.1.0"
 edition = "2024"
 rust-version = "1.99"
 publish = false
-default-run = "evaluation"
+autobins = false
 
 [[bin]]
 name = "review-change"
@@ -13,6 +13,10 @@ path = "src/change_main.rs"
 [[bin]]
 name = "consult"
 path = "src/consult_main.rs"
+
+[[example]]
+name = "reviewer-fixture"
+path = "tests/support/reviewer_main.rs"
 
 [dependencies]
 anyhow = "1"

@@ -1,15 +1,15 @@
 import { expect, test } from "bun:test";
-import { chmodSync, cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, realpathSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
+import { cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, realpathSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
 import { homedir, tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { startFakeClaudeApi, toolResults } from "./fixtures/claude-api.ts";
 import { copyPackageFiles } from "./fixtures/inactive-package.ts";
+import { installFixture } from "./fixtures/install-script";
 
 const CLAUDE = Bun.which("claude");
 const SANDBOX = "/usr/bin/sandbox-exec";
 const canRun = process.platform === "darwin" && CLAUDE && existsSync(SANDBOX);
-const INSTALLER = fileURLToPath(new URL("../tools/evaluation/target/debug/ai-config", import.meta.url));
 const PRIVATE_MARKER = "SYNTHETIC_PRIVATE_MARKER";
 const ALLOWED_MARKER = "BENIGN_MARKER";
 const PROCESS_TIMEOUT_MS = 50_000;
@@ -96,29 +96,16 @@ async function runClaude(root: string, home: string, project: string, port: numb
 }
 
 const claudeTest = canRun ? test : test.skip;
-const installedTest = canRun && existsSync(INSTALLER) ? test : test.skip;
-installedTest("public MVP installation loads the five evaluation agents and skills alongside personal skills", async () => {
-  const root = realpathSync(mkdtempSync(join(tmpdir(), "native-claude-package-")));
+claudeTest("public MVP installation loads the five evaluation agents and skills alongside personal skills", async () => {
+  const setup = installFixture();
+  const root = setup.temporary;
   try {
     const { home, project } = disposableHome(root, false);
-    const source = join(root, "replacement");
-    copyPackageFiles(source);
-    for (const binary of ["tools/worktree/target/release/wt", "tools/worklog/target/release/wl",
-      "tools/artifact-review/target/release/review-artifact", "tools/evaluation/target/release/review-change",
-      "tools/evaluation/target/release/consult"]) {
-      const path = join(source, binary);
-      mkdirSync(dirname(path), { recursive: true });
-      writeFileSync(path, "#!/bin/sh\nexit 0\n");
-      chmodSync(path, 0o755);
-    }
     const personal = join(home, ".claude/skills/personal/SKILL.md");
     mkdirSync(dirname(personal), { recursive: true });
     writeFileSync(personal, "---\nname: personal\ndescription: Fixture.\n---\nTest only.\n");
-    const installed = Bun.spawnSync([INSTALLER, "--root", realpathSync(source), "install"], {
-      env: { HOME: home, PATH: "/usr/bin:/bin", LANG: "en_US.UTF-8" },
-      stdout: "pipe", stderr: "pipe",
-    });
-    expect(installed.exitCode, installed.stderr.toString()).toBe(0);
+    const installed = setup.run([], { HOME: home });
+    expect(installed.status, installed.stderr).toBe(0);
     const { server } = startFakeClaudeApi([]);
     let stdout: string;
     const debugFile = join(root, "claude-debug.log");
@@ -148,7 +135,7 @@ installedTest("public MVP installation loads the five evaluation agents and skil
       expect(init?.agents).not.toContain(name);
     }
     expect(existsSync(join(home, ".claude/plugins/ai-worktree"))).toBe(false);
-  } finally { rmSync(root, { recursive: true, force: true }); }
+  } finally { setup.clean(); }
 }, 100_000);
 claudeTest("a natively discovered specialist exposes only read tools to Claude", async () => {
   const root = realpathSync(mkdtempSync(join(tmpdir(), "native-claude-agent-tools-")));

@@ -7,7 +7,7 @@ import { promisify } from 'node:util';
 
 export const execute = promisify(execFile);
 export const source = resolve(import.meta.dirname, '../..');
-export const binary = join(source, 'tools/evaluation/target/debug/evaluation');
+export const binary = join(source, 'tools/evaluation/target/debug/examples/reviewer-fixture');
 export const changeBinary = join(source, 'tools/evaluation/target/debug/review-change');
 export const consultBinary = join(source, 'tools/evaluation/target/debug/consult');
 export function put(path, contents) { mkdirSync(dirname(path), { recursive: true }); writeFileSync(path, contents); }

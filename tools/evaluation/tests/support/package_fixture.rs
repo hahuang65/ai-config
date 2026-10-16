@@ -39,7 +39,19 @@ pub fn fixture() -> TempDir {
     temporary
 }
 
+pub fn legacy_claude_settings() -> serde_json::Value {
+    use sha2::{Digest, Sha256};
+    let bytes = include_bytes!("../fixtures/legacy-claude.json");
+    assert_eq!(
+        format!("{:x}", Sha256::digest(bytes)),
+        "d1632b311ad03230b5a8027d92d54593e7bc3c5413ec569f0909b24bd97843b9",
+        "frozen permission-floor capture changed"
+    );
+    serde_json::from_slice(bytes).unwrap()
+}
+
 pub fn populate(root: &Path) {
+    super::shell_install::resources(root);
     for relative in [
         "baseline.md",
         "reviewer.md",
@@ -207,10 +219,7 @@ pub fn manifest(root: &Path) {
         json!({"destination": ".claude/settings.json", "path": ["env", "CLAUDE_CODE_PLUGIN_DIRS"],
         "mode": "value", "value": "~/.claude/plugins/ai-local-lsp"}),
     );
-    let defaults: serde_json::Value = serde_json::from_slice(include_bytes!(
-        "../../src/configuration/legacy_defaults/claude.json"
-    ))
-    .unwrap();
+    let defaults = legacy_claude_settings();
     for group in ["deny", "ask", "additionalDirectories"] {
         for entry in defaults["permissions"][group].as_array().unwrap() {
             if group == "additionalDirectories" && entry == "~/.orchard" {
