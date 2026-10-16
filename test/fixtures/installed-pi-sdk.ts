@@ -1,6 +1,7 @@
 import { existsSync, readFileSync, realpathSync, statSync } from "node:fs";
 import { createRequire } from "node:module";
 import { dirname, isAbsolute, join } from "node:path";
+import { projectPiExecutable } from "../../tools/project-pi.mjs";
 
 function sdkNearCli(cli: string): string | undefined {
   let directory = dirname(realpathSync(cli));
@@ -24,7 +25,7 @@ function wrappedCli(file: string): string | undefined {
   return match && isAbsolute(match[1]) && existsSync(match[1]) ? match[1] : undefined;
 }
 
-export function installedSdkFile(executable = Bun.which("pi")): string {
+export function installedSdkFile(executable = projectPiExecutable()): string {
   if (!executable) throw new Error("An installed Pi executable is required for resource discovery");
   let cli = realpathSync(executable);
   for (let hop = 0; hop < 4; hop++) {

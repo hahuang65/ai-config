@@ -7,6 +7,29 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { launchFirefox } from './firefox.mjs';
 
+test('Firefox launch honors an override, uses Linux PATH, and retains the macOS application fallback', async t => {
+  const root = await mkdtemp(join(tmpdir(), 'firefox-platform-'));
+  t.after(() => rm(root, { recursive: true, force: true }));
+  for (const [platform, env, expected] of [
+    ['linux', {}, 'firefox'],
+    ['darwin', {}, '/Applications/Firefox.app/Contents/MacOS/firefox'],
+    ['linux', { FIREFOX_BIN: '/fixture browser/firefox' }, '/fixture browser/firefox'],
+  ]) {
+    let executable;
+    const child = Object.assign(new EventEmitter(), { stderr: new PassThrough() });
+    await assert.rejects(launchFirefox(root, {
+      platform, env,
+      spawnProcess: command => {
+        executable = command;
+        setImmediate(() => child.emit('error', new Error('fixture launch stopped')));
+        return child;
+      },
+      stop: async () => {},
+    }), { message: 'Firefox endpoint discovery failed' });
+    assert.equal(executable, expected);
+  }
+});
+
 test('cancelling Firefox endpoint discovery stops its process before the startup deadline', async t => {
   const root = await mkdtemp(join(tmpdir(), 'firefox-startup-cancel-'));
   const child = Object.assign(new EventEmitter(), { pid: 123, stderr: new PassThrough() });

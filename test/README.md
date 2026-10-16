@@ -2,6 +2,10 @@
 
 Run `make test` from the package checkout.
 Tests use disposable homes and fake providers; they must not install into the live home, import old Work log history, contact a real provider, or read saved credentials.
+Provision declared tools explicitly before testing; build/test commands may fetch locked Cargo dependencies but never run mise installation themselves.
+Project Pi tracks `latest`; SDK tests and footer bundling resolve it through `mise which pi` from this checkout, with no fallback to a different global client.
+The selected installed Pi must be provisioned separately; failed selection gives an explicit provisioning instruction without exposing mise diagnostics.
+Restricted-reviewer offline settings and synthetic-provider boundaries remain unchanged.
 
 - `package-*.test.ts` verifies the retained skills, specialist roles, ordinary Claude and Pi discovery, guard adapters, shared commands, status displays, themes, LSP plugin separation, and review boundaries.
 - `package-instruction-routing.test.ts` follows consolidated instructions through disposable manifest-declared skill and bootstrap links for both harnesses.
@@ -17,8 +21,9 @@ Tests use disposable homes and fake providers; they must not install into the li
 - `cli-links.test.ts` checks executable link ownership in disposable homes.
   The retired WT Python install/repeat/uninstall test was replaced by `package-install-entrypoints.test.ts`, which exercises foreign regular files and dangling links through the real shell installer and rejects the removed uninstall interface without side effects.
   Shell installation/repeat tests and the WT CLI suites retain successful installation, repeat ownership, and executable behavior coverage.
-- `package-install-*.test.ts` exercises the shell installer with disposable homes and source copies, fake build/tool executables, and real jq/coreutils processes.
-  It covers missing dependencies, source/HOME separation, exact numeric preservation, ownership refusals, recorded alias upgrades, live lock contention, rollback, concurrent-edit refusal, and private record permissions.
+- `package-install-*.test.ts` exercises the shell installer with disposable homes and source copies, fake mise/build/tool executables, and real jq/coreutils processes.
+  It covers missing dependencies, provisioning-before-build ordering and failure exit status, source/HOME separation, exact numeric preservation, ownership refusals, recorded alias upgrades, live lock contention, rollback, concurrent-edit refusal, and private record permissions.
+  Cargo-style executable hard links are accepted only at catalogue paths; hard-linked source files and redirected private tool parents/files remain refused.
   Transaction failure tests inject a failing rename; the lock test waits for a real process barrier, not an elapsed-time guess.
   GNU coreutils are required; the macOS system find is also exercised.
   Applicable Rust installation-library scenarios have moved to these suites; unrecorded-adoption cases and private implementation tests are deliberately retired, not counted as retained coverage.
@@ -31,7 +36,7 @@ Tests use disposable homes and fake providers; they must not install into the li
 - `package-review-gate.test.ts` checks the complete and focused gates, shared executable build prerequisites, bounded WT worker selection, and grouped evaluation case wiring.
 - Rust tests and `tools/worktree/tests/rust_parity.py` check the standalone worktree CLI, including the process-level ownership, cleanup, interruption, and submodule cases; Rust tests also check Worklog.
 - The original Python worktree CLI's reference-only tests are not part of the replacement gate; the parity runner executes their applicable cases against the Rust CLI.
-- `tools/artifact-review/tests/` checks local review storage, revision-bound per-finding repair decisions through the Rust CLI, and the bounded Firefox integration after an explicit offline debug CLI build.
+- `tools/artifact-review/tests/` checks local review storage, revision-bound per-finding repair decisions through the Rust CLI, and the bounded Firefox integration after an explicit debug CLI build.
   Its real change-report case covers Accept/Reject, annotations, retry after response loss and reload, and preservation of the retained HTML; ordinary artifact approval keeps its existing coverage.
   `tests/wait.rs` covers indefinite foreground waiting, transport heartbeats, terminal state, replay/retry, interruption/shutdown, and fresh revision checks despite render reuse.
   The bounded browser suite counts idle event/snapshot requests and verifies live feedback, replies, and document reload through revision-only checks.
@@ -71,6 +76,7 @@ Their assertions, watchdogs, platform skips, and independent harness configurati
 All other package tests, including the Claude hook-adapter checks, remain serial; browser integration remains serial too.
 For serial diagnosis, use `bun test test/package-worktree.test.ts` or `bun test test/package-claude-worktree-runtime.test.ts` after building this checkout.
 Browser-based cases share one lazily started Firefox process and temporary profile for the suite, with at most one case active.
+Firefox uses Linux PATH or the macOS application fallback, with `FIREFOX_BIN` taking precedence on either platform.
 Each case gets a disposable WebDriver user context (an isolated browser storage container) and one fresh blank tab with its viewport reset.
 The default startup tab stays blank and keeps the browser alive between cases; tests cannot use it.
 Closing a case removes its entire user context and verifies its tabs and storage container are gone before allowing another case.
@@ -87,17 +93,17 @@ This isolates the tested page/storage state, not every browser-wide setting or f
 Evaluation's change-review cases live in `tools/evaluation/tests/cases/change_*.rs`, included by the single `tests/change.rs` integration target.
 Rust schedules those independent cases together rather than Cargo running nine binaries sequentially; their assertions and deadlines are unchanged.
 Only support code is shared: every case still creates its own disposable home, repository, provider state, and review store.
-Run the group with `cargo test --locked --offline --manifest-path tools/evaluation/Cargo.toml --test change`.
+Run the group with `cargo test --locked --manifest-path tools/evaluation/Cargo.toml --test change`.
 Add a module-name filter such as `change_post_safety::` to focus it, or append `-- --test-threads=1` for serial debugging.
 The reviewer and consult cases similarly share `tests/runners.rs` rather than four separate integration binaries.
 Their case modules are `cases/{consult,reviewer,reviewer_claude,reviewer_diagnostics}.rs`; the fake reviewer script lives in `support/reviewer.rs`.
 All cases retain their assertions, deadlines, and separate disposable homes, repositories, provider state, and output files.
-First run `make build-evaluation-debug` to build the test-only reviewer driver, then run `cargo test --locked --offline --manifest-path tools/evaluation/Cargo.toml --test runners`, optionally filtering a module such as `reviewer_diagnostics::` or appending `-- --test-threads=1`.
+First run `make build-evaluation-debug` to build the test-only reviewer driver, then run `cargo test --locked --manifest-path tools/evaluation/Cargo.toml --test runners`, optionally filtering a module such as `reviewer_diagnostics::` or appending `-- --test-threads=1`.
 Shell-backed package and installation cases share `tests/configuration.rs` and the existing Rust test-thread limit.
 They live in `cases/configuration_package*.rs` and `cases/package_*.rs`; no Rust installation library remains.
 The package-manifest helper runs `install.sh` in a disposable home and reads its completed ownership record rather than duplicating validation or effects.
 Every case retains its separate disposable installation source, home, ownership record, lock, and output files; shared package inputs remain read-only.
-Run the group with `cargo test --locked --offline --manifest-path tools/evaluation/Cargo.toml --test configuration`, optionally filtering a module such as `configuration_package_resources::` or appending `-- --test-threads=1`.
+Run the group with `cargo test --locked --manifest-path tools/evaluation/Cargo.toml --test configuration`, optionally filtering a module such as `configuration_package_resources::` or appending `-- --test-threads=1`.
 The complete evaluation gate still discovers integration targets automatically, including future targets outside these groups.
 The retired Rust file-lock/fork regression does not apply to the replacement lock-directory protocol, which has its own shell-process contention and release checks.
 
@@ -112,6 +118,8 @@ The Python-driven fixtures reuse two pristine Git snapshots per serial process o
 Each case receives independently writable files, modes, config, refs, objects, and working files; no hardlinks, persistent cache, or test outcomes are shared.
 Seed creation alone disables automatic maintenance, and failed or unsafe captures are never cached.
 Five fixture regressions join the original 83 parity cases in the same bounded pool, without nested worker pools; runner self-tests verify their registration.
+A further process-boundary test verifies Python-reference output preserves surrogateescaped Unix path bytes even with strict stdout encoding, without requiring APFS to create invalid UTF-8 filenames.
+The non-UTF-8 ownership lifecycle test retains its filesystem-dependent skip on macOS and expects integrated Rust task branches to be deleted.
 See [WT fixture details](../tools/worktree/docs/testing.md#python-driven-repository-fixtures) for bounds, failure checks, and focused invocation.
 
 Worklog's store-level lock test uses a 10ms deadline against a real file lock; the production CLI keeps its three-second deadline without a test-only environment override.

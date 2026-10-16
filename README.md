@@ -40,7 +40,7 @@ Worklog data stays in its existing private store; no old Work log history is que
 Ordinary user and project resources remain discoverable, while restricted reviewers use isolated snapshots.
 Failed change reviews retain [bounded, credential-safe diagnostics](docs/review-change-cli.md#reviewer-failures), not raw provider output or a publishable report.
 The installer changes only recorded owned links and narrow guardrail settings; it preserves unrelated resources, login, models, sessions, and project trust.
-It never provisions tools, touches services, or deletes private state.
+Explicit installation provisions the active mise tool configuration before building; it never touches services or deletes private state.
 
 The [ordinary-work continuation policy](baseline.md#keep-work-moving) keeps authorized tasks moving after progress updates, worklog checkpoints, and completed workflow steps.
 Completion, explicit user pauses, required decisions/approvals/manual actions, or forced interruptions are stopping points; a checkpoint does not renew or widen authorization.
@@ -63,7 +63,16 @@ Dated historical decision records may describe retired experiments; they are not
 
 ## Build and verify
 
-Use the versions pinned in `mise.toml` directly; do not install tools as a testing side effect.
+Use the mise-managed tools declared in `mise.toml` directly; do not install tools as a testing side effect.
+Bun, Node, Python 3.11.4, Rust, ShellCheck, and language servers have fixed versions; project Pi deliberately tracks `latest` to follow the user's rolling client.
+Python 3.11.4 is compiled from source when missing because no attested prebuilt artifact is available for that version.
+The npm backend uses npm rather than selecting a package manager implicitly.
+Provision missing tools explicitly with `mise install` before development.
+That command uses active configuration, including global tools and the shared language servers; review the selection before running it.
+For Pi alone, use `mise install npm:@earendil-works/pi-coding-agent` and explicitly refresh it with `mise upgrade --no-prune npm:@earendil-works/pi-coding-agent`.
+An installed `latest` is not a promise of a fresh registry lookup on every build, and a rolling Pi version is not a fully pinned toolchain.
+Build/test SDK discovery and footer bundling use `mise which pi` from this checkout, not whichever unrelated Pi happens to be first on PATH.
+This does not replace the native Pi installation or alter its settings; restricted reviewers continue to select their native executable independently.
 
 ```sh
 make build
@@ -71,7 +80,9 @@ make lint
 make test
 ```
 
-`make build` creates the Pi guard, status-footer, worktree, and LSP bundles, the shared catalogue's Claude plugin projection, and Rust release binaries offline; it **does not install**.
+`make build` creates the Pi guard, status-footer, worktree, and LSP bundles, the shared catalogue's Claude plugin projection, and Rust release binaries; it **does not provision tools or install harness resources**.
+Cargo build, test, and lint commands retain `--locked` but may fetch missing dependencies from the network.
+Restricted-reviewer offline flags and synthetic-provider isolation are unchanged.
 `make lint` checks that generated Claude LSP definitions still match the catalogue.
 Tests use disposable homes and fake providers, not the live harness state.
 Use the [focused test targets](test/README.md#focused-checks) during iteration instead of rerunning unrelated suites; `make test` and the commit hook still run the complete gate.
@@ -86,18 +97,23 @@ After a disposable-home rehearsal and **separate approval for a live home**, run
 ./install.sh
 ```
 
-`install.sh` runs `make build` in its own checkout, then performs ownership validation, link placement, settings merging, and rollback itself.
-It works when invoked by path from another directory and stops before installation if the build fails.
-It requires Bash, jq, GNU coreutils on PATH, make, iconv, find, the mise-managed Bun and Rust build tools, and cached dependencies for the offline build; it does not provision them.
-Missing jq or required GNU coreutils commands produce a clear error before building or installing.
+`install.sh` runs `mise install` and then `mise exec -- make build` in its own checkout before ownership validation, link placement, settings merging, and rollback.
+It works when invoked by path from another directory and stops before resource installation if provisioning or building fails, preserving that command's exit status.
+It requires Bash, mise, jq, GNU coreutils on PATH, make, iconv, and find; it does not provision these platform prerequisites.
+Mise provisions active configured tools, including global tools and language servers, and Cargo may download locked dependencies.
+Provisioning/build caches are not rolled back by the later resource transaction.
+Missing prerequisites produce a clear error before provisioning, building, or installing resources.
 The system find on macOS is supported; GNU findutils is not required.
 Run `./install.sh --help` for help without building or installing; other arguments, including the retired `--force`, are rejected before effects.
 The destination is the absolute `HOME` directory, not the caller's working directory; installation into the configuration source is refused.
-Use a disposable `HOME` for rehearsals and retain access to the already provisioned build tools and dependency caches.
+Use a disposable `HOME` for rehearsals; automated installer fixtures replace mise and build commands so they never provision tools.
+Real provisioning or installer rehearsals require separate approval and an explicit choice of isolated mise state and caches.
 `make build`, `make lint`, and `make test` never install into the live home; installation remains a separate explicit action.
 
 JSON-only filters and the package catalogue live under `tools/install/`; they do not perform installation or filesystem changes.
 Settings retain unrelated fields, exact unknown numeric tokens, and existing permissions; duplicate JSON keys, redirected files, and unrecorded collisions are refused.
+Only exact generated executable paths in the installer catalogue allow multiple hard links, as Cargo may link release binaries to hashed artifacts.
+Those executables still require safe parents, a bounded regular non-symlink file, and execute permission; source/support resources and settings retain single-link checks.
 The installer switches only declared links and settings and records ownership privately under `~/.local/state/ai-config/installation.json`.
 An atomic `install.lock.d` directory serializes transactions; an existing lock is never automatically broken.
 Handled failures restore completed changes only when their current bytes, targets, and modes still match the transaction.

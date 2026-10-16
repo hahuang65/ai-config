@@ -38,4 +38,4 @@ class OwnershipBytesTest(RustFixture):
         for task, path in (("feature", tree), ("second", second)):
             self.wt("clean", task, "--json")
             self.assertFalse(path.exists())
-            self.git("show-ref", "--verify", f"refs/heads/tu/{task}")
+            self.assertEqual(self.git("branch", "--list", f"tu/{task}"), "")

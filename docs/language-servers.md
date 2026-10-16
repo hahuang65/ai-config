@@ -18,13 +18,14 @@ Harness adapters own the client protocol and user interface, not separate langua
 ## Provisioning and installation
 
 [`mise.toml`](../mise.toml) pins these tools; provisioning is an explicit `mise install` operation, never a tool-call fallback or a build side effect.
-Node, Ruby, and Go must also be available through the user's mise environment, as they are for this package's existing development tools.
+Node is declared with this package's build runtimes; Ruby and Go must also be available through the user's mise environment.
+The explicit package installer runs `mise install`, which includes these server declarations and other active mise tools.
 TypeScript language server 6 requires Node 22.22.2 or newer.
 Its explicit mise postinstall hook places TypeScript 6.0.3 in the same tool installation tree so module resolution works without workspace `node_modules` or a second globally installed SDK.
 TypeScript 7 no longer supplies `tsserver` and is not compatible with this server's SDK requirement.
 The hook disables npm lifecycle scripts and writes only under `MISE_TOOL_INSTALL_PATH`; trusting this executable configuration is separate from running it.
 
-`make build` generates the Claude plugin, its installer-validation copy, and the bundled Pi extension offline.
+`make build` generates the Claude plugin, its installer-validation copy, and the bundled Pi extension locally; its Cargo steps may fetch locked dependencies.
 It neither provisions servers nor installs harness resources.
 A live `./install.sh` still needs separate approval.
 A configured or discovered server is not proof it is provisioned or usable in a particular project.
@@ -100,4 +101,4 @@ Restricted reviewers do not load this extension or any language servers.
 
 The focused tests are `test/package-claude-lsp.test.ts`, `test/package-pi-lsp.test.ts`, and `test/package-pi-lsp-transport.test.ts`.
 Native discovery tests additionally exercise the real installed Claude and Pi loaders in disposable homes.
-Fake-server tests establish client behavior, not real-server compatibility or successful provisioning; real-server smoke tests require provisioned executables and must remain separate from the offline gate.
+Fake-server tests establish client behavior, not real-server compatibility or successful provisioning; real-server smoke tests require provisioned executables and must remain separate from the fake-server verification gate.

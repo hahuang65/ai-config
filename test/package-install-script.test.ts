@@ -1,7 +1,43 @@
 import { expect, test } from "bun:test";
-import { existsSync, mkdirSync, readFileSync, readlinkSync, symlinkSync, unlinkSync, writeFileSync } from "node:fs";
+import { existsSync, linkSync, mkdirSync, readFileSync, readlinkSync, renameSync, symlinkSync, unlinkSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { installFixture } from "./fixtures/install-script";
+
+test("install.sh accepts Cargo hard-linked executables at the exact generated tool paths", () => {
+  const setup = installFixture();
+  try {
+    for (const relative of ["worktree/target/release/wt", "worklog/target/release/wl",
+      "evaluation/target/release/review-change", "evaluation/target/release/consult",
+      "artifact-review/target/release/review-artifact"]) {
+      const binary = join(setup.source, "tools", relative);
+      linkSync(binary, `${binary}-hashed-artifact`);
+    }
+    const result = setup.run();
+    expect({ status: result.status, stderr: result.stderr }).toEqual({ status: 0, stderr: "" });
+    expect(readlinkSync(join(setup.home, ".local/bin/wt"))).toBe(join(setup.source, "tools/worktree/target/release/wt"));
+  } finally { setup.clean(); }
+}, 30_000);
+
+test("Cargo hard-link acceptance does not permit hard-linked source resources or redirected private tools", () => {
+  for (const kind of ["source hard link", "private tool parent", "private tool symlink"]) {
+    const setup = installFixture();
+    try {
+      if (kind === "source hard link") {
+        linkSync(join(setup.source, "baseline.md"), join(setup.temporary, "other-source"));
+      } else {
+        const path = join(setup.source, "tools/artifact-review/target",
+          ...(kind === "private tool symlink" ? ["release/review-artifact"] : []));
+        const outside = join(setup.temporary, "redirected-tool");
+        renameSync(path, outside);
+        symlinkSync(outside, path);
+      }
+      const result = setup.run();
+      expect(result.status, kind).toBe(1);
+      expect(result.stderr, kind).toMatch(/Hard-linked|redirected|non-symlink/);
+      expect(existsSync(join(setup.home, ".local")), kind).toBe(false);
+    } finally { setup.clean(); }
+  }
+}, 30_000);
 
 test("install.sh refuses a missing jq before building or changing the home", () => {
   const setup = installFixture();
@@ -13,6 +49,21 @@ test("install.sh refuses a missing jq before building or changing the home", () 
     expect(result.stdout).toBe("");
     expect(setup.calls()).toBe("");
     expect(existsSync(join(setup.home, ".local/state/ai-config"))).toBe(false);
+  } finally { setup.clean(); }
+});
+
+test("install.sh refuses a missing mise before building or changing the home", () => {
+  const setup = installFixture();
+  try {
+    unlinkSync(join(setup.bin, "mise"));
+    for (const tool of ["dirname", "jq", "mv", "stat", "dd", "sync", "head", "readlink", "iconv", "find"]) {
+      symlinkSync(Bun.which(tool)!, join(setup.bin, tool));
+    }
+    const result = setup.run([], { PATH: setup.bin });
+    expect(result.status).toBe(1);
+    expect(result.stderr).toContain("mise is required");
+    expect(setup.calls()).toBe("");
+    expect(existsSync(join(setup.home, ".local"))).toBe(false);
   } finally { setup.clean(); }
 });
 
@@ -68,6 +119,17 @@ test("install.sh refuses a HOME inside its own source before creating state or b
   } finally { setup.clean(); }
 }, 30_000);
 
+test("install.sh preserves a provisioning failure without building or changing the home", () => {
+  const setup = installFixture();
+  try {
+    const result = setup.run([], { PROVISION_STATUS: "19" });
+    expect(result.status).toBe(19);
+    expect(setup.provisionCalls()).toBe(`${setup.source}\ninstall\n`);
+    expect(setup.calls()).toBe("");
+    expect(existsSync(join(setup.home, ".local"))).toBe(false);
+  } finally { setup.clean(); }
+});
+
 test("install.sh preserves a failed build's status and never starts installation", () => {
   const setup = installFixture();
   try {
@@ -100,7 +162,10 @@ test("install.sh help describes effects without building or installing", () => {
       const result = setup.run([flag]);
       expect(result.status).toBe(0);
       expect(result.stdout).toContain("Usage: install.sh");
-      expect(result.stdout).toContain("make build");
+      expect(result.stdout).toContain("mise install");
+      expect(result.stdout).toContain("mise exec -- make build");
+      expect(result.stdout).toContain("network");
+      expect(setup.provisionCalls()).toBe("");
       expect(result.stdout).toContain("HOME");
       expect(result.stderr).toBe("");
       expect(setup.calls()).toBe("");
@@ -117,16 +182,18 @@ test("install.sh rejects unsupported arguments before any build or installation"
       expect(result.stderr).toContain("Usage: install.sh");
       expect(result.stdout).toBe("");
       expect(setup.calls()).toBe("");
+      expect(setup.provisionCalls()).toBe("");
     }
   } finally { setup.clean(); }
 });
 
-test("install.sh builds and installs its own checkout when called from another directory", () => {
+test("install.sh provisions then builds its own checkout through mise when called from another directory", () => {
   const setup = installFixture();
   try {
     const result = setup.run();
     expect({ status: result.status, stderr: result.stderr }).toEqual({ status: 0, stderr: "" });
     expect(setup.calls()).toBe(`${setup.source}\nbuild\n`);
+    expect(setup.provisionCalls()).toBe(`${setup.source}\ninstall\n${setup.source}\nexec -- make build\n`);
     const record = JSON.parse(readFileSync(join(setup.home, ".local/state/ai-config/installation.json"), "utf8"));
     expect(record.source).toBe(setup.source);
   } finally { setup.clean(); }

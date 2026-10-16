@@ -6,7 +6,22 @@ const root = resolve(import.meta.dir, "..");
 const piRuntimeCommand = "bun test --concurrent --max-concurrency=2 test/package-worktree.test.ts";
 const claudeRuntimeCommand = "bun test --concurrent --max-concurrency=2 test/package-claude-worktree-runtime.test.ts";
 
-test("the offline build generates both LSP projections before package checks", () => {
+test("build and verification allow locked Cargo dependency fetching without provisioning tools", () => {
+  for (const target of ["build", "lint", "test"]) {
+    const preview = Bun.spawnSync(["make", "-n", target], { cwd: root, stdout: "pipe", stderr: "pipe" });
+    expect(preview.exitCode, preview.stderr.toString()).toBe(0);
+    const commands = preview.stdout.toString().split("\n");
+    const cargo = commands.filter(line => /^cargo (build|test|clippy) /.test(line));
+    expect(cargo.length).toBeGreaterThan(0);
+    for (const command of cargo) {
+      expect(command).toContain("--locked");
+      expect(command).not.toContain("--offline");
+    }
+    expect(commands.some(line => /^(mise install|\.\/install\.sh)(\s|$)/.test(line))).toBe(false);
+  }
+});
+
+test("the build generates both LSP projections before package checks", () => {
   const preview = Bun.spawnSync(["make", "-n", "test"], { cwd: root, stdout: "pipe", stderr: "pipe" });
   expect(preview.exitCode).toBe(0);
   const commands = preview.stdout.toString();
@@ -23,9 +38,9 @@ test("cold test runs build every manifest release target before package validati
   expect(preview.exitCode, preview.stderr.toString()).toBe(0);
   const commands = preview.stdout.toString();
   const packageTests = commands.indexOf("bun test ");
-  const rustTests = commands.indexOf("cargo test --locked --offline --manifest-path tools/evaluation/Cargo.toml");
+  const rustTests = commands.indexOf("cargo test --locked --manifest-path tools/evaluation/Cargo.toml");
   for (const tool of ["worktree", "worklog", "artifact-review", "evaluation"]) {
-    const release = `cargo build --locked --offline --release --manifest-path tools/${tool}/Cargo.toml`;
+    const release = `cargo build --locked --release --manifest-path tools/${tool}/Cargo.toml`;
     const position = commands.indexOf(release);
     expect(position).toBeGreaterThanOrEqual(0);
     expect(position).toBeLessThan(packageTests);
@@ -36,8 +51,8 @@ test("cold test runs build every manifest release target before package validati
 test("focused and full browser checks build every dependency once before use", () => {
   const builds = [
     "bun build harnesses/pi/guard-policies.ts --target node --format esm --outfile harnesses/pi/guard-policies.bundle.ts",
-    "cargo build --locked --offline --manifest-path tools/evaluation/Cargo.toml",
-    "cargo build --locked --offline --manifest-path tools/artifact-review/Cargo.toml",
+    "cargo build --locked --manifest-path tools/evaluation/Cargo.toml",
+    "cargo build --locked --manifest-path tools/artifact-review/Cargo.toml",
   ];
   const browser = "node --test --test-concurrency=1 tools/artifact-review/tests/integration.mjs";
   for (const targets of [["test-browser"], ["test"], ["test-package", "test-browser"], ["test-browser", "test-package"]]) {
@@ -55,7 +70,7 @@ test("focused and full browser checks build every dependency once before use", (
 });
 
 test("reviewer process fixtures are built for tests but not production builds", () => {
-  const fixture = "cargo build --locked --offline --manifest-path tools/evaluation/Cargo.toml --example reviewer-fixture";
+  const fixture = "cargo build --locked --manifest-path tools/evaluation/Cargo.toml --example reviewer-fixture";
   for (const target of ["test-package", "test-evaluation", "test"]) {
     const preview = Bun.spawnSync(["make", "-n", target], { cwd: root, stdout: "pipe", stderr: "pipe" });
     expect(preview.exitCode, preview.stderr.toString()).toBe(0);
@@ -69,13 +84,13 @@ test("reviewer process fixtures are built for tests but not production builds", 
   expect(production.stdout.toString()).not.toContain("reviewer-fixture");
 });
 
-test("offline gate builds and runs process-level worktree parity", () => {
+test("the gate builds and runs process-level worktree parity", () => {
   const preview = Bun.spawnSync(["make", "-n", "test"], {
     cwd: root, stdout: "pipe", stderr: "pipe",
   });
   expect(preview.exitCode, preview.stderr.toString()).toBe(0);
   const commands = preview.stdout.toString();
-  const build = "cargo build --locked --offline --manifest-path tools/worktree/Cargo.toml";
+  const build = "cargo build --locked --manifest-path tools/worktree/Cargo.toml";
   const parity = "python tools/worktree/tests/rust_parity.py";
   expect(commands).toContain(build);
   expect(commands).toContain(parity);
@@ -115,10 +130,10 @@ test("package gates run every Bun file once and isolate bounded native runtime c
 test("focused targets run only their selected suite and full test runs each suite once", () => {
   const suites = {
     "test-package": ["bun test test/", piRuntimeCommand, claudeRuntimeCommand],
-    "test-worktree": ["cargo test --locked --offline --manifest-path tools/worktree/Cargo.toml", "python -m unittest discover -s tools/worktree/tests -p parallel_runner_tests.py -v", "python tools/worktree/tests/rust_parity.py"],
-    "test-worklog": ["cargo test --locked --offline --manifest-path tools/worklog/Cargo.toml"],
-    "test-artifact": ["cargo test --locked --offline --manifest-path tools/artifact-review/Cargo.toml"],
-    "test-evaluation": ["cargo test --locked --offline --manifest-path tools/evaluation/Cargo.toml --lib --tests"],
+    "test-worktree": ["cargo test --locked --manifest-path tools/worktree/Cargo.toml", "python -m unittest discover -s tools/worktree/tests -p parallel_runner_tests.py -v", "python tools/worktree/tests/rust_parity.py"],
+    "test-worklog": ["cargo test --locked --manifest-path tools/worklog/Cargo.toml"],
+    "test-artifact": ["cargo test --locked --manifest-path tools/artifact-review/Cargo.toml"],
+    "test-evaluation": ["cargo test --locked --manifest-path tools/evaluation/Cargo.toml --lib --tests"],
     "test-browser": ["node --test --test-concurrency=1 tools/artifact-review/tests/integration.mjs"],
   };
   for (const [target, expected] of Object.entries(suites)) {
@@ -144,11 +159,11 @@ test("combined focused targets share builds within one invocation without cachin
     expect(preview.exitCode, preview.stderr.toString()).toBe(0);
     const commands = preview.stdout.toString().split("\n");
     for (const tool of ["worktree", "worklog", "artifact-review", "evaluation"]) {
-      expect(commands.filter(line => line === `cargo build --locked --offline --release --manifest-path tools/${tool}/Cargo.toml`).length).toBe(1);
+      expect(commands.filter(line => line === `cargo build --locked --release --manifest-path tools/${tool}/Cargo.toml`).length).toBe(1);
     }
-    expect(commands.filter(line => line === "cargo build --locked --offline --manifest-path tools/evaluation/Cargo.toml").length).toBe(1);
+    expect(commands.filter(line => line === "cargo build --locked --manifest-path tools/evaluation/Cargo.toml").length).toBe(1);
     expect(commands.some(line => line.startsWith("bun test "))).toBe(true);
-    expect(commands).toContain("cargo test --locked --offline --manifest-path tools/evaluation/Cargo.toml --lib --tests");
+    expect(commands).toContain("cargo test --locked --manifest-path tools/evaluation/Cargo.toml --lib --tests");
   }
 });
 
@@ -192,11 +207,11 @@ function expectGroupedEvaluationCases(target: string, groups: string[], pattern:
   expect(cases).toEqual(groups.map(name => `${name}.rs`).sort());
 }
 
-test("offline verification runs every evaluation regression, including safety suites", () => {
+test("verification runs every evaluation regression, including safety suites", () => {
   const preview = Bun.spawnSync(["make", "-n", "test"], {
     cwd: root, stdout: "pipe", stderr: "pipe",
   });
   expect(preview.exitCode, preview.stderr.toString()).toBe(0);
   const commands = preview.stdout.toString();
-  expect(commands).toContain("cargo test --locked --offline --manifest-path tools/evaluation/Cargo.toml --lib --tests");
+  expect(commands).toContain("cargo test --locked --manifest-path tools/evaluation/Cargo.toml --lib --tests");
 });

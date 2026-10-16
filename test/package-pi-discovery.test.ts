@@ -32,6 +32,31 @@ test("the Pi SDK follows its installed CLI package through a launcher without as
   } finally { rmSync(root, { recursive: true, force: true }); }
 });
 
+test("Pi SDK discovery selects this project's mise CLI even when a different Pi is on PATH", () => {
+  const root = realpathSync(mkdtempSync(join(tmpdir(), "project-pi-sdk-")));
+  try {
+    const installed = join(root, "npm/node_modules/@earendil-works/pi-coding-agent");
+    const cli = join(installed, "dist/cli.js");
+    const sdk = join(installed, "dist/index.js");
+    const bin = join(root, "bin"), log = join(root, "mise-log");
+    mkdirSync(join(installed, "dist"), { recursive: true });
+    mkdirSync(bin);
+    writeFileSync(join(installed, "package.json"), JSON.stringify({ name: "@earendil-works/pi-coding-agent" }));
+    writeFileSync(cli, "fixture\n");
+    writeFileSync(sdk, "fixture\n");
+    writeFileSync(join(bin, "mise"), '#!/bin/sh\nprintf "%s\\n%s\\n" "$PWD" "$*" > "$MISE_TEST_LOG"\nprintf "%s\\n" "$MISE_TEST_CLI"\n', { mode: 0o755 });
+    writeFileSync(join(bin, "pi"), "#!/bin/sh\nexit 99\n", { mode: 0o755 });
+    const fixture = fileURLToPath(new URL("./fixtures/installed-pi-sdk.ts", import.meta.url));
+    const run = Bun.spawnSync([process.execPath, "-e",
+      `import { installedSdkFile } from ${JSON.stringify(fixture)}; console.log(installedSdkFile());`], {
+      cwd: root, env: { ...process.env, PATH: `${bin}:${process.env.PATH}`, MISE_TEST_LOG: log, MISE_TEST_CLI: cli },
+    });
+    expect(run.exitCode, run.stderr.toString()).toBe(0);
+    expect(run.stdout.toString().trim()).toBe(sdk);
+    expect(readFileSync(log, "utf8")).toBe(`${realpathSync(fileURLToPath(new URL("../", import.meta.url)))}\nwhich pi\n`);
+  } finally { rmSync(root, { recursive: true, force: true }); }
+});
+
 test("the installed MVP keeps ordinary Pi skills, its guard, and project discovery", async () => {
   const setup = installFixture();
   try {

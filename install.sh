@@ -7,9 +7,9 @@ umask 077
 
 usage() {
   printf '%s\n' 'Usage: install.sh [-h|--help]' \
-    'Run make build offline in this checkout, then install its Claude and Pi resources into HOME.' \
-    'Requires jq, GNU coreutils, make, Bash, iconv, find, and the provisioned build tools.' \
-    'No tools are provisioned. Use make build alone to build without installing.' \
+    'Run mise install, then mise exec -- make build in this checkout, then install resources into HOME.' \
+    'Requires mise, jq, GNU coreutils, make, Bash, iconv, and find; provisioning may access the network.' \
+    'Mise provisions tools from active configuration. Use make build alone to build without installing.' \
     'A live home requires separate approval. Interrupted transactions require inspection.'
 }
 fail() { printf 'install.sh: %s\n' "$*" >&2; return 1; }
@@ -25,7 +25,7 @@ preflight() {
       *) fail "GNU coreutils ($tool) is required on PATH. Nothing was built or installed."; return 1 ;;
     esac
   done
-  for tool in make iconv find; do
+  for tool in make iconv find mise; do
     command -v "$tool" >/dev/null 2>&1 || { fail "$tool is required. Nothing was built or installed."; return 1; }
   done
 }
@@ -44,7 +44,8 @@ regular() {
   local path=$1 limit=$2 metadata
   [[ -f $path && ! -L $path ]] || { fail "Expected a regular, non-symlink file: $path"; return 1; }
   metadata=$(stat -c '%h %s' -- "$path") || return 1
-  [[ ${metadata%% *} == 1 && ${metadata#* } -le $limit ]] || { fail "Hard-linked or oversized file: $path"; return 1; }
+  [[ ( ${3:-single} == generated || ${metadata%% *} == 1 ) && ${metadata#* } -le $limit ]] \
+    || { fail "Hard-linked or oversized file: $path"; return 1; }
 }
 
 snapshot() {
@@ -90,12 +91,16 @@ resource_tree() {
 
 package_files() {
   local path name absolute plugin="$root/harnesses/claude/plugins/ai-local-lsp"
-  json -nj 'include "manifest"; support_files | unique[] | ., "\u0000"' > "$work/support"
+  json -nj 'include "manifest"; support_files - ([public_tools[]] + private_tools) | unique[] | ., "\u0000"' > "$work/support"
   while IFS= read -r -d '' path; do
     absolute="$root/$path"; parents "${absolute%/*}"; regular "$absolute" 16777216
   done < "$work/support"
   json -nj 'include "manifest"; ([public_tools[]] + private_tools) | unique[] | ., "\u0000"' > "$work/tools"
-  while IFS= read -r -d '' path; do [[ -x $root/$path ]] || { fail "Tool is not executable: $path"; return 1; }; done < "$work/tools"
+  # Cargo may hard-link release binaries to hashed artifacts; only catalogue tools qualify.
+  while IFS= read -r -d '' path; do
+    absolute="$root/$path"; parents "${absolute%/*}"; regular "$absolute" 16777216 generated
+    [[ -x $absolute ]] || { fail "Tool is not executable: $path"; return 1; }
+  done < "$work/tools"
   json -nr 'include "manifest"; skills[]' > "$work/skills"
   while IFS= read -r name; do
     path="$root/skills/$name/SKILL.md"; regular "$path" 65536
@@ -299,7 +304,8 @@ json -ne --arg home "${HOME:-}" 'include "manifest"; $home | absolute' >/dev/nul
   || { fail 'HOME must be an absolute non-root directory without traversal or control characters'; exit 1; }
 [[ $HOME != "$root" && $HOME != "$root/"* ]] \
   || { fail 'Refusing to install inside the configuration source'; exit 1; }
-make build
+mise install
+mise exec -- make build
 work=$(mktemp -d "${TMPDIR:-/tmp}/ai-install-XXXXXXXX")
 work=$(cd "$work" && pwd -P)
 work_id=$(stat -c '%d:%i' -- "$work")

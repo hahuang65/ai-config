@@ -2,7 +2,7 @@
 
 This repository is the currently installed configuration source for ordinary Claude Code and Pi.
 Its managed resources are declared by root `manifest.json` and linked by `./install.sh`.
-That explicit entry point builds its own checkout, then owns link and settings transactions with JSON-only support under `tools/install/`; `make build` alone does not install.
+That explicit entry point provisions active mise tools and builds its own checkout, then owns link and settings transactions with JSON-only support under `tools/install/`; `make build` alone does not provision tools or install resources.
 The former Orchard, `/build`, and review-pipeline vocabulary below is retained as historical context, not as installation or current workflow instructions.
 See [`README.md`](README.md) for the current installation contract, and [`docs/review-change-cli.md`](docs/review-change-cli.md) for the retained review-risk limit.
 

@@ -200,8 +200,8 @@ The current executable supports Unix systems; browser launch uses `open` on macO
 The process and browser suite is confined to this crate.
 It uses disposable private storage, the compiled executable, and real headless Firefox through WebDriver BiDi.
 There is no mock browser and no dependency on the original review runtime.
-The default Firefox path is `/Applications/Firefox.app/Contents/MacOS/firefox`.
-Set `FIREFOX_BIN` to an installed Firefox executable on other systems.
+On Linux, Firefox is discovered as `firefox` on PATH; macOS defaults to `/Applications/Firefox.app/Contents/MacOS/firefox`.
+Set `FIREFOX_BIN` to override either selection with an installed Firefox executable.
 Node.js 25 supplies the test runner and WebSocket client only; it is not a runtime dependency.
 
 ```sh

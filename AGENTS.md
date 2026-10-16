@@ -19,10 +19,12 @@ Do not stage, commit, push, or update the parent submodule pointer without separ
 4. Run focused tests, `make lint`, and the `make test` gate before a commit is considered.
    Keep Rust CLI tests in each crate's `tests/`, cross-harness adapter tests in `test/`, and browser integration tests with the artifact-review tool.
    Browser tests must use the bounded browser harness, not unbounded parallel launches.
-5. `make build` creates release artifacts offline; it does not install.
+5. `make build` creates release artifacts with locked Cargo dependencies; it may download dependencies but does not provision tools or install resources.
    Installation requires a separate explicit `./install.sh` invocation and separate approval for a live home.
-   That entry point builds this checkout and performs ownership, link, and settings transactions itself, using the JSON-only filters and catalogue in `tools/install/`.
-   It requires jq and GNU coreutils but does not provision build tools or dependencies.
+   That entry point runs `mise install`, builds this checkout through `mise exec -- make build`, and performs ownership, link, and settings transactions itself, using the JSON-only filters and catalogue in `tools/install/`.
+   It requires mise, jq, GNU coreutils, make, Bash, iconv, and find; its explicit provisioning uses active mise configuration, including global tools.
+   Tests stub provisioning; real provisioning requires separate approval and must not replace the live native Pi client.
+   Project Pi tracks `latest`; other declared tool versions stay fixed, and builds/tests never upgrade tools implicitly.
    Never bypass a retained transaction lock or incomplete rollback; inspect and recover explicitly.
    Preserve the live ownership record, model/authentication choices, conversations, independent TypeSafe and Herdr settings, and unrelated resources.
 

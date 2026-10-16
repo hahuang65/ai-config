@@ -1,4 +1,4 @@
-//! Run the real shell installer in a disposable package; stub compilation only.
+//! Run the real shell installer in a disposable package; stub provisioning and compilation.
 use super::executable;
 use std::fs;
 use std::path::Path;
@@ -22,6 +22,10 @@ pub fn resources(source: &Path) {
 pub fn command(source: &Path, home: &Path) -> Command {
     let bin = home.join(".fixture-build-bin");
     executable(bin.join("make"), "#!/bin/sh\nexit 0\n");
+    executable(
+        bin.join("mise"),
+        "#!/bin/sh\nif [ \"$*\" = install ]; then exit 0; fi\nif [ \"$1\" = exec ] && [ \"$2\" = -- ]; then shift 2; exec \"$@\"; fi\nexit 64\n",
+    );
     let scratch = home.join(".fixture-scratch");
     fs::create_dir_all(&scratch).unwrap();
     let mut command = Command::new(source.join("install.sh"));

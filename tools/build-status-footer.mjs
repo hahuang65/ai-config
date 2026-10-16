@@ -3,15 +3,14 @@ import { realpathSync, readFileSync, statSync } from "node:fs";
 import { createRequire } from "node:module";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import { projectPiExecutable } from "./project-pi.mjs";
 
 const project = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const source = resolve(project, "harnesses/pi/status-footer.ts");
 const destination = resolve(project, "harnesses/pi/status-footer.bundle.ts");
 
 function installedPiTui() {
-  const pi = Bun.which("pi");
-  if (!pi) throw new Error("A managed Pi executable is required to bundle the footer");
-  let cli = realpathSync(pi);
+  let cli = realpathSync(projectPiExecutable());
   for (let hop = 0; hop < 4; hop++) {
     try { return createRequire(cli).resolve("@earendil-works/pi-tui"); }
     catch (error) { if (error.code !== "MODULE_NOT_FOUND") throw error; }

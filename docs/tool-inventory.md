@@ -20,7 +20,10 @@ The user explicitly retired unrecorded legacy adoption; version-one and version-
 See [ADR 0041](adr/0041-retire-unrecorded-installation-adoption.md) and the [coverage migration](../test/installer-migration.md).
 The current installation contract is [manifest.json](../manifest.json), validated by the shell installer and [JSON catalogue](../tools/install/manifest.jq).
 `install.sh` now performs the transaction itself, using JSON-only filters under `tools/install/` rather than invoking an installer binary.
-The user approved jq and GNU coreutils as required dependencies; their absence produces a clear error before building or installing.
+The platform prerequisites are mise, jq, GNU coreutils, make, Bash, iconv, and find; missing checked commands produce a clear error before provisioning or building.
+Explicit installation runs `mise install` against active configuration, then `mise exec -- make build`; Cargo may fetch locked dependencies.
+Build/test SDK lookup and footer bundling select the project mise Pi (`latest`), independently of the live native client.
+Cargo-generated catalogue executables may have multiple hard links, but still require safe parents, regular non-symlink files, size bounds, and execute permission.
 The shell installer uses an atomic lock directory and retains private recovery files when rollback cannot safely restore concurrent edits.
 It is not crash-atomic, and its lock must not be bypassed or combined with stale Rust installation binaries retained in other checkouts.
 Orchard, agentmemory, and the old review-publication service are selected for retirement, with cross-repository changes and protected live cleanup handled separately.

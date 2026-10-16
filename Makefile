@@ -8,7 +8,7 @@
 WT_TEST_JOBS ?= 4
 
 help:
-	@printf 'build  Bundle the Pi guard and build the four Rust tools (offline).\n'
+	@printf 'build  Bundle Pi adapters and build four Rust tools (locked dependencies; network allowed).\n'
 	@printf 'test   Run the native package, review, worktree, worklog, and artifact tests.\n'
 	@printf 'lint   Check install.sh and Rust formatting and lints.\n'
 	@printf 'Focused: test-package, test-worktree, test-worklog, test-artifact, test-evaluation, test-browser.\n'
@@ -25,19 +25,19 @@ build-language-servers:
 build: build-guard-bundle build-language-servers
 	bun tools/build-status-footer.mjs
 	bun build harnesses/pi/worktree.ts --target node --format esm --external @earendil-works/pi-coding-agent --external @sinclair/typebox --outfile harnesses/pi/worktree.bundle.ts
-	cargo build --locked --offline --release --manifest-path tools/worktree/Cargo.toml
-	cargo build --locked --offline --release --manifest-path tools/worklog/Cargo.toml
-	cargo build --locked --offline --release --manifest-path tools/artifact-review/Cargo.toml
-	cargo build --locked --offline --release --manifest-path tools/evaluation/Cargo.toml
+	cargo build --locked --release --manifest-path tools/worktree/Cargo.toml
+	cargo build --locked --release --manifest-path tools/worklog/Cargo.toml
+	cargo build --locked --release --manifest-path tools/artifact-review/Cargo.toml
+	cargo build --locked --release --manifest-path tools/evaluation/Cargo.toml
 
 test: test-package test-worktree test-worklog test-artifact test-evaluation test-browser
 
 build-evaluation-debug:
-	cargo build --locked --offline --manifest-path tools/evaluation/Cargo.toml
-	cargo build --locked --offline --manifest-path tools/evaluation/Cargo.toml --example reviewer-fixture
+	cargo build --locked --manifest-path tools/evaluation/Cargo.toml
+	cargo build --locked --manifest-path tools/evaluation/Cargo.toml --example reviewer-fixture
 
 build-artifact-debug:
-	cargo build --locked --offline --manifest-path tools/artifact-review/Cargo.toml
+	cargo build --locked --manifest-path tools/artifact-review/Cargo.toml
 
 test-package: build build-evaluation-debug
 	bun test $(filter-out test/package-worktree.test.ts test/package-claude-worktree-runtime.test.ts,$(wildcard test/package-*.test.ts)) test/reviewer-runtime.test.ts test/guards.test.ts test/cli-links.test.ts test/resolve-conflicts.test.ts
@@ -45,19 +45,19 @@ test-package: build build-evaluation-debug
 	bun test --concurrent --max-concurrency=2 test/package-claude-worktree-runtime.test.ts
 
 test-worktree:
-	cargo test --locked --offline --manifest-path tools/worktree/Cargo.toml
-	cargo build --locked --offline --manifest-path tools/worktree/Cargo.toml
+	cargo test --locked --manifest-path tools/worktree/Cargo.toml
+	cargo build --locked --manifest-path tools/worktree/Cargo.toml
 	python -m unittest discover -s tools/worktree/tests -p parallel_runner_tests.py -v
 	python tools/worktree/tests/rust_parity.py --jobs $(WT_TEST_JOBS)
 
 test-worklog:
-	cargo test --locked --offline --manifest-path tools/worklog/Cargo.toml
+	cargo test --locked --manifest-path tools/worklog/Cargo.toml
 
 test-artifact:
-	cargo test --locked --offline --manifest-path tools/artifact-review/Cargo.toml
+	cargo test --locked --manifest-path tools/artifact-review/Cargo.toml
 
 test-evaluation: build build-evaluation-debug
-	cargo test --locked --offline --manifest-path tools/evaluation/Cargo.toml --lib --tests
+	cargo test --locked --manifest-path tools/evaluation/Cargo.toml --lib --tests
 
 test-browser: build-guard-bundle build-evaluation-debug build-artifact-debug
 	node --test --test-concurrency=1 tools/artifact-review/tests/integration.mjs
@@ -68,6 +68,6 @@ lint:
 	$(MAKE) -C tools/worktree lint
 	$(MAKE) -C tools/worklog lint
 	cargo fmt --check --manifest-path tools/evaluation/Cargo.toml
-	cargo clippy --all-targets --locked --offline --manifest-path tools/evaluation/Cargo.toml -- -D warnings
+	cargo clippy --all-targets --locked --manifest-path tools/evaluation/Cargo.toml -- -D warnings
 	cargo fmt --check --manifest-path tools/artifact-review/Cargo.toml
-	cargo clippy --all-targets --locked --offline --manifest-path tools/artifact-review/Cargo.toml -- -D warnings
+	cargo clippy --all-targets --locked --manifest-path tools/artifact-review/Cargo.toml -- -D warnings

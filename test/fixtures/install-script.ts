@@ -26,8 +26,11 @@ export function installFixture() {
   writeFileSync(log, "");
   writeFileSync(join(bin, "make"), '#!/bin/bash\nprintf "%s\\n%s\\n" "$PWD" "$*" >> "$TEST_LOG"\nexit "${BUILD_STATUS:-0}"\n');
   chmodSync(join(bin, "make"), 0o755);
+  const provisionLog = join(temporary, "provision-log");
+  writeFileSync(provisionLog, "");
+  writeFileSync(join(bin, "mise"), '#!/bin/bash\nprintf "%s\\n%s\\n" "$PWD" "$*" >> "$PROVISION_LOG"\nif [[ $* == install ]]; then exit "${PROVISION_STATUS:-0}"; fi\nif [[ $1 == exec && $2 == -- ]]; then shift 2; exec "$@"; fi\nexit 64\n', { mode: 0o755 });
   const environment = (extra: Record<string, string>) => ({
-    ...process.env, HOME: home, TMPDIR: scratch, PATH: `${bin}:${process.env.PATH}`, TEST_LOG: log, ...extra,
+    ...process.env, HOME: home, TMPDIR: scratch, PATH: `${bin}:${process.env.PATH}`, TEST_LOG: log, PROVISION_LOG: provisionLog, ...extra,
   });
   return {
     temporary, source, home, bin,
@@ -42,6 +45,7 @@ export function installFixture() {
       cwd: temporary, env: environment(env), detached: true, stdio: ["ignore", "pipe", "pipe"],
     }),
     calls: () => readFileSync(log, "utf8"),
+    provisionCalls: () => readFileSync(provisionLog, "utf8"),
     clean: () => rmSync(temporary, { recursive: true, force: true }),
   };
 }

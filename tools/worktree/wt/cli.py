@@ -79,7 +79,8 @@ def main(argv=None):
                 if not args.all:
                     result["worktrees"] = result["worktrees"][:50]
                 result.update(total=total, omitted=total - len(result["worktrees"]))
-        sys.stdout.write(json.dumps(result, ensure_ascii=True) + "\n" if args.json else render(result))
+        output = json.dumps(result, ensure_ascii=True) + "\n" if args.json else render(result)
+        sys.stdout.buffer.write(output.encode("utf-8", errors="surrogateescape"))
         if "results" in result and any("reason" in item for item in result["results"]):
             return 1
         return 0

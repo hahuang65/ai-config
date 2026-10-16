@@ -8,7 +8,8 @@ const TIMEOUT = 15000;
 
 // Standalone WebDriver BiDi fixture; no review runtime or browser package imports.
 export async function launchFirefox(profile, { signal, onStage = () => {}, spawnProcess = spawn,
-  stop = stopProcessGroup, createSocket = url => new WebSocket(url) } = {}) {
+  stop = stopProcessGroup, createSocket = url => new WebSocket(url),
+  env = process.env, platform = process.platform } = {}) {
   let child, socket, request, closing, stage = 'profile preparation';
   const at = name => { stage = name; onStage(name); };
   const active = () => { if (signal?.aborted) throw new Error('Firefox startup cancelled'); };
@@ -25,9 +26,11 @@ export async function launchFirefox(profile, { signal, onStage = () => {}, spawn
     await mkdir(profile, { recursive: true });
     active();
     at('endpoint discovery');
-    child = spawnProcess(process.env.FIREFOX_BIN || '/Applications/Firefox.app/Contents/MacOS/firefox',
+    const executable = env.FIREFOX_BIN || (platform === 'darwin'
+      ? '/Applications/Firefox.app/Contents/MacOS/firefox' : 'firefox');
+    child = spawnProcess(executable,
       ['--headless', '--no-remote', '--profile', profile, '--remote-debugging-port', '0', 'about:blank'],
-      { stdio: ['ignore', 'ignore', 'pipe'], detached: true });
+      { env, stdio: ['ignore', 'ignore', 'pipe'], detached: true });
     active();
     const endpoint = await discover(child, signal);
     at('connection');
