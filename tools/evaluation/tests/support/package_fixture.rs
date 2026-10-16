@@ -73,6 +73,13 @@ pub fn populate(root: &Path) {
         "harnesses/pi/guard-policies.bundle.ts",
         "harnesses/pi/status-footer.ts",
         "harnesses/pi/status-footer.bundle.ts",
+        "language-servers.json",
+        "harnesses/pi/lsp.ts",
+        "harnesses/pi/lsp.bundle.ts",
+        "harnesses/pi/lsp/client.ts",
+        "harnesses/pi/lsp/documents.ts",
+        "harnesses/pi/lsp/transport.ts",
+        "harnesses/pi/lsp/diagnostics.ts",
         "harnesses/pi/themes/catppuccin-mocha.json",
         "harnesses/claude/harness-rules.md",
         "harnesses/claude/guard-verdict.ts",
@@ -158,6 +165,7 @@ pub fn manifest(root: &Path) {
         {"destination": ".claude/plugins/ai-local-lsp", "target": "harnesses/claude/plugins/ai-local-lsp"},
         {"destination": ".pi/agent/extensions/guard-policies.ts", "target": "harnesses/pi/guard-policies.bundle.ts"},
         {"destination": ".pi/agent/extensions/status-footer.ts", "target": "harnesses/pi/status-footer.bundle.ts"},
+        {"destination": ".pi/agent/extensions/lsp.ts", "target": "harnesses/pi/lsp.bundle.ts"},
         {"destination": ".pi/agent/themes/catppuccin-mocha.json", "target": "harnesses/pi/themes/catppuccin-mocha.json"},
         {"destination": ".claude/commands/deliver.md", "target": "commands/deliver.md"},
         {"destination": ".claude/commands/rebase.md", "target": "commands/rebase.md"},
@@ -212,7 +220,7 @@ pub fn manifest(root: &Path) {
     ] {
         settings.push(
             json!({"destination": ".claude/settings.json", "path": ["enabledPlugins", name],
-            "mode": "value", "value": true}),
+            "mode": "value", "value": false}),
         );
     }
     settings.push(

@@ -17,7 +17,9 @@ The installed package provides:
 
 - Shared baseline instructions and guarded tool-call adapters for both harnesses.
 - The familiar two-line Claude and Pi status displays and Catppuccin themes, without agentmemory.
-- Claude's feature-disable settings and selected LSP plugins; a local `ty server`/`ruby-lsp` plugin provides Python and Ruby LSP without Astral's or Ruby's skill bundles or auto-installing launchers. Server tools remain independently provisioned through mise.
+- Claude's feature-disable settings and a [shared language-server catalogue](docs/language-servers.md) for Python, Ruby, Lua, Go, Shell, Terraform, TypeScript/JavaScript, and Rust.
+  Claude consumes a generated language-server-only plugin; Pi provides an on-demand `lsp` tool for navigation and diagnostics.
+  Server tools are declared in `mise.toml` and provisioned explicitly, never by the harness adapters.
 - Explicit `/deliver` and `/rebase` commands in both harnesses; `/resolve-conflicts` is the shared skill for a rebase already in progress.
 - Curated shared skills under `skills/`; the optional `review-change` skill selects the current harness's independently restricted reviewer.
 - The evaluation's specialist roles: API designer, change reviewer, database reviewer, fact checker, and frontend architect.
@@ -51,7 +53,7 @@ They carry the current conversation into a new task and resume the saved task co
 The [shared continuation contract](docs/worktree-transitions.md#shared-continuation-contract) resumes already-requested work once after verified native completion, without new authorization.
 Claude's interactive `/resume` still requires a subsequent `continue` message.
 Creating a worktree through the standalone CLI does not move a running conversation; use the documented native transition.
-This package does not install a Pi language-server client or the former agentmemory and background publication services.
+This package does not install the former agentmemory or background publication services.
 The commands never push automatically or clean merely because work ends.
 Local delivery requires project checks and a verified fast-forward; provider review is a separate, explicitly requested workflow.
 An explicit local delivery request also includes a native session return to the primary directory and safe worktree cleanup.
@@ -69,7 +71,8 @@ make lint
 make test
 ```
 
-`make build` creates the Pi guard, status-footer, and worktree bundles and Rust release binaries offline; it **does not install**.
+`make build` creates the Pi guard, status-footer, worktree, and LSP bundles, the shared catalogue's Claude plugin projection, and Rust release binaries offline; it **does not install**.
+`make lint` checks that generated Claude LSP definitions still match the catalogue.
 Tests use disposable homes and fake providers, not the live harness state.
 Use the [focused test targets](test/README.md#focused-checks) during iteration instead of rerunning unrelated suites; `make test` and the commit hook still run the complete gate.
 WT parity uses at most four isolated case workers; `WT_TEST_JOBS=1` selects serial execution without changing coverage.

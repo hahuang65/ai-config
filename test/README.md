@@ -37,7 +37,12 @@ Tests use disposable homes and fake providers; they must not install into the li
   The bounded browser suite counts idle event/snapshot requests and verifies live feedback, replies, and document reload through revision-only checks.
 
 The native Pi and Claude task-conversation runtime checks remain in the package suite.
-The package does not install a Pi language-server client.
+The Pi `lsp` client uses the same eight-server catalogue as the generated Claude plugin.
+`package-claude-lsp.test.ts` checks catalogue parity, fixed mise declarations, and generated projections; native Claude discovery checks all eight registrations.
+`package-pi-lsp.test.ts` checks source-to-bundle parity separately, then loads the manifest-declared bundle through the actual Node/Pi loader in disposable homes with fake stdio servers.
+It covers lazy startup, reuse, queries, disk updates, capability-dependent pull diagnostics, push diagnostics, stale reports after eviction/reopening, capability errors, bounded documents/output, path guards, server-directed edit refusal, and shutdown.
+`package-pi-lsp-transport.test.ts` covers fragmented frames, malformed envelopes, oversized responses, queued-output overflow from a non-reading server, missing executables, exit, timeout, cancellation, and descendant termination (including inherited pipes) with real pipes and no providers.
+These tests never provision or launch the real language servers; see [shared contracts and limits](../docs/language-servers.md).
 
 ## Focused checks
 

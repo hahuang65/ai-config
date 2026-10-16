@@ -23,7 +23,7 @@ test("shell installer catalogue accepts the package and retains recorded old com
 
 test("shell installer rejects missing safety resources and public aliases for private helpers", () => {
   for (const destination of [".claude/CLAUDE.md", ".pi/agent/AGENTS.md", ".claude/hooks/guard.ts",
-    ".claude/skills/code", ".pi/agent/agents/fact-checker.md", ".local/bin/review-change"]) {
+    ".claude/skills/code", ".pi/agent/agents/fact-checker.md", ".pi/agent/extensions/lsp.ts", ".local/bin/review-change"]) {
     const value = packageManifest();
     value.links = value.links.filter((link: { destination: string }) => link.destination !== destination);
     expect(validate(value).status, destination).not.toBe(0);

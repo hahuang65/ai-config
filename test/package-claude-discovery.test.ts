@@ -114,8 +114,9 @@ claudeTest("public MVP installation loads the five evaluation agents and skills 
     finally { server.stop(true); }
     const debug = readFileSync(debugFile, "utf8");
     expect(debug).not.toMatch(/CLAUDE_CODE_PLUGIN_DIRS: skipped/);
-    expect(debug).toContain("Registered diagnostics handler for plugin:ai-local-lsp:ty");
-    expect(debug).toContain("Registered diagnostics handler for plugin:ai-local-lsp:ruby");
+    for (const name of ["ty", "ruby", "lua", "go", "shell", "terraform", "typescript", "rust"]) {
+      expect(debug).toContain(`Registered diagnostics handler for plugin:ai-local-lsp:${name}`);
+    }
     const events = stdout.split("\n").flatMap((line) => {
       try { return [JSON.parse(line)]; } catch { return []; }
     });

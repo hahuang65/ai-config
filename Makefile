@@ -1,7 +1,7 @@
 # Ordinary Claude and Pi resources. Installing into a real home is an explicit,
 # separate ./install.sh invocation; this Makefile never retargets the live installation.
 .DEFAULT_GOAL := help
-.PHONY: help build test lint test-package test-worktree test-worklog test-artifact test-evaluation test-browser build-evaluation-debug build-artifact-debug build-guard-bundle
+.PHONY: help build test lint test-package test-worktree test-worklog test-artifact test-evaluation test-browser build-evaluation-debug build-artifact-debug build-guard-bundle build-language-servers
 # Keep suites serial even with make -j; common build prerequisites run once.
 # Isolated WT parity and separate native runtime groups use bounded workers.
 .NOTPARALLEL:
@@ -18,7 +18,11 @@ help:
 build-guard-bundle:
 	bun build harnesses/pi/guard-policies.ts --target node --format esm --outfile harnesses/pi/guard-policies.bundle.ts
 
-build: build-guard-bundle
+build-language-servers:
+	bun tools/build-language-servers.mjs
+	bun build harnesses/pi/lsp.ts --target node --format esm --external @earendil-works/pi-coding-agent --external typebox --outfile harnesses/pi/lsp.bundle.ts
+
+build: build-guard-bundle build-language-servers
 	bun tools/build-status-footer.mjs
 	bun build harnesses/pi/worktree.ts --target node --format esm --external @earendil-works/pi-coding-agent --external @sinclair/typebox --outfile harnesses/pi/worktree.bundle.ts
 	cargo build --locked --offline --release --manifest-path tools/worktree/Cargo.toml
@@ -59,6 +63,7 @@ test-browser: build-guard-bundle build-evaluation-debug build-artifact-debug
 	node --test --test-concurrency=1 tools/artifact-review/tests/integration.mjs
 
 lint:
+	bun tools/build-language-servers.mjs --check
 	shellcheck install.sh
 	$(MAKE) -C tools/worktree lint
 	$(MAKE) -C tools/worklog lint

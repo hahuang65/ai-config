@@ -36,7 +36,12 @@ fn relocated_package() -> tempfile::TempDir {
     ] {
         copy_tree(&repository.join(directory), &package.path().join(directory));
     }
-    for file in ["manifest.json", "baseline.md", "reviewer.md"] {
+    for file in [
+        "manifest.json",
+        "language-servers.json",
+        "baseline.md",
+        "reviewer.md",
+    ] {
         fs::copy(repository.join(file), package.path().join(file)).unwrap();
     }
     package
@@ -93,6 +98,7 @@ fn production_manifest_is_relocatable_and_covers_both_complete_harness_catalogue
         ".claude/hooks/guard.ts",
         ".pi/agent/extensions/guard-policies.ts",
         ".pi/agent/extensions/status-footer.ts",
+        ".pi/agent/extensions/lsp.ts",
         ".claude/statusline.ts",
         ".claude/themes/catppuccin-mocha.json",
         ".pi/agent/themes/catppuccin-mocha.json",
@@ -105,7 +111,6 @@ fn production_manifest_is_relocatable_and_covers_both_complete_harness_catalogue
         assert!(links.contains(&Path::new(destination)));
     }
     for destination in [
-        ".pi/agent/extensions/lsp.ts",
         ".pi/agent/extensions/wt.ts",
         ".claude/plugins/ai-worktree",
         ".local/bin/artifact-review",

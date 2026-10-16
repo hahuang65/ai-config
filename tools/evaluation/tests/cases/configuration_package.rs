@@ -128,6 +128,7 @@ fn ordinary_package_installs_the_selected_host_resources_and_cli_dependencies_on
                     | ".pi/agent/extensions/worktree.ts"
                     | ".pi/agent/extensions/guard-policies.ts"
                     | ".pi/agent/extensions/status-footer.ts"
+                    | ".pi/agent/extensions/lsp.ts"
                     | ".claude/statusline.ts"
                     | ".claude/themes/catppuccin-mocha.json"
                     | ".pi/agent/themes/catppuccin-mocha.json"

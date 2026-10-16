@@ -6,6 +6,16 @@ const root = resolve(import.meta.dir, "..");
 const piRuntimeCommand = "bun test --concurrent --max-concurrency=2 test/package-worktree.test.ts";
 const claudeRuntimeCommand = "bun test --concurrent --max-concurrency=2 test/package-claude-worktree-runtime.test.ts";
 
+test("the offline build generates both LSP projections before package checks", () => {
+  const preview = Bun.spawnSync(["make", "-n", "test"], { cwd: root, stdout: "pipe", stderr: "pipe" });
+  expect(preview.exitCode).toBe(0);
+  const commands = preview.stdout.toString();
+  for (const command of ["bun tools/build-language-servers.mjs", "bun build harnesses/pi/lsp.ts"]) {
+    expect(commands).toContain(command);
+    expect(commands.indexOf(command)).toBeLessThan(commands.indexOf("bun test "));
+  }
+});
+
 test("cold test runs build every manifest release target before package validation", () => {
   const preview = Bun.spawnSync(["make", "-n", "test"], {
     cwd: root, stdout: "pipe", stderr: "pipe",

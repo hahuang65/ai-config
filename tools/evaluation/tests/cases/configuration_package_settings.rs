@@ -27,7 +27,7 @@ fn package_selects_the_requested_claude_feature_disables() {
 }
 
 #[test]
-fn package_selects_language_servers_without_importing_plugin_skills() {
+fn package_uses_shared_language_servers_without_duplicate_plugins_or_plugin_skills() {
     let source = package_fixture::fixture();
     package_fixture::manifest(source.path());
     let manifest = prepared_manifest(&source.path().canonicalize().unwrap()).unwrap();
@@ -41,8 +41,8 @@ fn package_selects_language_servers_without_importing_plugin_skills() {
             manifest
                 .settings
                 .iter()
-                .any(|claim| claim.path == ["enabledPlugins", name] && claim.value == true),
-            "missing {name}"
+                .any(|claim| claim.path == ["enabledPlugins", name] && claim.value == false),
+            "missing duplicate-plugin disable: {name}"
         );
     }
     assert!(manifest.links.iter().any(|link| {

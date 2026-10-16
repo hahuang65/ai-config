@@ -1,7 +1,8 @@
 # Harness and external tool inventory
 
 Companion to the [package tool inventory](tool-inventory.md).
-This is the pre-pruning harness baseline; see that document's approved-replacement section for the implementation now in progress.
+Most entries retain the pre-pruning harness baseline; see that document's approved-replacement section for the implementation now in progress.
+The Pi LSP row and language-server section describe the subsequent shared-catalogue source change, not a verified live installation.
 This records tool identity, purpose, source, invocation, and configuration status—not a cross-harness parity specification.
 A **Tool** below is a named model-callable operation; the model invokes its runtime-defined arguments, not a shell command with the same spelling.
 Commands and resources that merely guide, wrap, or observe tools are listed separately.
@@ -21,7 +22,7 @@ Dynamic remote MCP tool names and effective tool sets in other projects remain u
 ## Pi
 
 All ordinary built-ins in this table are upstream Pi code, not reimplementations in ai-config.
-The package adds the separate WT row below.
+The package adds the separate WT and LSP rows below.
 Local Pi settings contained no `defaultTools`, extra `packages`, or `extensions` selection; there was no user `mcp.json` or project `.pi/mcp.json` in this checkout.
 The actual declarations in this inventory conversation were `read`, `bash`, `edit`, `write`, and `worktree_transition`, plus the call wrapper described below.
 
@@ -40,12 +41,13 @@ The actual declarations in this inventory conversation were `read`, `bash`, `edi
 | `mcp__SERVER__TOOL` | Invoke an external server's schema-defined operation. | Conditional runtime registration by upstream MCP support; no servers configured in the inspected Pi files. Names and exposure depend on the server. |
 | `list_mcp_resources`, `list_mcp_resource_templates`, `read_mcp_resource` | Discover and read resources from connected MCP servers. | Conditional upstream MCP tools, absent here; `docs/mcp.md`. |
 | `worktree_transition` with `action` and optional `task` | Prepare the privileged native session transition that a shell `cd` cannot perform. | Package-owned, active; [harnesses/pi/worktree.ts](../harnesses/pi/worktree.ts), installed as its bundle. Actions: `new`, `enter`, `leave`, `clean`; a human submits the prepared `/wt` command before transition. |
+| `lsp` with `operation`, `path`, and optional position | Query hover, definitions, references, symbols, or diagnostics from an on-demand language server. | Package-owned [harnesses/pi/lsp.ts](../harnesses/pi/lsp.ts), installed as a bundle; [shared catalogue and limits](language-servers.md). Not active in the original inventory session. |
 | `multi_tool_use.parallel` | Submit independent calls together through the session's execution wrapper. | Present in this conversation's tool interface, not registered by this package or an installed CLI. Do not mistake it for a second package orchestration implementation. |
 
 Pi's [extension contract](https://github.com/earendil-works/pi/blob/main/packages/coding-agent/docs/extensions.md) distinguishes a model tool (`registerTool`) from a slash command (`registerCommand`).
-The package registers one ordinary model tool and one `/wt` command in the same extension, not two interchangeable tools.
+The WT extension registers one model tool and one `/wt` command, not two interchangeable tools; the LSP extension adds a separate model tool.
 Guard and status-footer extensions register no tools.
-Pi has no package-installed native subagent or LSP tool; specialist files alone do not add either capability.
+Pi has no package-installed native subagent tool; specialist files alone do not add that capability.
 
 MCP tools default to codemode exposure in this Pi version, not direct declaration.
 `codemode`, `deferred`, `direct`, and `hidden` exposure differ; not seeing a tool in the current declarations does not generally prove it is unreachable.
@@ -101,23 +103,14 @@ The manifest does not disable ordinary user/project discovery.
 
 ## Language-server integrations
 
-These processes back Claude's single `LSP` tool; they are not six additional model tools.
-The package declares plugin selection, while server binaries remain independently provisioned through mise.
-None was launched to assert working authentication, startup, or project readiness.
-Upstream Lua/Go declarations were read from `~/.claude/plugins/marketplaces/claude-plugins-official/.claude-plugin/marketplace.json`; shell/Terraform declarations were read from the selected plugins' cached version-1.0.0 `.lsp.json` files.
-
-| Language | Source / ownership | Invocation | Purpose |
-| --- | --- | --- | --- |
-| Python | Package [ai-local-lsp plugin](../harnesses/claude/plugins/ai-local-lsp/.claude-plugin/plugin.json) | `ty server` | Python semantic diagnostics/navigation without importing Astral's skill bundle. |
-| Ruby | Same package plugin | `ruby-lsp` | Ruby/ERB semantic diagnostics/navigation without Ruby skill bundles or auto-installing launchers. |
-| Lua | `lua-lsp@claude-plugins-official`; installed marketplace declaration | `lua-language-server` | Lua diagnostics/navigation through Claude LSP. |
-| Go | `gopls-lsp@claude-plugins-official`; installed marketplace declaration | `gopls` | Go diagnostics/navigation through Claude LSP. |
-| Shell | `bash-language-server@claude-code-lsps`; installed `.lsp.json` | `bash-language-server start` | Shell diagnostics/navigation through Claude LSP. |
-| Terraform | `terraform-ls@claude-code-lsps`; installed `.lsp.json` | `terraform-ls serve` | Terraform diagnostics/navigation through Claude LSP. |
+Eight shared server definitions now back Claude's single `LSP` tool and Pi's single `lsp` tool; they are not eight additional model tools.
+The canonical [language-server catalogue](../language-servers.json) covers Python, Ruby/ERB, Lua, Go, Shell, Terraform, TypeScript/JavaScript, and Rust.
+The [integration contract](language-servers.md) lists their exact invocations, mise provisioning, native-client differences, and future-harness conformance requirements.
+Claude uses one generated [ai-local-lsp plugin](../harnesses/claude/plugins/ai-local-lsp/.claude-plugin/plugin.json); Pi imports the same catalogue into its bundled client.
+The manifest disables the four previously managed upstream Lua, Go, Shell, and Terraform plugins to avoid duplicates, without removing caches or changing unrelated plugin choices.
 
 An enabled plugin entry or a cached plugin directory does not prove that its server can run.
-Cached Astral, Ruby, or HUD resources are not evidence they remain enabled; the inspected enabled-plugin map selected the four upstream LSP plugins above, alongside the separately linked local plugin.
-Pi LSP remains separate follow-up work, not a hidden installed capability.
+Client tests use disposable fake servers and do not establish live provisioning, project readiness, or equivalent diagnostics from every native client.
 
 ## Restricted reviewers
 

@@ -9,7 +9,7 @@ export function copyPackageFiles(destination: string) {
   for (const directory of ["skills", "agents", "commands", "rules", "guard", "harnesses"]) {
     cpSync(join(source, directory), join(destination, directory), { recursive: true });
   }
-  for (const file of ["manifest.json", "baseline.md", "reviewer.md", "docs/worktree-transitions.md"]) {
+  for (const file of ["manifest.json", "language-servers.json", "baseline.md", "reviewer.md", "docs/worktree-transitions.md"]) {
     const target = join(destination, file);
     mkdirSync(dirname(target), { recursive: true });
     cpSync(join(source, file), target);

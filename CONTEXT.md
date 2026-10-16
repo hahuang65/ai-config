@@ -95,6 +95,13 @@ _Avoid_: Domain language, project vocabulary, `CONTEXT.md` vocabulary.
 
 ### Harness-specific terms
 
+**Language-server catalogue**:
+The shared `language-servers.json` definitions of server identities, executable names, arguments, and file-extension-to-language-ID mappings.
+Every harness consumes the same catalogue directly or through a generated, parity-checked projection.
+A harness owns its client protocol and interface, not a separate language selection; tool provisioning remains an explicit mise operation.
+See [language-server contracts](docs/language-servers.md) for client differences and future-harness checks.
+
+
 **`.claude` / `~/.claude/`**:
 Claude Code's normal config root.
 The replacement links only declared resources into `~/.claude/`, retains unrelated resources, login, model preferences, saved conversations, and project trust, and supplies its small bootstrap through `~/.claude/CLAUDE.md`.

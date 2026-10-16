@@ -1,12 +1,16 @@
 {
   "name": "ai-local-lsp",
-  "description": "Python and Ruby language servers only; no skills or prompts",
-  "author": { "name": "ai-config" },
-  "version": "1.0.0",
+  "description": "Shared language servers only; no skills, prompts, or automatic installation",
+  "author": {
+    "name": "ai-config"
+  },
+  "version": "2.0.0",
   "lspServers": {
     "ty": {
       "command": "ty",
-      "args": ["server"],
+      "args": [
+        "server"
+      ],
       "extensionToLanguage": {
         ".py": "python",
         ".pyi": "python"
@@ -21,6 +25,63 @@
         ".rake": "ruby",
         ".gemspec": "ruby",
         ".ru": "ruby"
+      }
+    },
+    "lua": {
+      "command": "lua-language-server",
+      "args": [],
+      "extensionToLanguage": {
+        ".lua": "lua"
+      }
+    },
+    "go": {
+      "command": "gopls",
+      "args": [],
+      "extensionToLanguage": {
+        ".go": "go"
+      }
+    },
+    "shell": {
+      "command": "bash-language-server",
+      "args": [
+        "start"
+      ],
+      "extensionToLanguage": {
+        ".sh": "shellscript",
+        ".bash": "shellscript"
+      }
+    },
+    "terraform": {
+      "command": "terraform-ls",
+      "args": [
+        "serve"
+      ],
+      "extensionToLanguage": {
+        ".tf": "terraform",
+        ".tfvars": "terraform-vars"
+      }
+    },
+    "typescript": {
+      "command": "typescript-language-server",
+      "args": [
+        "--stdio"
+      ],
+      "extensionToLanguage": {
+        ".ts": "typescript",
+        ".tsx": "typescriptreact",
+        ".mts": "typescript",
+        ".cts": "typescript",
+        ".js": "javascript",
+        ".jsx": "javascriptreact",
+        ".mjs": "javascript",
+        ".cjs": "javascript"
+      }
+    },
+    "rust": {
+      "command": "rust-analyzer",
+      "args": [],
+      "extensionToLanguage": {
+        ".rs": "rust"
       }
     }
   }

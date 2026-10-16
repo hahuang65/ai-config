@@ -1,4 +1,15 @@
 [tools]
 rust = "1.99.0"
 shellcheck = "0.11.0"
+# Shared language-server catalogue (language-servers.json).
+# Installation is explicit: mise install; make build never provisions tools.
 ty = "0.0.85"
+"gem:ruby-lsp" = "0.26.11"
+lua-language-server = "3.19.2"
+"go:golang.org/x/tools/gopls" = "0.24.0"
+"npm:bash-language-server" = "5.8.1"
+terraform-ls = "0.39.0"
+# Co-locate the TS 6 SDK so the LSP can resolve it without workspace dependencies.
+# TS 7 no longer ships tsserver. This hook runs only during explicit provisioning.
+"npm:typescript-language-server" = { version = "6.0.2", depends = ["node"], postinstall = 'npm install --prefix "$MISE_TOOL_INSTALL_PATH" --no-save --no-package-lock --ignore-scripts typescript@6.0.3' }
+rust-analyzer = "2026-10-12"

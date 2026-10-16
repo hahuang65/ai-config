@@ -1,0 +1,37 @@
+{
+  "ty": {
+    "command": "ty", "args": ["server"],
+    "extensionToLanguage": { ".py": "python", ".pyi": "python" }
+  },
+  "ruby": {
+    "command": "ruby-lsp", "args": [],
+    "extensionToLanguage": { ".rb": "ruby", ".erb": "erb", ".rake": "ruby", ".gemspec": "ruby", ".ru": "ruby" }
+  },
+  "lua": {
+    "command": "lua-language-server", "args": [],
+    "extensionToLanguage": { ".lua": "lua" }
+  },
+  "go": {
+    "command": "gopls", "args": [],
+    "extensionToLanguage": { ".go": "go" }
+  },
+  "shell": {
+    "command": "bash-language-server", "args": ["start"],
+    "extensionToLanguage": { ".sh": "shellscript", ".bash": "shellscript" }
+  },
+  "terraform": {
+    "command": "terraform-ls", "args": ["serve"],
+    "extensionToLanguage": { ".tf": "terraform", ".tfvars": "terraform-vars" }
+  },
+  "typescript": {
+    "command": "typescript-language-server", "args": ["--stdio"],
+    "extensionToLanguage": {
+      ".ts": "typescript", ".tsx": "typescriptreact", ".mts": "typescript", ".cts": "typescript",
+      ".js": "javascript", ".jsx": "javascriptreact", ".mjs": "javascript", ".cjs": "javascript"
+    }
+  },
+  "rust": {
+    "command": "rust-analyzer", "args": [],
+    "extensionToLanguage": { ".rs": "rust" }
+  }
+}

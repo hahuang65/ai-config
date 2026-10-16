@@ -65,6 +65,7 @@ def bootstrap: {
   ".claude/themes/catppuccin-mocha.json": "harnesses/claude/themes/catppuccin-mocha.json",
   ".pi/agent/extensions/guard-policies.ts": "harnesses/pi/guard-policies.bundle.ts",
   ".pi/agent/extensions/status-footer.ts": "harnesses/pi/status-footer.bundle.ts",
+  ".pi/agent/extensions/lsp.ts": "harnesses/pi/lsp.bundle.ts",
   ".pi/agent/themes/catppuccin-mocha.json": "harnesses/pi/themes/catppuccin-mocha.json",
   ".claude/plugins/ai-local-lsp": "harnesses/claude/plugins/ai-local-lsp"};
 # Explicit construction avoids any catalogue dependency on a mutable manifest.
@@ -79,6 +80,8 @@ def catalogue:
 
 def support_files: [
   "harnesses/worktree-client.ts", "docs/worktree-transitions.md", "harnesses/pi/worktree.ts",
+  "language-servers.json", "harnesses/pi/lsp.ts", "harnesses/pi/lsp/client.ts",
+  "harnesses/pi/lsp/documents.ts", "harnesses/pi/lsp/transport.ts", "harnesses/pi/lsp/diagnostics.ts",
   "harnesses/pi/review-scope.ts", "reviewer.md", "harnesses/pi/guard-policies.ts", "harnesses/pi/status-footer.ts",
   "harnesses/claude/harness-rules.md", "harnesses/claude/plugins/ai-local-lsp/.claude-plugin/plugin.json",
   "harnesses/claude/guard-verdict.ts", "harnesses/claude/read-only-github.ts", "guard/bash-command.ts",
@@ -108,7 +111,7 @@ def selected_setting:
       or $p == ["env", "CLAUDE_CODE_PLUGIN_DIRS"] and $v == "~/.claude/plugins/ai-local-lsp"
       or (($p | length) == 1 and $v == true and (["disableArtifact", "disableBundledSkills",
         "disableClaudeAiConnectors", "disableRemoteControl", "disableWorkflows"] | index($p[0])) != null)
-      or ($p[0] == "enabledPlugins" and $v == true and (["lua-lsp@claude-plugins-official",
+      or ($p[0] == "enabledPlugins" and $v == false and (["lua-lsp@claude-plugins-official",
         "bash-language-server@claude-code-lsps", "terraform-ls@claude-code-lsps",
         "gopls-lsp@claude-plugins-official"] | index($p[1])) != null)
     end;
