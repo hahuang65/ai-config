@@ -4,6 +4,49 @@ use std::fs;
 use support::{change::*, *};
 
 #[test]
+fn findings_render_four_human_readable_sections_with_escaped_content() {
+    let trial = fixture();
+    let output = command(&trial)
+        .env("CHANGE_TEST_MODE", "explained")
+        .args(["review", "range", "HEAD~1..HEAD", "--repo"])
+        .arg(trial.temporary.path().join("repo"))
+        .args(["--intent", "fixture", "--json"])
+        .output()
+        .unwrap();
+    success(output.clone());
+    let receipt: Value = serde_json::from_slice(&output.stdout).unwrap();
+    let html = fs::read_to_string(receipt["report"].as_str().unwrap()).unwrap();
+    for heading in [
+        "User-facing problem",
+        "Why it matters",
+        "Technical details",
+        "Suggested fix",
+    ] {
+        assert!(
+            html.contains(&format!("<h5>{heading}</h5>")),
+            "Missing {heading}"
+        );
+    }
+    for text in [
+        "USER_WORKFLOW",
+        "USER_IMPACT",
+        "SOURCE_DETAIL",
+        "FIX_ACTION",
+    ] {
+        assert!(html.contains(text));
+    }
+    assert!(html.contains("&lt;script&gt;not executable&lt;/script&gt;"));
+    assert!(!html.contains("<script>not executable</script>"));
+    let record = read_json(receipt["record"].as_str().unwrap());
+    assert!(
+        record["findings"][0]["body"]
+            .as_str()
+            .unwrap()
+            .contains("USER_IMPACT")
+    );
+}
+
+#[test]
 fn a_range_produces_private_frozen_evidence_and_escaped_html_without_touching_source() {
     let trial = fixture();
     let before = git(&trial, &["status", "--porcelain"]);
@@ -14,6 +57,8 @@ fn a_range_produces_private_frozen_evidence_and_escaped_html_without_touching_so
     assert!(html.contains("&lt;script&gt;bad&lt;/script&gt;"));
     assert!(!html.contains("<script>bad</script>"));
     assert!(html.contains("Tests were not run"));
+    assert!(html.contains("<title>Change review</title>"));
+    assert!(!html.to_lowercase().contains("pi evaluation"));
     assert_eq!(receipt["findingCount"], 1);
     assert_eq!(receipt["publication"], "local-only");
     assert_eq!(git(&trial, &["status", "--porcelain"]), before);
@@ -21,6 +66,56 @@ fn a_range_produces_private_frozen_evidence_and_escaped_html_without_touching_so
         serde_json::from_slice(&fs::read(receipt["record"].as_str().unwrap()).unwrap()).unwrap();
     assert_eq!(record["scope"]["head"], git(&trial, &["rev-parse", "HEAD"]));
     assert_eq!(record["findings"][0]["id"], "F1");
+}
+
+#[test]
+fn presentation_uses_names_and_a_short_intent_without_dumping_internal_evidence() {
+    let trial = fixture();
+    git(&trial, &["branch", "trunk", "HEAD~1"]);
+    git(&trial, &["branch", "topic", "HEAD"]);
+    let output = command(&trial)
+        .args(["review", "range", "trunk..topic", "--repo"])
+        .arg(trial.temporary.path().join("repo"))
+        .args(["--intent", "Make saved changes visible to users. WORKLOG_TECHNICAL_SENTINEL: implementation paths, hashes, test logs and repair protocol.", "--json"])
+        .output().unwrap();
+    success(output.clone());
+    let receipt: Value = serde_json::from_slice(&output.stdout).unwrap();
+    let record = read_json(receipt["record"].as_str().unwrap());
+    let html = fs::read_to_string(receipt["report"].as_str().unwrap()).unwrap();
+    assert!(html.contains("<dd>repo</dd>"));
+    assert!(html.contains("trunk → topic"));
+    assert!(html.contains("Make saved changes visible to users."));
+    for hidden in [
+        "Base revision",
+        "Snapshot SHA-256",
+        "Successful file reads",
+        "scope.json",
+        "WORKLOG_TECHNICAL_SENTINEL",
+        record["scope"]["repository"].as_str().unwrap(),
+        record["scope"]["base"].as_str().unwrap(),
+    ] {
+        assert!(
+            !html.contains(hidden),
+            "Unexpected internal detail: {hidden}"
+        );
+    }
+    assert!(
+        record["intent"]
+            .as_str()
+            .unwrap()
+            .contains("WORKLOG_TECHNICAL_SENTINEL")
+    );
+    assert!(
+        record["files_read"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .any(|path| path == "scope.json")
+    );
+    assert_eq!(
+        record["scope"]["base"],
+        git(&trial, &["rev-parse", "trunk"])
+    );
 }
 
 #[test]
@@ -55,6 +150,7 @@ fn invalid_model_output_cannot_create_a_publishable_report() {
         "malformed",
         "unsafe-path",
         "no-evidence",
+        "body-only",
     ] {
         let output = command(&trial)
             .env("CHANGE_TEST_MODE", mode)

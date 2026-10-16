@@ -253,6 +253,12 @@ fn named_worktree_reviews_its_branch_and_dirty_files_not_the_callers() {
         );
         assert!(snapshot.join("after/untracked.txt").exists());
         assert!(!snapshot.join("after/caller-only.txt").exists());
+        let record = read_json(receipt["record"].as_str().unwrap());
+        assert_eq!(record["display"]["repository"], "repo");
+        assert_eq!(
+            record["display"]["comparison"],
+            "main → feature/topic + outstanding changes"
+        );
     }
     assert_eq!(git(&trial, &["branch", "--show-current"]), "main");
 }
@@ -277,6 +283,8 @@ fn a_pr_url_is_the_only_required_subject() {
         record["scope"]["pull_request"]["url"],
         "https://github.com/fixture/repo/pull/7"
     );
+    assert_eq!(record["display"]["repository"], "repo");
+    assert_eq!(record["display"]["comparison"], "Pull request #7 changes");
     assert_eq!(read_json(provider)["posts"], 0);
 }
 

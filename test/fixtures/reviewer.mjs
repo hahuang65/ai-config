@@ -93,4 +93,4 @@ export async function repository(f) {
   return repo;
 }
 
-export const answer = JSON.stringify({ summary: 'A scoped review.', risk: 'medium', uncertainties: ['Tests were not run.'], findings: [{ severity: 'medium', title: '<img src=x onerror="globalThis.compromised=true">', body: 'Check behavior <script>globalThis.compromised=true</script>.', path: 'source.txt', line: 1, side: 'RIGHT' }] });
+export const answer = JSON.stringify({ summary: 'A scoped review.', intent_summary: 'Replace before with after.', risk: 'medium', uncertainties: ['Tests were not run.'], findings: [{ severity: 'medium', title: '<img src=x onerror="globalThis.compromised=true">', explanation: { problem: 'When opening a report, the user encounters the wrong behavior.', impact: 'The user cannot complete the intended workflow.', technical_details: 'Check behavior <script>globalThis.compromised=true</script>.', suggested_fix: 'Correct the behavior at the reported source location.' }, path: 'source.txt', line: 1, side: 'RIGHT' }] });

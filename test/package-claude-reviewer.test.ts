@@ -187,7 +187,7 @@ claudeTest("Claude change review retains a local report without Pi or publishing
   commit("Fixture base");
   writeFileSync(join(repo, "source.txt"), "FROZEN_REVIEW_MARKER\n");
   commit("Fixture change");
-  const answer = JSON.stringify({ summary: "Scoped review.", risk: "low",
+  const answer = JSON.stringify({ summary: "Scoped review.", intent_summary: "Review the fixture change.", risk: "low",
     uncertainties: ["Tests were not run."], findings: [] });
   const { server, requests } = startFakeClaudeApi([
     { name: "Read", input: { file_path: "scope.json" } },
@@ -209,7 +209,7 @@ claudeTest("Claude change review retains a local report without Pi or publishing
       expect(receipt).toMatchObject({ protocolVersion: 1, findingCount: 0,
         publication: "local-only" });
       const record = JSON.parse(readFileSync(receipt.record, "utf8"));
-      expect(record).toMatchObject({ summary: "Scoped review.",
+      expect(record).toMatchObject({ summary: "Scoped review.", intent_summary: "Review the fixture change.",
         files_read: ["patch.diff", "scope.json"] });
       expect(JSON.stringify(toolResults(requests.at(-1)!))).toContain("FROZEN_REVIEW_MARKER");
       expect(existsSync(join(source, ".state/pi"))).toBe(false);

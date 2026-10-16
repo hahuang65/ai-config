@@ -1,5 +1,7 @@
 use crate::support;
+use hmac::{Hmac, Mac};
 use serde_json::{Value, json};
+use sha2::Sha256;
 use std::fs;
 use support::{change::*, *};
 
@@ -7,11 +9,43 @@ fn state(path: &std::path::Path) -> Value {
     serde_json::from_slice(&fs::read(path).unwrap()).unwrap()
 }
 
+fn write_body_only_fixture(receipt: &Value) {
+    // Re-create the original version-1 wire shape using only this disposable fixture's key.
+    let path = std::path::Path::new(receipt["record"].as_str().unwrap());
+    let directory = path.parent().unwrap();
+    let mut record = state(path);
+    assert!(record.as_object_mut().unwrap().remove("display").is_some());
+    assert!(
+        record
+            .as_object_mut()
+            .unwrap()
+            .remove("intent_summary")
+            .is_some()
+    );
+    for finding in record["findings"].as_array_mut().unwrap() {
+        assert!(
+            finding
+                .as_object_mut()
+                .unwrap()
+                .remove("explanation")
+                .is_some()
+        );
+    }
+    let bytes = serde_json::to_vec(&record).unwrap();
+    let key = fs::read(directory.parent().unwrap().join("signing-key")).unwrap();
+    let mut mac = Hmac::<Sha256>::new_from_slice(&key).unwrap();
+    mac.update(directory.file_name().unwrap().as_encoded_bytes());
+    mac.update(&bytes);
+    fs::write(path, bytes).unwrap();
+    fs::write(directory.join("report.mac"), mac.finalize().into_bytes()).unwrap();
+}
+
 #[test]
 fn selection_preview_and_confirmation_publish_only_selected_comments_once() {
     let trial = fixture();
     let provider = provider(&trial);
     let receipt = pull(&trial, &provider);
+    write_body_only_fixture(&receipt);
     let report = receipt["report"].as_str().unwrap();
     let outcome = terminal(
         &trial,
@@ -24,6 +58,18 @@ fn selection_preview_and_confirmation_publish_only_selected_comments_once() {
     assert_eq!(saved["posts"], 1);
     assert_eq!(saved["reviews"][0]["event"], "COMMENT");
     assert_eq!(saved["reviews"][0]["comments"].as_array().unwrap().len(), 1);
+    let body = saved["reviews"][0]["comments"][0]["body"].as_str().unwrap();
+    for section in [
+        r"User\-facing problem",
+        "Why it matters",
+        "Technical details",
+        "Suggested fix",
+    ] {
+        assert!(
+            body.contains(section),
+            "Missing published section: {section}"
+        );
+    }
     assert!(!saved["reviews"][0].to_string().contains("Excluded finding"));
     assert!(
         outcome["output"]

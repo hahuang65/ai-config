@@ -119,7 +119,9 @@ pub const MODEL: &str = r#"#!/usr/bin/env python3
 import os, json
 root = os.environ['PI_REVIEW_ROOT']
 mode = os.environ.get('CHANGE_TEST_MODE', '')
-answer = {'summary':'A scoped review.', 'risk':'medium', 'uncertainties':['No tests executed.'], 'findings':[{'severity':'medium','title':'<script>bad</script>','body':'Check the behavior.','path':'source.txt','line':1,'side':'RIGHT'}]}
+answer = {'summary':'A scoped review.', 'intent_summary':'Make saved changes visible to users.', 'risk':'medium', 'uncertainties':['No tests executed.'], 'findings':[{'severity':'medium','title':'<script>bad</script>','body':'Check the behavior.','path':'source.txt','line':1,'side':'RIGHT'}]}
+if mode != 'body-only':
+    answer['findings'][0]['explanation'] = {'problem':'USER_WORKFLOW <script>not executable</script>', 'impact':'USER_IMPACT', 'technical_details':'Check the behavior. SOURCE_DETAIL', 'suggested_fix':'FIX_ACTION'}
 if os.environ.get('CHANGE_TEST_KIND'): answer['findings'][0]['kind'] = os.environ['CHANGE_TEST_KIND']
 if mode == 'unchanged-suggestion': answer['findings'][0]['line'] = 99
 if mode == 'two': answer['findings'].append(dict(answer['findings'][0], title='Excluded finding'))

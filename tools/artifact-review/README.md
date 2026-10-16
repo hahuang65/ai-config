@@ -76,7 +76,11 @@ The private SQLite configuration stores only the fixed IDs/titles, bound HTML re
 It does not modify the retained HTML, JSON, or publication signatures.
 No installed resources or dependencies are added by this mode.
 
+In finding-review mode, the browser title and toolbar say Change review, without harness branding.
 The shell replaces whole-document Approve with Accept/Reject buttons inside each corresponding rendered finding card.
+Each finding also has an optional comment field, saved only with that finding's Accept or Reject decision.
+Other findings' comments remain separate drafts, including when sending ordinary feedback or ending the review.
+Comments are stored in the decision event's existing `message`; when general feedback is also present, labeled sections distinguish it from the finding comment.
 The sidebar remains for annotations, general feedback, and conversation.
 The parent review runtime adds these controls after loading the inert snapshot, without enabling document scripts or changing the saved report.
 Missing or ambiguous finding anchors disable decisions rather than attaching controls to the wrong content.
@@ -154,6 +158,7 @@ A restored element draft can highlight the same target only at the matching revi
 If its target is offscreen, a text range cannot be reconstructed, or the document revision changes, the draft is retained without pretending that a different target is selected; the editor explains the missing location.
 Selection outlines and the floating editor are owned by the review runtime and never change saved artifact bytes.
 Unsent drafts and the exact pending submission are kept in that tab's session storage.
+Finding-comment drafts are keyed by the retained record digest and finding ID; acknowledging a decision clears only its own comment.
 If a response is interrupted, **Retry submission** sends the same ID and content.
 Server persistence precedes acknowledgement; retries do not create duplicate events.
 Do not clear private browser storage while a submission is unconfirmed.
@@ -196,7 +201,8 @@ The shell does not accept artifact `postMessage` decision messages.
 
 Files are limited to 2 MiB of UTF-8 HTML.
 Requests are limited to 128 KiB and a 5-second server timeout.
-Each submission permits 8000 UTF-8 bytes of general feedback and 16 annotations.
+Each submission permits an 8000-UTF-8-byte message and 16 annotations.
+A finding comment permits 4000 UTF-8 bytes; its combined message with any general feedback and labels must fit the same 8000-byte bound.
 Each annotation permits 4000 bytes of comment, 2000 bytes of target text, and 1000 bytes of selector.
 History is capped at 10,000 events; reaching the cap refuses new events without deleting old ones.
 There is no automatic history pruning or opaque history rewrite.

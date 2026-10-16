@@ -20,7 +20,7 @@ let target = null;
 let pending = null;
 let listening = false;
 let eventsConnected = true;
-const findings = new FindingControls(frame, (action, id) => submit(action, id));
+const findings = new FindingControls(frame, (action, id) => submit(action, id), persist);
 const publication = new PublicationControls(frame, request);
 const annotationPopover = new AnnotationPopover(frame);
 
@@ -49,7 +49,8 @@ async function request(route, body, timeout = 4000) {
 
 function persist() {
   sessionStorage.setItem(STORAGE, JSON.stringify({
-    queued, target, pending, message: $('#message').value, comment: $('#annotation-comment').value,
+    queued, target, pending, findingComments: findings.comments,
+    message: $('#message').value, comment: $('#annotation-comment').value,
   }));
 }
 
@@ -58,6 +59,7 @@ function restore() {
   queued = saved.queued || [];
   target = saved.target || null;
   pending = saved.pending || null;
+  findings.comments = saved.findingComments || {};
   $('#message').value = saved.message || '';
   $('#annotation-comment').value = saved.comment || '';
   showTarget();
@@ -281,12 +283,20 @@ async function refresh() {
   setTimeout(refresh, RELOAD_MS);
 }
 
+function submissionMessage(finding) {
+  const general = $('#message').value.trim();
+  const comment = finding ? findings.comment(finding).trim() : '';
+  if (byteLength(comment) > 4000) throw new Error('Finding comment is too long. Shorten it before deciding.');
+  if (!comment) return general;
+  return general ? `Finding ${finding} comment:\n${comment}\n\nGeneral feedback:\n${general}` : comment;
+}
+
 async function submit(action, finding) {
   if (busy || pending || status !== 'open') return;
   try {
     const draft = annotationDraft();
     const annotations = draft ? [...queued, draft] : queued;
-    const message = $('#message').value.trim();
+    const message = submissionMessage(finding);
     if (annotations.length > MAX_ANNOTATIONS || byteLength(message) > 8000) throw new Error('Feedback exceeds the input limit.');
     if (action === 'feedback' && !message && !annotations.length) throw new Error('Write feedback before sending.');
     pending = { id: crypto.randomUUID(), action, revision: frame.dataset.revision, message, annotations,
@@ -302,6 +312,7 @@ async function sendPending() {
   controls();
   try {
     await request('/submit', pending);
+    if (pending.finding) findings.saved(pending.finding);
     pending = null;
     queued = [];
     target = null;

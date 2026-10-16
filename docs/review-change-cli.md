@@ -41,7 +41,18 @@ JSON mode never opens a browser or posts.
 A human review opens the escaped, self-contained HTML report in `review-artifact` with its matching finding record.
 `--no-browser` retains and prints the report without opening it.
 The shared review-change skill also opens finding mode explicitly for JSON/agent workflows.
-The report states successful file reads, exclusions, uncertainty, and that tests were not run by the restricted reviewer.
+The report is titled Change review, independently of the harness that started it.
+Scope shows the repository name and a named comparison rather than local paths, full revisions, or snapshot hashes.
+Branch/worktree names are used where available; PRs are identified by number and unnamed commits use shortened IDs.
+Its short plain-language intent summary omits implementation detail, test logs, and work-log history, without discarding that context from the review.
+Inferred purpose remains labeled as inferred.
+The report summarizes evidence reads and retains uncertainty, exclusions, and the warning that tests were not run by the restricted reviewer.
+Exact revisions, the snapshot digest, original intent context, and the full file-read list remain in the machine-readable record.
+New findings have four distinct sections: User-facing problem, Why it matters, Technical details, and Suggested fix.
+Reviewer responses supply a nonempty `intent_summary` of at most 600 UTF-8 bytes and `explanation` with nonempty `problem`, `impact`, `technical_details`, and `suggested_fix` strings.
+The retained record also keeps a plain-text `body` composed from those sections for publication.
+The record's optional `display` and `intent_summary` fields preserve those human-facing labels alongside the exact scope.
+Existing version-1 body-only reports remain supported without being rewritten or inventing missing explanations.
 
 ## Finding decisions and repairs
 
@@ -54,7 +65,11 @@ tools/artifact-review/target/release/review-artifact wait /absolute/report.html 
 
 `review-artifact` is a source-local helper, not a shell PATH command.
 Resolve the executable from the installed configuration source before invoking it.
-Each rendered finding card contains its own Accept and Reject controls.
+Each rendered finding card contains its own Accept and Reject controls and an optional decision-comment field.
+Only that finding's comment accompanies its decision; comments on other findings remain drafts.
+The decision event's existing `message` contains the comment, with labeled sections when general feedback is also included.
+Drafts survive reload in the same tab and server origin, and only the acknowledged finding's comment is cleared.
+A comment alone is not a decision or repair authority.
 The review sidebar holds element/selected-text annotations, general feedback, and conversation; the saved report remains unchanged.
 Accept saves immediate authorization to repair that finding; Reject and undecided findings authorize no repairs.
 A click includes unsent comments and drafts, and interrupted submissions retry with the same ID.

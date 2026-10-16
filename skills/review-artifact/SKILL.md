@@ -56,6 +56,9 @@ Only the human chooses Accept/Reject in the review shell; never submit decision 
 Accept immediately authorizes repair of that exact finding; Reject and undecided findings authorize nothing.
 The shell replaces whole-document Approve with Accept/Reject inside each rendered finding; End review stops new decisions without undoing saved accepts.
 Comments and drafts accompany the clicked decision, and response-loss retries preserve the same submission ID and content.
+Each card's optional decision comment accompanies only that finding's Accept or Reject, in the event's `message`; other cards' comments remain drafts.
+When general feedback is included too, labeled sections distinguish it from the finding comment.
+A comment alone grants no repair authority.
 A saved decision cannot be overwritten, including by reopening the same report.
 Explicit chat clarification is required to revise a decision; a later rejection cannot undo repairs already performed.
 

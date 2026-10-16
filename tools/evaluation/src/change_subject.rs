@@ -162,6 +162,10 @@ pub fn verify(repo: &Path, target: &Target) -> Result<()> {
 }
 
 pub fn trunk(repo: &Path) -> Result<String> {
+    git::revision(repo, &trunk_name(repo)?)
+}
+
+pub fn trunk_name(repo: &Path) -> Result<String> {
     let output = git::run(
         repo,
         &[
@@ -179,14 +183,14 @@ pub fn trunk(repo: &Path) -> Result<String> {
         .iter()
         .find(|(name, _)| *name == "refs/remotes/origin/HEAD")
     {
-        return git::revision(repo, target);
+        return Ok((*target).to_owned());
     }
     ensure!(
         defaults.len() <= 1,
         "Multiple remote default branches; use an explicit X..Y range"
     );
     if let Some((_, target)) = defaults.first() {
-        return git::revision(repo, target);
+        return Ok((*target).to_owned());
     }
     let mut candidates = Vec::new();
     for name in ["refs/heads/main", "refs/heads/master"] {
@@ -196,7 +200,7 @@ pub fn trunk(repo: &Path) -> Result<String> {
         }
     }
     match candidates.as_slice() {
-        [name] => git::revision(repo, name),
+        [name] => Ok((*name).to_owned()),
         [] => bail!("Cannot identify trunk; set the remote default branch or use X..Y"),
         _ => bail!("Both main and master exist without a remote default; use X..Y"),
     }

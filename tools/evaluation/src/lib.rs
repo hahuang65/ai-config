@@ -7,6 +7,7 @@ mod change_git;
 mod change_html;
 mod change_intent;
 mod change_post;
+mod change_presentation;
 mod change_provider;
 mod change_reconcile;
 mod change_remote;

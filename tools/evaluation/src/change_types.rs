@@ -54,12 +54,43 @@ impl Kind {
 
 #[derive(Clone, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
+pub struct Explanation {
+    pub problem: String,
+    pub impact: String,
+    pub technical_details: String,
+    pub suggested_fix: String,
+}
+
+impl Explanation {
+    pub fn sections(&self) -> [(&'static str, &str); 4] {
+        [
+            ("User-facing problem", &self.problem),
+            ("Why it matters", &self.impact),
+            ("Technical details", &self.technical_details),
+            ("Suggested fix", &self.suggested_fix),
+        ]
+    }
+
+    fn body(&self) -> String {
+        self.sections()
+            .into_iter()
+            .map(|(heading, text)| format!("{heading}:\n{text}"))
+            .collect::<Vec<_>>()
+            .join("\n\n")
+    }
+}
+
+#[derive(Clone, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct Proposal {
     #[serde(default, skip_serializing_if = "Kind::is_defect")]
     pub kind: Kind,
     pub severity: Severity,
     pub title: String,
+    #[serde(default)]
     pub body: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub explanation: Option<Explanation>,
     pub path: String,
     pub line: Option<u64>,
     pub side: Side,
@@ -69,6 +100,7 @@ pub struct Proposal {
 #[serde(deny_unknown_fields)]
 pub struct Answer {
     pub summary: String,
+    pub intent_summary: String,
     pub risk: Severity,
     pub uncertainties: Vec<String>,
     pub findings: Vec<Proposal>,
@@ -108,10 +140,21 @@ pub struct Scope {
 
 #[derive(Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
+pub struct ScopeDisplay {
+    pub repository: String,
+    pub comparison: String,
+}
+
+#[derive(Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct Report {
     pub version: u32,
     pub scope: Scope,
     pub intent: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub intent_summary: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub display: Option<ScopeDisplay>,
     pub digest: String,
     pub html_digest: String,
     pub summary: String,
@@ -170,9 +213,10 @@ pub fn private_path(path: &str) -> bool {
 }
 
 pub fn answer(value: &str) -> Result<Answer> {
-    let answer: Answer = serde_json::from_str(value)
+    let mut answer: Answer = serde_json::from_str(value)
         .map_err(|_| anyhow::anyhow!("Reviewer did not return the required finding schema"))?;
     text(&answer.summary, 8000)?;
+    text(&answer.intent_summary, 600)?;
     ensure!(
         answer.findings.len() <= 50 && answer.uncertainties.len() <= 32,
         "Too many findings or uncertainty statements"
@@ -180,7 +224,14 @@ pub fn answer(value: &str) -> Result<Answer> {
     for uncertainty in &answer.uncertainties {
         text(uncertainty, 2000)?;
     }
-    for finding in &answer.findings {
+    for finding in &mut answer.findings {
+        let explanation = finding.explanation.as_ref().ok_or_else(|| {
+            anyhow::anyhow!("Reviewer findings require all four explanation sections")
+        })?;
+        for (_, section) in explanation.sections() {
+            text(section, 8000)?;
+        }
+        finding.body = explanation.body();
         text(&finding.title, 500)?;
         text(&finding.body, 8000)?;
         relative_path(&finding.path)?;

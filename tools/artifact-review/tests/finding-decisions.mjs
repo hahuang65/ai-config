@@ -22,7 +22,8 @@ async function reportFixture(t) {
   const f = fixture(root => t.after(() => rm(root, { recursive: true, force: true })));
   const repo = await repository(f);
   const proposed = JSON.parse(answer);
-  proposed.findings.push({ ...proposed.findings[0], title: 'Second finding' });
+  proposed.findings.push({ ...proposed.findings[0], title: 'Second finding' },
+    { ...proposed.findings[0], title: 'Third finding — comment left empty' });
   const { server } = modelServer(f.root, { answer: JSON.stringify(proposed), calls: calls(['scope.json', 'patch.diff'].map(path => ['read', { path }])) });
   await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
   try {
@@ -41,6 +42,20 @@ async function reportFixture(t) {
 }
 
 async function acceptWithInterruptedDelivery(browser) {
+  await browser.evaluate(`
+    const doc = document.querySelector('#artifact').contentDocument;
+    for (const [id, text] of [['F1', 'Keep this repair scoped to F1.'], ['F2', 'Do not alter the legacy behavior.']]) {
+      const comment = doc.querySelector('#' + id + ' [data-finding-comment]');
+      comment.value = text;
+      comment.dispatchEvent(new Event('input', { bubbles: true }));
+    }
+    document.querySelector('#message').value = 'General review context.';
+    document.querySelector('#message').dispatchEvent(new Event('input'));
+    return true;
+  `);
+  await browser.reload();
+  await eventually(() => browser.evaluate(`return document.querySelector('#artifact').contentDocument
+    ?.querySelector('#F2 [data-finding-comment]')?.value === 'Do not alter the legacy behavior.';`));
   await browser.evaluate(`
     const original = window.fetch;
     let interrupt = true;
@@ -61,10 +76,13 @@ async function acceptWithInterruptedDelivery(browser) {
 }
 
 async function assertReportPresentation(browser) {
+  assert.deepEqual(await browser.evaluate(`return { title: document.title, toolbar: document.querySelector('.toolbar strong').textContent };`),
+    { title: 'Change review', toolbar: 'Change review' });
   assert.equal(await browser.evaluate("return document.querySelectorAll('[data-decision]').length;"), 0);
   assert.deepEqual(await browser.evaluate(`return [...document.querySelector('#artifact').contentDocument.querySelectorAll('[data-finding-controls]')]
-    .map(row => ({ finding: row.dataset.finding, card: row.closest('article').id, buttons: row.querySelectorAll('[data-decision]').length }));`),
-  [{ finding: 'F1', card: 'F1', buttons: 2 }, { finding: 'F2', card: 'F2', buttons: 2 }]);
+    .map(row => ({ finding: row.dataset.finding, card: row.closest('article').id, buttons: row.querySelectorAll('[data-decision]').length,
+      comment: !!row.querySelector('label textarea[data-finding-comment]:not([required])') }));`),
+  ['F1', 'F2', 'F3'].map(id => ({ finding: id, card: id, buttons: 2, comment: true })));
   assert.deepEqual(await browser.evaluate(`const doc = document.querySelector('#artifact').contentDocument;
     return { heading:doc.querySelector('h1').textContent, leakedTitle:doc.body.innerText.includes('Change review · Pi evaluation') };`),
   { heading: 'Change review', leakedTitle: false });
@@ -91,18 +109,26 @@ export function registerFindingDecisionCases(firefox) {
       assert.equal(partial.status, 'open');
       assert.equal(partial.events.length, 1);
       assert.equal(partial.events[0].finding, 'F1');
+      assert.equal(partial.events[0].message, 'Finding F1 comment:\nKeep this repair scoped to F1.\n\nGeneral feedback:\nGeneral review context.');
+      assert.equal(await browser.evaluate(`return document.querySelector('#artifact').contentDocument
+        .querySelector('#F2 [data-finding-comment]').value;`), 'Do not alter the legacy behavior.');
       assert.equal(partial.events[0].annotations[0].comment, 'Repair this case without changing the API');
       assert.equal(partial.finding_review.items[1].decision, null);
       await eventually(() => browser.evaluate("return !document.querySelector('#artifact').contentDocument.querySelector('#F2 [data-decision=\"reject\"]').disabled;"));
       await browser.evaluate("document.querySelector('#artifact').contentDocument.querySelector('#F2 [data-decision=\"reject\"]').click(); return true;");
+      await eventually(() => browser.evaluate(`return !document.querySelector('#artifact').contentDocument
+        .querySelector('#F3 [data-decision="accept"]').disabled;`));
+      await browser.evaluate(`document.querySelector('#artifact').contentDocument.querySelector('#F3 [data-decision="accept"]').click(); return true;`);
       await eventually(() => browser.evaluate("return document.body.dataset.status === 'decided';"));
       const finished = await f.cli('poll', f.report, '--timeout', '0');
-      assert.deepEqual(finished.finding_review.items.map(item => item.decision), ['accept', 'reject']);
-      assert.equal(finished.events.length, 2);
+      assert.deepEqual(finished.finding_review.items.map(item => item.decision), ['accept', 'reject', 'accept']);
+      assert.equal(finished.events.length, 3);
+      assert.equal(finished.events[1].message, 'Do not alter the legacy behavior.');
+      assert.equal(finished.events[2].message, '');
       assert.equal(finished.finding_review.needs_review, false);
       await browser.reload();
       await eventually(() => browser.evaluate("return document.body.dataset.status === 'decided';"));
-      await eventually(() => browser.evaluate("return document.querySelector('#artifact').contentDocument?.querySelectorAll('[data-decision]').length === 4;"));
+      await eventually(() => browser.evaluate("return document.querySelector('#artifact').contentDocument?.querySelectorAll('[data-decision]').length === 6;"));
       assert.equal(await browser.evaluate("return [...document.querySelector('#artifact').contentDocument.querySelectorAll('[data-decision]')].every(button => button.disabled);"), true);
       await browser.narrow();
       assert.equal(await browser.evaluate('return document.documentElement.scrollWidth <= innerWidth;'), true);
