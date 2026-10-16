@@ -17,17 +17,21 @@ pub use legacy_inventory::{
 mod numbers;
 mod package;
 pub use package::prepared_manifest;
+mod installation_lock;
 mod settings;
 mod settings_files;
 mod transaction;
+use installation_lock::lock;
+#[cfg(test)]
+#[path = "../tests/unit/installation_lock.rs"]
+mod lock_lifetime_tests;
 use anyhow::{Context, Result, ensure};
-use fs2::FileExt;
 use serde::{Deserialize, Serialize};
 pub use settings::{Mode, Setting};
 use std::collections::{BTreeMap, BTreeSet};
-use std::fs::{self, File, OpenOptions};
+use std::fs;
 use std::io::Write;
-use std::os::unix::fs::{DirBuilderExt, OpenOptionsExt, symlink};
+use std::os::unix::fs::{DirBuilderExt, symlink};
 use std::path::{Component, Path, PathBuf};
 
 const STATE_DIRECTORY: &str = ".local/state/ai-config";
@@ -261,29 +265,6 @@ fn check_sources(home: &Path, manifest: &Manifest, targets: &Targets) -> Result<
         );
     }
     Ok(())
-}
-
-fn lock(state: &Path) -> Result<File> {
-    real_ancestors(state)?;
-    fs::DirBuilder::new()
-        .recursive(true)
-        .mode(0o700)
-        .create(state)?;
-    let file = OpenOptions::new()
-        .read(true)
-        .write(true)
-        .create(true)
-        .truncate(false)
-        .mode(0o600)
-        .custom_flags(libc::O_NOFOLLOW | libc::O_NONBLOCK)
-        .open(state.join("install.lock"))?;
-    ensure!(
-        file.metadata()?.is_file(),
-        "Installation lock must be a regular file"
-    );
-    file.try_lock_exclusive()
-        .context("Another configuration installer is running; retry when it finishes")?;
-    Ok(file)
 }
 
 fn previous_manifest(record: &Path) -> Result<Option<Manifest>> {

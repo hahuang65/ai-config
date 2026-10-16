@@ -80,6 +80,8 @@ They live in `cases/configuration_*.rs` and `cases/package_*.rs`; resource-valid
 Every case retains its separate disposable installation source, home, ownership record, lock, and output files; shared package inputs remain read-only.
 Run the group with `cargo test --locked --offline --manifest-path tools/evaluation/Cargo.toml --test configuration`, optionally filtering a module such as `configuration_inventory_safety::` or appending `-- --test-threads=1`.
 The complete evaluation gate still discovers integration targets automatically, including future targets outside these groups.
+The library lock-lifetime regression in `tools/evaluation/tests/unit/installation_lock.rs` uses a real fork and a blocked child, bounded by a five-second watchdog and unconditional child cleanup.
+It proves an active installer still excludes contenders and that success/error returns release its lock while the child's inherited handles remain open; no sleeps, retries, or serial-test workaround establish correctness.
 
 WT parity runs independent cases in at most four spawned worker processes, preserving their disposable fixtures and grouping output by case.
 It discovers the same cases as serial execution, retains skips and all failure outcomes, and fails if a worker crashes.
