@@ -81,7 +81,7 @@ export function registerFindingDecisionCases(firefox) {
       await f.cli('open', f.report, '--findings', f.record, '--no-browser');
       const [directory] = await readdir(join(f.root, 'reviews'));
       const { port, capability } = JSON.parse(await readFile(join(f.root, 'reviews', directory, 'server.json'), 'utf8'));
-      browser = await firefox();
+      browser = await firefox(t);
       await browser.navigate(`http://127.0.0.1:${port}/#${capability}`);
       await eventually(() => browser.evaluate("return !!document.querySelector('#artifact').dataset.revision;"));
       await assertReportPresentation(browser);

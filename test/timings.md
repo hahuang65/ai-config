@@ -88,6 +88,8 @@ Deterministic harness tests cover early exit, surviving groups, permission error
 Browser integration remains serial, sharing one suite-owned browser process with a disposable user context per case.
 Isolation checks use event-driven worker connection/disconnection signals rather than fixed observation sleeps.
 Each case removes its user context before the next starts; failed cleanup stops the shared browser rather than reusing it.
+Case cancellation now reaches acquisition and pending commands, records only the last stage/method, and stops the shared browser before it can be reused.
+The case and operation watchdogs retain their original budgets; a passing retry is not evidence that an earlier unexplained Firefox stall is fixed.
 
 ## Safety margins: do not tune down for speed
 
@@ -111,6 +113,9 @@ Each case removes its user context before the next starts; failed cleanup stops 
 | Browser `firefox-process.mjs` | `SHUTDOWN_GRACE_MS` | 300ms | Unchanged graceful-stop budget before forced cleanup |
 | Browser `firefox-isolation.mjs` | `ACTIVITY_GUARD_MS` | 3s | Bound waiting for a worker request to connect/disconnect; return immediately on the event |
 | Browser `firefox-isolation.mjs` | `CASE_GUARD_MS` | 15s | Bound each real-browser isolation regression, not a fixed wait |
+| Browser `firefox.mjs` / `firefox-transport.mjs` | `TIMEOUT` | 15s, unchanged | Startup-stage and WebDriver command watchdogs; cancellation interrupts them without waiting for expiry |
+| Browser `firefox-timeout.fixture.mjs` | `CASE_GUARD_MS` | 1s | Deliberately expire a fake-browser case to verify Node watchdog cancellation; no real browser is launched |
+| Browser `firefox-suite.test.mjs` | `RUNNER_GUARD_MS` | 5s | Bound the independent child runner that exercises the deliberate one-second timeout |
 
 Production deadlines and polling intervals are not test-tuning settings.
 Worklog retains its three-second lock timeout and 20ms polling; WT retains its production caller deadlines and 5ms polling.
@@ -141,7 +146,7 @@ cargo test --locked --offline --manifest-path tools/worklog/Cargo.toml a_waiting
 cargo test --locked --offline --manifest-path tools/worklog/Cargo.toml a_cli_writer_reports_success
 cargo test --locked --offline --manifest-path tools/worktree/Cargo.toml process::tests
 cargo test --locked --offline --manifest-path tools/evaluation/Cargo.toml --lib reviewer_process::tests
-node --test --test-concurrency=1 tools/artifact-review/tests/firefox-process.test.mjs tools/artifact-review/tests/firefox-suite.test.mjs
+node --test --test-concurrency=1 tools/artifact-review/tests/firefox-{process,suite,startup,transport}.test.mjs
 node --test --test-concurrency=1 --test-name-pattern='shared Firefox isolates|closing a Firefox case' tools/artifact-review/tests/integration.mjs
 make test-browser
 ```

@@ -2,39 +2,55 @@ import { spawn } from 'node:child_process';
 import { mkdir } from 'node:fs/promises';
 import { setTimeout as sleep } from 'node:timers/promises';
 import { stopProcessGroup } from './firefox-process.mjs';
+import { requester } from './firefox-transport.mjs';
 
 const TIMEOUT = 15000;
 
 // Standalone WebDriver BiDi fixture; no review runtime or browser package imports.
-export async function launchFirefox(profile) {
-  await mkdir(profile, { recursive: true });
-  const child = spawn(process.env.FIREFOX_BIN || '/Applications/Firefox.app/Contents/MacOS/firefox',
-    ['--headless', '--no-remote', '--profile', profile, '--remote-debugging-port', '0', 'about:blank'],
-    { stdio: ['ignore', 'ignore', 'pipe'], detached: true });
-  let socket;
-  const close = async () => {
+export async function launchFirefox(profile, { signal, onStage = () => {}, spawnProcess = spawn,
+  stop = stopProcessGroup, createSocket = url => new WebSocket(url) } = {}) {
+  let child, socket, request, closing, stage = 'profile preparation';
+  const at = name => { stage = name; onStage(name); };
+  const active = () => { if (signal?.aborted) throw new Error('Firefox startup cancelled'); };
+  const close = () => closing ??= (async () => {
+    signal?.removeEventListener('abort', cancel);
+    request?.close();
     socket?.close();
-    await stopProcessGroup(child.pid);
-  };
+    if (child) await stop(child.pid);
+  })();
+  const cancel = () => { if (child) void close().catch(() => {}); };
+  signal?.addEventListener('abort', cancel, { once: true });
   try {
-    const endpoint = await discover(child);
-    socket = await connect(`${endpoint}/session`);
-    const request = requester(socket);
+    active();
+    await mkdir(profile, { recursive: true });
+    active();
+    at('endpoint discovery');
+    child = spawnProcess(process.env.FIREFOX_BIN || '/Applications/Firefox.app/Contents/MacOS/firefox',
+      ['--headless', '--no-remote', '--profile', profile, '--remote-debugging-port', '0', 'about:blank'],
+      { stdio: ['ignore', 'ignore', 'pipe'], detached: true });
+    active();
+    const endpoint = await discover(child, signal);
+    at('connection');
+    socket = await connect(`${endpoint}/session`, signal, createSocket);
+    active();
+    request = requester(socket, { signal });
+    at('session.new');
     await request('session.new', { capabilities: { alwaysMatch: {} } });
-    const contexts = async () => (await request('browsingContext.getTree', { maxDepth: 0 })).contexts;
-    const initial = await contexts();
-    if (initial.length !== 1 || initial[0].url !== 'about:blank') throw new Error('Expected one blank startup tab');
+    at('browsingContext.getTree');
+    const initial = (await request('browsingContext.getTree', { maxDepth: 0 })).contexts;
+    if (initial.length !== 1 || initial[0].url !== 'about:blank') throw new Error('Invalid startup tab');
     // Keep the pristine default tab as an anchor; cases use disposable user contexts.
     return { request, close, processId: child.pid };
   } catch {
+    socket?.close();
     await close();
-    throw new Error('Firefox fixture could not start');
+    throw new Error(`Firefox ${stage} ${signal?.aborted ? 'cancelled' : 'failed'}`);
   }
 }
 
-function discover(child) {
+function discover(child, signal) {
   return new Promise((resolve, reject) => {
-    let output = '';
+    let output = '', finished = false;
     const timer = setTimeout(() => finish(), TIMEOUT);
     const onData = chunk => {
       output = (output + chunk.toString()).slice(-8192);
@@ -42,7 +58,10 @@ function discover(child) {
       if (match) finish(match[1]);
     };
     function finish(url) {
+      if (finished) return;
+      finished = true;
       clearTimeout(timer);
+      signal?.removeEventListener('abort', onError);
       child.stderr.off('data', onData);
       child.stderr.resume();
       child.off('error', onError);
@@ -53,40 +72,44 @@ function discover(child) {
     child.stderr.on('data', onData);
     child.once('error', onError);
     child.once('exit', onError);
+    signal?.addEventListener('abort', onError, { once: true });
+    if (signal?.aborted) onError();
   });
 }
 
-async function connect(url) {
+async function connect(url, signal, createSocket) {
   const deadline = Date.now() + TIMEOUT;
-  while (Date.now() < deadline) {
-    try {
-      return await new Promise((resolve, reject) => {
-        const socket = new WebSocket(url);
-        const timer = setTimeout(() => { socket.close(); reject(); }, 500);
-        socket.addEventListener('open', () => { clearTimeout(timer); resolve(socket); }, { once: true });
-        socket.addEventListener('error', () => { clearTimeout(timer); reject(); }, { once: true });
-      });
-    } catch { await sleep(50); }
+  while (!signal?.aborted && Date.now() < deadline) {
+    try { return await connectionAttempt(url, signal, createSocket); }
+    catch {
+      if (signal?.aborted) break;
+      await sleep(50, undefined, { signal });
+    }
   }
-  throw new Error('Firefox connection timed out');
+  throw new Error('Firefox connection unavailable');
 }
 
-function requester(socket) {
-  let sequence = 0;
-  const pending = new Map();
-  socket.addEventListener('message', event => {
-    const message = JSON.parse(String(event.data));
-    const waiter = pending.get(message.id);
-    if (!waiter) return;
-    pending.delete(message.id);
-    clearTimeout(waiter.timer);
-    if (message.type === 'error') waiter.reject(new Error(`Firefox ${waiter.method} failed (${String(message.error).replace(/[^a-z -]/g, '').slice(0, 60)})`));
-    else waiter.resolve(message.result);
-  });
-  return (method, params) => new Promise((resolve, reject) => {
-    const id = ++sequence;
-    const timer = setTimeout(() => { pending.delete(id); reject(new Error('Firefox command timed out')); }, TIMEOUT);
-    pending.set(id, { resolve, reject, timer, method });
-    socket.send(JSON.stringify({ id, method, params }));
+function connectionAttempt(url, signal, createSocket) {
+  return new Promise((resolve, reject) => {
+    const socket = createSocket(url);
+    const timer = setTimeout(() => finish(false), 500);
+    let finished = false;
+    const opened = () => finish(true), failed = () => finish(false);
+    function finish(success) {
+      if (finished) return;
+      finished = true;
+      clearTimeout(timer);
+      signal?.removeEventListener('abort', failed);
+      socket.removeEventListener('open', opened);
+      socket.removeEventListener('error', failed);
+      socket.removeEventListener('close', failed);
+      if (success && !signal?.aborted) resolve(socket);
+      else { socket.close(); reject(new Error('Firefox connection unavailable')); }
+    }
+    socket.addEventListener('open', opened, { once: true });
+    socket.addEventListener('error', failed, { once: true });
+    socket.addEventListener('close', failed, { once: true });
+    signal?.addEventListener('abort', failed, { once: true });
+    if (signal?.aborted) failed();
   });
 }

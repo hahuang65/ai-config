@@ -10,6 +10,8 @@ import { interruptBrowserDelivery } from './delivery.mjs';
 import { registerChangeReportCase } from '../../../test/change-report.browser-cases.mjs';
 import './firefox-process.test.mjs';
 import './firefox-suite.test.mjs';
+import './firefox-startup.test.mjs';
+import './firefox-transport.test.mjs';
 import { firefoxSuite } from './firefox-suite.mjs';
 import { registerFirefoxIsolationCases } from './firefox-isolation.mjs';
 import { registerFindingDecisionCases } from './finding-decisions.mjs';
@@ -17,7 +19,7 @@ import { registerAnnotationPopoverCases } from './annotation-popover.mjs';
 import { registerLiveWaitCases } from './live-wait.mjs';
 
 const browsers = firefoxSuite();
-const firefox = () => browsers.open();
+const firefox = t => browsers.open(t);
 after(() => browsers.close());
 registerFirefoxIsolationCases(browsers);
 registerChangeReportCase(firefox);
@@ -50,7 +52,7 @@ async function fixture(t) {
       await rm(root, { recursive: true, force: true });
     }
   });
-  const startBrowser = async () => { browser = await firefox(); return browser; };
+  const startBrowser = async () => { browser = await firefox(t); return browser; };
   await cli('open', file, '--no-browser');
   const descriptor = async () => {
     const [directory] = await readdir(env.AR_ROOT);
@@ -277,7 +279,7 @@ test('process poll and stop retain session identity after source replacement wit
 });
 
 test('isolated Firefox case uses one blank tab and evaluates promises without exposing exception details', async t => {
-  const browser = await firefox();
+  const browser = await firefox(t);
   t.after(() => browser.close());
   const contexts = await browser.contexts();
   assert.equal(contexts.length, 1, 'each isolated case must start with exactly one tab');

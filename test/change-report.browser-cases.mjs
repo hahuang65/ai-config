@@ -19,7 +19,7 @@ export function registerChangeReportCase(firefox) {
         '--intent', 'Replace before with after', '--provider', 'reviewer-fixture', '--model', 'fixture-model', '--thinking', 'off', '--json'],
         { cwd: f.root, env: f.env, timeout: 20000, maxBuffer: 1024 * 1024 });
       const report = JSON.parse(stdout).report;
-      browser = await firefox();
+      browser = await firefox(t);
       await browser.navigate(pathToFileURL(report).href);
       const desktop = await browser.evaluate(`return {
         active: document.querySelectorAll('script,img,iframe,form,link').length,

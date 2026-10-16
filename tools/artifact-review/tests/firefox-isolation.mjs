@@ -49,7 +49,7 @@ function registerBackgroundCase(suite) {
         connected.resolve();
       } else page(request, response);
     });
-    const browser = await suite.open();
+    const browser = await suite.open(t);
     t.after(() => browser.close());
     await browser.navigate(url);
     await browser.openTab();
@@ -59,7 +59,7 @@ function registerBackgroundCase(suite) {
     await browser.close();
     await observe(disconnected.promise);
     await assert.rejects(browser.evaluate('return true;'), /Firefox case is closed/);
-    const next = await suite.open();
+    const next = await suite.open(t);
     t.after(() => next.close());
     assert.equal(next.processId, browser.processId);
     assert.equal((await next.contexts()).length, 1);
@@ -69,7 +69,7 @@ function registerBackgroundCase(suite) {
 function registerStorageCase(suite) {
   test('shared Firefox isolates same-origin storage and resets the viewport between cases', { timeout: CASE_GUARD_MS }, async t => {
     const url = await origin(t);
-    const first = await suite.open();
+    const first = await suite.open(t);
     t.after(() => first.close());
     await first.navigate(url);
     await first.narrow();
@@ -90,7 +90,7 @@ function registerStorageCase(suite) {
     `);
     assert.equal(await first.evaluate("return (await caches.keys()).includes('fixture') && (await indexedDB.databases()).some(db => db.name === 'fixture');"), true);
     await first.close();
-    const second = await suite.open();
+    const second = await suite.open(t);
     t.after(() => second.close());
     assert.ok(Number.isSafeInteger(first.processId));
     assert.equal(second.processId, first.processId, 'cases must share the browser process');

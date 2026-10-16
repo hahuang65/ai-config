@@ -63,7 +63,11 @@ Closing a case removes its entire user context and verifies its tabs and storage
 Startup, setup, or cleanup failure stops the shared browser and forbids reuse, without automatic retry or fallback.
 Suite teardown stops the process group and removes its temporary profile; writable application fixtures remain independent per case.
 Real-browser regressions check same-origin cookies, local/session storage, IndexedDB, cache storage, viewport reset, extra-tab removal, and termination of a live worker request.
-Deterministic lifecycle checks cover serial use, idempotent close, shutdown during startup, setup failure, and failed or incomplete cleanup.
+Each browser caller passes its Node test context before acquisition, so a case timeout cancels startup and pending WebDriver commands, stops the process group, and permanently forbids suite reuse.
+Cancellation reports only the last startup stage or protocol method, not URLs, expressions, response bodies, or abort reasons; command timeouts name the method.
+A completed case detaches its cancellation listener before another case starts.
+Deterministic lifecycle checks cover serial use, idempotent close, cancellation during discovery/connection/context creation, shutdown during startup, setup failure, and failed or incomplete cleanup.
+A bounded child Node runner deliberately times out one fake-browser case and verifies cancellation diagnostics and absence of serial-overlap failures; transport checks advance a fake clock rather than waiting for real deadlines.
 This isolates the tested page/storage state, not every browser-wide setting or failure: cases must not mutate browser preferences, and a browser crash fails the remaining browser cases.
 
 Evaluation's change-review cases live in `tools/evaluation/tests/cases/change_*.rs`, included by the single `tests/change.rs` integration target.
