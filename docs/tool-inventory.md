@@ -7,7 +7,7 @@ Public commands remain symlinks to built binaries in the installed source, prese
 
 | Surface | Executable / source | Intended role |
 | --- | --- | --- |
-| `~/.local/bin/review-change` | `tools/evaluation/target/release/review-change`; [source](../tools/evaluation/src/change_main.rs) | Public source review and human-terminal publication. |
+| `~/.local/bin/review-change` | `tools/evaluation/target/release/review-change`; [source](../tools/evaluation/src/change_main.rs) | Public source review via one optional subject; human publication is confirmed in the report. |
 | Source-local `review-artifact` | `tools/artifact-review/target/release/review-artifact`; [source](../tools/artifact-review/src/main.rs) | Harness-invoked browser feedback and decisions. |
 | Source-local `consult` | `tools/evaluation/target/release/consult`; [source](../tools/evaluation/src/consult_main.rs) | Harness-invoked specialist advice, including before a change exists. |
 
@@ -28,7 +28,8 @@ The shell installer uses an atomic lock directory and retains private recovery f
 It is not crash-atomic, and its lock must not be bypassed or combined with stale Rust installation binaries retained in other checkouts.
 Orchard, agentmemory, and the old review-publication service are selected for retirement, with cross-repository changes and protected live cleanup handled separately.
 Existing worktrees, private histories, retained review formats, and publication reconciliation must be preserved.
-Human CLI ergonomics are separate follow-up work.
+Human CLI ergonomics use `review-change [SUBJECT]` and the artifact shell's separate publication preview/confirmation; see [ADR 0042](adr/0042-use-simple-review-subjects-and-browser-publication.md).
+The artifact helper links the review library for signed previews, locks, receipts and reconciliation; it does not introduce another executable or revive the retired publisher.
 No live installation has been changed by this task.
 
 ## Baseline inventory

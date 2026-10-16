@@ -28,6 +28,7 @@ Retire Orchard, agentmemory, and the former review-publication service without d
 Orchard's owning Git repository requires its own authorized task worktree.
 Protected publication state and live service cleanup remain human-terminal work; retirement is not permission to bypass their guards.
 Keep human-confirmed publication under `review-change post`, including existing report formats and reconciliation markers.
+[ADR 0042](0042-use-simple-review-subjects-and-browser-publication.md) supersedes that human interface with browser confirmation, while retaining the existing reconciliation machinery and an unadvertised terminal compatibility path.
 This replaces the selected agentmemory and socket-publisher workflows described in ADRs 0037 and 0038, not their historical evidence.
 
 ## Alternatives and consequences

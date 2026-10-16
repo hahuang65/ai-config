@@ -98,6 +98,11 @@ const ASSETS: &[(&str, &str, &str)] = &[
         include_str!("../assets/findings.js"),
     ),
     (
+        "/publication.js",
+        "text/javascript; charset=utf-8",
+        include_str!("../assets/publication.js"),
+    ),
+    (
         "/annotations.js",
         "text/javascript; charset=utf-8",
         include_str!("../assets/annotations.js"),
@@ -122,6 +127,14 @@ fn routes() -> Router<Service> {
         .layer(TimeoutLayer::with_status_code(
             StatusCode::REQUEST_TIMEOUT,
             Duration::from_secs(5),
+        ))
+        .route("/publication", get(publication_information))
+        .route("/publication/preview", post(publication_preview))
+        .route("/publication/confirm", post(publication_confirm))
+        .route("/publication/reconcile", post(publication_reconcile))
+        .route_layer(TimeoutLayer::with_status_code(
+            StatusCode::REQUEST_TIMEOUT,
+            Duration::from_secs(180),
         ))
         .route(
             "/events",
@@ -284,6 +297,59 @@ async fn submit(
             Json(json!({"cursor": cursor})).into_response()
         }
         Err(message) => failure(StatusCode::CONFLICT, message),
+    }
+}
+
+async fn publication_reconcile(State(service): State<Service>) -> Response {
+    publication_action(service, crate::publication::Action::Reconcile).await
+}
+
+async fn publication_information(State(service): State<Service>) -> Response {
+    publication_action(service, crate::publication::Action::Information).await
+}
+
+async fn publication_preview(
+    State(service): State<Service>,
+    body: std::result::Result<
+        Json<crate::publication::Selection>,
+        axum::extract::rejection::JsonRejection,
+    >,
+) -> Response {
+    let Ok(Json(selection)) = body else {
+        return failure(StatusCode::BAD_REQUEST, "Invalid publication selection.");
+    };
+    publication_action(service, crate::publication::Action::Preview(selection.ids)).await
+}
+
+async fn publication_confirm(
+    State(service): State<Service>,
+    body: std::result::Result<
+        Json<crate::publication::Confirmation>,
+        axum::extract::rejection::JsonRejection,
+    >,
+) -> Response {
+    let Ok(Json(confirmation)) = body else {
+        return failure(StatusCode::BAD_REQUEST, "Invalid publication confirmation.");
+    };
+    publication_action(
+        service,
+        crate::publication::Action::Confirm(confirmation.token),
+    )
+    .await
+}
+
+async fn publication_action(service: Service, action: crate::publication::Action) -> Response {
+    match tokio::task::spawn_blocking(move || {
+        crate::publication::execute(&service.paths, &service.store, action)
+    })
+    .await
+    {
+        Ok(Ok(result)) => Json(result).into_response(),
+        Ok(Err(message)) => failure(StatusCode::CONFLICT, message),
+        Err(_) => failure(
+            StatusCode::SERVICE_UNAVAILABLE,
+            "Cannot process publication request.",
+        ),
     }
 }
 

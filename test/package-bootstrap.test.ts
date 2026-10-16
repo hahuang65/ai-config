@@ -57,11 +57,20 @@ test("current documentation retains the review risk without temporary cutover pl
     .toContain("current installation links to this checkout");
   const cli = readFileSync(join(source, "docs/review-change-cli.md"), "utf8");
   expect(cli).toContain("same-user agent");
-  expect(cli).toContain("human terminal");
+  expect(cli).toContain("explicit human confirmation");
+  expect(cli).toContain("simulate a browser gesture");
   const readme = readFileSync(join(source, "README.md"), "utf8");
   expect(readme).toContain("currently installed");
   expect(readme).not.toContain("It is not yet installed");
   expect(readme).toContain("separate approval for a live home");
+});
+
+test("authoring policy requires a human publication decision without prescribing a terminal", () => {
+  const source = fileURLToPath(new URL("../", import.meta.url));
+  const policy = readFileSync(join(source, "AGENTS.md"), "utf8");
+  expect(policy).toContain("Review publication requires explicit human confirmation of the exact publication preview");
+  expect(policy).toContain("Repair Accept/Reject decisions never authorize publication");
+  expect(policy).not.toContain("human-confirmed in a real terminal");
 });
 
 test("current installation guidance names the build-and-install entry point", () => {

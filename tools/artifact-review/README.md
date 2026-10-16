@@ -110,8 +110,26 @@ Use a new retained report path for a fresh review after repairs; do not edit or 
 If a server from an older executable lacks this mode, report the error rather than silently falling back to whole-report approval.
 
 The calling workflow owns source relevance checks, repair execution, cursor handling, and avoiding replayed repairs.
-No decision authorizes commits, installation, delivery, or publication.
+No finding decision authorizes commits, installation, delivery, or publication.
 Same-user programs remain trusted: this local record is not proof against tampering by an agent with arbitrary same-user filesystem access.
+
+## Publication confirmation
+
+A signed retained PR report bound through `--findings` can publish selected comments directly from the shell.
+This is separate from repair Accept/Reject and ordinary artifact approval.
+Only the human selects publication findings, clicks Preview selected comments, inspects the exact account/PR/base/head/COMMENT request, and clicks Publish comments as final confirmation.
+The backend revalidates the signed report and binding, account identity, exact revisions and open PR before a new submission.
+Changing selection clears the displayed preview; signed previews expire after ten minutes and the report directory has a bounded preview count.
+Local reports cannot publish, and an unavailable signature or mismatched record never falls back to unsigned publication.
+
+The artifact executable links the existing evaluation library for locks, signed previews, attempts, receipts and reconciliation rather than invoking a retired publisher or adding a shell posting command.
+A lost response leaves the persisted attempt uncertain; Check publication status reconciles that same attempt without a new POST.
+An already-confirmed receipt remains posted across reloads and retries.
+The immutable report, JSON and repair-decision ledger are not rewritten by publication.
+Publication requests require the same exact local origin and session capability as other mutations.
+Models must not call these endpoints or manufacture human confirmations.
+The capability/signature design does not cryptographically prove a human gesture against arbitrary same-user code.
+Protected legacy publication state is never read or migrated.
 
 ## Browser behavior
 

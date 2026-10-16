@@ -83,7 +83,7 @@ fn public_review_cli_does_not_offer_trial_profile_or_service_installation() {
         .unwrap();
     assert!(output.status.success());
     let help = String::from_utf8(output.stdout).unwrap();
-    assert!(help.contains("review local"));
+    assert!(help.contains("Usage: review-change [SUBJECT]"));
     assert!(!help.contains("native-install"));
     assert!(!help.contains("herdr"));
     assert!(!help.contains("pi-minimal"));

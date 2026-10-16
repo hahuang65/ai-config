@@ -21,6 +21,7 @@ let pending = null;
 let listening = false;
 let eventsConnected = true;
 const findings = new FindingControls(frame, (action, id) => submit(action, id));
+const publication = new PublicationControls(frame, request);
 const annotationPopover = new AnnotationPopover(frame);
 
 function notice(message) { $('#notice').textContent = message; }
@@ -81,6 +82,7 @@ function controls() {
   const findingNotice = findings.controls(closed || busy || !!pending, ready, status);
   if (findingNotice) notice(findingNotice);
   annotationPopover.update(target);
+  publication.controls();
 }
 
 function showTarget(anchor) {
@@ -215,6 +217,7 @@ async function refreshEvents(wait = false) {
     status = page.status;
     approvedRevision = page.approved_revision;
     findings.update(page.finding_review);
+    publication.update(page.finding_review);
     more = page.more;
   }
   if (status === 'declined') notice('Review ended without approval.');

@@ -2,27 +2,51 @@ use crate::change_types::text;
 use anyhow::{Context, Result, bail, ensure};
 use std::{collections::BTreeSet, path::PathBuf};
 
-pub const HELP: &str = "Usage: review-change [--root SOURCE] review local|range BASE..HEAD|pr URL --intent TEXT [options]
-       review-change [--root SOURCE] post REPORT [--state-dir DIR]
-Options: --repo DIR, --path LITERAL_RELATIVE_PATH, --state-dir DIR, --engine pi|claude (default pi),
-         --provider NAME, --model ID, --thinking LEVEL,
-         --timeout SECONDS (1..3600), --json, --no-browser.
-Local includes tracked and non-ignored untracked files against HEAD; range compares two exact commits.
-Excluded private, binary, symlink and submodule files are reported; oversized snapshots fail, never truncate silently.
-Reports contain untrusted reviewer claims, not test execution evidence. Source code is never executed.
-JSON mode never prompts or opens a browser. Reviews never post automatically.
-Runner failures leave stdout empty and print a private failure.json path on stderr; raw provider text is never retained.
-Post requires a retained report and a human terminal; no automatic approval flag exists.
+pub const HELP: &str = "Usage: review-change [SUBJECT] [options]
+
+  review-change https://github.com/OWNER/REPO/pull/123
+  review-change feature-branch
+  review-change worktree-name
+  review-change https://github.com/OWNER/REPO/tree/BRANCH
+  review-change 'X..Y'
+  review-change
+
+SUBJECT is a PR URL, branch/worktree name or path, GitHub branch/repository URL,
+or a two-dot Git revision range. With no subject, review the current branch and
+outstanding changes from its merge base with trunk. Branch/worktree subjects
+include working changes only when that branch has a selected registered worktree.
+Trunk uses the remote default (origin preferred), then unambiguous main/master.
+The HTML opens in review-artifact. Select and confirm publication there;
+reviews and repair Accept/Reject decisions never publish automatically.
+No manual intent field is needed; available PR and commit context is unverified intent.
+
+Options: --repo DIR (default current directory), --path LITERAL_RELATIVE_PATH,
+         --engine pi|claude (default pi), --provider NAME, --model ID, --thinking LEVEL,
+         --timeout SECONDS (1..3600), --json, --no-browser, --state-dir ABSOLUTE_DIR.
+JSON mode is noninteractive and never opens a browser or posts.
+An optional --intent TEXT supplies explicit acceptance context for automation.
+Private, binary, symlink and submodule evidence is excluded and reported.
+Snapshots and external calls are bounded; source code is never executed.
 Exit codes: 0 completed, 1 operational failure, 2 invalid invocation.
 ";
 
+#[derive(Clone)]
 pub enum Target {
     Local,
+    Current,
+    Working {
+        head: String,
+        branch: Option<String>,
+    },
+    Branch(String),
     Range(String, String),
+    Expression(String),
     Pull(String),
+    Github(String),
     Post(PathBuf),
     Help,
 }
+#[derive(Clone)]
 pub struct Args {
     pub root: Option<PathBuf>,
     pub target: Target,
@@ -30,6 +54,7 @@ pub struct Args {
     pub path_filter: Option<String>,
     pub state: Option<PathBuf>,
     pub intent: String,
+    pub infer_intent: bool,
     pub json: bool,
     pub no_browser: bool,
     pub model: Vec<String>,
@@ -40,15 +65,12 @@ fn range(value: &str) -> Result<Target> {
         !value.contains("..."),
         "Use an explicit two-dot BASE..HEAD range"
     );
-    let (base, head) = value.split_once("..").context("Use BASE..HEAD")?;
-    for revision in [base, head] {
-        text(revision, 1024)?;
-        ensure!(
-            !revision.starts_with('-') && !revision.contains(['\n', '\t']),
-            "Invalid revision"
-        );
-    }
-    Ok(Target::Range(base.into(), head.into()))
+    text(value, 2048)?;
+    ensure!(
+        value.contains("..") && !value.starts_with('-') && !value.contains(['\n', '\t']),
+        "Use an explicit two-dot X..Y range"
+    );
+    Ok(Target::Expression(value.into()))
 }
 
 pub fn parse(values: Vec<String>) -> Result<Args> {
@@ -59,6 +81,9 @@ pub fn parse(values: Vec<String>) -> Result<Args> {
     } else {
         None
     };
+    let human = !values
+        .peek()
+        .is_some_and(|value| value == "review" || value == "post");
     let target = target(&mut values)?;
     let mut args = Args {
         root,
@@ -66,7 +91,12 @@ pub fn parse(values: Vec<String>) -> Result<Args> {
         repo: ".".into(),
         path_filter: None,
         state: None,
-        intent: String::new(),
+        intent: if human {
+            crate::change_intent::DEFAULT.into()
+        } else {
+            String::new()
+        },
+        infer_intent: human,
         json: false,
         no_browser: false,
         model: vec![],
@@ -98,9 +128,16 @@ pub fn parse(values: Vec<String>) -> Result<Args> {
     Ok(args)
 }
 
-fn target(values: &mut impl Iterator<Item = String>) -> Result<Target> {
+fn target(values: &mut std::iter::Peekable<impl Iterator<Item = String>>) -> Result<Target> {
+    if values
+        .peek()
+        .is_some_and(|value| value.starts_with('-') && value != "--help" && value != "-h")
+    {
+        return Ok(Target::Current);
+    }
     Ok(match values.next().as_deref() {
-        None | Some("--help" | "-h") => Target::Help,
+        None => Target::Current,
+        Some("--help" | "-h") => Target::Help,
         Some("post") => Target::Post(values.next().context("post needs a report path")?.into()),
         Some("review") => match values.next().as_deref() {
             Some("local") => Target::Local,
@@ -108,7 +145,12 @@ fn target(values: &mut impl Iterator<Item = String>) -> Result<Target> {
             Some("pr") => Target::Pull(values.next().context("pr needs a GitHub URL")?),
             _ => bail!("Choose review local, range BASE..HEAD, or pr URL"),
         },
-        _ => bail!("Unknown command; use --help"),
+        Some(subject) if subject.starts_with("https://") => Target::Github(subject.into()),
+        Some(subject) if subject.contains("..") => range(subject)?,
+        Some(subject) => {
+            text(subject, 4096)?;
+            Target::Branch(subject.into())
+        }
     })
 }
 
@@ -121,7 +163,10 @@ fn option(args: &mut Args, name: &str, value: String) -> Result<()> {
             args.path_filter = Some(value);
         }
         "--state-dir" => args.state = Some(value.into()),
-        "--intent" => args.intent = value,
+        "--intent" => {
+            args.intent = value;
+            args.infer_intent = false;
+        }
         "--engine" | "--provider" | "--model" | "--thinking" | "--timeout" => {
             args.model.extend([name.into(), value])
         }
@@ -131,6 +176,10 @@ fn option(args: &mut Args, name: &str, value: String) -> Result<()> {
 }
 
 fn validate(args: &Args) -> Result<()> {
+    if let Target::Github(url) = &args.target {
+        text(url, 4096)?;
+        crate::change_url::parse(url)?;
+    }
     if let Target::Pull(url) = &args.target {
         text(url, 4096)?;
         crate::change_provider::identity(url)?;

@@ -6,6 +6,7 @@
   <title>Review artifact</title>
   <link rel="stylesheet" href="/shell.css">
   <script src="/findings.js" defer></script>
+  <script src="/publication.js" defer></script>
   <script src="/annotations.js" defer></script>
   <script src="/shell.js" defer></script>
 </head>
@@ -19,6 +20,16 @@
       <iframe id="artifact" title="Artifact snapshot" sandbox="allow-same-origin" referrerpolicy="no-referrer"></iframe>
     </section>
     <aside class="conversation" aria-label="Feedback panel">
+      <section id="publication" aria-label="Publish review comments" hidden>
+        <h2>Publish comments</h2>
+        <div id="publication-items"></div>
+        <p id="publication-status" role="status" aria-live="polite"></p>
+        <button id="publication-preview" disabled>Preview selected comments</button>
+        <pre id="publication-request" aria-label="Exact publication request"></pre>
+        <button id="publication-confirm" disabled>Publish comments</button>
+        <button id="publication-cancel">Cancel preview</button>
+        <button id="publication-refresh">Check publication status</button>
+      </section>
       <h1>Feedback</h1>
       <div id="messages" role="log" aria-label="Review conversation"></div>
       <div id="queued" aria-label="Unsent annotations"></div>

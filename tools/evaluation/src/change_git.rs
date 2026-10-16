@@ -84,6 +84,28 @@ pub fn revision(repo: &Path, name: &str) -> Result<String> {
     Ok(oid)
 }
 
+pub fn range(repo: &Path, expression: &str) -> Result<(String, String)> {
+    let output = run(
+        repo,
+        &["rev-parse", "--revs-only", "--end-of-options", expression],
+    )?;
+    let lines: Vec<_> = std::str::from_utf8(&output)?.lines().collect();
+    ensure!(
+        lines.len() == 2,
+        "Range must resolve to exactly two commits"
+    );
+    let head = lines
+        .iter()
+        .find(|line| !line.starts_with('^'))
+        .context("Range has no head commit")?;
+    let base = lines
+        .iter()
+        .find_map(|line| line.strip_prefix('^'))
+        .context("Range has no base commit")?;
+    ensure!(valid_oid(head) && valid_oid(base), "Invalid range commits");
+    Ok((revision(repo, base)?, revision(repo, head)?))
+}
+
 pub fn valid_oid(value: &str) -> bool {
     matches!(value.len(), 40 | 64)
         && value

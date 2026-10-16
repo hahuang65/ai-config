@@ -12,6 +12,7 @@ path = "src/main.rs"
 [workspace]
 
 [dependencies]
+evaluation = { path = "../evaluation" }
 ammonia = "4.1"
 base64 = "0.22"
 axum = "0.8"

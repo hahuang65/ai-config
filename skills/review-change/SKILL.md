@@ -1,6 +1,6 @@
 ---
 name: review-change
-description: Review an explicit local change, Git range, or GitHub pull request through a restricted runner, then collect annotations and per-finding repair decisions. Publication requires separate human terminal confirmation.
+description: Review an explicit local change, Git range, or GitHub pull request through a restricted runner, then collect annotations and per-finding repair decisions. Publication requires separate human confirmation of the exact preview in the report.
 ---
 
 # Review a change
@@ -40,11 +40,13 @@ Ordinary session skill discovery remains enabled; the reviewer itself is isolate
    For an explicitly informational request, present the report normally without soliciting decisions.
    If the browser workflow is unavailable, report the limitation and ask to collect explicit finding-ID decisions in chat; never silently substitute whole-report approval.
    Unavailable restricted review is incomplete, never a clean result.
-4. If the user wants to publish pull-request findings, give them `review-change post REPORT` for their own terminal.
-   Never call posting through an agent shell, create a pseudo-terminal, supply confirmation, or treat a browser action as approval.
-   The human selects findings, previews the exact request, and confirms afresh; the CLI sends `COMMENT` only.
-   If posting is uncertain, reconcile that same retained report rather than creating another submission.
-   A changed revision requires a fresh review.
+4. If the user wants to publish pull-request findings, direct them to the report's separate publication controls in `review-artifact`.
+   Only the human selects publication findings, previews the exact account/PR/revisions/request, and clicks Publish comments as final confirmation.
+   Never submit publication selections, previews, confirmations, or terminal posting through model tools; do not synthesize clicks or confirmation requests.
+   Repair Accept/Reject, ordinary artifact approval, silence, and review completion never authorize publication.
+   Publication sends `COMMENT` only, not pull-request approval or requested changes.
+   If the outcome is uncertain, the human uses Check publication status on that same report to reconcile the persisted attempt, never a new submission.
+   A changed report or PR revision requires a fresh review.
 
 The reviewer does not edit, install, commit, push, or publish changes.
 Keep authentication private and record only meaningful progress through [work-log](../work-log/SKILL.md).

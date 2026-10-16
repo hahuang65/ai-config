@@ -38,6 +38,8 @@ Restricted-reviewer offline settings and synthetic-provider boundaries remain un
 - The original Python worktree CLI's reference-only tests are not part of the replacement gate; the parity runner executes their applicable cases against the Rust CLI.
 - `tools/artifact-review/tests/` checks local review storage, revision-bound per-finding repair decisions through the Rust CLI, and the bounded Firefox integration after an explicit debug CLI build.
   Its real change-report case covers Accept/Reject, annotations, retry after response loss and reload, and preservation of the retained HTML; ordinary artifact approval keeps its existing coverage.
+  `publication.mjs` separately checks exact preview then human browser confirmation, independent repair decisions, account/PR/report changes, rejected field injection, local-origin authorization, and reconciliation after a lost fake-provider response without a second post.
+  The artifact tool links the shared evaluation library; these cases never access a live provider or protected legacy publication state.
   `tests/wait.rs` covers indefinite foreground waiting, transport heartbeats, terminal state, replay/retry, interruption/shutdown, and fresh revision checks despite render reuse.
   The bounded browser suite counts idle event/snapshot requests and verifies live feedback, replies, and document reload through revision-only checks.
 
@@ -95,6 +97,8 @@ Rust schedules those independent cases together rather than Cargo running nine b
 Only support code is shared: every case still creates its own disposable home, repository, provider state, and review store.
 Run the group with `cargo test --locked --manifest-path tools/evaluation/Cargo.toml --test change`.
 Add a module-name filter such as `change_post_safety::` to focus it, or append `-- --test-threads=1` for serial debugging.
+`change_execution.rs` uses the real artifact helper for opener-safety checks; prepare `make build build-evaluation-debug` before running that group directly.
+Its executable exclusion scenarios reuse one disposable setup within the scenario instead of repeating installer setup for every executable.
 The reviewer and consult cases similarly share `tests/runners.rs` rather than four separate integration binaries.
 Their case modules are `cases/{consult,reviewer,reviewer_claude,reviewer_diagnostics}.rs`; the fake reviewer script lives in `support/reviewer.rs`.
 All cases retain their assertions, deadlines, and separate disposable homes, repositories, provider state, and output files.

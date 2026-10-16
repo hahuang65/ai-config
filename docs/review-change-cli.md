@@ -3,15 +3,33 @@
 Build the Rust binaries with `make build`, then invoke `tools/evaluation/target/release/review-change` (also linked at `~/.local/bin/review-change` after approved package installation).
 Neither review nor posting runs as part of the package installer.
 
+For humans, use one optional subject:
+
 ```text
-review-change review local --repo DIR --intent TEXT --engine pi --json
-review-change review range BASE..HEAD --repo DIR --intent TEXT --engine pi --json
-review-change review pr https://github.com/OWNER/REPO/pull/NUMBER --repo DIR --intent TEXT --engine pi --json
-review-change post /absolute/report.html [--state-dir DIR]
+review-change https://github.com/OWNER/REPO/pull/123
+review-change feature-branch
+review-change worktree-name
+review-change https://github.com/OWNER/REPO/tree/feature-branch
+review-change 'X..Y'
+review-change
 ```
 
-The reviewed repository must be explicit and the review intent must describe its intended behavior.
-`local` compares HEAD to the working state; `range` compares two committed endpoints.
+No subject reviews the current branch plus staged, unstaged and non-ignored untracked files from the merge base with trunk.
+Trunk comes from remote default metadata (origin preferred), then an unambiguous local main/master; ambiguity fails with a correction instead of guessing.
+An exact branch takes precedence over a worktree-name match.
+A selected registered worktree includes its outstanding changes, while an unchecked-out branch uses committed changes only.
+A worktree whose branch or HEAD changes during selection is refused.
+An explicit `X..Y` range uses Git revision expressions and exact endpoints, including omitted endpoints defaulting to HEAD; three-dot ranges are not supported.
+PR URLs use the provider's exact declared base/head and their unique merge base.
+GitHub branch and repository URLs use that repository's default branch, independently of the invocation directory.
+Missing GitHub objects are fetched only into an unmaterialized private temporary repository, bounded to 256 commits of history and the normal Git command timeout; insufficient history fails explicitly.
+Development refs, index and worktree files are never changed by target resolution.
+
+There is no menu, manual intent form, report list, or report-ID navigation in the human interface.
+Human reviews collect bounded PR descriptions and up to 20 commit messages as unverified context, not explicit acceptance criteria.
+`--intent TEXT` can supply explicit acceptance context when available.
+The existing `review local`, `review range X..Y`, and `review pr URL` forms remain compatible for agents, requiring their explicit `--intent`; `review local` still means HEAD to working state.
+Use an absolute `--repo DIR` and explicit engine in agent workflows, and `--json` for the stable receipt without opening a browser.
 `--path` limits evidence to a literal relative file or directory, never a glob.
 The Rust command freezes bounded, eligible source evidence, rejects modified or missing evidence, then invokes a restricted reviewer that cannot edit, run source code, or publish.
 Pi uses an ephemeral isolated profile with no ordinary extensions, skills, or project context and a link to existing authentication when present; Claude review is independently available with `--engine claude`.
@@ -20,8 +38,9 @@ Neither mode imports evaluation `.state/pi` or historical agentmemory data.
 Retained private reports and signatures default to `~/.local/state/ai-config/change-reviews`.
 `--state-dir` selects a separate private location, including when reviewing this source checkout.
 JSON mode never opens a browser or posts.
-A normal terminal review opens the escaped, self-contained HTML report in the ordinary browser.
-The shared review-change skill separately opens artifact-review's finding mode when collecting repair decisions; the CLI does not start that feedback loop itself.
+A human review opens the escaped, self-contained HTML report in `review-artifact` with its matching finding record.
+`--no-browser` retains and prints the report without opening it.
+The shared review-change skill also opens finding mode explicitly for JSON/agent workflows.
 The report states successful file reads, exclusions, uncertainty, and that tests were not run by the restricted reviewer.
 
 ## Finding decisions and repairs
@@ -59,7 +78,7 @@ Informational reviews can still use the plain browser view, and an unavailable f
 Neither finding decisions nor an all-decided report authorize staging, commits, installation, delivery, provider publication, or blanket approval of the code.
 
 These local decisions share artifact-review's same-user trust boundary; they are not tamper-resistant proof against a program running as the same operating-system user.
-They do not replace the separate human-terminal confirmation for posting.
+They do not replace the separate human confirmation of the exact publication preview in the browser.
 See [artifact-review's contract](../tools/artifact-review/README.md#finding-review-mode) for bounds, persistence, and recovery.
 
 ## Reviewer failures
@@ -85,11 +104,18 @@ No automatic retry, engine fallback, installation, or publication follows a fail
 Retained signatures bind report records and HTML bytes, but the signing key and records are accessible to programs running as the same operating-system user.
 A same-user agent could change both, so the signature does **not** establish report integrity against that agent.
 This is an accepted risk for the present human-reviewed workflow, not a claim of tamper resistance.
-The human inspects the report, and posting pull-request findings separately requires an exact preview and confirmation in a human terminal.
-That confirmation alone cannot establish that a saved report was never altered; revisit this risk if independent authenticity or posting without human review becomes necessary.
+The human inspects the report and selects publication comments separately from repair decisions.
+The browser shows an exact preview with the GitHub account, PR, base/head revisions and COMMENT request; Publish comments is the final explicit human confirmation.
+Selection changes invalidate that preview, which expires after ten minutes.
+The backend verifies the signed report, bound revision and record digest, then rechecks the account and exact open PR scope before mutation.
+The local capability and signing key cannot establish that arbitrary same-user code did not simulate a browser gesture; no tamper-resistant human-presence guarantee is claimed.
 
 For GitHub pull requests, posting uses a separately selected, retained report; no review command grants posting authority.
-Only the human runs `post REPORT` in an interactive terminal, confirms the exact preview, and sends comments (`COMMENT`, not `APPROVE` or `REQUEST_CHANGES`).
-A failed or uncertain post must be reconciled from the same retained report, not bypassed with an independent request.
+Only the human selects and confirms publication in the report; model tools must not invoke publication endpoints or manufacture that confirmation.
+Publication sends comments (`COMMENT`, not `APPROVE` or `REQUEST_CHANGES`) and never changes repair decisions.
+A failed or uncertain post must be reconciled from the same retained report using Check publication status, not bypassed with an independent request.
+A persisted attempt is never resubmitted; the existing per-report lock and receipt make replay and concurrent confirmation safe.
+Closing the tab does not publish or stop the tracked server; stopping that server makes its browser controls unavailable until it is reopened.
+The old explicit terminal `post REPORT` operation remains unadvertised compatibility for retained reports and consumers, not a required human step.
 Read `review-change --help` for current argument limits and error codes.
 The CLI rename preserves retained report formats, store ownership, and publication markers so existing reports can still be reconciled; those internal identifiers are not additional executables.

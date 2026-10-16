@@ -71,20 +71,36 @@ impl Session {
         }
     }
 
-    fn browse(&self) -> Result<()> {
+    fn browse(&self, paths: &Paths, binding: Option<&crate::findings::Binding>) -> Result<()> {
         let url = format!("{}/#{}", self.origin(), self.descriptor.capability);
         let opener = if cfg!(target_os = "macos") {
             "open"
         } else {
             "xdg-open"
         };
-        let mut child = Command::new(opener)
-            .arg(url)
-            .stdin(Stdio::null())
-            .stdout(Stdio::null())
-            .stderr(Stdio::null())
-            .spawn()
-            .map_err(|_| "Cannot open browser. Review server remains available.")?;
+        let roots = match binding {
+            Some(binding) => evaluation::publication::source_context(
+                &paths.artifact,
+                &binding.report_digest,
+                &binding.revision,
+            )
+            .map_err(|_| "Cannot restore the retained report's source exclusions.")?,
+            None => vec![],
+        };
+        let parent = paths
+            .artifact
+            .parent()
+            .ok_or("Artifact has no directory.")?;
+        let mut child = evaluation::change_command::with_sources(&roots, || {
+            evaluation::change_command::command(opener, &[parent])
+        })
+        .map_err(|_| "Cannot find a browser opener outside reviewed source.")?
+        .arg(url)
+        .stdin(Stdio::null())
+        .stdout(Stdio::null())
+        .stderr(Stdio::null())
+        .spawn()
+        .map_err(|_| "Cannot open browser. Review server remains available.")?;
         let deadline = Instant::now() + Duration::from_secs(3);
         while Instant::now() < deadline {
             match child.try_wait() {
@@ -127,7 +143,7 @@ pub fn open(
     }
     session.request("/reopen", Some(&json!({})))?;
     if !no_browser {
-        session.browse()?;
+        session.browse(paths, binding)?;
     }
     let state = session.request("/events?cursor=0", None)?;
     Ok(json!({"status": state["status"], "browser": !no_browser}))

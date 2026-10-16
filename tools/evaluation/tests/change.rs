@@ -1,5 +1,8 @@
 mod support;
 
+#[path = "cases/change_execution.rs"]
+mod change_execution;
+
 #[path = "cases/change_opportunities.rs"]
 mod change_opportunities;
 #[path = "cases/change_post.rs"]
@@ -16,5 +19,9 @@ mod change_scope;
 mod change_snapshot;
 #[path = "cases/change_startup.rs"]
 mod change_startup;
+#[path = "cases/change_subject.rs"]
+mod change_subject;
+#[path = "cases/change_subject_safety.rs"]
+mod change_subject_safety;
 #[path = "cases/change_suggestion_fallback.rs"]
 mod change_suggestion_fallback;

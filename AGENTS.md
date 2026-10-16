@@ -30,5 +30,6 @@ Do not stage, commit, push, or update the parent submodule pointer without separ
 
 For rule-loading and safety guidance, follow `baseline.md`, installed through each harness's global instruction link, and its root `rules/` directory.
 The guarded actions are implemented by the shared policy registry and per-harness adapters, not by advisory prose alone.
-Review publication remains human-confirmed in a real terminal.
+Review publication requires explicit human confirmation of the exact publication preview; the confirmation interface is not restricted to a terminal.
+Repair Accept/Reject decisions never authorize publication.
 Do not query or import old Work log history.

@@ -52,7 +52,7 @@ pub fn post(store: &Store, selected: &Path) -> Result<()> {
     confirm_and_submit(store, selected, &directory, &report)
 }
 
-fn lock(directory: &Path) -> Result<std::fs::File> {
+pub(crate) fn lock(directory: &Path) -> Result<std::fs::File> {
     let lock = OpenOptions::new()
         .read(true)
         .write(true)
@@ -66,7 +66,7 @@ fn lock(directory: &Path) -> Result<std::fs::File> {
     Ok(lock)
 }
 
-fn finished(store: &Store, directory: &Path, report: &Report) -> Result<bool> {
+pub(crate) fn finished(store: &Store, directory: &Path, report: &Report) -> Result<bool> {
     if directory.join("receipt.json").try_exists()? {
         let receipt: Receipt = store.load_object(directory, "receipt.json")?;
         ensure!(
@@ -121,7 +121,12 @@ fn confirm_and_submit(
     submit(store, directory, report, &attempt)
 }
 
-fn submit(store: &Store, directory: &Path, report: &Report, attempt: &Attempt) -> Result<()> {
+pub(crate) fn submit(
+    store: &Store,
+    directory: &Path,
+    report: &Report,
+    attempt: &Attempt,
+) -> Result<()> {
     // Save the request before starting the mutation. A lost response must never
     // turn the next invocation into a blind retry.
     provider::check(&report.scope)?;

@@ -15,6 +15,7 @@ import './firefox-transport.test.mjs';
 import { firefoxSuite } from './firefox-suite.mjs';
 import { registerFirefoxIsolationCases } from './firefox-isolation.mjs';
 import { registerFindingDecisionCases } from './finding-decisions.mjs';
+import { registerPublicationCases } from './publication.mjs';
 import { registerAnnotationPopoverCases } from './annotation-popover.mjs';
 import { registerLiveWaitCases } from './live-wait.mjs';
 
@@ -24,6 +25,7 @@ after(() => browsers.close());
 registerFirefoxIsolationCases(browsers);
 registerChangeReportCase(firefox);
 registerFindingDecisionCases(firefox);
+registerPublicationCases(firefox);
 registerAnnotationPopoverCases({ fixture, eventually });
 registerLiveWaitCases({ fixture, eventually });
 

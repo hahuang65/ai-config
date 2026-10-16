@@ -75,6 +75,18 @@ A decision never authorizes commits, installation, delivery, or publication, and
 An all-decided report is not blanket approval of the code.
 This is the current review-change workflow, distinct from the historical build-pipeline decision forms below.
 
+**Human review subject**:
+The optional positional argument to `review-change`: a PR URL, branch/worktree name or path, GitHub branch/repository URL, or explicit two-dot Git range.
+No subject selects the current branch plus outstanding changes from its merge base with trunk.
+A selected registered worktree includes its outstanding changes; an unchecked-out branch is committed evidence only.
+Collected PR and commit text is unverified context, not explicit acceptance criteria.
+
+**Browser publication confirmation**:
+The human's explicit Publish comments action after inspecting the exact account, PR, revisions and COMMENT request in `review-artifact`.
+It authorizes only that signed preview, separately from finding-repair decisions, and rechecks current report, account and PR scope before a new submission.
+An uncertain attempt is reconciled from the same retained report, never blindly retried.
+This is the current confirmation interface, distinct from the historical socket-publisher terms below, and does not prove human presence against arbitrary same-user code.
+
 **Historical memory**:
 An optional persistent record of prior sessions, preferences, lessons, and observations that can help locate evidence but does not define current project truth.
 A workflow verifies a useful record against its current canonical source before use, and the absence of the memory service never blocks work.

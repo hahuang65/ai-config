@@ -68,6 +68,17 @@ Before acting on an accept, require `finding_review.needs_review` false, matchin
 Historical accepts remain in the log after file changes but do not authorize repairs against a different report.
 The calling workflow owns mapping IDs to repairs, checking source relevance, avoiding replayed repairs, and obtaining a fresh review after changes.
 Keep the old report immutable; new findings require a new retained report and new decisions.
-No decision authorizes staging, committing, installation, delivery, or publication.
+No finding decision authorizes staging, committing, installation, delivery, or publication.
+
+## Publication confirmation
+
+For a retained pull-request change report, the shell provides publication controls independently of finding-repair decisions.
+Only the human selects comments, requests the exact account/PR/revisions/request preview, and clicks Publish comments as final publication confirmation.
+A changed selection invalidates that preview; stale reports, changed PR scope or account, and expired previews are refused before a new submission.
+Model tools must never choose publication findings, call publication endpoints, synthesize confirmation clicks, or treat a repair Accept as publication permission.
+Ordinary artifact Approve, End review, silence, and browser closure do not publish.
+An uncertain outcome is reconciled from the same report with Check publication status, never blindly resubmitted.
+This same-user browser capability is not proof against arbitrary code running as that OS user.
+The retired publisher and protected legacy state remain off limits.
 
 The calling task records the review outcome through [work-log](../work-log/SKILL.md), without a duplicate progress entry here.

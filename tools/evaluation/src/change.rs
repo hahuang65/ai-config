@@ -1,13 +1,13 @@
 use crate::{
     change_args::{Args, Target},
-    change_git as git, change_html, change_snapshot as snapshot,
+    change_html, change_snapshot as snapshot,
     change_store::Store,
     change_types::{self, Finding, Report},
     paths::Paths,
     reviewer,
 };
 use anyhow::{Context, Result};
-use std::{ffi::OsString, io::IsTerminal, os::unix::fs::PermissionsExt, path::Path};
+use std::{ffi::OsString, os::unix::fs::PermissionsExt, path::Path};
 
 pub fn main() -> i32 {
     let arguments = std::env::args_os()
@@ -51,14 +51,22 @@ fn execute(args: Args) -> Result<()> {
             let store = Store::open(&paths, args.state.as_deref())?;
             crate::change_post::post(&store, report)
         }
-        _ => review(&paths, &args),
+        _ => crate::change_command::with_source(&args.repo, || review(&paths, &args)),
     }
 }
 
 fn review(paths: &Paths, args: &Args) -> Result<()> {
-    let repo = git::root(&args.repo)?;
-    let evidence = snapshot::freeze(&repo, &args.target, args.path_filter.as_deref())?;
-    let store = Store::new(paths, args.state.as_deref(), Some(&repo))?;
+    let mut args = args.clone();
+    let selected = crate::change_subject::resolve(&args.repo, &args.target)?;
+    let repo = &selected.repo;
+    let mut evidence = snapshot::freeze(repo, &selected.target, args.path_filter.as_deref())?;
+    if let Some(url) = &selected.remote_url {
+        evidence.scope.repository = url.clone();
+    }
+    if args.infer_intent {
+        args.intent = crate::change_intent::infer(repo, &evidence.scope)?;
+    }
+    let store = Store::new(paths, args.state.as_deref(), Some(repo))?;
     let pending = tempfile::Builder::new()
         .prefix("review-")
         .tempdir_in(&store.root)?;
@@ -67,15 +75,15 @@ fn review(paths: &Paths, args: &Args) -> Result<()> {
     let frozen_lines = snapshot::lines(&patch)?;
     let mut proven = frozen_lines.clone();
     if let Some(pr) = &evidence.scope.pull_request {
-        let provider_lines = crate::change_provider::lines(&repo, pr)?;
+        let provider_lines = crate::change_provider::lines(repo, pr)?;
         proven.retain(|line| provider_lines.contains(line));
         crate::change_provider::check(&evidence.scope)?;
     }
     let response = response(
         paths,
-        args,
+        &args,
         &pending.path().join("snapshot"),
-        &repo,
+        repo,
         patch.is_empty(),
     );
     let (answer, reads) = match response {
@@ -89,8 +97,8 @@ fn review(paths: &Paths, args: &Args) -> Result<()> {
             "Refactoring and reuse suggestions must be anchored to changed lines"
         );
     }
-    let report = assemble(args, evidence, digest, answer, reads, &proven);
-    save_report(&store, pending, report, args)
+    let report = assemble(&args, evidence, digest, answer, reads, &proven);
+    save_report(paths, &store, pending, report, &args)
 }
 
 fn retain_failure(pending: tempfile::TempDir, error: anyhow::Error) -> anyhow::Error {
@@ -114,6 +122,7 @@ fn retain_failure(pending: tempfile::TempDir, error: anyhow::Error) -> anyhow::E
 }
 
 fn save_report(
+    paths: &Paths,
     store: &Store,
     pending: tempfile::TempDir,
     report: Report,
@@ -125,15 +134,9 @@ fn save_report(
         ..report
     };
     store.save(pending.path(), &report, &html)?;
+    crate::publication::save_sources(store, pending.path(), &report)?;
     let directory = pending.keep();
-    present(&directory, &report, args);
-    if report.scope.pull_request.is_some()
-        && !args.json
-        && std::io::stdin().is_terminal()
-        && std::io::stdout().is_terminal()
-    {
-        crate::change_post::post(store, &directory.join("report.html"))?;
-    }
+    present(paths, &directory, &report, args);
     Ok(())
 }
 
@@ -215,7 +218,7 @@ fn response(
     Ok((answer, reads))
 }
 
-fn present(directory: &Path, report: &Report, args: &Args) {
+fn present(paths: &Paths, directory: &Path, report: &Report, args: &Args) {
     let html = directory.join("report.html");
     if args.json {
         println!(
@@ -229,8 +232,7 @@ fn present(directory: &Path, report: &Report, args: &Args) {
             change_html::terminal(&html.display().to_string())
         );
         if !args.no_browser
-            && std::io::stdin().is_terminal()
-            && let Err(error) = open(&html, Path::new(&report.scope.repository))
+            && let Err(error) = open(paths, &html, Path::new(&report.scope.repository))
         {
             eprintln!(
                 "Cannot open the browser: {}. Open the report path manually.",
@@ -240,16 +242,22 @@ fn present(directory: &Path, report: &Report, args: &Args) {
     }
 }
 
-fn open(path: &Path, repository: &Path) -> Result<()> {
-    let mut command = crate::change_command::command(
-        if cfg!(target_os = "macos") {
-            "open"
-        } else {
-            "xdg-open"
-        },
-        &[path.parent().context("Report has no parent")?, repository],
+fn open(paths: &Paths, path: &Path, repository: &Path) -> Result<()> {
+    let mut command = crate::change_command::trusted(
+        &paths
+            .root
+            .join("tools/artifact-review/target/release/review-artifact"),
+        &[
+            repository,
+            path.parent().context("Report has no directory")?,
+        ],
     )?;
-    command.current_dir(std::env::temp_dir()).arg(path);
+    command
+        .current_dir(std::env::temp_dir())
+        .arg("open")
+        .arg(path)
+        .arg("--findings")
+        .arg(path.with_file_name("report.json"));
     crate::reviewer_process::run(command, 5)?;
     Ok(())
 }

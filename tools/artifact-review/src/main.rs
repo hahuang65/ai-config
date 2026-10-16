@@ -6,6 +6,7 @@ mod findings;
 mod images;
 mod model;
 mod paths;
+mod publication;
 mod server;
 mod store;
 

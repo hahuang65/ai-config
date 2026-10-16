@@ -19,6 +19,25 @@ type TargetRevisions = (&'static str, String, String, Option<PullRequest>);
 
 fn revisions(repo: &Path, target: &Target) -> Result<TargetRevisions> {
     Ok(match target {
+        Target::Branch(branch) => (
+            "branch",
+            crate::change_subject::trunk(repo)?,
+            git::revision(repo, branch)?,
+            None,
+        ),
+        Target::Current | Target::Working { .. } => {
+            crate::change_subject::verify(repo, target)?;
+            ensure!(
+                git::run(repo, &["ls-files", "--unmerged", "-z"])?.is_empty(),
+                "Resolve Git conflicts before reviewing local changes"
+            );
+            (
+                "branch-working",
+                crate::change_subject::trunk(repo)?,
+                git::revision(repo, "HEAD")?,
+                None,
+            )
+        }
         Target::Local => {
             ensure!(
                 git::run(repo, &["ls-files", "--unmerged", "-z"])?.is_empty(),
@@ -26,6 +45,10 @@ fn revisions(repo: &Path, target: &Target) -> Result<TargetRevisions> {
             );
             let head = git::revision(repo, "HEAD")?;
             ("local", head.clone(), head, None)
+        }
+        Target::Expression(expression) => {
+            let (base, head) = git::range(repo, expression)?;
+            ("range", base, head, None)
         }
         Target::Range(base, head) => (
             "range",
@@ -48,14 +71,8 @@ fn revisions(repo: &Path, target: &Target) -> Result<TargetRevisions> {
 
 fn scope(repo: &Path, target: &Target, filter: Option<&str>) -> Result<Scope> {
     let (kind, base, head, pull_request) = revisions(repo, target)?;
-    let comparison_base = if pull_request.is_some() {
-        let bytes = git::run(repo, &["merge-base", "--all", &base, &head])?;
-        let oid = std::str::from_utf8(&bytes)?.trim().to_owned();
-        ensure!(
-            git::valid_oid(&oid),
-            "A unique merge base is required; fetch complete commit history"
-        );
-        oid
+    let comparison_base = if pull_request.is_some() || matches!(kind, "branch" | "branch-working") {
+        crate::change_subject::merge_base(repo, &base, &head)?
     } else {
         base.clone()
     };
@@ -78,12 +95,14 @@ pub fn freeze(repo: &Path, target: &Target, filter: Option<&str>) -> Result<Evid
     let mut exclusions = Exclusions::new();
     let mut before = git::tree(repo, &scope.comparison_base, &mut exclusions, filter)?;
     let mut after_excluded = Exclusions::new();
-    let mut after = if scope.kind == "local" {
+    let working = matches!(scope.kind.as_str(), "local" | "branch-working");
+    let mut after = if working {
         git::working(repo, &mut after_excluded, filter)?
     } else {
         git::tree(repo, &scope.head, &mut after_excluded, filter)?
     };
-    if scope.kind == "local" {
+    if working {
+        crate::change_subject::verify(repo, target)?;
         let mut rechecked = Exclusions::new();
         ensure!(
             git::revision(repo, "HEAD")? == scope.head
