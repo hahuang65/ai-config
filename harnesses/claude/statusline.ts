@@ -140,17 +140,16 @@ async function main(): Promise<void> {
   const firstStyled = `${COLOR.location}${directory}${COLOR.reset}`
     + (branch ? ` (${COLOR.branch}${branch}${COLOR.reset})` : "")
     + (name ? `${COLOR.dim} • ${name}${COLOR.reset}` : "");
-  const first = Bun.stringWidth(firstPlain) <= width ? firstStyled
-    : `${COLOR.location}${clip(firstPlain, width)}${COLOR.reset}`;
-  const stats = usage(input);
   const modelWidth = Bun.stringWidth(modelStatus);
   const available = width - modelWidth - 1;
-  const left = available > 0 ? clip(stats, available) : "";
+  const left = Bun.stringWidth(firstPlain) <= available ? firstStyled
+    : `${COLOR.location}${clip(firstPlain, available)}${COLOR.reset}`;
   const padding = " ".repeat(Math.max(1, width - Bun.stringWidth(left) - modelWidth));
-  const second = available > 0
-    ? `${COLOR.dim}${left}${COLOR.reset}${padding}${COLOR.dim}${modelStatus}${COLOR.reset}`
+  const first = available > 0
+    ? `${left}${padding}${COLOR.dim}${modelStatus}${COLOR.reset}`
     : `${COLOR.dim}${clip(modelStatus, width)}${COLOR.reset}`;
-  process.stdout.write(`${first}\n${second}\n`);
+  const second = `${COLOR.dim}${clip(usage(input), width)}${COLOR.reset}`;
+  process.stdout.write(`${first}\n${second}`);
 }
 
 await main();

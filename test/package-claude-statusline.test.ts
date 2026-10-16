@@ -33,12 +33,12 @@ test("Claude retains the older token, cache, context, cost, and model display wi
     expect(output).toContain("\u001b[38;2;249;226;175m");
     expect(output).toContain("\u001b[38;2;166;173;200m");
     expect(rows[1]).toContain("↑1.5k ↓300 📚800 💾100 🎯31.3% $0.013 23.5%/128k (auto)");
-    expect(rows[1]).toContain("Fixture Model • high");
+    expect(rows[0]).toContain("Fixture Model • high");
     expect(output).not.toContain("agentmemory");
   } finally { rmSync(home, { recursive: true, force: true }); }
 });
 
-async function renderStatus(input: object, columns = "120"): Promise<string[]> {
+async function renderOutput(input: object, columns = "120"): Promise<string> {
   const home = realpathSync(mkdtempSync(join(tmpdir(), "claude-status-native-")));
   try {
     const child = Bun.spawn([Bun.which("bun")!, statusline], {
@@ -51,30 +51,53 @@ async function renderStatus(input: object, columns = "120"): Promise<string[]> {
       new Response(child.stdout).text(), new Response(child.stderr).text(), child.exited,
     ]);
     expect(status, errors).toBe(0);
-    return output.trimEnd().split("\n");
+    return output;
   } finally { rmSync(home, { recursive: true, force: true }); }
 }
+
+async function renderStatus(input: object, columns = "120"): Promise<string[]> {
+  return (await renderOutput(input, columns)).trimEnd().split("\n");
+}
+
+test.each(["20", "120", "300"])("Claude emits exactly two occupied rows without a trailing newline at %s columns", async columns => {
+  const output = await renderOutput({ model: { display_name: "Opus" }, effort: { level: "medium" } }, columns);
+  const rows = output.replace(/\u001b\[[0-9;]*m/g, "").split("\n");
+  expect(rows).toHaveLength(2);
+  expect(rows.every(row => row.trim().length > 0)).toBe(true);
+  expect(output.endsWith("\n")).toBe(false);
+  expect(rows[1]).toBe(rows[1].trimEnd());
+});
+
+test("Claude right-aligns model and effort on the first row and leaves usage on the second", async () => {
+  const rows = await renderStatus({ session_name: "Compact footer", model: { display_name: "Opus" },
+    effort: { level: "medium" }, context_window: { total_input_tokens: 35_000,
+      used_percentage: 4, context_window_size: 1_000_000 } });
+  const plain = rows.map(row => row.replace(/\u001b\[[0-9;]*m/g, ""));
+  expect(plain[0]).toMatch(/^~ • Compact footer +Opus • medium$/);
+  expect(Bun.stringWidth(plain[0])).toBe(116);
+  expect(plain[1]).toBe("↑35k $0.000 4.0%/1.0M (auto)");
+});
 
 test("Claude shows the native reasoning effort beside the model", async () => {
   const rows = await renderStatus({ model: { display_name: "Opus" },
     effort: { level: "high" }, thinking: { enabled: true }, thinking_level: "low" });
-  expect(rows[1]).toContain("Opus • high");
+  expect(rows[0]).toContain("Opus • high");
 });
 
 test("Claude shows disabled thinking instead of a retained effort setting", async () => {
   const rows = await renderStatus({ model: { display_name: "Opus" },
     effort: { level: "high" }, thinking: { enabled: false }, thinking_level: "medium" });
-  expect(rows[1]).toContain("Opus • thinking off");
+  expect(rows[0]).toContain("Opus • thinking off");
 });
 
 test("Claude shows enabled thinking when a model has no effort parameter", async () => {
   const rows = await renderStatus({ model: { display_name: "Sonnet" }, thinking: { enabled: true } });
-  expect(rows[1]).toContain("Sonnet • thinking on");
+  expect(rows[0]).toContain("Sonnet • thinking on");
 });
 
 test("Claude shows the session name on the location row like Pi", async () => {
   const rows = await renderStatus({ session_name: "Statusline parity", model: { display_name: "Opus" } });
-  expect(rows[0].replace(/\u001b\[[0-9;]*m/g, "")).toBe("~ • Statusline parity");
+  expect(rows[0].replace(/\u001b\[[0-9;]*m/g, "")).toMatch(/^~ • Statusline parity +Opus$/);
   expect(rows[1]).not.toContain("Statusline parity");
 });
 
@@ -84,9 +107,9 @@ test("Claude uses wide terminal columns instead of falling back to an 80-column 
       current_usage: { input_tokens: 1_000, cache_read_input_tokens: 5_000,
         cache_creation_input_tokens: 500 }, used_percentage: 42, context_window_size: 200_000 },
     cost: { total_cost_usd: 0.123 } }, "300");
-  expect(Bun.stringWidth(rows[1])).toBe(296);
+  expect(Bun.stringWidth(rows[0])).toBe(296);
   expect(rows[1]).toContain("↑12k ↓2.0k 📚5.0k 💾500 🎯76.9% $0.123 42.0%/200k (auto)");
-  expect(rows[1]).toContain("Opus • high");
+  expect(rows[0]).toContain("Opus • high");
 });
 
 test("Claude sanitizes and clips native session and effort text", async () => {
@@ -95,7 +118,7 @@ test("Claude sanitizes and clips native session and effort text", async () => {
   expect(rows).toHaveLength(2);
   expect(rows.every((row) => Bun.stringWidth(row) <= 38)).toBe(true);
   expect(rows[0]).toContain("…");
-  expect(rows[1]).toContain("Opus • high");
+  expect(rows[0]).toContain("Opus • high");
   expect(rows.join("\n")).not.toContain("\u001b[31m");
   expect(rows.join("\n")).not.toContain("\u202e");
 });
@@ -103,14 +126,14 @@ test("Claude sanitizes and clips native session and effort text", async () => {
 test.each([["4096", 4092], ["4097", 76], ["999999999", 76]] as const)(
   "Claude bounds output for COLUMNS=%s", async (columns, width) => {
     const rows = await renderStatus({ model: { display_name: "Opus" } }, columns);
-    expect(Bun.stringWidth(rows[1])).toBe(width);
+    expect(Bun.stringWidth(rows[0])).toBe(width);
   },
 );
 
 test("Claude does not invent a thinking state when native and legacy data are absent", async () => {
   const rows = await renderStatus({ model: { display_name: "Opus" } });
-  expect(rows[1]).not.toContain("•");
-  expect(rows[1]).not.toContain("thinking");
+  expect(rows[0]).not.toContain("•");
+  expect(rows[0]).not.toContain("thinking");
 });
 
 test("Claude status clips to display columns and strips untrusted terminal controls", async () => {
@@ -170,6 +193,6 @@ test("Claude status uses COLUMNS when a status update omits terminal_width", asy
     expect(rows).toHaveLength(2);
     expect(rows.every((row) => Bun.stringWidth(row) <= 38)).toBe(true);
     expect(rows[0]).toContain("…");
-    expect(rows[1]).toContain("fixture-model");
+    expect(rows[0]).toContain("fixture-model");
   } finally { rmSync(home, { recursive: true, force: true }); }
 });

@@ -25,7 +25,9 @@ The installed package provides:
 - Change-review annotations and per-finding Accept/Reject controls in the artifact-review shell: Accept authorizes that finding's repair only; commits and publication remain separate.
 - Event-driven foreground artifact-review waits without an inactivity cutoff, plus revision-only refreshes that preserve current HTML/image hashing and approval safety.
 
-Both status displays place the directory, Git branch, and available session name on the first row, with token/cache usage, cost, context, and model/thinking on the second.
+Both status displays place the directory, Git branch, and available session name on the first row, with token/cache usage, cost, and context on the second.
+Claude right-aligns model/thinking on the first row; Pi keeps it on the second.
+Claude emits exactly two occupied rows without a trailing newline; its built-in permission-mode, effort, and update badges are separate host-owned footer rows, not positioned by this script.
 Claude uses the current [status-line input](https://code.claude.com/docs/en/statusline): `session_name`, `effort.level`, and `thinking.enabled`, retaining the older `thinking_level` fallback.
 Disabled thinking displays `thinking off`; enabled thinking without an effort value displays `thinking on`; missing thinking data stays omitted.
 The displays use each harness's supplied usage data, not identical accounting: Claude falls back to the latest request's cache counts when cumulative counts are absent, while Pi sums its conversation branch.
