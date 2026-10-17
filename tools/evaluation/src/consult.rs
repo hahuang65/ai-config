@@ -1,4 +1,4 @@
-//! Read-only specialist advice over a retained, bounded source snapshot.
+//! Read-only specialist advice over a retained source snapshot.
 use crate::{
     agents,
     change_args::Target,
@@ -39,7 +39,8 @@ Options: --path LITERAL_RELATIVE_PATH, --state-dir ABSOLUTE_DIR, --engine pi|cla
          --thinking LEVEL, --timeout SECONDS (1..3600; default 900).
 The prompt is literal text, never an @file or command; the complete request is limited to 65536 bytes.
 Local source is double-captured in a private snapshot; an empty diff still permits consultation.
-Private, binary, linked and submodule files are excluded. Oversized snapshots fail without truncation.
+Private, binary, linked and submodule files are excluded.
+Command output limits and process timeouts still apply.
 Only restricted snapshot reads are available. No tests execute and no files are edited or published.
 Pi uses isolated Pi authentication; Claude uses native Claude credentials and does not start Pi.
 Returns protocol-version-1 JSON: agent, snapshot, record, response, filesRead, limits.
@@ -180,7 +181,7 @@ pub fn collect(paths: &Paths, request: Request) -> Result<Value> {
             "Advisory model text; claims are not independently verified.",
             "No tests executed. Only restricted snapshot reads are available.",
             "Private, binary, linked and submodule files are excluded; see scope.json.",
-            format!("At most {} files and {} bytes per source tree.", change_types::MAX_FILES, change_types::MAX_BYTES)
+            "Command output limits and process timeouts still apply."
         ]
     });
     change_store::write(&record, &serde_json::to_vec(&result)?)?;

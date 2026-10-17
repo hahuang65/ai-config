@@ -21,7 +21,7 @@ let pending = null;
 let listening = false;
 let eventsConnected = true;
 const findings = new FindingControls(frame, (action, id) => submit(action, id), persist);
-const publication = new PublicationControls(frame, request);
+const publication = new PublicationControls(frame, request, persist);
 const annotationPopover = new AnnotationPopover(frame);
 
 function notice(message) { $('#notice').textContent = message; }
@@ -49,7 +49,7 @@ async function request(route, body, timeout = 4000) {
 
 function persist() {
   sessionStorage.setItem(STORAGE, JSON.stringify({
-    queued, target, pending, findingComments: findings.comments,
+    queued, target, pending, findingComments: findings.comments, publicationDrafts: publication.drafts,
     message: $('#message').value, comment: $('#annotation-comment').value,
   }));
 }
@@ -60,6 +60,7 @@ function restore() {
   target = saved.target || null;
   pending = saved.pending || null;
   findings.comments = saved.findingComments || {};
+  publication.drafts = saved.publicationDrafts || {};
   $('#message').value = saved.message || '';
   $('#annotation-comment').value = saved.comment || '';
   showTarget();
@@ -179,14 +180,31 @@ function showQueue() {
   });
 }
 
+function historyLabel(action, finding) {
+  const labels = { feedback: 'Feedback', approve: 'Approved', decline: 'Declined', reply: 'Agent', reopen: 'New review' };
+  if (!finding) return labels[action] || 'Review';
+  if (findings.review?.publication_only) return `${finding} · Historical PR ${action === 'accept' ? 'acceptance' : 'rejection'} — no repair authority`;
+  return `${finding} · ${action === 'accept' ? 'Accepted — repair authorized' : 'Rejected — no repair authorized'}`;
+}
+
+function updateReview(review) {
+  const wasPublication = !!findings.review?.publication_only;
+  findings.update(review);
+  publication.update(review);
+  if (wasPublication !== !!review?.publication_only) {
+    for (const title of document.querySelectorAll('#messages [data-event-action]')) {
+      title.textContent = historyLabel(title.dataset.eventAction, title.dataset.eventFinding);
+    }
+  }
+}
+
 function renderEvent(event) {
   const row = document.createElement('article');
   row.className = `message ${event.action === 'reply' ? 'agent' : 'user'}`;
   const title = document.createElement('strong');
-  const labels = { feedback: 'Feedback', approve: 'Approved', decline: 'Declined', reply: 'Agent', reopen: 'New review' };
-  title.textContent = event.finding
-    ? `${event.finding} · ${event.action === 'accept' ? 'Accepted — repair authorized' : 'Rejected — no repair authorized'}`
-    : labels[event.action] || 'Review';
+  title.dataset.eventAction = event.action;
+  title.dataset.eventFinding = event.finding || '';
+  title.textContent = historyLabel(event.action, event.finding);
   const message = document.createElement('p');
   message.textContent = event.message;
   row.append(title, message);
@@ -210,6 +228,7 @@ async function refreshEvents(wait = false) {
     eventsConnected = true;
     wait = false;
     if (page.cursor < cursor) return;
+    updateReview(page.finding_review);
     // A submission and a refresh can finish together; each event is rendered once.
     for (const event of page.events) {
       if (event.cursor <= cursor) continue;
@@ -218,8 +237,6 @@ async function refreshEvents(wait = false) {
     }
     status = page.status;
     approvedRevision = page.approved_revision;
-    findings.update(page.finding_review);
-    publication.update(page.finding_review);
     more = page.more;
   }
   if (status === 'declined') notice('Review ended without approval.');

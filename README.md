@@ -25,8 +25,8 @@ The installed package provides:
 - The evaluation's specialist roles: API designer, change reviewer, database reviewer, fact checker, and frontend architect.
 - Public `wt`/`worktree`, `wl`/`worklog`, and `review-change` symlinks, plus source-local `review-artifact` and `consult` helpers resolved by their consumers without PATH aliases.
 - `review-change [SUBJECT]` for a PR URL, branch/worktree, GitHub branch URL, Git range, or the current branch plus outstanding changes; human reviews open directly in `review-artifact` without a manual intent field.
-- Change-review annotations and per-finding Accept/Reject controls in the artifact-review shell: Accept authorizes that finding's repair only; commits and publication remain separate.
-- Separate browser publication controls for retained PR reports: select comments, inspect the exact account/PR/revisions/request preview, then explicitly confirm a comment-only review; uncertain outcomes reconcile the same persisted attempt.
+- Local change-review annotations and per-finding Accept/Reject controls: Accept authorizes that finding's repair only; commits and publication remain separate.
+- PR reports use checkboxes and prefilled editable inline comments, never repair decisions; one Publish button below the document confirms the visible text, destinations, account and PR. The sidebar stays for agent feedback, and uncertain outcomes reconcile the same persisted attempt.
 - Event-driven foreground artifact-review waits without an inactivity cutoff, plus revision-only refreshes that preserve current HTML/image hashing and approval safety.
 
 Both status displays place the directory, Git branch, and available session name on the first row, with token/cache usage, cost, and context on the second.

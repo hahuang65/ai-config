@@ -31,7 +31,9 @@ Human reviews collect bounded PR descriptions and up to 20 commit messages as un
 The existing `review local`, `review range X..Y`, and `review pr URL` forms remain compatible for agents, requiring their explicit `--intent`; `review local` still means HEAD to working state.
 Use an absolute `--repo DIR` and explicit engine in agent workflows, and `--json` for the stable receipt without opening a browser.
 `--path` limits evidence to a literal relative file or directory, never a glob.
-The Rust command freezes bounded, eligible source evidence, rejects modified or missing evidence, then invokes a restricted reviewer that cannot edit, run source code, or publish.
+The Rust command freezes eligible source evidence, rejects modified or missing evidence, then invokes a restricted reviewer that cannot edit, run source code, or publish.
+Snapshots have no fixed file-count or content-size cap.
+Privacy exclusions, independent command-output bounds, and process timeouts still apply.
 Pi uses an ephemeral isolated profile with no ordinary extensions, skills, or project context and a link to existing authentication when present; Claude review is independently available with `--engine claude`.
 Neither mode imports evaluation `.state/pi` or historical agentmemory data.
 
@@ -65,7 +67,9 @@ tools/artifact-review/target/release/review-artifact wait /absolute/report.html 
 
 `review-artifact` is a source-local helper, not a shell PATH command.
 Resolve the executable from the installed configuration source before invoking it.
-Each rendered finding card contains its own Accept and Reject controls and an optional decision-comment field.
+The record selects local repair mode or PR publication-only mode.
+The repair-decision rules below apply only to local reports; PR comments use the publication workflow described later.
+Each rendered local finding card contains its own Accept and Reject controls and an optional decision-comment field.
 Only that finding's comment accompanies its decision; comments on other findings remain drafts.
 The decision event's existing `message` contains the comment, with labeled sections when general feedback is also included.
 Drafts survive reload in the same tab and server origin, and only the acknowledged finding's comment is cleared.
@@ -81,10 +85,12 @@ The artifact-review process stores the bound finding list and decisions separate
 `wait` keeps the foreground agent turn active without an inactivity cutoff; empty transport heartbeats do not return control to the model.
 After interruption, resume with the same report and last processed cursor, without manufacturing a decision or reopening a terminal review.
 `wait` and bounded `poll` return per-finding decisions under `finding_review`; its `needs_review` flag means the report revision changed or cannot be read, not that every finding has a decision.
-Only a specific saved accept with matching event/current/bound revisions can authorize repair, and only when that flag is false.
+`finding_review.publication_only` is true for PR reports: selections and historical Accept/Reject entries never authorize repairs.
+Only a specific local saved accept with matching event/current/bound revisions can authorize repair, and only when `publication_only` and nested `needs_review` are both false.
 Before mapping IDs to the retained record, verify its SHA-256 equals `finding_review.report_digest`.
 The ordinary top-level `approved_revision` and `needs_review` fields are for whole-document approval, not finding decisions.
-`status: "decided"` means all findings have decisions, including rejected ones; an empty report grants no repair authority.
+For local reports, `status: "decided"` means all findings have decisions, including rejected ones; an empty report grants no repair authority.
+PR feedback stays open until End review, including after publication or when there are no findings.
 
 The calling workflow checks source relevance, applies only accepted repairs within its ownership rules, avoids replaying already-applied repairs, and reruns verification and review.
 Unrelated source changes require a fresh review; earlier authorized repairs in the same batch are explicit context, not a reason to transfer finding IDs to a new report.
@@ -93,7 +99,7 @@ Informational reviews can still use the plain browser view, and an unavailable f
 Neither finding decisions nor an all-decided report authorize staging, commits, installation, delivery, provider publication, or blanket approval of the code.
 
 These local decisions share artifact-review's same-user trust boundary; they are not tamper-resistant proof against a program running as the same operating-system user.
-They do not replace the separate human confirmation of the exact publication preview in the browser.
+They do not authorize the separate human Publish action for PR comments.
 See [artifact-review's contract](../tools/artifact-review/README.md#finding-review-mode) for bounds, persistence, and recovery.
 
 ## Reviewer failures
@@ -119,15 +125,25 @@ No automatic retry, engine fallback, installation, or publication follows a fail
 Retained signatures bind report records and HTML bytes, but the signing key and records are accessible to programs running as the same operating-system user.
 A same-user agent could change both, so the signature does **not** establish report integrity against that agent.
 This is an accepted risk for the present human-reviewed workflow, not a claim of tamper resistance.
-The human inspects the report and selects publication comments separately from repair decisions.
-The browser shows an exact preview with the GitHub account, PR, base/head revisions and COMMENT request; Publish comments is the final explicit human confirmation.
-Selection changes invalidate that preview, which expires after ten minutes.
+PR reports never offer repair decisions.
+The runtime adds unchecked checkboxes and prefilled editable comments inside their finding cards, and one Publish button below the document.
+The sidebar remains for agent feedback.
+The initial comment text is the finding explanation without added internal IDs; selected final text is sent verbatim to the verified file, side and line.
+Unverified locations cannot be selected or fall back to summary comments.
+Edits and selections alone never publish.
+The visible text, destinations, account, PR and available reviewed-revision details form the confirmation view; there is no separate Preview step.
+Publish is the final explicit human confirmation of that exact set.
+The backend still signs a short-lived preparation, expiring after ten minutes, and checks the displayed account and revisions before accepting it.
 The backend verifies the signed report, bound revision and record digest, then rechecks the account and exact open PR scope before mutation.
 The local capability and signing key cannot establish that arbitrary same-user code did not simulate a browser gesture; no tamper-resistant human-presence guarantee is claimed.
 
 For GitHub pull requests, posting uses a separately selected, retained report; no review command grants posting authority.
 Only the human selects and confirms publication in the report; model tools must not invoke publication endpoints or manufacture that confirmation.
-Publication sends comments (`COMMENT`, not `APPROVE` or `REQUEST_CHANGES`) and never changes repair decisions.
+Publication sends comments (`COMMENT`, not `APPROVE` or `REQUEST_CHANGES`), never repair authority.
+Each selected comment permits 8000 UTF-8 bytes, up to 50 comments, with a 1 MiB preparation-request bound; feedback retains its existing smaller request bound.
+Drafts are kept separately by record digest and finding ID, not populated from old repair decisions.
+After publication, the report shows posted status rather than recreating editable defaults.
+A legacy PR binding can be enriched with publication-only metadata for the same exact record without rewriting history; restart older tracked servers before reopening with the new executable.
 A failed or uncertain post must be reconciled from the same retained report using Check publication status, not bypassed with an independent request.
 A persisted attempt is never resubmitted; the existing per-report lock and receipt make replay and concurrent confirmation safe.
 Closing the tab does not publish or stop the tracked server; stopping that server makes its browser controls unavailable until it is reopened.

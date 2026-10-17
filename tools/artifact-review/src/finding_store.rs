@@ -7,6 +7,20 @@ use crate::{
 use rusqlite::OptionalExtension;
 use std::collections::BTreeMap;
 
+fn validate_same_report(previous: &str, binding: &Binding) -> Result<()> {
+    let mut saved: Binding =
+        serde_json::from_str(previous).map_err(|_| "Invalid finding configuration.")?;
+    saved.validate()?;
+    // Enrich legacy PR metadata, never rewrite events or turn publication mode into repair authority.
+    saved.publication_only |= binding.publication_only;
+    if saved != *binding {
+        return Err(
+            "Finding review is already bound to another report. Open the new report at its own path.",
+        );
+    }
+    Ok(())
+}
+
 impl Store {
     pub fn configure_findings(&mut self, paths: &Paths, binding: &Binding) -> Result<()> {
         binding.validate()?;
@@ -25,12 +39,19 @@ impl Store {
             .map_err(|_| "Cannot read finding configuration.")?;
         let encoded = serde_json::to_string(binding).map_err(|_| "Cannot encode findings.")?;
         if let Some(previous) = previous {
-            if previous != encoded {
-                return Err(
-                    "Finding review is already bound to another report. Open the new report at its own path.",
-                );
+            if previous == encoded {
+                return Ok(());
             }
-            return Ok(());
+            validate_same_report(&previous, binding)?;
+            transaction
+                .execute(
+                    "UPDATE configuration SET findings=?1 WHERE id=1",
+                    [&encoded],
+                )
+                .map_err(|_| "Cannot update finding mode.")?;
+            return transaction
+                .commit()
+                .map_err(|_| "Cannot persist finding mode.");
         }
         let events: i64 = transaction
             .query_row("SELECT COUNT(*) FROM events", [], |row| row.get(0))
@@ -91,6 +112,7 @@ impl Store {
         }
         let needs_review = revision != Some(binding.revision.as_str());
         Ok(Some(Review {
+            publication_only: binding.publication_only,
             revision: binding.revision,
             report_digest: binding.report_digest,
             needs_review,
@@ -116,6 +138,11 @@ impl Store {
         };
         if submission.action == "reply" {
             return Ok(());
+        }
+        if review.publication_only
+            && (submission.finding.is_some() || submission.action == "approve")
+        {
+            return Err("Pull-request reviews select comments for publication, not repairs.");
         }
         if submission.action == "approve" {
             return Err(

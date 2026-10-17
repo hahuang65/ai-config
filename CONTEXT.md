@@ -68,13 +68,21 @@ After an exception interrupts the turn, an explicit request can resume waiting o
 This does not require a harness to wake an already-ended turn automatically.
 
 **Finding decision**:
-A human's Accept or Reject for one finding in a specific retained change-review report.
+A human's Accept or Reject for one finding in a specific retained local change-review report.
 Accept authorizes repairing that finding; Reject and undecided findings authorize no repairs.
 Decisions and annotations are stored separately from the immutable report and remain bound to its revision and retained record.
 An optional decision comment belongs to its specific finding's Accept or Reject; a comment alone grants no repair authority.
 A decision never authorizes commits, installation, delivery, or publication, and rejection is not evidence of a fix.
 An all-decided report is not blanket approval of the code.
-This is the current review-change workflow, distinct from the historical build-pipeline decision forms below.
+PR reviews use publication selections instead, never repair decisions.
+Historical PR Accept/Reject events remain in history but do not authorize repairs or choose publication comments.
+This is the current local review-change workflow, distinct from the historical build-pipeline decision forms below.
+
+**Publication selection**:
+A checkbox selecting one PR finding's editable comment for publication.
+The comment starts from the finding explanation without internal finding-ID prefixes and is submitted verbatim only to that finding's verified file, side, and line.
+Selection and editing alone do not publish; the final Publish action confirms the selected set.
+The original retained finding and report remain immutable.
 
 **Human review subject**:
 The optional positional argument to `review-change`: a PR URL, branch/worktree name or path, GitHub branch/repository URL, or explicit two-dot Git range.
@@ -84,8 +92,9 @@ Collected PR and commit text is unverified context, not explicit acceptance crit
 Report names and the short intent summary are human-facing presentation; exact revisions and full reviewer context remain in the retained record.
 
 **Browser publication confirmation**:
-The human's explicit Publish comments action after inspecting the exact account, PR, revisions and COMMENT request in `review-artifact`.
-It authorizes only that signed preview, separately from finding-repair decisions, and rechecks current report, account and PR scope before a new submission.
+The human's explicit Publish action after inspecting selected editable comments, their verified file/line destinations, the account, and PR context in `review-artifact`.
+That inline view is the confirmation view; there is no separate Preview step.
+It authorizes only the exact selected comment text and destinations, never repairs, and rechecks current report, account and PR scope before a new submission.
 An uncertain attempt is reconciled from the same retained report, never blindly retried.
 This is the current confirmation interface, distinct from the historical socket-publisher terms below, and does not prove human presence against arbitrary same-user code.
 

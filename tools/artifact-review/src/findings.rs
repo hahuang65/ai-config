@@ -14,6 +14,8 @@ pub struct Binding {
     pub revision: String,
     pub report_digest: String,
     pub items: Vec<Label>,
+    #[serde(default, skip_serializing_if = "is_false")]
+    pub publication_only: bool,
 }
 
 #[derive(Deserialize)]
@@ -21,6 +23,8 @@ struct Report {
     version: u32,
     html_digest: String,
     findings: Vec<Label>,
+    #[serde(default)]
+    scope: serde_json::Value,
 }
 
 impl Binding {
@@ -53,6 +57,7 @@ impl Binding {
             revision: report.html_digest,
             report_digest: hash(&bytes),
             items: report.findings,
+            publication_only: report.scope["pull_request"].is_object(),
         };
         binding.validate()?;
         Ok(binding)
@@ -78,6 +83,10 @@ impl Binding {
     }
 }
 
+fn is_false(value: &bool) -> bool {
+    !value
+}
+
 fn digest(value: &str) -> bool {
     value.len() == 64
         && value
@@ -94,6 +103,7 @@ pub struct Decision {
 
 #[derive(Deserialize, Serialize)]
 pub struct Review {
+    pub publication_only: bool,
     pub revision: String,
     pub report_digest: String,
     pub items: Vec<Decision>,
@@ -102,6 +112,6 @@ pub struct Review {
 
 impl Review {
     pub fn complete(&self) -> bool {
-        self.items.iter().all(|item| item.decision.is_some())
+        !self.publication_only && self.items.iter().all(|item| item.decision.is_some())
     }
 }

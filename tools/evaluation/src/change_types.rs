@@ -2,9 +2,6 @@ use anyhow::{Result, ensure};
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
 
-pub const MAX_FILES: usize = 2000;
-pub const MAX_BYTES: usize = 12 * 1024 * 1024;
-
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
 #[serde(rename_all = "lowercase")]
 pub enum Severity {

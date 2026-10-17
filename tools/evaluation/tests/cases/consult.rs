@@ -386,6 +386,8 @@ fn help_explains_the_committed_repository_requirement_without_installing() {
     success(output.clone());
     let help = String::from_utf8(output.stdout).unwrap();
     assert!(help.contains("committed Git repository"));
+    assert!(!help.contains("Oversized snapshots"));
+    assert!(help.contains("Command output limits and process timeouts"));
     assert!(help.contains("--agent"));
     assert!(!trial.log.exists());
     assert!(!trial.profile().exists());

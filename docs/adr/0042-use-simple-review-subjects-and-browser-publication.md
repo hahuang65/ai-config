@@ -1,6 +1,7 @@
 # Use simple review subjects and browser publication
 
-Status: accepted.
+Status: accepted; the separate publication-preview interaction is superseded by [ADR 0043](0043-separate-pr-publication-from-local-repairs.md).
+The subject-resolution decisions remain current.
 
 ## Problem
 

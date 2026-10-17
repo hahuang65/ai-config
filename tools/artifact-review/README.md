@@ -72,13 +72,13 @@ This explicit mode imports the retained version-1 change-review record, not arbi
 It requires a matching HTML digest, at most 50 sequential F1–F50 finding IDs, and titles of 1–500 UTF-8 bytes using the change-review title contract.
 The record must be a regular, non-symlink UTF-8 JSON file no larger than 2 MiB.
 Malformed or mismatched input is refused before starting a server; revision checks repeat at configuration and decision time.
-The private SQLite configuration stores only the fixed IDs/titles, bound HTML revision, and SHA-256 of the exact input record.
+The private SQLite configuration stores the fixed IDs/titles, bound HTML revision, SHA-256 of the exact input record, and whether it is publication-only PR mode.
 It does not modify the retained HTML, JSON, or publication signatures.
 No installed resources or dependencies are added by this mode.
 
 In finding-review mode, the browser title and toolbar say Change review, without harness branding.
-The shell replaces whole-document Approve with Accept/Reject buttons inside each corresponding rendered finding card.
-Each finding also has an optional comment field, saved only with that finding's Accept or Reject decision.
+Local reports replace whole-document Approve with Accept/Reject buttons inside each corresponding rendered finding card.
+Each local finding also has an optional decision-comment field, saved only with that finding's Accept or Reject decision.
 Other findings' comments remain separate drafts, including when sending ordinary feedback or ending the review.
 Comments are stored in the decision event's existing `message`; when general feedback is also present, labeled sections distinguish it from the finding comment.
 The sidebar remains for annotations, general feedback, and conversation.
@@ -93,20 +93,26 @@ Explicit chat clarification is needed to change a decision; a later rejection ca
 
 `wait` and `poll` add `finding_review` containing:
 
+- `publication_only`: true for PR reports, which never authorize repairs or record new Accept/Reject decisions.
 - `revision`: the fixed report revision for this finding list.
 - `report_digest`: SHA-256 of the exact imported JSON bytes, to verify before mapping IDs to repairs.
 - `items`: ID, title, and `decision` (`accept`, `reject`, or null for undecided).
 - `needs_review`: true when current artifact bytes differ from the bound report or cannot be read safely.
 
 That nested flag describes revision validity, not whether every finding has been decided.
-Only matching event/current/bound revisions with a false nested flag and a saved accept authorize the corresponding repair.
+Only local reports with `publication_only` false, matching event/current/bound revisions, a false nested flag, and a saved accept authorize the corresponding repair.
 The ordinary top-level approval fields still describe whole-document approval and remain independent.
-When every item has a decision, status becomes `decided`; this does not mean every finding was accepted or the code approved.
+For local reports, when every item has a decision, status becomes `decided`; this does not mean every finding was accepted or the code approved.
+PR feedback remains open until End review, even with zero findings or after publication.
 Zero findings produce no repair authority.
 The server rejects whole-document approval in this mode and refuses decisions for unknown IDs, ordinary artifacts, closed reviews, or changed reports.
 Missing/symlinked source files leave history available but cannot receive new decisions.
 
-End review closes the session without undoing saved accepts.
+A legacy PR configuration can be enriched with publication-only metadata for the same exact digest, revision and finding list, never downgraded into local repair authority.
+The original report and event payloads remain unchanged; historical PR decisions do not select comments or authorize repairs.
+Restart an older tracked server with the new executable before using this mode, preserving its history.
+
+End review closes the session without undoing saved local accepts.
 Reopening preserves decisions and can resume undecided findings; completion never resets the list.
 An existing ordinary review with feedback cannot be converted into finding authority.
 A different record cannot replace a configured list at the same artifact path, even if the HTML digest happens to match.
@@ -119,16 +125,25 @@ Same-user programs remain trusted: this local record is not proof against tamper
 
 ## Publication confirmation
 
-A signed retained PR report bound through `--findings` can publish selected comments directly from the shell.
-This is separate from repair Accept/Reject and ordinary artifact approval.
-Only the human selects publication findings, clicks Preview selected comments, inspects the exact account/PR/base/head/COMMENT request, and clicks Publish comments as final confirmation.
-The backend revalidates the signed report and binding, account identity, exact revisions and open PR before a new submission.
-Changing selection clears the displayed preview; signed previews expire after ten minutes and the report directory has a bounded preview count.
+A signed retained PR report bound through `--findings` uses publication-only mode, not repair Accept/Reject or whole-document approval.
+Each card gets an unchecked checkbox and prefilled editable comment from the finding explanation, without added internal finding-ID prefixes.
+Only selected comments are sent, verbatim, to the finding's verified immutable file, side and line.
+Unknown or unverified locations are disabled and rejected by the backend, never redirected into review-body comments.
+The retained HTML and JSON remain unchanged.
+
+The runtime appends one Publish button below the document, alongside the account, PR, available reviewed-revision details and publication status.
+The visible editable comments and destinations are the confirmation view; there is no separate Preview button or second confirmation.
+Only the human selects and edits comments and clicks Publish.
+Edits and selection alone do not publish, and the sidebar stays for feedback with the agent.
+Send feedback and End review do not include or publish PR comment drafts.
+The backend signs a preparation only after that click, verifies that the displayed account and revisions match, and rechecks the signed report, exact open PR scope and account before mutation.
+Signed preparations expire after ten minutes and their count is bounded.
 Local reports cannot publish, and an unavailable signature or mismatched record never falls back to unsigned publication.
 
 The artifact executable links the existing evaluation library for locks, signed previews, attempts, receipts and reconciliation rather than invoking a retired publisher or adding a shell posting command.
 A lost response leaves the persisted attempt uncertain; Check publication status reconciles that same attempt without a new POST.
 An already-confirmed receipt remains posted across reloads and retries.
+After publication, the app shows posted status instead of recreating editable default comments; the PR contains the actual submitted text.
 The immutable report, JSON and repair-decision ledger are not rewritten by publication.
 Publication requests require the same exact local origin and session capability as other mutations.
 Models must not call these endpoints or manufacture human confirmations.
@@ -200,7 +215,8 @@ Feedback and target text are rendered through `textContent`, never interpreted a
 The shell does not accept artifact `postMessage` decision messages.
 
 Files are limited to 2 MiB of UTF-8 HTML.
-Requests are limited to 128 KiB and a 5-second server timeout.
+Ordinary feedback requests are limited to 128 KiB and a 5-second server timeout.
+Only publication preparation permits a 1 MiB body for up to 50 comments of 8000 UTF-8 bytes each; publication routes retain their separate 180-second transport budget.
 Each submission permits an 8000-UTF-8-byte message and 16 annotations.
 A finding comment permits 4000 UTF-8 bytes; its combined message with any general feedback and labels must fit the same 8000-byte bound.
 Each annotation permits 4000 bytes of comment, 2000 bytes of target text, and 1000 bytes of selector.
@@ -235,7 +251,8 @@ node --test --test-concurrency=1 tools/artifact-review/tests/integration.mjs
 
 Coverage includes process-level cursor replay, interrupted waits, abrupt server restart, idempotent replies and submissions, authentication, origin checks, stale approval, current-versus-approved revisions, symlink replacement with retained history and shutdown, input limits, private storage, and CLI validation.
 Rust process tests in `tests/findings.rs` cover independent decisions, revision changes, ordinary-artifact separation, whole-report approval refusal, input bounds, persistence, and retries.
-A real generated change report passes through the same bounded Firefox suite to exercise Accept/Reject, comments, response-loss recovery across reload, completed-state restoration, inert finding titles, narrow layout, and unchanged report bytes.
+Real generated reports pass through the same bounded Firefox suite to exercise local Accept/Reject, decision comments, response-loss recovery, PR publication checkboxes and editable text, exact inline destinations, one final Publish action, draft reload, and unchanged report bytes.
+PR process cases also verify publication-only mode, zero-finding feedback and preservation of legacy decision history without repair authority.
 Real Firefox cases cover element and selected-text comments, general feedback, agent replies, live reload, retained annotations, response-loss retries, draft inclusion in terminal decisions, stale-page rejection, post-approval edit and reload, decline, closing without approval, class-based layout and styles, local render visibility, decode failures and revision binding, script isolation, text-only feedback rendering, and narrow layout.
 
 ## Waiting and render reuse

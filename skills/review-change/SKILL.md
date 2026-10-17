@@ -1,6 +1,6 @@
 ---
 name: review-change
-description: Review an explicit local change, Git range, or GitHub pull request through a restricted runner, then collect annotations and per-finding repair decisions. Publication requires separate human confirmation of the exact preview in the report.
+description: Review a local change, Git range, or GitHub pull request through a restricted runner, then collect local repair decisions or human-confirmed publication of selected editable PR comments.
 ---
 
 # Review a change
@@ -21,12 +21,15 @@ Ordinary session skill discovery remains enabled; the reviewer itself is isolate
    Each engine has its own restricted runner and authentication; do not fall back to another engine when one is unavailable.
    Run `review TARGET --engine ENGINE --repo ABSOLUTE_REPOSITORY --intent TEXT --json` with literal arguments.
    Use `--path RELATIVE_PATH` only for an explicit narrower scope.
-   The runners freeze bounded source evidence and restrict the reviewer's tools to snapshot reads.
+   The runners freeze eligible source evidence and restrict the reviewer's tools to snapshot reads.
    Do not execute reviewed code or fill evidence gaps without authorization.
 3. Read the bounded JSON result and present the HTML report path, scope, findings, and limits.
    Distinguish defects from changed-code refactoring and existing-code reuse.
-   For repair decisions, read and follow [review-artifact](../review-artifact/SKILL.md), including its finding-review mode, with `open REPORT.html --findings REPORT.json` and the exact returned paths.
+   For report interaction, read and follow [review-artifact](../review-artifact/SKILL.md) with `open REPORT.html --findings REPORT.json` and the exact returned paths.
    That skill owns foreground waiting, cursor and reply retries, revision/digest validation, and saved-decision finality.
+   PR reports use publication-only mode: checkbox selection and editable comment text, never repair Accept/Reject.
+   Do not repair PR findings in this workflow, even when legacy history contains Accept events.
+   The following repair-decision rules apply only to local reports.
    Apply its evidence checks before mapping accepted finding IDs to repairs; request a fresh review for mismatched, missing, or changed evidence.
    Accept authorizes repairing that finding; Reject and undecided findings authorize no repairs.
    The report must still describe the relevant code; unrelated source changes require a fresh review, while earlier authorized repairs in the same batch remain explicit context.
@@ -40,8 +43,10 @@ Ordinary session skill discovery remains enabled; the reviewer itself is isolate
    For an explicitly informational request, present the report normally without soliciting decisions.
    If the browser workflow is unavailable, report the limitation and ask to collect explicit finding-ID decisions in chat; never silently substitute whole-report approval.
    Unavailable restricted review is incomplete, never a clean result.
-4. If the user wants to publish pull-request findings, direct them to the report's separate publication controls in `review-artifact`.
-   Only the human selects publication findings, previews the exact account/PR/revisions/request, and clicks Publish comments as final confirmation.
+4. If the user wants to publish pull-request findings, direct them to the inline comment fields and Publish button below the report in `review-artifact`.
+   Only the human selects and edits comments, inspects their exact text, verified file/line destinations, account and PR context, and clicks Publish as final confirmation.
+   There is no separate Preview step; selected final text is posted verbatim without added finding IDs, and unverified inline locations cannot publish.
+   The sidebar stays for agent feedback, including after posting; keep waiting until End review or an explicit pause.
    Never submit publication selections, previews, confirmations, or terminal posting through model tools; do not synthesize clicks or confirmation requests.
    Repair Accept/Reject, ordinary artifact approval, silence, and review completion never authorize publication.
    Publication sends `COMMENT` only, not pull-request approval or requested changes.

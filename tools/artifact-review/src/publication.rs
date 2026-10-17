@@ -7,11 +7,7 @@ use serde::Deserialize;
 use serde_json::{Value, json};
 use std::sync::{Arc, Mutex};
 
-#[derive(Deserialize)]
-#[serde(deny_unknown_fields)]
-pub struct Selection {
-    pub ids: Vec<String>,
-}
+pub use evaluation::publication::Selection;
 
 #[derive(Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -21,7 +17,7 @@ pub struct Confirmation {
 
 pub enum Action {
     Information,
-    Preview(Vec<String>),
+    Preview(Selection),
     Confirm(String),
     Reconcile,
 }
@@ -48,11 +44,11 @@ pub fn execute(paths: &Paths, store: &Arc<Mutex<Store>>, action: Action) -> Resu
         Action::Information => {
             evaluation::publication::information(&paths.artifact, &binding.report_digest, &revision)
         }
-        Action::Preview(ids) => evaluation::publication::prepare(
+        Action::Preview(selection) => evaluation::publication::prepare(
             &paths.artifact,
             &binding.report_digest,
             &revision,
-            &ids,
+            &selection,
         ),
         Action::Confirm(token) => evaluation::publication::confirm(
             &paths.artifact,
@@ -64,5 +60,5 @@ pub fn execute(paths: &Paths, store: &Arc<Mutex<Store>>, action: Action) -> Resu
             evaluation::publication::reconcile(&paths.artifact, &binding.report_digest, &revision)
         }
     });
-    result.map_err(|_| "Publication unavailable: the report, preview, account, or PR may have changed. Refresh status; an uncertain attempt must be reconciled, never resubmitted.")
+    result.map_err(|_| "Publication unavailable: the report, comment selection, account, or PR may have changed. Check status; an uncertain attempt must be reconciled, never resubmitted.")
 }

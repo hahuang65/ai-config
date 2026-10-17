@@ -57,6 +57,76 @@ fn reviewer_does_not_execute_pi_from_the_original_checkout() {
 }
 
 #[test]
+fn more_than_2000_files_can_be_reviewed_in_working_and_committed_trees() {
+    let trial = fixture();
+    for index in 0..2000 {
+        put(
+            trial
+                .temporary
+                .path()
+                .join(format!("repo/extra/{index}.txt")),
+            "tiny\n",
+        );
+    }
+    let local = receipt(review(&trial, &["local"]));
+    let snapshot = Path::new(local["snapshot"].as_str().unwrap());
+    assert_eq!(
+        read_json(snapshot.join("scope.json"))["after"]
+            .as_array()
+            .unwrap()
+            .len(),
+        2001
+    );
+    assert_eq!(
+        fs::read(snapshot.join("after/extra/1999.txt")).unwrap(),
+        b"tiny\n"
+    );
+
+    // Exercise the committed listing without thousands of subprocess blob reads.
+    // Privacy exclusions still apply even when a repository is trusted.
+    let extra = trial.temporary.path().join("repo/extra");
+    for index in 0..2000 {
+        fs::rename(
+            extra.join(format!("{index}.txt")),
+            extra.join(format!(".env-{index}")),
+        )
+        .unwrap();
+    }
+    git(&trial, &["add", "extra"]);
+    git(&trial, &["commit", "-m", "many excluded files"]);
+    let range = receipt(review(&trial, &["range", "HEAD~1..HEAD"]));
+    let snapshot = Path::new(range["snapshot"].as_str().unwrap());
+    let manifest = read_json(snapshot.join("scope.json"));
+    assert_eq!(manifest["after"].as_array().unwrap().len(), 1);
+    assert_eq!(manifest["excluded"].as_object().unwrap().len(), 2000);
+    assert!(!snapshot.join("after/extra/.env-1999").exists());
+}
+
+#[test]
+fn snapshot_text_can_exceed_12_mib_without_truncation() {
+    let trial = fixture();
+    let size = 13 * 1024 * 1024;
+    put(
+        trial.temporary.path().join("repo/large.txt"),
+        vec![b'x'; size],
+    );
+    git(&trial, &["add", "large.txt"]);
+    git(&trial, &["commit", "-m", "large text fixture"]);
+    for target in [vec!["range", "HEAD..HEAD"], vec!["local"]] {
+        let reviewed = receipt(review(&trial, &target));
+        let snapshot = Path::new(reviewed["snapshot"].as_str().unwrap());
+        for side in ["before", "after"] {
+            assert_eq!(
+                fs::metadata(snapshot.join(side).join("large.txt"))
+                    .unwrap()
+                    .len(),
+                size as u64
+            );
+        }
+    }
+}
+
+#[test]
 fn credential_backups_are_not_embedded_in_local_or_committed_evidence() {
     let trial = fixture();
     for path in [

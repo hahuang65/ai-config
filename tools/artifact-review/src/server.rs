@@ -129,7 +129,10 @@ fn routes() -> Router<Service> {
             Duration::from_secs(5),
         ))
         .route("/publication", get(publication_information))
-        .route("/publication/preview", post(publication_preview))
+        .route(
+            "/publication/preview",
+            post(publication_preview).layer(DefaultBodyLimit::max(1024 * 1024)),
+        )
         .route("/publication/confirm", post(publication_confirm))
         .route("/publication/reconcile", post(publication_reconcile))
         .route_layer(TimeoutLayer::with_status_code(
@@ -318,7 +321,7 @@ async fn publication_preview(
     let Ok(Json(selection)) = body else {
         return failure(StatusCode::BAD_REQUEST, "Invalid publication selection.");
     };
-    publication_action(service, crate::publication::Action::Preview(selection.ids)).await
+    publication_action(service, crate::publication::Action::Preview(selection)).await
 }
 
 async fn publication_confirm(

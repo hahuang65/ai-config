@@ -1,109 +1,175 @@
 'use strict';
 
 class PublicationControls {
-  constructor(frame, request) {
+  constructor(frame, request, persist) {
     this.frame = frame;
     this.request = request;
+    this.persist = persist;
     this.binding = null;
-    this.preview = null;
-    this.busy = false;
     this.state = null;
-    this.root = document.querySelector('#publication');
-    this.selection = document.querySelector('#publication-items');
-    this.notice = document.querySelector('#publication-status');
-    this.previewButton = document.querySelector('#publication-preview');
-    this.confirmButton = document.querySelector('#publication-confirm');
-    this.previewButton.addEventListener('click', () => this.prepare());
-    this.confirmButton.addEventListener('click', () => this.confirm());
-    document.querySelector('#publication-cancel').addEventListener('click', () => this.invalidate());
-    document.querySelector('#publication-refresh').addEventListener('click', () => this.refresh(true));
-    this.selection.addEventListener('change', () => this.invalidate());
+    this.busy = false;
+    this.publishing = false;
+    this.error = '';
+    this.drafts = {};
+    this.document = null;
+    this.rows = new Map();
   }
 
   update(binding) {
-    const next = binding ? `${binding.report_digest}:${binding.revision}` : '';
-    const previous = this.binding ? `${this.binding.report_digest}:${this.binding.revision}` : '';
-    this.binding = binding;
-    if (next !== previous) {
-      this.preview = null;
-      this.refresh();
-    }
+    const next = binding?.publication_only ? binding : null;
+    const changed = next?.report_digest !== this.binding?.report_digest;
+    this.binding = next;
+    if (changed) { this.state = null; this.error = ''; void this.refresh(); }
     this.controls();
   }
 
-  controls() {
-    const current = this.binding && !this.binding.needs_review
-      && this.frame.dataset.revision === this.binding.revision;
-    const ready = this.state?.status === 'ready';
-    const ids = [...this.selection.querySelectorAll('input:checked')];
-    this.previewButton.disabled = this.busy || !current || !ready || !ids.length;
-    this.confirmButton.disabled = this.busy || !current || !ready || !this.preview;
-    for (const input of this.selection.querySelectorAll('input')) input.disabled = this.busy || !current || !ready;
-    if (!current) this.invalidate();
+  key(id) { return `${this.binding.report_digest}:${id}`; }
+
+  mount() {
+    const doc = this.frame.contentDocument;
+    if (!this.binding || !this.frame.dataset.revision || !doc) return;
+    if (doc !== this.document) {
+      this.document = doc;
+      this.rows.clear();
+      const style = doc.createElement('style');
+      style.textContent = PUBLICATION_STYLE;
+      doc.head.append(style);
+      this.renderFooter(doc);
+    }
+    if (!this.state?.available || this.state.status === 'posted' || this.rows.size) return;
+    for (const item of this.state.items) {
+      const matches = doc.querySelectorAll(`[id="${item.id}"]`);
+      if (matches.length === 1 && matches[0].tagName === 'ARTICLE') this.renderItem(doc, matches[0], item);
+    }
   }
 
-  invalidate() {
-    this.preview = null;
-    document.querySelector('#publication-request').textContent = '';
-    this.confirmButton.disabled = true;
+  renderItem(doc, card, item) {
+    const row = doc.createElement('div');
+    row.dataset.findingControls = '';
+    row.dataset.publicationCommentRow = '';
+    const label = doc.createElement('label');
+    const checkbox = doc.createElement('input');
+    checkbox.type = 'checkbox'; checkbox.dataset.publishFinding = item.id;
+    const draft = this.drafts[this.key(item.id)];
+    checkbox.checked = !!draft?.checked && item.inline;
+    label.append(checkbox, doc.createTextNode(' Include this comment'));
+    const location = doc.createElement('p');
+    location.textContent = `${item.path} · ${item.side} · line ${item.line ?? 'unknown'}`;
+    const comment = doc.createElement('textarea');
+    comment.dataset.publicationComment = item.id;
+    comment.setAttribute('aria-label', `Comment for ${item.title}`);
+    comment.rows = 10; comment.maxLength = 8000;
+    comment.value = draft?.body ?? item.body;
+    const changed = () => {
+      this.drafts[this.key(item.id)] = { checked: checkbox.checked, body: comment.value };
+      this.error = ''; this.persist(); this.controls();
+    };
+    checkbox.addEventListener('change', changed);
+    comment.addEventListener('input', changed);
+    row.append(label, location, comment);
+    if (!item.inline) {
+      const warning = doc.createElement('p');
+      warning.textContent = 'No verified inline location. Obtain a fresh review; this comment cannot be published elsewhere.';
+      row.append(warning);
+    }
+    card.append(row);
+    this.rows.set(item.id, { row, checkbox, comment, item });
+  }
+
+  renderFooter(doc) {
+    this.footer = doc.createElement('footer');
+    this.footer.dataset.findingControls = '';
+    this.footer.dataset.publicationFooter = '';
+    const heading = doc.createElement('h2'); heading.textContent = 'Publish selected comments';
+    this.account = doc.createElement('p'); this.account.dataset.publicationAccount = '';
+    const details = doc.createElement('details');
+    const summary = doc.createElement('summary'); summary.textContent = 'Reviewed revisions';
+    this.revisions = doc.createElement('code'); details.append(summary, this.revisions);
+    this.notice = doc.createElement('p'); this.notice.dataset.publicationStatus = '';
+    this.notice.setAttribute('role', 'status'); this.notice.setAttribute('aria-live', 'polite');
+    this.check = doc.createElement('button'); this.check.type = 'button';
+    this.check.textContent = 'Check publication status';
+    this.check.addEventListener('click', () => this.refresh(true));
+    this.publishButton = doc.createElement('button'); this.publishButton.type = 'button';
+    this.publishButton.dataset.publicationPublish = ''; this.publishButton.textContent = 'Publish';
+    this.publishButton.addEventListener('click', () => this.publish());
+    this.footer.append(heading, this.account, details, this.notice, this.check, this.publishButton);
+    doc.body.append(this.footer);
+  }
+
+  selected() {
+    return [...this.rows].filter(([, row]) => row.checkbox.checked)
+      .map(([id, row]) => ({ id, body: row.comment.value }));
+  }
+
+  controls() {
+    if (!this.binding) return;
+    this.mount();
+    if (!this.footer) return;
+    const current = !this.binding.needs_review && this.frame.dataset.revision === this.binding.revision;
+    const ready = this.state?.status === 'ready';
+    const posted = this.state?.status === 'posted';
+    const empty = this.state?.available && this.state.items.length === 0;
+    const selected = this.selected();
+    const valid = selected.every(comment => comment.body.trim() && new TextEncoder().encode(comment.body).length <= 8000);
+    const missing = this.state?.available && this.rows.size !== this.state.items.length;
+    for (const row of this.rows.values()) {
+      row.row.hidden = posted;
+      row.checkbox.disabled = this.busy || !current || !ready || !row.item.inline;
+      row.comment.disabled = this.busy || !current || !ready;
+    }
+    this.publishButton.disabled = this.busy || !current || !ready || !this.state?.account || missing || !selected.length || !valid;
+    this.publishButton.textContent = this.publishing ? 'Publishing…' : 'Publish';
+    this.check.hidden = !this.error && this.state?.status !== 'uncertain';
+    this.check.disabled = this.busy;
+    this.account.textContent = posted ? `Published to ${this.state.url}`
+      : empty ? `No findings to publish · ${this.state.url}`
+      : `${this.state?.account?.login || 'Waiting for GitHub account'} · ${this.state?.url || 'PR report'}`;
+    this.revisions.textContent = `${this.state?.base || ''} → ${this.state?.head || ''}`;
+    this.notice.textContent = this.error || (posted ? 'Published. See the PR for the submitted comments.'
+      : !current ? 'Report changed. Obtain a fresh review.'
+      : empty ? 'No findings to publish. The sidebar remains available for feedback.'
+      : missing ? 'Finding controls could not be matched to the report. Obtain a fresh review.'
+      : !valid ? 'Selected comments must contain 1–8000 UTF-8 bytes.'
+      : this.state?.status === 'uncertain' ? 'Outcome uncertain. Check the existing attempt; do not resubmit.'
+      : `Select comments above. Publish sends their exact text to the displayed file and line (${selected.length} selected). This posts comments only, never PR approval or requested changes.`);
   }
 
   async refresh(reconcile = false) {
     if (!this.binding || this.busy) return;
-    this.busy = true;
-    this.controls();
+    this.busy = true; this.controls();
     try {
       let state = await this.request('/publication', undefined, 180000);
-      if (reconcile && state.status === 'uncertain') {
-        state = await this.request('/publication/reconcile', {}, 180000);
-      }
-      this.state = state;
-      this.root.hidden = !state.available;
-      if (!state.available) return;
-      this.selection.replaceChildren();
-      for (const item of state.items) {
-        const label = document.createElement('label');
-        const input = document.createElement('input');
-        input.type = 'checkbox'; input.checked = true; input.dataset.publishFinding = item.id;
-        label.append(input, document.createTextNode(` ${item.id} · ${item.title}`));
-        this.selection.append(label);
-      }
-      this.notice.textContent = state.status === 'posted' ? 'Posted — comment-only review confirmed.'
-        : state.status === 'uncertain' ? 'Outcome uncertain. Check the existing attempt; do not create another submission.'
-        : 'Select comments, preview the exact request, then confirm publication. Repair decisions do not publish.';
-      this.invalidate();
-    } catch (error) {
-      this.notice.textContent = error.message;
-      this.invalidate();
-    } finally { this.busy = false; this.controls(); }
-  }
-
-  async prepare() {
-    if (this.previewButton.disabled) return;
-    this.busy = true; this.invalidate(); this.controls();
-    try {
-      const ids = [...this.selection.querySelectorAll('input:checked')].map(input => input.dataset.publishFinding);
-      this.preview = await this.request('/publication/preview', { ids }, 180000);
-      document.querySelector('#publication-request').textContent = JSON.stringify({
-        account: this.preview.account, pullRequest: this.preview.url,
-        base: this.preview.base, head: this.preview.head, request: this.preview.request,
-      }, null, 2);
-      this.notice.textContent = 'Inspect this exact request. Publish comments is the final human confirmation; it never approves or requests changes.';
-    } catch (error) { this.notice.textContent = error.message; }
+      if (reconcile && state.status === 'uncertain') state = await this.request('/publication/reconcile', {}, 180000);
+      this.state = state; this.error = '';
+    } catch (error) { this.error = error.message; }
     finally { this.busy = false; this.controls(); }
   }
 
-  async confirm() {
-    if (this.confirmButton.disabled) return;
-    const token = this.preview.token;
-    this.busy = true; this.controls();
+  async publish() {
+    if (this.publishButton.disabled) return;
+    const selection = { comments: this.selected(), account: this.state.account, base: this.state.base, head: this.state.head };
+    this.busy = true; this.publishing = true; this.error = ''; this.controls();
     try {
-      this.state = await this.request('/publication/confirm', { token }, 180000);
-      this.invalidate();
-      this.notice.textContent = 'Posted — comment-only review confirmed.';
+      // One human click confirms the visible comments, targets, account and PR.
+      // Prepare/confirm retain the signed backend attempt and race checks, not a second UI step.
+      const preview = await this.request('/publication/preview', selection, 180000);
+      this.state = await this.request('/publication/confirm', { token: preview.token }, 180000);
     } catch (error) {
-      this.notice.textContent = `${error.message} Check publication status before retrying.`;
-      this.invalidate();
-    } finally { this.busy = false; this.controls(); }
+      this.error = `${error.message} Check publication status before trying again.`;
+      this.state = { ...this.state, status: 'uncertain' };
+    } finally { this.busy = false; this.publishing = false; this.controls(); }
   }
 }
+
+const PUBLICATION_STYLE = `
+[data-publication-comment-row] { border-top: 1px solid #8996ab; margin-top: 18px; padding-top: 14px; }
+[data-publication-comment-row] label { font: 600 15px/1.5 system-ui,sans-serif; }
+[data-publication-comment-row] p { font: 13px/1.5 system-ui,sans-serif; overflow-wrap: anywhere; }
+[data-publication-comment] { display: block; width: 100%; box-sizing: border-box; padding: 12px; border: 1px solid #8996ab; border-radius: 6px; background: transparent; color: inherit; font: 14px/1.6 ui-monospace,monospace; resize: vertical; }
+[data-publication-footer] { box-sizing: border-box; max-width: 920px; margin: 24px auto; padding: 24px; border-top: 2px solid #3066b5; overflow-wrap: anywhere; }
+[data-publication-footer] button { font: 600 16px/1.5 system-ui,sans-serif; padding: 10px 24px; border: 1px solid #3066b5; border-radius: 7px; background: transparent; color: inherit; cursor: pointer; }
+[data-publication-footer] button:disabled { opacity: .5; cursor: default; }
+[data-publication-footer] [data-publication-publish] { display: block; margin-top: 18px; }
+[data-publication-comment]:focus-visible, [data-publication-footer] button:focus-visible { outline: 3px solid #3066b5; outline-offset: 3px; }
+`;

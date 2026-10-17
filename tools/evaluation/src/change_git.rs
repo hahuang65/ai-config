@@ -1,7 +1,5 @@
 use crate::{
-    change_types::{
-        Blob, Exclusions, MAX_BYTES, MAX_FILES, Tree, private_path, relative_path, text,
-    },
+    change_types::{Blob, Exclusions, Tree, private_path, relative_path, text},
     reviewer_process,
 };
 use anyhow::{Context, Result, ensure};
@@ -122,18 +120,12 @@ fn include(path: &str, excluded: &mut Exclusions) -> Result<bool> {
     Ok(true)
 }
 
-fn insert(tree: &mut Tree, path: String, blob: Blob, excluded: &mut Exclusions) -> Result<()> {
+fn insert(tree: &mut Tree, path: String, blob: Blob, excluded: &mut Exclusions) {
     if blob.bytes.contains(&0) || std::str::from_utf8(&blob.bytes).is_err() {
         excluded.insert(path.clone(), format!("Non-text file excluded: {path}"));
-        return Ok(());
+        return;
     }
     tree.insert(path, blob);
-    ensure!(
-        tree.len() <= MAX_FILES
-            && tree.values().map(|blob| blob.bytes.len()).sum::<usize>() <= MAX_BYTES,
-        "Snapshot exceeds 2000 files or 12 MiB; choose a smaller explicit scope"
-    );
-    Ok(())
 }
 
 pub fn tree(
@@ -150,10 +142,6 @@ pub fn tree(
         .split(|b| *b == 0)
         .filter(|b| !b.is_empty())
         .collect();
-    ensure!(
-        entries.len() <= MAX_FILES,
-        "Git tree exceeds the 2000-file limit"
-    );
     for entry in entries {
         let (metadata, path) = std::str::from_utf8(entry)?
             .split_once('\t')
@@ -181,7 +169,7 @@ pub fn tree(
                 executable: parts[0] == "100755",
             },
             excluded,
-        )?;
+        );
     }
     Ok(tree)
 }
@@ -201,10 +189,6 @@ pub fn working(repo: &Path, excluded: &mut Exclusions, filter: Option<&str>) -> 
         .split(|b| *b == 0)
         .filter(|b| !b.is_empty())
         .collect();
-    ensure!(
-        paths.len() <= MAX_FILES,
-        "Working tree exceeds the 2000-file limit"
-    );
     let mut tree = Tree::new();
     for path in paths {
         let path = std::str::from_utf8(path)?;
@@ -212,7 +196,7 @@ pub fn working(repo: &Path, excluded: &mut Exclusions, filter: Option<&str>) -> 
             continue;
         }
         if let Some(bytes) = read_working(repo, path, excluded)? {
-            insert(&mut tree, path.into(), bytes, excluded)?;
+            insert(&mut tree, path.into(), bytes, excluded);
         }
     }
     Ok(tree)
@@ -236,7 +220,7 @@ fn read_working(repo: &Path, path: &str, excluded: &mut Exclusions) -> Result<Op
         excluded.insert(path.into(), format!("Non-regular file excluded: {path}"));
         return Ok(None);
     }
-    let file = fs::OpenOptions::new()
+    let mut file = fs::OpenOptions::new()
         .read(true)
         .custom_flags(libc::O_NOFOLLOW | libc::O_NONBLOCK)
         .open(location)?;
@@ -247,10 +231,6 @@ fn read_working(repo: &Path, path: &str, excluded: &mut Exclusions) -> Result<Op
     );
     let executable = metadata.permissions().mode() & 0o100 != 0;
     let mut bytes = vec![];
-    file.take((MAX_BYTES + 1) as u64).read_to_end(&mut bytes)?;
-    ensure!(
-        bytes.len() <= MAX_BYTES,
-        "Working file exceeds the 12 MiB limit"
-    );
+    file.read_to_end(&mut bytes)?;
     Ok(Some(Blob { bytes, executable }))
 }

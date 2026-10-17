@@ -1,10 +1,11 @@
 import { readFile, writeFile, readdir, rm, mkdir } from 'node:fs/promises';
 import { join, resolve } from 'node:path';
+import { DatabaseSync } from 'node:sqlite';
 import { fixture, execute, changeBinary, modelServer, configureModel, repository, calls, answer } from '../../../test/fixtures/reviewer.mjs';
 
 const artifactBinary = resolve(import.meta.dirname, '../target/debug/review-artifact');
 
-export async function publicationFixture(t) {
+export async function publicationFixture(t, options = {}) {
   const f = fixture(root => t.after(() => rm(root, { recursive: true, force: true })));
   const repo = await repository(f);
   const git = async ref => (await execute('git', ['-C', repo, 'rev-parse', ref], { env: f.env })).stdout.trim();
@@ -15,7 +16,11 @@ export async function publicationFixture(t) {
   await writeFile(join(bin, 'gh'), PROVIDER, { mode: 0o755 });
   const env = { ...f.env, PATH: `${bin}:${f.env.PATH}`, PUBLICATION_FIXTURE: state, AR_ROOT: join(f.root, 'reviews') };
   const proposed = JSON.parse(answer);
+  if (options.line !== undefined) proposed.findings[0].line = options.line;
   proposed.findings.push({ ...proposed.findings[0], title: 'Second finding' });
+  for (let index = 2; index < (options.count ?? 2); index++) {
+    proposed.findings.push({ ...proposed.findings[0], title: `Finding ${index + 1}` });
+  }
   const { server } = modelServer(f.root, { answer: JSON.stringify(proposed), calls: calls(['scope.json', 'patch.diff'].map(path => ['read', { path }])) });
   await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
   let receipt;
@@ -34,6 +39,11 @@ export async function publicationFixture(t) {
   t.after(() => cli('stop', receipt.report).catch(() => {}));
   await cli('open', receipt.report, '--findings', receipt.record, '--no-browser');
   const [directory] = await readdir(env.AR_ROOT);
+  if (options.legacyHistory) {
+    await cli('stop', receipt.report);
+    await legacyHistory(join(env.AR_ROOT, directory, 'events.sqlite'), receipt.record);
+    await cli('open', receipt.report, '--findings', receipt.record, '--no-browser');
+  }
   const descriptor = JSON.parse(await readFile(join(env.AR_ROOT, directory, 'server.json'), 'utf8'));
   const api = async (route, body, headers = {}) => {
     const origin = `http://127.0.0.1:${descriptor.port}`;
@@ -41,8 +51,26 @@ export async function publicationFixture(t) {
       headers: { Authorization: `Bearer ${descriptor.capability}`, Origin: origin, 'Content-Type': 'application/json', ...headers },
       body: body ? JSON.stringify(body) : undefined });
   };
-  return { ...f, ...receipt, cli, descriptor, state, api,
+  const selection = async ids => {
+    const info = await (await api('/publication')).json();
+    return { account: info.account, base: info.base, head: info.head,
+      comments: ids.map(id => ({ id, body: info.items.find(item => item.id === id)?.body || 'Fixture comment' })) };
+  };
+  return { ...f, ...receipt, cli, descriptor, state, api, selection,
     provider: async () => JSON.parse(await readFile(state, 'utf8')) };
+}
+
+async function legacyHistory(file, record) {
+  const database = new DatabaseSync(file);
+  try {
+    const binding = JSON.parse(database.prepare('SELECT findings FROM configuration WHERE id=1').get().findings);
+    delete binding.publication_only;
+    database.prepare('UPDATE configuration SET findings=? WHERE id=1').run(JSON.stringify(binding));
+    const report = JSON.parse(await readFile(record, 'utf8'));
+    const event = { id: 'legacy-pr-accept-0001', action: 'accept', revision: report.html_digest,
+      message: 'Historical PR acceptance', annotations: [], finding: 'F1' };
+    database.prepare('INSERT INTO events(id,payload,action) VALUES(?,?,?)').run(event.id, JSON.stringify(event), event.action);
+  } finally { database.close(); }
 }
 
 const PROVIDER = `#!/usr/bin/env python3
@@ -61,7 +89,13 @@ elif '--method' in a:
  if p.get('lose'): sys.exit(7)
  print(json.dumps(review))
 elif endpoint.endswith('/reviews'): print(json.dumps(p['reviews']))
+elif endpoint.startswith('repos/fixture/repo/pulls/comments/'):
+ identifier=int(endpoint.rsplit('/',1)[1]); source=p['reviews'][0]['comments'][identifier-100]
+ comment=dict(source,id=identifier,pull_request_review_id=42,original_line=source['line'],original_commit_id=p['reviews'][0]['commit_id'])
+ comment.update(p.get('detail',{})); p['detail_reads']=p.get('detail_reads',0)+1; json.dump(p,open(path,'w'))
+ print(json.dumps(comment))
 elif endpoint.endswith('/comments'):
- print(json.dumps([dict(c,original_line=c['line'],original_commit_id=p['reviews'][0]['commit_id']) for c in p['reviews'][0]['comments']]))
+ # The real per-review endpoint returns legacy diff positions, not line/side fields.
+ print(json.dumps([dict(id=100+i,pull_request_review_id=42,path=c['path'],body=c['body'],position=i+1,original_commit_id=p['reviews'][0]['commit_id']) for i,c in enumerate(p['reviews'][0]['comments'])]))
 else: sys.exit(9)
 `;

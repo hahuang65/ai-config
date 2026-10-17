@@ -75,7 +75,7 @@ test("installed code and work-log skills return from checkpoints to the shared c
   });
 });
 
-test("installed change-review skills load one source-owned finding-decision protocol", () => {
+test("installed change-review skills load one source-owned local and PR interaction protocol", () => {
   withInstalledInstructions((home, source) => {
     for (const harness of harnesses) {
       const entry = realpathSync(join(home, harness, "skills/review-change/SKILL.md"));
@@ -94,6 +94,11 @@ test("installed change-review skills load one source-owned finding-decision prot
       expect(caller).not.toContain("finding_review.needs_review");
       expect(caller).toContain("coach mode");
       expect(caller).toContain("Never rewrite the retained report");
+      expect(caller).toContain("Do not repair PR findings in this workflow");
+      for (const requirement of ["publication_only", "PR reports never authorize repairs", "one Publish button below the document",
+        "verbatim", "There is no separate Preview step", "edit publication drafts"]) {
+        expect(protocol).toContain(requirement);
+      }
     }
   });
 });

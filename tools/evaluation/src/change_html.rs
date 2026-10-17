@@ -119,7 +119,7 @@ fn evidence(html: &mut String, report: &Report) {
     for uncertainty in &report.uncertainties {
         html.push_str(&format!("<li>{}</li>", escape(uncertainty)));
     }
-    html.push_str("</ul></section><footer>Publication requires a separate exact preview and human confirmation. GitHub comments never approve a pull request.</footer></main></body></html>");
+    html.push_str("</ul></section><footer>Publication requires human confirmation of the exact comment text and destinations. GitHub comments never approve a pull request.</footer></main></body></html>");
 }
 
 const HEADER: &str = r#"<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; base-uri 'none'; form-action 'none'"><title>Change review</title><style>

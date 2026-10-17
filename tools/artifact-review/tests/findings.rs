@@ -2,6 +2,126 @@ mod support;
 use serde_json::json;
 use support::Review;
 
+fn legacy_state(
+    review: &Review,
+    revision: &str,
+) -> (rusqlite::Connection, String, serde_json::Value) {
+    let directory = std::fs::read_dir(review.root.join("state"))
+        .unwrap()
+        .next()
+        .unwrap()
+        .unwrap()
+        .path();
+    let database = rusqlite::Connection::open(directory.join("events.sqlite")).unwrap();
+    let encoded: String = database
+        .query_row("SELECT findings FROM configuration WHERE id=1", [], |row| {
+            row.get(0)
+        })
+        .unwrap();
+    let mut legacy: serde_json::Value = serde_json::from_str(&encoded).unwrap();
+    legacy.as_object_mut().unwrap().remove("publication_only");
+    database
+        .execute(
+            "UPDATE configuration SET findings=?1 WHERE id=1",
+            [legacy.to_string()],
+        )
+        .unwrap();
+    let event = json!({"id":"legacy-pr-accept-0001","action":"accept","revision":revision,
+        "message":"Historical decision","annotations":[],"finding":"F1"})
+    .to_string();
+    database
+        .execute(
+            "INSERT INTO events(id,payload,action) VALUES('legacy-pr-accept-0001',?1,'accept')",
+            [&event],
+        )
+        .unwrap();
+    (database, event, legacy)
+}
+
+#[test]
+fn legacy_pr_configuration_is_upgraded_without_rewriting_saved_decisions() {
+    let review = Review::new();
+    let mut record: serde_json::Value =
+        serde_json::from_slice(&std::fs::read(&review.record).unwrap()).unwrap();
+    record["scope"] = json!({"pull_request":{"number":7}});
+    let original = record.to_string();
+    std::fs::write(&review.record, &original).unwrap();
+    assert!(review.open().status.success());
+    let revision = review.poll()["current_revision"]
+        .as_str()
+        .unwrap()
+        .to_owned();
+    assert!(
+        review
+            .command(&["stop", review.file.to_str().unwrap()])
+            .status
+            .success()
+    );
+    let (database, event, legacy) = legacy_state(&review, &revision);
+    assert!(
+        review.open().status.success(),
+        "The exact retained PR must remain reopenable"
+    );
+    let page = review.poll();
+    assert_eq!(page["finding_review"]["publication_only"], true);
+    assert_eq!(page["finding_review"]["items"][0]["decision"], "accept");
+    assert_eq!(page["events"].as_array().unwrap().len(), 1);
+    assert_eq!(page["status"], "open");
+    assert_eq!(review.request("/findings", Some(&legacy)).status(), 409);
+    assert_eq!(review.submit("accept", "F2", &revision).status(), 409);
+    assert_eq!(std::fs::read_to_string(&review.record).unwrap(), original);
+    let preserved: String = database
+        .query_row(
+            "SELECT payload FROM events WHERE id='legacy-pr-accept-0001'",
+            [],
+            |row| row.get(0),
+        )
+        .unwrap();
+    assert_eq!(preserved, event);
+}
+
+#[test]
+fn pull_request_reviews_allow_feedback_but_never_authorize_repairs() {
+    let review = Review::new();
+    let mut record: serde_json::Value =
+        serde_json::from_slice(&std::fs::read(&review.record).unwrap()).unwrap();
+    record["scope"] = json!({"kind":"pull-request", "pull_request":{"number":7}});
+    std::fs::write(&review.record, record.to_string()).unwrap();
+    assert!(review.open().status.success());
+    let page = review.poll();
+    assert_eq!(page["finding_review"]["publication_only"], true);
+    assert_eq!(page["status"], "open");
+    let revision = page["current_revision"].as_str().unwrap();
+    assert_eq!(review.submit("accept", "F1", revision).status(), 409);
+    assert_eq!(review.submit("reject", "F2", revision).status(), 409);
+    assert_eq!(
+        review
+            .submit_payload(
+                &json!({"id":"pr-feedback-not-a-decision", "action":"feedback",
+        "revision":revision,"message":"Please clarify the proposed comment.","annotations":[]})
+            )
+            .status(),
+        200
+    );
+    assert_eq!(
+        review.poll()["finding_review"]["items"][0]["decision"],
+        json!(null)
+    );
+}
+
+#[test]
+fn an_empty_pr_review_keeps_agent_feedback_open() {
+    let review = Review::new();
+    let mut record: serde_json::Value =
+        serde_json::from_slice(&std::fs::read(&review.record).unwrap()).unwrap();
+    record["scope"] = json!({"pull_request":{"number":7}});
+    record["findings"] = json!([]);
+    std::fs::write(&review.record, record.to_string()).unwrap();
+    assert!(review.open().status.success());
+    assert_eq!(review.poll()["status"], "open");
+    assert_eq!(review.poll()["finding_review"]["publication_only"], true);
+}
+
 #[test]
 fn changing_the_report_blocks_new_decisions_without_erasing_earlier_authority() {
     let review = Review::new();

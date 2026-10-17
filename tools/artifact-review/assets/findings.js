@@ -13,12 +13,16 @@ class FindingControls {
 
   update(review) {
     this.review = review || null;
+    if (this.review?.publication_only && this.rows.size) {
+      for (const { row } of this.rows.values()) row.remove();
+      this.rows.clear(); this.document = null;
+    }
     const title = this.review ? 'Change review' : 'Review artifact';
     document.title = title;
     document.querySelector('.toolbar strong').textContent = title;
     document.querySelector('#approve').hidden = !!this.review;
     document.querySelector('#decline').textContent = this.review ? 'End review' : 'Decline';
-    document.querySelector('#finding-policy').hidden = !this.review;
+    document.querySelector('#finding-policy').hidden = !this.review || this.review.publication_only;
   }
 
   mount() {
@@ -91,7 +95,7 @@ class FindingControls {
   }
 
   controls(blocked, ready, status) {
-    if (!this.review) return null;
+    if (!this.review || this.review.publication_only) return null;
     this.mount();
     const stale = this.review.needs_review || this.frame.dataset.revision !== this.review.revision;
     const missing = this.rows.size !== this.review.items.length;

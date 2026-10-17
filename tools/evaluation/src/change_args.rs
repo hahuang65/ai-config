@@ -26,7 +26,7 @@ Options: --repo DIR (default current directory), --path LITERAL_RELATIVE_PATH,
 JSON mode is noninteractive and never opens a browser or posts.
 An optional --intent TEXT supplies explicit acceptance context for automation.
 Private, binary, symlink and submodule evidence is excluded and reported.
-Snapshots and external calls are bounded; source code is never executed.
+External command outputs and runtimes are bounded; source code is never executed.
 Exit codes: 0 completed, 1 operational failure, 2 invalid invocation.
 ";
 

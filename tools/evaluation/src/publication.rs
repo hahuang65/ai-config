@@ -1,19 +1,21 @@
 //! Browser publication is separate from repair decisions and bound to a signed exact preview.
 use crate::{
-    change_post, change_provider as provider, change_selection,
+    change_post, change_provider as provider,
     change_store::{self, Store},
     change_types::Report,
     paths::Paths,
+    publication_comments,
 };
 use anyhow::{Context, Result, ensure};
 use serde::{Deserialize, Serialize};
 use serde_json::{Value, json};
 use sha2::{Digest, Sha256};
 use std::{
-    collections::BTreeSet,
     path::{Path, PathBuf},
     time::{SystemTime, UNIX_EPOCH},
 };
+
+pub use crate::publication_comments::{Account, Comment, Selection};
 
 struct Selected {
     store: Store,
@@ -143,11 +145,23 @@ fn status(selected: &Selected) -> Result<Value> {
         state = "uncertain";
     }
     Ok(json!({"available": true, "status": state, "url": pr.url,
-        "items": report.findings.iter().map(|finding| json!({"id":finding.id,"title":finding.proposal.title})).collect::<Vec<_>>()}))
+        "base":report.scope.base,"head":report.scope.head,
+        "items": report.findings.iter().map(|finding| {
+            let p = &finding.proposal;
+            json!({"id":finding.id,"title":p.title,"body":p.body,"path":p.path,"line":p.line,
+                "side":p.side,"inline":finding.inline && p.line.is_some_and(|line| line > 0)})
+        }).collect::<Vec<_>>()}))
 }
 
 pub fn information(html: &Path, digest: &str, revision: &str) -> Result<Value> {
-    status(&selected(html, digest, revision)?)
+    let selected = selected(html, digest, revision)?;
+    let mut state = status(&selected)?;
+    if state["status"] == "ready" && !selected.report.findings.is_empty() {
+        provider::check(&selected.report.scope)?;
+        let (id, login) = actor(&selected.report)?;
+        state["account"] = json!({"id":id,"login":login});
+    }
+    Ok(state)
 }
 
 fn actor(report: &Report) -> Result<(u64, String)> {
@@ -167,7 +181,7 @@ fn now() -> Result<u64> {
     Ok(SystemTime::now().duration_since(UNIX_EPOCH)?.as_secs())
 }
 
-pub fn prepare(html: &Path, digest: &str, revision: &str, ids: &[String]) -> Result<Value> {
+pub fn prepare(html: &Path, digest: &str, revision: &str, selection: &Selection) -> Result<Value> {
     let selected = selected(html, digest, revision)?;
     let _lock = change_post::lock(&selected.directory)?;
     let state = status(&selected)?;
@@ -175,13 +189,12 @@ pub fn prepare(html: &Path, digest: &str, revision: &str, ids: &[String]) -> Res
         state["available"] == true && state["status"] == "ready",
         "Report is not available for a new publication"
     );
-    let unique = selection(&selected.report, ids)?;
     ensure!(
         std::fs::read_dir(&selected.directory)?.take(129).count() < 128,
         "Preview limit reached for this report"
     );
     let token = format!("{:032x}", rand::random::<u128>());
-    let preview = preview(&selected, &unique, &token)?;
+    let preview = preview(&selected, selection, &token)?;
     selected.store.save_object(
         &selected.directory,
         &format!("preview-{token}.json"),
@@ -194,23 +207,22 @@ pub fn prepare(html: &Path, digest: &str, revision: &str, ids: &[String]) -> Res
     )
 }
 
-fn selection(report: &Report, ids: &[String]) -> Result<BTreeSet<String>> {
-    let unique: BTreeSet<_> = ids.iter().cloned().collect();
+fn preview(selected: &Selected, selection: &Selection, token: &str) -> Result<Preview> {
     ensure!(
-        !unique.is_empty()
-            && unique.len() == ids.len()
-            && unique.len() <= 50
-            && unique
-                .iter()
-                .all(|id| report.findings.iter().any(|finding| &finding.id == id)),
-        "Select one or more known findings without duplicates"
+        selection.base == selected.report.scope.base
+            && selection.head == selected.report.scope.head,
+        "Reviewed revisions do not match the displayed publication context"
     );
-    Ok(unique)
-}
-
-fn preview(selected: &Selected, unique: &BTreeSet<String>, token: &str) -> Result<Preview> {
     provider::check(&selected.report.scope)?;
     let (actor, login) = actor(&selected.report)?;
+    ensure!(
+        selection.account
+            == Account {
+                id: actor,
+                login: login.clone()
+            },
+        "GitHub account changed; inspect the publication context again"
+    );
     let marker = format!(
         "review-change-eval:{}:{token}",
         selected
@@ -224,7 +236,7 @@ fn preview(selected: &Selected, unique: &BTreeSet<String>, token: &str) -> Resul
         report_digest: change_post::digest(&selected.report)?,
         actor,
         login,
-        payload: change_selection::payload(&selected.report, unique, &marker),
+        payload: publication_comments::payload(&selected.report, selection, &marker)?,
         marker,
         expires: now()? + 600,
     })

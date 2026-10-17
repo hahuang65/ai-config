@@ -1,6 +1,6 @@
 ---
 name: review-artifact
-description: Review local HTML with annotations and revision-bound approval, or collect per-finding Accept/Reject repair decisions for a change-review report.
+description: Review local HTML with annotations and revision-bound approval, collect local finding repair decisions, or select editable inline PR comments for human-confirmed publication.
 ---
 
 # Review artifact
@@ -51,7 +51,9 @@ Do not advance another workflow merely because the browser closed or an operatio
 ## Finding-review mode
 
 Use `open REPORT.html --findings REPORT.json` only with the matching retained change-review record.
+The record selects local repair mode or PR publication-only mode.
 Check `open --help` for support; an unavailable mode is not permission to use ordinary Approve as repair authorization.
+The following repair-decision rules apply only to local reports.
 Only the human chooses Accept/Reject in the review shell; never submit decision events through agent tools.
 Accept immediately authorizes repair of that exact finding; Reject and undecided findings authorize nothing.
 The shell replaces whole-document Approve with Accept/Reject inside each rendered finding; End review stops new decisions without undoing saved accepts.
@@ -62,12 +64,13 @@ A comment alone grants no repair authority.
 A saved decision cannot be overwritten, including by reopening the same report.
 Explicit chat clarification is required to revise a decision; a later rejection cannot undo repairs already performed.
 
-`wait` and `poll` use the same cursor contract and include `finding_review` with `revision`, `report_digest`, `items` (ID, title, decision), and `needs_review`.
+`wait` and `poll` use the same cursor contract and include `finding_review` with `publication_only`, `revision`, `report_digest`, `items` (ID, title, decision), and `needs_review`.
+When `publication_only` is true, PR selections and historical decisions grant no repair authority; keep receiving feedback until End review, even after publication or with zero findings.
 `accept` and `reject` events carry `finding` and `revision`; undecided items have a null decision.
 `status: "decided"` means every finding has a decision, not that every finding was accepted or the code is approved.
 An empty findings list grants no repair authority.
 The ordinary top-level approval fields still describe whole-document approval, not finding decisions.
-Before acting on an accept, require `finding_review.needs_review` false, matching event/current/bound revisions, and the retained JSON's SHA-256 equal to `finding_review.report_digest`.
+Before acting on a local accept, require `finding_review.publication_only` false, `finding_review.needs_review` false, matching event/current/bound revisions, and the retained JSON's SHA-256 equal to `finding_review.report_digest`.
 Historical accepts remain in the log after file changes but do not authorize repairs against a different report.
 The calling workflow owns mapping IDs to repairs, checking source relevance, avoiding replayed repairs, and obtaining a fresh review after changes.
 Keep the old report immutable; new findings require a new retained report and new decisions.
@@ -75,10 +78,15 @@ No finding decision authorizes staging, committing, installation, delivery, or p
 
 ## Publication confirmation
 
-For a retained pull-request change report, the shell provides publication controls independently of finding-repair decisions.
-Only the human selects comments, requests the exact account/PR/revisions/request preview, and clicks Publish comments as final publication confirmation.
-A changed selection invalidates that preview; stale reports, changed PR scope or account, and expired previews are refused before a new submission.
-Model tools must never choose publication findings, call publication endpoints, synthesize confirmation clicks, or treat a repair Accept as publication permission.
+PR reports never authorize repairs and show no Accept/Reject controls.
+The runtime adds unchecked checkboxes and prefilled editable comments inside the corresponding cards, with one Publish button below the document; the sidebar stays for agent feedback.
+Each comment starts from the finding explanation without adding internal finding IDs.
+Only checked comments are sent, verbatim, to their immutable verified file, side and line; unverified locations cannot be selected or posted as summary comments.
+Selections and edits alone do not publish, and local decision notes are not publication comments.
+Only the human selects and edits comments, inspects the visible text, destinations, account and PR context, then clicks Publish as the final confirmation.
+There is no separate Preview step; the backend still signs preparation and rechecks the exact scope and account before mutation.
+Stale reports, changed PR scope or account, and expired preparations are refused before a new submission.
+Model tools must never choose publication findings, edit publication drafts, call publication endpoints, synthesize confirmation clicks, or treat historical PR Accept events as repair or publication permission.
 Ordinary artifact Approve, End review, silence, and browser closure do not publish.
 An uncertain outcome is reconciled from the same report with Check publication status, never blindly resubmitted.
 This same-user browser capability is not proof against arbitrary code running as that OS user.

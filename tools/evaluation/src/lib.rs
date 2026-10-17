@@ -21,6 +21,7 @@ pub mod consult;
 mod option_pairs;
 pub mod paths;
 pub mod publication;
+mod publication_comments;
 pub mod reviewer;
 mod reviewer_claude_stream;
 mod reviewer_diagnostics;
