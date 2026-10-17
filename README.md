@@ -15,7 +15,7 @@ Its [harness inventory](docs/harness-tool-inventory.md) distinguishes model tool
 
 The installed package provides:
 
-- Shared baseline instructions and guarded tool-call adapters for both harnesses.
+- Shared baseline instructions and guarded tool-call adapters for both harnesses, using tree-sitter-bash for command syntax and documented [dangerous-command boundaries and limits](docs/command-guards.md).
 - The familiar two-line Claude and Pi status displays and Catppuccin themes, without agentmemory.
 - Claude's feature-disable settings and a [shared language-server catalogue](docs/language-servers.md) for Python, Ruby, Lua, Go, Shell, Terraform, TypeScript/JavaScript, and Rust.
   Claude consumes a generated language-server-only plugin; Pi provides an on-demand `lsp` tool for navigation and diagnostics.
@@ -84,6 +84,8 @@ make test
 
 `make build` creates the Pi guard, status-footer, worktree, and LSP bundles, the shared catalogue's Claude plugin projection, and Rust release binaries; it **does not provision tools or install harness resources**.
 Cargo build, test, and lint commands retain `--locked` but may fetch missing dependencies from the network.
+The guard-parser build likewise restores frozen Bun library dependencies with lifecycle scripts disabled and regenerates the local WASM/runtime/license assets in `guard/vendor/`.
+`package.json` and `bun.lock` pin web-tree-sitter and tree-sitter-bash; ordinary harness execution needs neither network access nor `node_modules` for parsing.
 Restricted-reviewer offline flags and synthetic-provider isolation are unchanged.
 `make lint` checks that generated Claude LSP definitions still match the catalogue.
 Tests use disposable homes and fake providers, not the live harness state.
@@ -102,7 +104,7 @@ After a disposable-home rehearsal and **separate approval for a live home**, run
 `install.sh` runs `mise install` and then `mise exec -- make build` in its own checkout before ownership validation, link placement, settings merging, and rollback.
 It works when invoked by path from another directory and stops before resource installation if provisioning or building fails, preserving that command's exit status.
 It requires Bash, mise, jq, GNU coreutils on PATH, make, iconv, and find; it does not provision these platform prerequisites.
-Mise provisions active configured tools, including global tools and language servers, and Cargo may download locked dependencies.
+Mise provisions active configured tools, including global tools and language servers; Cargo and Bun may download locked build dependencies.
 Provisioning/build caches are not rolled back by the later resource transaction.
 Missing prerequisites produce a clear error before provisioning, building, or installing resources.
 The system find on macOS is supported; GNU findutils is not required.

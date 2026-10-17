@@ -1,6 +1,7 @@
-import path from "node:path";
-
-import { anyPipeline, tokenize } from "./bash-command";
+import { anyPipeline, inputRedirects, wordValue } from "./bash-command";
+import { invocation } from "./command-invocations";
+import { named } from "./shell-parser";
+import { evaluationProgram, readsProgramFromStdin } from "./interpreter-input";
 
 const NODE_INTERPRETERS = new Set(["node", "bun"]);
 const RUBY_PERL_INTERPRETERS = new Set(["ruby", "perl"]);
@@ -17,60 +18,31 @@ export function inlineProgramAccessesProtectedState(command: string): boolean {
   }));
 }
 
-function inlineProgramSource(stage: string): string | null {
-  const tokens = tokenize(stage);
-  const executableIndex = commandExecutableIndex(tokens);
-  if (executableIndex < 0) return null;
-  const executable = path.basename(tokens[executableIndex]);
+export function inlineProgramSource(stage: string): string | null {
+  const [executable, ...args] = invocation(stage);
   if (!isSupportedInterpreter(executable)) return null;
-  const heredoc = heredocBody(stage);
-  if (heredoc !== null) return heredoc;
-  const hereString = /<<<\s*([\s\S]+)$/.exec(stage);
-  if (hereString) return hereString[1];
-  return flaggedProgram(executable, tokens.slice(executableIndex + 1));
-}
-
-function flaggedProgram(executable: string, args: string[]): string | null {
-  for (let index = 0; index < args.length; index += 1) {
-    const argument = args[index];
-    const assignment = /^(?:--eval|--print|-c|-e|-p)=(.*)$/s.exec(argument);
-    if (assignment && flagSupported(executable, argument.slice(0, argument.indexOf("=")))) return assignment[1];
-    if (flagSupported(executable, argument)) return args[index + 1] ?? "";
-    if (RUBY_PERL_INTERPRETERS.has(executable) && /^-[A-Za-z]*[eE][A-Za-z]*$/.test(argument)) {
-      return args[index + 1] ?? "";
-    }
-    if (/^python\d*$/.test(executable) && argument.startsWith("-c") && argument.length > 2) {
-      return argument.slice(2);
+  const flagged = evaluationProgram([executable, ...args]);
+  if (flagged !== null) return flagged;
+  if (!readsProgramFromStdin([executable, ...args])) return null;
+  for (const redirect of inputRedirects(stage).slice(-1)) {
+    const body = named(redirect).find((node) => node.type === "heredoc_body");
+    if (redirect.type === "heredoc_redirect" && body) return body.text;
+    if (redirect.type === "herestring_redirect") {
+      const value = named(redirect).find((node) => node.type !== "file_descriptor");
+      if (value) return wordValue(value);
     }
   }
   return null;
 }
 
-function flagSupported(executable: string, flag: string): boolean {
-  if (NODE_INTERPRETERS.has(executable)) return ["-e", "--eval", "-p", "--print"].includes(flag);
-  if (/^python\d*$/.test(executable)) return flag === "-c";
-  return RUBY_PERL_INTERPRETERS.has(executable) && ["-e", "-E"].includes(flag);
-}
-
 function pipedProgramSource(stages: string[], interpreterIndex: number): string | null {
   if (interpreterIndex === 0) return null;
-  const interpreterTokens = tokenize(stages[interpreterIndex]);
-  const executableIndex = commandExecutableIndex(interpreterTokens);
-  if (executableIndex < 0 || !isSupportedInterpreter(path.basename(interpreterTokens[executableIndex]))) return null;
-  const args = interpreterTokens.slice(executableIndex + 1);
-  if (args.length > 0 && !args.includes("-")) return null;
-  const producerTokens = tokenize(stages[interpreterIndex - 1]);
-  const producerIndex = commandExecutableIndex(producerTokens);
-  if (producerIndex < 0 || !SHELL_INPUT_PRODUCERS.has(path.basename(producerTokens[producerIndex]))) return null;
-  return producerTokens.slice(producerIndex + 1).filter((token) => !token.startsWith("-")).join(" ");
-}
-
-function heredocBody(stage: string): string | null {
-  const marker = /<<-?\s*(['"]?)([A-Za-z_][A-Za-z0-9_]*)\1[^\n]*\n/.exec(stage);
-  if (!marker) return null;
-  const bodyStart = marker.index + marker[0].length;
-  const terminator = new RegExp(`(?:^|\\n)${escapeExpression(marker[2])}(?:\\n|$)`).exec(stage.slice(bodyStart));
-  return terminator ? stage.slice(bodyStart, bodyStart + terminator.index) : stage.slice(bodyStart);
+  const [executable, ...args] = invocation(stages[interpreterIndex]);
+  if (!isSupportedInterpreter(executable) || !readsProgramFromStdin([executable, ...args])
+    || inputRedirects(stages[interpreterIndex]).length) return null;
+  const [producer, ...input] = invocation(stages[interpreterIndex - 1]);
+  if (!SHELL_INPUT_PRODUCERS.has(producer)) return null;
+  return input.filter((token) => !token.startsWith("-")).join(" ");
 }
 
 function sourceAccessesProtectedState(source: string): boolean {
@@ -114,18 +86,4 @@ function isSupportedInterpreter(executable: string): boolean {
   return NODE_INTERPRETERS.has(executable)
     || RUBY_PERL_INTERPRETERS.has(executable)
     || /^python\d*$/.test(executable);
-}
-
-function commandExecutableIndex(tokens: string[]): number {
-  let index = tokens.findIndex((token) => !/^[A-Za-z_][A-Za-z0-9_]*=/.test(token));
-  while (index >= 0 && ["command", "env"].includes(path.basename(tokens[index]))) {
-    index += 1;
-    while (index < tokens.length && (tokens[index].startsWith("-") || /^[A-Za-z_][A-Za-z0-9_]*=/.test(tokens[index]))) index += 1;
-    if (index >= tokens.length) return -1;
-  }
-  return index;
-}
-
-function escapeExpression(value: string): string {
-  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }

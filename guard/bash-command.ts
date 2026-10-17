@@ -1,192 +1,149 @@
-// bash-command.ts
-//
-// A small deep module: walk a bash command string into the structure the
-// guardrail detectors query. All the quote / paren / separator / substitution
-// complexity lives here once — `anyPipeline` visits each pipeline's ordered
-// stages across every statement and recursively inside process/command
-// substitutions, short-circuiting on the first match. Detectors become
-// predicates over stages; `tokenize` and `leadingWord` are exposed for them.
-//
-// Replaces the per-detector copies of split-then-tokenize-then-recurse that
-// previously lived in guard-core.ts (one traversal, not three).
+// Bash structure comes only from tree-sitter-bash. No split/regex shell parser fallback.
+import { posix } from "node:path";
+import { descendants, field, fields, named, parseShell, type ShellNode } from "./shell-parser";
 
-export interface TokenizedStage {
-  malformed: boolean;
-  tokens: string[];
+/** Decode a syntax-classified shell word; expansions retain their spelling, not a guessed value. */
+export function wordValue(node: ShellNode): string {
+  if (node.type === "raw_string") return node.text.slice(1, -1);
+  if (node.type === "ansi_c_string") return ansiValue(node.text.slice(2, -1));
+  if (node.type === "command_name") return named(node).map(wordValue).join("");
+  if (node.type === "concatenation") return node.children.map(wordValue).join("");
+  if (node.type === "string" || node.type === "translated_string") return named(node).map(wordValue).join("");
+  if (node.type === "string_content") return node.text.replace(/\\([$`"\\\n])/g, (_match, character) => character === "\n" ? "" : character);
+  if (node.type === "word") return node.text.replace(/\\([\s\S])/g, (_match, character) => character === "\n" ? "" : character);
+  return node.text;
 }
 
-type ShellQuote = "double" | "none" | "single" | "backtick";
-
-const DOUBLE_QUOTE_ESCAPES = new Set(["$", "`", '"', "\\", "\n"]);
-
-function pushToken(tokens: string[], current: string, started: boolean): void {
-  if (started) tokens.push(current);
+function ansiValue(value: string): string {
+  const escapes: Record<string, string> = { a: "\x07", b: "\b", e: "\x1b", E: "\x1b", f: "\f", n: "\n", r: "\r", t: "\t", v: "\v", "\\": "\\", "'": "'", '"': '"' };
+  return value.replace(/\\(x[0-9a-fA-F]{1,2}|u[0-9a-fA-F]{1,4}|U[0-9a-fA-F]{1,8}|[0-7]{1,3}|[\s\S])/g, (match, escape: string) => {
+    if (escape in escapes) return escapes[escape];
+    if (/^[xuU]/.test(escape)) {
+      const code = Number.parseInt(escape.slice(1), 16);
+      return code <= 0x10ffff ? String.fromCodePoint(code) : match;
+    }
+    if (/^[0-7]/.test(escape)) return String.fromCharCode(Number.parseInt(escape, 8));
+    return match;
+  });
 }
 
-/** Shell-aware word split and escape normalization of a single command stage. */
-export function tokenizeDetailed(stage: string): TokenizedStage {
-  const tokens: string[] = [];
-  let current = "";
-  let started = false;
-  let quote: ShellQuote = "none";
-  let malformed = false;
-  for (let index = 0; index < stage.length; index += 1) {
-    const character = stage[index];
-    if (quote === "single") {
-      if (character === "'") quote = "none";
-      else current += character;
-      continue;
-    }
-    if (quote === "double" && character === '"') {
-      quote = "none";
-      continue;
-    }
-    if (character === "\\" && quote !== "backtick") {
-      const next = stage[index + 1];
-      if (next === undefined) {
-        current += character;
-        malformed = true;
-      } else if (quote === "none" || DOUBLE_QUOTE_ESCAPES.has(next)) {
-        if (next !== "\n") current += next;
-        started = true;
-        index += 1;
-      } else {
-        current += character;
-      }
-      continue;
-    }
-    if (quote === "none" && character === "'") {
-      quote = "single";
-      started = true;
-    } else if (quote === "none" && character === '"') {
-      quote = "double";
-      started = true;
-    } else if (quote === "none" && /\s/.test(character)) {
-      pushToken(tokens, current, started);
-      current = "";
-      started = false;
+export function literalWord(node: ShellNode): string | null {
+  if (["expansion", "simple_expansion", "command_substitution", "process_substitution", "arithmetic_expansion", "brace_expression", "extglob_pattern"].includes(node.type)) return null;
+  if (node.type === "word" && /[*?\[{}~]/.test(node.text.replace(/\\./g, ""))) return null;
+  if (node.children.some((child) => child.named && literalWord(child) === null)) return null;
+  const value = wordValue(node);
+  return value.includes("\0") ? null : value;
+}
+
+export function stageNode(stage: string): ShellNode | undefined {
+  const statements = named(parseShell(stage)).filter((node) => node.type !== "comment");
+  return statements.length === 1 ? statements[0] : undefined;
+}
+
+export function commandNode(node: ShellNode | undefined): ShellNode | undefined {
+  if (!node) return undefined;
+  if (node.type === "command") return node;
+  if (node.type === "redirected_statement") return commandNode(field(node, "body"));
+  return undefined;
+}
+
+export function commandWords(node: ShellNode): ShellNode[] {
+  const command = commandNode(node);
+  if (!command) return node.type === "variable_assignment" ? [node] : [];
+  const name = field(command, "name");
+  return [...named(command).filter((child) => child.type === "variable_assignment"),
+    ...(name ? [name] : []), ...fields(command, "argument")];
+}
+
+export function stageWords(stage: string): ShellNode[] {
+  const node = stageNode(stage);
+  return node ? commandWords(node) : [];
+}
+
+export const tokenize = (stage: string): string[] => stageWords(stage).map(wordValue);
+
+export function splitStatements(command: string): string[] {
+  const statements = (node: ShellNode): ShellNode[] => node.type === "program" || node.type === "list"
+    ? named(node).flatMap(statements) : node.type === "comment" ? [] : [node];
+  return statements(parseShell(command)).map((node) => node.text);
+}
+
+export function redirects(stage: string): ShellNode[] {
+  const node = stageNode(stage);
+  if (!node) return [];
+  return [...fields(node, "redirect"), ...fields(commandNode(node) ?? node, "redirect")]
+    .filter((redirect, index, all) => all.indexOf(redirect) === index)
+    .sort((left, right) => left.start - right.start);
+}
+
+export function descriptorPath(value: string): string | undefined {
+  const path = posix.normalize(value);
+  if (path === "/dev/stdin") return "0";
+  if (path === "/dev/stdout") return "1";
+  if (path === "/dev/stderr") return "2";
+  return /^\/(?:dev\/fd|proc\/self\/fd)\/(\d+)$/.exec(path)?.[1];
+}
+
+const REDIRECT_OPERATORS = new Set(["<", "<>", "<&", ">", ">>", ">|", ">&", "&>", "&>>", "<<", "<<-", "<<<"]);
+
+/** Descriptor copies capture their source at that point, not its later value. */
+function effectiveRedirect(stage: string, descriptor: string): ShellNode | undefined {
+  const streams = new Map<string, ShellNode | undefined>();
+  for (const node of redirects(stage)) {
+    const operator = node.children.find((child) => REDIRECT_OPERATORS.has(child.type))?.type ?? "";
+    const target = field(node, "descriptor")?.text ?? (operator.startsWith("<") ? "0" : "1");
+    const destination = field(node, "destination");
+    const value = destination ? literalWord(destination) : null;
+    const duplicate = ["<&", ">&"].includes(operator) && value?.match(/^(\d+)(-?)$/);
+    if (duplicate) {
+      streams.set(target, streams.get(duplicate[1]));
+      if (duplicate[2]) streams.set(duplicate[1], node);
+    } else if (value !== null && descriptorPath(value) !== undefined) {
+      streams.set(target, streams.get(descriptorPath(value)!));
     } else {
-      current += character;
-      started = true;
+      streams.set(target, node);
+      if (["&>", "&>>"].includes(operator)) streams.set("2", node);
     }
   }
-  pushToken(tokens, current, started);
-  return { malformed: malformed || quote !== "none", tokens };
+  return streams.get(descriptor);
 }
 
-/** Shell-aware word split of a single command stage. */
-export function tokenize(stage: string): string[] {
-  return tokenizeDetailed(stage).tokens;
+export function inputRedirects(stage: string): ShellNode[] {
+  const input = effectiveRedirect(stage, "0");
+  return input ? [input] : [];
 }
 
-/** First non-env-assignment word of a stage (skips `http_proxy=…` prefixes). */
-export function leadingWord(stage: string): string {
-  for (const token of tokenize(stage)) {
-    if (/^[A-Za-z_][A-Za-z0-9_]*=/.test(token)) continue;
-    return token;
-  }
-  return "";
+export function stdoutRedirects(stage: string): string[] {
+  const node = effectiveRedirect(stage, "1");
+  if (!node?.children.some((child) => [">", ">>", ">|", "&>", "&>>"].includes(child.type))) return [];
+  const destination = field(node, "destination");
+  return destination ? [wordValue(destination)] : [];
 }
 
-/** Inner contents of process/command substitutions and backticks. */
-function extractSubstitutions(command: string): string[] {
-  const found: string[] = [];
-  const patterns = [
-    /[<>]\(([^()]*(?:\([^()]*\)[^()]*)*)\)/g, // <(…) >(…)
-    /\$\(([^()]*(?:\([^()]*\)[^()]*)*)\)/g,    // $(…)
-    /`([^`]+)`/g,                               // `…`
-  ];
-  for (const re of patterns) {
-    let match = re.exec(command);
-    while (match !== null) {
-      found.push(match[1]);
-      match = re.exec(command);
-    }
-  }
-  return found;
-}
-
-function escapedPairLength(command: string, index: number, quote: ShellQuote): number {
-  if (command[index] !== "\\" || quote === "single") return 0;
-  const next = command[index + 1];
-  if (next === undefined) return 0;
-  if (quote === "none" || quote === "backtick" || DOUBLE_QUOTE_ESCAPES.has(next)) return 2;
-  return 0;
-}
-
-function splitShell(command: string, separatorLength: (command: string, index: number) => number): string[] {
-  const out: string[] = [];
-  let current = "";
-  let parentheses = 0;
-  let quote: ShellQuote = "none";
-  for (let index = 0; index < command.length; index += 1) {
-    const character = command[index];
-    const escapedLength = escapedPairLength(command, index, quote);
-    if (escapedLength > 0) {
-      current += command.slice(index, index + escapedLength);
-      index += escapedLength - 1;
-      continue;
-    }
-    if (quote === "single") {
-      if (character === "'") quote = "none";
-    } else if (quote === "double") {
-      if (character === '"') quote = "none";
-    } else if (quote === "backtick") {
-      if (character === "`") quote = "none";
-    } else if (character === "'") quote = "single";
-    else if (character === '"') quote = "double";
-    else if (character === "`") quote = "backtick";
-    else if (character === "(") parentheses += 1;
-    else if (character === ")") parentheses -= 1;
-    if (quote !== "none" || parentheses !== 0) {
-      current += character;
-      continue;
-    }
-    const length = separatorLength(command, index);
-    if (length === 0) current += character;
-    else {
-      out.push(current);
-      current = "";
-      index += length - 1;
-    }
-  }
-  if (current) out.push(current);
-  return out;
-}
-
-/** Split a command into statements on `;`, `&&`/`&`, or `||` outside quotes/parens. A single `|` is a pipe and stays within the statement. */
-export function splitStatements(command: string, splitNewlines = false): string[] {
-  return splitShell(command, (input, index) => {
-    const character = input[index];
-    if (character === ";" || character === "&" || splitNewlines && character === "\n") {
-      return input[index + 1] === character ? 2 : 1;
-    }
-    return character === "|" && input[index + 1] === "|" ? 2 : 0;
-  });
-}
-
-/** Split a statement into pipeline stages on a single `|` (and `|&`). */
-function splitPipeline(statement: string): string[] {
-  return splitShell(statement, (input, index) => {
-    if (input[index] !== "|" || input[index + 1] === "|") return 0;
-    return input[index + 1] === "&" ? 2 : 1;
-  });
-}
-
-/**
- * Visit each pipeline — an ordered list of its `|`-separated stage strings —
- * across every statement of `command` and recursively inside every
- * process/command substitution. Returns true as soon as `predicate` does.
- *
- * A flat invocation check is `anyPipeline(cmd, stages => stages.some(...))`;
- * a pipe-adjacency check reads the ordered `stages` directly.
- */
+/** Visit syntax-defined pipelines and executable children, never the contents of quoted examples. */
 export function anyPipeline(command: string, predicate: (stages: string[]) => boolean): boolean {
-  for (const statement of splitStatements(command)) {
-    if (predicate(splitPipeline(statement))) return true;
+  function visit(node: ShellNode, inPipeline = false): boolean {
+    const body = node.type === "redirected_statement" ? field(node, "body") : undefined;
+    if (body?.type === "pipeline") {
+      const stages = named(body).filter((child) => child.type !== "comment");
+      const texts = stages.map((stage, index) => index === stages.length - 1
+        ? node.text.slice(stage.start - node.start) : stage.text);
+      return predicate(texts) || stages.some((stage) => visit(stage, true))
+        || fields(node, "redirect").some((redirect) => visit(redirect, true));
+    }
+    if (node.type === "pipeline") {
+      const stages = named(node).filter((child) => child.type !== "comment");
+      return predicate(stages.map((stage) => stage.text)) || stages.some((stage) => visit(stage, true));
+    }
+    if (["command", "redirected_statement", "variable_assignment"].includes(node.type)) {
+      if (!inPipeline && predicate([node.text])) return true;
+      return named(node).some((child) => visit(child, true));
+    }
+    return named(node).some((child) => visit(child));
   }
-  for (const inner of extractSubstitutions(command)) {
-    if (anyPipeline(inner, predicate)) return true;
-  }
-  return false;
+  return visit(parseShell(command));
+}
+
+export function executableSubstitutions(node: ShellNode): ShellNode[] {
+  return [...descendants(node, "command_substitution"), ...descendants(node, "process_substitution")];
 }

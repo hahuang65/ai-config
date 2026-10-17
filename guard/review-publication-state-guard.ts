@@ -1,7 +1,10 @@
 import { realpathSync } from "node:fs";
 import path from "node:path";
 
-import { anyPipeline, splitStatements, tokenize, tokenizeDetailed } from "./bash-command";
+import { anyPipeline, splitStatements, tokenize, stageNode, commandNode, wordValue, redirects, literalWord } from "./bash-command";
+import { anyInvocation, invocation, invocationNodes, nestedCommand, SHELLS } from "./command-invocations";
+import { field, fields, ShellSyntaxError } from "./shell-parser";
+import { staticShellValue } from "./shell-values";
 import { inlineProgramAccessesProtectedState } from "./inline-program-state-guard";
 
 interface PublicationStateCall {
@@ -20,8 +23,9 @@ const PROTECTED_STATE_DIRECTORIES = [
 ];
 const RECURSIVE_FILE_TOOLS = new Set(["find", "glob", "grep", "list", "search"]);
 const RECURSIVE_SHELL_UTILITIES = new Set(["du", "find", "rg", "tar"]);
+const RECURSIVE_FLAG_UTILITIES = new Set(["grep", "cp", "mv", "rm", "ls", "chmod", "chown", "rsync", "scp", "zip", "diff"]);
 const PATH_CHANGING_UTILITIES = new Set(["mv", "rename"]);
-const SHELL_WRAPPERS = new Set(["bash", "dash", "ksh", "sh", "zsh"]);
+const WORKER_INTERPRETERS = new Set([...SHELLS, "node", "bun", "python", "python3", "ruby", "perl"]);
 const PUBLICATION_WORKER_NAMES = [
   "review-publication",
   "review-publication.mjs",
@@ -160,15 +164,18 @@ function shellReferencesProtectedPublicationState(call: PublicationStateCall): b
   let resolutionLost = false;
   let safePrefix = true;
   let assignment: { name: string; value: string } | null = null;
-  for (const statement of splitStatements(call.command, true)) {
+  for (const statement of splitStatements(call.command)) {
     const scopedCall = {
       ...call,
       cwd: effectiveCwd === UNRESOLVED_DIRECTORY ? undefined : effectiveCwd,
     };
     if (pipelineReferencesProtectedState(statement, scopedCall)) return true;
     const directoryChange = isDirectoryChange(statement);
-    if (resolutionLost && !directoryChange && tokenize(statement).length > 0) return true;
-    const nextAssignment = safePrefix ? safeDirectoryAssignment(statement) : null;
+    const executableStatement = anyInvocation(statement, () => true);
+    if (resolutionLost && !directoryChange && executableStatement) return true;
+    const nextAssignment = safePrefix ? safeDirectoryAssignment(statement, scopedCall) : null;
+    if (!directoryChange && !commandNode(stageNode(statement))
+      && anyInvocation(statement, ([executable]) => executable === "cd")) return true;
     effectiveCwd = changedDirectory(statement, scopedCall, effectiveCwd, safePrefix ? assignment : null);
     if (directoryChange) {
       if (effectiveCwd !== UNRESOLVED_DIRECTORY && isProtectedStatePath(effectiveCwd, scopedCall)) return true;
@@ -180,7 +187,7 @@ function shellReferencesProtectedPublicationState(call: PublicationStateCall): b
     } else if (nextAssignment) {
       // Only standalone static assignments before the first directory change can be trusted.
       assignment = nextAssignment;
-    } else if (tokenize(statement).length > 0) {
+    } else if (executableStatement) {
       safePrefix = false;
       assignment = null;
     }
@@ -190,35 +197,30 @@ function shellReferencesProtectedPublicationState(call: PublicationStateCall): b
 
 function pipelineReferencesProtectedState(statement: string, call: PublicationStateCall): boolean {
   return anyPipeline(statement, (stages) => stages.some((stage) => {
-    const tokens = publicationCheckTokens(stage);
-    const referencesState = tokens.some((token) => [token, ...token.split(/\s+/)].some((part) => (
-      isProtectedStatePath(part, call) || globScopeIntersectsProtectedState(part, call)
-    )));
+    const tokens = [...tokenize(stage), ...redirects(stage).flatMap((redirect) => fields(redirect, "destination").map(wordValue))];
+    const words = invocation(stage);
+    const referencesState = tokens.some((token) => isProtectedStatePath(token, call) || globScopeIntersectsProtectedState(token, call));
     return referencesState
-      || invokesProductionWorker(tokens)
-      || pathChangingOperationIntersectsProtectedState(tokens, call)
-      || shellWrapperReferencesProtectedState(tokens, call)
-      || recursivelyTraversesShellPath(tokens, call);
+      || invokesProductionWorker(stage)
+      || pathChangingOperationIntersectsProtectedState(words, call)
+      || shellWrapperReferencesProtectedState(stage, call)
+      || recursivelyTraversesShellPath(words, call);
   }));
 }
 
-function publicationCheckTokens(stage: string): string[] {
-  const tokenization = tokenizeDetailed(stage);
-  if (!tokenization.malformed) return tokenization.tokens;
-  return tokenization.tokens.map((token) => token
-    .replace(/\\([\s\S])/g, "$1")
-    .replace(/\\$/, ""));
+function invokesProductionWorker(stage: string): boolean {
+  const [executable, ...args] = invocation(stage);
+  if (!executable || !args.includes("--inetd")) return false;
+  const nodes = invocationNodes(stage);
+  if (isPublicationWorkerToken(executable, literalWord(nodes[0]) === null)) return true;
+  return WORKER_INTERPRETERS.has(executable) && args.some((arg, index) =>
+    isPublicationWorkerToken(arg, literalWord(nodes[index + 1]) === null));
 }
 
-function invokesProductionWorker(tokens: string[]): boolean {
-  const parts = tokens.flatMap((token) => token.split(/\s+/)).filter(Boolean);
-  return parts.includes("--inetd") && parts.some(isPublicationWorkerToken);
-}
-
-function isPublicationWorkerToken(token: string): boolean {
+function isPublicationWorkerToken(token: string, expanding: boolean): boolean {
   const basename = path.basename(token.replace(/^["']|["']$/g, ""));
   if (PUBLICATION_WORKER_NAMES.includes(basename)) return true;
-  if (!GLOB_MAGIC.test(basename)) return false;
+  if (!expanding || !GLOB_MAGIC.test(basename)) return false;
   return expandBracePatterns(basename).some((pattern) => {
     try {
       const expression = new RegExp(`^${pattern
@@ -232,65 +234,40 @@ function isPublicationWorkerToken(token: string): boolean {
   });
 }
 
-function expandBracePatterns(pattern: string): string[] {
+function expandBracePatterns(pattern: string, budget = { remaining: 64 }, depth = 0): string[] {
+  if (pattern.length > 1024 || depth > 16 || budget.remaining-- <= 0) {
+    throw new ShellSyntaxError("The Bash pathname pattern exceeds the inspection limits.");
+  }
   const match = /\{([^{}]+)\}/.exec(pattern);
   if (!match) return [pattern];
   return match[1].split(",").flatMap((choice) => expandBracePatterns(
-    `${pattern.slice(0, match.index)}${choice}${pattern.slice(match.index + match[0].length)}`,
+    `${pattern.slice(0, match.index)}${choice}${pattern.slice(match.index + match[0].length)}`, budget, depth + 1,
   ));
 }
 
-function pathChangingOperationIntersectsProtectedState(tokens: string[], call: PublicationStateCall): boolean {
-  const executableIndex = commandExecutableIndex(tokens);
-  if (executableIndex < 0) return false;
-  const executable = path.basename(tokens[executableIndex]);
+function pathChangingOperationIntersectsProtectedState([executable, ...args]: string[], call: PublicationStateCall): boolean {
   if (!PATH_CHANGING_UTILITIES.has(executable)) return false;
-  const operands = tokens.slice(executableIndex + 1).filter((token) => token !== "--" && !/^-[^-]/.test(token));
+  const operands = args.filter((token) => token !== "--" && !/^-[^-]/.test(token));
   return operands.some((operand) => pathScopeIntersectsProtectedState(operand, call));
 }
 
-function shellWrapperReferencesProtectedState(tokens: string[], call: PublicationStateCall): boolean {
-  const executableIndex = commandExecutableIndex(tokens);
-  if (executableIndex < 0 || !SHELL_WRAPPERS.has(path.basename(tokens[executableIndex]))) return false;
-  const args = tokens.slice(executableIndex + 1);
-  const commandFlag = args.findIndex((argument) => /^-[A-Za-z]*c[A-Za-z]*$/.test(argument));
-  const nestedCommand = commandFlag < 0 ? undefined : args[commandFlag + 1];
-  return !!nestedCommand && shellReferencesProtectedPublicationState({
-    ...call,
-    command: nestedCommand,
-  });
-}
-
-function commandExecutableIndex(tokens: string[]): number {
-  let index = tokens.findIndex((token) => !/^[A-Za-z_][A-Za-z0-9_]*=/.test(token));
-  while (index >= 0 && ["command", "env"].includes(path.basename(tokens[index]))) {
-    index += 1;
-    while (index < tokens.length && (tokens[index].startsWith("-") || /^[A-Za-z_][A-Za-z0-9_]*=/.test(tokens[index]))) {
-      index += 1;
-    }
-    if (index >= tokens.length) return -1;
-  }
-  return index;
+function shellWrapperReferencesProtectedState(stage: string, call: PublicationStateCall): boolean {
+  const command = nestedCommand(stage, invocation(stage));
+  return !!command && shellReferencesProtectedPublicationState({ ...call, command });
 }
 
 function isDirectoryChange(statement: string): boolean {
-  let stages: string[] = [];
-  anyPipeline(statement, (candidateStages) => {
-    stages = candidateStages;
-    return true;
-  });
-  if (stages.length !== 1) return false;
-  const tokens = tokenize(stages[0]);
-  const executable = tokens.find((token) => !/^[A-Za-z_][A-Za-z0-9_]*=/.test(token));
-  return executable?.replace(/^.*\//, "") === "cd";
+  return invocation(statement)[0] === "cd";
 }
 
-function safeDirectoryAssignment(statement: string): { name: string; value: string } | null {
-  const match = /^\s*([A-Za-z_][A-Za-z0-9_]*)=(?:"([^"]*)"|([^'"\s]+))\s*$/.exec(statement);
-  if (!match || match[1] === "HOME" || match[2]?.startsWith("~")) return null;
-  const value = match[2] ?? match[3];
-  if (!/^(?:\/[A-Za-z0-9_./-]*|(?:\$HOME|\$\{HOME\}|~)(?:\/[A-Za-z0-9_./-]*)?)$/.test(value)) return null;
-  return { name: match[1], value };
+function safeDirectoryAssignment(statement: string, call: PublicationStateCall): { name: string; value: string } | null {
+  const node = stageNode(statement);
+  if (node?.type !== "variable_assignment") return null;
+  const name = field(node, "name")?.text;
+  const valueNode = field(node, "value");
+  if (!name || name === "HOME" || !valueNode) return null;
+  const value = staticShellValue(valueNode, call.home ? { HOME: call.home } : {});
+  return value !== null && path.isAbsolute(value) ? { name, value } : null;
 }
 
 function changedDirectory(
@@ -299,32 +276,16 @@ function changedDirectory(
   current: string | typeof UNRESOLVED_DIRECTORY,
   assignment: { name: string; value: string } | null,
 ): string | typeof UNRESOLVED_DIRECTORY {
-  let stages: string[] = [];
-  anyPipeline(statement, (candidateStages) => {
-    stages = candidateStages;
-    return true;
-  });
-  if (stages.length !== 1) return current;
-  const tokens = tokenize(stages[0]);
-  const executableIndex = tokens.findIndex((token) => !/^[A-Za-z_][A-Za-z0-9_]*=/.test(token));
-  if (executableIndex < 0 || tokens[executableIndex].replace(/^.*\//, "") !== "cd") return current;
-  const args = tokens.slice(executableIndex + 1).filter((token) => token !== "--");
+  if (!isDirectoryChange(statement)) return current;
+  const command = commandNode(stageNode(statement));
+  const args = command?.children.filter((child) => child.field === "argument" && wordValue(child) !== "--") ?? [];
   if (args.length === 0) return call.home ?? UNRESOLVED_DIRECTORY;
-  const variable = /^\s*cd\s+(?:"\$([A-Za-z_][A-Za-z0-9_]*)"|\$([A-Za-z_][A-Za-z0-9_]*))\s*$/.exec(statement);
-  const candidate = assignment && variable && (variable[1] ?? variable[2]) === assignment.name
-    ? assignment.value : args[0];
-  if (args.length !== 1 || !isSafeDirectoryLiteral(candidate)) return UNRESOLVED_DIRECTORY;
-  const homeRelative = /^(?:\$HOME|\$\{HOME\}|~)(?:\/|$)/.test(candidate);
-  if (current === UNRESOLVED_DIRECTORY && !path.isAbsolute(candidate) && !homeRelative) {
-    return UNRESOLVED_DIRECTORY;
-  }
-  return normalizedCandidate(candidate, call, call.cwd) ?? UNRESOLVED_DIRECTORY;
-}
-
-function isSafeDirectoryLiteral(candidate: string): boolean {
-  if (["-", ".", ".."].includes(candidate)) return true;
-  if (/^(?:\$HOME|\$\{HOME\}|~)(?:\/|$)/.test(candidate)) return !GLOB_MAGIC.test(candidate);
-  return !/[`$*?{\[]/.test(candidate);
+  if (args.length !== 1) return UNRESOLVED_DIRECTORY;
+  const variables = { ...(call.home ? { HOME: call.home } : {}), ...(assignment ? { [assignment.name]: assignment.value } : {}) };
+  const candidate = staticShellValue(args[0], variables);
+  if (candidate === null || candidate === "-" || /[$`]/.test(candidate)) return UNRESOLVED_DIRECTORY;
+  if (current === UNRESOLVED_DIRECTORY && !path.isAbsolute(candidate)) return UNRESOLVED_DIRECTORY;
+  return path.resolve(current === UNRESOLVED_DIRECTORY ? "/" : current, candidate);
 }
 
 function globScopeIntersectsProtectedState(candidate: string, call: PublicationStateCall): boolean {
@@ -332,14 +293,10 @@ function globScopeIntersectsProtectedState(candidate: string, call: PublicationS
   return pathScopeIntersectsProtectedState(fixedGlobPrefix(candidate, call), call);
 }
 
-function recursivelyTraversesShellPath(tokens: string[], call: PublicationStateCall): boolean {
-  const executableIndex = tokens.findIndex((token) => !/^[A-Za-z_][A-Za-z0-9_]*=/.test(token));
-  if (executableIndex < 0) return false;
-  const executable = tokens[executableIndex].replace(/^.*\//, "");
-  const args = tokens.slice(executableIndex + 1);
+function recursivelyTraversesShellPath([executable, ...args]: string[], call: PublicationStateCall): boolean {
   const recursiveFlag = args.some((token) => /^-[A-Za-z]*[aArR][A-Za-z]*$/.test(token)
     || ["--archive", "--recursive"].includes(token));
-  if (!RECURSIVE_SHELL_UTILITIES.has(executable) && !recursiveFlag) return false;
+  if (!RECURSIVE_SHELL_UTILITIES.has(executable) && !(recursiveFlag && RECURSIVE_FLAG_UTILITIES.has(executable))) return false;
   if (args.some((token) => !token.startsWith("-") && pathScopeIntersectsProtectedState(token, call))) {
     return true;
   }

@@ -1,4 +1,6 @@
-import { anyPipeline, tokenize } from "./bash-command";
+import { anyInvocation } from "./command-invocations";
+import { redirects, wordValue } from "./bash-command";
+import { fields } from "./shell-parser";
 import type { ToolCall } from "./guard-core";
 
 // High-confidence credential formats; placeholder strings do not match.
@@ -54,7 +56,8 @@ export function detectSecretAccess(call: ToolCall): string | null {
   if (call.path && isCredentialPath(call.path)) {
     return `Refused — credential file read: ${call.path.slice(0, 80)}`;
   }
-  if (call.command && anyPipeline(call.command, (stages) => stages.some((stage) => readsCredentialFile(tokenize(stage))))) {
+  if (call.command && anyInvocation(call.command, (words, stage) => readsCredentialFile(words)
+    || redirects(stage).some((redirect) => fields(redirect, "destination").some((destination) => isCredentialPath(wordValue(destination)))))) {
     const command = call.command;
     return `Refused — bash command reads a credential file: ${command.length > 80 ? `${command.slice(0, 80)}…` : command}`;
   }

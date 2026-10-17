@@ -8,3 +8,4 @@ test-self-test-*
 # Native package build artifacts and private runtime state.
 target/
 .state/
+node_modules/

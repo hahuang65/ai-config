@@ -181,6 +181,13 @@ fn prepared_package_requires_its_bootstrap_rule_files_even_when_not_linked() {
         "harnesses/claude/harness-rules.md",
         "harnesses/claude/guard-verdict.ts",
         "guard/guard-core.ts",
+        "guard/command-invocations.ts",
+        "guard/dangerous-command-guard.ts",
+        "guard/recursive-delete-guard.ts",
+        "guard/remote-execution-guard.ts",
+        "guard/shell-parser.ts",
+        "guard/vendor/tree-sitter.mjs",
+        "guard/vendor/tree-sitter-bash.wasm",
     ] {
         let fixture = fixture();
         manifest(fixture.path());

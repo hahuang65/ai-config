@@ -1,7 +1,7 @@
 # Ordinary Claude and Pi resources. Installing into a real home is an explicit,
 # separate ./install.sh invocation; this Makefile never retargets the live installation.
 .DEFAULT_GOAL := help
-.PHONY: help build test lint test-package test-worktree test-worklog test-artifact test-evaluation test-browser build-evaluation-debug build-artifact-debug build-guard-bundle build-language-servers
+.PHONY: help build test lint test-package test-worktree test-worklog test-artifact test-evaluation test-browser build-evaluation-debug build-artifact-debug build-guard-parser build-guard-bundle build-language-servers
 # Keep suites serial even with make -j; common build prerequisites run once.
 # Isolated WT parity and separate native runtime groups use bounded workers.
 .NOTPARALLEL:
@@ -15,10 +15,14 @@ help:
 	@printf 'WT parity uses up to four workers; WT_TEST_JOBS=1 runs it serially. Full test coverage is unchanged.\n'
 	@printf 'Install explicitly with ./install.sh (builds first; live home requires separate approval).\n'
 
-build-guard-bundle:
+build-guard-parser:
+	bun install --frozen-lockfile --ignore-scripts
+	node tools/build-guard-parser.mjs
+
+build-guard-bundle: build-guard-parser
 	bun build harnesses/pi/guard-policies.ts --target node --format esm --outfile harnesses/pi/guard-policies.bundle.ts
 
-build-language-servers:
+build-language-servers: build-guard-parser
 	bun tools/build-language-servers.mjs
 	bun build harnesses/pi/lsp.ts --target node --format esm --external @earendil-works/pi-coding-agent --external typebox --outfile harnesses/pi/lsp.bundle.ts
 

@@ -1,4 +1,5 @@
-import { anyPipeline, splitStatements, tokenize } from "../../guard/bash-command";
+import { commandWords, literalWord } from "../../guard/bash-command";
+import { named, parseShell } from "../../guard/shell-parser";
 
 const READ_ONLY_METHODS = new Set(["GET", "HEAD"]);
 // Field options make `gh api` default to POST unless the method is explicit.
@@ -8,18 +9,17 @@ const FILE_FIELD_OPTION = /^(?:-F|--field)(?:=|$)/;
 const INPUT_OPTION = /^--input(?:=|$)/;
 
 export function isReadOnlyGitHubCommand(command: string): boolean {
-  if (hasComplexShellSyntax(command) || splitStatements(command).length !== 1) return false;
-  let pipeline: string[] | null = null;
-  anyPipeline(command, (stages) => {
-    pipeline = stages;
-    return true;
-  });
-  if (!pipeline || pipeline.length !== 1) return false;
-
-  const tokens = tokenize(pipeline[0]);
-  if (tokens[0] !== "gh") return false;
-  if (tokens[1] === "pr") return tokens[2] === "view";
-  return tokens[1] === "api" && ghApiIsReadOnly(tokens.slice(2));
+  try {
+    const statements = named(parseShell(command)).filter((node) => node.type !== "comment");
+    if (statements.length !== 1 || statements[0].type !== "command") return false;
+    if (statements[0].children.some((node) => node.field === "redirect" || node.type === "variable_assignment")) return false;
+    const values = commandWords(statements[0]).map(literalWord);
+    if (values.some((value) => value === null)) return false;
+    const tokens = values as string[];
+    if (tokens[0] !== "gh") return false;
+    if (tokens[1] === "pr") return tokens[2] === "view";
+    return tokens[1] === "api" && ghApiIsReadOnly(tokens.slice(2));
+  } catch { return false; }
 }
 
 function ghApiIsReadOnly(args: string[]): boolean {
@@ -49,27 +49,4 @@ function apiMethods(args: string[]): string[] | null {
     }
   }
   return methods;
-}
-
-function hasComplexShellSyntax(command: string): boolean {
-  let singleQuoted = false;
-  let doubleQuoted = false;
-  for (let index = 0; index < command.length; index += 1) {
-    const character = command[index];
-    if (character === "\\" && !singleQuoted) {
-      index += 1;
-      continue;
-    }
-    if (character === "'" && !doubleQuoted) {
-      singleQuoted = !singleQuoted;
-      continue;
-    }
-    if (character === '"' && !singleQuoted) {
-      doubleQuoted = !doubleQuoted;
-      continue;
-    }
-    if (!singleQuoted && (character === "`" || character === "$" && command[index + 1] === "(")) return true;
-    if (!singleQuoted && !doubleQuoted && /[;&|<>\n()]/.test(character)) return true;
-  }
-  return singleQuoted || doubleQuoted;
 }

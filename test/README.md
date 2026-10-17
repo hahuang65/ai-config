@@ -2,7 +2,7 @@
 
 Run `make test` from the package checkout.
 Tests use disposable homes and fake providers; they must not install into the live home, import old Work log history, contact a real provider, or read saved credentials.
-Provision declared tools explicitly before testing; build/test commands may fetch locked Cargo dependencies but never run mise installation themselves.
+Provision declared tools explicitly before testing; build/test commands may fetch locked Cargo and Bun dependencies but never run mise installation themselves.
 Project Pi tracks `latest`; SDK tests and footer bundling resolve it through `mise which pi` from this checkout, with no fallback to a different global client.
 The selected installed Pi must be provisioned separately; failed selection gives an explicit provisioning instruction without exposing mise diagnostics.
 Restricted-reviewer offline settings and synthetic-provider boundaries remain unchanged.
@@ -18,6 +18,13 @@ Restricted-reviewer offline settings and synthetic-provider boundaries remain un
   `make build-evaluation-debug` builds this driver for package/Rust tests; `make build` does not build or install it.
   The native Claude reviewer suite uses the same driver and skips only for missing host capabilities, never because a build artifact is absent.
 - `guards.test.ts` checks shared guard behavior.
+  `package-dangerous-commands.test.ts` checks formatting, host interruption, recursive deletion, process termination, and recognizable download-and-execute commands through both adapters and the generated Pi bundle.
+  `package-guard-execution.test.ts` adds command-role, inherited-output, and protected-ancestor regressions through the same shared adapter fixture.
+  Dangerous commands are evaluated only as strings, never executed; disposable paths cover cleanup exceptions and symlink refusal.
+  `package-guard-parser.test.ts` verifies generated parser assets, native Node/Pi loading without `node_modules`, and fail-closed missing-parser and malformed-input behavior.
+  `package-guard-parser-init.test.ts` checks bounded initialization and file loading, including stalled/late loaders, oversized assets, and FIFOs through both native adapters.
+  `package-github-guard.test.ts` checks Claude's syntax-based read-only GitHub permission shortcut.
+  See [command guard boundaries](../docs/command-guards.md) for intentional allowances and remaining gaps.
 - `cli-links.test.ts` checks executable link ownership in disposable homes.
   The retired WT Python install/repeat/uninstall test was replaced by `package-install-entrypoints.test.ts`, which exercises foreign regular files and dangling links through the real shell installer and rejects the removed uninstall interface without side effects.
   Shell installation/repeat tests and the WT CLI suites retain successful installation, repeat ownership, and executable behavior coverage.

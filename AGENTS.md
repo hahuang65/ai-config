@@ -19,7 +19,7 @@ Do not stage, commit, push, or update the parent submodule pointer without separ
 4. Run focused tests, `make lint`, and the `make test` gate before a commit is considered.
    Keep Rust CLI tests in each crate's `tests/`, cross-harness adapter tests in `test/`, and browser integration tests with the artifact-review tool.
    Browser tests must use the bounded browser harness, not unbounded parallel launches.
-5. `make build` creates release artifacts with locked Cargo dependencies; it may download dependencies but does not provision tools or install resources.
+5. `make build` creates release artifacts with locked Cargo and Bun dependencies; it may download dependencies but does not provision tools or install resources.
    Installation requires a separate explicit `./install.sh` invocation and separate approval for a live home.
    That entry point runs `mise install`, builds this checkout through `mise exec -- make build`, and performs ownership, link, and settings transactions itself, using the JSON-only filters and catalogue in `tools/install/`.
    It requires mise, jq, GNU coreutils, make, Bash, iconv, and find; its explicit provisioning uses active mise configuration, including global tools.

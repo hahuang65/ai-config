@@ -1,8 +1,23 @@
 import { expect, test } from "bun:test";
 import { spawnSync } from "node:child_process";
-import { existsSync, linkSync, lstatSync, mkdirSync, readFileSync, symlinkSync, writeFileSync } from "node:fs";
+import { existsSync, linkSync, lstatSync, mkdirSync, readFileSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { installFixture } from "./fixtures/install-script";
+
+for (const file of ["command-invocations.ts", "dangerous-command-guard.ts", "recursive-delete-guard.ts", "remote-execution-guard.ts",
+  "shell-parser.ts", "shell-values.ts", "system-command-guards.ts", "interpreter-input.ts", "vendor/tree-sitter.mjs",
+  "vendor/web-tree-sitter.wasm", "vendor/tree-sitter-bash.wasm"]) {
+  test(`shell installer requires guard/${file} before linking either adapter`, () => {
+    const setup = installFixture();
+    try {
+      rmSync(join(setup.source, "guard", file));
+      const result = setup.run();
+      expect(result.status, file).not.toBe(0);
+      expect(existsSync(join(setup.home, ".claude/CLAUDE.md"))).toBe(false);
+      expect(existsSync(join(setup.home, ".pi/agent/AGENTS.md"))).toBe(false);
+    } finally { setup.clean(); }
+  }, 30_000);
+}
 
 for (const kind of ["symlink", "hard link", "directory", "FIFO", "duplicate keys", "invalid UTF-8",
   "malformed JSON", "non-object JSON", "overdeep JSON", "oversized JSON", "unowned matching value"]) {

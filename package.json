@@ -1,0 +1,9 @@
+{
+  "name": "ai-config-guard-build",
+  "private": true,
+  "type": "module",
+  "devDependencies": {
+    "tree-sitter-bash": "0.25.1",
+    "web-tree-sitter": "0.27.1"
+  }
+}

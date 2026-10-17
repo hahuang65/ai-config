@@ -87,6 +87,11 @@ def support_files: [
   "harnesses/claude/guard-verdict.ts", "harnesses/claude/read-only-github.ts", "guard/bash-command.ts",
   "guard/credential-guard.ts", "guard/guard-core.ts", "guard/guard-home.ts", "guard/inline-program-state-guard.ts",
   "guard/policy-registry.ts", "guard/review-publication-state-guard.ts",
+  "guard/command-invocations.ts", "guard/dangerous-command-guard.ts",
+  "guard/recursive-delete-guard.ts", "guard/remote-execution-guard.ts",
+  "guard/shell-parser.ts", "guard/shell-values.ts", "guard/system-command-guards.ts", "guard/interpreter-input.ts",
+  "guard/vendor/tree-sitter.mjs", "guard/vendor/web-tree-sitter.wasm", "guard/vendor/tree-sitter-bash.wasm",
+  "guard/vendor/web-tree-sitter.LICENSE", "guard/vendor/tree-sitter-bash.LICENSE",
   "rules/a5.md", "rules/cli-ergonomics.md", "rules/coding-style.md", "rules/documentation.md", "rules/git-commit.md",
   "rules/html-routing.md", "rules/mise.md", "rules/performance.md", "rules/security.md", "rules/testing.md"]
   + (bootstrap | [.[] | select(. != "harnesses/claude/plugins/ai-local-lsp")])
