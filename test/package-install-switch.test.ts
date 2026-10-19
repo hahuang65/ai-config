@@ -1,7 +1,10 @@
 import { expect, test } from "bun:test";
 import { chmodSync, cpSync, existsSync, mkdirSync, readFileSync, readlinkSync, rmSync, statSync, symlinkSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
-import { installFixture } from "./fixtures/install-script";
+import { INSTALL_COMMAND_GUARD_MS, installFixture } from "./fixtures/install-script";
+
+// Five bounded installer calls, plus one command-sized margin for fixture setup/cleanup.
+const SOURCE_SWITCH_GUARD_MS = 6 * INSTALL_COMMAND_GUARD_MS;
 
 function optionalResource(source: string, enabled: boolean) {
   const path = join(source, "manifest.json");
@@ -75,4 +78,4 @@ test("shell switches recorded sources repeatedly, preserves personal state and h
     expect(readlinkSync(join(setup.home, ".claude/CLAUDE.md"))).toBe(join(next, "baseline.md"));
     for (const path of retained) expect(readFileSync(join(setup.home, path), "utf8")).toBe("personal state");
   } finally { setup.clean(); }
-}, 40_000);
+}, SOURCE_SWITCH_GUARD_MS);

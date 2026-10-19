@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import { cpSync, mkdirSync, mkdtempSync, readFileSync, realpathSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
+import { cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, realpathSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -32,28 +32,30 @@ test("the Pi SDK follows its installed CLI package through a launcher without as
   } finally { rmSync(root, { recursive: true, force: true }); }
 });
 
-test("Pi SDK discovery selects this project's mise CLI even when a different Pi is on PATH", () => {
+test("Pi SDK discovery uses a pre-installed CLI on PATH behind a mise shim without invoking mise", () => {
   const root = realpathSync(mkdtempSync(join(tmpdir(), "project-pi-sdk-")));
   try {
     const installed = join(root, "npm/node_modules/@earendil-works/pi-coding-agent");
     const cli = join(installed, "dist/cli.js");
     const sdk = join(installed, "dist/index.js");
-    const bin = join(root, "bin"), log = join(root, "mise-log");
+    const bin = join(root, "bin"), shims = join(root, "shims"), log = join(root, "mise-log");
     mkdirSync(join(installed, "dist"), { recursive: true });
     mkdirSync(bin);
+    mkdirSync(shims);
     writeFileSync(join(installed, "package.json"), JSON.stringify({ name: "@earendil-works/pi-coding-agent" }));
-    writeFileSync(cli, "fixture\n");
+    writeFileSync(cli, "fixture\n", { mode: 0o755 });
     writeFileSync(sdk, "fixture\n");
-    writeFileSync(join(bin, "mise"), '#!/bin/sh\nprintf "%s\\n%s\\n" "$PWD" "$*" > "$MISE_TEST_LOG"\nprintf "%s\\n" "$MISE_TEST_CLI"\n', { mode: 0o755 });
-    writeFileSync(join(bin, "pi"), "#!/bin/sh\nexit 99\n", { mode: 0o755 });
+    writeFileSync(join(bin, "mise"), '#!/bin/sh\nprintf "invoked" > "$MISE_TEST_LOG"\nexit 99\n', { mode: 0o755 });
+    symlinkSync(join(bin, "mise"), join(shims, "pi"));
+    symlinkSync(cli, join(bin, "pi"));
     const fixture = fileURLToPath(new URL("./fixtures/installed-pi-sdk.ts", import.meta.url));
     const run = Bun.spawnSync([process.execPath, "-e",
       `import { installedSdkFile } from ${JSON.stringify(fixture)}; console.log(installedSdkFile());`], {
-      cwd: root, env: { ...process.env, PATH: `${bin}:${process.env.PATH}`, MISE_TEST_LOG: log, MISE_TEST_CLI: cli },
+      cwd: root, env: { ...process.env, PATH: `${shims}:${bin}`, MISE_TEST_LOG: log },
     });
     expect(run.exitCode, run.stderr.toString()).toBe(0);
     expect(run.stdout.toString().trim()).toBe(sdk);
-    expect(readFileSync(log, "utf8")).toBe(`${realpathSync(fileURLToPath(new URL("../", import.meta.url)))}\nwhich pi\n`);
+    expect(existsSync(log)).toBe(false);
   } finally { rmSync(root, { recursive: true, force: true }); }
 });
 

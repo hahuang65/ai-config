@@ -37,6 +37,17 @@ The private observer is a no-op for production callers, with no environment over
 The CLI test retains output/history checks after external lock release but does not claim to prove contention.
 Both ignoring lock failure and refusing to retry must make the storage recovery test fail.
 
+## Shell installer fixtures
+
+| Check | Constant | Current value | Source and purpose |
+| --- | --- | --- | --- |
+| Retained | `INSTALL_COMMAND_GUARD_MS` | 30s | [install-script.ts](fixtures/install-script.ts): unchanged subprocess limit for one installer transaction |
+| Adjusted | `SOURCE_SWITCH_GUARD_MS` | 180s | [package-install-switch.test.ts](package-install-switch.test.ts): five sequential installer limits plus one 30s fixture setup/cleanup margin |
+
+The source-switch scenario covers initial installation, repeat installation, switching sources, switching back, and recovery after removing the former source.
+Its previous 40s whole-case watchdog was shorter than the combined subprocess budgets and left no headroom on a measured local run of about 40s for five successful transactions.
+The new watchdog derives from the existing per-command limit; it does not add successful-path waits or change installer behavior, transaction limits, or assertions.
+
 ## WT subprocesses
 
 All six settings live in [process.rs](../tools/worktree/tests/support/process.rs).

@@ -5,6 +5,7 @@ import { dirname, join, resolve } from "node:path";
 import { copyPackageFiles } from "./inactive-package";
 
 const repository = resolve(import.meta.dir, "../..");
+export const INSTALL_COMMAND_GUARD_MS = 30_000;
 export function installFixture() {
   const temporary = realpathSync(mkdtempSync(join(tmpdir(), "shell-install-")));
   const source = join(temporary, "package π with spaces");
@@ -35,11 +36,11 @@ export function installFixture() {
   return {
     temporary, source, home, bin,
     run: (args: string[] = [], env: Record<string, string> = {}) => spawnSync(join(source, "install.sh"), args, {
-      cwd: temporary, encoding: "utf8", timeout: 30_000,
+      cwd: temporary, encoding: "utf8", timeout: INSTALL_COMMAND_GUARD_MS,
       env: environment(env),
     }),
     runFrom: (selectedSource: string, env: Record<string, string> = {}) => spawnSync(join(selectedSource, "install.sh"), [], {
-      cwd: temporary, encoding: "utf8", timeout: 30_000, env: environment(env),
+      cwd: temporary, encoding: "utf8", timeout: INSTALL_COMMAND_GUARD_MS, env: environment(env),
     }),
     launch: (env: Record<string, string> = {}) => spawn(join(source, "install.sh"), [], {
       cwd: temporary, env: environment(env), detached: true, stdio: ["ignore", "pipe", "pipe"],

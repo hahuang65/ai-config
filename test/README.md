@@ -3,8 +3,10 @@
 Run `make test` from the package checkout.
 Tests use disposable homes and fake providers; they must not install into the live home, import old Work log history, contact a real provider, or read saved credentials.
 Provision declared tools explicitly before testing; build/test commands may fetch locked Cargo and Bun dependencies but never run mise installation themselves.
-Project Pi tracks `latest`; SDK tests and footer bundling resolve it through `mise which pi` from this checkout, with no fallback to a different global client.
-The selected installed Pi must be provisioned separately; failed selection gives an explicit provisioning instruction without exposing mise diagnostics.
+SDK tests and footer bundling discover the first pre-installed executable `pi` on an absolute PATH entry, skipping mise shims without executing them.
+Pi must be installed separately (for example through Homebrew or AUR); failed discovery gives installation guidance without invoking mise or candidate programs.
+Fixtures cover native CLI symlinks, supported launchers, mise shim shadowing, and missing or unusable PATH candidates without assuming a Homebrew installation.
+Restricted Pi runners also skip mise shims during executable discovery while retaining reviewed-source exclusions; a Rust CLI regression and the native synthetic-provider cases cover that path.
 Restricted-reviewer offline settings and synthetic-provider boundaries remain unchanged.
 
 - `package-*.test.ts` verifies the retained skills, specialist roles, ordinary Claude and Pi discovery, guard adapters, shared commands, status displays, themes, LSP plugin separation, and review boundaries.

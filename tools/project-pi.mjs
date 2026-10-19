@@ -1,17 +1,20 @@
-// Build/test dependency selection only; never install or change the live Pi client.
-import { spawnSync } from "node:child_process";
-import { isAbsolute } from "node:path";
-import { fileURLToPath } from "node:url";
+// Discover a pre-installed build/test dependency; never provision or update Pi.
+import { accessSync, constants, realpathSync, statSync } from "node:fs";
+import { basename, delimiter, isAbsolute, join } from "node:path";
 
 export function projectPiExecutable() {
-  const result = spawnSync("mise", ["which", "pi"], {
-    cwd: fileURLToPath(new URL("../", import.meta.url)),
-    encoding: "utf8", timeout: 10_000, maxBuffer: 64 * 1024,
-    stdio: ["ignore", "pipe", "pipe"],
-  });
-  const path = result.stdout?.trim();
-  if (result.error || result.status !== 0 || !path || !isAbsolute(path) || /[\r\n\0]/.test(path)) {
-    throw new Error("Project Pi is unavailable; explicitly run mise install npm:@earendil-works/pi-coding-agent before building or testing");
+  for (const directory of (process.env.PATH ?? "").split(delimiter)) {
+    if (!isAbsolute(directory) || /[\r\n\0]/.test(directory)) continue;
+    try {
+      const executable = realpathSync(join(directory, "pi"));
+      // Mise's Unix shims are symlinks to mise itself, not a Pi installation.
+      if (basename(executable) === "mise") continue;
+      if (!statSync(executable).isFile()) continue;
+      accessSync(executable, constants.X_OK);
+      return executable;
+    } catch (error) {
+      if (!["ENOENT", "ENOTDIR", "EACCES", "ELOOP"].includes(error.code)) throw error;
+    }
   }
-  return path;
+  throw new Error("Cannot find a pre-installed Pi executable on an absolute PATH entry outside mise shims; install Pi separately and add it to PATH before building or testing");
 }

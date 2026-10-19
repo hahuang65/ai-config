@@ -24,7 +24,7 @@ Do not stage, commit, push, or update the parent submodule pointer without separ
    That entry point runs `mise install`, builds this checkout through `mise exec -- make build`, and performs ownership, link, and settings transactions itself, using the JSON-only filters and catalogue in `tools/install/`.
    It requires mise, jq, GNU coreutils, make, Bash, iconv, and find; its explicit provisioning uses active mise configuration, including global tools.
    Tests stub provisioning; real provisioning requires separate approval and must not replace the live native Pi client.
-   Project Pi tracks `latest`; other declared tool versions stay fixed, and builds/tests never upgrade tools implicitly.
+   Pi is a separately installed prerequisite discovered on PATH, not a mise-managed project tool; declared tool versions stay fixed, and builds/tests never install or upgrade Pi.
    Never bypass a retained transaction lock or incomplete rollback; inspect and recover explicitly.
    Preserve the live ownership record, model/authentication choices, conversations, independent TypeSafe and Herdr settings, and unrelated resources.
 

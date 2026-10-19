@@ -36,6 +36,36 @@ os.execv(os.environ['EXECUTION_REAL_GIT'],[os.environ['EXECUTION_REAL_GIT']]+a)
 }
 
 #[test]
+fn pi_selection_skips_mise_shims_and_uses_a_preinstalled_executable() {
+    let trial = fixture();
+    let shims = trial.temporary.path().join("shims");
+    let mise = trial.temporary.path().join("mise");
+    let marker = trial.temporary.path().join("mise-invoked");
+    fs::create_dir(&shims).unwrap();
+    executable(
+        &mise,
+        "#!/bin/sh\nprintf invoked > \"$MISE_MARKER\"\nexit 19\n",
+    );
+    std::os::unix::fs::symlink(&mise, shims.join("pi")).unwrap();
+    let output = command(&trial)
+        .env(
+            "PATH",
+            format!(
+                "{}:{}:{}",
+                shims.display(),
+                trial.fake_bin.display(),
+                std::env::var("PATH").unwrap()
+            ),
+        )
+        .env("MISE_MARKER", &marker)
+        .args(["HEAD~1..HEAD", "--json"])
+        .output()
+        .unwrap();
+    assert!(!marker.exists(), "Pi discovery invoked mise");
+    success(output);
+}
+
+#[test]
 fn automatic_artifact_opening_never_uses_a_checkout_controlled_browser_opener() {
     for alias in [false, true] {
         let trial = fixture();

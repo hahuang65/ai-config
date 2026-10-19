@@ -22,7 +22,7 @@ The current installation contract is [manifest.json](../manifest.json), validate
 `install.sh` now performs the transaction itself, using JSON-only filters under `tools/install/` rather than invoking an installer binary.
 The platform prerequisites are mise, jq, GNU coreutils, make, Bash, iconv, and find; missing checked commands produce a clear error before provisioning or building.
 Explicit installation runs `mise install` against active configuration, then `mise exec -- make build`; Cargo may fetch locked dependencies.
-Build/test SDK lookup and footer bundling select the project mise Pi (`latest`), independently of the live native client.
+Build/test SDK lookup and footer bundling discover a pre-installed Pi on absolute PATH entries, skipping mise shims without executing them; Pi installation and updates remain outside this package.
 Cargo-generated catalogue executables may have multiple hard links, but still require safe parents, regular non-symlink files, size bounds, and execute permission.
 The shell installer uses an atomic lock directory and retains private recovery files when rollback cannot safely restore concurrent edits.
 It is not crash-atomic, and its lock must not be bypassed or combined with stale Rust installation binaries retained in other checkouts.

@@ -68,15 +68,17 @@ Dated historical decision records may describe retired experiments; they are not
 ## Build and verify
 
 Use the mise-managed tools declared in `mise.toml` directly; do not install tools as a testing side effect.
-Bun, Node, Python 3.11.4, Rust, ShellCheck, and language servers have fixed versions; project Pi deliberately tracks `latest` to follow the user's rolling client.
+Bun, Node, Python 3.11.4, Rust, ShellCheck, and language servers have fixed versions; Pi is a separately installed prerequisite, not declared in `mise.toml`.
 Python 3.11.4 is compiled from source when missing because no attested prebuilt artifact is available for that version.
 The npm backend uses npm rather than selecting a package manager implicitly.
 Provision missing tools explicitly with `mise install` before development.
 That command uses active configuration, including global tools and the shared language servers; review the selection before running it.
-For Pi alone, use `mise install npm:@earendil-works/pi-coding-agent` and explicitly refresh it with `mise upgrade --no-prune npm:@earendil-works/pi-coding-agent`.
-An installed `latest` is not a promise of a fresh registry lookup on every build, and a rolling Pi version is not a fully pinned toolchain.
-Build/test SDK discovery and footer bundling use `mise which pi` from this checkout, not whichever unrelated Pi happens to be first on PATH.
-This does not replace the native Pi installation or alter its settings; restricted reviewers continue to select their native executable independently.
+Install and update Pi separately using your preferred package manager, such as Homebrew on macOS or AUR on Arch Linux.
+Build/test SDK discovery and footer bundling use the first executable `pi` on an absolute PATH entry, skipping mise shims without invoking mise or Pi during discovery.
+Discovery follows CLI symlinks and supported launchers to locate the installed SDK and terminal helpers, without assuming a package-manager-specific location.
+Missing Pi produces installation guidance; builds/tests never provision or update it, and the toolchain does not pin its version.
+Restricted reviewers discover their native executable independently on absolute PATH entries, also skipping mise Pi shims while preserving reviewed-source exclusions.
+Removing the project declaration does not uninstall an existing mise Pi or remove its shim; any previously installed copy needs separate cleanup after this change is integrated.
 
 ```sh
 make build
