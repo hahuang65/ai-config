@@ -18,6 +18,8 @@ import { registerFindingDecisionCases } from './finding-decisions.mjs';
 import { registerPublicationCases } from './publication.mjs';
 import { registerAnnotationPopoverCases } from './annotation-popover.mjs';
 import { registerLiveWaitCases } from './live-wait.mjs';
+import { registerSubmissionStatusCases } from './submission-status.mjs';
+import { registerLinkNavigationCases } from './link-navigation.mjs';
 
 const browsers = firefoxSuite();
 const firefox = t => browsers.open(t);
@@ -28,6 +30,8 @@ registerFindingDecisionCases(firefox);
 registerPublicationCases(firefox);
 registerAnnotationPopoverCases({ fixture, eventually });
 registerLiveWaitCases({ fixture, eventually });
+registerSubmissionStatusCases({ fixture, eventually });
+registerLinkNavigationCases({ fixture, eventually });
 
 const executable = resolve(import.meta.dirname, '../target/debug/review-artifact');
 const exec = promisify(execFile);

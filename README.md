@@ -29,8 +29,13 @@ The installed package provides:
 - The evaluation's specialist roles: API designer, change reviewer, database reviewer, fact checker, and frontend architect.
 - Public `wt`/`worktree`, `wl`/`worklog`, and `review-change` symlinks, plus source-local `review-artifact` and `consult` helpers resolved by their consumers without PATH aliases.
 - `review-change [SUBJECT]` for a PR URL, branch/worktree, GitHub branch URL, Git range, or the current branch plus outstanding changes; human reviews open directly in `review-artifact` without a manual intent field.
+  Human CLI runs keep timestamped start/end logs, per-step elapsed times, and verified evidence-read activity, with a live overall stage bar and total time in terminals.
+  Redirected logs remain plain, and `--json` stays silent except for its receipt and diagnostics.
 - Local change-review annotations and per-finding Accept/Reject controls: Accept authorizes that finding's repair only; commits and publication remain separate.
-- PR reports use checkboxes and prefilled editable inline comments, never repair decisions; one Publish button below the document confirms the visible text, destinations, account and PR. The sidebar stays for agent feedback, and uncertain outcomes reconcile the same persisted attempt.
+- PR reports include a clickable PR link and prefilled editable Markdown comments with bold section headings, never repair decisions; one Publish button below the document confirms the selected text, destinations, account and PR.
+  The sidebar stays for agent feedback, and uncertain outcomes reconcile the same persisted attempt.
+- Readable artifact pages show prominent submitted/completed status banners and browser-tab labels, with distinct warnings for changed reports and uncertain publication.
+  Sending feedback does not close the review or imply approval.
 - Event-driven foreground artifact-review waits without an inactivity cutoff, plus revision-only refreshes that preserve current HTML/image hashing and approval safety.
 
 Both status displays place the directory, Git branch, and available session name on the first row, with token/cache usage, cost, and context on the second.

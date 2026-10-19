@@ -23,7 +23,10 @@ No manual intent field is needed; available PR and commit context is unverified 
 Options: --repo DIR (default current directory), --path LITERAL_RELATIVE_PATH,
          --engine pi|claude (default pi), --provider NAME, --model ID, --thinking LEVEL,
          --timeout SECONDS (1..3600), --json, --no-browser, --state-dir ABSOLUTE_DIR.
-JSON mode is noninteractive and never opens a browser or posts.
+Human runs log timestamped step starts/ends, elapsed times and verified reads on stderr.
+Terminals also show an overall workflow-stage bar and total time, not analysis percentages.
+Redirected logs stay plain; quiet reviewer periods include elapsed-time updates.
+JSON mode suppresses progress and never opens a browser or posts.
 An optional --intent TEXT supplies explicit acceptance context for automation.
 Private, binary, symlink and submodule evidence is excluded and reported.
 External command outputs and runtimes are bounded; source code is never executed.

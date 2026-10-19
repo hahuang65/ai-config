@@ -56,7 +56,8 @@ fn scope(html: &mut String, report: &Report) {
     html.push_str(&format!("<section><h2>Scope and intent</h2><p>{}</p><dl><dt>Repository</dt><dd>{}</dd><dt>Path scope</dt><dd>{}</dd><dt>Comparison</dt><dd>{}</dd></dl>", escape(intent), escape(repository), escape(report.scope.path_filter.as_deref().unwrap_or("All eligible source files")), escape(comparison)));
     if let Some(pr) = &report.scope.pull_request {
         html.push_str(&format!(
-            "<p>Pull request: <code>{}</code></p>",
+            "<p>Pull request: <a href=\"{}\" target=\"_blank\" rel=\"noopener noreferrer\">{}</a></p>",
+            escape(&pr.url),
             escape(&pr.url)
         ));
     }

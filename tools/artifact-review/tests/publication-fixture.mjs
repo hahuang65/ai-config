@@ -74,9 +74,13 @@ async function legacyHistory(file, record) {
 }
 
 const PROVIDER = `#!/usr/bin/env python3
-import json,os,sys
+import json,os,sys,time
 path=os.environ['PUBLICATION_FIXTURE']
 p=json.load(open(path)); a=sys.argv[1:]; endpoint=a[1].split('?')[0]
+deadline=time.monotonic()+10
+while p.get('hold') and time.monotonic()<deadline:
+ time.sleep(0.02); p=json.load(open(path))
+if p.get('unavailable') or p.get('hold'): sys.exit(7)
 if endpoint == 'repos/fixture/repo/pulls/7':
  print(json.dumps({'id':70,'number':7,'html_url':'https://github.com/fixture/repo/pull/7','state':'open','base':{'sha':p['base'],'repo':{'id':9,'full_name':'fixture/repo'}},'head':{'sha':p['head']}}))
 elif endpoint.endswith('/files'):

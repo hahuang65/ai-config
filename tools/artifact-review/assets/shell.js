@@ -21,8 +21,9 @@ let pending = null;
 let listening = false;
 let eventsConnected = true;
 const findings = new FindingControls(frame, (action, id) => submit(action, id), persist);
-const publication = new PublicationControls(frame, request, persist);
+const publication = new PublicationControls(frame, request, persist, renderSubmissionStatus);
 const annotationPopover = new AnnotationPopover(frame);
+const submissionStatus = new SubmissionStatus(frame);
 
 function notice(message) { $('#notice').textContent = message; }
 function byteLength(text) { return new TextEncoder().encode(text).length; }
@@ -88,6 +89,11 @@ function controls() {
   publication.controls();
 }
 
+function renderSubmissionStatus() {
+  submissionStatus.render({ review: findings.review, status, approvedRevision,
+    publication: publication.state, publishing: publication.publishing });
+}
+
 function showTarget(anchor) {
   $('#annotation-target').textContent = target ? `${target.kind === 'selection' ? 'Selected text' : 'Element'}: ${target.text}` : 'Annotation';
   annotationPopover.update(target, anchor);
@@ -120,9 +126,12 @@ function selector(element) {
 function attachAnnotations(revision) {
   const doc = frame.contentDocument;
   annotationPopover.attach();
+  for (const link of doc.querySelectorAll('a[href]')) link.target = '_blank';
   doc.addEventListener('click', event => {
     if (event.target.closest('[data-finding-controls]')) return;
     event.preventDefault();
+    const link = event.target.closest('a[href]');
+    if (link) { window.open(link.href, '_blank', 'noopener,noreferrer'); return; }
     if (doc.getSelection()?.toString().trim()) return;
     const element = event.target.closest('body *');
     if (!element) return;
@@ -199,6 +208,7 @@ function updateReview(review) {
 }
 
 function renderEvent(event) {
+  submissionStatus.event(event);
   const row = document.createElement('article');
   row.className = `message ${event.action === 'reply' ? 'agent' : 'user'}`;
   const title = document.createElement('strong');

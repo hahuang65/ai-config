@@ -6,7 +6,7 @@ use std::collections::{BTreeMap, BTreeSet};
 use std::path::Path;
 
 #[derive(Default)]
-struct Stream {
+pub(crate) struct Stream {
     session: Option<String>,
     settled: bool,
     calls: BTreeMap<String, String>,
@@ -85,7 +85,7 @@ impl Stream {
         Ok(())
     }
 
-    fn user(&mut self, event: &Value, root: &Path) -> Result<()> {
+    fn user(&mut self, event: &Value, root: &Path) -> Result<Option<String>> {
         let blocks = event["message"]["content"]
             .as_array()
             .context("Malformed Claude reviewer tool result")?;
@@ -125,9 +125,11 @@ impl Stream {
                             == json!(root.join(&relative))),
                 "Claude reviewer read lacks matching successful file evidence"
             );
-            self.reads.insert(relative);
+            if self.reads.insert(relative.clone()) {
+                return Ok(Some(relative));
+            }
         }
-        Ok(())
+        Ok(None)
     }
 
     fn finish(&mut self, event: &Value) -> Result<()> {
@@ -155,14 +157,14 @@ impl Stream {
         Ok(())
     }
 
-    fn accept(&mut self, event: Value, root: &Path) -> Result<()> {
+    pub(crate) fn accept(&mut self, event: Value, root: &Path) -> Result<Option<String>> {
         ensure!(
             !self.settled,
             "Claude reviewer emitted data after completion"
         );
         match (event["type"].as_str(), event["subtype"].as_str()) {
-            (Some("system"), Some("init")) => self.init(&event, root),
-            (Some("system"), _) => Ok(()),
+            (Some("system"), Some("init")) => self.init(&event, root).map(|()| None),
+            (Some("system"), _) => Ok(None),
             (Some("assistant" | "user" | "result"), _) => {
                 ensure!(
                     self.session.is_some(),
@@ -170,9 +172,9 @@ impl Stream {
                 );
                 self.session(&event)?;
                 match event["type"].as_str() {
-                    Some("assistant") => self.assistant(&event),
+                    Some("assistant") => self.assistant(&event).map(|()| None),
                     Some("user") => self.user(&event, root),
-                    _ => self.finish(&event),
+                    _ => self.finish(&event).map(|()| None),
                 }
             }
             _ => anyhow::bail!("Malformed Claude reviewer event stream"),

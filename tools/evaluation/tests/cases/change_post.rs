@@ -41,6 +41,33 @@ fn write_body_only_fixture(receipt: &Value) {
 }
 
 #[test]
+fn structured_comments_keep_markdown_section_headings_in_terminal_publication() {
+    let trial = fixture();
+    let provider = provider(&trial);
+    let receipt = pull(&trial, &provider);
+    let outcome = terminal(
+        &trial,
+        &provider,
+        receipt["report"].as_str().unwrap(),
+        &["exclude F2", "preview", "post"],
+    );
+    assert_eq!(outcome["code"], 0, "{}", outcome["output"]);
+    let saved = state(&provider);
+    let body = saved["reviews"][0]["comments"][0]["body"].as_str().unwrap();
+    for heading in [
+        r"User\-facing problem",
+        "Why it matters",
+        "Technical details",
+        "Suggested fix",
+    ] {
+        assert!(
+            body.contains(&format!("**{heading}:**\n\n")),
+            "Missing Markdown heading: {heading}"
+        );
+    }
+}
+
+#[test]
 fn selection_preview_and_confirmation_publish_only_selected_comments_once() {
     let trial = fixture();
     let provider = provider(&trial);

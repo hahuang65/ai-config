@@ -19,6 +19,8 @@ Retain draft target text and revision if a reload prevents safely locating the o
 Use readable semantic HTML, plain language, and stable section identifiers.
 Do not add change badges, comparison overlays, pipeline metadata, or custom decision forms.
 Keep review controls owned by the review runtime, never in the saved artifact.
+Keep submitted and completed documents readable with a prominent runtime-owned status banner and browser-tab label.
+Feedback submission stays open for follow-up; completion and publication are distinct from approval, and uncertain publication never shows successful completion.
 Finding-review controls appear inside their corresponding rendered finding cards; the sidebar holds feedback and conversation.
 
 For ordinary artifacts, apply feedback to the same HTML file, describe the changes briefly, and continue receiving feedback until the user approves or declines.
@@ -81,6 +83,9 @@ No finding decision authorizes staging, committing, installation, delivery, or p
 PR reports never authorize repairs and show no Accept/Reject controls.
 The runtime adds unchecked checkboxes and prefilled editable comments inside the corresponding cards, with one Publish button below the document; the sidebar stays for agent feedback.
 Each comment starts from the finding explanation without adding internal finding IDs.
+New reports use Markdown with bold section headings; edited text is still sent verbatim.
+The existing PR URL in Scope and intent is a normal clickable anchor, independent of publication checks.
+The shell preserves safe GitHub PR links and opens them in a separate tab; document scripts remain disabled.
 Only checked comments are sent, verbatim, to their immutable verified file, side and line; unverified locations cannot be selected or posted as summary comments.
 Selections and edits alone do not publish, and local decision notes are not publication comments.
 Only the human selects and edits comments, inspects the visible text, destinations, account and PR context, then clicks Publish as the final confirmation.

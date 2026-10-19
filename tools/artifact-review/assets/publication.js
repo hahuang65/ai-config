@@ -1,7 +1,8 @@
 'use strict';
 
 class PublicationControls {
-  constructor(frame, request, persist) {
+  constructor(frame, request, persist, onStatus) {
+    this.onStatus = onStatus;
     this.frame = frame;
     this.request = request;
     this.persist = persist;
@@ -19,7 +20,7 @@ class PublicationControls {
     const next = binding?.publication_only ? binding : null;
     const changed = next?.report_digest !== this.binding?.report_digest;
     this.binding = next;
-    if (changed) { this.state = null; this.error = ''; void this.refresh(); }
+    if (changed) { this.state = next ? { status: 'loading' } : null; this.error = ''; void this.refresh(); }
     this.controls();
   }
 
@@ -103,6 +104,7 @@ class PublicationControls {
   }
 
   controls() {
+    this.onStatus();
     if (!this.binding) return;
     this.mount();
     if (!this.footer) return;
@@ -120,17 +122,18 @@ class PublicationControls {
     }
     this.publishButton.disabled = this.busy || !current || !ready || !this.state?.account || missing || !selected.length || !valid;
     this.publishButton.textContent = this.publishing ? 'Publishing…' : 'Publish';
-    this.check.hidden = !this.error && this.state?.status !== 'uncertain';
+    this.check.hidden = !this.error && !['uncertain', 'unavailable'].includes(this.state?.status);
     this.check.disabled = this.busy;
     this.account.textContent = posted ? `Published to ${this.state.url}`
       : empty ? `No findings to publish · ${this.state.url}`
       : `${this.state?.account?.login || 'Waiting for GitHub account'} · ${this.state?.url || 'PR report'}`;
     this.revisions.textContent = `${this.state?.base || ''} → ${this.state?.head || ''}`;
     this.notice.textContent = this.error || (posted ? 'Published. See the PR for the submitted comments.'
-      : !current ? 'Report changed. Obtain a fresh review.'
+      : !current ? 'Report changed. Do not resubmit; reconcile any existing attempt from the original unchanged report before starting another review.'
       : empty ? 'No findings to publish. The sidebar remains available for feedback.'
       : missing ? 'Finding controls could not be matched to the report. Obtain a fresh review.'
       : !valid ? 'Selected comments must contain 1–8000 UTF-8 bytes.'
+      : this.state?.status === 'unavailable' ? 'Publication unavailable. Check status before trying again; the PR link remains available.'
       : this.state?.status === 'uncertain' ? 'Outcome uncertain. Check the existing attempt; do not resubmit.'
       : `Select comments above. Publish sends their exact text to the displayed file and line (${selected.length} selected). This posts comments only, never PR approval or requested changes.`);
   }
@@ -142,8 +145,10 @@ class PublicationControls {
       let state = await this.request('/publication', undefined, 180000);
       if (reconcile && state.status === 'uncertain') state = await this.request('/publication/reconcile', {}, 180000);
       this.state = state; this.error = '';
-    } catch (error) { this.error = error.message; }
-    finally { this.busy = false; this.controls(); }
+    } catch (error) {
+      this.error = error.message;
+      if (!['posted', 'uncertain'].includes(this.state?.status)) this.state = { ...this.state, status: 'unavailable' };
+    } finally { this.busy = false; this.controls(); }
   }
 
   async publish() {

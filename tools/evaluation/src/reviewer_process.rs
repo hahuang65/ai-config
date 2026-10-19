@@ -82,7 +82,20 @@ impl Drop for Interrupts {
     }
 }
 
-fn capture(pipe: impl Read + Send + 'static, limit: u64, retain: bool) -> Reader {
+pub(crate) type Observer = Box<dyn FnMut(&[u8]) + Send>;
+pub(crate) type Tick = Box<dyn FnMut() + Send>;
+
+pub(crate) struct Observation {
+    pub bytes: Observer,
+    pub tick: Tick,
+}
+
+fn capture(
+    pipe: impl Read + Send + 'static,
+    limit: u64,
+    retain: bool,
+    mut observer: Option<Observer>,
+) -> Reader {
     let count = Arc::new(AtomicU64::new(0));
     let observed = count.clone();
     let task = thread::spawn(move || {
@@ -97,7 +110,12 @@ fn capture(pipe: impl Read + Send + 'static, limit: u64, retain: bool) -> Reader
             if size == 0 {
                 break;
             }
-            observed.fetch_add(size as u64, Ordering::Relaxed);
+            let total = observed.fetch_add(size as u64, Ordering::Relaxed) + size as u64;
+            if total <= limit
+                && let Some(observer) = &mut observer
+            {
+                observer(&buffer[..size]);
+            }
             if retain {
                 bytes.extend_from_slice(&buffer[..size]);
             }
@@ -128,6 +146,7 @@ fn wait(
     signals: &Interrupts,
     seconds: u64,
     process: &mut ProcessEvidence,
+    tick: &mut Option<Tick>,
 ) -> Result<ExitStatus> {
     let deadline = Instant::now() + Duration::from_secs(seconds);
     loop {
@@ -147,6 +166,9 @@ fn wait(
             let status = running.child.wait()?;
             running.reaped = true;
             return Ok(status);
+        }
+        if let Some(tick) = tick {
+            tick();
         }
         thread::sleep(POLL_INTERVAL);
     }
@@ -214,7 +236,19 @@ pub fn run_accepted(command: Command, seconds: u64, accepted: &[i32]) -> Result<
     Ok(output.bytes)
 }
 
-pub(crate) fn run_captured(mut command: Command, seconds: u64) -> Result<Output> {
+pub(crate) fn run_captured(command: Command, seconds: u64) -> Result<Output> {
+    run_observed(command, seconds, None)
+}
+
+pub(crate) fn run_observed(
+    mut command: Command,
+    seconds: u64,
+    observation: Option<Observation>,
+) -> Result<Output> {
+    let (observer, mut tick) = match observation {
+        Some(observation) => (Some(observation.bytes), Some(observation.tick)),
+        None => (None, None),
+    };
     let signals = Interrupts::new()?;
     let child = command
         .stdin(Stdio::null())
@@ -227,8 +261,18 @@ pub(crate) fn run_captured(mut command: Command, seconds: u64) -> Result<Output>
         child,
         reaped: false,
     };
-    let stdout = capture(running.child.stdout.take().unwrap(), MAX_OUTPUT, true);
-    let stderr = capture(running.child.stderr.take().unwrap(), MAX_DIAGNOSTICS, false);
+    let stdout = capture(
+        running.child.stdout.take().unwrap(),
+        MAX_OUTPUT,
+        true,
+        observer,
+    );
+    let stderr = capture(
+        running.child.stderr.take().unwrap(),
+        MAX_DIAGNOSTICS,
+        false,
+        None,
+    );
     let mut process = ProcessEvidence::default();
     let status = wait(
         &mut running,
@@ -237,6 +281,7 @@ pub(crate) fn run_captured(mut command: Command, seconds: u64) -> Result<Output>
         &signals,
         seconds,
         &mut process,
+        &mut tick,
     )
     .map_err(|error| Failure::capture(error, evidence(process, &stdout.count, &stderr.count)))?;
     collected(status, stdout, stderr)

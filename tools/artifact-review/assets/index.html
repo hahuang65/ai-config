@@ -8,15 +8,19 @@
   <script src="/findings.js" defer></script>
   <script src="/publication.js" defer></script>
   <script src="/annotations.js" defer></script>
+  <script src="/submission-status.js" defer></script>
   <script src="/shell.js" defer></script>
 </head>
 <body data-status="open">
   <header class="toolbar"><strong>Review artifact</strong><span id="connection">Connecting…</span></header>
   <main class="layout">
     <section class="artifact-panel" aria-label="Document">
-      <p class="hint">Click an element or select text to comment. Document scripts and external resources are disabled.
-        <span id="finding-policy" hidden>Accept authorizes repairing that finding; Reject and undecided findings authorize nothing. Neither action authorizes commits or publication.</span>
-      </p>
+      <div class="document-header">
+        <p class="hint">Click an element or select text to comment. Document scripts and external resources are disabled.
+          <span id="finding-policy" hidden>Accept authorizes repairing that finding; Reject and undecided findings authorize nothing. Neither action authorizes commits or publication.</span>
+        </p>
+        <section id="submission-status" role="status" aria-live="polite" hidden><strong></strong><p></p></section>
+      </div>
       <iframe id="artifact" title="Artifact snapshot" sandbox="allow-same-origin" referrerpolicy="no-referrer"></iframe>
     </section>
     <aside class="conversation" aria-label="Feedback panel">

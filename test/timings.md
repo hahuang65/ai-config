@@ -41,13 +41,18 @@ Both ignoring lock failure and refusing to retry must make the storage recovery 
 
 | Check | Constant | Current value | Source and purpose |
 | --- | --- | --- | --- |
-| Retained | `INSTALL_COMMAND_GUARD_MS` | 30s | [install-script.ts](fixtures/install-script.ts): unchanged subprocess limit for one installer transaction |
-| Adjusted | `installerScenarioGuard(transactions)` | `(transactions + 1) × 30s` | [install-script.ts](fixtures/install-script.ts): sum sequential invocation limits plus one setup/cleanup margin |
-| Retained | `SOURCE_SWITCH_GUARD_MS` | 180s | [package-install-switch.test.ts](package-install-switch.test.ts): five sequential installer limits plus one 30s fixture setup/cleanup margin |
+| Temporarily adjusted | `INSTALL_COMMAND_GUARD_MS` | 60s | [install-script.ts](fixtures/install-script.ts): subprocess limit for one installer transaction |
+| Derived | `installerScenarioGuard(transactions)` | `(transactions + 1) × 60s` | [install-script.ts](fixtures/install-script.ts): sum sequential invocation limits plus one setup/cleanup margin |
+| Derived | `SOURCE_SWITCH_GUARD_MS` | 360s | [package-install-switch.test.ts](package-install-switch.test.ts): five sequential installer limits plus one 60s fixture setup/cleanup margin |
+
+The invocation limit is temporarily one minute because two rollback fixtures were terminated by the former 30s command guard before they could report their restoration results.
+A disposable reproduction returned `ETIMEDOUT` and `SIGTERM` after 30s; it did not establish the natural completion time.
+Further runtime profiling is deferred to a separate follow-up task.
+This adjustment preserves finite watchdogs and all rollback assertions; it changes no production installer deadline.
 
 The source-switch scenario covers initial installation, repeat installation, switching sources, switching back, and recovery after removing the former source.
 Its previous 40s whole-case watchdog was shorter than the combined subprocess budgets and left no headroom on a measured local run of about 40s for five successful transactions.
-The new watchdog derives from the existing per-command limit; it does not add successful-path waits or change installer behavior, transaction limits, or assertions.
+Scenario watchdogs derive from the per-command test limit; they do not add successful-path waits or change installer behavior or assertions.
 
 The ownership-record preservation scenario had the same mismatch: five installer invocations shared one 30s whole-test deadline.
 A disposable diagnostic run completed the initial installation and all four expected rejections in 28.1s, leaving little scheduling margin.
@@ -58,12 +63,12 @@ The record, transaction, rollback, and modified-link-switch scenarios now use `i
 
 | Suite | Invocations per scenario, in source order | Whole-scenario budgets |
 | --- | --- | --- |
-| [Ownership records](package-install-records.test.ts) | 2, 5, 5, 3, 2 | 90s, 180s, 180s, 120s, 90s |
-| [Transactions](package-install-transaction.test.ts) | 2, 2, 3, 3 | 90s, 90s, 120s, 120s |
-| [Rollback](package-install-rollback.test.ts) | 2 for each source-switch failure, 2 for a concurrent edit, 1 for first-install failure | 90s, 90s, 60s |
-| [Modified obsolete link](package-install-switch.test.ts) | 3 | 120s |
+| [Ownership records](package-install-records.test.ts) | 2, 5, 5, 3, 2 | 180s, 360s, 360s, 240s, 180s |
+| [Transactions](package-install-transaction.test.ts) | 2, 2, 3, 3 | 180s, 180s, 240s, 240s |
+| [Rollback](package-install-rollback.test.ts) | 2 for each source-switch failure, 2 for a concurrent edit, 1 for first-install failure | 180s, 180s, 120s |
+| [Modified obsolete link](package-install-switch.test.ts) | 3 | 240s |
 
-`package-install-budgets.test.ts` pins the unchanged 30s invocation limit and checks the composed budgets and setup/cleanup margin.
+`package-install-budgets.test.ts` pins the temporary 60s invocation limit and checks the composed budgets and setup/cleanup margin.
 Adding another installer invocation requires updating its scenario count.
 These watchdogs remain upper bounds, not waits, and do not relax transaction assertions or production behavior.
 

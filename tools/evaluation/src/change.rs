@@ -1,6 +1,8 @@
 use crate::{
     change_args::{Args, Target},
-    change_html, change_snapshot as snapshot,
+    change_html, change_presentation,
+    change_progress::{Progress, Stage},
+    change_snapshot as snapshot,
     change_store::Store,
     change_types::{self, Finding, Report},
     paths::Paths,
@@ -51,14 +53,21 @@ fn execute(args: Args) -> Result<()> {
             let store = Store::open(&paths, args.state.as_deref())?;
             crate::change_post::post(&store, report)
         }
-        _ => crate::change_command::with_source(&args.repo, || review(&paths, &args)),
+        _ => crate::change_command::with_source(&args.repo, || {
+            let progress = Progress::new(args.json);
+            let result = review(&paths, &args, &progress);
+            progress.finish(result.is_ok());
+            result
+        }),
     }
 }
 
-fn review(paths: &Paths, args: &Args) -> Result<()> {
+fn review(paths: &Paths, args: &Args, progress: &std::sync::Arc<Progress>) -> Result<()> {
     let mut args = args.clone();
+    progress.start(Stage::Resolve);
     let selected = crate::change_subject::resolve(&args.repo, &args.target)?;
     let repo = &selected.repo;
+    progress.start(Stage::Freeze);
     let mut evidence = snapshot::freeze(repo, &selected.target, args.path_filter.as_deref())?;
     if let Some(url) = &selected.remote_url {
         evidence.scope.repository = url.clone();
@@ -66,12 +75,8 @@ fn review(paths: &Paths, args: &Args) -> Result<()> {
     if args.infer_intent {
         args.intent = crate::change_intent::infer(repo, &evidence.scope)?;
     }
-    let display = crate::change_presentation::describe(
-        repo,
-        &args.target,
-        &selected.target,
-        &evidence.scope,
-    )?;
+    let display =
+        change_presentation::describe(repo, &args.target, &selected.target, &evidence.scope)?;
     let store = Store::new(paths, args.state.as_deref(), Some(repo))?;
     let pending = tempfile::Builder::new()
         .prefix("review-")
@@ -81,9 +86,12 @@ fn review(paths: &Paths, args: &Args) -> Result<()> {
     let frozen_lines = snapshot::lines(&patch)?;
     let mut proven = frozen_lines.clone();
     if let Some(pr) = &evidence.scope.pull_request {
+        progress.start(Stage::Verify);
         let provider_lines = crate::change_provider::lines(repo, pr)?;
         proven.retain(|line| provider_lines.contains(line));
         crate::change_provider::check(&evidence.scope)?;
+    } else {
+        progress.skip(Stage::Verify, "Not a pull-request review");
     }
     let response = response(
         paths,
@@ -91,20 +99,30 @@ fn review(paths: &Paths, args: &Args) -> Result<()> {
         &pending.path().join("snapshot"),
         repo,
         patch.is_empty(),
+        progress,
     );
     let (answer, reads) = match response {
         Ok(response) => response,
         Err(error) => return Err(retain_failure(pending, error)),
     };
+    validate_findings(&answer, &frozen_lines)?;
+    let report = assemble(&args, evidence, digest, answer, reads, &proven, display);
+    progress.start(Stage::Save);
+    save_report(paths, &store, pending, report, &args, progress)
+}
+
+fn validate_findings(
+    answer: &change_types::Answer,
+    lines: &std::collections::BTreeSet<(String, String, u64)>,
+) -> Result<()> {
     for finding in &answer.findings {
         anyhow::ensure!(
             finding.kind.is_defect()
-                || snapshot::inline(&frozen_lines, &finding.path, &finding.side, finding.line),
+                || snapshot::inline(lines, &finding.path, &finding.side, finding.line),
             "Refactoring and reuse suggestions must be anchored to changed lines"
         );
     }
-    let report = assemble(&args, evidence, digest, answer, reads, &proven, display);
-    save_report(paths, &store, pending, report, &args)
+    Ok(())
 }
 
 fn retain_failure(pending: tempfile::TempDir, error: anyhow::Error) -> anyhow::Error {
@@ -133,6 +151,7 @@ fn save_report(
     pending: tempfile::TempDir,
     report: Report,
     args: &Args,
+    progress: &Progress,
 ) -> Result<()> {
     let html = change_html::render(&report);
     let report = Report {
@@ -142,7 +161,7 @@ fn save_report(
     store.save(pending.path(), &report, &html)?;
     crate::publication::save_sources(store, pending.path(), &report)?;
     let directory = pending.keep();
-    present(paths, &directory, &report, args);
+    present(paths, &directory, &report, args, progress);
     Ok(())
 }
 
@@ -193,8 +212,11 @@ fn response(
     snapshot: &Path,
     repository: &Path,
     empty: bool,
+    progress: &std::sync::Arc<Progress>,
 ) -> Result<(change_types::Answer, Vec<String>)> {
     if empty {
+        progress.skip(Stage::Review, "No reviewable text changes");
+        progress.start(Stage::Validate);
         return Ok((
             change_types::Answer {
                 summary: "No reviewable text changes in this scope.".into(),
@@ -218,12 +240,13 @@ fn response(
         prompt.into(),
     ];
     options.extend(args.model.iter().map(Into::into));
-    let response = reviewer::collect(
-        paths,
-        reviewer::parse(&options)?
-            .excluding(repository)
-            .requiring_reads(&["scope.json", "patch.diff"]),
-    )?;
+    progress.start(Stage::Review);
+    let mut request = reviewer::parse(&options)?
+        .excluding(repository)
+        .requiring_reads(&["scope.json", "patch.diff"]);
+    request.progress = (!args.json).then(|| progress.clone());
+    let response = reviewer::collect(paths, request)?;
+    progress.start(Stage::Validate);
     let answer = change_types::answer(
         response["response"]
             .as_str()
@@ -233,7 +256,7 @@ fn response(
     Ok((answer, reads))
 }
 
-fn present(paths: &Paths, directory: &Path, report: &Report, args: &Args) {
+fn present(paths: &Paths, directory: &Path, report: &Report, args: &Args, progress: &Progress) {
     let html = directory.join("report.html");
     if args.json {
         println!(
@@ -246,13 +269,17 @@ fn present(paths: &Paths, directory: &Path, report: &Report, args: &Args) {
             report.findings.len(),
             change_html::terminal(&html.display().to_string())
         );
-        if !args.no_browser
-            && let Err(error) = open(paths, &html, Path::new(&report.scope.repository))
-        {
-            eprintln!(
-                "Cannot open the browser: {}. Open the report path manually.",
-                change_html::terminal(&error.to_string())
-            );
+        if !args.no_browser {
+            progress.start(Stage::Open);
+            if let Err(error) = open(paths, &html, Path::new(&report.scope.repository)) {
+                progress.fail_current();
+                eprintln!(
+                    "Cannot open the browser: {}. Open the report path manually.",
+                    change_html::terminal(&error.to_string())
+                );
+            }
+        } else {
+            progress.skip(Stage::Open, "Browser opening disabled");
         }
     }
 }

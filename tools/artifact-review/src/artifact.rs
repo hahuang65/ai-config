@@ -120,6 +120,24 @@ impl ImageState {
     }
 }
 
+fn pr_link(value: &str) -> bool {
+    let Some(path) = value.strip_prefix("https://github.com/") else {
+        return false;
+    };
+    let parts: Vec<_> = path.split('/').collect();
+    parts.len() == 4
+        && parts[..2].iter().all(|name| {
+            !name.is_empty()
+                && !matches!(*name, "." | "..")
+                && name
+                    .bytes()
+                    .all(|byte| byte.is_ascii_alphanumeric() || b"-_.".contains(&byte))
+        })
+        && parts[2] == "pull"
+        && parts[3].bytes().all(|byte| byte.is_ascii_digit())
+        && parts[3].parse::<u64>().is_ok_and(|number| number > 0)
+}
+
 fn sanitize(paths: &Paths, source: &str, images: Arc<Mutex<ImageState>>) -> String {
     let artifact = paths.artifact.clone();
     ammonia::Builder::default()
@@ -131,10 +149,13 @@ fn sanitize(paths: &Paths, source: &str, images: Arc<Mutex<ImageState>>) -> Stri
         .rm_clean_content_tags(["style"].iter().copied())
         .add_clean_content_tags(["title"].iter().copied())
         .add_generic_attributes(["id", "class", "style"].iter().copied())
-        .rm_tag_attributes("a", ["href", "target"].iter().copied())
+        .rm_tag_attributes("a", ["target"].iter().copied())
         .rm_tag_attributes("img", ["srcset"].iter().copied())
         .add_url_schemes(&["data"])
         .attribute_filter(move |element, attribute, value| {
+            if element == "a" && attribute == "href" {
+                return pr_link(value).then_some(Cow::Borrowed(value));
+            }
             if element != "img" || attribute != "src" {
                 return Some(Cow::Borrowed(value));
             }
@@ -144,7 +165,7 @@ fn sanitize(paths: &Paths, source: &str, images: Arc<Mutex<ImageState>>) -> Stri
                 .inline(&artifact, value)
                 .map(Cow::Owned)
         })
-        .link_rel(None)
+        .link_rel(Some("noopener noreferrer"))
         .clean(source)
         .to_string()
 }

@@ -1,4 +1,5 @@
 mod artifact;
+mod assets;
 mod client;
 mod event_wait;
 mod finding_store;

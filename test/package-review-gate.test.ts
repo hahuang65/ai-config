@@ -169,7 +169,8 @@ test("combined focused targets share builds within one invocation without cachin
 
 test("change-review cases share one Cargo test target with every case module wired once", () => {
   const groups = [
-    "change_execution", "change_opportunities", "change_post", "change_post_safety", "change_review",
+    "change_execution", "change_opportunities", "change_post", "change_post_safety",
+    "change_progress", "change_progress_terminal", "change_review",
     "change_review_diagnostics", "change_scope", "change_snapshot", "change_startup",
     "change_subject", "change_subject_safety", "change_suggestion_fallback",
   ];

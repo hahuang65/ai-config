@@ -18,6 +18,18 @@ fn markdown(text: &str) -> String {
         .collect()
 }
 
+fn comment_body(proposal: &crate::change_types::Proposal) -> String {
+    match &proposal.explanation {
+        Some(explanation) => explanation
+            .sections()
+            .into_iter()
+            .map(|(heading, text)| format!("**{}:**\n\n{}", markdown(heading), markdown(text)))
+            .collect::<Vec<_>>()
+            .join("\n\n"),
+        None => markdown(&proposal.body),
+    }
+}
+
 pub fn payload(report: &Report, selected: &BTreeSet<String>, marker: &str) -> Value {
     let mut comments = vec![];
     let mut body = format!(
@@ -36,7 +48,7 @@ pub fn payload(report: &Report, selected: &BTreeSet<String>, marker: &str) -> Va
             finding.id,
             category,
             markdown(&p.title),
-            markdown(&p.body)
+            comment_body(p)
         );
         if finding.inline {
             comments.push(json!({"path":p.path,"line":p.line,"side":p.side,"body":text}));

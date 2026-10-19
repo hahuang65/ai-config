@@ -71,7 +71,7 @@ impl Explanation {
     fn body(&self) -> String {
         self.sections()
             .into_iter()
-            .map(|(heading, text)| format!("{heading}:\n{text}"))
+            .map(|(heading, text)| format!("**{heading}:**\n\n{text}"))
             .collect::<Vec<_>>()
             .join("\n\n")
     }

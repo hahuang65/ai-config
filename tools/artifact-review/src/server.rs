@@ -1,3 +1,4 @@
+use crate::assets::ASSETS;
 use crate::model::{Submission, snapshot};
 use crate::paths::{Descriptor, Paths, Result, private_file};
 use crate::store::Store;
@@ -75,39 +76,6 @@ pub async fn serve(paths: Paths) -> Result<()> {
     let _ = std::fs::remove_file(paths.directory.join("server.json"));
     Ok(())
 }
-
-const ASSETS: &[(&str, &str, &str)] = &[
-    (
-        "/",
-        "text/html; charset=utf-8",
-        include_str!("../assets/index.html"),
-    ),
-    (
-        "/shell.js",
-        "text/javascript; charset=utf-8",
-        include_str!("../assets/shell.js"),
-    ),
-    (
-        "/shell.css",
-        "text/css; charset=utf-8",
-        include_str!("../assets/shell.css"),
-    ),
-    (
-        "/findings.js",
-        "text/javascript; charset=utf-8",
-        include_str!("../assets/findings.js"),
-    ),
-    (
-        "/publication.js",
-        "text/javascript; charset=utf-8",
-        include_str!("../assets/publication.js"),
-    ),
-    (
-        "/annotations.js",
-        "text/javascript; charset=utf-8",
-        include_str!("../assets/annotations.js"),
-    ),
-];
 
 fn routes() -> Router<Service> {
     let mut router = Router::new();

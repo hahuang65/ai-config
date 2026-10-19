@@ -48,6 +48,7 @@ enum Engine {
 }
 
 pub struct Request {
+    pub(crate) progress: Option<std::sync::Arc<crate::change_progress::Progress>>,
     engine: Engine,
     snapshot: PathBuf,
     prompt: String,
@@ -122,6 +123,7 @@ pub fn parse(arguments: &[OsString]) -> Result<Request> {
         "--provider and --thinking require --engine pi"
     );
     Ok(Request {
+        progress: None,
         engine,
         snapshot: snapshot.into(),
         prompt: (*prompt).into(),
@@ -347,7 +349,14 @@ pub fn collect(paths: &Paths, request: Request) -> Result<serde_json::Value> {
         )?,
         Engine::Claude => configure_claude(&mut command, paths, &request, &snapshot)?,
     }
-    let output = reviewer_process::run_captured(command, request.timeout);
+    let observer = request.progress.as_ref().map(|progress| {
+        crate::reviewer_progress::observer(
+            &snapshot,
+            request.engine == Engine::Claude,
+            progress.clone(),
+        )
+    });
+    let output = reviewer_process::run_observed(command, request.timeout, observer);
     drop(profile); // Keep Pi's temporary authentication links alive until the child exits.
     completed(output, request.engine, &snapshot, request.required_reads)
 }

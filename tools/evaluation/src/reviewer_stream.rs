@@ -66,7 +66,7 @@ fn final_text(message: &Value) -> Result<String> {
 }
 
 #[derive(Default)]
-struct Stream {
+pub(crate) struct Stream {
     ready: bool,
     settled: bool,
     final_message: Value,
@@ -100,7 +100,7 @@ impl Stream {
         Ok(())
     }
 
-    fn end_tool(&mut self, event: &Value, root: &Path) -> Result<()> {
+    fn end_tool(&mut self, event: &Value, root: &Path) -> Result<Option<String>> {
         let id = event["toolCallId"]
             .as_str()
             .context("Missing reviewer tool call ID")?;
@@ -117,17 +117,20 @@ impl Stream {
                 call["toolName"] == "read" && event["toolName"] == "read",
                 "Reviewer executed an unexpected tool"
             );
-            self.reads.insert(read_path(
+            let path = read_path(
                 call["args"]["path"]
                     .as_str()
                     .context("Missing reviewer read path")?,
                 root,
-            )?);
+            )?;
+            if self.reads.insert(path.clone()) {
+                return Ok(Some(path));
+            }
         }
-        Ok(())
+        Ok(None)
     }
 
-    fn accept(&mut self, event: Value, root: &Path) -> Result<()> {
+    pub(crate) fn accept(&mut self, event: Value, root: &Path) -> Result<Option<String>> {
         ensure!(
             event.is_object() && event["type"].is_string(),
             "Malformed reviewer event stream"
@@ -158,10 +161,10 @@ impl Stream {
                 self.final_message = event["message"].clone()
             }
             Some("tool_execution_start") => self.start_tool(&event)?,
-            Some("tool_execution_end") => self.end_tool(&event, root)?,
+            Some("tool_execution_end") => return self.end_tool(&event, root),
             _ => {}
         }
-        Ok(())
+        Ok(None)
     }
 
     fn result(self, root: &Path) -> Result<Value> {

@@ -48,11 +48,16 @@ Restricted-reviewer offline settings and synthetic-provider boundaries remain un
 - `resolve-conflicts.test.ts` checks the rebase-only skill contract.
 - Every `tools/evaluation/tests/*.rs` integration suite runs, including package validation, configuration ownership, frozen evidence, restricted reviewers, consultations, and human-confirmed comment-only publication with disposable fixtures and fake providers; no hand-maintained suite allowlist can omit new safety tests.
 - `package-review-gate.test.ts` checks the complete and focused gates, shared executable build prerequisites, bounded WT worker selection, and grouped evaluation case wiring.
+- `tools/evaluation/tests/cases/change_progress.rs` checks timestamped step starts/ends and durations, live Pi/Claude evidence-read activity, elapsed-time updates, bounded output, private-output filtering, and silent JSON mode.
+  `change_progress_terminal.rs` verifies the running log and overall stage/time bar through a real pseudo-terminal.
 - Rust tests and `tools/worktree/tests/rust_parity.py` check the standalone worktree CLI, including the process-level ownership, cleanup, interruption, and submodule cases; Rust tests also check Worklog.
 - The original Python worktree CLI's reference-only tests are not part of the replacement gate; the parity runner executes their applicable cases against the Rust CLI.
 - `tools/artifact-review/tests/` checks local review storage, revision-bound per-finding repair decisions through the Rust CLI, and the bounded Firefox integration after an explicit debug CLI build.
   Its real change-report case covers Accept/Reject, annotations, retry after response loss and reload, and preservation of the retained HTML; ordinary artifact approval keeps its existing coverage.
   `publication.mjs` separately checks exact preview then human browser confirmation, independent repair decisions, account/PR/report changes, rejected field injection, local-origin authorization, and reconciliation after a lost fake-provider response without a second post.
+  It also checks the original Scope and intent PR anchor, Markdown section headings, and confirmed-versus-uncertain publication banners.
+  `link-navigation.mjs` checks that only safe GitHub PR anchors survive sanitization, without enabling document scripts or other navigation.
+  `submission-status.mjs` checks readable submitted/completed pages, reload persistence, agent replies, changed versions, and reopening without stale completion labels.
   The artifact tool links the shared evaluation library; these cases never access a live provider or protected legacy publication state.
   `tests/wait.rs` covers indefinite foreground waiting, transport heartbeats, terminal state, replay/retry, interruption/shutdown, and fresh revision checks despite render reuse.
   The bounded browser suite counts idle event/snapshot requests and verifies live feedback, replies, and document reload through revision-only checks.

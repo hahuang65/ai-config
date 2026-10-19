@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { readFile, readdir, rm } from 'node:fs/promises';
+import { readFile, readdir, rm, writeFile } from 'node:fs/promises';
 import { join, resolve } from 'node:path';
 import { setTimeout as sleep } from 'node:timers/promises';
 import { fixture, execute, changeBinary, modelServer, configureModel, repository, calls, answer } from '../../../test/fixtures/reviewer.mjs';
@@ -107,6 +107,7 @@ export function registerFindingDecisionCases(firefox) {
       await eventually(async () => (await f.cli('poll', f.report, '--timeout', '0')).events.some(event => event.action === 'accept'));
       const partial = await f.cli('poll', f.report, '--timeout', '0');
       assert.equal(partial.status, 'open');
+      assert.equal(await browser.evaluate("return document.querySelector('#submission-status').dataset.state;"), 'submitted');
       assert.equal(partial.events.length, 1);
       assert.equal(partial.events[0].finding, 'F1');
       assert.equal(partial.events[0].message, 'Finding F1 comment:\nKeep this repair scoped to F1.\n\nGeneral feedback:\nGeneral review context.');
@@ -126,13 +127,19 @@ export function registerFindingDecisionCases(firefox) {
       assert.equal(finished.events[1].message, 'Do not alter the legacy behavior.');
       assert.equal(finished.events[2].message, '');
       assert.equal(finished.finding_review.needs_review, false);
+      assert.equal(await browser.evaluate("return document.querySelector('#submission-status strong').textContent;"), 'COMPLETED — All findings decided');
       await browser.reload();
       await eventually(() => browser.evaluate("return document.body.dataset.status === 'decided';"));
       await eventually(() => browser.evaluate("return document.querySelector('#artifact').contentDocument?.querySelectorAll('[data-decision]').length === 6;"));
       assert.equal(await browser.evaluate("return [...document.querySelector('#artifact').contentDocument.querySelectorAll('[data-decision]')].every(button => button.disabled);"), true);
+      assert.equal(await browser.evaluate("return document.querySelector('#submission-status').dataset.state;"), 'completed');
       await browser.narrow();
       assert.equal(await browser.evaluate('return document.documentElement.scrollWidth <= innerWidth;'), true);
       assert.deepEqual(await readFile(f.report), original);
+      await writeFile(f.report, Buffer.concat([original, Buffer.from('<!-- changed report -->')]));
+      await browser.reload();
+      await eventually(() => browser.evaluate("return !!document.querySelector('#artifact').dataset.revision;"));
+      assert.equal(await browser.evaluate("return document.querySelector('#submission-status strong').textContent;"), 'CHANGED — Obtain a fresh review');
     } finally {
       try { await browser?.close(); }
       finally { await f.cli('stop', f.report).catch(() => {}); }

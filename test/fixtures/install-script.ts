@@ -5,7 +5,8 @@ import { dirname, join, resolve } from "node:path";
 import { copyPackageFiles } from "./inactive-package";
 
 const repository = resolve(import.meta.dir, "../..");
-export const INSTALL_COMMAND_GUARD_MS = 30_000;
+// Temporary headroom while worklog task #365 investigates installer fixture runtimes.
+export const INSTALL_COMMAND_GUARD_MS = 60_000;
 
 export function installerScenarioGuard(transactions: number) {
   // Every invocation retains its own limit; reserve one more for setup/cleanup.

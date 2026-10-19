@@ -40,6 +40,24 @@ Neither mode imports evaluation `.state/pi` or historical agentmemory data.
 Retained private reports and signatures default to `~/.local/state/ai-config/change-reviews`.
 `--state-dir` selects a separate private location, including when reviewing this source checkout.
 JSON mode never opens a browser or posts.
+
+### Terminal progress
+
+Human CLI runs keep a running log on stderr while stdout retains the final report summary.
+Each step logs local start and end times (`HH:MM:SS`) and elapsed seconds measured with a monotonic clock.
+Failed steps log FAIL, and optional steps log SKIP instead of claiming work ran.
+An interactive terminal also shows a live overall bar, the current stage, and total elapsed time.
+The bar counts seven workflow stages, including skipped optional stages, not a percentage of model analysis or an estimated finish time.
+Redirected stderr uses plain timestamped logs and a final total, without terminal control sequences.
+Stages cover target resolution, source freezing, PR-location verification when applicable, the restricted reviewer, findings validation, report saving, and browser opening.
+During the reviewer stage, successful native read events report snapshot-relative file names and a count of distinct evidence files inspected.
+Both Pi and Claude use their own stream validators; failed reads, source contents, model text, and provider diagnostics are never progress output.
+Read activity is not proof that the overall review completed successfully.
+Every five seconds without completion, a WAIT entry shows the read count and elapsed reviewer time.
+The overall bar continues to show total review time, including source preparation and browser opening.
+The first 50 file names are shown, with individual names limited to 160 characters; later activity uses count summaries and points to the full `files_read` list in `report.json`.
+Live event decoding is bounded and best-effort; the existing full-stream and completion checks still decide whether a report can be retained.
+`--json` suppresses all progress messages and keeps its single JSON receipt.
 A human review opens the escaped, self-contained HTML report in `review-artifact` with its matching finding record.
 `--no-browser` retains and prints the report without opening it.
 The shared review-change skill also opens finding mode explicitly for JSON/agent workflows.
@@ -52,7 +70,7 @@ The report summarizes evidence reads and retains uncertainty, exclusions, and th
 Exact revisions, the snapshot digest, original intent context, and the full file-read list remain in the machine-readable record.
 New findings have four distinct sections: User-facing problem, Why it matters, Technical details, and Suggested fix.
 Reviewer responses supply a nonempty `intent_summary` of at most 600 UTF-8 bytes and `explanation` with nonempty `problem`, `impact`, `technical_details`, and `suggested_fix` strings.
-The retained record also keeps a plain-text `body` composed from those sections for publication.
+New retained records also keep a Markdown `body` composed from those sections, with bold section headings for publication.
 The record's optional `display` and `intent_summary` fields preserve those human-facing labels alongside the exact scope.
 Existing version-1 body-only reports remain supported without being rewritten or inventing missing explanations.
 
@@ -128,6 +146,8 @@ This is an accepted risk for the present human-reviewed workflow, not a claim of
 PR reports never offer repair decisions.
 The runtime adds unchecked checkboxes and prefilled editable comments inside their finding cards, and one Publish button below the document.
 The sidebar remains for agent feedback.
+The existing PR URL in Scope and intent is a normal clickable anchor that opens GitHub in a separate tab without leaving the report.
+The link does not depend on publication readiness or live GitHub checks.
 The initial comment text is the finding explanation without added internal IDs; selected final text is sent verbatim to the verified file, side and line.
 Unverified locations cannot be selected or fall back to summary comments.
 Edits and selections alone never publish.
@@ -143,6 +163,12 @@ Publication sends comments (`COMMENT`, not `APPROVE` or `REQUEST_CHANGES`), neve
 Each selected comment permits 8000 UTF-8 bytes, up to 50 comments, with a 1 MiB preparation-request bound; feedback retains its existing smaller request bound.
 Drafts are kept separately by record digest and finding ID, not populated from old repair decisions.
 After publication, the report shows posted status rather than recreating editable defaults.
+A prominent banner above the readable document and a browser-tab title prefix distinguish submitted feedback, completed reviews, and confirmed publication.
+Submitted feedback keeps the review open for follow-up; an agent reply is shown separately, and changed document bytes are marked as an updated version.
+Approval, End review, and all-decided local reports show completion without granting additional authority.
+Changed reports and uncertain publication outcomes show warnings instead of a current successful completion.
+Loading or unavailable publication checks never imply completion, even after End review.
+A changed PR report also retains explicit unresolved-publication guidance: do not resubmit before reconciling any existing attempt from the original unchanged report.
 A legacy PR binding can be enriched with publication-only metadata for the same exact record without rewriting history; restart older tracked servers before reopening with the new executable.
 A failed or uncertain post must be reconciled from the same retained report using Check publication status, not bypassed with an independent request.
 A persisted attempt is never resubmitted; the existing per-report lock and receipt make replay and concurrent confirmation safe.

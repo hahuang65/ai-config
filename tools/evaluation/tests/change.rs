@@ -9,6 +9,10 @@ mod change_opportunities;
 mod change_post;
 #[path = "cases/change_post_safety.rs"]
 mod change_post_safety;
+#[path = "cases/change_progress.rs"]
+mod change_progress;
+#[path = "cases/change_progress_terminal.rs"]
+mod change_progress_terminal;
 #[path = "cases/change_review.rs"]
 mod change_review;
 #[path = "cases/change_review_diagnostics.rs"]
