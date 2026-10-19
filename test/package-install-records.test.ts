@@ -1,7 +1,7 @@
 import { expect, test } from "bun:test";
 import { chmodSync, mkdirSync, readFileSync, readlinkSync, rmSync, statSync, symlinkSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
-import { installFixture } from "./fixtures/install-script";
+import { installerScenarioGuard, installFixture } from "./fixtures/install-script";
 
 const recordName = ".local/state/ai-config/installation.json";
 
@@ -23,7 +23,7 @@ test("shell upgrades version-one ownership and repairs missing owned links and s
       .toMatchObject({ model: "personal", theme: "custom:catppuccin-mocha" });
     expect(JSON.parse(readFileSync(join(setup.home, ".pi/agent/settings.json"), "utf8")).theme).toBe("catppuccin-mocha");
   } finally { setup.clean(); }
-}, 30_000);
+}, installerScenarioGuard(2));
 
 test("shell preserves corrupt and unknown ownership records without changing either harness", () => {
   const setup = installFixture();
@@ -44,7 +44,7 @@ test("shell preserves corrupt and unknown ownership records without changing eit
       }
     }
   } finally { setup.clean(); }
-}, 30_000);
+}, installerScenarioGuard(5));
 
 test("shell refuses unrecorded same-source links and does not normalize modified owned targets", () => {
   const setup = installFixture();
@@ -66,7 +66,7 @@ test("shell refuses unrecorded same-source links and does not normalize modified
       expect(readlinkSync(join(setup.home, ".pi/agent/AGENTS.md"))).toBe(join(setup.source, "baseline.md"));
     }
   } finally { setup.clean(); }
-}, 30_000);
+}, installerScenarioGuard(5));
 
 test("shell rejects edited owned settings without logging or overwriting the native choice", () => {
   const setup = installFixture();
@@ -91,7 +91,7 @@ test("shell rejects edited owned settings without logging or overwriting the nat
       writeFileSync(path, original);
     }
   } finally { setup.clean(); }
-}, 30_000);
+}, installerScenarioGuard(3));
 
 test("repeat shell installation preserves settings bytes, inode, mode and private preferences", () => {
   const setup = installFixture();
@@ -109,4 +109,4 @@ test("repeat shell installation preserves settings bytes, inode, mode and privat
     expect(readFileSync(join(setup.home, recordName), "utf8")).not.toContain("private-choice");
     expect(statSync(join(setup.home, ".local/state/ai-config")).mode & 0o777).toBe(0o700);
   } finally { setup.clean(); }
-}, 30_000);
+}, installerScenarioGuard(2));

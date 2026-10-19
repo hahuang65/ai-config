@@ -1,7 +1,7 @@
 import { expect, test } from "bun:test";
 import { chmodSync, cpSync, existsSync, readFileSync, readlinkSync, statSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
-import { installFixture } from "./fixtures/install-script";
+import { installerScenarioGuard, installFixture } from "./fixtures/install-script";
 
 for (const destination of [".pi/agent/AGENTS.md", ".pi/agent/settings.json", ".local/state/ai-config/installation.json"]) {
   test(`shell rolls back a source switch when writing ${destination} fails`, () => {
@@ -32,7 +32,7 @@ for (const destination of [".pi/agent/AGENTS.md", ".pi/agent/settings.json", ".l
       }
       expect(existsSync(join(setup.home, ".local/state/ai-config/install.lock.d"))).toBe(false);
     } finally { setup.clean(); }
-  }, 30_000);
+  }, installerScenarioGuard(2));
 }
 
 test("shell preserves a native settings edit after preflight and restores completed link changes", () => {
@@ -60,7 +60,7 @@ test("shell preserves a native settings edit after preflight and restores comple
       expect(readlinkSync(join(setup.home, link.destination))).toBe(join(setup.source, link.target));
     }
   } finally { setup.clean(); }
-}, 30_000);
+}, installerScenarioGuard(2));
 
 test("a failed first installation removes its newly created settings and links", () => {
   const setup = installFixture();
@@ -74,4 +74,4 @@ test("a failed first installation removes its newly created settings and links",
       expect(existsSync(join(setup.home, path))).toBe(false);
     }
   } finally { setup.clean(); }
-}, 20_000);
+}, installerScenarioGuard(1));

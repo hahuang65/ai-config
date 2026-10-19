@@ -1,7 +1,7 @@
 import { expect, test } from "bun:test";
 import { chmodSync, existsSync, mkdirSync, readFileSync, readdirSync, readlinkSync, statSync, unlinkSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
-import { installFixture } from "./fixtures/install-script";
+import { installerScenarioGuard, installFixture } from "./fixtures/install-script";
 
 test("install.sh owns installation without a Rust installer and preserves personal settings", () => {
   const setup = installFixture();
@@ -25,7 +25,7 @@ test("install.sh owns installation without a Rust installer and preserves person
     expect(setup.run().status).toBe(0);
     expect(readFileSync(record, "utf8")).toBe(before);
   } finally { setup.clean(); }
-}, 30_000);
+}, installerScenarioGuard(2));
 
 test("repeat installation keeps the ownership record private without changing its bytes", () => {
   const setup = installFixture();
@@ -38,7 +38,7 @@ test("repeat installation keeps the ownership record private without changing it
     expect(readFileSync(record, "utf8")).toBe(original);
     expect(statSync(record).mode & 0o777).toBe(0o600);
   } finally { setup.clean(); }
-}, 30_000);
+}, installerScenarioGuard(2));
 
 test("rollback refuses concurrent edits and retains a private workspace and blocking lock", () => {
   const setup = installFixture();
@@ -70,7 +70,7 @@ test("rollback refuses concurrent edits and retains a private workspace and bloc
     expect(retry.stderr).toContain("interrupted work needs inspection");
     expect(readFileSync(settings, "utf8")).toBe(foreign);
   } finally { setup.clean(); }
-}, 30_000);
+}, installerScenarioGuard(3));
 
 test("a failed ownership-record write restores prior links, settings bytes, and permissions", () => {
   const setup = installFixture();
@@ -103,4 +103,4 @@ test("a failed ownership-record write restores prior links, settings bytes, and 
     unlinkSync(join(setup.bin, "mv"));
     expect(setup.run().status).toBe(0);
   } finally { setup.clean(); }
-}, 30_000);
+}, installerScenarioGuard(3));

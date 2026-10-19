@@ -4,6 +4,7 @@ Companion to the [package tool inventory](tool-inventory.md).
 Most entries retain the pre-pruning harness baseline; see that document's approved-replacement section for the implementation now in progress.
 The Pi LSP row and language-server section describe the subsequent shared-catalogue source change, not a verified live installation.
 This records tool identity, purpose, source, invocation, and configuration status—not a cross-harness parity specification.
+The current [harness contracts catalogue](harness-contracts.md) adds resources, settings, lifecycle, workflows, safety boundaries, conformance evidence, and a new-harness checklist without replacing this dated tool evidence.
 A **Tool** below is a named model-callable operation; the model invokes its runtime-defined arguments, not a shell command with the same spelling.
 Commands and resources that merely guide, wrap, or observe tools are listed separately.
 

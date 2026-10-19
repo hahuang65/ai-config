@@ -1,7 +1,7 @@
 import { expect, test } from "bun:test";
 import { chmodSync, cpSync, existsSync, mkdirSync, readFileSync, readlinkSync, rmSync, statSync, symlinkSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
-import { INSTALL_COMMAND_GUARD_MS, installFixture } from "./fixtures/install-script";
+import { INSTALL_COMMAND_GUARD_MS, installerScenarioGuard, installFixture } from "./fixtures/install-script";
 
 // Five bounded installer calls, plus one command-sized margin for fixture setup/cleanup.
 const SOURCE_SWITCH_GUARD_MS = 6 * INSTALL_COMMAND_GUARD_MS;
@@ -37,7 +37,7 @@ test("shell preserves a modified obsolete link rather than pruning it during an 
       expect(readlinkSync(join(setup.home, ".claude/CLAUDE.md"))).toBe(join(setup.source, "baseline.md"));
     }
   } finally { setup.clean(); }
-}, 30_000);
+}, installerScenarioGuard(3));
 
 test("shell switches recorded sources repeatedly, preserves personal state and handles a removed source", () => {
   const setup = installFixture();

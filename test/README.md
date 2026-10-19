@@ -35,11 +35,16 @@ Restricted-reviewer offline settings and synthetic-provider boundaries remain un
   Cargo-style executable hard links are accepted only at catalogue paths; hard-linked source files and redirected private tool parents/files remain refused.
   Transaction failure tests inject a failing rename; the lock test waits for a real process barrier, not an elapsed-time guess.
   GNU coreutils are required; the macOS system find is also exercised.
+  Multi-step ownership, transaction, rollback and modified-link scenarios compose their whole-case watchdogs from the unchanged 30s per-installer limit plus setup/cleanup headroom.
+  `package-install-budgets.test.ts` checks that composition; [timing evidence](timings.md#shell-installer-fixtures) records the reproduced cumulative-deadline failure.
   Applicable Rust installation-library scenarios have moved to these suites; unrecorded-adoption cases and private implementation tests are deliberately retired, not counted as retained coverage.
   See the [coverage migration](installer-migration.md) for the behavior-to-suite mapping.
   Former `ai-config` and generic `evaluation` installation consumers now invoke the real shell installer through a disposable-package helper; both native harness discovery checks use the same shell fixture, without skipping when an obsolete binary is absent.
 - `package-tool-inventory.test.ts` checks catalogue coverage for manifest CLI aliases, the current Rust executable source layout, literal Pi tool registrations, and bare Claude tool denials.
   It does not contact MCP servers or assert that a documented host tool is active in every session.
+- `package-harness-contracts.test.ts` checks every manifest resource destination-to-source mapping, settings destination/path, the complete registry policy matrix, and local source-reference links.
+  It rejects undocumented added/renamed routes reusing existing sources and preserves the positive local-documentation contract without the retired external destination.
+  These are documentation completeness and navigation checks, not semantic parity, live-installation verification, or model-compliance evidence.
 - `resolve-conflicts.test.ts` checks the rebase-only skill contract.
 - Every `tools/evaluation/tests/*.rs` integration suite runs, including package validation, configuration ownership, frozen evidence, restricted reviewers, consultations, and human-confirmed comment-only publication with disposable fixtures and fake providers; no hand-maintained suite allowlist can omit new safety tests.
 - `package-review-gate.test.ts` checks the complete and focused gates, shared executable build prerequisites, bounded WT worker selection, and grouped evaluation case wiring.

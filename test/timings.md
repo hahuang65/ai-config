@@ -42,11 +42,39 @@ Both ignoring lock failure and refusing to retry must make the storage recovery 
 | Check | Constant | Current value | Source and purpose |
 | --- | --- | --- | --- |
 | Retained | `INSTALL_COMMAND_GUARD_MS` | 30s | [install-script.ts](fixtures/install-script.ts): unchanged subprocess limit for one installer transaction |
-| Adjusted | `SOURCE_SWITCH_GUARD_MS` | 180s | [package-install-switch.test.ts](package-install-switch.test.ts): five sequential installer limits plus one 30s fixture setup/cleanup margin |
+| Adjusted | `installerScenarioGuard(transactions)` | `(transactions + 1) × 30s` | [install-script.ts](fixtures/install-script.ts): sum sequential invocation limits plus one setup/cleanup margin |
+| Retained | `SOURCE_SWITCH_GUARD_MS` | 180s | [package-install-switch.test.ts](package-install-switch.test.ts): five sequential installer limits plus one 30s fixture setup/cleanup margin |
 
 The source-switch scenario covers initial installation, repeat installation, switching sources, switching back, and recovery after removing the former source.
 Its previous 40s whole-case watchdog was shorter than the combined subprocess budgets and left no headroom on a measured local run of about 40s for five successful transactions.
 The new watchdog derives from the existing per-command limit; it does not add successful-path waits or change installer behavior, transaction limits, or assertions.
+
+The ownership-record preservation scenario had the same mismatch: five installer invocations shared one 30s whole-test deadline.
+A disposable diagnostic run completed the initial installation and all four expected rejections in 28.1s, leaving little scheduling margin.
+With a composed scenario deadline, the unchanged assertions passed in 35.7s; the former deadline would have killed correct work.
+These are local observations, not performance guarantees or evidence of a per-installer hang.
+
+The record, transaction, rollback, and modified-link-switch scenarios now use `installerScenarioGuard` with their actual sequential invocation counts:
+
+| Suite | Invocations per scenario, in source order | Whole-scenario budgets |
+| --- | --- | --- |
+| [Ownership records](package-install-records.test.ts) | 2, 5, 5, 3, 2 | 90s, 180s, 180s, 120s, 90s |
+| [Transactions](package-install-transaction.test.ts) | 2, 2, 3, 3 | 90s, 90s, 120s, 120s |
+| [Rollback](package-install-rollback.test.ts) | 2 for each source-switch failure, 2 for a concurrent edit, 1 for first-install failure | 90s, 90s, 60s |
+| [Modified obsolete link](package-install-switch.test.ts) | 3 | 120s |
+
+`package-install-budgets.test.ts` pins the unchanged 30s invocation limit and checks the composed budgets and setup/cleanup margin.
+Adding another installer invocation requires updating its scenario count.
+These watchdogs remain upper bounds, not waits, and do not relax transaction assertions or production behavior.
+
+## Claude hook scenario
+
+`CLAUDE_HOOK_SCENARIO_GUARD_MS` in [package-claude-worktree.test.ts](package-claude-worktree.test.ts) is 120s.
+The whole-case watchdog covers repository setup, new-task entry, saved/manual conversation checks, leave/re-entry, damaged-reference checks and cleanup.
+The former 30s deadline repeatedly interrupted correct intermediate checks in full package runs.
+A focused passing run took 29.9s, leaving almost no scheduling margin under that former deadline.
+The package's WT client already permits 120s for one CLI invocation; its timeout and the 10s Git-command limits remain unchanged.
+The larger test-only watchdog does not add sleeps, remove assertions or change native adapter behavior.
 
 ## WT subprocesses
 

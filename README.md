@@ -12,6 +12,8 @@ Harness-specific source lives in `harnesses/claude/` and `harnesses/pi/`; the st
 The restricted reviewer also uses root `reviewer.md` and `harnesses/pi/review-scope.ts` as checked support files, not ordinary installed resources.
 See the [tool inventory](docs/tool-inventory.md) for executable entry points, aliases, installer responsibilities, installed-state limits, and the selected pruning work.
 Its [harness inventory](docs/harness-tool-inventory.md) distinguishes model tools from skills, hooks, language servers, and independently configured integrations.
+The broader [harness contracts catalogue](docs/harness-contracts.md) covers all owned resources, settings, adapters, workflows, safety contracts, legitimate differences, and verification limits.
+Use the [new-harness checklist](docs/new-harness-checklist.md) for concrete implementation and conformance requirements.
 
 The installed package provides:
 

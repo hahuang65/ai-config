@@ -6,6 +6,12 @@ import { copyPackageFiles } from "./inactive-package";
 
 const repository = resolve(import.meta.dir, "../..");
 export const INSTALL_COMMAND_GUARD_MS = 30_000;
+
+export function installerScenarioGuard(transactions: number) {
+  // Every invocation retains its own limit; reserve one more for setup/cleanup.
+  return (transactions + 1) * INSTALL_COMMAND_GUARD_MS;
+}
+
 export function installFixture() {
   const temporary = realpathSync(mkdtempSync(join(tmpdir(), "shell-install-")));
   const source = join(temporary, "package π with spaces");

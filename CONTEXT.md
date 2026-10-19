@@ -52,13 +52,14 @@ _Avoid_: Context artifacts, context docs, glossary files.
 
 **Context documentation**:
 The selected durable record and navigation structure for a project's domain concepts and context relationships.
-The main project directory and every non-A5 linked worktree always use local **context files**.
-Only an A5 linked worktree can select Confluence, after which it uses its saved local selection or Confluence context document.
+Every project and linked worktree uses local **context files**.
+A5 projects keep these files private under the shared documentation and A5 rules.
 _Avoid_: Context artifacts, context docs, glossary files.
 
 **Decision record**:
 A durable explanation of a hard-to-reverse, surprising choice that resulted from a real trade-off.
-Local destinations use Architectural Decision Records under `docs/adr/`; Confluence destinations use linked `D-NNN` entries and cohesive Decision details.
+Use local Architectural Decision Records under `docs/adr/`.
+A5 projects keep these records private.
 
 **Review wait**:
 An active agent turn waiting for saved artifact-review feedback, with no inactivity cutoff.
@@ -102,13 +103,6 @@ This is the current confirmation interface, distinct from the historical socket-
 An optional persistent record of prior sessions, preferences, lessons, and observations that can help locate evidence but does not define current project truth.
 A workflow verifies a useful record against its current canonical source before use, and the absence of the memory service never blocks work.
 _Avoid_: Long-term memory (implies current authority), source of truth, automatic context
-
-**Domain documentation destination**:
-The local-or-Confluence choice used by `model-domain` for **context documentation** and **decision records** in an A5 linked worktree.
-The main project directory and every non-A5 project are always local and do not have a destination choice.
-Each A5 linked worktree stores only its own persistent choice and two designated Confluence page links in an ignored `domain-documentation.json` at its worktree root.
-A Confluence destination never creates another page: glossary and context-map content stays on the context document, while contracts and decision records stay on the decisions document.
-_Avoid_: Project-wide documentation setting, repository documentation setting.
 
 **Ubiquitous language**:
 The shared, canonical vocabulary that domain experts, users, documentation, tests, and code use with one consistent meaning to describe a project's domain.

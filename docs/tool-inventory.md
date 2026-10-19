@@ -39,7 +39,7 @@ The following records the pre-pruning source and installation observations, not 
 Inventory alone was not approval to remove, install, enable, or consolidate anything.
 It covers this package's executable entry points, installed aliases, model-callable tools, and the host and external surfaces that can be confused with them.
 The [harness inventory](harness-tool-inventory.md) covers Claude, Pi, language servers, MCP, and resources that are not tools.
-The broader cross-harness implementation checklist belongs to separate work.
+The broader [harness contracts catalogue](harness-contracts.md) and [new-harness checklist](new-harness-checklist.md) cover the non-tool surfaces and conformance requirements from that follow-up.
 
 ## Scope and evidence
 

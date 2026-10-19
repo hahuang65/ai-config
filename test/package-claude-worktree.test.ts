@@ -5,6 +5,7 @@ import { join, resolve } from "node:path";
 import { Worktrees } from "../harnesses/worktree-client";
 
 const session = "11111111-1111-4111-8111-111111111111";
+const CLAUDE_HOOK_SCENARIO_GUARD_MS = 120_000;
 test("Claude transitions retain conversation checks without locking or owning manual sessions", async () => {
   const { handleWorktreeHook } = await import("../harnesses/claude/worktree");
   const home = realpathSync(mkdtempSync(join(tmpdir(), "claude-task-")));
@@ -82,4 +83,4 @@ test("Claude transitions retain conversation checks without locking or owning ma
     if (oldRoot === undefined) delete process.env.WT_ROOT; else process.env.WT_ROOT = oldRoot;
     rmSync(home, { recursive: true, force: true });
   }
-}, 30_000);
+}, CLAUDE_HOOK_SCENARIO_GUARD_MS);
