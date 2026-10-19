@@ -36,6 +36,7 @@ Do not start another task or expand scope merely because the current work is com
 
 Use the project's documented terms consistently and define unfamiliar terms when needed.
 Lead with the answer and state what was verified and what remains uncertain.
+Before writing prose, read and follow `writing.md` using the rule-loading instructions below.
 Use plain language and put each complete Markdown sentence on its own line.
 Treat approval as approval of the stated artifact or action, not unrelated work.
 
@@ -58,6 +59,7 @@ Read only the relevant rules before the action:
 - `performance.md`: optimizing, caching, bounded retrieval, or external calls.
 - `security.md`: external input, SQL, shells, file paths, rendering, authorization, or logging.
 - `testing.md`: test strategy or writing and modifying tests.
+- `writing.md`: before writing replies, documents, comments, or commit messages.
 
 In Claude Code only, read the shell guidance before a shell command.
 From the directory containing the global instruction symlink target, use `harnesses/claude/harness-rules.md` (`/path/to/source/harnesses/claude/harness-rules.md`).

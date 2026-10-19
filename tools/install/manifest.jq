@@ -93,7 +93,7 @@ def support_files: [
   "guard/vendor/tree-sitter.mjs", "guard/vendor/web-tree-sitter.wasm", "guard/vendor/tree-sitter-bash.wasm",
   "guard/vendor/web-tree-sitter.LICENSE", "guard/vendor/tree-sitter-bash.LICENSE",
   "rules/a5.md", "rules/cli-ergonomics.md", "rules/coding-style.md", "rules/documentation.md", "rules/git-commit.md",
-  "rules/html-routing.md", "rules/mise.md", "rules/performance.md", "rules/security.md", "rules/testing.md"]
+  "rules/html-routing.md", "rules/mise.md", "rules/performance.md", "rules/security.md", "rules/testing.md", "rules/writing.md"]
   + (bootstrap | [.[] | select(. != "harnesses/claude/plugins/ai-local-lsp")])
   + (public_tools | [.[]]) + private_tools + [skills[] | "skills/\(.)/SKILL.md"]
   + [agents[] | "agents/\(.).md"] + ["commands/deliver.md", "commands/rebase.md"];

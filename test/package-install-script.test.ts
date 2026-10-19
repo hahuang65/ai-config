@@ -39,6 +39,19 @@ test("Cargo hard-link acceptance does not permit hard-linked source resources or
   }
 }, 30_000);
 
+test("install.sh refuses a package missing its shared writing rule before changing managed resources", () => {
+  const setup = installFixture();
+  try {
+    unlinkSync(join(setup.source, "rules/writing.md"));
+    const result = setup.run();
+    expect(result.status).toBe(1);
+    expect(result.stderr).toContain("rules/writing.md");
+    expect(existsSync(join(setup.home, ".claude/CLAUDE.md"))).toBe(false);
+    expect(existsSync(join(setup.home, ".pi/agent/AGENTS.md"))).toBe(false);
+    expect(existsSync(join(setup.home, ".local/state/ai-config/installation.json"))).toBe(false);
+  } finally { setup.clean(); }
+}, 30_000);
+
 test("install.sh refuses a missing jq before building or changing the home", () => {
   const setup = installFixture();
   try {

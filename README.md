@@ -16,6 +16,8 @@ Its [harness inventory](docs/harness-tool-inventory.md) distinguishes model tool
 The installed package provides:
 
 - Shared baseline instructions and guarded tool-call adapters for both harnesses, using tree-sitter-bash for command syntax and documented [dangerous-command boundaries and limits](docs/command-guards.md).
+- Shared [STE-inspired writing guidance](rules/writing.md) for replies, documents, comments, and commit messages.
+  These practical defaults preserve technical meaning without a plugin, automatic enforcement, or a claim of ASD-STE100 compliance.
 - The familiar two-line Claude and Pi status displays and Catppuccin themes, without agentmemory.
 - Claude's feature-disable settings and a [shared language-server catalogue](docs/language-servers.md) for Python, Ruby, Lua, Go, Shell, Terraform, TypeScript/JavaScript, and Rust.
   Claude consumes a generated language-server-only plugin; Pi provides an on-demand `lsp` tool for navigation and diagnostics.

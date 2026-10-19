@@ -51,6 +51,31 @@ test("both installed bootstraps keep authorized work moving across checkpoints w
   });
 });
 
+test("both installed bootstraps load one STE-inspired rule for every prose surface", () => {
+  withInstalledInstructions((home, source) => {
+    for (const bootstrap of [".claude/CLAUDE.md", ".pi/agent/AGENTS.md"]) {
+      const entry = realpathSync(join(home, bootstrap));
+      expect(entry).toBe(realpathSync(join(source, "baseline.md")));
+      const instructions = readFileSync(entry, "utf8");
+      expect(instructions).toContain("Before writing prose, read and follow `writing.md`");
+      const trigger = instructions.match(/- `writing\.md`: ([^\n]+)/)?.[1] ?? "";
+      for (const surface of ["replies", "documents", "comments", "commit messages"]) {
+        expect(trigger).toContain(surface);
+      }
+      const rulePath = resolve(dirname(entry), "rules/writing.md");
+      expect(realpathSync(rulePath)).toBe(realpathSync(join(source, "rules/writing.md")));
+      const writing = readFileSync(rulePath, "utf8");
+      for (const requirement of ["Simplified Technical English", "practical defaults", "familiar, precise words",
+        "simple tenses", "full forms", "semicolons", "editing targets, not hard gates",
+        "Before sending a reply or writing prose", "conditions, uncertainty, or evidence", "not automatic enforcement"]) {
+        expect(writing).toContain(requirement);
+      }
+      expect(writing).toContain("Do not rename identifiers");
+      expect(writing).toContain("technical meaning");
+    }
+  });
+});
+
 test("installed code and work-log skills return from checkpoints to the shared continuation policy", () => {
   withInstalledInstructions((home, source) => {
     for (const harness of harnesses) {
@@ -98,6 +123,25 @@ test("installed change-review skills load one source-owned local and PR interact
       for (const requirement of ["publication_only", "PR reports never authorize repairs", "one Publish button below the document",
         "verbatim", "There is no separate Preview step", "edit publication drafts"]) {
         expect(protocol).toContain(requirement);
+      }
+    }
+  });
+});
+
+test("document writing shares the same rule without replacing context and decision conventions", () => {
+  withInstalledInstructions((home, source) => {
+    for (const bootstrap of [".claude/CLAUDE.md", ".pi/agent/AGENTS.md"]) {
+      const entry = realpathSync(join(home, bootstrap));
+      const instructions = readFileSync(entry, "utf8");
+      const trigger = instructions.match(/- `writing\.md`: ([^\n]+)/)?.[1] ?? "";
+      expect(trigger).toContain("documents");
+      expect(instructions).toContain("`documentation.md`: changing context documentation or durable decisions");
+      const rulePath = resolve(dirname(entry), "rules/writing.md");
+      expect(realpathSync(rulePath)).toBe(realpathSync(join(source, "rules/writing.md")));
+      const rule = readFileSync(rulePath, "utf8");
+      for (const requirement of ["problem, proposed approach, and practical effect", "order the reader needs",
+        "concrete examples", "reader's question", "Do not force one outline", "conditions, uncertainty, or evidence"]) {
+        expect(rule).toContain(requirement);
       }
     }
   });

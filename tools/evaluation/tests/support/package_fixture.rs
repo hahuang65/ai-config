@@ -115,6 +115,7 @@ pub fn populate(root: &Path) {
         "rules/performance.md",
         "rules/security.md",
         "rules/testing.md",
+        "rules/writing.md",
     ] {
         let path = root.join(relative);
         fs::create_dir_all(path.parent().unwrap()).unwrap();

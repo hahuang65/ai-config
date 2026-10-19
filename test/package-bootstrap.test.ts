@@ -4,7 +4,7 @@ import { tmpdir } from "node:os";
 import { dirname, isAbsolute, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
-const ruleNames = ["a5", "cli-ergonomics", "coding-style", "documentation", "git-commit", "html-routing", "mise", "performance", "security", "testing"];
+const ruleNames = ["a5", "cli-ergonomics", "coding-style", "documentation", "git-commit", "html-routing", "mise", "performance", "security", "testing", "writing"];
 const instructions = [".claude/CLAUDE.md", ".pi/agent/AGENTS.md"];
 
 function withDisposableInstallation(check: (home: string) => void) {
