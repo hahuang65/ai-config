@@ -3,15 +3,23 @@
 .DEFAULT_GOAL := help
 .PHONY: help build test lint test-package test-worktree test-worklog test-artifact test-evaluation test-browser build-evaluation-debug build-artifact-debug build-guard-parser build-guard-bundle build-language-servers
 # Keep suites serial even with make -j; common build prerequisites run once.
-# Isolated WT parity and separate native runtime groups use bounded workers.
+# Installer files, WT parity, and separate native runtime groups use bounded workers.
 .NOTPARALLEL:
 WT_TEST_JOBS ?= 4
+INSTALL_TEST_JOBS ?= 2
+ifneq ($(words $(INSTALL_TEST_JOBS)),1)
+$(error INSTALL_TEST_JOBS must be 1 or 2)
+endif
+ifeq ($(filter 1 2,$(INSTALL_TEST_JOBS)),)
+$(error INSTALL_TEST_JOBS must be 1 or 2)
+endif
 
 help:
 	@printf 'build  Bundle Pi adapters and build four Rust tools (locked dependencies; network allowed).\n'
 	@printf 'test   Run the native package, review, worktree, worklog, and artifact tests.\n'
 	@printf 'lint   Check install.sh and Rust formatting and lints.\n'
 	@printf 'Focused: test-package, test-worktree, test-worklog, test-artifact, test-evaluation, test-browser.\n'
+	@printf 'Installer files use two workers; INSTALL_TEST_JOBS=1 runs them serially.\n'
 	@printf 'WT parity uses up to four workers; WT_TEST_JOBS=1 runs it serially. Full test coverage is unchanged.\n'
 	@printf 'Install explicitly with ./install.sh (builds first; live home requires separate approval).\n'
 
@@ -45,7 +53,8 @@ build-artifact-debug:
 	cargo build --locked --manifest-path tools/artifact-review/Cargo.toml
 
 test-package: build build-evaluation-debug
-	bun test $(filter-out test/package-worktree.test.ts test/package-claude-worktree-runtime.test.ts,$(wildcard test/package-*.test.ts)) test/reviewer-runtime.test.ts test/guards.test.ts test/cli-links.test.ts test/resolve-conflicts.test.ts
+	bun test $(filter-out test/package-worktree.test.ts test/package-claude-worktree-runtime.test.ts $(wildcard test/package-install-*.test.ts),$(wildcard test/package-*.test.ts)) test/reviewer-runtime.test.ts test/guards.test.ts test/cli-links.test.ts test/resolve-conflicts.test.ts
+	$(MAKE) --no-print-directory -f test/installers.mk -j$(INSTALL_TEST_JOBS)
 	bun test --concurrent --max-concurrency=2 test/package-worktree.test.ts
 	bun test --concurrent --max-concurrency=2 test/package-claude-worktree-runtime.test.ts
 

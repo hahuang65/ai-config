@@ -107,21 +107,51 @@ test("worktree parity uses a bounded worker count with a serial override", () =>
   }
 });
 
+test("installer workers have a bounded default and an explicit serial override", () => {
+  const environment = { ...process.env };
+  for (const key of ["INSTALL_TEST_JOBS", "MAKEFLAGS", "MFLAGS", "MAKEOVERRIDES", "MAKELEVEL"]) delete environment[key];
+  for (const workers of [undefined, 1, 2]) {
+    const options = workers === undefined ? [] : [`INSTALL_TEST_JOBS=${workers}`];
+    const preview = Bun.spawnSync(["make", "-n", "test-package", ...options], {
+      cwd: root, env: environment, stdout: "pipe", stderr: "pipe",
+    });
+    expect(preview.exitCode, preview.stderr.toString()).toBe(0);
+    expect(preview.stdout.toString()).toContain(`-f test/installers.mk -j${workers ?? 2}`);
+  }
+});
+
+test("invalid installer worker counts fail before build or test commands", () => {
+  for (const workers of ["", "0", "3", "1 2", "unbounded"]) {
+    const preview = Bun.spawnSync(["make", "-n", "test-package", `INSTALL_TEST_JOBS=${workers}`], {
+      cwd: root, stdout: "pipe", stderr: "pipe",
+    });
+    expect(preview.exitCode).not.toBe(0);
+    expect(preview.stderr.toString()).toContain("INSTALL_TEST_JOBS must be 1 or 2");
+    expect(preview.stdout.toString()).toBe("");
+  }
+});
+
 test("package gates run every Bun file once and isolate bounded native runtime concurrency", () => {
   const expectedFiles = [
     ...readdirSync(resolve(root, "test")).filter(name => /^package-.*\.test\.ts$/.test(name)).map(name => `test/${name}`),
     "test/reviewer-runtime.test.ts", "test/guards.test.ts", "test/cli-links.test.ts", "test/resolve-conflicts.test.ts",
   ].sort();
-  for (const targets of [["test-package"], ["test"], ["-j4", "test"]]) {
+  for (const targets of [["test-package"], ["test-package", "INSTALL_TEST_JOBS=1"], ["test"], ["-j4", "test"]]) {
     const preview = Bun.spawnSync(["make", "-n", ...targets], { cwd: root, stdout: "pipe", stderr: "pipe" });
     expect(preview.exitCode, preview.stderr.toString()).toBe(0);
-    const commands = preview.stdout.toString().split("\n").filter(line => line.startsWith("bun test "));
-    expect(commands).toHaveLength(3);
-    expect(commands[1]).toBe(piRuntimeCommand);
-    expect(commands[2]).toBe(claudeRuntimeCommand);
+    const commands = bunCommands(preview.stdout.toString());
+    expect(commands).toHaveLength(5);
+    expect(commands[3]).toBe(piRuntimeCommand);
+    expect(commands[4]).toBe(claudeRuntimeCommand);
+    expect(commands[0]).not.toContain("test/package-install-");
     expect(commands[0]).not.toContain("test/package-worktree.test.ts");
     expect(commands[0]).not.toContain("test/package-claude-worktree-runtime.test.ts");
-    expect(commands[0]).not.toContain("--concurrent");
+    for (const command of commands.slice(0, 3)) expect(command).not.toContain("--concurrent");
+    for (const command of commands.slice(1, 3)) {
+      const selected = command.split(/\s+/).slice(2);
+      expect(selected.length).toBeGreaterThan(0);
+      expect(selected.every(path => /^test\/package-install-.*\.test\.ts$/.test(path))).toBe(true);
+    }
     const files = commands.flatMap(command => command.split(/\s+/).filter(arg => arg.endsWith(".test.ts")));
     expect(files.sort()).toEqual(expectedFiles);
   }
@@ -188,6 +218,13 @@ test("shell installation and package cases share one Cargo test target with ever
   ];
   expectGroupedEvaluationCases("configuration", groups, /^(configuration|package)_.*\.rs$/);
 });
+
+function bunCommands(output: string) {
+  return output.split("\n").flatMap(line => {
+    const command = line.match(/(?:^|; )(bun test [^|]+)/)?.[1];
+    return command ? [command.replace(/\s+2>&1\s*$/, "").trim()] : [];
+  });
+}
 
 function expectGroupedEvaluationCases(target: string, groups: string[], pattern: RegExp) {
   const metadata = Bun.spawnSync([

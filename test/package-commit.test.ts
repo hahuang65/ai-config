@@ -4,6 +4,8 @@ import { spawnSync } from "node:child_process";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
+import { COMMIT_LOG_COMMAND_COUNT, COMMIT_LOG_COMMAND_GUARD_MS, COMMIT_LOG_EARLIER_TASKS,
+  COMMIT_LOG_SCENARIO_GUARD_MS } from "./fixtures/commit-log";
 
 const skillPath = fileURLToPath(new URL("../skills/commit/SKILL.md", import.meta.url));
 const rulePath = fileURLToPath(new URL("../rules/git-commit.md", import.meta.url));
@@ -21,6 +23,15 @@ test("the replacement commit skill uses its own rule and preserves explicit comm
   expect(skill).not.toContain("pi-minimal");
 });
 
+test("the synthetic Worklog scenario budgets every bounded command and a cleanup margin", () => {
+  expect(COMMIT_LOG_EARLIER_TASKS).toBe(20);
+  expect(COMMIT_LOG_COMMAND_COUNT).toBe(25);
+  expect(COMMIT_LOG_COMMAND_GUARD_MS).toBe(10_000);
+  expect(COMMIT_LOG_SCENARIO_GUARD_MS).toBe(260_000);
+  expect(COMMIT_LOG_SCENARIO_GUARD_MS - COMMIT_LOG_COMMAND_COUNT * COMMIT_LOG_COMMAND_GUARD_MS)
+    .toBe(COMMIT_LOG_COMMAND_GUARD_MS);
+});
+
 test("the bundled Worklog records a synthetic commit using the commands named by the skill", () => {
   const home = realpathSync(mkdtempSync(join(tmpdir(), "native-commit-log-")));
   try {
@@ -29,10 +40,14 @@ test("the bundled Worklog records a synthetic commit using the commands named by
     const env = { HOME: home, PATH: process.env.PATH ?? "", GIT_CONFIG_NOSYSTEM: "1",
       GIT_CONFIG_GLOBAL: "/dev/null" };
     const binary = realpathSync(fileURLToPath(new URL("../tools/worklog/target/release/wl", import.meta.url)));
-    const run = (command: string, args: string[]) => spawnSync(command, args,
-      { cwd: project, env, encoding: "utf8", timeout: 10_000 });
+    let commands = 0;
+    const run = (command: string, args: string[]) => {
+      commands++;
+      return spawnSync(command, args,
+        { cwd: project, env, encoding: "utf8", timeout: COMMIT_LOG_COMMAND_GUARD_MS });
+    };
     expect(run("git", ["init", "-q"]).status).toBe(0);
-    for (let index = 0; index < 20; index++) {
+    for (let index = 0; index < COMMIT_LOG_EARLIER_TASKS; index++) {
       expect(run(binary, ["start", `Earlier task ${index}`, "--json"]).status).toBe(0);
     }
     const start = run(binary, ["start", "Synthetic task", "--json"]);
@@ -47,8 +62,9 @@ test("the bundled Worklog records a synthetic commit using the commands named by
       "--subject", "Synthetic change", "--json"]);
     expect(recorded.status).toBe(0);
     expect(JSON.parse(recorded.stdout).entry.commit.hash).toBe("abcdef0");
+    expect(commands).toBe(COMMIT_LOG_COMMAND_COUNT);
   } finally { rmSync(home, { recursive: true, force: true }); }
-});
+}, COMMIT_LOG_SCENARIO_GUARD_MS);
 
 test("the native Git rule retains A5 and parent-repository staging protections", () => {
   const rule = readFileSync(rulePath, "utf8");

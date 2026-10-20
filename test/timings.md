@@ -6,6 +6,56 @@ The values below are the current settings, not promises that lower values will b
 Update this list whenever a setting changes.
 Checked rows mean the documented setting was audited against source and retained through the full gate, not that further reductions are safe.
 
+## Bounded installer workers (#384)
+
+At `2523925`, the installer files remained the largest serial bucket: 83 cases took 652.38s in the latest commit-hook run.
+A local comparison ran the same two file groups concurrently and then serially, without changing the installer or its tests.
+Rollback, records, paths, and performance formed one group of 24 cases; the other ten installer files formed a group of 59 cases.
+All 83 cases passed in both successful trials:
+
+| Scheduling | Elapsed time | Cases |
+| --- | --- | --- |
+| One Bun worker at a time | 656.51s | 83 passed |
+| Two Bun workers | 231.67s | 83 passed |
+
+This is one warm local comparison, not a repeated benchmark or a cross-platform guarantee.
+Both trials used disposable source copies, fake provisioning/builds, real filesystem commands, and the same short private scratch-root layout.
+The first attempted trial used a longer nested scratch prefix and hit macOS's pathname limit while constructing the existing 129-level fixture.
+No test or depth assertion was changed; the successful comparison used short trial roots, and the regular gate retains its normal temporary-directory layout.
+
+The package gate now runs the two installer groups in a separate sub-make capped at two Bun workers.
+`INSTALL_TEST_JOBS=1` runs the same groups serially; other values fail before build or test commands.
+The main Makefile stays serial around that sub-make, so ordinary package tests, native Pi/Claude runtime groups, and browser integration do not overlap with it.
+Per-case and per-installer watchdogs, all transaction assertions, and production installer behavior are unchanged.
+A barrier regression fails if the sub-make is accidentally serialized, and failure regressions fail if output prefixing hides either worker's exit status.
+Their disposable negative controls were observed to fail as intended.
+
+The first two-worker `make lint test` gate passed in 655.30s (10m 55.30s), compared with the prior 1,080.81s (18m 00.81s) gate.
+That is an observed reduction of 425.51s, about 39%; separate full-gate runs do not isolate host-load effects.
+With the normal temporary-directory layout, the installer workers passed 24/59 cases in 225.72/231.49s.
+The ordinary Bun group passed 274 cases in 140.06s, including the eight new worker/gate regressions.
+The native Pi/Claude groups passed 5/2 cases, the Rust review/configuration/runner groups passed 70/43/36, and all 64 browser cases passed.
+The same two filesystem-dependent parity skips remained.
+
+Review then identified an inherited-environment problem in the new default-worker preview assertion.
+An enclosing `INSTALL_TEST_JOBS=1` setting made that assertion expect two workers from a one-worker preview.
+The selected repair isolates Make override variables in that test and adds a nested enclosing-serial-environment regression, observed RED then GREEN.
+After this test-only repair, the complete `make lint test INSTALL_TEST_JOBS=1` gate passed in 903.75s (15m 03.75s).
+It passed 275 ordinary Bun cases, the same 24/59 installer cases scheduled serially, both native runtime groups, all Rust suites, and all 64 browser cases, with the same two parity skips.
+The first two-worker timing above preceded this test-only repair; worker scheduling and production installer behavior did not change.
+A fresh default `make lint test` after the repair passed in 640.04s (10m 40.04s).
+It passed 275 ordinary Bun cases, including nine new worker/gate regressions, and the installer groups passed 24/59 cases in 232.37/237.85s.
+All other group counts and the two parity skips remained unchanged.
+The latest default gate was 440.77s shorter than the preceding 1,080.81s gate; the same separate-run timing caveat applies.
+
+The synthetic worker checks use these finite guards in [package-installer-workers.test.ts](package-installer-workers.test.ts):
+
+| Constant | Value | Purpose |
+| --- | --- | --- |
+| `WORKER_BARRIER_SECONDS` | 3s | Bound waiting for the other fake Bun worker to start |
+| `MAKE_GUARD_MS` | 10s | Bound the test-only Make subprocess |
+| `CASE_GUARD_MS` | 15s | Cover fixture setup, the command guard, and cleanup |
+
 ## Installer test-layering follow-up (#379)
 
 The audit in #377 counted 120 installer launches across 85 Bun installer cases and 101 across the 42-case Rust configuration suite, including help and rejection paths.
@@ -114,6 +164,28 @@ This proves retry while contended, then successful append with retained history;
 The private observer is a no-op for production callers, with no environment override or public test switch.
 The CLI test retains output/history checks after external lock release but does not claim to prove contention.
 Both ignoring lock failure and refusing to retry must make the storage recovery test fail.
+
+### Commit-skill fixture watchdog (#391)
+
+The synthetic Worklog commit scenario runs 25 real subprocesses: Git initialization, 21 task starts, two list calls, and one commit-recording call.
+Two commit hooks exceeded Bun's default 5s whole-case deadline, although each subprocess already had a 10s limit.
+A disposable control added 250ms of startup delay before each unchanged subprocess call and reproduced the 5s failure.
+With the repaired scenario budget, all 25 calls and the original assertions passed in 9.79s; the normal focused case took 2.28s.
+The startup delay exists only in that disposable control, not in the committed fixture.
+
+The constants in [fixtures/commit-log.ts](fixtures/commit-log.ts) compose the whole-case budget:
+
+| Constant | Value | Purpose |
+| --- | --- | --- |
+| `COMMIT_LOG_COMMAND_GUARD_MS` | 10s, unchanged | Bound each real Git or Worklog subprocess |
+| `COMMIT_LOG_COMMAND_COUNT` | 25 | Twenty earlier tasks plus the five remaining CLI calls |
+| `COMMIT_LOG_SCENARIO_GUARD_MS` | 260s | Sum 25 command limits and one command-sized setup/cleanup margin |
+
+The scenario counts actual invocations and asserts that they match the budget.
+A fast regression pins the 20 earlier tasks, 25 calls, unchanged command limit, and cleanup margin.
+The 260s watchdog is an upper bound, not a successful-path wait; a stalled subprocess still reaches its individual 10s limit.
+All default-list omission, complete-list lookup, commit hash, explicit commit-authority, and A5/parent-repository assertions remain in place.
+Only disposable Worklog state is used, and no production deadline or installed configuration changes.
 
 ## Shell installer fixtures
 

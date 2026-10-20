@@ -30,6 +30,9 @@ Restricted-reviewer offline settings and synthetic-provider boundaries remain un
 - `cli-links.test.ts` checks executable link ownership in disposable homes.
   The retired WT Python install/repeat/uninstall test was replaced by `package-install-entrypoints.test.ts`, which exercises foreign regular files and dangling links through the real shell installer and rejects the removed uninstall interface without side effects.
   Shell installation/repeat tests and the WT CLI suites retain successful installation, repeat ownership, and executable behavior coverage.
+- `package-commit.test.ts` checks the commit skill's explicit authority, protected-path policy, and real Worklog CLI commands in a disposable home.
+  Its 25-command scenario retains a 10s limit per command and composes a finite whole-case budget with cleanup headroom through `fixtures/commit-log.ts`.
+  Regressions pin the budget and actual command count while retaining default-list omission, full-list lookup, and synthetic commit-recording assertions.
 - `package-install-*.test.ts` exercises the shell installer with disposable homes and source copies, fake mise/build/tool executables, and real jq/coreutils processes.
   It covers missing dependencies, provisioning-before-build ordering and failure exit status, source/HOME separation, exact numeric preservation, ownership refusals, recorded alias upgrades, live lock contention, rollback, concurrent-edit refusal, and private record permissions.
   Cargo-style executable hard links are accepted only at catalogue paths; hard-linked source files and redirected private tool parents/files remain refused.
@@ -55,7 +58,9 @@ Restricted-reviewer offline settings and synthetic-provider boundaries remain un
   These are documentation completeness and navigation checks, not semantic parity, live-installation verification, or model-compliance evidence.
 - `resolve-conflicts.test.ts` checks the rebase-only skill contract.
 - Every `tools/evaluation/tests/*.rs` integration suite runs, including package validation, configuration ownership, frozen evidence, restricted reviewers, consultations, and human-confirmed comment-only publication with disposable fixtures and fake providers; no hand-maintained suite allowlist can omit new safety tests.
-- `package-review-gate.test.ts` checks the complete and focused gates, shared executable build prerequisites, bounded WT worker selection, and grouped evaluation case wiring.
+- `package-review-gate.test.ts` checks the complete and focused gates, shared executable build prerequisites, bounded installer/WT worker selection, and grouped evaluation case wiring.
+  `package-installer-workers.test.ts` uses fake Bun processes and barriers to prove overlap, serial ordering, automatic file discovery, exact-once assignment, empty-group refusal, and failure propagation through prefixed output.
+  A nested gate-check regression supplies inherited serial Make settings; the default/explicit preview checks isolate those settings before asserting their own worker counts.
 - `tools/evaluation/tests/cases/change_progress.rs` checks timestamped step starts/ends and durations, live Pi/Claude evidence-read activity, elapsed-time updates, bounded output, private-output filtering, and silent JSON mode.
   `change_progress_terminal.rs` verifies the running log and overall stage/time bar through a real pseudo-terminal.
 - Rust tests and `tools/worktree/tests/rust_parity.py` check the standalone worktree CLI, including the process-level ownership, cleanup, interruption, and submodule cases; Rust tests also check Worklog.
@@ -101,13 +106,21 @@ Each target builds its own required executables; package and evaluation checks n
 Multiple targets in one Make invocation share build prerequisites, for example `make test-package test-evaluation`.
 A new invocation always reruns the selected tests; Cargo still manages its ordinary build cache.
 The full gate includes each suite once and keeps suite invocations serial even when Make receives `-j`.
-The package target excludes `test/package-worktree.test.ts` and `test/package-claude-worktree-runtime.test.ts` from its ordinary serial Bun run, then runs each file in its own invocation with `--concurrent --max-concurrency=2`.
-The Pi and Claude groups run sequentially, never concurrently with one another or the ordinary package tests, and every test file runs exactly once.
+The package target excludes `test/package-install-*.test.ts`, `test/package-worktree.test.ts`, and `test/package-claude-worktree-runtime.test.ts` from its ordinary serial Bun run.
+It then runs installer files through `test/installers.mk` with two Bun worker processes, each retaining serial case execution.
+The measured costly rollback, record, path, and performance files form one group; every remaining installer file is discovered automatically into the other group.
+Both groups are phony targets, so every invocation reruns them without a successful-test cache.
+Output lines carry `[installer 1]` or `[installer 2]`; pipeline failures propagate instead of being hidden by output prefixing.
+`INSTALL_TEST_JOBS=1` schedules those same groups serially, and values other than 1 or 2 fail before commands run.
+The worker limit counts Bun processes; the lock fixture still launches its own controlled competing installer.
+After both installer workers finish, the Pi and Claude runtime files each run in their own invocation with `--concurrent --max-concurrency=2`.
+The installer, Pi, Claude, and ordinary package groups never overlap with one another, and every test file runs exactly once.
 The three complete Pi runtime scenarios keep separate Node processes, temporary homes, repositories, and worktrees; the file's two read-only package checks run in the same bounded group.
 The two native Claude scenarios keep separate sandboxed processes, homes, repositories, session histories, and loopback fake API servers.
 Their assertions, watchdogs, platform skips, and independent harness configuration are unchanged.
-All other package tests, including the Claude hook-adapter checks, remain serial; browser integration remains serial too.
-For serial diagnosis, use `bun test test/package-worktree.test.ts` or `bun test test/package-claude-worktree-runtime.test.ts` after building this checkout.
+All package tests outside the installer and native runtime groups, including the Claude hook-adapter checks, remain serial; browser integration remains serial too.
+For serial installer diagnosis, use `make test-package INSTALL_TEST_JOBS=1`.
+For serial native-runtime diagnosis, use `bun test test/package-worktree.test.ts` or `bun test test/package-claude-worktree-runtime.test.ts` after building this checkout.
 Browser-based cases share one lazily started Firefox process and temporary profile for the suite, with at most one case active.
 Firefox uses Linux PATH or the macOS application fallback, with `FIREFOX_BIN` taking precedence on either platform.
 Each case gets a disposable WebDriver user context (an isolated browser storage container) and one fresh blank tab with its viewport reset.
