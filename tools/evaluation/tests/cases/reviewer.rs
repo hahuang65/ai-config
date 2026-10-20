@@ -7,7 +7,6 @@ use support::{reviewer::REVIEWER, *};
 
 fn prepared() -> Trial {
     let trial = Trial::new();
-    trial.install();
     put(
         trial.root.join("harnesses/pi/review-scope.ts"),
         "scope fixture\n",
@@ -101,6 +100,7 @@ fn reviewer_option_pairs_keep_specific_errors_without_starting_a_runner() {
 #[test]
 fn returns_only_completed_reviewer_text_with_scoped_read_evidence() {
     let trial = prepared();
+    trial.assert_uninstalled();
     let snapshot = fs::canonicalize(trial.temporary.path().join("snapshot")).unwrap();
     let path = format!(
         ".:{}:{}:{}",
@@ -138,6 +138,7 @@ fn returns_only_completed_reviewer_text_with_scoped_read_evidence() {
     assert!(!agent_dir.exists(), "the restricted profile is ephemeral");
     assert_resources(call, &trial);
     assert!(!trial.profile().join("sessions").exists());
+    trial.assert_uninstalled();
 }
 
 fn assert_resources(call: &Value, trial: &Trial) {

@@ -39,7 +39,6 @@ pub fn git(trial: &Trial, args: &[&str]) -> String {
 
 pub fn fixture() -> Trial {
     let trial = Trial::new();
-    trial.install();
     put(trial.temporary.path().join("repo/source.txt"), "before\n");
     git(&trial, &["init", "-b", "main"]);
     git(&trial, &["add", "source.txt"]);

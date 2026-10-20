@@ -7,7 +7,7 @@ test("shell bounds resource entry counts and refuses a 129-level resource tree",
   const setup = installFixture();
   try {
     writeFileSync(join(setup.bin, "find"), '#!/bin/bash\nif [[ $1 == "$TREE_TARGET" ]]; then\n for ((i=0;i<100001;i++)); do printf "%s\\0" "$1"; done\nelse exec "$REAL_FIND" "$@"; fi\n', { mode: 0o755 });
-    const count = setup.run([], { REAL_FIND: Bun.which("find")!, TREE_TARGET: join(setup.source, "baseline.md") });
+    const count = setup.run([], { REAL_FIND: Bun.which("find")!, TREE_TARGET: join(setup.source, "skills/commit") });
     expect(count.status).toBe(1);
     expect(count.stderr).toContain("too large, or too deep");
     rmSync(join(setup.bin, "find"));

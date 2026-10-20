@@ -6,6 +6,84 @@ The values below are the current settings, not promises that lower values will b
 Update this list whenever a setting changes.
 Checked rows mean the documented setting was audited against source and retained through the full gate, not that further reductions are safe.
 
+## Installer test-layering follow-up (#379)
+
+The audit in #377 counted 120 installer launches across 85 Bun installer cases and 101 across the 42-case Rust configuration suite, including help and rejection paths.
+This follow-up combines the three positive process-overhead checks into one instrumented installation, retaining the six independent metadata-refusal cases.
+Restoring repeated parent creation, individual support metadata processes, or plain-file tree walking separately in disposable installer copies makes the combined check fail for its intended assertion.
+
+Rust data-only catalogue assertions now exercise the production `native_package` filter directly, with a 10s watchdog.
+Filesystem safety cases, actual release-build validation, installation/repeat behavior, source switching, rollback, and lock contention remain end-to-end.
+Three scenarios inspect their own completed installation instead of performing an extra installation for expected data.
+Change-review and runner-diagnostic fixtures no longer install unrelated resources; their new no-installation assertions were observed RED before the setup changes and GREEN afterward.
+The catalogue boundary likewise passed with a deliberately refusing installer only after it stopped invoking installation.
+No installed-home snapshots or successful-test results are cached.
+
+Single local before/after runs on the same host measured these test-body durations, excluding Cargo compilation:
+
+| Focused check | Before | After | Cases after |
+| --- | --- | --- | --- |
+| Installer performance and safety | 51.17s | 29.22s | 7, down from 9 through consolidation |
+| Rust configuration | 77.73s | 43.23s | 43, including one new boundary regression |
+| Restricted-runner and consultation group | 45.61s | 8.22s | 36, unchanged |
+| One report-rendering case | 13.14s | 1.31s | 1, with added no-installation assertions |
+
+The full 70-case change-review group passed in 36.62s after removing unrelated installation setup.
+The runner group also passed two further checks in 7.97s and 7.94s.
+These are warm local observations, not repeated controlled before/after benchmarks or cross-platform guarantees.
+
+The first full gate exposed a diagnostic-fixture deadline mismatch: a stdout-limit probe reached its one-second deadline before the fake provider emitted any bytes.
+Only the actual timeout probe now uses `--timeout 1`; stdout/stderr-limit probes use an explicit 10s startup margin and still assert the exact output-limit diagnostics and private-output withholding.
+The margin is a finite watchdog, not a successful-path wait or a change to production defaults.
+The temporary 60s Bun installer-command guard, composed scenario budgets, transaction assertions, durability operations, and concurrency limits remain unchanged.
+The Rust full-installer helper still lacks an equivalent per-command deadline; the new 10s watchdog bounds only direct catalogue-filter checks.
+
+The final `make lint test` gate passed in 1,080.81s (18m 00.81s), versus the preceding successful gate's 1,335.67s (22m 15.67s).
+The observed difference is 254.86s, about 19%; these separate full-gate runs do not isolate host-load effects.
+The final serial Bun group passed 349 cases in 800.45s, down from 351 after consolidating two duplicate positive-installation setups.
+The Rust change-review, configuration, and runner groups passed 70/43/36 cases in 36.44/42.58/8.20s, and all 64 browser cases passed.
+The same two filesystem-dependent WT parity cases remained skipped.
+Source-level counts now give 118 installer launches across 83 Bun installer cases and 70 across the 43-case Rust configuration suite, including help and rejection paths.
+
+## Installer process-overhead checkpoint (#365)
+
+This pass compares the installer at `9583d45` with the optimized working tree on macOS arm64 using Bun 1.3.14, real jq/coreutils, and disposable installation homes.
+Three alternating baseline/optimized pairs used the same fixture setup, including an obsolete link, a removed settings claim, and an injected source-switch rename failure.
+Provisioning, builds, and packaged tool executables were stubbed, as in the normal installer tests; no live home was installed into.
+Fixture copying took about 10ms and was not the main cost.
+The table reports median command times, excluding fixture creation and cleanup:
+
+| Command | Baseline | Optimized | Reduction |
+| --- | --- | --- | --- |
+| Initial installation | 13.606s | 11.358s | 16.5% |
+| Repeat installation | 6.727s | 5.516s | 18.0% |
+| Source switch with injected failure and rollback | 30.276s | 24.837s | 18.0% |
+
+The changes avoid `mkdir -p` when a destination parent already exists, inspect plain file resources without launching tree walkers, and read support-file metadata in one GNU `stat` invocation.
+Parent-path checks remain in place, and real resource directories still use the existing bounded traversal.
+The metadata batch checks every file's regular-file mode, hard-link count, and byte limit, and refuses failed, incomplete, malformed, or excess output before changing HOME.
+Metadata is not cached between installations; generated tool hard-link exceptions stay separate.
+A fixture that swaps a support file for a symlink at the metadata boundary is rejected.
+The entry-count regression now injects excess entries into an actual resource directory, retaining its count/depth and unchanged-home assertions.
+
+A trace of the same fixture counted these subprocess calls:
+
+| Calls | Initial: before → after | Repeat: before → after | Rollback: before → after |
+| --- | --- | --- | --- |
+| `stat` | 196 → 114 | 136 → 54 | 283 → 201 |
+| `mkdir` | 74 → 16 | 2 → 2 | 140 → 2 |
+| `find` and `head` combined | 84 → 40 | 84 → 40 | 82 → 40 |
+
+Nine performance/safety regressions cover the reduced process counts and metadata refusal paths.
+A negative control removed only the hard-link check in a disposable installer copy; installation then succeeded with a hard-linked support file, demonstrating that the refusal regression would fail.
+The 60s command guard, composed scenario budgets, rollback assertions, transaction locks, durability operations, and concurrency limits are unchanged.
+These three warm local pairs do not justify tightening the guard for slower hosts or higher load.
+
+The full `make lint test` gate passed in 1,335.67s (22m 15.67s), including the nine new cases and the existing two filesystem-dependent parity skips.
+Its serial Bun package group passed 351 tests in 812.90s, compared with 342 tests in 970.19s in the preceding successful gate.
+Those full-gate runs were not paired under controlled host load, so they are observations rather than a causal end-to-end speedup claim.
+The paired installer measurements above provide the direct comparison.
+
 ## Test-gate speed checkpoint (#121)
 
 That task's final macOS check passed `make lint` and the complete `make test` gate with Rust 1.99.0, Python 3.11.4, and Bun 1.3.14.
@@ -47,7 +125,7 @@ Both ignoring lock failure and refusing to retry must make the storage recovery 
 
 The invocation limit is temporarily one minute because two rollback fixtures were terminated by the former 30s command guard before they could report their restoration results.
 A disposable reproduction returned `ETIMEDOUT` and `SIGTERM` after 30s; it did not establish the natural completion time.
-Further runtime profiling is deferred to a separate follow-up task.
+The installer process-overhead checkpoint above records the follow-up profiling; the one-minute limit remains in place.
 This adjustment preserves finite watchdogs and all rollback assertions; it changes no production installer deadline.
 
 The source-switch scenario covers initial installation, repeat installation, switching sources, switching back, and recovery after removing the former source.

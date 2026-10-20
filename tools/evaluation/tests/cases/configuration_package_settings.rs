@@ -1,5 +1,5 @@
 use crate::support::package_fixture;
-use crate::support::package_manifest::prepared_manifest;
+use crate::support::package_manifest::{catalogue_manifest, prepared_manifest};
 use serde_json::{Value, json};
 use std::fs;
 
@@ -7,7 +7,7 @@ use std::fs;
 fn package_selects_the_requested_claude_feature_disables() {
     let source = package_fixture::fixture();
     package_fixture::manifest(source.path());
-    let manifest = prepared_manifest(&source.path().canonicalize().unwrap()).unwrap();
+    let manifest = catalogue_manifest(&source.path().canonicalize().unwrap()).unwrap();
     for name in [
         "disableArtifact",
         "disableBundledSkills",
@@ -30,7 +30,7 @@ fn package_selects_the_requested_claude_feature_disables() {
 fn package_uses_shared_language_servers_without_duplicate_plugins_or_plugin_skills() {
     let source = package_fixture::fixture();
     package_fixture::manifest(source.path());
-    let manifest = prepared_manifest(&source.path().canonicalize().unwrap()).unwrap();
+    let manifest = catalogue_manifest(&source.path().canonicalize().unwrap()).unwrap();
     for name in [
         "lua-lsp@claude-plugins-official",
         "bash-language-server@claude-code-lsps",
@@ -104,7 +104,7 @@ fn mvp_refuses_unrelated_worktree_settings() {
         }));
         fs::write(file, document.to_string()).unwrap();
         assert!(
-            prepared_manifest(&source.path().canonicalize().unwrap()).is_err(),
+            catalogue_manifest(&source.path().canonicalize().unwrap()).is_err(),
             "{path:?}"
         );
     }
@@ -130,7 +130,7 @@ fn losing_a_captured_deny_confirmation_or_scope_rule_refuses_preflight() {
         assert_eq!(claims.len(), before - 1, "missing fixture: {group} {value}");
         fs::write(&file, document.to_string()).unwrap();
         assert!(
-            prepared_manifest(&source.path().canonicalize().unwrap()).is_err(),
+            catalogue_manifest(&source.path().canonicalize().unwrap()).is_err(),
             "{group}: {value}"
         );
     }
@@ -148,5 +148,5 @@ fn a_package_cannot_reintroduce_old_source_runtime_commands() {
             "command":"bun ~/.dotfiles/ai/hooks/retired.ts"}]}
     }));
     fs::write(&file, document.to_string()).unwrap();
-    assert!(prepared_manifest(&source.path().canonicalize().unwrap()).is_err());
+    assert!(catalogue_manifest(&source.path().canonicalize().unwrap()).is_err());
 }

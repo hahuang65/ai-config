@@ -7,7 +7,6 @@ use support::*;
 
 fn prepared() -> Trial {
     let trial = Trial::new();
-    trial.install();
     put(
         trial.root.join("harnesses/pi/review-scope.ts"),
         "scope fixture\n",
@@ -44,10 +43,12 @@ fn failure(output: Output) -> String {
 #[test]
 fn successful_process_exit_does_not_hide_a_model_or_api_error() {
     let trial = prepared();
+    trial.assert_uninstalled();
     let diagnostic = failure(request(&trial, "error").output().unwrap());
     assert!(diagnostic.contains("model/API error"), "{diagnostic}");
     assert!(diagnostic.contains("stopReason=error"), "{diagnostic}");
     assert!(diagnostic.contains("exit=0"), "{diagnostic}");
+    trial.assert_uninstalled();
 }
 
 #[test]
@@ -87,9 +88,11 @@ fn runner_limits_are_distinct_from_model_output_limits_and_timeouts() {
         ("stderr-limit", "stderr limit exceeded"),
         ("timeout", "timed out"),
     ] {
+        // Output-limit probes need startup headroom; only the timeout probe should expire.
+        let seconds = if mode == "timeout" { "1" } else { "10" };
         let diagnostic = failure(
             request(&trial, mode)
-                .args(["--timeout", "1"])
+                .args(["--timeout", seconds])
                 .output()
                 .unwrap(),
         );

@@ -1,10 +1,13 @@
-//! Inspect the real shell installer's output in a disposable home, never a second installer.
-use anyhow::{Result, ensure};
+//! Separate catalogue-data validation from inspection of real shell installation records.
+use anyhow::{Result, bail, ensure};
 use serde::Deserialize;
 use std::{
     fs,
     path::{Path, PathBuf},
+    process::{Command, Stdio},
+    time::Duration,
 };
+use wait_timeout::ChildExt;
 
 #[derive(Deserialize)]
 pub struct Manifest {
@@ -13,7 +16,7 @@ pub struct Manifest {
     pub settings: Vec<Setting>,
 }
 
-#[derive(Deserialize)]
+#[derive(Debug, Deserialize, PartialEq, Eq)]
 pub struct Link {
     pub destination: PathBuf,
     pub target: PathBuf,
@@ -34,6 +37,38 @@ pub enum Mode {
     ArrayEntry,
 }
 
+// Catalogue data only: filesystem refusals and installation effects use prepared_manifest.
+pub fn catalogue_manifest(source: &Path) -> Result<Manifest> {
+    let output = tempfile::NamedTempFile::new()?;
+    let modules = source.join("tools/install");
+    let mut child = Command::new("jq")
+        .arg("-L").arg(&modules)
+        .args(["--slurpfile", "permissions"]).arg(modules.join("permissions.json"))
+        .args(["--arg", "source"]).arg(source)
+        .args(["-ce", "include \"manifest\"; if .source == \".\" then .source = $source else . end | native_package($permissions[0])"])
+        .arg(source.join("manifest.json"))
+        .stdin(Stdio::null())
+        .stdout(output.reopen()?)
+        .stderr(Stdio::null())
+        .spawn()?;
+    let Some(status) = child.wait_timeout(Duration::from_secs(10))? else {
+        child.kill()?;
+        child.wait()?;
+        bail!("Production catalogue filter timed out");
+    };
+    ensure!(
+        status.success(),
+        "Production catalogue filter refused manifest"
+    );
+    Ok(serde_json::from_reader(output.reopen()?)?)
+}
+
+pub fn installed_manifest(home: &Path) -> Result<Manifest> {
+    Ok(serde_json::from_slice(&fs::read(
+        home.join(".local/state/ai-config/installation.json"),
+    )?)?)
+}
+
 pub fn prepared_manifest(source: &Path) -> Result<Manifest> {
     let home = tempfile::tempdir()?;
     let output = super::shell_install::command(source, &home.path().canonicalize()?).output()?;
@@ -42,7 +77,5 @@ pub fn prepared_manifest(source: &Path) -> Result<Manifest> {
         "Shell installer refused package: {}",
         String::from_utf8_lossy(&output.stderr)
     );
-    Ok(serde_json::from_slice(&fs::read(
-        home.path().join(".local/state/ai-config/installation.json"),
-    )?)?)
+    installed_manifest(home.path())
 }

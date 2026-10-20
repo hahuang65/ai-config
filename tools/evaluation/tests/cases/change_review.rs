@@ -6,6 +6,7 @@ use support::{change::*, *};
 #[test]
 fn findings_render_four_human_readable_sections_with_escaped_content() {
     let trial = fixture();
+    trial.assert_uninstalled();
     let output = command(&trial)
         .env("CHANGE_TEST_MODE", "explained")
         .args(["review", "range", "HEAD~1..HEAD", "--repo"])
@@ -44,6 +45,7 @@ fn findings_render_four_human_readable_sections_with_escaped_content() {
             .unwrap()
             .contains("USER_IMPACT")
     );
+    trial.assert_uninstalled();
 }
 
 #[test]

@@ -1,5 +1,5 @@
 use crate::support::package_fixture;
-use crate::support::package_manifest::prepared_manifest;
+use crate::support::package_manifest::{catalogue_manifest, prepared_manifest};
 use package_fixture::{fixture, manifest};
 use serde_json::json;
 use std::fs;
@@ -222,7 +222,7 @@ fn prepared_package_refuses_redirected_bootstrap_rules_and_wrong_adapter_targets
 }
 
 #[test]
-fn prepared_package_requires_every_ordinary_harness_resource_link() {
+fn catalogue_requires_every_ordinary_harness_resource_link() {
     for destination in [
         ".claude/skills/plan",
         ".pi/agent/skills/work-log",
@@ -250,7 +250,7 @@ fn prepared_package_requires_every_ordinary_harness_resource_link() {
         );
         fs::write(&path, value.to_string()).unwrap();
         assert!(
-            prepared_manifest(&fixture.path().canonicalize().unwrap()).is_err(),
+            catalogue_manifest(&fixture.path().canonicalize().unwrap()).is_err(),
             "{destination}"
         );
     }

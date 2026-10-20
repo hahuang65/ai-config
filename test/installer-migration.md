@@ -2,12 +2,13 @@
 
 The installation entry point is `install.sh`, not a Rust library API or a captured historical installer.
 [ADR 0041](../docs/adr/0041-retire-unrecorded-installation-adoption.md) explicitly retires adoption of unrecorded legacy installations while retaining recorded upgrades.
-The former 121-case Rust configuration group now contains 42 shell-backed package and installation cases.
+The former 121-case Rust configuration group now contains 43 catalogue-filter, shell-backed package, and installation cases.
 Other applicable scenarios moved into the Bun shell-process and JSON-filter suites below; raw case counts are not a claim of unchanged coverage.
 
 | Former behavior or implementation | Current evidence / disposition |
 | --- | --- |
-| Package catalogue, required resources, harness isolation, skill metadata, executable modes, local LSP definition, themes, permission floors | `tools/evaluation/tests/cases/configuration_package*.rs` and `package_manifest.rs` inspect the ownership record produced by the real shell installer in a disposable home. |
+| Package catalogue, harness isolation, selected settings, permission floors | `tools/evaluation/tests/cases/configuration_package*.rs` and `package_manifest.rs` exercise the production `native_package` JSON filter directly for data-only assertions. Full installation cases still verify the resulting ownership record and materialized links. |
+| Required source resources, skill metadata, executable modes, local LSP definition, theme installation | The filesystem cases in `configuration_package*.rs` retain real shell installations in disposable homes. The real-checkout release-build check and relocated-package installation remain end-to-end. |
 | Public installation, model/settings preservation, recorded source upgrades, command-alias migration | `tools/evaluation/tests/cases/package_{install,config_cli,command_migration}.rs`; native harness discovery also uses `install.sh`. |
 | Version-one records, missing owned resources, invalid/future records, exact link targets, unrecorded collisions, native preference edits, byte/inode/mode-preserving repeats | `package-install-records.test.ts`, `package-install-entrypoints.test.ts`, and `package-install-safety.test.ts`. |
 | Repeated source switches, absent old sources, obsolete-link pruning/refusal, unrelated files and independent links | `package-install-switch.test.ts` and `package-install-upgrade.test.ts`. |
@@ -21,7 +22,12 @@ Other applicable scenarios moved into the Bun shell-process and JSON-filter suit
 | Historical shared/evaluation inventories, legacy symlink detachment, adoption flags/preflight and adoption rollback | Deliberately retired with the operation; `package_install.rs` checks that legacy flags are rejected without creating home state. |
 | Captured legacy installer execution | Removed; only the integrity-checked Claude permission-floor JSON remains as passive evidence. |
 
-The Rust `support/package_manifest.rs` helper deserializes a completed shell installation record; it does not reimplement preparation, ownership decisions or filesystem effects.
+The Rust `support/package_manifest.rs` helper separates three boundaries.
+`catalogue_manifest` runs the production JSON catalogue filter with a 10s watchdog and performs no installation or source-filesystem validation.
+`prepared_manifest` runs the real shell installer in a disposable home, while `installed_manifest` reads an existing completed installation record without another transaction.
+These helpers do not reimplement ownership decisions or filesystem effects, and no successful-test results or installed homes are cached.
+Theme, guarded-package, and relocated-package scenarios inspect their own completed installation rather than installing into another home just for expected data.
+Review rendering and runner-diagnostic fixtures retain independent disposable state but no longer install unrelated resources; regressions verify that successful review behavior needs no installation ownership record or managed links.
 Normal installer fixtures stub compilation; fault cases additionally substitute selected filesystem commands to force the documented failure or interleaving.
 The separate test-only `reviewer-fixture` driver exercises the unchanged restricted-runner library and is not a production executable.
 

@@ -79,6 +79,7 @@ check_record() {
 resource_tree() {
   local path=$1 entry depth count=0
   parents "${path%/*}" || return 1
+  if [[ -f $path && ! -L $path ]]; then return 0; fi
   find "$path" -maxdepth 129 -print0 2>/dev/null | head -z -n 100001 > "$work/tree" \
     || { fail 'Cannot inspect bounded package resource tree'; return 1; }
   while IFS= read -r -d '' entry; do
@@ -89,12 +90,32 @@ resource_tree() {
   [[ $count -gt 0 ]]
 }
 
+support_metadata() {
+  local path metadata='' index=0
+  local -a resources=()
+  while IFS= read -r -d '' path; do
+    path="$root/$path"; parents "${path%/*}" || return 1
+    [[ -f $path && ! -L $path ]] || { fail "Expected a regular, non-symlink file: $path"; return 1; }
+    resources[${#resources[@]}]=$path
+  done < "$work/support"
+  [[ ${#resources[@]} -gt 0 ]] || return 0
+  stat --printf '%f %h %s\0' -- "${resources[@]}" > "$work/support-metadata" || return 1
+  while IFS= read -r -d '' metadata; do
+    [[ $index -lt ${#resources[@]} ]] || { fail 'Package support metadata count mismatch'; return 1; }
+    [[ $metadata =~ ^([[:xdigit:]]+)\ (1)\ ([0-9]+)$ ]] \
+      && (( (16#${BASH_REMATCH[1]} & 0170000) == 0100000 )) \
+      && [[ ${BASH_REMATCH[3]} -le 16777216 ]] \
+      || { fail "Hard-linked, non-regular, or oversized support file: ${resources[index]}"; return 1; }
+    index=$((index + 1))
+  done < "$work/support-metadata"
+  [[ $index -eq ${#resources[@]} && -z $metadata ]] \
+    || { fail 'Incomplete package support metadata'; return 1; }
+}
+
 package_files() {
   local path name absolute plugin="$root/harnesses/claude/plugins/ai-local-lsp"
   json -nj 'include "manifest"; support_files - ([public_tools[]] + private_tools) | unique[] | ., "\u0000"' > "$work/support"
-  while IFS= read -r -d '' path; do
-    absolute="$root/$path"; parents "${absolute%/*}"; regular "$absolute" 16777216
-  done < "$work/support"
+  support_metadata
   json -nj 'include "manifest"; ([public_tools[]] + private_tools) | unique[] | ., "\u0000"' > "$work/tools"
   # Cargo may hard-link release binaries to hashed artifacts; only catalogue tools qualify.
   while IFS= read -r -d '' path; do
@@ -201,7 +222,7 @@ replace() {
   local path=$1 kind=$2 value=$3 mode=$4 stage
   parents "${path%/*}" || return 1
   if [[ $kind == missing || -z $kind ]]; then rm -- "$path"; return; fi
-  mkdir -p -- "${path%/*}" || return 1
+  if [[ ! -d ${path%/*} ]]; then mkdir -p -- "${path%/*}" || return 1; fi
   parents "${path%/*}" || return 1
   stage=$(mktemp -d "${path%/*}/.ai-config-XXXXXXXX") || return 1
   stages[${#stages[@]}]=$stage

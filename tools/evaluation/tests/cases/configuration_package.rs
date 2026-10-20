@@ -1,9 +1,33 @@
 use crate::support::package_fixture;
-use crate::support::{package_manifest::prepared_manifest, shell_install, success};
+use crate::support::{
+    package_manifest::{catalogue_manifest, installed_manifest, prepared_manifest},
+    shell_install, success,
+};
 use package_fixture::{fixture, manifest};
 use serde_json::json;
 use std::fs;
 use std::process::Command;
+
+#[test]
+fn catalogue_validation_uses_production_filters_without_running_the_installer() {
+    let fixture = fixture();
+    manifest(fixture.path());
+    fs::write(
+        fixture.path().join("install.sh"),
+        "#!/bin/sh\nprintf invoked > \"$0.invoked\"\nexit 97\n",
+    )
+    .unwrap();
+    let source = fixture.path().canonicalize().unwrap();
+    let package = catalogue_manifest(&source).unwrap();
+    assert_eq!(package.source, source);
+    assert!(!fixture.path().join("install.sh.invoked").exists());
+    assert!(
+        package
+            .links
+            .iter()
+            .any(|link| link.destination == std::path::Path::new(".pi/agent/AGENTS.md"))
+    );
+}
 
 #[test]
 fn prepared_package_requires_a_manifest_and_never_creates_home_state() {
@@ -39,7 +63,7 @@ fn ordinary_package_uses_one_root_level_resource_tree() {
         .join("../..")
         .canonicalize()
         .unwrap();
-    let package = prepared_manifest(&source).unwrap();
+    let package = catalogue_manifest(&source).unwrap();
     assert!(source.join("manifest.json").is_file());
     assert!(source.join("skills/code/SKILL.md").is_file());
     assert!(source.join("harnesses/pi/review-scope.ts").is_file());
@@ -57,12 +81,12 @@ fn ordinary_package_uses_one_root_level_resource_tree() {
 }
 
 #[test]
-fn ordinary_package_installs_only_the_five_trial_specialists() {
+fn ordinary_catalogue_selects_only_the_five_specialists() {
     let source = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
         .join("../..")
         .canonicalize()
         .unwrap();
-    let package = prepared_manifest(&source).unwrap();
+    let package = catalogue_manifest(&source).unwrap();
     let agents: std::collections::BTreeSet<_> = package
         .links
         .iter()
@@ -89,12 +113,12 @@ fn ordinary_package_installs_only_the_five_trial_specialists() {
 }
 
 #[test]
-fn ordinary_package_does_not_install_a_claude_worktree_mod() {
+fn ordinary_catalogue_does_not_select_a_claude_worktree_mod() {
     let source = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
         .join("../..")
         .canonicalize()
         .unwrap();
-    let package = prepared_manifest(&source).unwrap();
+    let package = catalogue_manifest(&source).unwrap();
     assert!(
         package
             .links
@@ -108,12 +132,12 @@ fn ordinary_package_does_not_install_a_claude_worktree_mod() {
 }
 
 #[test]
-fn ordinary_package_installs_the_selected_host_resources_and_cli_dependencies_only() {
+fn ordinary_catalogue_selects_the_host_resources_and_cli_dependencies_only() {
     let source = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
         .join("../..")
         .canonicalize()
         .unwrap();
-    let package = prepared_manifest(&source).unwrap();
+    let package = catalogue_manifest(&source).unwrap();
     let extras: Vec<_> = package
         .links
         .iter()
@@ -176,7 +200,7 @@ fn prepared_package_resolves_a_relocatable_manifest_without_writing_the_source()
 }
 
 #[test]
-fn prepared_package_refuses_a_guard_that_claude_would_not_invoke() {
+fn catalogue_refuses_a_guard_that_claude_would_not_invoke() {
     for replacement in [
         json!([]),
         json!([{"destination": ".claude/settings.json", "path": ["hooks", "PreToolUse"],
@@ -193,7 +217,7 @@ fn prepared_package_refuses_a_guard_that_claude_would_not_invoke() {
         settings.retain(|claim| claim["path"] != json!(["hooks", "PreToolUse"]));
         settings.extend(replacement.as_array().unwrap().iter().cloned());
         fs::write(path, value.to_string()).unwrap();
-        assert!(prepared_manifest(&fixture.path().canonicalize().unwrap()).is_err());
+        assert!(catalogue_manifest(&fixture.path().canonicalize().unwrap()).is_err());
     }
 }
 
@@ -213,12 +237,9 @@ fn guarded_package_preserves_preferences_and_installs_both_adapters_in_a_disposa
     )
     .unwrap();
     fs::write(&pi, r#"{"defaultModel":"saved"}"#).unwrap();
-    let package = prepared_manifest(&fixture.path().canonicalize().unwrap()).unwrap();
-    success(
-        shell_install::command(&package.source, &home)
-            .output()
-            .unwrap(),
-    );
+    let source = fixture.path().canonicalize().unwrap();
+    success(shell_install::command(&source, &home).output().unwrap());
+    let package = installed_manifest(&home).unwrap();
     let settings: serde_json::Value = serde_json::from_slice(&fs::read(&claude).unwrap()).unwrap();
     assert_eq!(settings["model"], "saved");
     assert_eq!(settings["permissions"]["allow"][0], "Read(personal/**)");

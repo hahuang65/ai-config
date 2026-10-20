@@ -1,7 +1,7 @@
 #[allow(dead_code)]
 use crate::support::{
     package_fixture,
-    package_manifest::{Mode, prepared_manifest},
+    package_manifest::{Mode, catalogue_manifest, installed_manifest},
     shell_install,
 };
 use std::fs;
@@ -51,7 +51,7 @@ fn relocated_package() -> tempfile::TempDir {
 fn production_manifest_is_relocatable_and_covers_both_complete_harness_catalogues() {
     let package = relocated_package();
     let source = package.path().canonicalize().unwrap();
-    let manifest = prepared_manifest(&source).unwrap();
+    let manifest = catalogue_manifest(&source).unwrap();
     let links: Vec<_> = manifest
         .links
         .iter()
@@ -126,7 +126,7 @@ fn production_manifest_is_relocatable_and_covers_both_complete_harness_catalogue
 #[test]
 fn production_manifest_retains_captured_claude_denials_and_confirmation_rules() {
     let package = relocated_package();
-    let manifest = prepared_manifest(&package.path().canonicalize().unwrap()).unwrap();
+    let manifest = catalogue_manifest(&package.path().canonicalize().unwrap()).unwrap();
     let legacy = package_fixture::legacy_claude_settings();
     for group in ["deny", "ask", "additionalDirectories"] {
         for value in legacy["permissions"][group].as_array().unwrap() {
@@ -203,7 +203,10 @@ fn public_installer_links_the_real_relocated_package_without_changing_private_st
             String::from_utf8_lossy(&output.stderr)
         );
     }
-    let manifest = prepared_manifest(&source).unwrap();
+    let manifest = catalogue_manifest(&source).unwrap();
+    let installed = installed_manifest(&home_path).unwrap();
+    assert_eq!(installed.source, source);
+    assert_eq!(installed.links, manifest.links);
     for link in &manifest.links {
         assert_eq!(
             fs::read_link(home.path().join(&link.destination)).unwrap(),

@@ -79,6 +79,20 @@ impl Trial {
         success(output);
     }
 
+    pub fn assert_uninstalled(&self) {
+        for relative in [
+            ".claude/CLAUDE.md",
+            ".pi/agent/AGENTS.md",
+            ".local/bin",
+            ".local/state/ai-config/installation.json",
+        ] {
+            assert!(
+                !evaluation::paths::present(&self.home.join(relative)).unwrap(),
+                "Unexpected installation: {relative}"
+            );
+        }
+    }
+
     pub fn profile(&self) -> PathBuf {
         self.home.join(".local/state/ai-config/reviewer-pi")
     }

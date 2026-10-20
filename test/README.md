@@ -35,11 +35,19 @@ Restricted-reviewer offline settings and synthetic-provider boundaries remain un
   Cargo-style executable hard links are accepted only at catalogue paths; hard-linked source files and redirected private tool parents/files remain refused.
   Transaction failure tests inject a failing rename; the lock test waits for a real process barrier, not an elapsed-time guess.
   GNU coreutils are required; the macOS system find is also exercised.
-  Multi-step ownership, transaction, rollback and modified-link scenarios compose their whole-case watchdogs from the unchanged 30s per-installer limit plus setup/cleanup headroom.
+  Multi-step ownership, transaction, rollback and modified-link scenarios compose their whole-case watchdogs from the temporary 60s per-installer limit plus setup/cleanup headroom.
   `package-install-budgets.test.ts` checks that composition; [timing evidence](timings.md#shell-installer-fixtures) records the reproduced cumulative-deadline failure.
+  `package-install-performance.test.ts` verifies bounded support-metadata batching, existing-parent reuse, and file-versus-directory traversal in one instrumented installation.
+  Its six independent fault cases cover failed/truncated metadata, hard links, oversized files, symlinks, and a file-to-symlink swap at the metadata boundary.
+  Disposable negative controls restore each process-overhead regression separately and must fail the combined successful-installation check.
+  [Paired installer measurements](timings.md#installer-process-overhead-checkpoint-365) document the process-count reductions and verification limits.
   Applicable Rust installation-library scenarios have moved to these suites; unrecorded-adoption cases and private implementation tests are deliberately retired, not counted as retained coverage.
   See the [coverage migration](installer-migration.md) for the behavior-to-suite mapping.
-  Former `ai-config` and generic `evaluation` installation consumers now invoke the real shell installer through a disposable-package helper; both native harness discovery checks use the same shell fixture, without skipping when an obsolete binary is absent.
+  Rust data-only catalogue checks call the production JSON filter directly with a 10s watchdog, while filesystem and installation scenarios retain the real shell installer.
+  Scenarios that already install read their own completed ownership record instead of performing another installation for expected data.
+  Change-review rendering and runner-diagnostic fixtures use independent uninstalled homes; representative regressions reject accidental installation before and after their review behavior.
+  No installed-home or successful-test cache is used.
+  Both native harness discovery checks retain the real shell fixture, without skipping when an obsolete binary is absent.
 - `package-tool-inventory.test.ts` checks catalogue coverage for manifest CLI aliases, the current Rust executable source layout, literal Pi tool registrations, and bare Claude tool denials.
   It does not contact MCP servers or assert that a documented host tool is active in every session.
 - `package-harness-contracts.test.ts` checks every manifest resource destination-to-source mapping, settings destination/path, the complete registry policy matrix, and local source-reference links.
