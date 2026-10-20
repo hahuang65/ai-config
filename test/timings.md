@@ -6,6 +6,40 @@ The values below are the current settings, not promises that lower values will b
 Update this list whenever a setting changes.
 Checked rows mean the documented setting was audited against source and retained through the full gate, not that further reductions are safe.
 
+## Batched required-skill validation (#413)
+
+Required skills now use one metadata command and one front-matter parser instead of 18 of each.
+All 18 per-file UTF-8 commands remain, as do the 65536-byte limit, regular-file/single-link checks, complete metadata records, and command-success checks.
+The support-file metadata batch uses the same checked helper with its unchanged 16 MiB limit.
+The new JSON-only `tools/install/skills.jq` filter preserves each file's name, description, and body rules and requires every catalogue entry to pass.
+Both shell fixtures include it, and preflight checks it before provisioning or builds.
+
+The existing positive installation probe observed RED at 18 separate metadata calls, then GREEN at one batch.
+The parser assertion separately observed RED at 18 processes, then GREEN at one.
+The probe retains all earlier assertions, traces one UTF-8 invocation per skill, and accepts an exactly-65536-byte skill without another successful installation.
+Fast data-only cases reject malformed first/middle/last entries, incomplete or extra catalogue keys, duplicate fields, empty captures/bodies, and excessive descriptions.
+Shell refusals preserve invalid UTF-8, the 65537-byte boundary, and missing-filter preflight evidence.
+Disposable controls that accept any one skill, omit catalogue-key checks, skip UTF-8, loosen/tighten the size limit, or defer the filter check each fail their intended assertion.
+Filter calls retain 10s guards; 26-call and four-call cases reserve one command-sized margin within 270s/50s whole-case guards.
+Existing installer and scenario deadlines, worker caps, and transaction checks do not change.
+
+Three alternating pairs compared `4f9fc36` with the batched implementation using independent disposable fixtures and unchanged assertions:
+
+| Scenario | Baseline median | Batched median |
+| --- | --- | --- |
+| Fresh installation | 6.26s | 5.77s |
+| Repeat installation | 4.23s | 3.66s |
+| Failed-switch rollback | 13.24s | 14.01s |
+
+Fresh and repeat medians improved in these samples, but the rollback median did not.
+Separate phase-marker profiles under variable host load measured skill validation at 1.44–2.81s before and 0.19–0.34s after, while whole rollback runs ranged from 22s to 45s.
+Do not treat phase savings as proof of a rollback or full-gate speedup.
+
+The complete default `make lint test` passed in 549.45s (9m 09.45s) without retries or deadline changes.
+It passed 285 ordinary Bun cases, all 92 installer cases in 28/64-case workers taking 212.92s/215.70s, both native runtime groups, all Rust suites, and 64 browser cases.
+The same two filesystem-dependent WT parity skips remained.
+This is 3.62s shorter than the preceding 553.07s commit hook, with five additional installer/filter cases; separate runs do not isolate host-load or build effects.
+
 ## Shared installer staging (#405)
 
 `install.sh` now retains one private staging directory per destination parent for the transaction.

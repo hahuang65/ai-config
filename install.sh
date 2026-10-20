@@ -90,49 +90,56 @@ resource_tree() {
   [[ $count -gt 0 ]]
 }
 
-support_metadata() {
-  local path metadata='' index=0
+regular_files() {
+  local list=$1 limit=$2 path metadata='' index=0
   local -a resources=()
   while IFS= read -r -d '' path; do
     path="$root/$path"; parents "${path%/*}" || return 1
     [[ -f $path && ! -L $path ]] || { fail "Expected a regular, non-symlink file: $path"; return 1; }
     resources[${#resources[@]}]=$path
-  done < "$work/support"
+  done < "$list"
   [[ ${#resources[@]} -gt 0 ]] || return 0
-  stat --printf '%f %h %s\0' -- "${resources[@]}" > "$work/support-metadata" || return 1
+  stat --printf '%f %h %s\0' -- "${resources[@]}" > "$work/file-metadata" || return 1
   while IFS= read -r -d '' metadata; do
-    [[ $index -lt ${#resources[@]} ]] || { fail 'Package support metadata count mismatch'; return 1; }
+    [[ $index -lt ${#resources[@]} ]] || { fail 'Package file metadata count mismatch'; return 1; }
     [[ $metadata =~ ^([[:xdigit:]]+)\ (1)\ ([0-9]+)$ ]] \
       && (( (16#${BASH_REMATCH[1]} & 0170000) == 0100000 )) \
-      && [[ ${BASH_REMATCH[3]} -le 16777216 ]] \
-      || { fail "Hard-linked, non-regular, or oversized support file: ${resources[index]}"; return 1; }
+      && [[ ${BASH_REMATCH[3]} -le $limit ]] \
+      || { fail "Hard-linked, non-regular, or oversized package file: ${resources[index]}"; return 1; }
     index=$((index + 1))
-  done < "$work/support-metadata"
+  done < "$work/file-metadata"
   [[ $index -eq ${#resources[@]} && -z $metadata ]] \
-    || { fail 'Incomplete package support metadata'; return 1; }
+    || { fail 'Incomplete package file metadata'; return 1; }
+}
+
+skill_files() {
+  local path name
+  local -a arguments=()
+  json -nr 'include "manifest"; skills[]' > "$work/skills"
+  : > "$work/skill-files"
+  while IFS= read -r name; do printf '%s\0' "skills/$name/SKILL.md" >> "$work/skill-files"; done < "$work/skills"
+  regular_files "$work/skill-files" 65536
+  while IFS= read -r name; do
+    path="$root/skills/$name/SKILL.md"
+    [[ -f $path && ! -L $path ]] || { fail "Expected a regular, non-symlink skill: $name"; return 1; }
+    iconv -f UTF-8 -t UTF-8 "$path" >/dev/null 2>&1 || { fail "Invalid UTF-8 skill: $name"; return 1; }
+    arguments+=(--rawfile "$name" "$path")
+  done < "$work/skills"
+  json -ne "${arguments[@]}" 'include "skills"; $ARGS.named | valid_skills' >/dev/null 2>&1 \
+    || { fail 'Invalid required skill metadata'; return 1; }
 }
 
 package_files() {
-  local path name absolute plugin="$root/harnesses/claude/plugins/ai-local-lsp"
+  local path absolute plugin="$root/harnesses/claude/plugins/ai-local-lsp"
   json -nj 'include "manifest"; support_files - ([public_tools[]] + private_tools) | unique[] | ., "\u0000"' > "$work/support"
-  support_metadata
+  regular_files "$work/support" 16777216
   json -nj 'include "manifest"; ([public_tools[]] + private_tools) | unique[] | ., "\u0000"' > "$work/tools"
   # Cargo may hard-link release binaries to hashed artifacts; only catalogue tools qualify.
   while IFS= read -r -d '' path; do
     absolute="$root/$path"; parents "${absolute%/*}"; regular "$absolute" 16777216 generated
     [[ -x $absolute ]] || { fail "Tool is not executable: $path"; return 1; }
   done < "$work/tools"
-  json -nr 'include "manifest"; skills[]' > "$work/skills"
-  while IFS= read -r name; do
-    path="$root/skills/$name/SKILL.md"; regular "$path" 65536
-    iconv -f UTF-8 -t UTF-8 "$path" >/dev/null 2>&1
-    json -Rse --arg name "$name" 'capture("\\A---\\n(?<header>.*?)\\n---\\n(?<body>.*)\\z"; "m")
-      | (.header | split("\n")) as $lines
-      | [$lines[] | select(startswith("name: "))] == ["name: " + $name]
-        and ([$lines[] | select(startswith("description: ")) | .[13:]] | length == 1
-          and all(.[]; test("\\S") and length <= 1024)) and (.body | test("\\S"))' "$path" >/dev/null 2>&1 \
-      || { fail "Invalid required skill: $name"; return 1; }
-  done < "$work/skills"
+  skill_files
   find "$plugin" -mindepth 1 ! -path "$plugin/.claude-plugin" ! -path "$plugin/.claude-plugin/plugin.json" -print > "$work/plugin-extra"
   [[ ! -s $work/plugin-extra ]] || { fail 'Local LSP plugin contains extra resources'; return 1; }
   snapshot "$plugin/.claude-plugin/plugin.json" "$work/plugin"; check_json "$work/plugin"
@@ -341,7 +348,7 @@ preflight
 cd -- "$(dirname -- "${BASH_SOURCE[0]}")"
 root=$(pwd -P)
 parents "$root/tools/install"
-for module in settings.jq manifest.jq permissions.json lsp-plugin.json; do
+for module in settings.jq manifest.jq skills.jq permissions.json lsp-plugin.json; do
   regular "$root/tools/install/$module" 1048576
 done
 json -ne --arg home "${HOME:-}" 'include "manifest"; $home | absolute' >/dev/null 2>&1 \

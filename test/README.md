@@ -40,8 +40,13 @@ Restricted-reviewer offline settings and synthetic-provider boundaries remain un
   GNU coreutils are required; the macOS system find is also exercised.
   Multi-step ownership, transaction, rollback and modified-link scenarios compose their whole-case watchdogs from the temporary 60s per-installer limit plus setup/cleanup headroom.
   `package-install-budgets.test.ts` checks that composition; [timing evidence](timings.md#shell-installer-fixtures) records the reproduced cumulative-deadline failure.
-  `package-install-performance.test.ts` verifies bounded support-metadata batching, existing-parent reuse, one staging directory per destination parent, staging cleanup, and file-versus-directory traversal in one instrumented installation.
+  `package-install-performance.test.ts` verifies bounded support/skill metadata batching, one skill-parser process, independent UTF-8 checks, existing-parent reuse, shared staging, cleanup, and file-versus-directory traversal in one instrumented installation.
+  That same installation accepts a skill at exactly 65536 bytes; no extra successful-installation fixture is added.
+  Its argument-count/NUL trace records preserve multiline jq arguments without adding a logging subprocess.
   Its six independent fault cases cover failed/truncated metadata, hard links, oversized files, symlinks, and a file-to-symlink swap at the metadata boundary.
+  `package-install-skills.test.ts` checks the production `skills.jq` filter directly for invalid entries at the beginning, middle, and end of the required catalogue, exact names, duplicate fields, missing captures, blank bodies, and description limits.
+  Shell cases retain invalid-UTF-8 and 65537-byte refusals before home changes and require the new filter before provisioning/building.
+  Each filter command keeps a 10s watchdog; the two multi-command cases reserve 270s/50s for all bounded calls and a command-sized cleanup margin.
   `package-install-staging.test.ts` refuses directory/symlink substitution and a metadata command that prints a matching identity but fails before another write.
   It also preserves unexpected staging entries and checks that private recovery state and the blocking lock remain.
   Negative controls instrument both link creation and file copying, so unsafe staging reuse fails for attempted writes rather than only diagnostic wording.

@@ -10,6 +10,7 @@ pub fn resources(source: &Path) {
         "install.sh",
         "tools/install/manifest.jq",
         "tools/install/settings.jq",
+        "tools/install/skills.jq",
         "tools/install/permissions.json",
         "tools/install/lsp-plugin.json",
     ] {

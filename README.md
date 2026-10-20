@@ -135,6 +135,7 @@ Real provisioning or installer rehearsals require separate approval and an expli
 `make build`, `make lint`, and `make test` never install into the live home; installation remains a separate explicit action.
 
 JSON-only filters and the package catalogue live under `tools/install/`; they do not perform installation or filesystem changes.
+Required skills share a metadata batch and the `skills.jq` front-matter check, retaining each file's 64 KiB limit and independent UTF-8 check.
 Settings retain unrelated fields, exact unknown numeric tokens, and existing permissions; duplicate JSON keys, redirected files, and unrecorded collisions are refused.
 Only exact generated executable paths in the installer catalogue allow multiple hard links, as Cargo may link release binaries to hashed artifacts.
 Those executables still require safe parents, a bounded regular non-symlink file, and execute permission; source/support resources and settings retain single-link checks.
