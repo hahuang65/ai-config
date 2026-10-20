@@ -59,9 +59,9 @@ struct Interrupts {
 }
 
 impl Interrupts {
-    fn new() -> Result<Self> {
+    fn new(cancellation: Option<Arc<AtomicBool>>) -> Result<Self> {
         let mut signals = Self {
-            stopped: Arc::new(AtomicBool::new(false)),
+            stopped: cancellation.unwrap_or_else(|| Arc::new(AtomicBool::new(false))),
             registrations: vec![],
         };
         for signal in [signal_hook::consts::SIGINT, signal_hook::consts::SIGTERM] {
@@ -241,15 +241,24 @@ pub(crate) fn run_captured(command: Command, seconds: u64) -> Result<Output> {
 }
 
 pub(crate) fn run_observed(
+    command: Command,
+    seconds: u64,
+    observation: Option<Observation>,
+) -> Result<Output> {
+    run_cancelled(command, seconds, observation, None)
+}
+
+pub(crate) fn run_cancelled(
     mut command: Command,
     seconds: u64,
     observation: Option<Observation>,
+    cancellation: Option<Arc<AtomicBool>>,
 ) -> Result<Output> {
     let (observer, mut tick) = match observation {
         Some(observation) => (Some(observation.bytes), Some(observation.tick)),
         None => (None, None),
     };
-    let signals = Interrupts::new()?;
+    let signals = Interrupts::new(cancellation)?;
     let child = command
         .stdin(Stdio::null())
         .stdout(Stdio::piped())

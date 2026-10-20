@@ -61,17 +61,45 @@ A durable explanation of a hard-to-reverse, surprising choice that resulted from
 Use local Architectural Decision Records under `docs/adr/`.
 A5 projects keep these records private.
 
+**Review feedback**:
+Durable browser comments and decisions processed separately from the foreground conversation's current request.
+An agent-launched review routes feedback to its originating harness, saved conversation, and workspace.
+An idle open conversation can resume automatically, while a busy conversation finishes its current work first.
+A closed conversation retains feedback until that original conversation resumes.
+A conversation that changes workspace leaves the original workspace's unclaimed feedback queued until re-entry.
+An unavailable review does not block feedback for other reviews in the same conversation.
+Standalone CLI change reviews instead use short-lived restricted responders that may discuss the review but never repair source.
+The artifact path identifies the review, while rendered revision hashes bind feedback and decisions.
+
+**Feedback processing state**:
+The review runtime's Queued, Working, Answered, Updated, or Needs attention status, separate from approval and publication.
+Queued means saved but not claimed by its responder.
+Working requires an active claim, not merely an agent busy on unrelated work.
+Answered supplies a response without implying changed content.
+Updated does not imply a fresh source review or approval.
+Needs attention retains interrupted or failed feedback without claiming completion.
+
 **Review wait**:
-An active agent turn waiting for saved artifact-review feedback, with no inactivity cutoff.
-Feedback returns control to the agent, which handles it and resumes waiting while the review is open.
-Transport heartbeats do not end this logical wait, and silence grants no approval.
-After an exception interrupts the turn, an explicit request can resume waiting on the same review from the last processed cursor.
-This does not require a harness to wake an already-ended turn automatically.
+The legacy foreground compatibility interface for consuming saved artifact events from a cursor without an inactivity cutoff.
+It remains distinct from native background **review feedback** delivery and is not the default agent workflow.
+Silence, a timeout, and browser closure grant no approval.
+
+**Current review report**:
+The single HTML/JSON report at an artifact path, updated in place when feedback changes its wording.
+The owned revision command preserves source scope, finding identity, existing authorizations, and publication outcomes.
+Unconfirmed drafts may be discarded, and a failed report can be regenerated instead of recovered.
+Report updates do not retain a recovery journal or replay incomplete writes.
+HTML, report JSON, individual renders, and aggregate decoded renders each have a 25 MiB bound.
+Earlier report copies are not an archive requirement.
+Frozen source evidence remains separate from report presentation.
+Routine wording edits and retries do not reset authorization, while different work or publication content needs its own decision.
+A verified wording update can refresh a decided or ended report without reopening its decisions or granting approval.
 
 **Finding decision**:
 A human's Accept or Reject for one finding in a specific retained local change-review report.
 Accept authorizes repairing that finding; Reject and undecided findings authorize no repairs.
-Decisions and annotations are stored separately from the immutable report and remain bound to its revision and retained record.
+Decisions and annotations are stored separately from the current report.
+A wording update retains the exact authorized finding, source scope, and original decision revision without retaining an earlier whole report.
 An optional decision comment belongs to its specific finding's Accept or Reject; a comment alone grants no repair authority.
 A decision never authorizes commits, installation, delivery, or publication, and rejection is not evidence of a fix.
 An all-decided report is not blanket approval of the code.
@@ -83,7 +111,7 @@ This is the current local review-change workflow, distinct from the historical b
 A checkbox selecting one PR finding's editable comment for publication.
 The comment starts from the finding explanation without internal finding-ID prefixes and is submitted verbatim only to that finding's verified file, side, and line.
 Selection and editing alone do not publish; the final Publish action confirms the selected set.
-The original retained finding and report remain immutable.
+The exact confirmed publication payload and its outcome remain recorded even when report wording changes.
 
 **Human review subject**:
 The optional positional argument to `review-change`: a PR URL, branch/worktree name or path, GitHub branch/repository URL, or explicit two-dot Git range.

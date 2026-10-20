@@ -2,6 +2,8 @@ use anyhow::{Result, ensure};
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
 
+pub const MAX_REPORT_BYTES: usize = 25 * 1024 * 1024;
+
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
 #[serde(rename_all = "lowercase")]
 pub enum Severity {
@@ -68,7 +70,7 @@ impl Explanation {
         ]
     }
 
-    fn body(&self) -> String {
+    pub(crate) fn body(&self) -> String {
         self.sections()
             .into_iter()
             .map(|(heading, text)| format!("**{heading}:**\n\n{text}"))

@@ -107,10 +107,10 @@ impl Review {
     pub fn request(&self, route: &str, payload: Option<&Value>) -> reqwest::blocking::Response {
         let directory = fs::read_dir(self.root.join("state"))
             .unwrap()
-            .next()
-            .unwrap()
-            .unwrap()
-            .path();
+            .filter_map(std::result::Result::ok)
+            .map(|entry| entry.path())
+            .find(|directory| directory.join("server.json").is_file())
+            .expect("one running review server");
         let descriptor: Value =
             serde_json::from_slice(&fs::read(directory.join("server.json")).unwrap()).unwrap();
         let origin = format!("http://127.0.0.1:{}", descriptor["port"]);

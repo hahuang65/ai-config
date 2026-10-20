@@ -103,6 +103,8 @@ pub struct Page {
     pub more: bool,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub finding_review: Option<crate::findings::Review>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub processing: Option<crate::feedback::Processing>,
 }
 
 #[derive(Clone, Serialize)]

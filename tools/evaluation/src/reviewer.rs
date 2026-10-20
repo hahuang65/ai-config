@@ -2,8 +2,7 @@
 use crate::{
     option_pairs,
     paths::{Paths, is_text, real_directory},
-    reviewer_diagnostics::{Category, Failure},
-    reviewer_process, reviewer_stream, settings,
+    reviewer_process, settings,
 };
 use anyhow::{Context, Result, ensure};
 use std::collections::BTreeMap;
@@ -13,6 +12,9 @@ use std::io::Write;
 use std::os::unix::fs::{OpenOptionsExt, symlink};
 use std::path::{Path, PathBuf};
 use std::process::Command;
+
+#[path = "reviewer_completed.rs"]
+mod completion;
 
 const MAX_PROMPT_BYTES: usize = 65_536;
 const DEFAULT_TIMEOUT: u64 = 900;
@@ -49,6 +51,7 @@ enum Engine {
 
 pub struct Request {
     pub(crate) progress: Option<std::sync::Arc<crate::change_progress::Progress>>,
+    pub(crate) cancellation: Option<std::sync::Arc<std::sync::atomic::AtomicBool>>,
     engine: Engine,
     snapshot: PathBuf,
     prompt: String,
@@ -60,6 +63,14 @@ pub struct Request {
 }
 
 impl Request {
+    fn run(
+        &self,
+        command: Command,
+        observer: Option<reviewer_process::Observation>,
+    ) -> Result<reviewer_process::Output> {
+        reviewer_process::run_cancelled(command, self.timeout, observer, self.cancellation.clone())
+    }
+
     pub fn with_agent(mut self, name: &str) -> Result<Self> {
         ensure!(
             crate::agents::NAMES.contains(&name),
@@ -124,6 +135,7 @@ pub fn parse(arguments: &[OsString]) -> Result<Request> {
     );
     Ok(Request {
         progress: None,
+        cancellation: None,
         engine,
         snapshot: snapshot.into(),
         prompt: (*prompt).into(),
@@ -356,44 +368,7 @@ pub fn collect(paths: &Paths, request: Request) -> Result<serde_json::Value> {
             progress.clone(),
         )
     });
-    let output = reviewer_process::run_observed(command, request.timeout, observer);
+    let output = request.run(command, observer);
     drop(profile); // Keep Pi's temporary authentication links alive until the child exits.
-    completed(output, request.engine, &snapshot, request.required_reads)
-}
-
-fn completed(
-    output: Result<reviewer_process::Output>,
-    engine: Engine,
-    snapshot: &Path,
-    required_reads: &[&str],
-) -> Result<serde_json::Value> {
-    let name = match engine {
-        Engine::Pi => "pi",
-        Engine::Claude => "claude",
-    };
-    let output = output.map_err(|error| Failure::process(error, name))?;
-    if output.evidence.exit_code != Some(0) {
-        return Err(Failure::annotate(
-            Failure::new(Category::ProcessExit, None).into(),
-            name,
-            output.evidence,
-        ));
-    }
-    let result = match engine {
-        Engine::Pi => reviewer_stream::validate(&output.bytes, snapshot),
-        Engine::Claude => crate::reviewer_claude_stream::validate(&output.bytes, snapshot),
-    };
-    let result = result.and_then(|response| {
-        let reads = response["filesRead"]
-            .as_array()
-            .context("Missing reviewer read evidence")?;
-        ensure!(
-            required_reads
-                .iter()
-                .all(|path| reads.iter().any(|read| read.as_str() == Some(*path))),
-            "Reviewer did not inspect required snapshot evidence"
-        );
-        Ok(response)
-    });
-    result.map_err(|error| Failure::annotate(error, name, output.evidence))
+    completion::completed(output, request.engine, &snapshot, request.required_reads)
 }

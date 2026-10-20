@@ -26,18 +26,19 @@ export async function publicationFixture(t, options = {}) {
   let receipt;
   try {
     configureModel(f.profile, server.address().port);
-    receipt = JSON.parse((await execute(changeBinary, ['--root', f.evaluation, 'review', 'pr',
-      'https://github.com/fixture/repo/pull/7', '--repo', repo, '--intent', 'Fixture',
+    const target = options.local ? ['range', 'HEAD~1..HEAD'] : ['pr', 'https://github.com/fixture/repo/pull/7'];
+    receipt = JSON.parse((await execute(changeBinary, ['--root', f.evaluation, 'review', ...target, '--repo', repo, '--intent', 'Fixture',
       '--provider', 'reviewer-fixture', '--model', 'fixture-model', '--thinking', 'off', '--json'],
     { cwd: f.root, env, timeout: 20000, maxBuffer: 1024 * 1024 })).stdout);
   } finally {
     server.closeAllConnections();
     await new Promise(resolve => server.close(resolve));
   }
+  const responder = options.responder ? await responseFixture(f, t) : null;
   const cli = async (...args) => JSON.parse((await execute(artifactBinary, args,
     { env, timeout: 15000, maxBuffer: 1024 * 1024 })).stdout);
   t.after(() => cli('stop', receipt.report).catch(() => {}));
-  await cli('open', receipt.report, '--findings', receipt.record, '--no-browser');
+  await cli('open', receipt.report, '--findings', receipt.record, ...(options.standalone ? ['--standalone'] : []), '--no-browser');
   const [directory] = await readdir(env.AR_ROOT);
   if (options.legacyHistory) {
     await cli('stop', receipt.report);
@@ -56,8 +57,20 @@ export async function publicationFixture(t, options = {}) {
     return { account: info.account, base: info.base, head: info.head,
       comments: ids.map(id => ({ id, body: info.items.find(item => item.id === id)?.body || 'Fixture comment' })) };
   };
-  return { ...f, ...receipt, cli, descriptor, state, api, selection,
+  return { ...f, ...receipt, cli, descriptor, state, api, selection, responder,
     provider: async () => JSON.parse(await readFile(state, 'utf8')) };
+}
+
+async function responseFixture(f, t) {
+  const options = { answer: 'not JSON', calls: calls(['scope.json', 'patch.diff', 'review.json', 'feedback.json'].map(path => ['read', { path }])) };
+  const model = modelServer(f.root, options);
+  await new Promise(resolve => model.server.listen(0, '127.0.0.1', resolve));
+  configureModel(f.profile, model.server.address().port);
+  t.after(async () => { model.server.closeAllConnections(); await new Promise(resolve => model.server.close(resolve)); });
+  return { requests: model.requests, recover(revision = null) {
+    model.requests.length = 0;
+    options.answer = JSON.stringify({ reply: 'Recovered the read-only discussion.', revision });
+  } };
 }
 
 async function legacyHistory(file, record) {

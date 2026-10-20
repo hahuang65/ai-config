@@ -13,6 +13,7 @@ history.replaceState(null, '', '/');
 let cursor = 0;
 let status = 'open';
 let approvedRevision = null;
+let processing = null;
 let ready = false;
 let busy = false;
 let queued = [];
@@ -23,7 +24,7 @@ let eventsConnected = true;
 const findings = new FindingControls(frame, (action, id) => submit(action, id), persist);
 const publication = new PublicationControls(frame, request, persist, renderSubmissionStatus);
 const annotationPopover = new AnnotationPopover(frame);
-const submissionStatus = new SubmissionStatus(frame);
+const submissionStatus = new SubmissionStatus(frame, cursor => request('/feedback/retry', { cursor }));
 
 function notice(message) { $('#notice').textContent = message; }
 function byteLength(text) { return new TextEncoder().encode(text).length; }
@@ -91,7 +92,7 @@ function controls() {
 
 function renderSubmissionStatus() {
   submissionStatus.render({ review: findings.review, status, approvedRevision,
-    publication: publication.state, publishing: publication.publishing });
+    publication: publication.state, publishing: publication.publishing, processing });
 }
 
 function showTarget(anchor) {
@@ -247,6 +248,7 @@ async function refreshEvents(wait = false) {
     }
     status = page.status;
     approvedRevision = page.approved_revision;
+    processing = page.processing || null;
     more = page.more;
   }
   if (status === 'declined') notice('Review ended without approval.');
@@ -254,10 +256,14 @@ async function refreshEvents(wait = false) {
 }
 
 async function refreshSnapshot() {
-  if (status !== 'open' && frame.dataset.revision) return;
+  const boundRevision = findings.review?.needs_review ? null : findings.review?.revision;
+  const closed = status !== 'open' && !!frame.dataset.revision;
+  if (closed && (!boundRevision || boundRevision === frame.dataset.revision)) return;
   const current = await request('/revision');
   if (current.revision === frame.dataset.revision) { ready = true; return; }
+  if (closed && current.revision !== boundRevision) return;
   const snapshot = await request('/snapshot');
+  if (closed && snapshot.revision !== boundRevision) return;
   // The previous revision no longer describes the iframe once replacement begins.
   frame.dataset.revision = '';
   ready = false;
@@ -294,12 +300,19 @@ async function listen() {
   listening = false;
 }
 
+async function refreshProcessing() {
+  if (!processing?.pending) return;
+  try { processing = await request('/processing'); }
+  catch { processing = { ...processing, state: 'needs_attention' }; }
+}
+
 async function refresh() {
   try {
     if (!listening) {
       await refreshEvents();
       if (status === 'open') { listening = true; void listen(); }
     }
+    await refreshProcessing();
     await refreshSnapshot();
     $('#connection').textContent = !eventsConnected ? 'Disconnected — retrying' : status === 'open' ? 'Connected' : 'Review closed';
   } catch {

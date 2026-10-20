@@ -36,7 +36,13 @@ The installed package provides:
   The sidebar stays for agent feedback, and uncertain outcomes reconcile the same persisted attempt.
 - Readable artifact pages show prominent submitted/completed status banners and browser-tab labels, with distinct warnings for changed reports and uncertain publication.
   Sending feedback does not close the review or imply approval.
-- Event-driven foreground artifact-review waits without an inactivity cutoff, plus revision-only refreshes that preserve current HTML/image hashing and approval safety.
+- Agent review feedback attaches to the originating saved conversation and returns replies to the browser without a foreground wait.
+  Pi queues native follow-ups while busy and uses `/review-feedback` to resume after interruption.
+  Claude uses native wake-up hooks with automatic 55-minute idle renewal, which can add maintenance turns and token usage.
+  Native processing does not grant publication or commit authority.
+- Standalone CLI reviews use on-demand restricted responders for browser discussion, without an idle model or source repairs.
+  Retained engine options and frozen evidence stay bound to the report, and initial generation still completes before the command exits.
+- Event-driven foreground artifact-review waits remain available for compatibility, plus revision-only refreshes that preserve current HTML/image hashing and approval safety.
 
 Both status displays place the directory, Git branch, and available session name on the first row, with token/cache usage, cost, and context on the second.
 Claude right-aligns model/thinking on the first row; Pi keeps it on the second.

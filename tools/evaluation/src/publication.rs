@@ -17,10 +17,11 @@ use std::{
 
 pub use crate::publication_comments::{Account, Comment, Selection};
 
-struct Selected {
-    store: Store,
-    directory: PathBuf,
-    report: Report,
+pub(crate) struct Selected {
+    pub(crate) store: Store,
+    pub(crate) directory: PathBuf,
+    pub(crate) report: Report,
+    pub(crate) paths: Paths,
 }
 
 #[derive(Deserialize)]
@@ -93,7 +94,7 @@ pub fn source_context(html: &Path, digest: &str, revision: &str) -> Result<Vec<P
     Ok(roots)
 }
 
-fn selected(html: &Path, digest: &str, revision: &str) -> Result<Selected> {
+pub(crate) fn selected(html: &Path, digest: &str, revision: &str) -> Result<Selected> {
     ensure!(
         html.file_name().is_some_and(|name| name == "report.html"),
         "Select a retained report"
@@ -105,9 +106,13 @@ fn selected(html: &Path, digest: &str, revision: &str) -> Result<Selected> {
     let owner: Owner =
         serde_json::from_slice(&change_store::read(&root.join("owner.json"), 8192)?)?;
     ensure!(owner.version == 1, "Unsupported store owner");
-    let store = Store::open(&Paths::new(Some(owner.evaluation))?, Some(root))?;
+    let paths = Paths::new(Some(owner.evaluation))?;
+    let store = Store::open(&paths, Some(root))?;
     let (directory, report) = store.load(html)?;
-    let bytes = change_store::read(&directory.join("report.json"), 512 * 1024)?;
+    let bytes = change_store::read(
+        &directory.join("report.json"),
+        crate::change_types::MAX_REPORT_BYTES,
+    )?;
     ensure!(
         format!("{:x}", Sha256::digest(bytes)) == digest && report.html_digest == revision,
         "Report changed; obtain a fresh review"
@@ -116,6 +121,7 @@ fn selected(html: &Path, digest: &str, revision: &str) -> Result<Selected> {
         store,
         directory,
         report,
+        paths,
     })
 }
 
@@ -130,7 +136,12 @@ fn status(selected: &Selected) -> Result<Value> {
             .store
             .load_object(&selected.directory, "receipt.json")?;
         ensure!(
-            receipt.report_digest == change_post::digest(report)?,
+            crate::publication_authority::matches(
+                &selected.store,
+                &selected.directory,
+                report,
+                &receipt.report_digest
+            )?,
             "Receipt does not match report"
         );
         state = "posted";
@@ -139,7 +150,12 @@ fn status(selected: &Selected) -> Result<Value> {
             .store
             .load_object(&selected.directory, "attempt.json")?;
         ensure!(
-            attempt.report_digest == change_post::digest(report)?,
+            crate::publication_authority::matches(
+                &selected.store,
+                &selected.directory,
+                report,
+                &attempt.report_digest
+            )?,
             "Attempt does not match report"
         );
         state = "uncertain";
@@ -265,15 +281,15 @@ pub fn confirm(html: &Path, digest: &str, revision: &str, token: &str) -> Result
     let preview: Preview = selected
         .store
         .load_object(&selected.directory, &format!("preview-{token}.json"))?;
-    ensure!(
-        preview.report_digest == change_post::digest(&selected.report)?,
-        "Preview does not match report"
-    );
     verify_attempt(&selected, &preview)?;
     // A persisted attempt is reconciled, never resent, even if its response was lost.
     if change_post::finished(&selected.store, &selected.directory, &selected.report)? {
         return status(&selected);
     }
+    ensure!(
+        preview.report_digest == change_post::digest(&selected.report)?,
+        "Preview does not match report"
+    );
     ensure!(
         now()? <= preview.expires,
         "Preview expired; preview the selection again"

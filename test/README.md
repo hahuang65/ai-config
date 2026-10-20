@@ -59,7 +59,11 @@ Restricted-reviewer offline settings and synthetic-provider boundaries remain un
   `link-navigation.mjs` checks that only safe GitHub PR anchors survive sanitization, without enabling document scripts or other navigation.
   `submission-status.mjs` checks readable submitted/completed pages, reload persistence, agent replies, changed versions, and reopening without stale completion labels.
   The artifact tool links the shared evaluation library; these cases never access a live provider or protected legacy publication state.
-  `tests/wait.rs` covers indefinite foreground waiting, transport heartbeats, terminal state, replay/retry, interruption/shutdown, and fresh revision checks despite render reuse.
+  `tests/wait.rs` covers manual compatibility waiting, transport heartbeats, terminal state, replay/retry, interruption/shutdown, and fresh revision checks despite render reuse.
+  `feedback*.rs` cover durable jobs, exact origin routing, receipt validation, attempt fencing, native listener notification, and active lease renewal.
+  Native Pi and Claude feedback fixtures prove idle delivery, busy sequencing, browser replies, Markdown-safe completion, and orphaned-claim recovery with synthetic providers.
+  Evaluation's `feedback_response.rs` covers restricted standalone responses, cancellation, no idle model call, retained discussion context, and CLI launch-mode selection.
+  `standalone.mjs` checks readable local reports without repair controls through the bounded Firefox harness.
   The bounded browser suite counts idle event/snapshot requests and verifies live feedback, replies, and document reload through revision-only checks.
 
 The native Pi and Claude task-conversation runtime checks remain in the package suite.

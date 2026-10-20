@@ -13,8 +13,8 @@ export function toolResults(request: ApiRequest): Block[] {
     .filter((block) => block.type === "tool_result");
 }
 
-function events(blocks: Block[], stop: string, model: string): string {
-  const message = { id: "msg_fixture", type: "message", role: "assistant", model,
+function events(blocks: Block[], stop: string, model: string, id: string): string {
+  const message = { id, type: "message", role: "assistant", model,
     content: [], stop_reason: null, stop_sequence: null, usage: { input_tokens: 20, output_tokens: 1 } };
   const stream: Event[] = [{ type: "message_start", message }];
   for (const [index, block] of blocks.entries()) {
@@ -32,7 +32,18 @@ function events(blocks: Block[], stop: string, model: string): string {
   return stream.map((event) => `event: ${event.type}\ndata: ${JSON.stringify(event)}\n\n`).join("");
 }
 
-export function startFakeClaudeApi(calls: FixtureCall[], finalText = "FIXTURE_COMPLETE"): { server: Server<undefined>; requests: ApiRequest[] } {
+export type ApiMetadata = { requestClass: "main" | "subagent" | "workflow" | "compaction" | "auxiliary" | "side_reply" | "unknown" };
+type Options = { additionalTurns?: number; onRequest?: (request: ApiRequest, count: number, metadata: ApiMetadata) => Promise<string | void>;
+  nextCall?: (request: ApiRequest, count: number) => FixtureCall | undefined };
+
+function requestMetadata(input: Request): ApiMetadata {
+  const value = input.headers.get("x-claude-code-request-class");
+  const requestClass = value === "main" || value === "subagent" || value === "workflow" || value === "compaction"
+    || value === "auxiliary" || value === "side_reply" ? value : "unknown";
+  return { requestClass };
+}
+
+export function startFakeClaudeApi(calls: FixtureCall[], finalText = "FIXTURE_COMPLETE", options: Options = {}): { server: Server<undefined>; requests: ApiRequest[] } {
   const requests: ApiRequest[] = [];
   const server = Bun.serve({ hostname: "127.0.0.1", port: 0, async fetch(input) {
     if (input.method !== "POST") return new Response(null, { status: 405 });
@@ -44,7 +55,7 @@ export function startFakeClaudeApi(calls: FixtureCall[], finalText = "FIXTURE_CO
     if (pathname === "/v1/messages/count_tokens") {
       return Response.json({ input_tokens: 20 });
     }
-    if (!pathname.startsWith("/v1/messages") || requests.length > calls.length + 1) {
+    if (!pathname.startsWith("/v1/messages") || requests.length > calls.length + (options.additionalTurns ?? 1)) {
       return new Response(null, { status: 404 });
     }
     let payload: unknown;
@@ -59,17 +70,20 @@ export function startFakeClaudeApi(calls: FixtureCall[], finalText = "FIXTURE_CO
         (request.model !== undefined && typeof request.model !== "string")) {
       return new Response(null, { status: 400 });
     }
-    requests.push(request);
+    const count = requests.push(request);
+    const id = `msg_fixture_${count}`;
+    const responseText = await options.onRequest?.(request, count, requestMetadata(input));
     const completed = toolResults(request).length;
-    const blocks: Block[] = completed < calls.length
-      ? [{ type: "tool_use", id: `call_${completed}`, ...calls[completed] }]
-      : [{ type: "text", text: finalText }];
-    const stop = completed < calls.length ? "tool_use" : "end_turn";
+    const call = options.nextCall ? options.nextCall(request, count) : calls[completed];
+    const blocks: Block[] = call
+      ? [{ type: "tool_use", id: `call_${options.nextCall ? count : completed}`, ...call }]
+      : [{ type: "text", text: responseText ?? finalText }];
+    const stop = call ? "tool_use" : "end_turn";
     const model = request.model ?? "claude-sonnet-4-6";
     if (request.stream) {
-      return new Response(events(blocks, stop, model), { headers: { "Content-Type": "text/event-stream" } });
+      return new Response(events(blocks, stop, model, id), { headers: { "Content-Type": "text/event-stream" } });
     }
-    return Response.json({ id: "msg_fixture", type: "message", role: "assistant", model,
+    return Response.json({ id, type: "message", role: "assistant", model,
       content: blocks, stop_reason: stop, stop_sequence: null,
       usage: { input_tokens: 20, output_tokens: 10 } });
   } });

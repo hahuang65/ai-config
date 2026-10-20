@@ -7,7 +7,11 @@ use std::path::{Path, PathBuf};
 
 pub type Failure = &'static str;
 pub type Result<T> = std::result::Result<T, Failure>;
-pub const MAX_ARTIFACT: u64 = 2 * 1024 * 1024;
+pub const MAX_ARTIFACT: u64 = evaluation::change::MAX_REPORT_BYTES as u64;
+
+#[cfg(test)]
+#[path = "../tests/support/size_limits.rs"]
+mod tests;
 
 #[derive(Clone)]
 pub struct Paths {
@@ -37,12 +41,7 @@ impl Paths {
             .canonicalize()
             .map_err(|_| "Cannot resolve artifact path.")?
             .join(name);
-        let root = std::env::var_os("AR_ROOT")
-            .map(PathBuf::from)
-            .unwrap_or_else(|| {
-                PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../.state/reviews")
-            });
-        private_directory(&root)?;
+        let root = state_root()?;
         let directory = root.join(hash(artifact.as_os_str().as_encoded_bytes()));
         private_directory(&directory)?;
         Ok(Self {
@@ -78,6 +77,15 @@ impl Paths {
     }
 }
 
+pub fn state_root() -> Result<PathBuf> {
+    let root = std::env::var_os("AR_ROOT")
+        .map(PathBuf::from)
+        .unwrap_or_else(|| PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../.state/reviews"));
+    private_directory(&root)?;
+    root.canonicalize()
+        .map_err(|_| "Cannot resolve review state directory.")
+}
+
 pub fn read_artifact(path: &Path) -> Result<String> {
     let file = OpenOptions::new()
         .read(true)
@@ -96,7 +104,7 @@ pub fn read_artifact(path: &Path) -> Result<String> {
         .read_to_string(&mut source)
         .map_err(|_| "Artifact must contain UTF-8 HTML.")?;
     if source.len() as u64 > MAX_ARTIFACT {
-        return Err("Artifact exceeds the 2 MiB limit.");
+        return Err("Artifact exceeds the 25 MiB limit.");
     }
     Ok(source)
 }

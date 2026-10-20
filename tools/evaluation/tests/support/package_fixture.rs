@@ -59,8 +59,12 @@ pub fn populate(root: &Path) {
         "harnesses/worktree-client.ts",
         "docs/worktree-transitions.md",
         "harnesses/claude/worktree.ts",
+        "harnesses/claude/review-feedback.ts",
         "harnesses/pi/worktree.ts",
         "harnesses/pi/worktree.bundle.ts",
+        "harnesses/review-feedback-client.ts",
+        "harnesses/pi/review-feedback.ts",
+        "harnesses/pi/review-feedback.bundle.ts",
         "commands/deliver.md",
         "commands/rebase.md",
         "harnesses/claude/commands/wt.md",
@@ -173,7 +177,9 @@ pub fn manifest(root: &Path) {
         {"destination": ".pi/agent/AGENTS.md", "target": "baseline.md"},
         {"destination": ".claude/hooks/guard.ts", "target": "harnesses/claude/guard.ts"},
         {"destination": ".claude/hooks/worktree.ts", "target": "harnesses/claude/worktree.ts"},
+        {"destination": ".claude/hooks/review-feedback.ts", "target": "harnesses/claude/review-feedback.ts"},
         {"destination": ".pi/agent/extensions/worktree.ts", "target": "harnesses/pi/worktree.bundle.ts"},
+        {"destination": ".pi/agent/extensions/review-feedback.ts", "target": "harnesses/pi/review-feedback.bundle.ts"},
         {"destination": ".claude/statusline.ts", "target": "harnesses/claude/statusline.ts"},
         {"destination": ".claude/themes/catppuccin-mocha.json", "target": "harnesses/claude/themes/catppuccin-mocha.json"},
         {"destination": ".claude/plugins/ai-local-lsp", "target": "harnesses/claude/plugins/ai-local-lsp"},
@@ -204,7 +210,14 @@ pub fn manifest(root: &Path) {
             .iter()
             .filter(|setting| {
                 setting["path"][0] == "hooks"
-                    && setting["value"]["hooks"][0]["command"] == "bun ~/.claude/hooks/worktree.ts"
+                    && [
+                        "bun ~/.claude/hooks/worktree.ts",
+                        "bun ~/.claude/hooks/review-feedback.ts",
+                        "bun ~/.claude/hooks/review-feedback.ts --complete",
+                        "bun ~/.claude/hooks/review-feedback.ts --focus",
+                    ]
+                    .iter()
+                    .any(|command| setting["value"]["hooks"][0]["command"] == *command)
             })
             .cloned(),
     );

@@ -16,6 +16,8 @@ pub struct Binding {
     pub items: Vec<Label>,
     #[serde(default, skip_serializing_if = "is_false")]
     pub publication_only: bool,
+    #[serde(default, skip_serializing_if = "is_false")]
+    pub read_only: bool,
 }
 
 #[derive(Deserialize)]
@@ -46,7 +48,7 @@ impl Binding {
             .read_to_end(&mut bytes)
             .map_err(|_| "Cannot read findings report JSON.")?;
         if bytes.len() as u64 > MAX_ARTIFACT {
-            return Err("Findings report exceeds 2 MiB.");
+            return Err("Findings report exceeds 25 MiB.");
         }
         let report: Report = serde_json::from_slice(&bytes)
             .map_err(|_| "Expected a version-1 change-review report JSON.")?;
@@ -58,6 +60,7 @@ impl Binding {
             report_digest: hash(&bytes),
             items: report.findings,
             publication_only: report.scope["pull_request"].is_object(),
+            read_only: false,
         };
         binding.validate()?;
         Ok(binding)
@@ -99,11 +102,15 @@ pub struct Decision {
     #[serde(flatten)]
     pub label: Label,
     pub decision: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub authorization: Option<serde_json::Value>,
 }
 
 #[derive(Deserialize, Serialize)]
 pub struct Review {
     pub publication_only: bool,
+    #[serde(default, skip_serializing_if = "is_false")]
+    pub read_only: bool,
     pub revision: String,
     pub report_digest: String,
     pub items: Vec<Decision>,
@@ -112,6 +119,8 @@ pub struct Review {
 
 impl Review {
     pub fn complete(&self) -> bool {
-        !self.publication_only && self.items.iter().all(|item| item.decision.is_some())
+        !self.publication_only
+            && !self.read_only
+            && self.items.iter().all(|item| item.decision.is_some())
     }
 }

@@ -2,13 +2,23 @@ mod artifact;
 mod assets;
 mod client;
 mod event_wait;
+mod feedback;
+mod feedback_cli;
+mod feedback_context;
+mod feedback_delivery;
+mod feedback_jobs;
+mod feedback_registry;
+mod feedback_store;
+mod feedback_ticket;
 mod finding_store;
 mod findings;
 mod images;
 mod model;
 mod paths;
 mod publication;
+mod report_update;
 mod server;
+mod standalone_store;
 mod store;
 
 use clap::{Parser, Subcommand};
@@ -37,7 +47,12 @@ enum Operation {
         /// Review each finding from this matching change-review report JSON.
         #[arg(long)]
         findings: Option<PathBuf>,
+        /// Use an on-demand read-only responder, never an underlying source repair agent.
+        #[arg(long, requires = "findings")]
+        standalone: bool,
     },
+    #[command(flatten)]
+    Feedback(feedback_cli::Command),
     /// Wait in the foreground; replay events after a saved cursor (no destructive reads).
     Poll {
         file: PathBuf,
@@ -114,12 +129,18 @@ fn review_paths(command: &Operation) -> Result<(Paths, Option<findings::Binding>
         | Operation::Wait { file, .. }
         | Operation::Stop { file }
         | Operation::Serve { file } => file,
+        Operation::Feedback(_) => unreachable!("Feedback commands use their own dispatcher"),
     };
     let binding = match command {
         Operation::Open {
             findings: Some(record),
+            standalone,
             ..
-        } => Some(findings::Binding::read(record)?),
+        } => {
+            let mut binding = findings::Binding::read(record)?;
+            binding.read_only = *standalone;
+            Some(binding)
+        }
         _ => None,
     };
     if let Some(binding) = &binding
@@ -131,9 +152,17 @@ fn review_paths(command: &Operation) -> Result<(Paths, Option<findings::Binding>
 }
 
 fn execute(arguments: Arguments) -> Result<Option<serde_json::Value>> {
-    let (paths, binding) = review_paths(&arguments.command)?;
-    let output = match arguments.command {
+    match arguments.command {
+        Operation::Feedback(command) => Ok(Some(feedback_cli::execute(command)?)),
+        command => execute_review(command),
+    }
+}
+
+fn execute_review(command: Operation) -> Result<Option<serde_json::Value>> {
+    let (paths, binding) = review_paths(&command)?;
+    let output = match command {
         Operation::Open { no_browser, .. } => client::open(&paths, no_browser, binding.as_ref())?,
+        Operation::Feedback(_) => unreachable!("Feedback commands use their own dispatcher"),
         Operation::Poll {
             cursor,
             timeout,

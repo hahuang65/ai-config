@@ -27,7 +27,8 @@ button:focus-visible, textarea:focus-visible { outline: 3px solid var(--accent);
 .artifact-panel { min-width: 0; min-height: 0; display: grid; grid-template-rows: auto minmax(0, 1fr); padding: 10px; background: #11111b; }
 #submission-status { padding: 18px 22px; margin-bottom: 10px; border: 3px solid #fab387; border-radius: 8px; background: #fab387; color: #181825; }
 #submission-status[data-state="completed"] { background: #a6e3a1; border-color: #a6e3a1; }
-#submission-status[data-state="changed"] { background: #f38ba8; border-color: #f38ba8; }
+#submission-status[data-state="changed"], #submission-status[data-state="needs_attention"] { background: #f38ba8; border-color: #f38ba8; }
+#submission-status[data-state="working"], #submission-status[data-state="answered"] { background: #89b4fa; border-color: #89b4fa; }
 #submission-status strong { display: block; font-size: 22px; line-height: 1.25; font-weight: 850; letter-spacing: .02em; }
 #submission-status p { margin: 8px 0 0; font-size: 14px; line-height: 1.5; }
 .hint { margin: 0; padding: 4px 4px 12px; color: var(--muted); font-size: 12px; }

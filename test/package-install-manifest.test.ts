@@ -33,6 +33,15 @@ test("shell installer rejects missing safety resources and public aliases for pr
   expect(validate(value).status).not.toBe(0);
 });
 
+test("shell installer requires synchronous feedback workspace focus at startup and worktree transitions", () => {
+  for (const event of ["SessionStart", "PostToolUse"]) {
+    const value = packageManifest();
+    value.settings = value.settings.filter(setting => !(setting.path[1] === event
+      && setting.value.hooks?.[0].command === "bun ~/.claude/hooks/review-feedback.ts --focus"));
+    expect(validate(value).status, event).not.toBe(0);
+  }
+});
+
 test("shell installer rejects unsafe paths, duplicate declarations, and unrelated settings ownership", () => {
   for (const patch of [
     { source: "/" }, { source: "relative" }, { source: "/safe/../source" }, { source: "/safe\nsource" },

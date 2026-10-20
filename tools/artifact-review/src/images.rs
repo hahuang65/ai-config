@@ -8,8 +8,8 @@ use std::{
 };
 
 pub const MAX_IMAGES: usize = 24;
-pub const MAX_IMAGE_BYTES: usize = 2 * 1024 * 1024;
-pub const MAX_TOTAL_BYTES: usize = 8 * 1024 * 1024;
+pub const MAX_IMAGE_BYTES: usize = crate::paths::MAX_ARTIFACT as usize;
+pub const MAX_TOTAL_BYTES: usize = MAX_IMAGE_BYTES;
 
 type Image = (&'static str, Vec<u8>);
 
@@ -45,13 +45,13 @@ fn embedded(source: &str) -> Result<Image> {
         _ => return Err("Unsupported embedded render. Approval is unavailable."),
     };
     if encoded.len() > MAX_IMAGE_BYTES.div_ceil(3) * 4 {
-        return Err("Render exceeds the 2 MiB image limit. Approval is unavailable.");
+        return Err("Render exceeds the 25 MiB image limit. Approval is unavailable.");
     }
     let bytes = STANDARD
         .decode(encoded)
         .map_err(|_| "Invalid embedded render. Approval is unavailable.")?;
-    if !valid(mime, &bytes) {
-        return Err("Invalid embedded render. Approval is unavailable.");
+    if bytes.len() > MAX_IMAGE_BYTES || !valid(mime, &bytes) {
+        return Err("Invalid or oversized embedded render. Approval is unavailable.");
     }
     Ok((mime, bytes))
 }
@@ -99,7 +99,7 @@ fn local(artifact: &Path, source: &str) -> Result<Image> {
         .metadata()
         .map_err(|_| "Cannot inspect local render. Approval is unavailable.")?;
     if !meta.is_file() || meta.len() > MAX_IMAGE_BYTES as u64 {
-        return Err("Render must be a regular file of at most 2 MiB. Approval is unavailable.");
+        return Err("Render must be a regular file of at most 25 MiB. Approval is unavailable.");
     }
     let mut bytes = Vec::new();
     file.take(MAX_IMAGE_BYTES as u64 + 1)

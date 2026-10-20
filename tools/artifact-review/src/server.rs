@@ -1,6 +1,11 @@
+mod feedback_routes;
+mod report_update;
+mod setup;
+mod standalone;
+
 use crate::assets::ASSETS;
 use crate::model::{Submission, snapshot};
-use crate::paths::{Descriptor, Paths, Result, private_file};
+use crate::paths::{Paths, Result, private_file};
 use crate::store::Store;
 use axum::extract::{DefaultBodyLimit, Request, State};
 use axum::http::{HeaderValue, StatusCode};
@@ -34,45 +39,24 @@ pub async fn serve(paths: Paths) -> Result<()> {
     if lock.try_lock_exclusive().is_err() {
         return Ok(());
     }
-    let listener = tokio::net::TcpListener::bind("127.0.0.1:0")
-        .await
-        .map_err(|_| "Cannot bind local review server.")?;
-    let port = listener
-        .local_addr()
-        .map_err(|_| "Cannot read local server port.")?
-        .port();
-    let capability = format!(
-        "{:032x}{:032x}",
-        rand::random::<u128>(),
-        rand::random::<u128>()
-    );
-    let shutdown = Arc::new(Notify::new());
-    let service = Service {
-        store: Arc::new(Mutex::new(Store::open(&paths)?)),
-        paths: paths.clone(),
-        capability: capability.clone(),
-        origin: format!("http://127.0.0.1:{port}"),
-        host: format!("127.0.0.1:{port}"),
-        shutdown: shutdown.clone(),
-        updates: watch::channel(false).0,
-    };
-    paths.save_descriptor(&Descriptor {
-        pid: std::process::id(),
-        port,
-        capability,
-    })?;
+    let (listener, service) = setup::prepare(&paths).await?;
+    let shutdown = service.shutdown.clone();
     let updates = service.updates.clone();
+    let mut termination = tokio::signal::unix::signal(tokio::signal::unix::SignalKind::terminate())
+        .map_err(|_| "Cannot observe server shutdown.")?;
+    let responder = tokio::spawn(standalone::run(service.clone()));
     let app = routes()
         .layer(DefaultBodyLimit::max(MAX_BODY))
         .layer(middleware::from_fn_with_state(service.clone(), boundary))
         .with_state(service);
     axum::serve(listener, app)
         .with_graceful_shutdown(async move {
-            tokio::select! { _ = shutdown.notified() => {}, _ = tokio::signal::ctrl_c() => {} }
+            tokio::select! { _ = shutdown.notified() => {}, _ = tokio::signal::ctrl_c() => {}, _ = termination.recv() => {} }
             updates.send_replace(true);
         })
         .await
         .map_err(|_| "Review server stopped unexpectedly.")?;
+    let _ = responder.await;
     let _ = std::fs::remove_file(paths.directory.join("server.json"));
     Ok(())
 }
@@ -87,9 +71,25 @@ fn routes() -> Router<Service> {
     }
     router
         .route("/snapshot", get(read_snapshot))
+        .route("/processing", get(feedback_routes::status))
         .route("/revision", get(read_revision))
         .route("/submit", post(submit))
         .route("/findings", post(configure_findings))
+        .route("/feedback/standalone", post(standalone::configure))
+        .route("/feedback/retry", post(standalone::retry))
+        .route("/feedback/revise", post(report_update::revise))
+        .route("/feedback/attach", post(feedback_routes::attach))
+        .route(
+            "/feedback/attach-ticket",
+            post(feedback_routes::attach_ticket),
+        )
+        .route("/feedback/ticket", post(feedback_routes::ticket))
+        .route("/feedback/claim", post(feedback_routes::claim))
+        .route("/feedback/pending", post(feedback_routes::pending))
+        .route("/feedback/inbox", post(feedback_routes::inbox))
+        .route("/feedback/renew", post(feedback_routes::renew))
+        .route("/feedback/finish", post(feedback_routes::finish))
+        .route("/feedback/fail", post(feedback_routes::fail))
         .route("/reopen", post(reopen))
         .route("/stop", post(stop))
         .layer(TimeoutLayer::with_status_code(

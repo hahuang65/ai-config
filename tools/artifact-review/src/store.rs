@@ -18,11 +18,13 @@ impl Store {
                cursor INTEGER PRIMARY KEY AUTOINCREMENT,
                id TEXT NOT NULL UNIQUE, payload TEXT NOT NULL, action TEXT NOT NULL
              );
+             CREATE TABLE IF NOT EXISTS finding_authorizations(id TEXT PRIMARY KEY, payload TEXT NOT NULL);
              CREATE TABLE IF NOT EXISTS configuration (
                id INTEGER PRIMARY KEY CHECK(id=1), findings TEXT NOT NULL
              );",
             )
             .map_err(|_| "Cannot initialize event history.")?;
+        crate::feedback_store::initialize(&connection)?;
         Ok(Self(connection))
     }
 
@@ -42,7 +44,7 @@ impl Store {
         })
     }
 
-    fn status(&self) -> Result<String> {
+    pub(crate) fn status(&self) -> Result<String> {
         self.review_state().map(|(status, _)| status)
     }
 
@@ -92,19 +94,15 @@ impl Store {
     }
 
     fn append(&mut self, submission: &Submission) -> Result<u64> {
-        if self.latest()? >= MAX_EVENTS {
-            return Err(
-                "Event history limit reached. Preserve this history before starting a new storage root.",
-            );
-        }
-        let payload = serde_json::to_string(submission).map_err(|_| "Cannot encode feedback.")?;
-        self.0
-            .execute(
-                "INSERT INTO events(id,payload,action) VALUES(?1,?2,?3)",
-                params![submission.id, payload, submission.action],
-            )
-            .map_err(|_| "Cannot persist feedback. Nothing was acknowledged.")?;
-        Ok(self.0.last_insert_rowid() as u64)
+        let transaction = self
+            .0
+            .transaction()
+            .map_err(|_| "Cannot start feedback transaction.")?;
+        let cursor = append_event(&transaction, submission)?;
+        transaction
+            .commit()
+            .map_err(|_| "Cannot commit feedback. Nothing was acknowledged.")?;
+        Ok(cursor)
     }
 
     fn latest(&self) -> Result<u64> {
@@ -168,6 +166,38 @@ impl Store {
             events,
             more: cursor < latest,
             finding_review,
+            processing: Some(self.feedback_processing()?),
         })
     }
+}
+
+pub(crate) fn append_event(
+    transaction: &rusqlite::Transaction<'_>,
+    submission: &Submission,
+) -> Result<u64> {
+    let latest: i64 = transaction
+        .query_row("SELECT COALESCE(MAX(cursor),0) FROM events", [], |row| {
+            row.get(0)
+        })
+        .map_err(|_| "Cannot read event cursor.")?;
+    if latest as u64 >= MAX_EVENTS {
+        return Err(
+            "Event history limit reached. Preserve this history before starting a new storage root.",
+        );
+    }
+    let payload = serde_json::to_string(submission).map_err(|_| "Cannot encode feedback.")?;
+    transaction
+        .execute(
+            "INSERT INTO events(id,payload,action) VALUES(?1,?2,?3)",
+            params![submission.id, payload, submission.action],
+        )
+        .map_err(|_| "Cannot persist feedback. Nothing was acknowledged.")?;
+    let cursor = transaction.last_insert_rowid();
+    if ["feedback", "accept", "reject", "approve", "decline"].contains(&submission.action.as_str())
+    {
+        transaction
+            .execute("INSERT INTO feedback_jobs(cursor) VALUES(?1)", [cursor])
+            .map_err(|_| "Cannot queue feedback. Nothing was acknowledged.")?;
+    }
+    Ok(cursor as u64)
 }

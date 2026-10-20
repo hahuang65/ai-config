@@ -48,6 +48,8 @@ The actual declarations in this inventory conversation were `read`, `bash`, `edi
 Pi's [extension contract](https://github.com/earendil-works/pi/blob/main/packages/coding-agent/docs/extensions.md) distinguishes a model tool (`registerTool`) from a slash command (`registerCommand`).
 The WT extension registers one model tool and one `/wt` command, not two interchangeable tools; the LSP extension adds a separate model tool.
 Guard and status-footer extensions register no tools.
+The [review-feedback extension](../harnesses/pi/review-feedback.ts) also registers no model tool.
+Its `/review-feedback` command resumes saved feedback after interruption; background native messages use the existing conversation and shared Rust queue.
 Pi has no package-installed native subagent tool; specialist files alone do not add that capability.
 
 MCP tools default to codemode exposure in this Pi version, not direct declaration.
@@ -101,6 +103,9 @@ No runtime availability is inferred merely because a name appears in a deny rule
 The package also disables bundled skills, Claude.ai connectors, and Remote Control.
 Disabling Claude.ai connectors does **not** establish that all independently configured MCP servers are disabled.
 The manifest does not disable ordinary user/project discovery.
+The [review-feedback hook](../harnesses/claude/review-feedback.ts) adds no model tool or MCP server.
+It uses native `asyncRewake` listeners and maintenance turns, with a short synchronous completion hook to avoid reply races at prompt boundaries.
+Synthetic native-client tests verify this source change without claiming live installation or provider eligibility.
 
 ## Language-server integrations
 

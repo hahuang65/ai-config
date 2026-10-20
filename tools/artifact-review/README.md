@@ -40,7 +40,8 @@ Silence never ends the logical wait or grants approval.
 The server holds a request until a durable state change or a bounded transport heartbeat; the command renews empty waits internally, without returning control to the model.
 Connection timeouts retry internally; other connection errors, server shutdown, cancellation, and harness execution limits interrupt the command without consuming history.
 Resume an interrupted wait using the same report and last processed cursor; a stopped or incompatible server needs explicit recovery, not silent reopening of a terminal review.
-No automatic wake of an already-ended agent turn is provided.
+The `wait` command itself does not wake an ended turn.
+Native adapters provide the separate background delivery described below.
 
 `poll` remains the bounded interface: 0–60 seconds, default 20, plus a bounded local request allowance of 3 seconds.
 `poll --timeout 0` checks immediately.
@@ -54,12 +55,66 @@ Pages contain at most 50 events; use the returned cursor to continue while `more
 Save the cursor only after processing the returned events.
 Interrupted waits do not consume events; retry with the last processed cursor.
 Empty events with `status: "open"` mean no feedback arrived, not approval.
-The agent must keep a foreground `wait` active while the review is open, including after asking questions through replies.
-Use no shell-tool timeout when supported, and report harness-imposed interruptions honestly rather than claiming indefinite host execution.
-Send feedback is received through that active loop; the browser does not itself wake an ended agent turn.
+An explicitly selected manual compatibility consumer keeps `wait` active while its review remains open.
+Use no shell-tool timeout for that manual workflow when supported, and report interruptions honestly.
+Ordinary agent-launched reviews instead return control and use native background delivery.
 A reply requires a caller-generated stable ID of 16–80 letters, digits, or hyphens.
 Retry an interrupted reply with the same ID and content.
 Reusing an ID for different content is rejected.
+
+## Background feedback
+
+An `open` result includes an opaque five-minute attachment receipt, not the browser capability.
+Pi and Claude adapters consume it and bind the artifact to the actual originating conversation and canonical workspace.
+A receipt cannot redirect an already attached review to another conversation.
+The review's private SQLite history queues feedback and decisions transactionally.
+The shared private routing index permits up to 50 artifacts per origin.
+A notification does not claim work or report Working while the conversation is busy elsewhere.
+Unavailable artifacts, inboxes, and lease renewals are skipped individually so a healthy replacement can still deliver feedback.
+The listener clears failed lease tracking and returns `skipped_unavailable: true` when it skips a review or renewal.
+It never reopens the old server, restores failed work, or marks that work completed.
+Shared routing-state errors still fail the listener rather than being hidden.
+
+`attach`, `attached`, `focus`, `listen`, `claim`, `renew`, `finish`, `fail`, `active`, and `abandon` support the native adapters.
+The native `focus` command records the current canonical workspace for a conversation.
+Once tracked, an inactive workspace cannot notify or claim feedback, and CLI claims also require that workspace as their actual working directory.
+Claims use new attempt tokens and renewable 60-second leases.
+A lease owns one feedback event, not a worktree or session lock.
+Interrupted attempts remain Needs attention, and a replacement attempt invalidates the old completion token.
+Completion saves one idempotent reply and distinguishes Answered from changed artifact bytes.
+Change-report wording updates use the owned `revise` command and retain the same artifact path.
+Verified wording updates refresh decided and ended reports without reopening decisions or approval.
+
+Pi queues native follow-ups and claims only when feedback reaches model context.
+Claude uses native `asyncRewake` hooks and re-arms them after feedback or a 55-minute idle maintenance turn.
+Maintenance can add visible activity and token usage, but grants no new task authority.
+Synchronous SessionStart and completed EnterWorktree/ExitWorktree hooks record Claude's current workspace.
+Unclaimed feedback waits while its originating workspace is inactive and becomes eligible again on re-entry.
+A short synchronous Stop hook saves the reply before another user prompt can clear the claim.
+An active listener renews its conversation's claimed leases while work continues.
+Closing or interrupting a conversation retains feedback for its original saved conversation to resume.
+Neither adapter substitutes another editing agent.
+
+`open REPORT.html --findings REPORT.json --standalone` enables an on-demand read-only responder instead.
+This mode has no repair Accept/Reject controls, including for local and range reports.
+PR publication still uses the existing human-controlled fields and confirmation.
+The detached server waits without an idle model and starts the retained restricted engine only for feedback.
+Responder settings and frozen-evidence fingerprints remain signed and separate from current report wording.
+The responder reads a private verified copy, the retained review, current feedback, and bounded prior discussion.
+Snapshot copying permits 128 MiB, 20,000 entries, depth 64, and 16 MiB per file, with no symlinks.
+Discussion context contains at most 50 prior events within a 128 KiB total feedback bound, with explicit truncation metadata.
+The responder cannot edit source, execute it, publish, or change authentication settings.
+Failures retain feedback without an automatic job retry or engine fallback.
+The browser's Retry response button explicitly requeues one failed standalone response with a new attempt token.
+It grants no source-repair or publication authority.
+Failed reports can instead be regenerated; draft recovery is not a requirement.
+
+`/processing` and the event page expose Queued, Working, Answered, Updated, and Needs attention through the shared submission banner.
+Approval and publication remain separate and keep their stronger status precedence.
+Processing-state changes do not submit unsent annotations or publication drafts.
+A wording update can discard unconfirmed drafts and selections.
+Report updates use atomic file replacements without a recovery journal or crash replay.
+If interruption leaves an invalid report, generate another report.
 
 ## Finding-review mode
 
@@ -70,7 +125,7 @@ Reusing an ID for different content is rejected.
 
 This explicit mode imports the retained version-1 change-review record, not arbitrary decision markup embedded in HTML.
 It requires a matching HTML digest, at most 50 sequential F1–F50 finding IDs, and titles of 1–500 UTF-8 bytes using the change-review title contract.
-The record must be a regular, non-symlink UTF-8 JSON file no larger than 2 MiB.
+The record must be a regular, non-symlink UTF-8 JSON file no larger than 25 MiB.
 Malformed or mismatched input is refused before starting a server; revision checks repeat at configuration and decision time.
 The private SQLite configuration stores the fixed IDs/titles, bound HTML revision, SHA-256 of the exact input record, and whether it is publication-only PR mode.
 It does not modify the retained HTML, JSON, or publication signatures.
@@ -94,13 +149,14 @@ Explicit chat clarification is needed to change a decision; a later rejection ca
 `wait` and `poll` add `finding_review` containing:
 
 - `publication_only`: true for PR reports, which never authorize repairs or record new Accept/Reject decisions.
+- `read_only`: true for standalone discussions, which cannot authorize source repairs.
 - `revision`: the fixed report revision for this finding list.
 - `report_digest`: SHA-256 of the exact imported JSON bytes, to verify before mapping IDs to repairs.
 - `items`: ID, title, and `decision` (`accept`, `reject`, or null for undecided).
 - `needs_review`: true when current artifact bytes differ from the bound report or cannot be read safely.
 
 That nested flag describes revision validity, not whether every finding has been decided.
-Only local reports with `publication_only` false, matching event/current/bound revisions, a false nested flag, and a saved accept authorize the corresponding repair.
+Only local reports with `read_only` false or absent, `publication_only` false, matching event/current/bound revisions, a false nested flag, and a saved accept authorize the corresponding repair.
 The ordinary top-level approval fields still describe whole-document approval and remain independent.
 For local reports, when every item has a decision, status becomes `decided`; this does not mean every finding was accepted or the code approved.
 PR feedback remains open until End review, even with zero findings or after publication.
@@ -144,7 +200,8 @@ The artifact executable links the existing evaluation library for locks, signed 
 A lost response leaves the persisted attempt uncertain; Check publication status reconciles that same attempt without a new POST.
 An already-confirmed receipt remains posted across reloads and retries.
 After publication, the app shows posted status instead of recreating editable default comments; the PR contains the actual submitted text.
-The immutable report, JSON and repair-decision ledger are not rewritten by publication.
+Publication does not rewrite report wording or repair decisions.
+Owned wording revisions preserve exact confirmed attempts and outcomes without another publication or authorization.
 Publication requests require the same exact local origin and session capability as other mutations.
 Models must not call these endpoints or manufacture human confirmations.
 The capability/signature design does not cryptographically prove a human gesture against arbitrary same-user code.
@@ -207,14 +264,14 @@ Inline CSS and class attributes are retained, including class-based layout and s
 Document title metadata is removed from the snapshot rather than leaking as plain body text; visible headings and the original file's title remain unchanged.
 Local PNG, JPEG, WebP, and GIF renders in the HTML directory (including plain relative subpaths) and embedded base64 images of those types are copied into the inert snapshot.
 Referenced local paths must stay inside that directory without symlinks; a missing, unsupported, malformed, or oversized local render prevents approval rather than showing an incomplete design.
-Each render is limited to 2 MiB, with at most 24 images and 8 MiB of decoded image bytes per snapshot.
+Each render is limited to 25 MiB, with at most 24 images and 25 MiB of decoded image bytes per snapshot.
 External CSS, fonts, remote images, SVG, unsupported markup, and interactive artifact behavior are not supported.
 Remote images are stripped and never fetched; do not request approval of image-dependent work unless the required renders are visible.
 This is a review of static self-contained HTML, not a general browser preview.
 Feedback and target text are rendered through `textContent`, never interpreted as HTML.
 The shell does not accept artifact `postMessage` decision messages.
 
-Files are limited to 2 MiB of UTF-8 HTML.
+HTML and retained report JSON each have a 25 MiB limit.
 Ordinary feedback requests are limited to 128 KiB and a 5-second server timeout.
 Only publication preparation permits a 1 MiB body for up to 50 comments of 8000 UTF-8 bytes each; publication routes retain their separate 180-second transport budget.
 Each submission permits an 8000-UTF-8-byte message and 16 annotations.
@@ -265,7 +322,7 @@ The event route permits its requested hold plus a five-second service allowance,
 CLI requests use the requested hold plus three seconds, and browser event requests use the hold plus four seconds.
 These transport budgets are not logical review inactivity limits.
 
-Each process caches at most one successful rendered artifact, keyed by its absolute path and exact HTML bytes, with the existing 2 MiB HTML, 24-image, and 8 MiB decoded-image bounds.
+Each process caches at most one successful rendered artifact, keyed by its absolute path and exact HTML bytes, with the 25 MiB HTML, 24-image, and 25 MiB decoded-image bounds.
 Every revision check still reads the HTML and safely rereads, validates, and hashes the displayed image dependencies in their original order; size and modification time are never freshness proofs.
 Unchanged HTML reuses the sanitizer-derived dependency list instead of parsing/sanitizing/encoding the full snapshot again.
 A changed image requires a new render before its snapshot is served, while unchanged HTML and image bytes can reuse the previous inert snapshot.

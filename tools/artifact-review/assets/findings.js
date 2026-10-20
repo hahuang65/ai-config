@@ -13,7 +13,7 @@ class FindingControls {
 
   update(review) {
     this.review = review || null;
-    if (this.review?.publication_only && this.rows.size) {
+    if ((this.review?.publication_only || this.review?.read_only) && this.rows.size) {
       for (const { row } of this.rows.values()) row.remove();
       this.rows.clear(); this.document = null;
     }
@@ -22,12 +22,12 @@ class FindingControls {
     document.querySelector('.toolbar strong').textContent = title;
     document.querySelector('#approve').hidden = !!this.review;
     document.querySelector('#decline').textContent = this.review ? 'End review' : 'Decline';
-    document.querySelector('#finding-policy').hidden = !this.review || this.review.publication_only;
+    document.querySelector('#finding-policy').hidden = !this.review || this.review.publication_only || this.review.read_only;
   }
 
   mount() {
     const doc = this.frame.contentDocument;
-    if (!this.review || !this.frame.dataset.revision || doc === this.document) return;
+    if (!this.review || this.review.read_only || this.review.publication_only || !this.frame.dataset.revision || doc === this.document) return;
     this.document = doc;
     this.rows.clear();
     const style = doc.createElement('style');
@@ -95,14 +95,14 @@ class FindingControls {
   }
 
   controls(blocked, ready, status) {
-    if (!this.review || this.review.publication_only) return null;
+    if (!this.review || this.review.publication_only || this.review.read_only) return null;
     this.mount();
     const stale = this.review.needs_review || this.frame.dataset.revision !== this.review.revision;
     const missing = this.rows.size !== this.review.items.length;
     for (const item of this.review.items) {
       const controls = this.rows.get(item.id);
       if (!controls) continue;
-      controls.outcome.textContent = item.decision === 'accept' ? 'Accepted — repair authorized'
+      controls.outcome.textContent = item.decision === 'accept' ? (item.authorization ? 'Accepted — original finding remains authorized' : 'Accepted — repair authorized')
         : item.decision === 'reject' ? 'Rejected — no repair authorized' : 'Undecided — no repair authorized';
       for (const control of controls.row.querySelectorAll('[data-decision], [data-finding-comment]')) {
         control.disabled = blocked || !ready || stale || missing || !!item.decision;

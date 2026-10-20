@@ -26,7 +26,8 @@ Ordinary session skill discovery remains enabled; the reviewer itself is isolate
 3. Read the bounded JSON result and present the HTML report path, scope, findings, and limits.
    Distinguish defects from changed-code refactoring and existing-code reuse.
    For report interaction, read and follow [review-artifact](../review-artifact/SKILL.md) with `open REPORT.html --findings REPORT.json` and the exact returned paths.
-   That skill owns foreground waiting, cursor and reply retries, revision/digest validation, and saved-decision finality.
+   That skill owns background feedback delivery, claimed-event handling, revision/digest validation, and saved-decision finality.
+   Return control after opening the report instead of holding a foreground feedback wait.
    PR reports use publication-only mode: checkbox selection and editable comment text, never repair Accept/Reject.
    Do not repair PR findings in this workflow, even when legacy history contains Accept events.
    The following repair-decision rules apply only to local reports.
@@ -35,9 +36,12 @@ Ordinary session skill discovery remains enabled; the reviewer itself is isolate
    The report must still describe the relevant code; unrelated source changes require a fresh review, while earlier authorized repairs in the same batch remain explicit context.
    Process comments within the accepted finding's scope; ask about conflicting instructions, and preserve user ownership of source and tests in coach mode.
    Never submit accept/reject events yourself, infer acceptance from feedback or a closed browser, or repair a finding twice after event replay.
-   Record handled cursors and repair outcomes while following that skill's wait lifecycle.
+   Record handled event cursors and repair outcomes in the originating conversation before completing the response.
+   The native adapter returns that response to the browser.
    Verify accepted repairs and request a fresh review of the whole changed task, at a new retained report path.
-   Never rewrite the retained report, its JSON, or signatures to record decisions or fixes.
+   Never rewrite the retained report, its JSON, or signatures through raw file edits to record decisions or fixes.
+   Requested wording changes use the owned `revise` interface from review-artifact and keep the same report path.
+   Existing authorizations remain attached to their original finding and source scope.
    Rejection is not a verified fix, and an all-decided report is not blanket code approval.
    Browser decisions never authorize staging, commits, installation, delivery, or publication.
    For an explicitly informational request, present the report normally without soliciting decisions.
@@ -46,13 +50,16 @@ Ordinary session skill discovery remains enabled; the reviewer itself is isolate
 4. If the user wants to publish pull-request findings, direct them to the inline comment fields and Publish button below the report in `review-artifact`.
    Only the human selects and edits comments, inspects their exact text, verified file/line destinations, account and PR context, and clicks Publish as final confirmation.
    There is no separate Preview step; selected final text is posted verbatim without added finding IDs, and unverified inline locations cannot publish.
-   The sidebar stays for agent feedback, including after posting; keep waiting until End review or an explicit pause.
+   The sidebar stays open for background feedback, including after posting, until End review or an explicit pause.
    Never submit publication selections, previews, confirmations, or terminal posting through model tools; do not synthesize clicks or confirmation requests.
    Repair Accept/Reject, ordinary artifact approval, silence, and review completion never authorize publication.
    Publication sends `COMMENT` only, not pull-request approval or requested changes.
    If the outcome is uncertain, the human uses Check publication status on that same report to reconcile the persisted attempt, never a new submission.
    A changed report or PR revision requires a fresh review.
 
+Standalone CLI reviews use on-demand restricted responders for discussion, clarification, and rewording, never underlying source repairs.
+A CLI command invoked inside this conversation is agent-launched, not standalone.
+Do not pass `--standalone` to replace this conversation with another responder.
 The reviewer does not edit, install, commit, push, or publish changes.
 Keep authentication private and record only meaningful progress through [work-log](../work-log/SKILL.md).
 See the [CLI contract and limits](../../docs/review-change-cli.md) for scope and retained-state recovery.

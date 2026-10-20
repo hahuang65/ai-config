@@ -19,6 +19,10 @@ class PublicationControls {
   update(binding) {
     const next = binding?.publication_only ? binding : null;
     const changed = next?.report_digest !== this.binding?.report_digest;
+    if (changed && next && this.binding) {
+      this.drafts = {};
+      this.persist();
+    }
     this.binding = next;
     if (changed) { this.state = next ? { status: 'loading' } : null; this.error = ''; void this.refresh(); }
     this.controls();

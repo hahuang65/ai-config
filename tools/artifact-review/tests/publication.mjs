@@ -57,7 +57,7 @@ async function assertDisplayedContextAndTargets(f, state) {
 
 export function registerPublicationCases(firefox) {
   test('the existing PR URL in Scope and intent is a safe clickable anchor', { timeout: 30000 }, async t => {
-    const f = await publicationFixture(t);
+    const f = await publicationFixture(t, { standalone: true });
     const browser = await firefox(t);
     try {
       const { port, capability } = f.descriptor;

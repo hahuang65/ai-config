@@ -34,7 +34,7 @@ The [context glossary](../CONTEXT.md) distinguishes a harness, Tool, agent-facin
 | Presentation | Catppuccin Mocha; two-row location/session and usage display without memory services. | Command status line; model/thinking right-aligned on row one. | TUI-only footer; model/thinking right-aligned on row two. |
 | Specialist roles | Same trusted role intent; optional advice is not change-review evidence. | Native `Agent` can discover role files with read-only frontmatter. | Role files alone do not supply an ordinary subagent tool. |
 | Restricted review | Explicit caller-matching engine, frozen source evidence, read-only tools, no automatic engine fallback. | Independent safe/restricted subprocess, only `Read`, strict empty MCP config. | Ephemeral profile, ordinary discovery disabled, explicit snapshot-only reader and shared guard. |
-| Human feedback | Same local browser review, revision-bound decisions, separate publication confirmation. | Shared source-local Rust helper through shell. | Same helper; no second extension protocol or hosted artifact workflow. |
+| Human feedback | Same local browser review, revision-bound decisions, separate publication confirmation. | Native wake-up hooks attach and re-arm the shared queue; idle renewal can add maintenance turns. | Background native extension attaches the originating conversation, queues follow-ups, and acknowledges processing through the same helper. |
 | Work history | One append-only host-local Worklog store, project identity shared across worktrees. | Shared WL CLI, not native session task tools. | Same CLI/store, not session-tree entries or a scheduler. |
 
 Native spelling, UI placement, usage accounting, and client capability differences are legitimate when documented and tested.
@@ -51,11 +51,13 @@ The same source supplies both harnesses wherever two routes are listed.
 | --- | --- |
 | [baseline.md](../baseline.md) | `.claude/CLAUDE.md`, `.pi/agent/AGENTS.md`. |
 | [Claude guard](../harnesses/claude/guard.ts) | `.claude/hooks/guard.ts`; [normalization/verdict](../harnesses/claude/guard-verdict.ts) and [read-only GitHub shortcut](../harnesses/claude/read-only-github.ts) are source-local support. |
+| [Claude feedback](../harnesses/claude/review-feedback.ts) | `.claude/hooks/review-feedback.ts`; shares the source-local [feedback client](../harnesses/review-feedback-client.ts) with Pi. |
 | [Claude WT](../harnesses/claude/worktree.ts) | `.claude/hooks/worktree.ts`; shares [WT client](../harnesses/worktree-client.ts) with Pi. |
 | [Claude status](../harnesses/claude/statusline.ts) | `.claude/statusline.ts`. |
 | [Claude theme](../harnesses/claude/themes/catppuccin-mocha.json) | `.claude/themes/catppuccin-mocha.json`; host-specific theme schema. |
 | [Claude LSP plugin](../harnesses/claude/plugins/ai-local-lsp) | `.claude/plugins/ai-local-lsp`; generated language-server-only plugin. |
 | [Pi guard bundle](../harnesses/pi/guard-policies.bundle.ts) | `.pi/agent/extensions/guard-policies.ts`; authored in [guard-policies.ts](../harnesses/pi/guard-policies.ts). |
+| [Pi feedback bundle](../harnesses/pi/review-feedback.bundle.ts) | `.pi/agent/extensions/review-feedback.ts`; authored in [review-feedback.ts](../harnesses/pi/review-feedback.ts), using the source-local [feedback client](../harnesses/review-feedback-client.ts). |
 | [Pi WT bundle](../harnesses/pi/worktree.bundle.ts) | `.pi/agent/extensions/worktree.ts`; authored in [worktree.ts](../harnesses/pi/worktree.ts). |
 | [Pi footer bundle](../harnesses/pi/status-footer.bundle.ts) | `.pi/agent/extensions/status-footer.ts`; authored in [status-footer.ts](../harnesses/pi/status-footer.ts). |
 | [Pi LSP bundle](../harnesses/pi/lsp.bundle.ts) | `.pi/agent/extensions/lsp.ts`; authored in [lsp.ts](../harnesses/pi/lsp.ts) and its [client modules](../harnesses/pi/lsp). |
@@ -116,7 +118,9 @@ The exact permission patterns remain in the [manifest](../manifest.json) and [pe
 | Destination | Owned paths | Intent and difference |
 | --- | --- | --- |
 | `.claude/settings.json` | `hooks.PreToolUse` | Array entries: WT verification (15s) and shared guard command (10s). |
-| `.claude/settings.json` | `hooks.PostToolUse` | WT entry/exit verification and continuation, matcher `EnterWorktree\|ExitWorktree` (15s). |
+| `.claude/settings.json` | `hooks.PostToolUse` | WT entry/exit verification and continuation, matcher `EnterWorktree\|ExitWorktree` (15s), synchronous feedback workspace focus (10s), plus asynchronous feedback attachment/listening (3600s). |
+| `.claude/settings.json` | `hooks.SessionStart`, `hooks.Stop` | Synchronous SessionStart workspace focus (10s), asynchronous feedback listening with native wake-up on delivery or 55-minute renewal (3600s hook limit), and a synchronous Stop reply before the next user prompt (10s). |
+| `.claude/settings.json` | `hooks.UserPromptSubmit`, `hooks.SessionEnd`, `hooks.StopFailure` | Abandon interrupted feedback claims without marking them answered (10s). |
 | `.claude/settings.json` | `hooks.WorktreeCreate`, `hooks.WorktreeRemove` | WT creation (120s), block native cleanup (15s). |
 | `.claude/settings.json` | `theme` | `custom:catppuccin-mocha`. |
 | `.claude/settings.json` | `statusLine.type`, `statusLine.command` | Command renderer via Bun; no transcript or memory-service reads. |
@@ -189,7 +193,7 @@ The guard, resource ownership, and project trust are not operating-system sandbo
 | Handoffs | Private files outside Git; verify scope against current sources and current authority on pickup. Historical approval is not new authorization. [Handoff](../skills/handoff/SKILL.md), [pickup](../skills/pickup/SKILL.md). |
 | Domain documentation | Every project and linked worktree uses local context files and Markdown ADRs. A5 projects keep these files private and never stage the protected documentation paths. A5 status requires effective global/system Git configuration, never repository-local self-classification. [Model-domain](../skills/model-domain/SKILL.md), [documentation rule](../rules/documentation.md), [A5 rule](../rules/a5.md). |
 | Restricted review | Whole-task scope from recorded start, explicit intent, no executing reviewed code, current-host engine, immutable evidence/report, failed/unavailable review is incomplete. Consultation is separate optional advice. [Review CLI](review-change-cli.md), [specialists](specialists.md). |
-| Artifact approval | Local HTML review; current rendered revision and supported image evidence are checked. Foreground wait has no inactivity cutoff; resume saved cursor after interruption, never manufacture approval. [Artifact skill](../skills/review-artifact/SKILL.md), [runtime contract](../tools/artifact-review/README.md). |
+| Artifact approval | Local HTML review; current rendered revision and supported image evidence are checked. Native background delivery returns control while review remains open; closed conversations retain feedback, and claimed events retain revision checks. Never manufacture approval. [Artifact skill](../skills/review-artifact/SKILL.md), [runtime contract](../tools/artifact-review/README.md). |
 | Local repair decisions | Accept authorizes that exact retained finding only, with revision/digest/source checks. Reject, undecided, all-decided, and whole-document approval do not grant wider repair/commit authority. New changed-state review gets a new immutable report. [Finding contract](review-change-cli.md#finding-decisions-and-repairs). |
 | PR publication | No repair controls. Human selects/edits verified inline comments and clicks Publish after inspecting exact content, destinations, account and PR. COMMENT only; uncertain attempts reconcile the same report without resubmission. Never simulate confirmation. [Publication contract](review-change-cli.md#retained-reports-and-publication). |
 | Installation | `install.sh` alone owns provisioning/build, manifest validation, links/settings, private ownership record, lock and handled-failure rollback. No unrecorded adoption, automatic lock breaking, or silent concurrent-edit overwrite. Live-home installation and source switching need separate approval. [Install guide](../README.md#install). |
@@ -245,7 +249,7 @@ These suite references identify checks to run, not a claim that every future env
 | Status and theme | `test/package-claude-statusline.test.ts`, `test/package-pi-footer.test.ts`, discovery and manifest tests | Identical host billing, native badge placement, or every terminal's rendering. |
 | Language catalogue and clients | `test/package-claude-lsp.test.ts`, `test/package-pi-lsp.test.ts`, `test/package-pi-lsp-transport.test.ts`, native discovery | Provisioned real servers, identical diagnostics, or Windows process-tree cleanup. |
 | Restricted review and diagnostics | `test/reviewer-runtime.test.ts`, `test/package-claude-reviewer.test.ts`, `tools/evaluation/tests/runners.rs`, `tools/evaluation/tests/change.rs` | Reviewer execution of project checks or automatic clean results after a runner failure. |
-| Artifact decisions, wait and publication | `tools/artifact-review/tests`, `tools/evaluation/tests/change.rs`, serial bounded browser suite | Same-user tamper resistance, automatic publication authority, or wakeup of an already-ended harness turn. |
+| Artifact decisions, feedback and publication | `tools/artifact-review/tests`, `tools/evaluation/tests/feedback_response.rs`, native feedback runtime tests, serial bounded browser suite | Same-user tamper resistance, automatic publication authority, closed-client wake-up, or live-provider eligibility. |
 | Worklog | `tools/worklog/tests` | Scheduling, long-term backlog semantics, or old-store migration. |
 | Inventory completeness | `test/package-tool-inventory.test.ts`, `test/package-harness-contracts.test.ts` | Semantic correctness of every statement; human source review remains necessary. |
 

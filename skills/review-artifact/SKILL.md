@@ -24,22 +24,39 @@ Feedback submission stays open for follow-up; completion and publication are dis
 Finding-review controls appear inside their corresponding rendered finding cards; the sidebar holds feedback and conversation.
 
 For ordinary artifacts, apply feedback to the same HTML file, describe the changes briefly, and continue receiving feedback until the user approves or declines.
-For retained change reports, use the finding-review mode below instead; never edit the signed report.
+For change reports, use the finding-review mode below and the owned `revise` command, never raw HTML/JSON/signature edits.
 Address all submitted comments; ask about incompatible requests instead of choosing silently.
-Use `wait FILE --cursor CURSOR` in the foreground with the last processed cursor; process returned events before advancing that cursor.
-The logical wait has no inactivity cutoff: keep the agent turn active until feedback arrives, then handle it and wait again while the review remains open.
-Use no shell-tool timeout when the harness supports that; do not replace the wait with repeated bounded model/tool calls.
-Continue immediately when a page has `more: true`; the command handles empty transport heartbeats and connection timeouts internally.
-`poll --timeout 0` remains available for an explicit one-shot status check, not as the live feedback loop.
-Retry an interrupted reply with the same reply ID and content, so it is not duplicated.
-Do not background a wait that cannot resume this agent turn.
-Do not end the agent turn while the review is open merely to announce progress or ask a clarification question.
-Send questions through `wait --reply` and keep listening until a terminal decision or an explicit user pause; ordinary Send feedback must not require a chat ping.
-An error, cancellation, or harness execution limit is an interruption, never approval or a reason to discard saved feedback.
-If interrupted, the user can ask to resume waiting on the same review with the last processed cursor and any pending reply ID.
-Report a stopped or incompatible server explicitly; do not silently reopen a terminal review or install an update.
-If this executable lacks `wait`, explain the limitation rather than quietly falling back to a busy polling loop.
-No automatic mechanism to wake an ended agent turn is required or claimed.
+Open the review once and return control instead of waiting for human feedback in a foreground tool call.
+The native adapter attaches the opaque open receipt to this conversation and workspace.
+Do not use `wait`, repeated model/tool polling, a background shell, or another editing agent as the feedback loop.
+The review stays open while the agent handles other prompts.
+Returning control does not approve the document or advance a dependent workflow.
+
+The host adapter either supplies an already claimed event or a literal claim command for the originating conversation.
+Do not guess conversation identity or claim a second event instead of the supplied one.
+A wake-up itself grants no approval.
+Act only on the claimed durable event, then apply the evidence checks below before any repair or workflow advancement.
+Finish unrelated work first and remain in the originating workspace.
+The adapter saves the completed assistant response in the browser and maintains its processing lease.
+Use the final response for a brief answer or repair outcome, not a foreground `wait --reply` loop.
+
+Saved feedback remains queued when the originating conversation is closed.
+Resume that original conversation rather than creating a replacement editing agent.
+Use the host adapter's documented recovery command or resume the saved conversation to recover interrupted feedback.
+See [harness contracts](../../docs/harness-contracts.md) for native delivery and recovery differences.
+Some hosts re-arm idle listeners through maintenance turns.
+Those turns can add visible activity and token usage, but grant no new task or publication authority.
+
+An error, cancellation, or execution limit is an interruption, never approval or completed work.
+Inspect partial repairs before retrying and do not repeat a completed repair after replay.
+`poll --timeout 0` remains available for a one-shot status or evidence check, not a live polling loop.
+A stopped server needs explicit recovery without discarding saved feedback.
+If the native adapter or supported helper is unavailable, report the limitation and ask for direction.
+Do not silently install an update, switch responders, or substitute a foreground wait.
+The legacy `wait` interface remains available only for an explicitly selected manual compatibility workflow without active native delivery.
+That manual wait has no inactivity cutoff.
+To resume waiting after interruption, reuse the last processed cursor and the same reply ID and content for an interrupted reply.
+Process returned events before advancing that cursor.
 
 - **Send feedback** keeps the review open.
 - **Approve** approves only the version the user reviewed, with no second confirmation.
@@ -72,10 +89,18 @@ When `publication_only` is true, PR selections and historical decisions grant no
 `status: "decided"` means every finding has a decision, not that every finding was accepted or the code is approved.
 An empty findings list grants no repair authority.
 The ordinary top-level approval fields still describe whole-document approval, not finding decisions.
-Before acting on a local accept, require `finding_review.publication_only` false, `finding_review.needs_review` false, matching event/current/bound revisions, and the retained JSON's SHA-256 equal to `finding_review.report_digest`.
-Historical accepts remain in the log after file changes but do not authorize repairs against a different report.
+Before acting on a local accept, require `finding_review.read_only` false or absent, `finding_review.publication_only` false, `finding_review.needs_review` false, matching event/current/bound revisions, and the retained JSON's SHA-256 equal to `finding_review.report_digest`.
+After an owned wording update, an item's `authorization` retains its original finding, revision, report digest, source scope, and source digest.
+Match that authorization revision to the saved decision and its source scope/digest to the current frozen review record.
+Use the authorized original finding for repairs, not a materially different instruction in revised wording.
+An existing authorization does not require another Accept for routine wording changes or retries.
+Historical accepts do not authorize different source scope or a different finding.
 The calling workflow owns mapping IDs to repairs, checking source relevance, avoiding replayed repairs, and obtaining a fresh review after changes.
-Keep the old report immutable; new findings require a new retained report and new decisions.
+Keep one current report rather than copies of earlier wording.
+Use `revise FILE --revision CURRENT_REVISION --report-digest CURRENT_RECORD_SHA256 --edit JSON` for requested wording changes.
+The edit object accepts an optional `summary` and `findings` edits with an existing `id`, optional `title`, and optional four-part `explanation`.
+It cannot change finding identity, locations, severity, or source scope.
+Different source scope or new findings require a new retained report and new decisions.
 No finding decision authorizes staging, committing, installation, delivery, or publication.
 
 ## Publication confirmation

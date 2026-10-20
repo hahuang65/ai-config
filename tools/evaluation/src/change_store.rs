@@ -1,4 +1,7 @@
-use crate::{change_types::Report, paths::Paths};
+use crate::{
+    change_types::{MAX_REPORT_BYTES, Report},
+    paths::Paths,
+};
 use anyhow::{Context, Result, ensure};
 use hmac::{Hmac, Mac};
 use sha2::{Digest, Sha256};
@@ -97,16 +100,27 @@ impl Store {
         name: &str,
         object: &T,
     ) -> Result<()> {
+        write(
+            &directory.join(name),
+            &self.object_bytes(directory, name, object)?,
+        )
+    }
+
+    fn object_bytes<T: serde::Serialize>(
+        &self,
+        directory: &Path,
+        name: &str,
+        object: &T,
+    ) -> Result<Vec<u8>> {
         let payload = serde_json::to_string(object)?;
         let mut mac = Hmac::<Sha256>::new_from_slice(&self.key()?)?;
         mac.update(directory.file_name().unwrap().as_encoded_bytes());
         mac.update(name.as_bytes());
         mac.update(payload.as_bytes());
         let signature: Vec<u8> = mac.finalize().into_bytes().to_vec();
-        write(
-            &directory.join(name),
-            &serde_json::to_vec(&serde_json::json!({"payload":payload,"signature":signature}))?,
-        )
+        Ok(serde_json::to_vec(
+            &serde_json::json!({"payload":payload,"signature":signature}),
+        )?)
     }
 
     pub fn load_object<T: serde::de::DeserializeOwned>(
@@ -114,14 +128,22 @@ impl Store {
         directory: &Path,
         name: &str,
     ) -> Result<T> {
+        self.load_object_bounded(directory, name, 2 * 1024 * 1024)
+    }
+
+    pub(crate) fn load_object_bounded<T: serde::de::DeserializeOwned>(
+        &self,
+        directory: &Path,
+        name: &str,
+        maximum: usize,
+    ) -> Result<T> {
         #[derive(serde::Deserialize)]
         #[serde(deny_unknown_fields)]
         struct Envelope {
             payload: String,
             signature: Vec<u8>,
         }
-        let envelope: Envelope =
-            serde_json::from_slice(&read(&directory.join(name), 2 * 1024 * 1024)?)?;
+        let envelope: Envelope = serde_json::from_slice(&read(&directory.join(name), maximum)?)?;
         let mut mac = Hmac::<Sha256>::new_from_slice(&read(&self.root.join("signing-key"), 32)?)?;
         mac.update(directory.file_name().unwrap().as_encoded_bytes());
         mac.update(name.as_bytes());
@@ -192,8 +214,8 @@ impl Store {
     pub fn save(&self, directory: &Path, report: &Report, html: &str) -> Result<()> {
         let bytes = serde_json::to_vec(report)?;
         ensure!(
-            bytes.len() <= 512 * 1024,
-            "Retained report exceeds 512 KiB; choose a smaller scope"
+            bytes.len() <= MAX_REPORT_BYTES && html.len() <= MAX_REPORT_BYTES,
+            "Retained report exceeds 25 MiB"
         );
         let mut mac = Hmac::<Sha256>::new_from_slice(&self.key()?)?;
         mac.update(
@@ -206,6 +228,46 @@ impl Store {
         write(&directory.join("report.json"), &bytes)?;
         write(&directory.join("report.mac"), &mac.finalize().into_bytes())?;
         write(&directory.join("report.html"), html.as_bytes())
+    }
+
+    pub(crate) fn replace_object<T: serde::Serialize>(
+        &self,
+        directory: &Path,
+        name: &str,
+        object: &T,
+    ) -> Result<()> {
+        crate::change_update::atomic(
+            &directory.join(name),
+            &self.object_bytes(directory, name, object)?,
+        )
+    }
+
+    pub(crate) fn replace_report(
+        &self,
+        directory: &Path,
+        report: &Report,
+        html: &str,
+    ) -> Result<()> {
+        let bytes = serde_json::to_vec(report)?;
+        ensure!(
+            bytes.len() <= MAX_REPORT_BYTES && html.len() <= MAX_REPORT_BYTES,
+            "Report update exceeds its limit"
+        );
+        ensure!(
+            report.version == 1 && format!("{:x}", Sha256::digest(html)) == report.html_digest,
+            "Invalid current report bytes"
+        );
+        let mut mac = Hmac::<Sha256>::new_from_slice(&self.key()?)?;
+        mac.update(
+            directory
+                .file_name()
+                .context("Missing report directory")?
+                .as_encoded_bytes(),
+        );
+        mac.update(&bytes);
+        crate::change_update::atomic(&directory.join("report.json"), &bytes)?;
+        crate::change_update::atomic(&directory.join("report.mac"), &mac.finalize().into_bytes())?;
+        crate::change_update::atomic(&directory.join("report.html"), html.as_bytes())
     }
 
     pub fn load(&self, selected: &Path) -> Result<(PathBuf, Report)> {
@@ -224,7 +286,7 @@ impl Store {
             directory.parent() == Some(self.root.as_path()),
             "Report is outside the selected review store"
         );
-        let bytes = read(&directory.join("report.json"), 512 * 1024)?;
+        let bytes = read(&directory.join("report.json"), MAX_REPORT_BYTES)?;
         let signature = read(&directory.join("report.mac"), 32)?;
         let mut mac = Hmac::<Sha256>::new_from_slice(&read(&self.root.join("signing-key"), 32)?)?;
         mac.update(directory.file_name().unwrap().as_encoded_bytes());
@@ -233,7 +295,7 @@ impl Store {
             .map_err(|_| anyhow::anyhow!("Retained report was changed; run a fresh review"))?;
         let report: Report = serde_json::from_slice(&bytes).context("Invalid retained report")?;
         ensure!(report.version == 1, "Unsupported retained report version");
-        let html = read(&directory.join("report.html"), 4 * 1024 * 1024)?;
+        let html = read(&directory.join("report.html"), MAX_REPORT_BYTES)?;
         ensure!(
             format!("{:x}", Sha256::digest(html)) == report.html_digest,
             "HTML report changed; run a fresh review before posting"

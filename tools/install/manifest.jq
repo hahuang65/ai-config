@@ -60,7 +60,9 @@ def private_tools: ["tools/artifact-review/target/release/review-artifact", "too
 def bootstrap: {
   ".claude/CLAUDE.md": "baseline.md", ".pi/agent/AGENTS.md": "baseline.md",
   ".claude/hooks/guard.ts": "harnesses/claude/guard.ts", ".claude/hooks/worktree.ts": "harnesses/claude/worktree.ts",
+  ".claude/hooks/review-feedback.ts": "harnesses/claude/review-feedback.ts",
   ".pi/agent/extensions/worktree.ts": "harnesses/pi/worktree.bundle.ts",
+  ".pi/agent/extensions/review-feedback.ts": "harnesses/pi/review-feedback.bundle.ts",
   ".claude/statusline.ts": "harnesses/claude/statusline.ts",
   ".claude/themes/catppuccin-mocha.json": "harnesses/claude/themes/catppuccin-mocha.json",
   ".pi/agent/extensions/guard-policies.ts": "harnesses/pi/guard-policies.bundle.ts",
@@ -80,6 +82,7 @@ def catalogue:
 
 def support_files: [
   "harnesses/worktree-client.ts", "docs/worktree-transitions.md", "harnesses/pi/worktree.ts",
+  "harnesses/review-feedback-client.ts", "harnesses/pi/review-feedback.ts",
   "language-servers.json", "harnesses/pi/lsp.ts", "harnesses/pi/lsp/client.ts",
   "harnesses/pi/lsp/documents.ts", "harnesses/pi/lsp/transport.ts", "harnesses/pi/lsp/diagnostics.ts",
   "harnesses/pi/review-scope.ts", "reviewer.md", "harnesses/pi/guard-policies.ts", "harnesses/pi/status-footer.ts",
@@ -102,6 +105,16 @@ def worktree_hook($event):
   {hooks: [{type: "command", command: "bun ~/.claude/hooks/worktree.ts",
     timeout: (if $event == "WorktreeCreate" then 120 else 15 end)}]}
   + (if $event == "PostToolUse" then {matcher: "EnterWorktree|ExitWorktree"} else {} end);
+def feedback_focus($event):
+  {hooks: [{type: "command", command: "bun ~/.claude/hooks/review-feedback.ts --focus", timeout: 10}]}
+  + (if $event == "PostToolUse" then {matcher: "EnterWorktree|ExitWorktree"} else {} end);
+def feedback_completion:
+  {hooks: [{type: "command", command: "bun ~/.claude/hooks/review-feedback.ts --complete", timeout: 10}]};
+def feedback_events: ["SessionStart", "PostToolUse", "Stop", "UserPromptSubmit", "SessionEnd", "StopFailure"];
+def feedback_hook($event):
+  {hooks: [{type: "command", command: "bun ~/.claude/hooks/review-feedback.ts"}
+    + (if (["SessionStart", "PostToolUse", "Stop"] | index($event)) != null
+       then {asyncRewake: true, timeout: 3600} else {timeout: 10} end)]};
 def selected_setting:
   .value as $v | .path as $p
   | if .destination == ".pi/agent/settings.json" then $p == ["theme"] and $v == "catppuccin-mocha"
@@ -109,6 +122,9 @@ def selected_setting:
       $p == ["hooks", "PreToolUse"] or $p[0] == "permissions"
       or ($p[0] == "hooks" and (["PostToolUse", "WorktreeCreate", "WorktreeRemove"] | index($p[1])) != null
         and $v == worktree_hook($p[1]))
+      or ($p[0] == "hooks" and (feedback_events | index($p[1])) != null and $v == feedback_hook($p[1]))
+      or ($p == ["hooks", "Stop"] and $v == feedback_completion)
+      or ($p[0] == "hooks" and (["SessionStart", "PostToolUse"] | index($p[1])) != null and $v == feedback_focus($p[1]))
     else
       $p == ["theme"] and $v == "custom:catppuccin-mocha"
       or $p == ["statusLine", "type"] and $v == "command"
@@ -140,7 +156,15 @@ def native_package($permissions):
         command: "bun ~/.claude/hooks/guard.ts", timeout: 10}]}); "Package lacks the guard hook")
   | require(all(["PreToolUse", "PostToolUse", "WorktreeCreate", "WorktreeRemove"][]; . as $event
       | any($package.settings[]; .destination == ".claude/settings.json" and .mode == "array_entry"
-        and .path == ["hooks", $event] and .value == worktree_hook($event))); "Package lacks a task hook");
+        and .path == ["hooks", $event] and .value == worktree_hook($event))); "Package lacks a task hook")
+  | require(all(feedback_events[]; . as $event
+      | any($package.settings[]; .destination == ".claude/settings.json" and .mode == "array_entry"
+        and .path == ["hooks", $event] and .value == feedback_hook($event))); "Package lacks a feedback hook")
+  | require(any($package.settings[]; .destination == ".claude/settings.json" and .mode == "array_entry"
+      and .path == ["hooks", "Stop"] and .value == feedback_completion); "Package lacks feedback completion")
+  | require(all(["SessionStart", "PostToolUse"][]; . as $event
+      | any($package.settings[]; .destination == ".claude/settings.json" and .mode == "array_entry"
+        and .path == ["hooks", $event] and .value == feedback_focus($event))); "Package lacks feedback workspace focus");
 
 def link_plan($previous):
   . as $desired

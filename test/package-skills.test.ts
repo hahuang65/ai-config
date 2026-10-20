@@ -103,7 +103,10 @@ test("change-review decisions authorize only accepted findings without replacing
   expect(artifact).toContain("finding_review.report_digest");
   expect(artifact).toContain("finding_review.needs_review");
   expect(artifact).toContain("Only the human");
-  expect(artifact).toContain("Do not end the agent turn while the review is open");
+  expect(artifact).toContain("return control instead of waiting for human feedback");
+  expect(artifact).toContain("A wake-up itself grants no approval");
+  expect(artifact).toContain("Act only on the claimed durable event");
+  expect(artifact).not.toContain("Do not end the agent turn while the review is open");
   expect(artifact).toContain("wait --reply");
   expect(artifact).toContain("no inactivity cutoff");
   expect(artifact).toContain("last processed cursor");

@@ -16,6 +16,7 @@ import { firefoxSuite } from './firefox-suite.mjs';
 import { registerFirefoxIsolationCases } from './firefox-isolation.mjs';
 import { registerFindingDecisionCases } from './finding-decisions.mjs';
 import { registerPublicationCases } from './publication.mjs';
+import { registerStandaloneCases } from './standalone.mjs';
 import { registerAnnotationPopoverCases } from './annotation-popover.mjs';
 import { registerLiveWaitCases } from './live-wait.mjs';
 import { registerSubmissionStatusCases } from './submission-status.mjs';
@@ -28,6 +29,7 @@ registerFirefoxIsolationCases(browsers);
 registerChangeReportCase(firefox);
 registerFindingDecisionCases(firefox);
 registerPublicationCases(firefox);
+registerStandaloneCases({ firefox, eventually });
 registerAnnotationPopoverCases({ fixture, eventually });
 registerLiveWaitCases({ fixture, eventually });
 registerSubmissionStatusCases({ fixture, eventually });
@@ -61,7 +63,9 @@ async function fixture(t) {
   const startBrowser = async () => { browser = await firefox(t); return browser; };
   await cli('open', file, '--no-browser');
   const descriptor = async () => {
-    const [directory] = await readdir(env.AR_ROOT);
+    const directories = (await readdir(env.AR_ROOT)).filter(name => /^[a-f0-9]{64}$/.test(name));
+    assert.equal(directories.length, 1, 'one artifact state directory per fixture');
+    const [directory] = directories;
     return JSON.parse(await readFile(join(env.AR_ROOT, directory, 'server.json'), 'utf8'));
   };
   const api = async (route, body, headers = {}) => {
@@ -162,7 +166,7 @@ test('unsafe, missing, and oversized local renders refuse approval', async t => 
   await symlink(f.file, image);
   assert.equal((await f.api('/snapshot')).status, 503);
   await rm(image);
-  await writeFile(image, Buffer.alloc(2 * 1024 * 1024 + 1));
+  await writeFile(image, Buffer.alloc(25 * 1024 * 1024 + 1));
   assert.equal((await f.api('/snapshot')).status, 503);
   const review = await f.cli('poll', f.file, '--timeout', '0');
   assert.equal(review.current_revision, null);

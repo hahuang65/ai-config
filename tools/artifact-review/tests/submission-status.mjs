@@ -3,6 +3,30 @@ import assert from 'node:assert/strict';
 import { writeFile } from 'node:fs/promises';
 
 export function registerSubmissionStatusCases({ fixture, eventually }) {
+  test('background feedback state is visible without discarding an unsent follow-up', { timeout: 30000 }, async t => {
+    const f = await fixture(t);
+    const origin = { harness: 'pi', conversation: 'browser-feedback-fixture', workspace: f.root };
+    assert.equal((await f.api('/feedback/attach', origin)).status, 200);
+    const browser = await f.startBrowser();
+    const { port, capability } = await f.descriptor();
+    await browser.navigate(`http://127.0.0.1:${port}/#${capability}`);
+    await eventually(() => browser.evaluate("return !!document.querySelector('#artifact').dataset.revision;"));
+    await browser.evaluate("document.querySelector('#message').value='Explain this'; document.querySelector('#send').click(); return true;");
+    await eventually(() => browser.evaluate("return document.querySelector('#submission-status').dataset.state === 'queued';"));
+    const job = await (await f.api('/feedback/claim', origin)).json();
+    await eventually(() => browser.evaluate("return document.querySelector('#submission-status').dataset.state === 'working';"));
+    await browser.evaluate("const input=document.querySelector('#message'); input.value='Keep this unsent follow-up'; input.dispatchEvent(new Event('input')); return true;");
+    assert.equal((await f.api('/feedback/fail', { cursor: job.cursor, attempt: job.attempt })).status, 200);
+    await eventually(() => browser.evaluate("return document.querySelector('#submission-status').dataset.state === 'needs_attention';"));
+    assert.equal(await browser.evaluate("return document.querySelector('#message').value;"), 'Keep this unsent follow-up');
+    const retried = await (await f.api('/feedback/claim', origin)).json();
+    assert.equal((await f.api('/feedback/finish', { cursor: retried.cursor, attempt: retried.attempt, message: 'Here is the explanation.' })).status, 200);
+    await eventually(() => browser.evaluate("return document.querySelector('#submission-status').dataset.state === 'answered';"));
+    await browser.reload();
+    await eventually(() => browser.evaluate("return document.title === 'Answered · Review artifact';"));
+    assert.equal(await browser.evaluate("return document.querySelector('#message').value;"), 'Keep this unsent follow-up');
+    assert.equal(await browser.evaluate("return document.querySelector('#artifact').contentDocument.querySelector('h1').textContent;"), 'First version');
+  });
   test('decline visibly completes the review without implying approval and reopening clears the banner', { timeout: 30000 }, async t => {
     const f = await fixture(t);
     const browser = await f.startBrowser();

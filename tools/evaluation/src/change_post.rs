@@ -70,7 +70,12 @@ pub(crate) fn finished(store: &Store, directory: &Path, report: &Report) -> Resu
     if directory.join("receipt.json").try_exists()? {
         let receipt: Receipt = store.load_object(directory, "receipt.json")?;
         ensure!(
-            receipt.report_digest == digest(report)?,
+            crate::publication_authority::matches(
+                store,
+                directory,
+                report,
+                &receipt.report_digest
+            )?,
             "Receipt does not match this report"
         );
         println!("Already posted: {}", receipt.url);
@@ -151,7 +156,7 @@ pub(crate) fn submit(
 fn reconcile(store: &Store, directory: &Path, report: &Report) -> Result<()> {
     let attempt: Attempt = store.load_object(directory, "attempt.json")?;
     ensure!(
-        attempt.report_digest == digest(report)?,
+        crate::publication_authority::matches(store, directory, report, &attempt.report_digest)?,
         "Attempt does not match this report; no new submission allowed"
     );
     let receipt = change_reconcile::confirm(report, &attempt)?;

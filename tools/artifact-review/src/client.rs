@@ -141,12 +141,21 @@ pub fn open(
             Some(&serde_json::to_value(binding).map_err(|_| "Cannot encode findings.")?),
         )?;
     }
+    let standalone = binding.is_some_and(|binding| binding.read_only);
+    if standalone {
+        session.request("/feedback/standalone", Some(&json!({})))?;
+    }
     session.request("/reopen", Some(&json!({})))?;
     if !no_browser {
         session.browse(paths, binding)?;
     }
     let state = session.request("/events?cursor=0", None)?;
-    Ok(json!({"status": state["status"], "browser": !no_browser}))
+    if standalone {
+        return Ok(json!({"status":state["status"],"browser":!no_browser}));
+    }
+    let ticket = session.request("/feedback/ticket", Some(&json!({})))?;
+    Ok(json!({"status": state["status"], "browser": !no_browser,
+        "review_feedback":{"version":1,"artifact":paths.artifact,"ticket":ticket["ticket"]}}))
 }
 
 fn start(paths: &Paths) -> Result<Session> {

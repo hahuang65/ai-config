@@ -29,6 +29,7 @@ build-language-servers: build-guard-parser
 build: build-guard-bundle build-language-servers
 	bun tools/build-status-footer.mjs
 	bun build harnesses/pi/worktree.ts --target node --format esm --external @earendil-works/pi-coding-agent --external @sinclair/typebox --outfile harnesses/pi/worktree.bundle.ts
+	bun build harnesses/pi/review-feedback.ts --target node --format esm --external @earendil-works/pi-coding-agent --outfile harnesses/pi/review-feedback.bundle.ts
 	cargo build --locked --release --manifest-path tools/worktree/Cargo.toml
 	cargo build --locked --release --manifest-path tools/worklog/Cargo.toml
 	cargo build --locked --release --manifest-path tools/artifact-review/Cargo.toml

@@ -30,7 +30,52 @@ fn parse() -> Result<Parsed> {
     Ok((root, request))
 }
 
+fn feedback() -> Result<()> {
+    let args: Vec<_> = env::args().skip(2).collect();
+    ensure!(
+        args.len() == 4,
+        "Feedback fixture needs HTML, digest, revision, and JSON event"
+    );
+    let event: serde_json::Value = serde_json::from_str(&args[3])?;
+    let cancel = std::sync::Arc::new(std::sync::atomic::AtomicBool::new(false));
+    if let Some(started) = event["fixture_started"].as_str() {
+        let started = PathBuf::from(started);
+        let flag = cancel.clone();
+        std::thread::spawn(move || {
+            let deadline = std::time::Instant::now() + std::time::Duration::from_secs(5);
+            while !started.is_file() && std::time::Instant::now() < deadline {
+                std::thread::sleep(std::time::Duration::from_millis(5));
+            }
+            flag.store(true, std::sync::atomic::Ordering::Relaxed);
+        });
+    }
+    let response = evaluation::feedback_response::respond(
+        PathBuf::from(&args[0]).as_path(),
+        &args[1],
+        &args[2],
+        &event,
+        cancel,
+    )?;
+    if let Some(edit) = &response.revision {
+        evaluation::report_edit::apply(
+            PathBuf::from(&args[0]).as_path(),
+            &args[1],
+            &args[2],
+            edit,
+        )?;
+    }
+    println!("{}", serde_json::to_string(&response)?);
+    Ok(())
+}
+
 fn main() {
+    if env::args().nth(1).as_deref() == Some("feedback") {
+        if let Err(error) = feedback() {
+            eprintln!("Feedback fixture: {error}");
+            std::process::exit(1);
+        }
+        return;
+    }
     let (root, request) = match parse() {
         Ok(parsed) => parsed,
         Err(error) => {

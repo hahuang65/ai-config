@@ -225,7 +225,7 @@ fn ordinary_artifacts_cannot_record_finding_decisions() {
 #[test]
 fn oversized_and_symlinked_records_are_refused_without_starting_a_server() {
     let review = Review::new();
-    std::fs::write(&review.record, vec![b' '; 2 * 1024 * 1024 + 1]).unwrap();
+    std::fs::write(&review.record, vec![b' '; 25 * 1024 * 1024 + 1]).unwrap();
     assert_eq!(review.open().status.code(), Some(1));
     assert!(!review.root.join("state").exists());
     std::fs::remove_file(&review.record).unwrap();

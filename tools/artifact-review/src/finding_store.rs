@@ -13,6 +13,7 @@ fn validate_same_report(previous: &str, binding: &Binding) -> Result<()> {
     saved.validate()?;
     // Enrich legacy PR metadata, never rewrite events or turn publication mode into repair authority.
     saved.publication_only |= binding.publication_only;
+    saved.read_only |= binding.read_only;
     if saved != *binding {
         return Err(
             "Finding review is already bound to another report. Open the new report at its own path.",
@@ -24,6 +25,9 @@ fn validate_same_report(previous: &str, binding: &Binding) -> Result<()> {
 impl Store {
     pub fn configure_findings(&mut self, paths: &Paths, binding: &Binding) -> Result<()> {
         binding.validate()?;
+        if binding.read_only && self.feedback_origin()?.is_some() {
+            return Err("An agent-attached review cannot become standalone.");
+        }
         if model::revision(paths)? != binding.revision {
             return Err("Findings report does not match the artifact revision.");
         }
@@ -70,7 +74,7 @@ impl Store {
             .map_err(|_| "Cannot persist finding configuration.")
     }
 
-    fn finding_binding(&self) -> Result<Option<Binding>> {
+    pub(crate) fn finding_binding(&self) -> Result<Option<Binding>> {
         let saved: Option<String> = self
             .0
             .query_row("SELECT findings FROM configuration WHERE id=1", [], |row| {
@@ -103,9 +107,14 @@ impl Store {
             let event: Submission =
                 serde_json::from_str(&source).map_err(|_| "Invalid finding decision.")?;
             let id = event.finding.ok_or("Finding decision has no ID.")?;
-            if event.revision != binding.revision
+            let authorization = self
+                .finding_authorization(&id)?
+                .filter(|grant| grant["revision"] == event.revision);
+            if (event.revision != binding.revision && authorization.is_none())
                 || !binding.items.iter().any(|item| item.id == id)
-                || decisions.insert(id, event.action).is_some()
+                || decisions
+                    .insert(id, (event.action, authorization))
+                    .is_some()
             {
                 return Err("Finding decision does not match this report.");
             }
@@ -113,15 +122,20 @@ impl Store {
         let needs_review = revision != Some(binding.revision.as_str());
         Ok(Some(Review {
             publication_only: binding.publication_only,
+            read_only: binding.read_only,
             revision: binding.revision,
             report_digest: binding.report_digest,
             needs_review,
             items: binding
                 .items
                 .into_iter()
-                .map(|label| Decision {
-                    decision: decisions.remove(&label.id),
-                    label,
+                .map(|label| {
+                    let saved = decisions.remove(&label.id);
+                    Decision {
+                        decision: saved.as_ref().map(|saved| saved.0.clone()),
+                        authorization: saved.and_then(|saved| saved.1),
+                        label,
+                    }
                 })
                 .collect(),
         }))
@@ -138,6 +152,9 @@ impl Store {
         };
         if submission.action == "reply" {
             return Ok(());
+        }
+        if review.read_only && (submission.finding.is_some() || submission.action == "approve") {
+            return Err("Standalone reviews discuss the report, never authorize source repairs.");
         }
         if review.publication_only
             && (submission.finding.is_some() || submission.action == "approve")

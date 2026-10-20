@@ -74,13 +74,27 @@ New retained records also keep a Markdown `body` composed from those sections, w
 The record's optional `display` and `intent_summary` fields preserve those human-facing labels alongside the exact scope.
 Existing version-1 body-only reports remain supported without being rewritten or inventing missing explanations.
 
-## Finding decisions and repairs
+## Standalone and agent-launched feedback
+
+Outside an agent conversation, the CLI opens a read-only review and exits after initial generation.
+Browser feedback starts a short-lived restricted responder using retained model options and verified frozen evidence.
+An idle review makes no model call and needs no conversation maintenance turns.
+The responder can discuss, clarify, and reword the review, never change underlying source, execute reviewed code, or publish.
+Local, range, and PR targets share this source-read-only rule.
+
+A CLI run inside Pi or Claude is agent-launched even when it uses the human-facing subject syntax.
+Its opaque artifact receipt returns feedback to the originating conversation instead of starting another responder.
+The Pi adapter supplies a session-scoped launch marker, while Claude supplies its native `CLAUDECODE` marker.
+These markers select delivery mode, not repair or publication permission.
+The native adapter still binds the exact conversation and workspace.
+JSON mode continues to return retained paths without opening a browser.
+
+## Agent-launched finding decisions and repairs
 
 Use the exact retained paths returned by review JSON:
 
 ```text
 tools/artifact-review/target/release/review-artifact open /absolute/report.html --findings /absolute/report.json
-tools/artifact-review/target/release/review-artifact wait /absolute/report.html --cursor 0
 ```
 
 `review-artifact` is a source-local helper, not a shell PATH command.
@@ -90,7 +104,8 @@ The repair-decision rules below apply only to local reports; PR comments use the
 Each rendered local finding card contains its own Accept and Reject controls and an optional decision-comment field.
 Only that finding's comment accompanies its decision; comments on other findings remain drafts.
 The decision event's existing `message` contains the comment, with labeled sections when general feedback is also included.
-Drafts survive reload in the same tab and server origin, and only the acknowledged finding's comment is cleared.
+The browser can retain same-tab drafts, but draft preservation is not a requirement.
+Unconfirmed drafts may be discarded after a wording update or failure.
 A comment alone is not a decision or repair authority.
 The review sidebar holds element/selected-text annotations, general feedback, and conversation; the saved report remains unchanged.
 Accept saves immediate authorization to repair that finding; Reject and undecided findings authorize no repairs.
@@ -100,11 +115,14 @@ End review and closing the browser do not undo earlier accepts or authorize unde
 An explicit request in chat is needed to change a decision; already-performed repairs are not undone automatically.
 
 The artifact-review process stores the bound finding list and decisions separately, leaving the retained HTML, JSON, and publication signatures unchanged.
-`wait` keeps the foreground agent turn active without an inactivity cutoff; empty transport heartbeats do not return control to the model.
-After interruption, resume with the same report and last processed cursor, without manufacturing a decision or reopening a terminal review.
+Native adapters deliver feedback in the background and save the completed response in the browser.
+A busy agent finishes its current request before claiming feedback.
+After interruption, resume the originating conversation and inspect partial work before retrying.
+The legacy `wait` interface remains available for an explicitly chosen manual compatibility workflow.
 `wait` and bounded `poll` return per-finding decisions under `finding_review`; its `needs_review` flag means the report revision changed or cannot be read, not that every finding has a decision.
 `finding_review.publication_only` is true for PR reports: selections and historical Accept/Reject entries never authorize repairs.
-Only a specific local saved accept with matching event/current/bound revisions can authorize repair, and only when `publication_only` and nested `needs_review` are both false.
+Only a specific local saved accept with matching event/current/bound revisions can authorize repair.
+`publication_only`, `read_only`, and nested `needs_review` must all be false or, for the optional `read_only` field, absent.
 Before mapping IDs to the retained record, verify its SHA-256 equals `finding_review.report_digest`.
 The ordinary top-level `approved_revision` and `needs_review` fields are for whole-document approval, not finding decisions.
 For local reports, `status: "decided"` means all findings have decisions, including rejected ones; an empty report grants no repair authority.
@@ -112,7 +130,13 @@ PR feedback stays open until End review, including after publication or when the
 
 The calling workflow checks source relevance, applies only accepted repairs within its ownership rules, avoids replaying already-applied repairs, and reruns verification and review.
 Unrelated source changes require a fresh review; earlier authorized repairs in the same batch are explicit context, not a reason to transfer finding IDs to a new report.
-Keep prior reports immutable and review the changed task into a new retained report with new decisions.
+Requested wording changes update the current report through the owned `revise` interface, without copies of earlier reports.
+HTML and report JSON each have a 25 MiB bound, as do individual renders and aggregate decoded renders.
+Updates use atomic file replacements without a recovery journal or automatic crash replay.
+A failed or invalid report can be regenerated instead of recovered.
+Saved finding authorizations retain their original finding and source scope, and publication attempts retain their exact confirmed payload.
+Routine wording updates and retries do not require another authorization.
+Review genuinely changed source into a new report with decisions for that new scope.
 Informational reviews can still use the plain browser view, and an unavailable finding-review mode requires an explicit chat fallback rather than treating whole-report approval as repair authorization.
 Neither finding decisions nor an all-decided report authorize staging, commits, installation, delivery, provider publication, or blanket approval of the code.
 

@@ -112,8 +112,10 @@ A child shell `cd`, printed path, or new subprocess does not move the current ha
 - [ ] Keep artifact approval, local finding Accept/Reject and PR publication separate.
   Human Publish confirms exact editable selected text, verified destinations, account and PR; model tools never synthesize it.
   Preserve COMMENT-only posting and same-report reconciliation after uncertain results.
-- [ ] Preserve foreground event-driven waits without an inactivity cutoff, saved cursors, replay safety and explicit interruption reporting.
-  Do not claim the host can wake a turn that has already ended.
+- [ ] Deliver saved feedback to the originating conversation without a foreground human-feedback wait.
+  Prove idle wake-up, busy follow-up ordering, claim timing, lease renewal, interruption recovery, and shutdown with native fixtures.
+  Retain feedback while a conversation is closed and never substitute another editing agent.
+  Keep manual foreground waits as compatibility interfaces, not the default delivery mechanism.
 
 ## 7. Integrate ownership, build and verification
 

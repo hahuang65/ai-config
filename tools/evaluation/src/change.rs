@@ -1,3 +1,4 @@
+pub use crate::change_types::MAX_REPORT_BYTES;
 use crate::{
     change_args::{Args, Target},
     change_html, change_presentation,
@@ -160,6 +161,7 @@ fn save_report(
     };
     store.save(pending.path(), &report, &html)?;
     crate::publication::save_sources(store, pending.path(), &report)?;
+    crate::feedback_response::save_settings(store, pending.path(), &report, &args.model)?;
     let directory = pending.keep();
     present(paths, &directory, &report, args, progress);
     Ok(())
@@ -300,7 +302,16 @@ fn open(paths: &Paths, path: &Path, repository: &Path) -> Result<()> {
         .arg(path)
         .arg("--findings")
         .arg(path.with_file_name("report.json"));
-    crate::reviewer_process::run(command, 5)?;
+    let agent = crate::feedback_response::agent_launched();
+    if !agent {
+        command.arg("--standalone");
+    }
+    let opened = crate::reviewer_process::run(command, 5)?;
+    if agent {
+        let receipt: serde_json::Value =
+            serde_json::from_slice(&opened).context("Invalid artifact attachment receipt")?;
+        println!("{receipt}");
+    }
     Ok(())
 }
 
