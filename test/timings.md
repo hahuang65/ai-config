@@ -6,6 +6,51 @@ The values below are the current settings, not promises that lower values will b
 Update this list whenever a setting changes.
 Checked rows mean the documented setting was audited against source and retained through the full gate, not that further reductions are safe.
 
+## Shared installer staging (#405)
+
+`install.sh` now retains one private staging directory per destination parent for the transaction.
+Every reuse checks safe ancestors and the saved device/inode identity, including the metadata command's exit status.
+Each attempted replacement has its own tracked value entry, so a failed rename leaves no collision for rollback.
+Atomic rename and file synchronization remain unchanged.
+Cleanup removes only tracked leftover entries and retains recovery state if unexpected contents prevent directory removal.
+
+Three alternating baseline/shared, shared/baseline, and baseline/shared pairs compared `a4ed2a8` with the production change.
+Both variants used independent disposable homes, the same fixture layout, fake provisioning/builds, and unchanged 60s installer guards.
+Every scenario checked links, settings/record bytes, permissions, staging cleanup, and lock removal.
+
+| Scenario | Baseline median | Shared-staging median |
+| --- | --- | --- |
+| Fresh installation | 7.56s | 6.58s |
+| Repeat installation | 4.28s | 4.32s |
+| Failed-switch rollback | 17.42s | 14.34s |
+
+Fresh installation took about 13% less time and failed-switch rollback about 18% less in these runs; repeats were effectively unchanged.
+These are local paired observations, not a cross-platform or full-gate speedup guarantee.
+The earlier isolated prototype measured 10.88s/8.78s for fresh installation and 23.41s/19.78s for rollback.
+Those separate runs had different host conditions and are not direct comparisons with this production measurement.
+
+The existing combined performance regression observed RED at 71 staging directories across 15 parents, then GREEN with one per parent and no retained staging directories.
+No extra installation was added for the positive staging-count assertion.
+Four new safety cases cover directory substitution, symlink substitution, a failed identity command that still prints matching metadata, and an unexpected staging entry.
+Disposable negative controls remove reuse validation, ignore the identity command's exit status, delete unexpected contents, or reuse an occupied value slot.
+Each control must fail its corresponding attempted-write, cleanup-refusal, or existing failed-switch assertion.
+All existing ownership, rollback, lock, durability, and deadline assertions remain.
+
+The complete installer check passed all 87 cases with the previous grouping in 251.88s.
+Its workers took 203.25s/251.78s; the four new staging cases accounted for 36.57s in the longer group.
+Moving the existing entrypoint, lock, and upgrade files (24.74s combined in that run) into the shorter group preserves both worker limits and exact-once discovery.
+A synthetic selection regression observed RED before that move, then all 32 worker/gate checks passed with the balanced assignment and serial overrides.
+
+The final default `make lint test` passed in 569.35s (9m 29.35s).
+It retained 285 ordinary Bun cases, passed all 87 installer cases in balanced 28/59-case workers taking 235.81s/232.64s, and passed both native runtime groups, all Rust suites, and all 64 browser cases.
+The same two filesystem-dependent WT parity skips remained.
+This separate full run did not beat the preceding commit hook's 561.07s, which had four fewer installer safety cases.
+Do not attribute a gate-wide improvement to the paired transaction measurements.
+
+Two earlier full-gate attempts stopped at existing watchdogs during variable host contention: 30s ownership/upgrade cases and a 5s permission-floor case first, then native Pi discovery's 20s scenario deadline.
+All four cases passed unchanged in focused checks, and the complete default gate then passed without changing assertions, deadlines, worker limits, or adding automatic retries.
+The failed attempts are not successful timing samples.
+
 ## Bounded ordinary package workers (#397)
 
 At `731e444`, the ordinary Bun stage remained serial and took 155.66s in the latest successful commit hook.

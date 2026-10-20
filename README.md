@@ -140,6 +140,9 @@ Only exact generated executable paths in the installer catalogue allow multiple 
 Those executables still require safe parents, a bounded regular non-symlink file, and execute permission; source/support resources and settings retain single-link checks.
 The installer switches only declared links and settings and records ownership privately under `~/.local/state/ai-config/installation.json`.
 An atomic `install.lock.d` directory serializes transactions; an existing lock is never automatically broken.
+Atomic replacements share one private staging directory per destination parent, with ancestor and device/inode checks before reuse.
+Each replacement gets a separate tracked staging entry so a failed rename cannot block rollback with leftover data.
+Cleanup removes only tracked entries; unexpected staging contents retain the recovery files and lock for inspection.
 Handled failures restore completed changes only when their current bytes, targets, and modes still match the transaction.
 Concurrent edits or incomplete rollback retain private recovery files and the lock for human inspection.
 This is not crash-atomic installation: after an uncatchable termination, inspect the lock's `workspace` reference and saved transaction before manually recovering; do not simply delete the lock and retry.

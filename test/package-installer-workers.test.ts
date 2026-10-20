@@ -3,7 +3,8 @@ import { spawnSync } from "node:child_process";
 import { rmSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { CASE_GUARD_MS, MAKE_GUARD_MS, expectEveryFileOnce, workerFixture } from "./fixtures/bun-workers";
-const names = ["rollback", "records", "paths", "performance", "safety", "new-scenario"];
+const first = ["rollback", "records", "paths", "performance", "entrypoints", "lock", "upgrade"];
+const names = [...first, "staging", "safety", "new-scenario"];
 function fixture() {
   const files = names.map(name => `test/package-install-${name}.test.ts`);
   return workerFixture(resolve(import.meta.dir, "installers.mk"), files, files[0]);
@@ -15,6 +16,8 @@ test("two installer processes overlap at a barrier and include newly discovered 
     const result = setup.run(2, "parallel");
     expect(result.status, result.stdout + result.stderr).toBe(0);
     expectEveryFileOnce(setup);
+    const selected = setup.calls().find(call => call.includes("test/package-install-rollback.test.ts"));
+    expect(selected?.slice(1).sort()).toEqual(first.map(name => `test/package-install-${name}.test.ts`).sort());
     expect(result.stdout).toContain("[installer 1] Fixture worker completed");
     expect(result.stdout).toContain("[installer 2] Fixture worker completed");
   } finally { setup.clean(); }
@@ -57,7 +60,7 @@ for (const empty of ["one", "two"]) {
     const setup = fixture();
     try {
       for (const path of setup.files) {
-        const heavy = names.slice(0, 4).some(name => path.endsWith(`-${name}.test.ts`));
+        const heavy = first.some(name => path.endsWith(`-${name}.test.ts`));
         if (heavy === (empty === "one")) rmSync(join(setup.temporary, path));
       }
       const result = setup.run(2, "parallel");

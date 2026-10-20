@@ -40,8 +40,12 @@ Restricted-reviewer offline settings and synthetic-provider boundaries remain un
   GNU coreutils are required; the macOS system find is also exercised.
   Multi-step ownership, transaction, rollback and modified-link scenarios compose their whole-case watchdogs from the temporary 60s per-installer limit plus setup/cleanup headroom.
   `package-install-budgets.test.ts` checks that composition; [timing evidence](timings.md#shell-installer-fixtures) records the reproduced cumulative-deadline failure.
-  `package-install-performance.test.ts` verifies bounded support-metadata batching, existing-parent reuse, and file-versus-directory traversal in one instrumented installation.
+  `package-install-performance.test.ts` verifies bounded support-metadata batching, existing-parent reuse, one staging directory per destination parent, staging cleanup, and file-versus-directory traversal in one instrumented installation.
   Its six independent fault cases cover failed/truncated metadata, hard links, oversized files, symlinks, and a file-to-symlink swap at the metadata boundary.
+  `package-install-staging.test.ts` refuses directory/symlink substitution and a metadata command that prints a matching identity but fails before another write.
+  It also preserves unexpected staging entries and checks that private recovery state and the blocking lock remain.
+  Negative controls instrument both link creation and file copying, so unsafe staging reuse fails for attempted writes rather than only diagnostic wording.
+  The existing failed-switch regression also rejects reuse of an occupied staging entry during rollback.
   Disposable negative controls restore each process-overhead regression separately and must fail the combined successful-installation check.
   [Paired installer measurements](timings.md#installer-process-overhead-checkpoint-365) document the process-count reductions and verification limits.
   Applicable Rust installation-library scenarios have moved to these suites; unrecorded-adoption cases and private implementation tests are deliberately retired, not counted as retained coverage.
@@ -113,7 +117,7 @@ Claude hook lifecycle, Claude/Pi discovery, reviewer runtime, and Pi LSP transpo
 Each worker executes its own cases serially; process-global environment changes cannot cross worker boundaries.
 `PACKAGE_TEST_JOBS=1` schedules these ordinary groups serially.
 The gate then runs installer files through `test/installers.mk` with two Bun worker processes, each retaining serial case execution.
-The measured costly rollback, record, path, and performance files form one installer group; every remaining installer file is discovered automatically into the other group.
+Rollback, record, path, performance, entrypoint, lock, and upgrade files form one installer group, balanced against the new staging safety cases and the remaining automatically discovered files.
 All worker groups are phony targets, so every invocation reruns them without a successful-test cache.
 Output lines carry `[package 1]`/`[package 2]` or `[installer 1]`/`[installer 2]`; pipeline failures propagate instead of being hidden by output prefixing.
 `INSTALL_TEST_JOBS=1` schedules the installer groups serially, and either worker setting rejects values other than 1 or 2 before commands run.

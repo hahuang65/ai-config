@@ -1,10 +1,10 @@
 import { expect, test } from "bun:test";
-import { existsSync, lstatSync, linkSync, mkdirSync, readFileSync, readlinkSync, symlinkSync, truncateSync, unlinkSync, writeFileSync } from "node:fs";
+import { existsSync, lstatSync, linkSync, mkdirSync, readFileSync, readdirSync, readlinkSync, symlinkSync, truncateSync, unlinkSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { spawnSync } from "node:child_process";
 import { installFixture, installerScenarioGuard } from "./fixtures/install-script";
 
-function trace(setup: ReturnType<typeof installFixture>, tool: "mkdir" | "stat" | "find") {
+function trace(setup: ReturnType<typeof installFixture>, tool: "mkdir" | "stat" | "find" | "mktemp") {
   const key = tool.toUpperCase();
   const calls = join(setup.temporary, `${tool}-calls`);
   writeFileSync(calls, "");
@@ -15,7 +15,7 @@ function trace(setup: ReturnType<typeof installFixture>, tool: "mkdir" | "stat" 
   };
 }
 
-test("one installation reuses parents, batches support metadata, and traverses only resource directories", () => {
+test("one installation reuses parents and staging, batches support metadata, and traverses only resource directories", () => {
   const setup = installFixture();
   try {
     const manifest = JSON.parse(readFileSync(join(setup.source, "manifest.json"), "utf8"));
@@ -31,9 +31,14 @@ test("one installation reuses parents, batches support metadata, and traverses o
     expect(catalogue.status).toBe(0);
     const support = JSON.parse(catalogue.stdout).map((path: string) => join(setup.source, path));
     expect(support.length).toBeGreaterThan(1);
-    const mkdir = trace(setup, "mkdir"), stat = trace(setup, "stat"), find = trace(setup, "find");
-    const result = setup.run([], { ...mkdir.environment, ...stat.environment, ...find.environment });
+    const mkdir = trace(setup, "mkdir"), stat = trace(setup, "stat"), find = trace(setup, "find"), mktemp = trace(setup, "mktemp");
+    const result = setup.run([], { ...mkdir.environment, ...stat.environment, ...find.environment, ...mktemp.environment });
     expect(result.status, result.stderr).toBe(0);
+    const stages = mktemp.invocations().flat().filter(argument => argument.includes("/.ai-config-"));
+    const stagingParents = new Set(stages.map(dirname));
+    expect(stages.length).toBeGreaterThan(1);
+    expect(stages).toHaveLength(stagingParents.size);
+    for (const parent of stagingParents) expect(readdirSync(parent).filter(name => name.startsWith(".ai-config-")), parent).toEqual([]);
     const mkdirArguments = mkdir.invocations().flat();
     for (const parent of parents) expect(mkdirArguments.filter(argument => argument === parent), parent).toHaveLength(0);
     const invocations = stat.invocations();

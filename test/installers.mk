@@ -4,8 +4,8 @@ SHELL := /bin/bash
 .PHONY: installers installer-one installer-two
 
 INSTALLER_FILES := $(wildcard test/package-install-*.test.ts)
-# Balance the measured costly files against every remaining installer file.
-INSTALLER_ONE := $(filter test/package-install-rollback.test.ts test/package-install-records.test.ts test/package-install-paths.test.ts test/package-install-performance.test.ts,$(INSTALLER_FILES))
+# Balance measured file durations, including shared-staging safety coverage.
+INSTALLER_ONE := $(filter test/package-install-rollback.test.ts test/package-install-records.test.ts test/package-install-paths.test.ts test/package-install-performance.test.ts test/package-install-entrypoints.test.ts test/package-install-lock.test.ts test/package-install-upgrade.test.ts,$(INSTALLER_FILES))
 INSTALLER_TWO := $(filter-out $(INSTALLER_ONE),$(INSTALLER_FILES))
 ifeq ($(strip $(INSTALLER_ONE)),)
 $(error Installer worker one has no test files)

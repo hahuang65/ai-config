@@ -218,23 +218,43 @@ matches() {
   esac
 }
 
+stage_matches() {
+  local index=$1 path=${stages[$1]} identity
+  parents "$path" || return 1
+  identity=$(stat -c '%d:%i' -- "$path") || return 1
+  [[ $identity == "${stage_ids[index]}" ]]
+}
+
+stage_for_parent() {
+  local parent=$1 index
+  for ((index=0; index<${#stages[@]}; index++)); do
+    if [[ ${stages[index]%/*} == "$parent" ]]; then
+      stage_matches "$index" || { fail 'Staging directory changed during installation'; return 1; }
+      STAGE=${stages[index]}
+      return 0
+    fi
+  done
+  STAGE=$(mktemp -d "$parent/.ai-config-XXXXXXXX") || return 1
+  stages[${#stages[@]}]=$STAGE
+  stage_ids[${#stage_ids[@]}]=$(stat -c '%d:%i' -- "$STAGE") || return 1
+  printf '%s\0' "$STAGE" >> "$work/staging"
+}
+
 replace() {
-  local path=$1 kind=$2 value=$3 mode=$4 stage
+  local path=$1 kind=$2 value=$3 mode=$4 slot
   parents "${path%/*}" || return 1
   if [[ $kind == missing || -z $kind ]]; then rm -- "$path"; return; fi
   if [[ ! -d ${path%/*} ]]; then mkdir -p -- "${path%/*}" || return 1; fi
   parents "${path%/*}" || return 1
-  stage=$(mktemp -d "${path%/*}/.ai-config-XXXXXXXX") || return 1
-  stages[${#stages[@]}]=$stage
-  stage_ids[${#stage_ids[@]}]=$(stat -c '%d:%i' -- "$stage") || return 1
-  printf '%s\0' "$stage" >> "$work/staging"
+  stage_for_parent "${path%/*}" || return 1
+  slot="$STAGE/value-${#stage_values[@]}"
+  stage_values[${#stage_values[@]}]=$slot
   if [[ $kind == link ]]; then
-    ln -s -- "$value" "$stage/value" || return 1
+    ln -s -- "$value" "$slot" || return 1
   else
-    cp -- "$value" "$stage/value" && chmod "$mode" "$stage/value" && sync "$stage/value" || return 1
+    cp -- "$value" "$slot" && chmod "$mode" "$slot" && sync "$slot" || return 1
   fi
-  mv -fT -- "$stage/value" "$path" || return 1
-  rmdir -- "$stage" 2>/dev/null || true
+  mv -fT -- "$slot" "$path" || return 1
 }
 
 apply() {
@@ -249,12 +269,15 @@ apply() {
 }
 
 clean_staging() {
-  local index path
+  local index path value
   for ((index=0; index<${#stages[@]}; index++)); do
     path=${stages[index]}
     if ! present "$path"; then continue; fi
-    parents "$path" && [[ $(stat -c '%d:%i' -- "$path") == "${stage_ids[index]}" ]] || return 1
-    rm -f -- "$path/value" && rmdir -- "$path" || return 1
+    stage_matches "$index" || return 1
+    for value in "${stage_values[@]}"; do
+      if [[ ${value%/*} == "$path" ]] && present "$value"; then rm -f -- "$value" || return 1; fi
+    done
+    rmdir -- "$path" || return 1
   done
 }
 
@@ -331,7 +354,7 @@ work=$(mktemp -d "${TMPDIR:-/tmp}/ai-install-XXXXXXXX")
 work=$(cd "$work" && pwd -P)
 work_id=$(stat -c '%d:%i' -- "$work")
 lock='' lock_id='' applied=0 committed=0
-declare -a destinations=() before_kind=() before_value=() after_kind=() after_value=() modes=() new_modes=() stages=() stage_ids=()
+declare -a destinations=() before_kind=() before_value=() after_kind=() after_value=() modes=() new_modes=() stages=() stage_ids=() stage_values=()
 trap finish EXIT
 trap 'exit 129' HUP
 trap 'exit 130' INT
