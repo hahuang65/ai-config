@@ -6,6 +6,36 @@ The values below are the current settings, not promises that lower values will b
 Update this list whenever a setting changes.
 Checked rows mean the documented setting was audited against source and retained through the full gate, not that further reductions are safe.
 
+## Bounded ordinary package workers (#397)
+
+At `731e444`, the ordinary Bun stage remained serial and took 155.66s in the latest successful commit hook.
+A parallel/serial/parallel comparison used the same 276 cases and file groups, unchanged assertions and deadlines, disposable homes, and the same scratch-root layout:
+
+| Scheduling | Elapsed time | Cases |
+| --- | --- | --- |
+| Two Bun workers, first trial | 58.23s | 276 passed |
+| One Bun worker at a time | 138.68s | 276 passed |
+| Two Bun workers, second trial | 57.26s | 276 passed |
+
+Claude hook lifecycle, Claude/Pi discovery, reviewer runtime, and Pi LSP transport formed one group of 38 cases across five files.
+The remaining 238 cases across 26 files formed the other group.
+These are warm local observations, not controlled host-load or cross-platform guarantees.
+
+`test/packages.mk` now discovers ordinary files, excludes installer and native-runtime files, and schedules two isolated Bun processes.
+`PACKAGE_TEST_JOBS=1` runs the same groups serially; other values fail before commands run.
+The main Makefile still waits between the ordinary, installer, Pi, and Claude stages; browsers remain serial and separate.
+No assertion, production timeout, installer worker cap, installed configuration, or successful-test cache changes.
+Worker fixtures share only test support code through `fixtures/bun-workers.ts`; every fake-worker scenario keeps its own temporary state and unchanged guards.
+Real barriers prove overlap and serial ordering, and negative controls catch accidental serialization or hidden pipeline failures.
+Gate inventories cover default, individual/both serial overrides, and `make -j4`, while nested checks exercise inherited Make overrides.
+
+The updated serial ordinary stage passed all 285 cases in 111.52s with an enclosing `PACKAGE_TEST_JOBS=1` setting.
+The full default `make lint test` passed in 653.21s (10m 53.21s); its ordinary workers passed 38/247 cases in 58.41/56.94s.
+All 83 installer cases, both native groups, the Rust suites, and all 64 browser cases passed, with the same two filesystem-dependent parity skips.
+The ordinary stage therefore improved in these runs, but the full run was not faster than the earlier 640.04s gate.
+The browser stage took 112.50s versus 66.60s in that earlier gate, other stages also varied, and host load was high after the run.
+Do not interpret this result as a demonstrated gate-wide speedup.
+
 ## Bounded installer workers (#384)
 
 At `2523925`, the installer files remained the largest serial bucket: 83 cases took 652.38s in the latest commit-hook run.
@@ -48,7 +78,7 @@ It passed 275 ordinary Bun cases, including nine new worker/gate regressions, an
 All other group counts and the two parity skips remained unchanged.
 The latest default gate was 440.77s shorter than the preceding 1,080.81s gate; the same separate-run timing caveat applies.
 
-The synthetic worker checks use these finite guards in [package-installer-workers.test.ts](package-installer-workers.test.ts):
+The synthetic installer and ordinary worker checks share these unchanged finite guards in [fixtures/bun-workers.ts](fixtures/bun-workers.ts):
 
 | Constant | Value | Purpose |
 | --- | --- | --- |
