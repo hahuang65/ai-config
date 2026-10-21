@@ -27,3 +27,7 @@ The branch remains available after cleanup.
 **Git worktree lock** is an explicit Git protection against moving or removing a worktree.
 Native harness adapters do not acquire or release it.
 WT's ordinary entry and cleanup commands respect existing Git locks without treating them as proof of an active session.
+
+**Shell completion** suggests public commands, options, and current-project managed task names without performing a lifecycle operation.
+Bash setup is opt-in, and a suggestion never grants entry or cleanup authority.
+Completion does not fetch, acquire the WT operation lock, or retain a cache between requests.

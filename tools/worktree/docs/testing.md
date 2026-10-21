@@ -51,6 +51,18 @@ There is no persistent fixture cache or cached test result.
 Use `cargo test --locked --offline --test cli cleanup::` or `--test cli sessions::` from this component directory to select one group.
 Use `cargo test --locked --offline --test cli -- --test-threads=1` for serial diagnosis.
 
+## Bash completion
+
+`tests/cases/completions.rs` runs the Rust-produced setup in clean Bash processes with disposable homes.
+Cases cover both installed names, executable paths with spaces, current-project task names, option positions, `--`, literal shell metacharacters, quiet failures, and managed names beyond the list display limit.
+A held WT operation lock, file-content/modification-time snapshots, and Git process traces check that completion does not lock, mutate, fetch, or invoke cleanup.
+The retained Python oracle gains only the help note identifying the Rust-only setup command; its lifecycle assertions remain unchanged.
+The component lint gate syntax-checks and ShellChecks the embedded Bash source.
+
+```sh
+cargo test --locked --test cli completions::
+```
+
 ## Branch-syntax reuse
 
 A repository object reuses successful `git check-ref-format` results only for its own fixed checkout root and lifetime within one WT invocation.

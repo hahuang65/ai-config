@@ -28,6 +28,7 @@ The installed package provides:
 - Curated shared skills under `skills/`; the optional `review-change` skill selects the current harness's independently restricted reviewer.
 - The evaluation's specialist roles: API designer, change reviewer, database reviewer, fact checker, and frontend architect.
 - Public `wt`/`worktree`, `wl`/`worklog`, and `review-change` symlinks, plus source-local `review-artifact` and `consult` helpers resolved by their consumers without PATH aliases.
+  WT prints opt-in [Bash completion setup](tools/worktree/README.md#bash-completion), including read-only managed task-name completion for `enter` and `clean`.
 - `review-change [SUBJECT]` for a PR URL, branch/worktree, GitHub branch URL, Git range, or the current branch plus outstanding changes; human reviews open directly in `review-artifact` without a manual intent field.
   Human CLI runs keep timestamped start/end logs, per-step elapsed times, and verified evidence-read activity, with a live overall stage bar and total time in terminals.
   Redirected logs remain plain, and `--json` stays silent except for its receipt and diagnostics.

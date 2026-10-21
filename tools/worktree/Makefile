@@ -16,5 +16,7 @@ rust-test:
 	python tests/rust_parity.py --jobs $(WT_TEST_JOBS)
 
 lint:
+	bash -n src/completion.bash
+	shellcheck --shell=bash src/completion.bash
 	cargo fmt --check
 	cargo clippy --all-targets --locked -- -D warnings

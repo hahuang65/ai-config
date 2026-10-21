@@ -74,6 +74,7 @@ Restricted-reviewer offline settings and synthetic-provider boundaries remain un
 - `tools/evaluation/tests/cases/change_progress.rs` checks timestamped step starts/ends and durations, live Pi/Claude evidence-read activity, elapsed-time updates, bounded output, private-output filtering, and silent JSON mode.
   `change_progress_terminal.rs` verifies the running log and overall stage/time bar through a real pseudo-terminal.
 - Rust tests and `tools/worktree/tests/rust_parity.py` check the standalone worktree CLI, including the process-level ownership, cleanup, interruption, and submodule cases; Rust tests also check Worklog.
+  WT's completion cases run the printed setup in Bash and verify current-project names, option context, aliases, literal input handling, and read-only lookup while the operation lock is held.
 - The original Python worktree CLI's reference-only tests are not part of the replacement gate; the parity runner executes their applicable cases against the Rust CLI.
 - `tools/artifact-review/tests/` checks local review storage, revision-bound per-finding repair decisions through the Rust CLI, and the bounded Firefox integration after an explicit debug CLI build.
   Its real change-report case covers Accept/Reject, annotations, retry after response loss and reload, and preservation of the retained HTML; ordinary artifact approval keeps its existing coverage.

@@ -1,5 +1,6 @@
 mod args;
 mod cli;
+mod completion;
 mod git;
 mod github;
 mod lifecycle;

@@ -14,6 +14,9 @@ pub fn main() -> Result<i32> {
         .skip(1)
         .map(|value| text::from_os(&value))
         .collect();
+    if let Some(result) = crate::completion::dispatch(&values) {
+        return result;
+    }
     if values.first().is_some_and(|value| value == "session") {
         return crate::sessions::main(&values[1..]);
     }

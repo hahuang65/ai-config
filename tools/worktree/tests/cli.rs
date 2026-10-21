@@ -3,6 +3,8 @@
 mod branch_validation;
 #[path = "cases/cleanup.rs"]
 mod cleanup;
+#[path = "cases/completions.rs"]
+mod completions;
 #[path = "support/repository.rs"]
 mod repository;
 #[path = "cases/sessions.rs"]

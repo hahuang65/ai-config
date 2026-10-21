@@ -80,10 +80,38 @@ No remote branch is deleted, and branch deletion is never forced.
 Successful removal adds `branchRemoved` to JSON output; retained branches include `branchReason`.
 If branch deletion fails after worktree removal, `cleanupIncomplete` is true and the command exits nonzero, preserving the branch and reporting the partial result.
 
-All commands support `--json` for protocol-version-1 output.
+All lifecycle commands support `--json` for protocol-version-1 output.
 Diagnostics stay on standard error.
 Exit codes are 0 for success, 1 for an operational failure or incomplete single/batch cleanup, 2 for invalid arguments, and 130 for interruption.
 A successful empty batch explicitly reports zero managed tasks.
+
+## Bash completion
+
+The Rust CLI can print opt-in completion setup for both `wt` and `worktree`:
+
+```bash
+source <(wt completions bash)
+```
+
+Run this in Bash after building and selecting the updated executable.
+Add the same line to your Bash startup file if you want future shells to enable it.
+The package installer does not edit shell startup files, and the setup command itself does not install anything.
+No bash-completion package, Python, jq, or additional runtime service is required.
+Other shells are not currently supported.
+
+Completion offers public subcommands and their options.
+For `wt enter fe<TAB>` and `wt clean fe<TAB>`, it reads the current project's managed task names and matches the literal prefix.
+Names still complete after flags such as `--json` or `--check`, and after `--`.
+Unmanaged worktrees are not suggested, and the normal `wt list` 50-entry display limit does not hide matching managed tasks.
+Suggestions do not bypass entry or cleanup safety checks.
+`new` task names stay free text; starting-revision completion for `new --base` is not included.
+
+Task completion reads current Git inventory and ownership records without fetching, creating worktrees, taking the WT operation lock, or changing repository state.
+It works from a main checkout or a linked task, with no persistent completion cache.
+Outside a usable repository, task-name completion returns no suggestions or diagnostics.
+Subcommand and option completion remain available without a repository.
+The printed Bash function uses the internal `__complete` callback; it is not an agent workflow or another installed executable.
+Callback arguments are bounded to 256 values and 32 KiB in total, with invalid contexts silently returning no candidates.
 
 ## Starting branch
 
