@@ -39,14 +39,26 @@ test("repository edits use a task worktree by default with a narrow direct-check
   expect(baseline).toContain("Before adding, editing, or removing repository files");
   expect(baseline).toContain("skills/worktree/SKILL.md");
   expect(baseline).toContain("~/.dotfiles");
-  expect(baseline).toContain("commit authorization");
+  expect(baseline).toContain("Commit authorization is separate and may come later.");
+  expect(baseline).toContain("Direct-checkout edit approval does not authorize staging or commits.");
+  expect(baseline).not.toContain("grants commit authorization up front");
   const skill = readFileSync(join(directory, "worktree/SKILL.md"), "utf8");
   expect(skill).toContain("../../tools/worktree/target/release/wt");
   expect(skill).toContain("wt new");
   expect(skill).toContain("current session");
   expect(skill).toContain("Do not move, stash, reset, or copy existing changes");
   expect(skill).toContain("Without a verified session transition, report the path");
-  expect(skill).toContain("commit authorization up front");
+  expect(skill).toContain("Commit authorization is separate and may come later.");
+  expect(skill).toContain("Direct-checkout edit approval does not authorize staging or commits.");
+  expect(skill).toContain("single self-contained change");
+  expect(skill).toContain("**in advance**");
+  expect(skill).toContain("Use a named task branch, never trunk");
+  expect(skill).toContain("retain the changed branch");
+  expect(skill).not.toContain("grant commit authorization up front");
+  for (const path of ["README.md", "docs/harness-contracts.md"]) {
+    expect(readFileSync(join(root, path), "utf8"))
+      .toContain("Direct-checkout edit approval does not authorize staging or commits.");
+  }
   expect(skill).toContain("Do not clean, delete, or switch tasks automatically");
   const manifest = JSON.parse(readFileSync(join(root, "manifest.json"), "utf8"));
   for (const harness of [".claude", ".pi/agent"]) {

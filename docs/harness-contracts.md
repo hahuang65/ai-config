@@ -184,7 +184,7 @@ The guard, resource ownership, and project trust are not operating-system sandbo
 
 | Boundary | Contract and canonical detail |
 | --- | --- |
-| Repository edits | Named task branch and verified task worktree; no stash/move/copy workaround for dirty state; keep the `~/.dotfiles` parent on main. The narrow direct-checkout exception needs the user's up-front choice and commit authority. [Baseline](../baseline.md). |
+| Repository edits | Named task branch and verified task worktree; no stash/move/copy workaround for dirty state; keep the `~/.dotfiles` parent on main. The narrow direct-checkout exception needs the user's up-front choice to edit one self-contained change. Direct-checkout edit approval does not authorize staging or commits. Commit authorization is separate and may come later. [Baseline](../baseline.md). |
 | WT persistence | Separate per-harness saved conversation references in Git administrative metadata, not transcripts, PID ownership or session locks. Respect explicit Git locks. Verify cwd, branch, repository and conversation. [Native transitions](worktree-transitions.md). |
 | Return and cleanup | Leave carries the current conversation without removal. Cleanup follows a verified native return and repeated WT safety checks. No automatic cleanup at task end; local integration proof controls local branch deletion. [WT contract](worktree-transitions.md#saved-references-and-recovery). |
 | Delivery | Explicit `/deliver` authorizes its selected commit/rebase/check/integration and safe post-local-integration cleanup, not a provider review or implied push. Local default, explicit `wt.delivery` override, A5 GitHub default. [Command](../commands/deliver.md). |

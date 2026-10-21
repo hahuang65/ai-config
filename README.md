@@ -64,7 +64,9 @@ Completion, explicit user pauses, required decisions/approvals/manual actions, o
 This is shared instruction guidance, not a background restart mechanism or a guarantee of model compliance.
 
 Before a repository edit, use a verified task worktree; `skills/worktree/SKILL.md` describes safe creation, entry, and cleanup with `wt` or `worktree`.
-A direct-checkout exception requires the user's up-front choice for one self-contained change and commit authorization.
+A direct-checkout exception requires the user's up-front choice to edit one self-contained change on a named task branch.
+Direct-checkout edit approval does not authorize staging or commits.
+Commit authorization is separate and may come later.
 [Native task adapters](docs/worktree-transitions.md) own the entry, resume, return, and cleanup procedures for each harness, including conversation verification and unsupported modes.
 They carry the current conversation into a new task and resume the saved task conversation for an existing one, without converting between harnesses.
 The [shared continuation contract](docs/worktree-transitions.md#shared-continuation-contract) resumes already-requested work once after verified native completion, without new authorization.

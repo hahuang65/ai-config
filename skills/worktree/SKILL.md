@@ -41,11 +41,14 @@ Read [native task transitions](../../docs/worktree-transitions.md) before creati
 
 ## Narrow direct-checkout exception
 
-Only for a single self-contained change, the user may choose the current checkout **in advance** and separately grant commit authorization up front.
+Only for a single self-contained change, the user may explicitly choose edits in the current checkout **in advance**.
 A one-line change or a documentation edit does not qualify by size alone.
 Use a named task branch, never trunk; if a safe branch transition cannot be proved, ask instead of editing.
-The authorization covers only the named change, not unrelated files, automatic staging, or an unapproved commit.
-If review or checks prevent immediate completion, retain the changed branch and ask rather than forcing a commit or moving the work afterward.
+Direct-checkout edit approval does not authorize staging or commits.
+Commit authorization is separate and may come later.
+Each authorization covers only the named change, not unrelated files.
+If commit authorization has not been given, retain the changed branch and report the uncommitted work without treating it as blocked.
+If review or checks prevent completion, retain the changed branch and ask rather than forcing a commit or moving the work afterward.
 The `~/.dotfiles` parent remains on `main` and never gains a branch, worktree, staged change, or commit from this exception.
 
 ## Finish

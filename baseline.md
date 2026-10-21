@@ -10,7 +10,10 @@ Use a named task branch (`user-initials/short-intent`), never trunk.
 Before adding, editing, or removing repository files, inspect the repository, checkout, branch, and working state; load `skills/worktree/SKILL.md` from this instruction file's absolute source.
 Reuse an existing verified task worktree; otherwise create or enter a managed task worktree for a user-requested edit without asking again when the primary checkout is clean.
 Do not edit until the current session is running in that worktree; if transition is unavailable or the checkout has unrelated changes, stop and ask rather than moving, stashing, or copying changes.
-Only a single self-contained change may skip the worktree when the user explicitly chooses direct-checkout work and grants commit authorization up front; still use a named task branch and never treat that exception as permission to stage or commit unrelated changes.
+Only a single self-contained change may skip the worktree when the user explicitly chooses direct-checkout work in advance.
+Still use a named task branch, never trunk.
+Direct-checkout edit approval does not authorize staging or commits.
+Commit authorization is separate and may come later.
 Keep the `~/.dotfiles` parent repository on `main`; do not branch, stage, commit, or make a worktree there.
 Use a task branch independently in each affected submodule.
 Do not stage, commit, push, or deliver unless the current request explicitly authorizes that action.
