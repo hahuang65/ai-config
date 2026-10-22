@@ -24,13 +24,34 @@ fn bounded_output(command: &mut Command) -> Output {
 }
 
 #[test]
+fn rooted_probe_uses_disposable_resources_without_a_copied_executable() {
+    let trial = support::Trial::new();
+    let snapshot = trial.temporary.path().join("snapshot");
+    support::put(snapshot.join("source.txt"), "source\n");
+    support::executable(trial.fake_bin.join("pi"), support::reviewer::REVIEWER);
+    fs::remove_file(&trial.binary).unwrap();
+    let output = bounded_output(
+        trial
+            .rooted_command()
+            .args(["reviewer", "--snapshot"])
+            .arg(snapshot.canonicalize().unwrap())
+            .args(["--prompt", "Inspect source.txt"]),
+    );
+    support::success(output);
+    assert_eq!(trial.calls()[0]["cwd"], trial.root.to_str().unwrap());
+    trial.assert_uninstalled();
+}
+
+#[test]
 fn fixture_lookup_follows_the_running_test_output_directory() {
     const PROBE: &str = "AI_TEST_RELOCATED_REVIEWER_FIXTURE";
     if std::env::var_os(PROBE).is_some() {
         let trial = support::Trial::new();
-        let output = bounded_output(trial.command().args(["reviewer", "--help"]));
-        support::success(output.clone());
-        assert_eq!(output.stdout, b"SELECTED_OUTPUT_FIXTURE\n");
+        for mut command in [trial.command(), trial.rooted_command()] {
+            let output = bounded_output(command.args(["reviewer", "--help"]));
+            support::success(output.clone());
+            assert_eq!(output.stdout, b"SELECTED_OUTPUT_FIXTURE\n");
+        }
         return;
     }
     let temporary = tempfile::tempdir().unwrap();

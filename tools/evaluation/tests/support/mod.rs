@@ -31,6 +31,15 @@ pub fn executable(path: impl AsRef<Path>, contents: &str) {
     fs::set_permissions(path, fs::Permissions::from_mode(0o755)).unwrap();
 }
 
+fn fixture_binary() -> PathBuf {
+    let test_binary = std::env::current_exe().expect("Locate the running Cargo test executable");
+    test_binary
+        .parent()
+        .and_then(Path::parent)
+        .expect("Cargo tests must run beneath the selected profile's deps directory")
+        .join("examples/reviewer-fixture")
+}
+
 impl Trial {
     pub fn new() -> Self {
         let temporary = tempfile::tempdir().unwrap();
@@ -42,13 +51,7 @@ impl Trial {
         let log = base.join("calls.jsonl");
         fs::create_dir_all(binary.parent().unwrap()).unwrap();
         fs::create_dir_all(&fake_bin).unwrap();
-        let test_binary =
-            std::env::current_exe().expect("Locate the running Cargo test executable");
-        let profile = test_binary
-            .parent()
-            .and_then(Path::parent)
-            .expect("Cargo tests must run beneath the selected profile's deps directory");
-        fs::copy(profile.join("examples/reviewer-fixture"), &binary)
+        fs::copy(fixture_binary(), &binary)
             .expect("Build reviewer-fixture with cargo build --example reviewer-fixture in the same target directory and profile first");
         package_fixture::populate(&root);
         package_fixture::manifest(&root);
@@ -99,6 +102,12 @@ impl Trial {
 
     pub fn command(&self) -> Command {
         self.configured_command(&self.binary)
+    }
+
+    pub fn rooted_command(&self) -> Command {
+        let mut command = self.configured_command(fixture_binary());
+        command.arg("--root").arg(&self.root);
+        command
     }
 
     pub fn consult_command(&self) -> Command {

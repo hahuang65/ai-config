@@ -21,7 +21,8 @@ fn prepared() -> Trial {
 }
 
 fn request(trial: &Trial) -> Command {
-    let mut command = trial.command();
+    // Reuse the built driver so copied-executable startup does not consume timing budgets.
+    let mut command = trial.rooted_command();
     command
         .args(["reviewer", "--snapshot"])
         .arg(fs::canonicalize(trial.temporary.path().join("snapshot")).unwrap())
