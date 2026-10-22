@@ -74,7 +74,10 @@ Restricted-reviewer offline settings and synthetic-provider boundaries remain un
 - `tools/evaluation/tests/cases/change_progress.rs` checks timestamped step starts/ends and durations, live Pi/Claude evidence-read activity, elapsed-time updates, bounded output, private-output filtering, and silent JSON mode.
   `change_progress_terminal.rs` verifies the running log and overall stage/time bar through a real pseudo-terminal.
 - Rust tests and `tools/worktree/tests/rust_parity.py` check the standalone worktree CLI, including the process-level ownership, cleanup, interruption, and submodule cases; Rust tests also check Worklog.
-  WT's completion cases run the printed setup in Bash and verify current-project names, option context, aliases, literal input handling, and read-only lookup while the operation lock is held.
+  WT's completion cases run the printed setup in Bash and verify current-project names, typed-flag context without flag suggestions, aliases, literal input handling, and read-only lookup while the operation lock is held.
+  `package-install-completions.test.ts` checks owned completion entries, independent alias loading, upgrades, source switches, idempotency, and unowned-file refusal without startup-file edits.
+  Its optional system-loader case exercises actual lazy discovery when `bash-completion` is already available; no completion package is provisioned.
+  Installer rollback cases also inject failures at both completion destinations.
 - The original Python worktree CLI's reference-only tests are not part of the replacement gate; the parity runner executes their applicable cases against the Rust CLI.
 - `tools/artifact-review/tests/` checks local review storage, revision-bound per-finding repair decisions through the Rust CLI, and the bounded Firefox integration after an explicit debug CLI build.
   Its real change-report case covers Accept/Reject, annotations, retry after response loss and reload, and preservation of the retained HTML; ordinary artifact approval keeps its existing coverage.
@@ -86,6 +89,8 @@ Restricted-reviewer offline settings and synthetic-provider boundaries remain un
   `tests/wait.rs` covers manual compatibility waiting, transport heartbeats, terminal state, replay/retry, interruption/shutdown, and fresh revision checks despite render reuse.
   `feedback*.rs` cover durable jobs, exact origin routing, receipt validation, attempt fencing, native listener notification, and active lease renewal.
   Native Pi and Claude feedback fixtures prove idle delivery, busy sequencing, browser replies, Markdown-safe completion, and orphaned-claim recovery with synthetic providers.
+  Claude adapter cases copy only the public hook, client, manifest, and CLI into each disposable home; the sandbox still denies the live home and installed source.
+  A fixture regression verifies independent file copies and relative helper discovery, while native worktree probes keep literal executable paths and explicit task directories.
   Evaluation's `feedback_response.rs` covers restricted standalone responses, cancellation, no idle model call, retained discussion context, and CLI launch-mode selection.
   `standalone.mjs` checks readable local reports without repair controls through the bounded Firefox harness.
   The bounded browser suite counts idle event/snapshot requests and verifies live feedback, replies, and document reload through revision-only checks.

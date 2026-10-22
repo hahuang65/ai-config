@@ -58,13 +58,9 @@ fn request(values: &[String]) -> Result<i32> {
 
 fn candidates(words: &[String], index: usize, current: &str) -> Vec<String> {
     if index == 1 {
-        return if current.starts_with('-') {
-            vec!["-h".into(), "--help".into()]
-        } else {
-            ["new", "enter", "list", "clean", "completions"]
-                .map(str::to_owned)
-                .to_vec()
-        };
+        return ["new", "enter", "list", "clean", "completions"]
+            .map(str::to_owned)
+            .to_vec();
     }
     if index < 2 {
         return Vec::new();
@@ -75,14 +71,6 @@ fn candidates(words: &[String], index: usize, current: &str) -> Vec<String> {
         return Vec::new();
     };
     let mut values = Vec::new();
-    if !position.positional && (current.is_empty() || current.starts_with('-')) {
-        values.extend(
-            options(command)
-                .iter()
-                .filter(|option| !prior.iter().any(|word| word == **option))
-                .map(|value| (*value).to_owned()),
-        );
-    }
     if !position.task && !current.starts_with('-') {
         if matches!(command.as_str(), "enter" | "clean") {
             values.extend(tasks().unwrap_or_default());

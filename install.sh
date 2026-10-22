@@ -317,7 +317,7 @@ finish() {
     fi
   fi
   [[ $failed == 0 ]] || status=1
-  if [[ $status == 0 && $committed == 1 ]]; then printf '%s\n' 'Installed owned Claude and Pi resources.'; fi
+  if [[ $status == 0 && $committed == 1 ]]; then printf '%s\n' 'Installed owned Claude, Pi, and Bash completion resources.'; fi
   exit "$status"
 }
 

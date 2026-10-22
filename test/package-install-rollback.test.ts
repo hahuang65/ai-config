@@ -3,7 +3,8 @@ import { chmodSync, cpSync, existsSync, readFileSync, readlinkSync, statSync, wr
 import { join } from "node:path";
 import { installerScenarioGuard, installFixture } from "./fixtures/install-script";
 
-for (const destination of [".pi/agent/AGENTS.md", ".pi/agent/settings.json", ".local/state/ai-config/installation.json"]) {
+for (const destination of [".pi/agent/AGENTS.md", ".pi/agent/settings.json", ".local/state/ai-config/installation.json",
+  ".local/share/bash-completion/completions/wt", ".local/share/bash-completion/completions/worktree"]) {
   test(`shell rolls back a source switch when writing ${destination} fails`, () => {
     const setup = installFixture();
     try {

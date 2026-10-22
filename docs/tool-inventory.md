@@ -12,7 +12,8 @@ Public commands remain symlinks to built binaries in the installed source, prese
 | Source-local `consult` | `tools/evaluation/target/release/consult`; [source](../tools/evaluation/src/consult_main.rs) | Harness-invoked specialist advice, including before a change exists. |
 
 WT and WL retain their existing alias pairs and targets listed below.
-WT's Rust executable also prints opt-in [Bash completion setup](../tools/worktree/README.md#bash-completion) for `wt` and `worktree`, with read-only current-project task-name lookup and no extra installed executable or shell-startup ownership.
+WT's Rust executable also prints manual [Bash completion setup](../tools/worktree/README.md#bash-completion) for `wt` and `worktree`, with read-only current-project task-name lookup.
+Installation owns standard per-user completion entries for both names, discovered by an existing `bash-completion` loader without another installed executable or shell-startup ownership.
 The agreed installer is `install.sh` alone, not a wrapper around a Rust/Python installer.
 The `ai-config` executable has been removed and its fixture consumers now invoke the shell installer.
 The separate WT Python installer has also been removed; component Makefiles still cannot install or uninstall package links.

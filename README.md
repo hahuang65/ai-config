@@ -28,7 +28,8 @@ The installed package provides:
 - Curated shared skills under `skills/`; the optional `review-change` skill selects the current harness's independently restricted reviewer.
 - The evaluation's specialist roles: API designer, change reviewer, database reviewer, fact checker, and frontend architect.
 - Public `wt`/`worktree`, `wl`/`worklog`, and `review-change` symlinks, plus source-local `review-artifact` and `consult` helpers resolved by their consumers without PATH aliases.
-  WT prints opt-in [Bash completion setup](tools/worktree/README.md#bash-completion), including read-only managed task-name completion for `enter` and `clean`.
+  Installation includes [Bash completion entries](tools/worktree/README.md#bash-completion) for both WT names, with read-only managed task-name completion for `enter` and `clean`.
+  An existing `bash-completion` loader discovers them automatically; WT also prints manual setup without that package.
 - `review-change [SUBJECT]` for a PR URL, branch/worktree, GitHub branch URL, Git range, or the current branch plus outstanding changes; human reviews open directly in `review-artifact` without a manual intent field.
   Human CLI runs keep timestamped start/end logs, per-step elapsed times, and verified evidence-read activity, with a live overall stage bar and total time in terminals.
   Redirected logs remain plain, and `--json` stays silent except for its receipt and diagnostics.
@@ -136,6 +137,11 @@ The destination is the absolute `HOME` directory, not the caller's working direc
 Use a disposable `HOME` for rehearsals; automated installer fixtures replace mise and build commands so they never provision tools.
 Real provisioning or installer rehearsals require separate approval and an explicit choice of isolated mise state and caches.
 `make build`, `make lint`, and `make test` never install into the live home; installation remains a separate explicit action.
+
+Installation owns `~/.local/share/bash-completion/completions/wt` and `worktree`, linking both to the same Bash adapter source.
+With `bash-completion` already enabled, future Bash sessions load these entries on demand.
+The installer does not install that optional package or modify Bash startup files.
+Already-open shells can load completion with `source <(wt completions bash)`.
 
 JSON-only filters and the package catalogue live under `tools/install/`; they do not perform installation or filesystem changes.
 Required skills share a metadata batch and the `skills.jq` front-matter check, retaining each file's 64 KiB limit and independent UTF-8 check.

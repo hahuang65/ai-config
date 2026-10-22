@@ -66,6 +66,7 @@ The same source supplies both harnesses wherever two routes are listed.
 | [Rebase](../commands/rebase.md) | `.claude/commands/rebase.md`, `.pi/agent/prompts/rebase.md`. |
 | [Claude WT prompt](../harnesses/claude/commands/wt.md) | `.claude/commands/wt.md`; guidance, unlike Pi's executable `/wt` handler. |
 | [WT executable](../tools/worktree/target/release/wt) | `.local/bin/wt`, `.local/bin/worktree`; [source contract](../tools/worktree/README.md). |
+| [WT Bash completion](../tools/worktree/src/completion.bash) | `.local/share/bash-completion/completions/wt`, `.local/share/bash-completion/completions/worktree`; discovered by an existing `bash-completion` loader without startup-file edits. |
 | [WL executable](../tools/worklog/target/release/wl) | `.local/bin/wl`, `.local/bin/worklog`; [CLI contract](../tools/worklog/docs/cli.md). |
 | [Review executable](../tools/evaluation/target/release/review-change) | `.local/bin/review-change`; [review contract](review-change-cli.md). |
 

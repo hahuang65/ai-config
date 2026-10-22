@@ -132,7 +132,7 @@ fn ordinary_catalogue_does_not_select_a_claude_worktree_mod() {
 }
 
 #[test]
-fn ordinary_catalogue_selects_the_host_resources_and_cli_dependencies_only() {
+fn ordinary_catalogue_selects_host_cli_and_completion_resources_only() {
     let source = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
         .join("../..")
         .canonicalize()
@@ -169,6 +169,8 @@ fn ordinary_catalogue_selects_the_host_resources_and_cli_dependencies_only() {
                     | ".local/bin/wl"
                     | ".local/bin/worklog"
                     | ".local/bin/review-change"
+                    | ".local/share/bash-completion/completions/wt"
+                    | ".local/share/bash-completion/completions/worktree"
             ) && !path.starts_with(".claude/skills/")
                 && !path.starts_with(".pi/agent/skills/")
                 && !path.starts_with(".claude/agents/")

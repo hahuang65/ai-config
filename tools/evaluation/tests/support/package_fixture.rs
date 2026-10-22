@@ -55,6 +55,7 @@ pub fn populate(root: &Path) {
     for relative in [
         "baseline.md",
         "reviewer.md",
+        "tools/worktree/src/completion.bash",
         "harnesses/pi/review-scope.ts",
         "harnesses/worktree-client.ts",
         "docs/worktree-transitions.md",
@@ -194,6 +195,8 @@ pub fn manifest(root: &Path) {
         {"destination": ".pi/agent/prompts/rebase.md", "target": "commands/rebase.md"},
         {"destination": ".claude/skills/commit", "target": "skills/commit"},
         {"destination": ".pi/agent/skills/commit", "target": "skills/commit"},
+        {"destination": ".local/share/bash-completion/completions/wt", "target": "tools/worktree/src/completion.bash"},
+        {"destination": ".local/share/bash-completion/completions/worktree", "target": "tools/worktree/src/completion.bash"},
         {"destination": ".local/bin/wt", "target": "tools/worktree/target/release/wt"},
         {"destination": ".local/bin/worktree", "target": "tools/worktree/target/release/wt"},
         {"destination": ".local/bin/wl", "target": "tools/worklog/target/release/wl"},

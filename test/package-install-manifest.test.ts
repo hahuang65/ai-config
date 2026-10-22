@@ -23,7 +23,8 @@ test("shell installer catalogue accepts the package and retains recorded old com
 
 test("shell installer rejects missing safety resources and public aliases for private helpers", () => {
   for (const destination of [".claude/CLAUDE.md", ".pi/agent/AGENTS.md", ".claude/hooks/guard.ts",
-    ".claude/skills/code", ".pi/agent/agents/fact-checker.md", ".pi/agent/extensions/lsp.ts", ".local/bin/review-change"]) {
+    ".claude/skills/code", ".pi/agent/agents/fact-checker.md", ".pi/agent/extensions/lsp.ts", ".local/bin/review-change",
+    ".local/share/bash-completion/completions/wt", ".local/share/bash-completion/completions/worktree"]) {
     const value = packageManifest();
     value.links = value.links.filter((link: { destination: string }) => link.destination !== destination);
     expect(validate(value).status, destination).not.toBe(0);
@@ -31,6 +32,15 @@ test("shell installer rejects missing safety resources and public aliases for pr
   const value = packageManifest();
   value.links.push({ destination: ".local/bin/consult", target: "tools/evaluation/target/release/consult" });
   expect(validate(value).status).not.toBe(0);
+});
+
+test("shell completion destinations cannot link unrelated package resources", () => {
+  for (const name of ["wt", "worktree"]) {
+    const value = packageManifest();
+    value.links.find((link: { destination: string }) =>
+      link.destination === `.local/share/bash-completion/completions/${name}`).target = "baseline.md";
+    expect(validate(value).status, name).not.toBe(0);
+  }
 });
 
 test("shell installer requires synchronous feedback workspace focus at startup and worktree transitions", () => {
@@ -58,7 +68,8 @@ test("shell installer rejects unsafe paths, duplicate declarations, and unrelate
 test("shell record validation rejects private destinations, preference ownership and invalid setting shapes", () => {
   for (const destination of ["../outside", "/tmp/outside", ".claude/settings.json", ".pi/agent/settings.json",
     ".claude/projects/history", ".pi/agent/sessions/history", ".pi/agent/trust.json",
-    ".local/state/ai-config/installation.json"]) {
+    ".local/state/ai-config/installation.json", ".local/share/bash-completion/completions/personal",
+    ".bashrc", ".bash_profile"]) {
     const value = packageManifest();
     value.links.push({ destination, target: "baseline.md" });
     expect(validate(value, "record").status, destination).not.toBe(0);

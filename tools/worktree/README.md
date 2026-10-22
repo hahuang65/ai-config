@@ -87,21 +87,26 @@ A successful empty batch explicitly reports zero managed tasks.
 
 ## Bash completion
 
-The Rust CLI can print opt-in completion setup for both `wt` and `worktree`:
+Package installation places owned links at `~/.local/share/bash-completion/completions/wt` and `worktree`.
+An existing `bash-completion` loader discovers either command's entry on demand in future Bash sessions.
+The installer preserves personal completion files, refuses unrecorded collisions, and does not edit Bash startup files or install the optional `bash-completion` package.
+
+For an already-open shell, or without a `bash-completion` loader, the Rust CLI prints manual setup for both names:
 
 ```bash
 source <(wt completions bash)
 ```
 
 Run this in Bash after building and selecting the updated executable.
-Add the same line to your Bash startup file if you want future shells to enable it.
-The package installer does not edit shell startup files, and the setup command itself does not install anything.
-No bash-completion package, Python, jq, or additional runtime service is required.
+Without `bash-completion`, add the same line to your Bash startup file if you want future shells to enable it.
+The setup command itself does not install anything.
+Manual setup requires no bash-completion package, Python, jq, or additional runtime service.
 Other shells are not currently supported.
 
-Completion offers public subcommands and their options.
+Completion offers public subcommands and managed task names, not flags.
 For `wt enter fe<TAB>` and `wt clean fe<TAB>`, it reads the current project's managed task names and matches the literal prefix.
-Names still complete after flags such as `--json` or `--check`, and after `--`.
+Names still complete after typed flags such as `--json` or `--check`, and after `--`.
+Flags remain valid command arguments but are never suggested.
 Unmanaged worktrees are not suggested, and the normal `wt list` 50-entry display limit does not hide matching managed tasks.
 Suggestions do not bypass entry or cleanup safety checks.
 `new` task names stay free text; starting-revision completion for `new --base` is not included.
@@ -109,7 +114,7 @@ Suggestions do not bypass entry or cleanup safety checks.
 Task completion reads current Git inventory and ownership records without fetching, creating worktrees, taking the WT operation lock, or changing repository state.
 It works from a main checkout or a linked task, with no persistent completion cache.
 Outside a usable repository, task-name completion returns no suggestions or diagnostics.
-Subcommand and option completion remain available without a repository.
+Subcommand completion remains available without a repository.
 The printed Bash function uses the internal `__complete` callback; it is not an agent workflow or another installed executable.
 Callback arguments are bounded to 256 values and 32 KiB in total, with invalid contexts silently returning no candidates.
 

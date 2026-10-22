@@ -54,7 +54,7 @@ Use `cargo test --locked --offline --test cli -- --test-threads=1` for serial di
 ## Bash completion
 
 `tests/cases/completions.rs` runs the Rust-produced setup in clean Bash processes with disposable homes.
-Cases cover both installed names, executable paths with spaces, current-project task names, option positions, `--`, literal shell metacharacters, quiet failures, and managed names beyond the list display limit.
+Cases cover both installed names, executable paths with spaces, current-project task names, typed-flag positions without flag suggestions, `--`, literal shell metacharacters, quiet failures, and managed names beyond the list display limit.
 A held WT operation lock, file-content/modification-time snapshots, and Git process traces check that completion does not lock, mutate, fetch, or invoke cleanup.
 The retained Python oracle gains only the help note identifying the Rust-only setup command; its lifecycle assertions remain unchanged.
 The component lint gate syntax-checks and ShellChecks the embedded Bash source.

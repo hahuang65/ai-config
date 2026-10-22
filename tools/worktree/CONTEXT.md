@@ -28,6 +28,8 @@ The branch remains available after cleanup.
 Native harness adapters do not acquire or release it.
 WT's ordinary entry and cleanup commands respect existing Git locks without treating them as proof of an active session.
 
-**Shell completion** suggests public commands, options, and current-project managed task names without performing a lifecycle operation.
-Bash setup is opt-in, and a suggestion never grants entry or cleanup authority.
+**Shell completion** suggests public commands and current-project managed task names, not flags, without performing a lifecycle operation.
+The CLI prints manual Bash setup on request, and package installation owns standard per-user `bash-completion` entries for both command names.
+An existing loader can discover them without startup-file edits.
+A suggestion never grants entry or cleanup authority.
 Completion does not fetch, acquire the WT operation lock, or retain a cache between requests.

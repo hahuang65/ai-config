@@ -152,15 +152,19 @@ fn task_names_still_complete_after_flags_and_the_option_terminator() {
 }
 
 #[test]
-fn bash_completes_each_subcommands_options_without_repository_access() {
+fn bash_does_not_suggest_flags() {
     let shell = Shell::new();
-    for (words, expected) in [
-        (["clean", "--ch"], "--check"),
-        (["new", "--l"], "--local"),
-        (["enter", "--j"], "--json"),
-        (["list", "--a"], "--all"),
+    for words in [
+        ["--h"].as_slice(),
+        ["clean", "--ch"].as_slice(),
+        ["new", "--l"].as_slice(),
+        ["enter", "--j"].as_slice(),
+        ["list", "--a"].as_slice(),
+        ["list", ""].as_slice(),
+        ["new", ""].as_slice(),
+        ["completions", "bash", ""].as_slice(),
     ] {
-        assert_eq!(candidates(shell.complete(&words)), [expected]);
+        assert!(candidates(shell.complete(words)).is_empty(), "{words:?}");
     }
     assert!(!shell.trees.exists());
 }
@@ -347,7 +351,7 @@ fn bash_setup_help_is_available_before_or_after_the_shell_name() {
 }
 
 #[test]
-fn inline_base_splits_preserve_later_option_completion() {
+fn new_base_contexts_offer_neither_revisions_nor_flags() {
     let shell = Shell::new();
     for words in [
         ["new", "task", "--base", "=", "main", "--l"].as_slice(),
@@ -355,19 +359,16 @@ fn inline_base_splits_preserve_later_option_completion() {
         ["new", "task", "--base", "main", "--l"].as_slice(),
         ["new", "task", "--base=main", "--l"].as_slice(),
     ] {
-        assert_eq!(candidates(shell.complete(words)), ["--local"], "{words:?}");
+        assert!(candidates(shell.complete(words)).is_empty(), "{words:?}");
     }
     assert!(candidates(shell.complete(&["new", "task", "--base", "=", "ma"])).is_empty());
     assert!(candidates(shell.complete(&["new", "task", "--base", "="])).is_empty());
 }
 
 #[test]
-fn setup_help_options_complete_after_the_shell_name() {
+fn setup_does_not_suggest_help_flags_or_repeat_the_shell_name() {
     let shell = Shell::new();
-    assert_eq!(
-        candidates(shell.complete(&["completions", "bash", "--h"])),
-        ["--help"]
-    );
+    assert!(candidates(shell.complete(&["completions", "bash", "--h"])).is_empty());
     assert!(candidates(shell.complete(&["completions", "bash", "ba"])).is_empty());
 }
 
