@@ -1,20 +1,19 @@
 import { expect, test } from "bun:test";
 import { existsSync, mkdirSync, readFileSync, symlinkSync, writeFileSync } from "node:fs";
-import { join, resolve } from "node:path";
+import { join } from "node:path";
 import { startFakeClaudeApi } from "./fixtures/claude-api";
-import { feedbackScenario, startFeedbackClaude, until } from "./fixtures/review-feedback-claude";
+import { adapterScenario, startFeedbackClaude, until } from "./fixtures/review-feedback-claude";
 
 const nativeTest = process.platform === "darwin" && Bun.which("claude") && existsSync("/usr/bin/sandbox-exec") ? test : test.skip;
 const quote = (text: string) => `'${text.replaceAll("'", "'\\''")}'`;
-const cli = resolve("tools/artifact-review/target/release/review-artifact");
-
-function configure(home: string) {
+function configure(scenario: ReturnType<typeof adapterScenario>) {
+  const { home, runtime } = scenario;
   const hooksDirectory = join(home, ".claude/hooks");
   mkdirSync(hooksDirectory, { recursive: true });
   const installed = join(hooksDirectory, "review-feedback.ts");
-  symlinkSync(resolve("harnesses/claude/review-feedback.ts"), installed);
+  symlinkSync(join(runtime, "harnesses/claude/review-feedback.ts"), installed);
   const command = `${quote(process.execPath)} ${quote(installed)}`;
-  const manifest = JSON.parse(readFileSync(resolve("manifest.json"), "utf8"));
+  const manifest = JSON.parse(readFileSync(join(runtime, "manifest.json"), "utf8"));
   const hooks: Record<string, unknown[]> = {};
   for (const setting of manifest.settings.filter(setting => setting.path[0] === "hooks"
     && setting.value.hooks?.[0].command.startsWith("bun ~/.claude/hooks/review-feedback.ts"))) {
@@ -24,7 +23,8 @@ function configure(home: string) {
   writeFileSync(join(home, ".claude/settings.json"), JSON.stringify({ hooks }));
 }
 
-async function command(home: string, args: string[]) {
+async function command(scenario: ReturnType<typeof adapterScenario>, args: string[]) {
+  const { home, cli } = scenario;
   const child = Bun.spawn([cli, ...args], { env: { HOME: home, AR_ROOT: join(home, "reviews") }, stdout: "pipe", stderr: "pipe" });
   const guard = setTimeout(() => child.kill("SIGKILL"), 10_000);
   try {
@@ -45,7 +45,7 @@ async function sendFeedback(home: string, artifact: string, revision: string) {
 }
 
 function workspaceScenario() {
-  const scenario = { ...feedbackScenario(), tools: "Bash,EnterWorktree,ExitWorktree" };
+  const scenario = { ...adapterScenario(), tools: "Bash,EnterWorktree,ExitWorktree" };
   const task = join(scenario.root, ".claude/worktrees/feedback");
   mkdirSync(join(scenario.root, ".claude/worktrees"), { recursive: true });
   const env = { PATH: process.env.PATH, HOME: scenario.home, GIT_CONFIG_GLOBAL: "/dev/null", GIT_CONFIG_NOSYSTEM: "1" };
@@ -56,21 +56,24 @@ function workspaceScenario() {
     expect(result.exitCode, result.stderr.toString()).toBe(0);
   }
   scenario.artifact = join(task, "review.html");
-  configure(scenario.home);
+  configure(scenario);
   return { ...scenario, task };
 }
 
 function workspaceApi(scenario: ReturnType<typeof workspaceScenario>, owner: () => string) {
+  const { cli } = scenario;
+  if (!/^\/[A-Za-z0-9_./-]+$/.test(cli)) throw Error("Native worktree probe needs a literal shell-safe executable path.");
+  const scoped = (args: string[]) => `cd ${quote(scenario.task)} && ${cli} ${args.map(quote).join(" ")}`;
   let returning = false;
   let claimed = false;
   const api = startFakeClaudeApi([], "WORKSPACE_REPLY", { additionalTurns: 12, nextCall(request, count) {
     if (count === 1 || returning && count === 5) return { name: "EnterWorktree", input: { path: scenario.task } };
-    if (count === 2) return { name: "Bash", input: { command: [cli, "open", scenario.artifact, "--no-browser"].map(quote).join(" ") } };
+    if (count === 2) return { name: "Bash", input: { command: scoped(["open", scenario.artifact, "--no-browser"]) } };
     if (count === 3) return { name: "ExitWorktree", input: { action: "keep" } };
     if (returning && !claimed && JSON.stringify(request).includes("Use this literal command to read and claim")) {
       claimed = true;
-      return { name: "Bash", input: { command: [cli, "claim", scenario.artifact, "--harness", "claude",
-        "--conversation", owner(), "--workspace", scenario.task].map(quote).join(" ") } };
+      return { name: "Bash", input: { command: scoped(["claim", scenario.artifact, "--harness", "claude",
+        "--conversation", owner(), "--workspace", scenario.task]) } };
     }
   } });
   return { ...api, reenter() { returning = true; } };
@@ -81,7 +84,10 @@ nativeTest("Claude defers task feedback while away and completes it after native
   let owner: string;
   const api = workspaceApi(scenario, () => owner);
   const run = startFeedbackClaude(scenario, api.server.port);
-  const poll = () => command(scenario.home, ["poll", scenario.artifact, "--timeout", "0"]);
+  const poll = async () => {
+    try { return await command(scenario, ["poll", scenario.artifact, "--timeout", "0"]); }
+    catch (error) { throw Error(`${error}\nSynthetic Claude trace: ${run.output().slice(-16_384)}`); }
+  };
   try {
     run.send("OPEN_REVIEW_THEN_LEAVE_TASK");
     await until(() => run.output().includes('"type":"result"'), run.output);
@@ -103,15 +109,16 @@ nativeTest("Claude defers task feedback while away and completes it after native
     expect(state.processing.state).toBe("answered");
     expect(state.events.filter(event => event.action === "reply").map(event => event.message)).toEqual(["WORKSPACE_REPLY"]);
   } finally {
-    await command(scenario.home, ["stop", scenario.artifact]).catch(() => {});
+    await command(scenario, ["stop", scenario.artifact]).catch(() => {});
     await run.stop();
     api.server.stop(true);
   }
 }, 60_000);
 
 nativeTest("native Claude feedback returns the Markdown reply before processing queued unrelated prompts", async () => {
-  const scenario = { ...feedbackScenario(), tools: "Bash" };
-  configure(scenario.home);
+  const scenario = { ...adapterScenario(), tools: "Bash" };
+  const { cli } = scenario;
+  configure(scenario);
   let owner: string;
   let processing = false;
   let release: () => void;
@@ -125,7 +132,7 @@ nativeTest("native Claude feedback returns the Markdown reply before processing 
       "--workspace", scenario.root].map(quote).join(" ") } };
   } });
   const run = startFeedbackClaude(scenario, api.server.port);
-  const poll = () => command(scenario.home, ["poll", scenario.artifact, "--timeout", "0"]);
+  const poll = () => command(scenario, ["poll", scenario.artifact, "--timeout", "0"]);
   try {
     run.send("OPEN_SYNTHETIC_REVIEW");
     await until(() => run.output().includes('"type":"result"'), run.output);
@@ -152,7 +159,7 @@ nativeTest("native Claude feedback returns the Markdown reply before processing 
     expect(replies[0].message).toBe("- REVIEW_REPLY");
   } finally {
     release!();
-    await command(scenario.home, ["stop", scenario.artifact]).catch(() => {});
+    await command(scenario, ["stop", scenario.artifact]).catch(() => {});
     await run.stop();
     api.server.stop(true);
   }

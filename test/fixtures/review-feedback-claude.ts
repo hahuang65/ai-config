@@ -1,6 +1,6 @@
-import { mkdirSync, mkdtempSync, realpathSync, rmSync, writeFileSync } from "node:fs";
+import { copyFileSync, mkdirSync, mkdtempSync, realpathSync, rmSync, writeFileSync } from "node:fs";
 import { homedir, tmpdir } from "node:os";
-import { dirname, join } from "node:path";
+import { dirname, join, resolve } from "node:path";
 
 export async function until(condition: () => boolean, evidence: () => string) {
   const deadline = Date.now() + 20_000;
@@ -36,6 +36,25 @@ export function feedbackScenario(timeout = 30) {
   writeFileSync(join(home, ".claude.json"), JSON.stringify({ hasCompletedOnboarding: true,
     projects: { [root]: { hasTrustDialogAccepted: true } } }));
   return { home, root, marker, artifact };
+}
+
+export function adapterScenario() {
+  const scenario = feedbackScenario();
+  const runtime = join(scenario.home, "runtime");
+  const source = resolve(import.meta.dir, "../..");
+  const executable = "tools/artifact-review/target/release/review-artifact";
+  const resources = ["manifest.json", "harnesses/claude/review-feedback.ts", "harnesses/review-feedback-client.ts", executable];
+  try {
+    for (const relative of resources) {
+      const target = join(runtime, relative);
+      mkdirSync(dirname(target), { recursive: true });
+      copyFileSync(join(source, relative), target);
+    }
+    return { ...scenario, runtime, cli: join(runtime, executable) };
+  } catch (error) {
+    rmSync(scenario.home, { recursive: true, force: true });
+    throw error;
+  }
 }
 
 export function renewalScenario() {
