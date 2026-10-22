@@ -1,7 +1,9 @@
 use crate::support;
 use serde_json::Value;
 use std::fs;
-use std::os::unix::fs::PermissionsExt;
+use std::os::unix::{fs::PermissionsExt, process::CommandExt};
+use std::process::Stdio;
+use std::time::{Duration, Instant};
 use support::{change::*, *};
 
 fn request(trial: &Trial) -> std::process::Command {
@@ -144,10 +146,6 @@ time.sleep(30)
 
 #[test]
 fn interruption_retains_observed_counts_without_inventing_an_exit_status() {
-    use std::{
-        process::Stdio,
-        time::{Duration, Instant},
-    };
     let trial = fixture();
     let marker = trial.temporary.path().join("reviewer-ready");
     executable(trial.fake_bin.join("pi"), INTERRUPTED);
@@ -183,29 +181,57 @@ fn interruption_retains_observed_counts_without_inventing_an_exit_status() {
     assert!(diagnostic["process"]["signal"].is_null());
 }
 
+fn timeout_request(trial: &Trial, mode: &str) -> std::process::Command {
+    prepare_timeout_provider(trial);
+    let mut command = request(trial);
+    command
+        .env("EVALUATION_TIMEOUT_FIXTURE_MODE", mode)
+        .args(["--timeout", "1"]);
+    command
+}
+
+fn prepare_timeout_provider(trial: &Trial) {
+    let next = trial.fake_bin.join("timeout-provider.next");
+    fs::copy(&trial.binary, &next).unwrap();
+    fs::rename(next, trial.fake_bin.join("pi")).unwrap();
+    let stdout = trial.temporary.path().join("warmup.stdout");
+    let stderr = trial.temporary.path().join("warmup.stderr");
+    let mut child = std::process::Command::new(trial.fake_bin.join("pi"))
+        .env("EVALUATION_TIMEOUT_FIXTURE_MODE", "warmup")
+        .stdin(Stdio::null())
+        .stdout(fs::File::create(&stdout).unwrap())
+        .stderr(fs::File::create(&stderr).unwrap())
+        .process_group(0)
+        .spawn()
+        .unwrap();
+    let deadline = Instant::now() + Duration::from_secs(5);
+    let status = loop {
+        if let Some(status) = child.try_wait().unwrap() {
+            break status;
+        }
+        if Instant::now() >= deadline {
+            // SAFETY: this unreaped child owns the fixture preparation process group.
+            unsafe {
+                libc::kill(-(child.id() as i32), libc::SIGKILL);
+            }
+            child.wait().unwrap();
+            panic!("Native timeout fixture did not prepare within five seconds");
+        }
+        std::thread::sleep(Duration::from_millis(5));
+    };
+    assert!(
+        status.success(),
+        "Rebuild reviewer-fixture before running timeout diagnostic cases"
+    );
+    assert_eq!(fs::metadata(stdout).unwrap().len(), 0);
+    assert_eq!(fs::metadata(stderr).unwrap().len(), 0);
+}
+
 #[test]
 fn timeout_preserves_an_exited_leaders_status_while_descendants_hold_pipes() {
     let trial = fixture();
-    executable(
-        trial.fake_bin.join("pi"),
-        r#"#!/usr/bin/env python3
-import os, signal, time
-os.write(1, b'PRIVATE_TEST_SECRET')
-os.write(2, b'PRIVATE_TEST_SECRET')
-if os.fork() == 0:
-    time.sleep(30)
-    os._exit(0)
-if os.environ['LEADER_END'] == 'signal':
-    os.kill(os.getpid(), signal.SIGTERM)
-os._exit(7)
-"#,
-    );
     for mode in ["exit", "signal"] {
-        let output = request(&trial)
-            .env("LEADER_END", mode)
-            .args(["--timeout", "1"])
-            .output()
-            .unwrap();
+        let output = timeout_request(&trial, mode).output().unwrap();
         let diagnostic = retained(output);
         assert_eq!(diagnostic["category"], "process_timeout");
         if mode == "exit" {
@@ -232,13 +258,49 @@ time.sleep(30)
 "#;
 
 #[test]
+fn one_second_deadline_still_covers_delayed_provider_startup() {
+    let trial = fixture();
+    let output = timeout_request(&trial, "startup-delay").output().unwrap();
+    let diagnostic = retained(output);
+    assert_eq!(diagnostic["category"], "process_timeout");
+    assert_eq!(diagnostic["process"]["stdout_bytes"], 0);
+    assert_eq!(diagnostic["process"]["stderr_bytes"], 0);
+    assert!(diagnostic["process"]["exit_code"].is_null());
+    assert!(diagnostic["process"]["signal"].is_null());
+}
+
+#[test]
+fn native_timeout_provider_has_a_silent_preparation_mode() {
+    let trial = fixture();
+    prepare_timeout_provider(&trial);
+}
+
+#[test]
+fn timeout_diagnostic_fixtures_do_not_depend_on_python_startup() {
+    let trial = fixture();
+    let marker = trial.temporary.path().join("python-started");
+    executable(
+        trial.fake_bin.join("python3"),
+        "#!/bin/sh\nprintf invoked > \"$TIMEOUT_PYTHON_MARKER\"\nsleep 2\nexit 91\n",
+    );
+    let output = timeout_request(&trial, "wait")
+        .env("TIMEOUT_PYTHON_MARKER", &marker)
+        .output()
+        .unwrap();
+    let diagnostic = retained(output);
+    assert!(
+        !marker.exists(),
+        "A one-second timeout fixture still starts Python"
+    );
+    assert_eq!(diagnostic["category"], "process_timeout");
+    assert_eq!(diagnostic["process"]["stdout_bytes"], 19);
+    assert_eq!(diagnostic["process"]["stderr_bytes"], 19);
+}
+
+#[test]
 fn timed_out_review_retains_failure_without_inventing_an_exit_status() {
     let trial = fixture();
-    executable(
-        trial.fake_bin.join("pi"),
-        "#!/usr/bin/env python3\nimport os, time\nos.write(1, b'PRIVATE_TEST_SECRET')\nos.write(2, b'PRIVATE_TEST_SECRET')\nos.close(1)\nos.close(2)\ntime.sleep(30)\n",
-    );
-    let output = request(&trial).args(["--timeout", "1"]).output().unwrap();
+    let output = timeout_request(&trial, "wait").output().unwrap();
     let diagnostic = retained(output);
     assert_eq!(diagnostic["category"], "process_timeout");
     assert_eq!(

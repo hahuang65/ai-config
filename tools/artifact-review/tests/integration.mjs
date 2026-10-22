@@ -21,6 +21,7 @@ import { registerAnnotationPopoverCases } from './annotation-popover.mjs';
 import { registerLiveWaitCases } from './live-wait.mjs';
 import { registerSubmissionStatusCases } from './submission-status.mjs';
 import { registerLinkNavigationCases } from './link-navigation.mjs';
+import { registerSvgCases } from './svg.mjs';
 
 const browsers = firefoxSuite();
 const firefox = t => browsers.open(t);
@@ -34,6 +35,7 @@ registerAnnotationPopoverCases({ fixture, eventually });
 registerLiveWaitCases({ fixture, eventually });
 registerSubmissionStatusCases({ fixture, eventually });
 registerLinkNavigationCases({ fixture, eventually });
+registerSvgCases({ fixture, eventually });
 
 const executable = resolve(import.meta.dirname, '../target/debug/review-artifact');
 const exec = promisify(execFile);

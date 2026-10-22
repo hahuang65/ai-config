@@ -1,0 +1,22 @@
+[
+  {
+    "name": "pele",
+    "version": "1.8.0",
+    "tarball": "https://registry.npmjs.org/pele/-/pele-1.8.0.tgz",
+    "integrity": "sha512-AYmHttE70cwNJVXdfPMCANGivFlmc3bGGpMG0GqH5S5vE3RgtEuLlkqbhRfe94Csv/ZEd1TUbv2dMUHpw4p1Bg==",
+    "member": "package/dist/pele.global.js",
+    "bundle": "pele.js",
+    "bytes": 699670,
+    "sha256": "9bf34b3a9a19351dc69d0d238e365560331a8ae392c41656df7f5090653253d0"
+  },
+  {
+    "name": "mermaid",
+    "version": "12.1.0",
+    "tarball": "https://registry.npmjs.org/mermaid/-/mermaid-12.1.0.tgz",
+    "integrity": "sha512-wlVCp+8eTupfCeeFvoZNNiTuHrvag0P2jz/ILgb/f/6jkVokUefOcujefi8qUe/j2asHiSePncVsz/xzzA80LQ==",
+    "member": "package/dist/mermaid.min.js",
+    "bundle": "mermaid.js",
+    "bytes": 5493176,
+    "sha256": "6484afc32872a3aa16cac9a76ba1816a1ed4cc870a6593cc2e17757750f518b2"
+  }
+]

@@ -127,12 +127,12 @@ function selector(element) {
 function attachAnnotations(revision) {
   const doc = frame.contentDocument;
   annotationPopover.attach();
-  for (const link of doc.querySelectorAll('a[href]')) link.target = '_blank';
+  for (const link of doc.querySelectorAll('a[href]')) link.setAttribute('target', '_blank');
   doc.addEventListener('click', event => {
     if (event.target.closest('[data-finding-controls]')) return;
     event.preventDefault();
     const link = event.target.closest('a[href]');
-    if (link) { window.open(link.href, '_blank', 'noopener,noreferrer'); return; }
+    if (link) { window.open(link.getAttribute('href'), '_blank', 'noopener,noreferrer'); return; }
     if (doc.getSelection()?.toString().trim()) return;
     const element = event.target.closest('body *');
     if (!element) return;

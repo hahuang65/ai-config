@@ -2,6 +2,7 @@ use crate::{
     images,
     model::Snapshot,
     paths::{Paths, Result},
+    svg,
 };
 use base64::{Engine, engine::general_purpose::STANDARD};
 use sha2::{Digest, Sha256};
@@ -140,7 +141,9 @@ fn pr_link(value: &str) -> bool {
 
 fn sanitize(paths: &Paths, source: &str, images: Arc<Mutex<ImageState>>) -> String {
     let artifact = paths.artifact.clone();
-    ammonia::Builder::default()
+    let mut builder = ammonia::Builder::default();
+    svg::configure(&mut builder);
+    builder
         .add_tags(
             ["style", "section", "main", "article", "aside"]
                 .iter()
@@ -157,7 +160,7 @@ fn sanitize(paths: &Paths, source: &str, images: Arc<Mutex<ImageState>>) -> Stri
                 return pr_link(value).then_some(Cow::Borrowed(value));
             }
             if element != "img" || attribute != "src" {
-                return Some(Cow::Borrowed(value));
+                return svg::attribute(element, attribute, value);
             }
             images
                 .lock()

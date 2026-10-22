@@ -4,6 +4,7 @@ use std::fs::{self, File, OpenOptions};
 use std::io::{Read, Write};
 use std::os::unix::fs::{DirBuilderExt, OpenOptionsExt, PermissionsExt};
 use std::path::{Path, PathBuf};
+use std::sync::OnceLock;
 
 pub type Failure = &'static str;
 pub type Result<T> = std::result::Result<T, Failure>;
@@ -78,9 +79,17 @@ impl Paths {
 }
 
 pub fn state_root() -> Result<PathBuf> {
-    let root = std::env::var_os("AR_ROOT")
-        .map(PathBuf::from)
-        .unwrap_or_else(|| PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../.state/reviews"));
+    static DEFAULT: OnceLock<Result<PathBuf>> = OnceLock::new();
+    let root = match std::env::var_os("AR_ROOT") {
+        Some(root) => PathBuf::from(root),
+        None => DEFAULT
+            .get_or_init(|| {
+                crate::review_state::default_root(
+                    &PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../.."),
+                )
+            })
+            .clone()?,
+    };
     private_directory(&root)?;
     root.canonicalize()
         .map_err(|_| "Cannot resolve review state directory.")

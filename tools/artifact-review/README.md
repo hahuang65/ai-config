@@ -265,7 +265,17 @@ Document title metadata is removed from the snapshot rather than leaking as plai
 Local PNG, JPEG, WebP, and GIF renders in the HTML directory (including plain relative subpaths) and embedded base64 images of those types are copied into the inert snapshot.
 Referenced local paths must stay inside that directory without symlinks; a missing, unsupported, malformed, or oversized local render prevents approval rather than showing an incomplete design.
 Each render is limited to 25 MiB, with at most 24 images and 25 MiB of decoded image bytes per snapshot.
-External CSS, fonts, remote images, SVG, unsupported markup, and interactive artifact behavior are not supported.
+Pre-rendered inline SVG supports shapes, groups, text, descriptions, markers, local clipping, and gradients through an explicit allowlist.
+SVG presentation attributes and restricted inline styles preserve font sizing, colors, and CSS-variable themes.
+Paint, marker, and clipping URLs may reference only local fragment IDs; SVG image and use elements are removed.
+HTML and SVG anchor styles share the restricted paint-value grammar while retaining ordinary HTML layout declarations such as padding and display.
+Scripts, event handlers, embedded HTML, SVG animation elements, and metadata remain removed.
+SVG title elements are removed with document title metadata, so use aria-label and a visible caption instead.
+Existing stylesheet handling is unchanged: CSS remains inline, with external fetches blocked by Content Security Policy.
+Unsupported SVG elements or styling can disappear during sanitization; inspect the rendered review before requesting approval.
+This does not add an SVG image MIME type, external SVG files, or a Pele/Mermaid JavaScript runtime.
+PNG, JPEG, WebP, and GIF remain the only supported img sources.
+External CSS, fonts, remote images, unsupported markup, and interactive artifact behavior are not supported.
 Remote images are stripped and never fetched; do not request approval of image-dependent work unless the required renders are visible.
 This is a review of static self-contained HTML, not a general browser preview.
 Feedback and target text are rendered through `textContent`, never interpreted as HTML.
@@ -280,8 +290,15 @@ Each annotation permits 4000 bytes of comment, 2000 bytes of target text, and 10
 History is capped at 10,000 events; reaching the cap refuses new events without deleting old ones.
 There is no automatic history pruning or opaque history rewrite.
 
-Storage defaults to this evaluation's `.state/reviews`, resolved from the crate's build-time project location.
-Set `AR_ROOT` to a private directory for isolated tests or an explicitly relocated installation.
+Storage defaults to `.state/reviews` in this package repository's verified primary Git checkout, not the worktree where a helper was built or invoked.
+Primary and linked-worktree builds therefore share the installed adapter's review state.
+Submodules use their own primary checkout, never the parent repository's state.
+A source export without Git metadata retains its package-local `.state/reviews` default.
+Git discovery uses the existing reviewed-source-excluding executable resolver, including inherited source exclusions and startup-environment cleanup.
+It is read-only, limited to three seconds and 256 KiB per command, and cached per helper process.
+Git's canonical worktree root must equal the package source before shared-state discovery can proceed.
+A broken Git identity, including a dangling `.git` link or an invalid directory that would discover an enclosing repository, fails with explicit-root guidance instead of selecting another queue.
+Set `AR_ROOT` to a private directory for isolated tests or an explicitly relocated installation; this override takes precedence and performs no Git discovery.
 Each file path, with its parent directory canonicalized and its final filename unchanged, maps to a SHA-256 directory with mode 0700.
 Replacing the final file with a symlink does not change session identity: `wait`, `poll`, and `stop` still reach the original session.
 Artifact reads reject final symlinks and non-regular files.
@@ -291,6 +308,27 @@ SQLite transactions with full synchronization retain append-only feedback across
 The server record is replaceable derived state; the event database is not.
 Do not share or publish the private server record.
 The current executable supports Unix systems; browser launch uses `open` on macOS or `xdg-open` on Linux.
+
+### Recover one older worktree-local review
+
+Old worktree-built helpers may have saved a review outside the shared default.
+Recovery is explicit and limited to one artifact, with no event replay or decision reset:
+
+```sh
+AR_ROOT=/absolute/old/private/state review-artifact stop /absolute/report.html
+review-artifact recover-state /absolute/report.html --from-root /absolute/old/private/state
+review-artifact open /absolute/report.html --findings /absolute/report.json
+```
+
+Use the source-local helper described above, not an unrelated PATH command.
+For ordinary artifacts, omit `--findings`.
+Recovery keeps the entire stopped SQLite directory together, including journals, original decisions, publication outcomes, and feedback origin.
+It refuses live server locks, unexpired feedback claims, symbolic links or public source files, and any populated destination.
+Hard-link alias detection is not included; recovery assumes its source files are not shared with another store.
+Both roots must be on the same filesystem so the move is atomic.
+It never merges stores or imports their routing registries.
+Reopening the same report emits a fresh attachment receipt; the original saved conversation then receives the retained event through its native adapter.
+Do not create another Accept event or substitute a standalone responder for an existing agent conversation.
 
 ## Focused evidence
 

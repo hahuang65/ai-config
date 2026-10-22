@@ -28,9 +28,16 @@ This explanation is not a substitute for [change review](../review-change/SKILL.
 ## Render and present
 
 Write one self-contained HTML file with inline CSS and semantic elements.
-For feedback, decisions, or approval through `review-artifact`, build diagrams with static HTML/CSS or a supported raster image (PNG, JPEG, WebP, or GIF) confined to the HTML directory or embedded as bounded data.
-The review sanitizer removes SVG; never ask the user to approve a diagram that will not appear there.
-Use inline SVG only for informational pages opened in the ordinary browser, not for `review-artifact` decisions.
+For feedback, decisions, or approval through `review-artifact`, use static HTML/CSS, pre-rendered inline SVG, or a supported raster image (PNG, JPEG, WebP, or GIF).
+Prefer Pele when it is available, but generate SVG before opening the review; document JavaScript remains disabled.
+Do not download or install a renderer without permission.
+The review sanitizer supports SVG shapes, groups, text, markers, clipping, gradients, and restricted inline styling, not arbitrary SVG features.
+Do not use SVG scripts, event handlers, foreignObject, image, use, animation elements, or external paint references.
+Keep diagram IDs unique and give each SVG an aria-label plus a visible caption; SVG title elements are removed with document metadata.
+Keep all chart categories visible and labels readable at the intended display size.
+Use a simpler layout, horizontal chart, or natural-size scrolling instead of shrinking text until it becomes unreadable.
+Raster images must stay inside the HTML directory or use bounded embedded data.
+Inspect the sanitized review before requesting approval; unsupported SVG features can disappear.
 No external resources or scripts: avoid remote fonts, libraries, analytics, and executable page scripts.
 Escape source text, keep labels readable, use useful captions, and do not rely on color alone.
 Check narrow layouts, reading order, contrast, and overflow.

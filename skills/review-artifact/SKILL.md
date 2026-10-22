@@ -17,6 +17,9 @@ Support element and selected-text comments, general feedback, brief agent replie
 Selecting a target outlines it and opens the comment editor beside it; queued comments and conversation stay in the sidebar.
 Retain draft target text and revision if a reload prevents safely locating the original selection.
 Use readable semantic HTML, plain language, and stable section identifiers.
+Pre-rendered inline SVG can show diagrams through the runtime's static SVG allowlist; document scripts and external resources stay disabled.
+Use aria-label and a visible caption, unique IDs, and readable natural-size layouts.
+SVG title elements, embedded HTML, images, use references, and animation elements are removed; unsupported SVG output must be simplified or rasterized before approval.
 Do not add change badges, comparison overlays, pipeline metadata, or custom decision forms.
 Keep review controls owned by the review runtime, never in the saved artifact.
 Keep submitted and completed documents readable with a prominent runtime-owned status banner and browser-tab label.

@@ -17,9 +17,13 @@ mod model;
 mod paths;
 mod publication;
 mod report_update;
+mod review_state;
 mod server;
 mod standalone_store;
+mod state_git;
+mod state_recovery;
 mod store;
+mod svg;
 
 use clap::{Parser, Subcommand};
 use paths::{Paths, Result};
@@ -78,6 +82,12 @@ enum Operation {
         #[arg(long, requires = "reply")]
         id: Option<String>,
     },
+    /// Move one stopped review from an old private state root without replaying decisions.
+    RecoverState {
+        file: PathBuf,
+        #[arg(long)]
+        from_root: PathBuf,
+    },
     /// Stop the server without approving, declining, or deleting events.
     Stop { file: PathBuf },
     #[command(name = "_serve", hide = true)]
@@ -129,7 +139,9 @@ fn review_paths(command: &Operation) -> Result<(Paths, Option<findings::Binding>
         | Operation::Wait { file, .. }
         | Operation::Stop { file }
         | Operation::Serve { file } => file,
-        Operation::Feedback(_) => unreachable!("Feedback commands use their own dispatcher"),
+        Operation::Feedback(_) | Operation::RecoverState { .. } => {
+            unreachable!("These commands use their own dispatcher")
+        }
     };
     let binding = match command {
         Operation::Open {
@@ -154,6 +166,9 @@ fn review_paths(command: &Operation) -> Result<(Paths, Option<findings::Binding>
 fn execute(arguments: Arguments) -> Result<Option<serde_json::Value>> {
     match arguments.command {
         Operation::Feedback(command) => Ok(Some(feedback_cli::execute(command)?)),
+        Operation::RecoverState { file, from_root } => {
+            Ok(Some(state_recovery::recover(&file, &from_root)?))
+        }
         command => execute_review(command),
     }
 }
@@ -162,7 +177,9 @@ fn execute_review(command: Operation) -> Result<Option<serde_json::Value>> {
     let (paths, binding) = review_paths(&command)?;
     let output = match command {
         Operation::Open { no_browser, .. } => client::open(&paths, no_browser, binding.as_ref())?,
-        Operation::Feedback(_) => unreachable!("Feedback commands use their own dispatcher"),
+        Operation::Feedback(_) | Operation::RecoverState { .. } => {
+            unreachable!("These commands use their own dispatcher")
+        }
         Operation::Poll {
             cursor,
             timeout,

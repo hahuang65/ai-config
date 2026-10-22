@@ -3,6 +3,8 @@ use anyhow::{Context, Result, ensure};
 use evaluation::{paths::Paths, reviewer};
 use std::{env, ffi::OsString, path::PathBuf};
 
+mod timeout_provider;
+
 type Parsed = (Option<PathBuf>, Option<reviewer::Request>);
 
 fn parse() -> Result<Parsed> {
@@ -69,6 +71,9 @@ fn feedback() -> Result<()> {
 }
 
 fn main() {
+    if let Some(code) = timeout_provider::selected_exit() {
+        std::process::exit(code);
+    }
     if env::args().nth(1).as_deref() == Some("feedback") {
         if let Err(error) = feedback() {
             eprintln!("Feedback fixture: {error}");

@@ -18,6 +18,11 @@ Restricted-reviewer offline settings and synthetic-provider boundaries remain un
 - `reviewer-runtime.test.ts` checks the restricted Pi reviewer with a synthetic provider and a private source snapshot.
   Its process entry is the test-only Cargo example `reviewer-fixture`, backed by the shared runner library, not a production or installed command.
   `make build-evaluation-debug` builds this driver for package/Rust tests; `make build` does not build or install it.
+  Fixed-deadline diagnostic cases also use its native test-provider modes instead of launching Python inside a one-second timeout.
+  A silent preparation step has its own five-second cap, avoiding first-launch setup races in the diagnostic assertions.
+  A slow-Python regression verifies that these cases do not invoke the interpreter while retaining the original byte-count, redaction, leader-status, signal, and timeout assertions.
+  A separate deliberately slow-starting provider still times out before producing bytes, so preparation does not remove startup from production timeout coverage.
+  Production timeout handling and the test requests' one-second deadlines remain unchanged.
   The native Claude reviewer suite uses the same driver and skips only for missing host capabilities, never because a build artifact is absent.
 - `guards.test.ts` checks shared guard behavior.
   `package-dangerous-commands.test.ts` checks formatting, host interruption, recursive deletion, process termination, and recognizable download-and-execute commands through both adapters and the generated Pi bundle.
@@ -84,6 +89,10 @@ Restricted-reviewer offline settings and synthetic-provider boundaries remain un
   `publication.mjs` separately checks exact preview then human browser confirmation, independent repair decisions, account/PR/report changes, rejected field injection, local-origin authorization, and reconciliation after a lost fake-provider response without a second post.
   It also checks the original Scope and intent PR anchor, Markdown section headings, and confirmed-versus-uncertain publication banners.
   `link-navigation.mjs` checks that only safe GitHub PR anchors survive sanitization, without enabling document scripts or other navigation.
+  `svg.mjs` checks visible static vector geometry, CSS-variable colors, arrow markers, annotations, and safe PR anchors in SVG without enabling document scripts.
+  The Rust `svg.rs` process tests cover the allowlist, rejected active content and external paint, and geometry-bound approval revisions.
+  `support/state_root.rs` checks shared defaults for ordinary and absorbed-submodule worktrees, exports, broken and dangling Git identities, ancestor-discovery rejection, and rejection of Git executables inside inherited excluded source roots.
+  `state_recovery.rs` exercises explicit stopped-store recovery through the process boundary, preserving Accept events and refusing live stores, active claims, linked roots, and destination conflicts.
   `submission-status.mjs` checks readable submitted/completed pages, reload persistence, agent replies, changed versions, and reopening without stale completion labels.
   The artifact tool links the shared evaluation library; these cases never access a live provider or protected legacy publication state.
   `tests/wait.rs` covers manual compatibility waiting, transport heartbeats, terminal state, replay/retry, interruption/shutdown, and fresh revision checks despite render reuse.

@@ -4,7 +4,7 @@ use sha2::{Digest, Sha256};
 use std::{
     fs,
     os::unix::fs::DirBuilderExt,
-    path::PathBuf,
+    path::{Path, PathBuf},
     process::{Command, Output, Stdio},
     time::{Duration, Instant},
 };
@@ -39,11 +39,15 @@ impl Review {
     }
 
     pub fn command(&self, args: &[&str]) -> Output {
+        self.command_with_root(&self.root.join("state"), args)
+    }
+
+    pub fn command_with_root(&self, state: &Path, args: &[&str]) -> Output {
         let stdout = self.root.join("stdout");
         let stderr = self.root.join("stderr");
         let mut child = Command::new(env!("CARGO_BIN_EXE_review-artifact"))
             .args(args)
-            .env("AR_ROOT", self.root.join("state"))
+            .env("AR_ROOT", state)
             .stdin(Stdio::null())
             .stdout(fs::File::create(&stdout).unwrap())
             .stderr(fs::File::create(&stderr).unwrap())
