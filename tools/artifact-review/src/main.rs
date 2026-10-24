@@ -1,6 +1,8 @@
 mod artifact;
 mod assets;
 mod client;
+mod diagram_process;
+mod diagrams;
 mod event_wait;
 mod feedback;
 mod feedback_cli;
@@ -42,6 +44,8 @@ struct Arguments {
 
 #[derive(Subcommand)]
 enum Operation {
+    /// Render a diagram to SVG on stdout with bundled Pele 1.8.0; never opens a review.
+    RenderDiagram(diagrams::Arguments),
     /// Start or reconnect to a tracked server; start a new review if closed.
     Open {
         file: PathBuf,
@@ -139,7 +143,7 @@ fn review_paths(command: &Operation) -> Result<(Paths, Option<findings::Binding>
         | Operation::Wait { file, .. }
         | Operation::Stop { file }
         | Operation::Serve { file } => file,
-        Operation::Feedback(_) | Operation::RecoverState { .. } => {
+        Operation::Feedback(_) | Operation::RecoverState { .. } | Operation::RenderDiagram(_) => {
             unreachable!("These commands use their own dispatcher")
         }
     };
@@ -165,6 +169,10 @@ fn review_paths(command: &Operation) -> Result<(Paths, Option<findings::Binding>
 
 fn execute(arguments: Arguments) -> Result<Option<serde_json::Value>> {
     match arguments.command {
+        Operation::RenderDiagram(arguments) => {
+            diagrams::render(&arguments)?;
+            Ok(None)
+        }
         Operation::Feedback(command) => Ok(Some(feedback_cli::execute(command)?)),
         Operation::RecoverState { file, from_root } => {
             Ok(Some(state_recovery::recover(&file, &from_root)?))
@@ -177,7 +185,7 @@ fn execute_review(command: Operation) -> Result<Option<serde_json::Value>> {
     let (paths, binding) = review_paths(&command)?;
     let output = match command {
         Operation::Open { no_browser, .. } => client::open(&paths, no_browser, binding.as_ref())?,
-        Operation::Feedback(_) | Operation::RecoverState { .. } => {
+        Operation::Feedback(_) | Operation::RecoverState { .. } | Operation::RenderDiagram(_) => {
             unreachable!("These commands use their own dispatcher")
         }
         Operation::Poll {

@@ -91,6 +91,10 @@ Restricted-reviewer offline settings and synthetic-provider boundaries remain un
   `link-navigation.mjs` checks that only safe GitHub PR anchors survive sanitization, without enabling document scripts or other navigation.
   `svg.mjs` checks visible static vector geometry, CSS-variable colors, arrow markers, annotations, and safe PR anchors in SVG without enabling document scripts.
   The Rust `svg.rs` process tests cover the allowlist, rejected active content and external paint, and geometry-bound approval revisions.
+  `diagrams.rs` checks bundled Pele from a copied binary without runtime packages, generated chart review compatibility, unique accessibility IDs, source-local Node rejection, mise-shim skipping without dispatcher execution, private failures, missing Node, and the blocked-input deadline.
+  The deadline cases cover both a live launcher and a successful exiting launcher whose descendant retains stdin.
+  `diagram_sources.rs` checks outside callers with checkout-controlled Node candidates, executable aliases, and symlinked input files.
+  `make build-pele` prepares the embedded engine before direct Cargo builds/tests; the root build, lint, and applicable test targets do this automatically.
   `support/state_root.rs` checks shared defaults for ordinary and absorbed-submodule worktrees, exports, broken and dangling Git identities, ancestor-discovery rejection, and rejection of Git executables inside inherited excluded source roots.
   `state_recovery.rs` exercises explicit stopped-store recovery through the process boundary, preserving Accept events and refusing live stores, active claims, linked roots, and destination conflicts.
   `submission-status.mjs` checks readable submitted/completed pages, reload persistence, agent replies, changed versions, and reopening without stale completion labels.

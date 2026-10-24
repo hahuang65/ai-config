@@ -104,8 +104,8 @@ pub fn command(name: &str, excluded: &[&Path]) -> Result<Command> {
         .filter_map(|directory| directory.join(name).canonicalize().ok())
         .find(|path| {
             !excluded.iter().any(|root| path.starts_with(root))
-                // Unix mise shims resolve to mise itself, not an installed Pi.
-                && !(name == "pi" && path.file_name().is_some_and(|file| file == "mise"))
+                // Unix mise shims resolve to the dispatcher, not the requested executable.
+                && !(matches!(name, "pi" | "node") && path.file_name().is_some_and(|file| file == "mise"))
                 && fs::metadata(path)
                     .is_ok_and(|meta| meta.is_file() && meta.permissions().mode() & 0o111 != 0)
         })

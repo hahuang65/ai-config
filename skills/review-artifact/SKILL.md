@@ -18,6 +18,9 @@ Selecting a target outlines it and opens the comment editor beside it; queued co
 Retain draft target text and revision if a reload prevents safely locating the original selection.
 Use readable semantic HTML, plain language, and stable section identifiers.
 Pre-rendered inline SVG can show diagrams through the runtime's static SVG allowlist; document scripts and external resources stay disabled.
+For diagrams and charts, the same owned helper provides `render-diagram FILE --id-prefix UNIQUE` using bundled Pele and the configured Node.
+Generate and embed the SVG before `open`; rendering never runs inside the review document or starts a review itself.
+No global Pele installation, runtime package download, or node_modules directory is needed.
 Use aria-label and a visible caption, unique IDs, and readable natural-size layouts.
 SVG title elements, embedded HTML, images, use references, and animation elements are removed; unsupported SVG output must be simplified or rasterized before approval.
 Do not add change badges, comparison overlays, pipeline metadata, or custom decision forms.

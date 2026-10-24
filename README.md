@@ -33,6 +33,9 @@ The installed package provides:
 - `review-change [SUBJECT]` for a PR URL, branch/worktree, GitHub branch URL, Git range, or the current branch plus outstanding changes; human reviews open directly in `review-artifact` without a manual intent field.
   Human CLI runs keep timestamped start/end logs, per-step elapsed times, and verified evidence-read activity, with a live overall stage bar and total time in terminals.
   Redirected logs remain plain, and `--json` stays silent except for its receipt and diagnostics.
+- Bundled Pele 1.8.0 for diagram and chart authoring through source-local `review-artifact render-diagram FILE`.
+  It generates SVG using the configured Node without a global renderer or runtime downloads; browser reviews still disable document scripts.
+  See [diagram authoring](tools/artifact-review/diagrams.md).
 - Local change-review annotations and per-finding Accept/Reject controls: Accept authorizes that finding's repair only; commits and publication remain separate.
 - PR reports include a clickable PR link and prefilled editable Markdown comments with bold section headings, never repair decisions; one Publish button below the document confirms the selected text, destinations, account and PR.
   The sidebar stays for agent feedback, and uncertain outcomes reconcile the same persisted attempt.
@@ -106,6 +109,7 @@ make test
 `make build` creates the Pi guard, status-footer, worktree, and LSP bundles, the shared catalogue's Claude plugin projection, and Rust release binaries; it **does not provision tools or install harness resources**.
 Cargo build, test, and lint commands retain `--locked` but may fetch missing dependencies from the network.
 The guard-parser build likewise restores frozen Bun library dependencies with lifecycle scripts disabled and regenerates the local WASM/runtime/license assets in `guard/vendor/`.
+The Pele build bundles its pinned library and license into the artifact helper; only the explicit authoring command starts Node, never the review server.
 `package.json` and `bun.lock` pin web-tree-sitter and tree-sitter-bash; ordinary harness execution needs neither network access nor `node_modules` for parsing.
 Restricted-reviewer offline flags and synthetic-provider isolation are unchanged.
 `make lint` checks that generated Claude LSP definitions still match the catalogue.

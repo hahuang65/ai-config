@@ -29,7 +29,11 @@ This explanation is not a substitute for [change review](../review-change/SKILL.
 
 Write one self-contained HTML file with inline CSS and semantic elements.
 For feedback, decisions, or approval through `review-artifact`, use static HTML/CSS, pre-rendered inline SVG, or a supported raster image (PNG, JPEG, WebP, or GIF).
-Prefer Pele when it is available, but generate SVG before opening the review; document JavaScript remains disabled.
+Use bundled Pele for diagrams and charts through `../../tools/artifact-review/target/release/review-artifact render-diagram FILE --id-prefix UNIQUE`, resolved from this skill's absolute source path.
+The command reads Pele-compatible Mermaid syntax and writes SVG to stdout; embed that SVG in the HTML before opening the review.
+It uses the configured Node without a global renderer, runtime package downloads, or node_modules; document JavaScript remains disabled.
+Use `--max-width PIXELS` only when useful for layout, and give each diagram a distinct ID prefix.
+If the helper is missing or lacks `render-diagram`, report the required package build instead of silently choosing an unrelated renderer.
 Do not download or install a renderer without permission.
 The review sanitizer supports SVG shapes, groups, text, markers, clipping, gradients, and restricted inline styling, not arbitrary SVG features.
 Do not use SVG scripts, event handlers, foreignObject, image, use, animation elements, or external paint references.

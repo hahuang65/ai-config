@@ -8,7 +8,7 @@ Public commands remain symlinks to built binaries in the installed source, prese
 | Surface | Executable / source | Intended role |
 | --- | --- | --- |
 | `~/.local/bin/review-change` | `tools/evaluation/target/release/review-change`; [source](../tools/evaluation/src/change_main.rs) | Public source review via one optional subject; human publication is confirmed in the report. |
-| Source-local `review-artifact` | `tools/artifact-review/target/release/review-artifact`; [source](../tools/artifact-review/src/main.rs) | Harness-invoked browser feedback, local repair decisions, and editable inline PR publication. |
+| Source-local `review-artifact` | `tools/artifact-review/target/release/review-artifact`; [source](../tools/artifact-review/src/main.rs) | Bundled-Pele SVG authoring, browser feedback, local repair decisions, and editable inline PR publication. |
 | Source-local `consult` | `tools/evaluation/target/release/consult`; [source](../tools/evaluation/src/consult_main.rs) | Harness-invoked specialist advice, including before a change exists. |
 
 WT and WL retain their existing alias pairs and targets listed below.

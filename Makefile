@@ -1,7 +1,7 @@
 # Ordinary Claude and Pi resources. Installing into a real home is an explicit,
 # separate ./install.sh invocation; this Makefile never retargets the live installation.
 .DEFAULT_GOAL := help
-.PHONY: help build test lint test-package test-worktree test-worklog test-artifact test-evaluation test-browser build-evaluation-debug build-artifact-debug build-guard-parser build-guard-bundle build-language-servers
+.PHONY: help build test lint test-package test-worktree test-worklog test-artifact test-evaluation test-browser build-evaluation-debug build-artifact-debug build-guard-parser build-guard-bundle build-language-servers build-pele
 # Keep suites serial even with make -j; common build prerequisites run once.
 # Ordinary package files, installers, WT parity, and native runtime groups use bounded workers.
 .NOTPARALLEL:
@@ -22,7 +22,7 @@ $(error INSTALL_TEST_JOBS must be 1 or 2)
 endif
 
 help:
-	@printf 'build  Bundle Pi adapters and build four Rust tools (locked dependencies; network allowed).\n'
+	@printf 'build  Bundle Pi adapters and Pele; build four Rust tools (locked dependencies; network allowed).\n'
 	@printf 'test   Run the native package, review, worktree, worklog, and artifact tests.\n'
 	@printf 'lint   Check install.sh and Rust formatting and lints.\n'
 	@printf 'Focused: test-package, test-worktree, test-worklog, test-artifact, test-evaluation, test-browser.\n'
@@ -42,7 +42,10 @@ build-language-servers: build-guard-parser
 	bun tools/build-language-servers.mjs
 	bun build harnesses/pi/lsp.ts --target node --format esm --external @earendil-works/pi-coding-agent --external typebox --outfile harnesses/pi/lsp.bundle.ts
 
-build: build-guard-bundle build-language-servers
+build-pele: build-guard-parser
+	bun tools/build-pele.mjs
+
+build: build-guard-bundle build-language-servers build-pele
 	bun tools/build-status-footer.mjs
 	bun build harnesses/pi/worktree.ts --target node --format esm --external @earendil-works/pi-coding-agent --external @sinclair/typebox --outfile harnesses/pi/worktree.bundle.ts
 	bun build harnesses/pi/review-feedback.ts --target node --format esm --external @earendil-works/pi-coding-agent --outfile harnesses/pi/review-feedback.bundle.ts
@@ -57,7 +60,7 @@ build-evaluation-debug:
 	cargo build --locked --manifest-path tools/evaluation/Cargo.toml
 	cargo build --locked --manifest-path tools/evaluation/Cargo.toml --example reviewer-fixture
 
-build-artifact-debug:
+build-artifact-debug: build-pele
 	cargo build --locked --manifest-path tools/artifact-review/Cargo.toml
 
 test-package: build build-evaluation-debug
@@ -75,7 +78,7 @@ test-worktree:
 test-worklog:
 	cargo test --locked --manifest-path tools/worklog/Cargo.toml
 
-test-artifact:
+test-artifact: build-pele
 	cargo test --locked --manifest-path tools/artifact-review/Cargo.toml
 
 test-evaluation: build build-evaluation-debug
@@ -84,7 +87,7 @@ test-evaluation: build build-evaluation-debug
 test-browser: build-guard-bundle build-evaluation-debug build-artifact-debug
 	node --test --test-concurrency=1 tools/artifact-review/tests/integration.mjs
 
-lint:
+lint: build-pele
 	bun tools/build-language-servers.mjs --check
 	shellcheck install.sh
 	$(MAKE) -C tools/worktree lint

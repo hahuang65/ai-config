@@ -71,7 +71,9 @@ test("repository edits use a task worktree by default with a narrow direct-check
 test("visualize uses review-compatible diagrams when requesting a browser decision", () => {
   const instructions = readFileSync(join(directory, "visualize/SKILL.md"), "utf8");
   expect(instructions).toContain("pre-rendered inline SVG");
-  expect(instructions).toContain("Prefer Pele when it is available");
+  expect(instructions).toContain("bundled Pele");
+  expect(instructions).toContain("render-diagram");
+  expect(instructions).toContain("../../tools/artifact-review/target/release/review-artifact");
   expect(instructions).toContain("document JavaScript remains disabled");
   expect(instructions).toContain("aria-label");
   expect(instructions).toContain("review-artifact");

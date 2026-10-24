@@ -1,16 +1,19 @@
 # Artifact review
 
 A standalone Rust executable for browser review of one local HTML file.
-The runtime does not import the original review runtime, Node.js, or Pi.
+The browser-review runtime does not import the original review runtime, Node.js, or Pi.
+The separate authoring command `render-diagram` uses Node to run its embedded Pele engine before review.
 The executable is named `review-artifact` and remains inside this package's build directory.
 It has no installed shell PATH alias; harness skills resolve it from their absolute configuration source.
 
 ## Build and commands
 
-Use the mise-managed Rust 1.99 toolchain.
+Use the configured Rust, Bun, and Node toolchain.
+`make build-artifact-debug` restores frozen library dependencies, bundles Pele, and builds the debug helper.
+For a direct Cargo build, run `make build-pele` first.
 
 ```sh
-cargo build --manifest-path tools/artifact-review/Cargo.toml --locked
+make build-artifact-debug
 ./tools/artifact-review/target/debug/review-artifact --help
 ./tools/artifact-review/target/debug/review-artifact open /absolute/document.html
 ./tools/artifact-review/target/debug/review-artifact wait /absolute/document.html --cursor 0
@@ -26,7 +29,8 @@ Opening a closed review appends a new review event, without deleting earlier fee
 If a server crashes, `open` restarts it with a new capability and retains events.
 Use `open` without `--no-browser` to open the new browser connection.
 
-Each command returns one JSON object on standard output.
+Review and feedback commands return one JSON object on standard output.
+`render-diagram` instead writes the complete SVG directly to stdout.
 Errors go to standard error without capabilities or artifact contents.
 Exit status 0 means command success, 1 means an operational failure, and 2 means invalid arguments.
 A successful command does not itself mean approval.
@@ -61,6 +65,13 @@ Ordinary agent-launched reviews instead return control and use native background
 A reply requires a caller-generated stable ID of 16–80 letters, digits, or hyphens.
 Retry an interrupted reply with the same ID and content.
 Reusing an ID for different content is rejected.
+
+## Bundled diagram authoring
+
+Use `render-diagram FILE --id-prefix UNIQUE` to generate SVG with the embedded, pinned Pele engine and the configured Node.
+This authoring command needs no global Pele installation or runtime package download and never starts a review.
+Embed its output in the HTML before `open`; the review document still cannot execute JavaScript.
+See [diagram authoring](diagrams.md) for examples, layout options, input/output bounds, and runtime limits.
 
 ## Background feedback
 
