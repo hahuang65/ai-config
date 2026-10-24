@@ -8,7 +8,8 @@ This document completes the wider inventory requested by task #158; it does not 
 ## Evidence and authority
 
 Inspected source: `cb683c00089ca721348362f66fb68fe73fc1669d`, on 2026-10-19.
-The tables describe that source and its verification suites, not a fresh audit of installed links or effective live settings.
+The tables describe source and its verification suites, not a fresh audit of installed links or effective live settings.
+The clarification entries reflect the subsequent [question-tool change](clarification.md), checked against Pi 1.3.0.
 The earlier tool inventories retain explicitly dated pre-pruning observations; their historical executable names are not current entry points.
 Pi's installed 1.3.0 extension, configuration, settings, skills, prompt, theme, SDK, and TUI documentation was also consulted.
 The native WT contract records its original Pi 1.1.0 and Claude 2.1.296 API checks; this inventory does not claim a new live Claude smoke test.
@@ -26,11 +27,12 @@ The [context glossary](../CONTEXT.md) distinguishes a harness, Tool, agent-facin
 | Instructions | Same small bootstrap and on-demand rules, resolved beside its absolute symlink target. | `~/.claude/CLAUDE.md`; Claude-only shell guidance. | `~/.pi/agent/AGENTS.md`; host discovers directory context files. |
 | Ordinary discovery | Retain normal personal/project discovery and trust behavior; owned resources must not link into the sibling module. | Native commands, skills, agents, plugins, and project context. | Native skills, templates, extensions, themes, and context; project trust is host-owned. |
 | Workflow invocation | Same intent and authorization boundaries, not identical slash syntax. | Native skill discovery/invocation; commands for compositions. | Automatic skill matching or `/skill:NAME`; `/deliver` and `/rebase` templates. |
-| Model tools | Native read/edit/write/shell operations subject to guards; inventory conditional tools honestly. | Native tool identifiers and permission system. | Native lower-case identifiers; package adds `worktree_transition` and `lsp`. |
+| Model tools | Native read/edit/write/shell operations subject to guards; inventory conditional tools honestly. | Native tool identifiers and permission system. | Native lower-case identifiers; package adds `worktree_transition`, `lsp`, and `ask_user_question`. |
 | Enforcement | Same registry and detection core with native refusal semantics. | Tier B command hook plus static permissions. | Tier A in-process `tool_call` handler; bundled dependencies. |
 | Task conversations | New carries, existing resumes, verified destination tools/context before edits. | `EnterWorktree`, keep-only `ExitWorktree`, WT hooks, native `/resume`. | Interactive `/wt` command uses `switchSession` and fresh context; model tool only prepares it. |
 | Continuation | Exactly one destination turn after verified automatic transitions; no new authority. | Post-tool `additionalContext`; interactive `/resume` needs a manual `continue`. | Fresh-context `sendUserMessage`, no duplicate scheduling; print/RPC transitions unsupported. |
 | Language servers | One catalogue, explicit provisioning, read-only client surface, explicit errors and trust limits. | Native `LSP` client with generated plugin. | Package stdio client, lazy query startup, disk synchronization, bounded transport. |
+| Clarification | Requirements and preferences, never a replacement approval gate. | Native `AskUserQuestion` explicitly allowed; independent denials remain effective. | Model-only `ask_user_question`, native TUI/RPC select/input, explicit cancellation/unavailability, ordinary-chat fallback. [Contract](clarification.md). |
 | Presentation | Catppuccin Mocha; two-row location/session and usage display without memory services. | Command status line; model/thinking right-aligned on row one. | TUI-only footer; model/thinking right-aligned on row two. |
 | Specialist roles | Same trusted role intent; optional advice is not change-review evidence. | Native `Agent` can discover role files with read-only frontmatter. | Role files alone do not supply an ordinary subagent tool. |
 | Restricted review | Explicit caller-matching engine, frozen source evidence, read-only tools, no automatic engine fallback. | Independent safe/restricted subprocess, only `Read`, strict empty MCP config. | Ephemeral profile, ordinary discovery disabled, explicit snapshot-only reader and shared guard. |
@@ -61,6 +63,7 @@ The same source supplies both harnesses wherever two routes are listed.
 | [Pi WT bundle](../harnesses/pi/worktree.bundle.ts) | `.pi/agent/extensions/worktree.ts`; authored in [worktree.ts](../harnesses/pi/worktree.ts). |
 | [Pi footer bundle](../harnesses/pi/status-footer.bundle.ts) | `.pi/agent/extensions/status-footer.ts`; authored in [status-footer.ts](../harnesses/pi/status-footer.ts). |
 | [Pi LSP bundle](../harnesses/pi/lsp.bundle.ts) | `.pi/agent/extensions/lsp.ts`; authored in [lsp.ts](../harnesses/pi/lsp.ts) and its [client modules](../harnesses/pi/lsp). |
+| [Pi clarification bundle](../harnesses/pi/ask-user-question.bundle.ts) | `.pi/agent/extensions/ask-user-question.ts`; authored in [ask-user-question.ts](../harnesses/pi/ask-user-question.ts). |
 | [Pi theme](../harnesses/pi/themes/catppuccin-mocha.json) | `.pi/agent/themes/catppuccin-mocha.json`; same palette intent, different schema. |
 | [Deliver](../commands/deliver.md) | `.claude/commands/deliver.md`, `.pi/agent/prompts/deliver.md`. |
 | [Rebase](../commands/rebase.md) | `.claude/commands/rebase.md`, `.pi/agent/prompts/rebase.md`. |
@@ -130,7 +133,7 @@ The exact permission patterns remain in the [manifest](../manifest.json) and [pe
 | `.claude/settings.json` | `env.CLAUDE_CODE_PLUGIN_DIRS` | `~/.claude/plugins/ai-local-lsp`; shared catalogue projection. |
 | `.claude/settings.json` | `permissions.deny` | Entries cover destructive/cloud/deploy/shell writes, Git push/publish, credentials, and selected host features; native restrictions can exceed shared guards. |
 | `.claude/settings.json` | `permissions.ask` | Git clean and environment/key-file access patterns; an ask rule never overrides a shared refusal. |
-| `.claude/settings.json` | `permissions.allow` | Declared context/ADR/feature reads, edits, Git message read; not user authorization for unrelated edits. |
+| `.claude/settings.json` | `permissions.allow` | Declared context/ADR/feature reads, edits, Git message read, and native `AskUserQuestion`; not action authorization or artifact approval. |
 | `.claude/settings.json` | `permissions.additionalDirectories` | `~/.claude`, `~/.config`, `~/.dotfiles`, `~/Projects/a5`, `/tmp`; access scope is not action approval. |
 | `.pi/agent/settings.json` | `theme` | `catppuccin-mocha`; no package-owned model, auth, tool-selection, MCP, or trust settings. |
 
@@ -248,6 +251,7 @@ These suite references identify checks to run, not a claim that every future env
 | WT protocol and hooks | `tools/worktree/tests/cli.rs`, bounded Rust/Python parity, `test/package-worktree-client.test.ts`, `test/package-claude-worktree.test.ts` | Actual model continuation from a hook notification alone. |
 | Native task runtime | `test/package-worktree.test.ts`, `test/package-claude-worktree-runtime.test.ts` | Automatic Claude interactive `/resume`; native interactive `/branch` and `/resume` still require human smoke checks. |
 | Status and theme | `test/package-claude-statusline.test.ts`, `test/package-pi-footer.test.ts`, discovery and manifest tests | Identical host billing, native badge placement, or every terminal's rendering. |
+| Clarification | `test/package-pi-questions.test.ts`, `test/package-install-pi-questions.test.ts`, Claude installer questions, discovery and shared-skill tests | Live tool availability, real keyboard/RPC rendering, human presence, or action authorization. |
 | Language catalogue and clients | `test/package-claude-lsp.test.ts`, `test/package-pi-lsp.test.ts`, `test/package-pi-lsp-transport.test.ts`, native discovery | Provisioned real servers, identical diagnostics, or Windows process-tree cleanup. |
 | Restricted review and diagnostics | `test/reviewer-runtime.test.ts`, `test/package-claude-reviewer.test.ts`, `tools/evaluation/tests/runners.rs`, `tools/evaluation/tests/change.rs` | Reviewer execution of project checks or automatic clean results after a runner failure. |
 | Artifact decisions, feedback and publication | `tools/artifact-review/tests`, `tools/evaluation/tests/feedback_response.rs`, native feedback runtime tests, serial bounded browser suite | Same-user tamper resistance, automatic publication authority, closed-client wake-up, or live-provider eligibility. |

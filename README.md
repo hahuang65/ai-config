@@ -24,7 +24,11 @@ The installed package provides:
 - Claude's feature-disable settings and a [shared language-server catalogue](docs/language-servers.md) for Python, Ruby, Lua, Go, Shell, Terraform, TypeScript/JavaScript, and Rust.
   Claude consumes a generated language-server-only plugin; Pi provides an on-demand `lsp` tool for navigation and diagnostics.
   Server tools are declared in `mise.toml` and provisioned explicitly, never by the harness adapters.
+- An owned Pi `ask_user_question` tool for one choice or free-text clarification, using native TUI/RPC dialogs and explicit cancellation/unavailability.
+  Shared skills use it only when useful and fall back to ordinary chat; see [clarification contracts and limits](docs/clarification.md).
 - Explicit `/deliver` and `/rebase` commands in both harnesses; `/resolve-conflicts` is the shared skill for a rebase already in progress.
+- An explicit allowance for Claude's native `AskUserQuestion` to clarify requirements and preferences, without changing artifact review or action-authorization boundaries.
+  An approved installation removes its formerly owned denial; independently configured personal, project, or managed deny rules remain effective.
 - Curated shared skills under `skills/`; the optional `review-change` skill selects the current harness's independently restricted reviewer.
 - The evaluation's specialist roles: API designer, change reviewer, database reviewer, fact checker, and frontend architect.
 - Public `wt`/`worktree`, `wl`/`worklog`, and `review-change` symlinks, plus source-local `review-artifact` and `consult` helpers resolved by their consumers without PATH aliases.
@@ -106,7 +110,7 @@ make lint
 make test
 ```
 
-`make build` creates the Pi guard, status-footer, worktree, and LSP bundles, the shared catalogue's Claude plugin projection, and Rust release binaries; it **does not provision tools or install harness resources**.
+`make build` creates the Pi guard, status-footer, worktree, LSP, and clarification bundles, the shared catalogue's Claude plugin projection, and Rust release binaries; it **does not provision tools or install harness resources**.
 Cargo build, test, and lint commands retain `--locked` but may fetch missing dependencies from the network.
 The guard-parser build likewise restores frozen Bun library dependencies with lifecycle scripts disabled and regenerates the local WASM/runtime/license assets in `guard/vendor/`.
 The Pele build bundles its pinned library and license into the artifact helper; only the explicit authoring command starts Node, never the review server.

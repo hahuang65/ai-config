@@ -10,6 +10,9 @@ No mandatory artifact or specialist agent is needed.
 Read the relevant current sources, tests, context, and project rules.
 Agree on scope and acceptance criteria, then propose the public interface to test and wait for the user's confirmation.
 Do not force work through a new document or every application layer.
+Use an available structured-question tool only for actual intent blockers, not routine checkpoints.
+Offer trade-offs and free text, or use ordinary chat when the tool is absent or unavailable.
+Cancellation is not an answer, and clarification answers do not transfer implementation ownership or grant action authority.
 Record the starting revision and prior edits so review accounts for both committed and uncommitted task changes without absorbing unrelated work.
 
 The user owns implementation, refactoring, and source changes throughout coaching.

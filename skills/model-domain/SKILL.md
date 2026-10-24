@@ -17,6 +17,9 @@ Use the project's documented language consistently in conversation, tests, and c
 - Record agreed domain knowledge and significant architecture choices as they become clear.
   Follow the documentation rule for context-file navigation, record contents, and decision criteria; preserve the history of superseded decisions.
 
+Use an available structured-question tool to settle ambiguous terms or intent, with alternatives and their trade-offs.
+Use ordinary chat when the tool is absent or unavailable.
+Cancellation leaves the question unresolved.
 Do not invent decisions or present unresolved proposals as agreed facts.
 Create files only when there is useful content to record.
 When another skill calls this one, apply the modeling discipline within its current conversation.

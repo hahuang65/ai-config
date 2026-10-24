@@ -124,13 +124,15 @@ fn production_manifest_is_relocatable_and_covers_both_complete_harness_catalogue
 }
 
 #[test]
-fn production_manifest_retains_captured_claude_denials_and_confirmation_rules() {
+fn production_manifest_retains_other_captured_claude_denials_and_allows_questions() {
     let package = relocated_package();
     let manifest = catalogue_manifest(&package.path().canonicalize().unwrap()).unwrap();
     let legacy = package_fixture::legacy_claude_settings();
     for group in ["deny", "ask", "additionalDirectories"] {
         for value in legacy["permissions"][group].as_array().unwrap() {
-            if group == "additionalDirectories" && value == "~/.orchard" {
+            if (group == "additionalDirectories" && value == "~/.orchard")
+                || (group == "deny" && value == "AskUserQuestion")
+            {
                 continue;
             }
             assert!(
@@ -144,7 +146,11 @@ fn production_manifest_retains_captured_claude_denials_and_confirmation_rules() 
             );
         }
     }
+    assert!(!manifest.settings.iter().any(|claim| {
+        claim.path == ["permissions", "deny"] && claim.value == "AskUserQuestion"
+    }));
     for rule in [
+        "AskUserQuestion",
         "Read(CONTEXT.md)",
         "Edit(CONTEXT.md)",
         "Read(docs/adr/**)",

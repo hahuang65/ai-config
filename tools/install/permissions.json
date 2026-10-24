@@ -10,7 +10,7 @@
     "Bash(terraform apply)", "Bash(terraform apply *)", "Bash(terraform destroy *)",
     "Read(**/.aws/credentials)", "Read(**/credentials*)", "Read(*.secrets.*)",
     "EnterPlanMode", "ExitPlanMode", "DesignSync", "NotebookEdit", "SendMessage", "PushNotification",
-    "RemoteTrigger", "ReportFindings", "ScheduleWakeup", "AskUserQuestion", "CronCreate", "CronDelete", "CronList"
+    "RemoteTrigger", "ReportFindings", "ScheduleWakeup", "CronCreate", "CronDelete", "CronList"
   ],
   "ask": [
     "Bash(git clean *)", "Read(*.env)", "Read(*.env.*)", "Bash(cat *.env*)", "Bash(head *.env*)",
@@ -18,5 +18,5 @@
     "Bash(head *.pem*)", "Bash(tail *.pem*)", "Bash(cat *.key*)", "Bash(head *.key*)", "Bash(tail *.key*)"
   ],
   "additionalDirectories": ["~/.claude", "~/.config", "~/.dotfiles", "~/Projects/a5", "/tmp"],
-  "allow": ["Read(CONTEXT.md)", "Edit(CONTEXT.md)", "Read(docs/adr/**)", "Read(docs/features/**)", "Edit(**)", "Read(~/.gitmessage)"]
+  "allow": ["AskUserQuestion", "Read(CONTEXT.md)", "Edit(CONTEXT.md)", "Read(docs/adr/**)", "Read(docs/features/**)", "Edit(**)", "Read(~/.gitmessage)"]
 }

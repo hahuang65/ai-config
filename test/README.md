@@ -65,6 +65,11 @@ Restricted-reviewer offline settings and synthetic-provider boundaries remain un
   Change-review rendering and runner-diagnostic fixtures use independent uninstalled homes; representative regressions reject accidental installation before and after their review behavior.
   No installed-home or successful-test cache is used.
   Both native harness discovery checks retain the real shell fixture, without skipping when an obsolete binary is absent.
+- `package-pi-questions.test.ts` loads the manifest-linked clarification bundle with the installed Node/Pi loader and controlled native TUI/RPC dialog responses.
+  It checks source-to-bundle parity, bounded schemas, choice and free-text answers, cancellation/abort, hidden headless behavior, private UI failures, invalid responses, and terminal-control neutralization.
+  `package-install-pi-questions.test.ts` checks recorded resource upgrades, personal-settings/extension preservation, and refusal to adopt an unowned matching bundle.
+  Shared-skill tests check useful clarification guidance without extra approval gates or coaching takeover.
+  These checks do not establish live installation, actual keyboard interaction, or RPC client transport/rendering.
 - `package-tool-inventory.test.ts` checks catalogue coverage for manifest CLI aliases, the current Rust executable source layout, literal Pi tool registrations, and bare Claude tool denials.
   It does not contact MCP servers or assert that a documented host tool is active in every session.
 - `package-harness-contracts.test.ts` checks every manifest resource destination-to-source mapping, settings destination/path, the complete registry policy matrix, and local source-reference links.
@@ -83,6 +88,7 @@ Restricted-reviewer offline settings and synthetic-provider boundaries remain un
   `package-install-completions.test.ts` checks owned completion entries, independent alias loading, upgrades, source switches, idempotency, and unowned-file refusal without startup-file edits.
   Its optional system-loader case exercises actual lazy discovery when `bash-completion` is already available; no completion package is provisioned.
   Installer rollback cases also inject failures at both completion destinations.
+  `package-install-questions.test.ts` checks the explicit Claude `AskUserQuestion` allowance, removal of its recorded old denial during upgrade, and preservation of unrelated permissions and unowned personal denials.
 - The original Python worktree CLI's reference-only tests are not part of the replacement gate; the parity runner executes their applicable cases against the Rust CLI.
 - `tools/artifact-review/tests/` checks local review storage, revision-bound per-finding repair decisions through the Rust CLI, and the bounded Firefox integration after an explicit debug CLI build.
   Its real change-report case covers Accept/Reject, annotations, retry after response loss and reload, and preservation of the retained HTML; ordinary artifact approval keeps its existing coverage.

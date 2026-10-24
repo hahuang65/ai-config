@@ -11,6 +11,9 @@ Read relevant current code, tests, context, project rules, and any supplied desi
 Establish the allowed scope, acceptance criteria, public interface, and project checks.
 Record the starting revision and prior edits so final review covers the task's committed and uncommitted work without absorbing unrelated changes.
 Ask about intent-sensitive choices; do not require a new planning document when the request is already clear.
+Use an available structured-question tool only for actual intent blockers, not routine checkpoints.
+Offer trade-offs and free text, or use ordinary chat when the tool is absent or unavailable.
+Cancellation is not an answer, and clarification does not grant commit, installation, delivery, or publication authority.
 Use [model-domain](../model-domain/SKILL.md) only when domain ambiguity or a durable decision needs resolution.
 
 ## Implement

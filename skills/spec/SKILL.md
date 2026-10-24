@@ -9,6 +9,9 @@ Use a spec when a written description will help; small changes do not require on
 Read the relevant local context files, ADRs, and code.
 Suggest grilling, a mockup, or specialist consultation when it would resolve important uncertainty, but do not require these for every spec.
 Ask targeted questions when essential intent is missing.
+Use an available structured-question tool for requirements choices, with trade-offs, a recommendation, and a free-text alternative.
+Use ordinary chat when the tool is absent or unavailable.
+These answers are clarification, not whole-document approval.
 Use [model-domain](../model-domain/SKILL.md) if the discussion exposes a domain ambiguity or significant architecture choice.
 
 Write one semantic HTML file using the project's artifact convention, otherwise `docs/features/<feature-name>/spec.html`.

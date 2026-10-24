@@ -8,6 +8,9 @@ description: Turn a clear request, issue, spec, or existing plan into small veri
 Start from a clear request, issue, spec, or existing plan and the current code and context.
 No spec or fixed sequence of design steps is required.
 Resolve missing intent before turning an assumption into a task.
+Use an available structured-question tool for requirements choices, with trade-offs, a recommendation, and a free-text alternative.
+Use ordinary chat when the tool is absent or unavailable.
+A clarification answer does not approve the plan or authorize implementation.
 Use [model-domain](../model-domain/SKILL.md) when shared terms or durable architecture decisions need clarification.
 
 Choose the smallest useful planning format.

@@ -3,6 +3,7 @@
 Companion to the [package tool inventory](tool-inventory.md).
 Most entries retain the pre-pruning harness baseline; see that document's approved-replacement section for the implementation now in progress.
 The Pi LSP row and language-server section describe the subsequent shared-catalogue source change, not a verified live installation.
+The clarification rows reflect the current package source, checked against Pi 1.3.0, not a live installation or Claude tool declaration.
 This records tool identity, purpose, source, invocation, and configuration status—not a cross-harness parity specification.
 The current [harness contracts catalogue](harness-contracts.md) adds resources, settings, lifecycle, workflows, safety boundaries, conformance evidence, and a new-harness checklist without replacing this dated tool evidence.
 A **Tool** below is a named model-callable operation; the model invokes its runtime-defined arguments, not a shell command with the same spelling.
@@ -23,7 +24,7 @@ Dynamic remote MCP tool names and effective tool sets in other projects remain u
 ## Pi
 
 All ordinary built-ins in this table are upstream Pi code, not reimplementations in ai-config.
-The package adds the separate WT and LSP rows below.
+The package adds the separate WT, LSP, and clarification rows below.
 Local Pi settings contained no `defaultTools`, extra `packages`, or `extensions` selection; there was no user `mcp.json` or project `.pi/mcp.json` in this checkout.
 The actual declarations in this inventory conversation were `read`, `bash`, `edit`, `write`, and `worktree_transition`, plus the call wrapper described below.
 
@@ -43,10 +44,12 @@ The actual declarations in this inventory conversation were `read`, `bash`, `edi
 | `list_mcp_resources`, `list_mcp_resource_templates`, `read_mcp_resource` | Discover and read resources from connected MCP servers. | Conditional upstream MCP tools, absent here; `docs/mcp.md`. |
 | `worktree_transition` with `action` and optional `task` | Prepare the privileged native session transition that a shell `cd` cannot perform. | Package-owned, active; [harnesses/pi/worktree.ts](../harnesses/pi/worktree.ts), installed as its bundle. Actions: `new`, `enter`, `leave`, `clean`; a human submits the prepared `/wt` command before transition. |
 | `lsp` with `operation`, `path`, and optional position | Query hover, definitions, references, symbols, or diagnostics from an on-demand language server. | Package-owned [harnesses/pi/lsp.ts](../harnesses/pi/lsp.ts), installed as a bundle; [shared catalogue and limits](language-servers.md). Not active in the original inventory session. |
+| `ask_user_question` with `question` and optional `options` | Clarify one requirements or preference decision with trade-offs and a free-text alternative. | Package-owned [harnesses/pi/ask-user-question.ts](../harnesses/pi/ask-user-question.ts), installed as a bundle; native TUI/RPC dialogs, model-only, hidden without UI. [Results and approval limits](clarification.md). Not active in the original inventory session. |
 | `multi_tool_use.parallel` | Submit independent calls together through the session's execution wrapper. | Present in this conversation's tool interface, not registered by this package or an installed CLI. Do not mistake it for a second package orchestration implementation. |
 
 Pi's [extension contract](https://github.com/earendil-works/pi/blob/main/packages/coding-agent/docs/extensions.md) distinguishes a model tool (`registerTool`) from a slash command (`registerCommand`).
-The WT extension registers one model tool and one `/wt` command, not two interchangeable tools; the LSP extension adds a separate model tool.
+The WT extension registers one model tool and one `/wt` command, not two interchangeable tools.
+The LSP and clarification extensions each add a separate model tool.
 Guard and status-footer extensions register no tools.
 The [review-feedback extension](../harnesses/pi/review-feedback.ts) also registers no model tool.
 Its `/review-feedback` command resumes saved feedback after interruption; background native messages use the existing conversation and shared Rust queue.
@@ -82,7 +85,7 @@ No runtime availability is inferred merely because a name appears in a deny rule
 | `WaitForMcpServers` | Wait for still-connecting servers. | Conditional when tool search is disabled; not an MCP server itself. |
 | `ListMcpResourcesTool`, `ReadMcpResourceTool` | Discover/read external MCP resources. | Conditional on server configuration and connection. |
 | `mcp__SERVER__TOOL` | Invoke a server-defined operation. | Independently configured; concrete names and connection status not verified in this inventory. |
-| `AskUserQuestion` | Present structured choices. | Explicitly denied; shared workflows use conversation or artifact feedback instead. |
+| `AskUserQuestion` | Present structured choices for clarifying requirements and preferences. | Explicitly allowed by the package; independent deny rules can still block it. This does not replace revision-bound artifact approval, finding decisions, or publication confirmation. |
 | `EnterPlanMode`, `ExitPlanMode` | Enter a host planning mode and present its approval boundary. | Explicitly denied; do not confuse these with the shared `plan` skill. |
 | `NotebookEdit` | Modify notebook cells as structured data. | Explicitly denied. |
 | `SendMessage` | Message another agent or session. | Explicitly denied. |

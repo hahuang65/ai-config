@@ -81,6 +81,8 @@ pub fn populate(root: &Path) {
         "language-servers.json",
         "harnesses/pi/lsp.ts",
         "harnesses/pi/lsp.bundle.ts",
+        "harnesses/pi/ask-user-question.ts",
+        "harnesses/pi/ask-user-question.bundle.ts",
         "harnesses/pi/lsp/client.ts",
         "harnesses/pi/lsp/documents.ts",
         "harnesses/pi/lsp/transport.ts",
@@ -187,6 +189,7 @@ pub fn manifest(root: &Path) {
         {"destination": ".pi/agent/extensions/guard-policies.ts", "target": "harnesses/pi/guard-policies.bundle.ts"},
         {"destination": ".pi/agent/extensions/status-footer.ts", "target": "harnesses/pi/status-footer.bundle.ts"},
         {"destination": ".pi/agent/extensions/lsp.ts", "target": "harnesses/pi/lsp.bundle.ts"},
+        {"destination": ".pi/agent/extensions/ask-user-question.ts", "target": "harnesses/pi/ask-user-question.bundle.ts"},
         {"destination": ".pi/agent/themes/catppuccin-mocha.json", "target": "harnesses/pi/themes/catppuccin-mocha.json"},
         {"destination": ".claude/commands/deliver.md", "target": "commands/deliver.md"},
         {"destination": ".claude/commands/rebase.md", "target": "commands/rebase.md"},
@@ -260,7 +263,9 @@ pub fn manifest(root: &Path) {
     let defaults = legacy_claude_settings();
     for group in ["deny", "ask", "additionalDirectories"] {
         for entry in defaults["permissions"][group].as_array().unwrap() {
-            if group == "additionalDirectories" && entry == "~/.orchard" {
+            if (group == "additionalDirectories" && entry == "~/.orchard")
+                || (group == "deny" && entry == "AskUserQuestion")
+            {
                 continue;
             }
             settings.push(
@@ -270,6 +275,7 @@ pub fn manifest(root: &Path) {
         }
     }
     for value in [
+        "AskUserQuestion",
         "Read(CONTEXT.md)",
         "Edit(CONTEXT.md)",
         "Read(docs/adr/**)",

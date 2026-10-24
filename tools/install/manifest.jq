@@ -72,6 +72,7 @@ def bootstrap: {
   ".pi/agent/extensions/guard-policies.ts": "harnesses/pi/guard-policies.bundle.ts",
   ".pi/agent/extensions/status-footer.ts": "harnesses/pi/status-footer.bundle.ts",
   ".pi/agent/extensions/lsp.ts": "harnesses/pi/lsp.bundle.ts",
+  ".pi/agent/extensions/ask-user-question.ts": "harnesses/pi/ask-user-question.bundle.ts",
   ".pi/agent/themes/catppuccin-mocha.json": "harnesses/pi/themes/catppuccin-mocha.json",
   ".claude/plugins/ai-local-lsp": "harnesses/claude/plugins/ai-local-lsp"};
 # Explicit construction avoids any catalogue dependency on a mutable manifest.
@@ -87,6 +88,7 @@ def catalogue:
 def support_files: [
   "harnesses/worktree-client.ts", "docs/worktree-transitions.md", "harnesses/pi/worktree.ts",
   "harnesses/review-feedback-client.ts", "harnesses/pi/review-feedback.ts",
+  "harnesses/pi/ask-user-question.ts",
   "language-servers.json", "harnesses/pi/lsp.ts", "harnesses/pi/lsp/client.ts",
   "harnesses/pi/lsp/documents.ts", "harnesses/pi/lsp/transport.ts", "harnesses/pi/lsp/diagnostics.ts",
   "harnesses/pi/review-scope.ts", "reviewer.md", "harnesses/pi/guard-policies.ts", "harnesses/pi/status-footer.ts",

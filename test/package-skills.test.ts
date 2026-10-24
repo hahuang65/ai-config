@@ -34,6 +34,19 @@ test("shared skills and advisory rules do not name particular harnesses", () => 
   }
 });
 
+test("clarification guidance uses available structured questions without adding approval gates", () => {
+  for (const skill of ["grill", "model-domain", "plan", "spec", "code", "coach"]) {
+    const text = readFileSync(join(directory, skill, "SKILL.md"), "utf8");
+    expect(text).toContain("structured-question tool");
+    expect(text).toContain("ordinary chat");
+  }
+  for (const skill of ["code", "coach"]) {
+    expect(readFileSync(join(directory, skill, "SKILL.md"), "utf8")).toContain("not routine checkpoints");
+  }
+  expect(readFileSync(join(directory, "coach/SKILL.md"), "utf8")).toContain("do not transfer implementation ownership");
+  expect(readFileSync(join(directory, "spec/SKILL.md"), "utf8")).toContain("not whole-document approval");
+});
+
 test("repository edits use a task worktree by default with a narrow direct-checkout exception", () => {
   const baseline = readFileSync(join(root, "baseline.md"), "utf8");
   expect(baseline).toContain("Before adding, editing, or removing repository files");
