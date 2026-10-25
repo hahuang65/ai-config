@@ -15,6 +15,8 @@ Inspect the current Git operation and recover both changes' intent from source e
 Preserve compatible intent; ask in chat for a decision when the intended behaviors conflict.
 Do not blindly select a side, invent behavior, or change unrelated work.
 
+For a multi-file resolution, use an optional session checklist through available native task-list tools or ordinary chat.
+Track only the authorized current rebase and its checks; the checklist cannot authorize a new operation or extra staging.
 Run the project's checks and continue only the verified active rebase.
 After it finishes, use [review-change](../review-change/SKILL.md) for the complete rebased task, including any remaining task edits.
 Review findings do not authorize automatic repairs.

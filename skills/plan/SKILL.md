@@ -16,6 +16,9 @@ Use [model-domain](../model-domain/SKILL.md) when shared terms or durable archit
 Choose the smallest useful planning format.
 A short ordered list in the conversation can be enough; HTML tasks are optional.
 Do not create an artifact just to satisfy a workflow.
+For substantial planning, an optional session checklist can show current progress through available native task-list tools or ordinary chat.
+Keep it short, recover existing progress, and do not duplicate an authoritative plan as a competing task model.
+A pending checklist step is not permission to start implementation or another reminder.
 
 For each task, describe:
 

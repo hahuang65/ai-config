@@ -12,6 +12,8 @@ Ask a small group of focused questions at a time, with a recommendation and its 
 Settle foundational choices before questions that depend on them.
 Use concrete scenarios to challenge assumptions and expose missing behavior.
 Do not keep interviewing once the important choices are clear enough to proceed.
+Use a session checklist only when an agreed investigation has several meaningful steps, not for every question.
+Prefer available native task-list tools, otherwise a concise list in ordinary chat; the list does not authorize implementation.
 Prefer an available structured-question tool for one decision at a time, with brief trade-offs and a free-text alternative.
 Use ordinary chat when the tool is absent or unavailable.
 Respect cancellation without assuming an answer or reopening the question automatically.

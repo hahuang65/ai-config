@@ -96,6 +96,8 @@ A child shell `cd`, printed path, or new subprocess does not move the current ha
   Preserve each artifact's scope-specific approval, not a new global approval gate or resurrected build pipeline.
 - [ ] Support useful requirements clarification through native question dialogs when available, otherwise ordinary chat.
   Preserve explicit cancellation/unavailability and the [clarification boundaries](clarification.md), never substitute question answers for artifact approval, action authorization, or coaching ownership.
+- [ ] Prefer native task-list tools for optional [session checklists](session-checklist.md), otherwise provide a small adapter or ordinary-chat fallback.
+  Keep progress separate from Worklog, approvals, and ownership; test current-branch replay, reload/resume/compaction, native task carry, and supported UI modes.
 - [ ] Expose explicit deliver/rebase compositions with their current authorization boundaries.
   Never turn delivery/rebase into implicit publication, provider review, push or unsafe cleanup.
 - [ ] Use WL's existing private store and project identity across worktrees; no native-task substitution, old-history import, automatic scheduling or store switch after an empty query.

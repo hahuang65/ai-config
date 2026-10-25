@@ -3,7 +3,7 @@
 Companion to the [package tool inventory](tool-inventory.md).
 Most entries retain the pre-pruning harness baseline; see that document's approved-replacement section for the implementation now in progress.
 The Pi LSP row and language-server section describe the subsequent shared-catalogue source change, not a verified live installation.
-The clarification rows reflect the current package source, checked against Pi 1.3.0, not a live installation or Claude tool declaration.
+The clarification and session-checklist rows reflect the current package source, checked against Pi 1.3.0, not a live installation or Claude tool declaration.
 This records tool identity, purpose, source, invocation, and configuration status—not a cross-harness parity specification.
 The current [harness contracts catalogue](harness-contracts.md) adds resources, settings, lifecycle, workflows, safety boundaries, conformance evidence, and a new-harness checklist without replacing this dated tool evidence.
 A **Tool** below is a named model-callable operation; the model invokes its runtime-defined arguments, not a shell command with the same spelling.
@@ -24,7 +24,7 @@ Dynamic remote MCP tool names and effective tool sets in other projects remain u
 ## Pi
 
 All ordinary built-ins in this table are upstream Pi code, not reimplementations in ai-config.
-The package adds the separate WT, LSP, and clarification rows below.
+The package adds the separate WT, LSP, clarification, and session-checklist rows below.
 Local Pi settings contained no `defaultTools`, extra `packages`, or `extensions` selection; there was no user `mcp.json` or project `.pi/mcp.json` in this checkout.
 The actual declarations in this inventory conversation were `read`, `bash`, `edit`, `write`, and `worktree_transition`, plus the call wrapper described below.
 
@@ -45,11 +45,13 @@ The actual declarations in this inventory conversation were `read`, `bash`, `edi
 | `worktree_transition` with `action` and optional `task` | Prepare the privileged native session transition that a shell `cd` cannot perform. | Package-owned, active; [harnesses/pi/worktree.ts](../harnesses/pi/worktree.ts), installed as its bundle. Actions: `new`, `enter`, `leave`, `clean`; a human submits the prepared `/wt` command before transition. |
 | `lsp` with `operation`, `path`, and optional position | Query hover, definitions, references, symbols, or diagnostics from an on-demand language server. | Package-owned [harnesses/pi/lsp.ts](../harnesses/pi/lsp.ts), installed as a bundle; [shared catalogue and limits](language-servers.md). Not active in the original inventory session. |
 | `ask_user_question` with `question` and optional `options` | Clarify one requirements or preference decision with trade-offs and a free-text alternative. | Package-owned [harnesses/pi/ask-user-question.ts](../harnesses/pi/ask-user-question.ts), installed as a bundle; native TUI/RPC dialogs, model-only, hidden without UI. [Results and approval limits](clarification.md). Not active in the original inventory session. |
+| `todo` with `action: read` or `write` | Read or replace the current task's short progress checklist, not cross-session Worklog reminders. | Package-owned [harnesses/pi/todo.ts](../harnesses/pi/todo.ts), installed as a bundle; model-only and sequential, with `/todos` and a compact TUI/plain-RPC widget. [State and authority limits](session-checklist.md). |
 | `multi_tool_use.parallel` | Submit independent calls together through the session's execution wrapper. | Present in this conversation's tool interface, not registered by this package or an installed CLI. Do not mistake it for a second package orchestration implementation. |
 
 Pi's [extension contract](https://github.com/earendil-works/pi/blob/main/packages/coding-agent/docs/extensions.md) distinguishes a model tool (`registerTool`) from a slash command (`registerCommand`).
 The WT extension registers one model tool and one `/wt` command, not two interchangeable tools.
 The LSP and clarification extensions each add a separate model tool.
+The session-checklist extension adds one model tool and a read-only `/todos` command.
 Guard and status-footer extensions register no tools.
 The [review-feedback extension](../harnesses/pi/review-feedback.ts) also registers no model tool.
 Its `/review-feedback` command resumes saved feedback after interruption; background native messages use the existing conversation and shared Rust queue.

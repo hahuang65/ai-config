@@ -26,6 +26,8 @@ The installed package provides:
   Server tools are declared in `mise.toml` and provisioned explicitly, never by the harness adapters.
 - An owned Pi `ask_user_question` tool for one choice or free-text clarification, using native TUI/RPC dialogs and explicit cancellation/unavailability.
   Shared skills use it only when useful and fall back to ordinary chat; see [clarification contracts and limits](docs/clarification.md).
+- A small Pi `todo` tool and `/todos` command for a branch-aware session checklist, with a compact editor panel and RPC/headless fallbacks.
+  It tracks the current task, not Worklog reminders or action authority; see [session checklist contracts](docs/session-checklist.md).
 - Explicit `/deliver` and `/rebase` commands in both harnesses; `/resolve-conflicts` is the shared skill for a rebase already in progress.
 - An explicit allowance for Claude's native `AskUserQuestion` to clarify requirements and preferences, without changing artifact review or action-authorization boundaries.
   An approved installation removes its formerly owned denial; independently configured personal, project, or managed deny rules remain effective.
@@ -110,7 +112,7 @@ make lint
 make test
 ```
 
-`make build` creates the Pi guard, status-footer, worktree, LSP, and clarification bundles, the shared catalogue's Claude plugin projection, and Rust release binaries; it **does not provision tools or install harness resources**.
+`make build` creates the Pi guard, status-footer, worktree, LSP, clarification, and checklist bundles, the shared catalogue's Claude plugin projection, and Rust release binaries; it **does not provision tools or install harness resources**.
 Cargo build, test, and lint commands retain `--locked` but may fetch missing dependencies from the network.
 The guard-parser build likewise restores frozen Bun library dependencies with lifecycle scripts disabled and regenerates the local WASM/runtime/license assets in `guard/vendor/`.
 The Pele build bundles its pinned library and license into the artifact helper; only the explicit authoring command starts Node, never the review server.

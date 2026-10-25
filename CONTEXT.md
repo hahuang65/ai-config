@@ -61,6 +61,11 @@ A durable explanation of a hard-to-reverse, surprising choice that resulted from
 Use local Architectural Decision Records under `docs/adr/`.
 A5 projects keep these records private.
 
+**Session checklist**:
+A short progress display for one authorized task on the current conversation branch.
+It is separate from Worklog reminders and history, not a backlog, scheduler, competing specification, or approval record.
+Pending steps grant no authority to start work, and completed steps are reported progress rather than proof of verification.
+
 **Review feedback**:
 Durable browser comments and decisions processed separately from the foreground conversation's current request.
 An agent-launched review routes feedback to its originating harness, saved conversation, and workspace.

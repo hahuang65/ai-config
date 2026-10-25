@@ -17,6 +17,9 @@ Record the starting revision and prior edits so review accounts for both committ
 
 The user owns implementation, refactoring, and source changes throughout coaching.
 The AI writes one test at a time and verifies when the user is ready.
+An optional session checklist tracks only the agreed current cycle and necessary checks, never speculative future tests.
+Use available native task-list tools or a concise list in ordinary chat, with at most one active step.
+Checklist state does not transfer implementation ownership, replace user readiness, or authorize file polling.
 
 ## One behavior at a time
 

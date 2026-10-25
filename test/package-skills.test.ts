@@ -47,6 +47,20 @@ test("clarification guidance uses available structured questions without adding 
   expect(readFileSync(join(directory, "spec/SKILL.md"), "utf8")).toContain("not whole-document approval");
 });
 
+test("shared workflows use session checklists as progress displays, not new authority or reminders", () => {
+  for (const skill of ["code", "coach", "plan", "grill", "spec", "model-domain", "resolve-conflicts"]) {
+    const text = readFileSync(join(directory, skill, "SKILL.md"), "utf8");
+    expect(text).toContain("session checklist");
+    expect(text).toContain("ordinary chat");
+  }
+  const code = readFileSync(join(directory, "code/SKILL.md"), "utf8");
+  expect(code).toContain("verified evidence");
+  expect(code).toContain("Worklog");
+  const coach = readFileSync(join(directory, "coach/SKILL.md"), "utf8");
+  expect(coach).toContain("only the agreed current cycle");
+  expect(coach).toContain("does not transfer implementation ownership");
+});
+
 test("repository edits use a task worktree by default with a narrow direct-checkout exception", () => {
   const baseline = readFileSync(join(root, "baseline.md"), "utf8");
   expect(baseline).toContain("Before adding, editing, or removing repository files");

@@ -70,6 +70,11 @@ Restricted-reviewer offline settings and synthetic-provider boundaries remain un
   `package-install-pi-questions.test.ts` checks recorded resource upgrades, personal-settings/extension preservation, and refusal to adopt an unowned matching bundle.
   Shared-skill tests check useful clarification guidance without extra approval gates or coaching takeover.
   These checks do not establish live installation, actual keyboard interaction, or RPC client transport/rendering.
+- `package-pi-checklist.test.ts` uses native Pi tool wrapping, disposable session managers, and a bounded synthetic provider to check the owned current-task checklist.
+  It covers typed bounded replacements, one-active-step validation, read-only operations, native reload/tree/compaction/resume, aborts, terminal safety, corrupted snapshots, compact width-aware widgets, and RPC/headless bindings.
+  The native worktree suite also verifies checklist carry, original-session isolation, saved-task resume, leave, and cleanup through real native session replacement.
+  `package-install-checklist.test.ts` checks fresh ownership, recorded upgrades, personal-resource/settings preservation, and refusal to adopt an unowned matching extension.
+  These tests do not prove real keyboard/rendering behavior or every conditional native task-tool declaration.
 - `package-tool-inventory.test.ts` checks catalogue coverage for manifest CLI aliases, the current Rust executable source layout, literal Pi tool registrations, and bare Claude tool denials.
   It does not contact MCP servers or assert that a documented host tool is active in every session.
 - `package-harness-contracts.test.ts` checks every manifest resource destination-to-source mapping, settings destination/path, the complete registry policy matrix, and local source-reference links.

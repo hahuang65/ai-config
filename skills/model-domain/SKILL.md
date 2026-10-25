@@ -20,6 +20,8 @@ Use the project's documented language consistently in conversation, tests, and c
 Use an available structured-question tool to settle ambiguous terms or intent, with alternatives and their trade-offs.
 Use ordinary chat when the tool is absent or unavailable.
 Cancellation leaves the question unresolved.
+For a substantial modeling investigation, an optional session checklist can track agreed work through native task-list tools or ordinary chat.
+Do not turn unresolved questions into approved decisions or start queued reminders from checklist state.
 Do not invent decisions or present unresolved proposals as agreed facts.
 Create files only when there is useful content to record.
 When another skill calls this one, apply the modeling discipline within its current conversation.

@@ -100,6 +100,7 @@ test("the installed MVP keeps ordinary Pi skills, its guard, and project discove
     expect(discovered.paths).toContain(join(agentDir, "extensions/worktree.ts"));
     expect(discovered.paths).toContain(join(agentDir, "extensions/lsp.ts"));
     expect(discovered.paths).toContain(join(agentDir, "extensions/ask-user-question.ts"));
+    expect(discovered.paths).toContain(join(agentDir, "extensions/todo.ts"));
     expect(discovered.paths).toContain(join(agentDir, "extensions/review-feedback.ts"));
     for (const name of ["wt", "write-tool-highlights"]) {
       expect(discovered.paths).not.toContain(join(agentDir, `extensions/${name}.ts`));

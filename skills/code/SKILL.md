@@ -20,6 +20,10 @@ Use [model-domain](../model-domain/SKILL.md) only when domain ambiguity or a dur
 
 The AI writes tests and implementation within the authorized scope.
 Work on one behavior test at a time, not a batch of speculative tests.
+For meaningful multi-step work, use an available session checklist or native task-list tools, otherwise a concise list in ordinary chat.
+Read existing progress before replacing it, keep at most one step active, and mark completion only from verified evidence.
+Track behavior-level steps, not a queue of future tests; the checklist does not expand action authority.
+Keep Worklog for reminders and meaningful history, not every checklist update.
 
 1. Write one failing test through the public interface or the closest meaningful observable boundary.
    Run it and confirm RED is caused by the missing behavior, not a broken test harness.

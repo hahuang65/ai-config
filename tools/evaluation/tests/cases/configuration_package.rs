@@ -156,6 +156,7 @@ fn ordinary_catalogue_selects_host_cli_and_completion_resources_only() {
                     | ".pi/agent/extensions/status-footer.ts"
                     | ".pi/agent/extensions/lsp.ts"
                     | ".pi/agent/extensions/ask-user-question.ts"
+                    | ".pi/agent/extensions/todo.ts"
                     | ".claude/statusline.ts"
                     | ".claude/themes/catppuccin-mocha.json"
                     | ".pi/agent/themes/catppuccin-mocha.json"

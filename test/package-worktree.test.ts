@@ -55,3 +55,17 @@ test.each(["feature", "Task_123-xyz", `A${"_".repeat(63)}`])("native Pi carries 
     expect(result.context).toContain("TASK_CONTEXT_MARKER");
   } finally { rmSync(p.home, { recursive: true, force: true }); }
 }, 30_000);
+
+test("native task carry, saved-task resume, leave, and cleanup preserve the selected checklist branch", async () => {
+  const p = project();
+  try {
+    const sdk = installedSdkFile();
+    const run = Bun.spawnSync(["node", resolve("test/fixtures/worktree-pi.mjs"), sdk, p.cwd,
+      resolve("harnesses/pi/worktree.bundle.ts"), "checklist", installedAiFile(sdk),
+      resolve("harnesses/pi/todo.bundle.ts")], { cwd: p.cwd, env: p.env, timeout: 30_000, stdout: "pipe", stderr: "pipe" });
+    expect(run.exitCode, run.stderr.toString()).toBe(0);
+    const result = JSON.parse(run.stdout.toString());
+    expect(result.carried).toBe(true);
+    expect(result.resumed).toBe(true);
+  } finally { rmSync(p.home, { recursive: true, force: true }); }
+}, 40_000);

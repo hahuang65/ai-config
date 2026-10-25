@@ -3,7 +3,7 @@ import { existsSync, mkdirSync, unlinkSync, writeFileSync } from "node:fs";
 import { execFileSync } from "node:child_process";
 import { join } from "node:path";
 import { transitionModel } from "./worktree-pi-model.mjs";
-const [sdkFile, cwd, extension, task = "feature", aiFile] = process.argv.slice(2);
+const [sdkFile, cwd, extension, task = "feature", aiFile, checklistExtension] = process.argv.slice(2);
 const sdk = await import(sdkFile);
 const agentDir = process.env.PI_CODING_AGENT_DIR;
 mkdirSync(agentDir, { recursive: true });
@@ -30,11 +30,22 @@ function assertRequest(index, directory, notices, taskContext = false) {
 }
 let cancelSwitch = false;
 const errors = [];
+const initialChecklist = { version: 1, title: "Carry current task", items: [
+  { id: "carry", text: "Carry the current checklist", status: "pending" },
+] };
+const taskChecklist = { ...initialChecklist, items: [{ ...initialChecklist.items[0], status: "completed" }] };
+async function checkChecklist(expected) {
+  if (!checklistExtension) return;
+  const tool = runtime.session.agent.state.tools.find(tool => tool.name === "todo");
+  assert.ok(tool, "The native destination must expose its checklist tool");
+  const result = await tool.execute("verify-checklist", { action: "read" });
+  assert.deepEqual(result.structuredContent.checklist, expected);
+}
 const factory = async ({ cwd, sessionManager, sessionStartEvent }) => {
   const settingsManager = sdk.SettingsManager.inMemory({ cacheWarming: "off", retry: { enabled: false } });
   settingsManager.setProjectTrusted(true); // Disposable, deliberately trusted fixture only.
   const services = await sdk.createAgentSessionServices({ cwd, agentDir, settingsManager, modelRuntime,
-    resourceLoaderOptions: { additionalExtensionPaths: [extension], extensionFactories: [api => {
+    resourceLoaderOptions: { additionalExtensionPaths: [extension, ...(checklistExtension ? [checklistExtension] : [])], extensionFactories: [api => {
       api.on("session_before_switch", () => cancelSwitch ? { cancel: true } : undefined);
     }] } });
   const errors = services.resourceLoader.getExtensions().errors;
@@ -58,6 +69,11 @@ const bind = async () => {
 runtime.setRebindSession(bind);
 try {
   await bind();
+  if (checklistExtension) {
+    const result = await runtime.session.agent.state.tools.find(tool => tool.name === "todo")
+      .execute("initialize-checklist", { action: "write", title: initialChecklist.title, items: initialChecklist.items });
+    assert.equal(result.structuredContent.status, "ok");
+  }
   const prepare = runtime.session.agent.state.tools.find(t => t.name === "worktree_transition");
   if (!prepare) throw Error("The model cannot request a native task transition");
   const nameSchema = prepare.parameters.properties.task;
@@ -77,12 +93,18 @@ try {
     throw Error("Verified new-task entry must automatically start exactly one destination model turn");
   }
   assertRequest(0, target, 1);
+  await checkChecklist(initialChecklist);
+  if (checklistExtension) {
+    await runtime.session.agent.state.tools.find(tool => tool.name === "todo")
+      .execute("update-task-checklist", { action: "write", title: taskChecklist.title, items: taskChecklist.items });
+  }
   if (/^locked/m.test(execFileSync("git", ["worktree", "list", "--porcelain"], { cwd, encoding: "utf8" }))) {
     throw Error("A Pi task transition must not lock the worktree");
   }
   writeFileSync(join(target, "AGENTS.md"), "TASK_CONTEXT_MARKER\n");
   runtime.session.sessionManager.appendMessage({ role: "user", content: "SAVED_TASK_HISTORY", timestamp: Date.now() });
   await runtime.switchSession(original);
+  await checkChecklist(initialChecklist);
   if (turns.length !== 1) throw Error("Ordinary session restore must not replay a continuation");
   await runtime.session.prompt("/wt cancel");
   cancelSwitch = true;
@@ -92,6 +114,7 @@ try {
   await runtime.session.prompt(`/wt enter ${task}`);
   if (turns.length !== 2 || turns[1].file !== file || turns[1].cwd !== target) throw Error("Saved task did not continue exactly once");
   assertRequest(1, target, 2, true);
+  await checkChecklist(taskChecklist);
   const result = await runtime.session.agent.state.tools.find(t => t.name === "bash")
     .execute("fixture", { command: "pwd -P" });
   const evidence = { carried, resumed: runtime.session.sessionFile === file &&
@@ -110,6 +133,7 @@ try {
   if (!existsSync(target)) throw Error("Leave must not clean the task");
   if (turns.length !== 3 || turns[2].file !== left || turns[2].cwd !== cwd) throw Error("Leave did not continue at primary exactly once");
   assertRequest(2, cwd, 3);
+  await checkChecklist(taskChecklist);
   await runtime.session.prompt("/wt leave");
   if (turns.length !== 3) throw Error("No-op leave must not continue again");
   await runtime.session.prompt(`/wt enter ${task}`);
@@ -164,6 +188,7 @@ try {
     throw Error("Cleanup must finish before exactly one primary continuation");
   }
   assertRequest(5, cwd, 4); // Cleanup carries the task branch, not an older primary conversation.
+  await checkChecklist(taskChecklist);
   if (runtime.session.sessionManager.getCwd() !== cwd || existsSync(target) ||
       !JSON.stringify(runtime.session.messages).includes("SAVED_TASK_HISTORY")) {
     throw Error("Native cleanup must carry the conversation to primary before removing the task");

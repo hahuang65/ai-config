@@ -6,6 +6,8 @@ description: Write a concise HTML specification grounded in the discussion and c
 # Spec
 
 Use a spec when a written description will help; small changes do not require one.
+For substantial work, an optional session checklist can track research, drafting, and review using available native task-list tools or ordinary chat.
+Track progress rather than copying the specification into a second model; checklist completion is not whole-document approval.
 Read the relevant local context files, ADRs, and code.
 Suggest grilling, a mockup, or specialist consultation when it would resolve important uncertainty, but do not require these for every spec.
 Ask targeted questions when essential intent is missing.
