@@ -61,6 +61,46 @@ test("shared workflows use session checklists as progress displays, not new auth
   expect(coach).toContain("does not transfer implementation ownership");
 });
 
+test("coding guidance orders reuse before new code without dropping required behavior", () => {
+  const rule = readFileSync(join(root, "rules/coding-style.md"), "utf8");
+  const choices = [...rule.matchAll(/^\d+\. (.+)$/gm)].map(match => match[1]);
+  expect(choices).toHaveLength(4);
+  expect(choices[0]).toContain("repository");
+  expect(choices[1]).toContain("Standard library or native platform");
+  expect(choices[2]).toContain("Dependencies already present");
+  expect(choices[3]).toContain("Small new code");
+  expect(rule).toContain("callers, tests, fixtures, configuration, and exports");
+  expect(rule).toContain("behavior, errors, ownership, lifecycle, and dependencies");
+  expect(rule).toContain("validation, error handling, security, and accessibility");
+  expect(rule).toContain("rather than minimizing line count");
+});
+
+test("code checks reuse and integration impact before its one-test-at-a-time loop", () => {
+  const code = readFileSync(join(directory, "code/SKILL.md"), "utf8");
+  expect(code).toContain("Read `coding-style.md` through the baseline's rule-loading instructions");
+  expect(code).toContain("inspect affected integration points before the first behavior test");
+  expect(code.indexOf("inspect affected integration points")).toBeLessThan(code.indexOf("1. Write one failing test"));
+  expect(code).toContain("one behavior test at a time, not a batch");
+  expect(code).toContain("Always review the change");
+});
+
+test("coach uses the shared reuse order for discussion without taking over implementation or cleanup", () => {
+  const coach = readFileSync(join(directory, "coach/SKILL.md"), "utf8");
+  expect(coach).toContain("Read `coding-style.md` through the baseline's rule-loading instructions");
+  expect(coach).toContain("Use its reuse order to discuss the smallest complete change");
+  expect(coach).toContain("The user owns implementation, refactoring, and source changes throughout coaching");
+  expect(coach).toContain("Do not perform source cleanup");
+  expect(coach).toContain("Never batch tests, queue speculative next tests");
+});
+
+test("plan considers existing capabilities without narrowing required behavior or granting implementation authority", () => {
+  const plan = readFileSync(join(directory, "plan/SKILL.md"), "utf8");
+  expect(plan).toContain("Read `coding-style.md` through the baseline's rule-loading instructions");
+  expect(plan).toContain("Use its reuse order without dropping requested behavior or required integration");
+  expect(plan).toContain("Resolve missing intent before turning an assumption into a task");
+  expect(plan).toContain("Plan approval does not authorize implementation");
+});
+
 test("repository edits use a task worktree by default with a narrow direct-checkout exception", () => {
   const baseline = readFileSync(join(root, "baseline.md"), "utf8");
   expect(baseline).toContain("Before adding, editing, or removing repository files");

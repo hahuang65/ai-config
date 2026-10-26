@@ -19,6 +19,8 @@ Use [model-domain](../model-domain/SKILL.md) only when domain ambiguity or a dur
 ## Implement
 
 The AI writes tests and implementation within the authorized scope.
+Read `coding-style.md` through the baseline's rule-loading instructions before selecting an implementation.
+Use its reuse order and inspect affected integration points before the first behavior test.
 Work on one behavior test at a time, not a batch of speculative tests.
 For meaningful multi-step work, use an available session checklist or native task-list tools, otherwise a concise list in ordinary chat.
 Read existing progress before replacing it, keep at most one step active, and mark completion only from verified evidence.

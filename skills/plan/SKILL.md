@@ -13,6 +13,8 @@ Use ordinary chat when the tool is absent or unavailable.
 A clarification answer does not approve the plan or authorize implementation.
 Use [model-domain](../model-domain/SKILL.md) when shared terms or durable architecture decisions need clarification.
 
+Read `coding-style.md` through the baseline's rule-loading instructions before proposing new components or dependencies.
+Use its reuse order without dropping requested behavior or required integration.
 Choose the smallest useful planning format.
 A short ordered list in the conversation can be enough; HTML tasks are optional.
 Do not create an artifact just to satisfy a workflow.

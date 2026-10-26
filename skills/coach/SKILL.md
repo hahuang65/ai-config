@@ -8,6 +8,8 @@ description: Coach a clear request, issue, spec, or plan with one AI-written fai
 Accept a clear request, issue, spec, or plan as intent.
 No mandatory artifact or specialist agent is needed.
 Read the relevant current sources, tests, context, and project rules.
+Read `coding-style.md` through the baseline's rule-loading instructions before proposing implementation options.
+Use its reuse order to discuss the smallest complete change.
 Agree on scope and acceptance criteria, then propose the public interface to test and wait for the user's confirmation.
 Do not force work through a new document or every application layer.
 Use an available structured-question tool only for actual intent blockers, not routine checkpoints.
