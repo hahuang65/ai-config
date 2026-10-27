@@ -19,6 +19,10 @@ Use the bundled `worktree` CLI (`worktree list --json`) and Git; do not use anot
    Do not fetch, pull, reset, or move the integration branch implicitly.
    On conflict, load `resolve-conflicts` in the same checkout; do not discard either side or silently abort.
 4. Verify the completed branch, ancestry, working state, and project checks.
+   A no-op rebase preserves exact current verification when the checkout, required commands, relevant configuration/toolchain, and clean source state also match.
+   A changed tip requires fresh checks after rebase and before integration, even if the file tree is unchanged.
+   Missing or uncertain check evidence requires running the checks; never bypass a commit hook or treat commit success alone as proof.
+   Record the resulting verified tip and results so delivery does not repeat those same current checks.
    A real-provider `review-change` is a separate workflow, not implicit in this rebase.
    If that review is needed, request approval only when it is not already explicitly authorized for this scope; report an incomplete review honestly.
 

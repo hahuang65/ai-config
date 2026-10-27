@@ -1,0 +1,29 @@
+{
+  "toolActivation": "eager",
+  "toolDescriptionMode": "compact",
+  "pinToolDeclarations": false,
+  "disabledFeatures": [
+    "agent-management", "watchdog", "panes", "missions", "lane-management",
+    "spawn-budget-grants", "preflight", "lane-metadata", "gates", "usage-budgets",
+    "tool-budgets", "control-overrides", "extension-bindings", "external-machines", "workflow-scripts"
+  ],
+  "missions": { "enabled": false, "globalIndex": false },
+  "scheduledRuns": { "enabled": false },
+  "enableSlashCommands": false,
+  "asyncByDefault": false,
+  "forceTopLevelAsync": false,
+  "autoResume": false,
+  "defaultSubagentContext": "fresh",
+  "fleetView": false,
+  "asyncWidget": false,
+  "programStatus": false,
+  "intercomBridge": { "mode": "off", "resultDelivery": false },
+  "maxSubagentDepth": 1,
+  "globalConcurrencyLimit": 2,
+  "maxSubagentSpawnsPerRun": 2,
+  "maxSubagentSpawnsPerSession": 20,
+  "timeoutMs": 120000,
+  "toolTimeoutMs": 30000,
+  "artifactDir": "session",
+  "resultScanLogging": "off"
+}

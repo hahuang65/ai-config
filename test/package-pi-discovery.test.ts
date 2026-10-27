@@ -5,6 +5,7 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { installedSdkFile } from "./fixtures/installed-pi-sdk";
 import { installFixture } from "./fixtures/install-script";
+import { copySpecialistRuntime } from "./fixtures/inactive-package";
 
 test("the Node-compatible Pi guard bundle matches the reviewed source", async () => {
   const source = fileURLToPath(new URL("../harnesses/pi/guard-policies.ts", import.meta.url));
@@ -30,6 +31,11 @@ test("the Pi SDK follows its installed CLI package through a launcher without as
     expect(installedSdkFile(wrapper)).toBe(sdk);
     expect(installedSdkFile(cli)).toBe(sdk);
   } finally { rmSync(root, { recursive: true, force: true }); }
+});
+
+test("runtime packaging resolves the existing Pi host rather than provisioning a peer client", async () => {
+  const discovery = await import("../tools/project-pi.mjs");
+  expect(discovery.projectPiPackage?.()).toBe(dirname(dirname(installedSdkFile())));
 });
 
 test("Pi SDK discovery uses a pre-installed CLI on PATH behind a mise shim without invoking mise", () => {
@@ -62,6 +68,7 @@ test("Pi SDK discovery uses a pre-installed CLI on PATH behind a mise shim witho
 test("the installed MVP keeps ordinary Pi skills, its guard, and project discovery", async () => {
   const setup = installFixture();
   try {
+    copySpecialistRuntime(setup.source);
     const { home } = setup;
     const project = join(home, "project");
     const agentDir = join(home, ".pi/agent");
@@ -101,6 +108,7 @@ test("the installed MVP keeps ordinary Pi skills, its guard, and project discove
     expect(discovered.paths).toContain(join(agentDir, "extensions/lsp.ts"));
     expect(discovered.paths).toContain(join(agentDir, "extensions/ask-user-question.ts"));
     expect(discovered.paths).toContain(join(agentDir, "extensions/todo.ts"));
+    expect(discovered.paths).toContain(join(agentDir, "extensions/specialists.ts"));
     expect(discovered.paths).toContain(join(agentDir, "extensions/review-feedback.ts"));
     for (const name of ["wt", "write-tool-highlights"]) {
       expect(discovered.paths).not.toContain(join(agentDir, `extensions/${name}.ts`));

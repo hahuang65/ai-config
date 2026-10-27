@@ -78,6 +78,10 @@ Restricted-reviewer offline settings and synthetic-provider boundaries remain un
   The native worktree suite also verifies checklist carry, original-session isolation, saved-task resume, leave, and cleanup through real native session replacement.
   `package-install-checklist.test.ts` checks fresh ownership, recorded upgrades, personal-resource/settings preservation, and refusal to adopt an unowned matching extension.
   These tests do not prove real keyboard/rendering behavior or every conditional native task-tool declaration.
+- `package-pi-specialists.test.ts` exercises the pinned engine through the real native adapter and child SDK with a credential-free provider.
+  It checks host identity, bundle parity, inherited role/context, read-only tools, credential refusal, forbidden controls, and failed/changed policy or guard registration.
+  `package-install-specialists.test.ts` retains recorded upgrades and refuses unowned matching adapter/policy files while preserving model and unrelated extension settings.
+  These checks do not establish real-provider quality, snapshot confinement, every SDK/platform, or live installation.
 - `package-tool-inventory.test.ts` checks catalogue coverage for manifest CLI aliases, the current Rust executable source layout, literal Pi tool registrations, and bare Claude tool denials.
   It does not contact MCP servers or assert that a documented host tool is active in every session.
 - `package-harness-contracts.test.ts` checks every manifest resource destination-to-source mapping, settings destination/path, the complete registry policy matrix, and local source-reference links.
@@ -135,6 +139,12 @@ These tests never provision or launch the real language servers; see [shared con
 Use the smallest relevant target during development, then run `make lint` and `make test` for the complete gate.
 The pre-commit hook remains a complete gate; focused runs do not authorize skipping it.
 No successful-test cache or changed-file filter is used.
+
+For a source-stable parallel review, first run `make build build-evaluation-debug build-artifact-debug` successfully against the current source.
+Then `make test-prepared` runs the same complete assertion recipes without repeating source-generating prerequisites.
+Keep the source unchanged while tests and review run, and verify freshness afterward.
+`package-verification.test.ts` compares both full command plans, including every worker and Rust/Python/browser suite.
+Normal `make test` and the pre-commit hook still prepare their own artifacts; the prepared entry point is not a cache, subset, or hook bypass.
 
 | Target | Checks |
 | --- | --- |

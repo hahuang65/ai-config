@@ -1,5 +1,8 @@
 # Read-only specialists
 
+This page describes restricted source-local consultation.
+The ordinary Pi [native specialist adapter](native-specialists.md) is separate: it inherits task context, is not snapshot-confined, and excludes `change-reviewer`.
+
 The standalone Rust review tools use five explicit, trusted role files under `agents/`:
 `api-designer`, `frontend-architect`, `database-reviewer`, `fact-checker`, and `change-reviewer`.
 Do not discover roles from the reviewed repository.

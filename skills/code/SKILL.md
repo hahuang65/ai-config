@@ -43,6 +43,14 @@ Update an existing plan only when its status is supported by evidence; no plan f
 
 Run the project's documented verification checks, including applicable type checks, lint, tests, and build.
 Choose scope according to project rules and the authorized task; report exact commands and any checks not run.
+Overlap independent project checks with the required restricted review when the host supports concurrent work and source-producing build steps finish first.
+Run deterministic checks as bounded subprocesses, not general shell-enabled subagents.
+Use separate logs and bounded concurrency, respecting the project's existing test/browser limits and resource contention.
+Record separate logs, exit status, commands, and the checked revision or exact working-source snapshot.
+Wait for both results before repairs or further edits; terminate and account for any unfinished process on cancellation or failure.
+If checks can rewrite source, serialize those steps before freezing review evidence rather than reviewing moving files.
+Recheck source freshness after both finish; any source change invalidates the affected checks and review.
+If concurrency is unavailable or unsafe, run serially and state that limit instead of claiming a speedup.
 Always review the change, including small changes, through [review-change](../review-change/SKILL.md) before claiming completion.
 Use explicit scope and authoritative intent for the review; tests alone do not replace it.
 If the review tool is missing or unavailable, review is not complete; report the block rather than substituting an unsupported approval.

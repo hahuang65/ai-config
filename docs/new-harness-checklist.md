@@ -30,6 +30,8 @@ An unimplemented mandatory safety boundary blocks admission.
   This installer isolation is not an ordinary runtime discovery allowlist or OS sandbox.
 - [ ] Document native subagent support honestly.
   If role files are inert without an executor, say so; do not add an automatic agent team to fill the gap.
+  For ordinary delegation, preserve canonical role intent, inherited instructions, explicit tool/agent ceilings, required guards, and fail-closed startup.
+  Keep it separate from restricted snapshot review and deterministic check subprocesses; see the [native specialist example](native-specialists.md).
 
 ## 3. Enforce the shared safety boundary
 
@@ -100,6 +102,8 @@ A child shell `cd`, printed path, or new subprocess does not move the current ha
   Keep progress separate from Worklog, approvals, and ownership; test current-branch replay, reload/resume/compaction, native task carry, and supported UI modes.
 - [ ] Expose explicit deliver/rebase compositions with their current authorization boundaries.
   Never turn delivery/rebase into implicit publication, provider review, push or unsafe cleanup.
+  Commits always run required checks; delivery may reuse only proven verification for the unchanged exact revision and matching check inputs.
+  A real rebase requires fresh checks before integration; a needed authorized review may overlap independent checks without duplicating a current review.
 - [ ] Use WL's existing private store and project identity across worktrees; no native-task substitution, old-history import, automatic scheduling or store switch after an empty query.
 - [ ] Use local context files and Markdown ADRs in every project and linked worktree, following the [documentation rule](../rules/documentation.md).
   Preserve A5 classification from effective global/system configuration and keep A5 documentation private under the [A5 rule](../rules/a5.md).

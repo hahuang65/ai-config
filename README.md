@@ -33,7 +33,9 @@ The installed package provides:
 - An explicit allowance for Claude's native `AskUserQuestion` to clarify requirements and preferences, without changing artifact review or action-authorization boundaries.
   An approved installation removes its formerly owned denial; independently configured personal, project, or managed deny rules remain effective.
 - Curated shared skills under `skills/`; the optional `review-change` skill selects the current harness's independently restricted reviewer.
-- The evaluation's specialist roles: API designer, change reviewer, database reviewer, fact checker, and frontend architect.
+- Shared specialist roles: API designer, change reviewer, database reviewer, fact checker, and frontend architect.
+  The source adds a guarded Pi `subagent` adapter for the four ordinary read-only roles, backed by pinned pi-subagents 0.83.0 and the installed host SDK.
+  It preserves role bodies, inherited instructions/skills, mandatory guards, and the dedicated restricted review path; see [native specialist contracts](docs/native-specialists.md).
 - Public `wt`/`worktree`, `wl`/`worklog`, and `review-change` symlinks, plus source-local `review-artifact` and `consult` helpers resolved by their consumers without PATH aliases.
   Installation includes [Bash completion entries](tools/worktree/README.md#bash-completion) for both WT names, with read-only managed task-name completion for `enter` and `clean`.
   An existing `bash-completion` loader discovers them automatically; WT also prints manual setup without that package.
@@ -86,7 +88,9 @@ Claude's interactive `/resume` still requires a subsequent `continue` message.
 Creating a worktree through the standalone CLI does not move a running conversation; use the documented native transition.
 This package does not install the former agentmemory or background publication services.
 The commands never push automatically or clean merely because work ends.
-Local delivery requires project checks and a verified fast-forward; provider review is a separate, explicitly requested workflow.
+Local delivery requires project checks and a verified fast-forward; provider review is a separate, explicitly requested workflow that may run during delivery when needed and authorized.
+Commits always run required checks; delivery reuses only proven results for an unchanged verified revision and reruns invalidated checks after rebase, before integration.
+Implementation completion can overlap independent checks and restricted review after source-producing builds finish, with bounded processes, separate logs, and a final source-freshness check.
 An explicit local delivery request also includes a native session return to the primary directory and safe worktree cleanup.
 Cleanup also deletes the local task branch only when integrated into the recorded local target; incomplete transitions retain the worktree, and incomplete branch deletion is reported separately.
 GitHub delivery retains the branch and worktree for a separately authorized PR workflow.
@@ -113,15 +117,22 @@ make lint
 make test
 ```
 
-`make build` creates the Pi guard, status-footer, worktree, LSP, clarification, and checklist bundles, the shared catalogue's Claude plugin projection, and Rust release binaries; it **does not provision tools or install harness resources**.
+`make build` creates the Pi guard, status-footer, worktree, LSP, clarification, checklist, and specialist bundles, the shared catalogue's Claude plugin projection, and Rust release binaries; it **does not provision tools or install harness resources**.
 Cargo build, test, and lint commands retain `--locked` but may fetch missing dependencies from the network.
 The guard-parser build likewise restores frozen Bun library dependencies with lifecycle scripts disabled and regenerates the local WASM/runtime/license assets in `guard/vendor/`.
 The Pele build bundles its pinned library and license into the artifact helper; only the explicit authoring command starts Node, never the review server.
+The specialist build preserves the pinned engine and licenses in ignored `target/pi-subagents/`, using runtime dependencies copied from the locked install and peer links to the existing Pi SDK.
+Library restoration omits peers and lifecycle scripts, so builds do not provision another Pi client.
+Rebuild this checkout after changing the installed Pi host; the adapter rejects a mismatched runtime.
 `package.json` and `bun.lock` pin web-tree-sitter and tree-sitter-bash; ordinary harness execution needs neither network access nor `node_modules` for parsing.
 Restricted-reviewer offline flags and synthetic-provider isolation are unchanged.
 `make lint` checks that generated Claude LSP definitions still match the catalogue.
 Tests use disposable homes and fake providers, not the live harness state.
 Use the [focused test targets](test/README.md#focused-checks) during iteration instead of rerunning unrelated suites; `make test` and the commit hook still run the complete gate.
+For safe overlap with a restricted review, first run `make build build-evaluation-debug build-artifact-debug` against the current source.
+After that preparation succeeds, `make test-prepared` runs the same complete test recipes without rerunning source-generating prerequisites.
+Freeze the review only after preparation, keep the source unchanged while both jobs run, and validate freshness afterward.
+The normal `make test` and commit hook still prepare everything themselves; this is not a test subset or a verification cache.
 WT parity uses at most four isolated case workers; `WT_TEST_JOBS=1` selects serial execution without changing coverage.
 Ordinary package files run in two isolated Bun worker processes; `PACKAGE_TEST_JOBS=1` runs them serially.
 Installer files run in a separate two-worker stage; `INSTALL_TEST_JOBS=1` runs those workers serially.

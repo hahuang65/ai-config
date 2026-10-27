@@ -4,6 +4,7 @@ Companion to the [package tool inventory](tool-inventory.md).
 Most entries retain the pre-pruning harness baseline; see that document's approved-replacement section for the implementation now in progress.
 The Pi LSP row and language-server section describe the subsequent shared-catalogue source change, not a verified live installation.
 The clarification and session-checklist rows reflect the current package source, checked against Pi 1.3.0, not a live installation or Claude tool declaration.
+The specialist row describes the guarded source integration checked with Pi 1.4.0 and a synthetic provider, not a live installation.
 This records tool identity, purpose, source, invocation, and configuration status—not a cross-harness parity specification.
 The current [harness contracts catalogue](harness-contracts.md) adds resources, settings, lifecycle, workflows, safety boundaries, conformance evidence, and a new-harness checklist without replacing this dated tool evidence.
 A **Tool** below is a named model-callable operation; the model invokes its runtime-defined arguments, not a shell command with the same spelling.
@@ -46,6 +47,7 @@ The actual declarations in this inventory conversation were `read`, `bash`, `edi
 | `lsp` with `operation`, `path`, and optional position | Query hover, definitions, references, symbols, or diagnostics from an on-demand language server. | Package-owned [harnesses/pi/lsp.ts](../harnesses/pi/lsp.ts), installed as a bundle; [shared catalogue and limits](language-servers.md). Not active in the original inventory session. |
 | `ask_user_question` with `question` and optional `options` | Clarify one requirements or preference decision with trade-offs and a free-text alternative. | Package-owned [harnesses/pi/ask-user-question.ts](../harnesses/pi/ask-user-question.ts), installed as a bundle; native TUI/RPC dialogs, model-only, hidden without UI. [Results and approval limits](clarification.md). Not active in the original inventory session. |
 | `todo` with `action: read` or `write` | Read or replace the current task's short progress checklist, not cross-session Worklog reminders. | Package-owned [harnesses/pi/todo.ts](../harnesses/pi/todo.ts), installed as a bundle; model-only and sequential, with `/todos` and a compact TUI/plain-RPC widget. [State and authority limits](session-checklist.md). |
+| `subagent` with `agent` and `task` | Consult one of four curated read-only specialists in a fresh foreground context. | Package-owned [harnesses/pi/specialists.ts](../harnesses/pi/specialists.ts), wrapping pinned pi-subagents 0.83.0; model-only, inherited instructions/skills, mandatory child guards, and a four-tool ceiling. No `change-reviewer`, shell, writing, background work, nested delegation, or package worktrees. [Contracts and limits](native-specialists.md). |
 | `multi_tool_use.parallel` | Submit independent calls together through the session's execution wrapper. | Present in this conversation's tool interface, not registered by this package or an installed CLI. Do not mistake it for a second package orchestration implementation. |
 
 Pi's [extension contract](https://github.com/earendil-works/pi/blob/main/packages/coding-agent/docs/extensions.md) distinguishes a model tool (`registerTool`) from a slash command (`registerCommand`).
@@ -55,7 +57,9 @@ The session-checklist extension adds one model tool and a read-only `/todos` com
 Guard and status-footer extensions register no tools.
 The [review-feedback extension](../harnesses/pi/review-feedback.ts) also registers no model tool.
 Its `/review-feedback` command resumes saved feedback after interruption; background native messages use the existing conversation and shared Rust queue.
-Pi has no package-installed native subagent tool; specialist files alone do not add that capability.
+Specialist files alone do not add delegation.
+The current source adds the guarded `subagent` adapter above, independently of the restricted snapshot reviewer and source-local `consult` helper.
+Its built runtime shares the installed host SDK rather than installing another Pi client.
 
 MCP tools default to codemode exposure in this Pi version, not direct declaration.
 `codemode`, `deferred`, `direct`, and `hidden` exposure differ; not seeing a tool in the current declarations does not generally prove it is unreachable.

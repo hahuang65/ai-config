@@ -11,6 +11,8 @@ Public commands remain symlinks to built binaries in the installed source, prese
 | Source-local `review-artifact` | `tools/artifact-review/target/release/review-artifact`; [source](../tools/artifact-review/src/main.rs) | Bundled-Pele SVG authoring, browser feedback, local repair decisions, and editable inline PR publication. |
 | Source-local `consult` | `tools/evaluation/target/release/consult`; [source](../tools/evaluation/src/consult_main.rs) | Harness-invoked specialist advice, including before a change exists. |
 
+The guarded ordinary Pi `subagent` facade is a model tool, not another CLI or a replacement for the restricted reviewer; see [native specialist contracts](native-specialists.md).
+Its pinned engine is built against the existing host SDK without provisioning Pi.
 WT and WL retain their existing alias pairs and targets listed below.
 WT's Rust executable also prints manual [Bash completion setup](../tools/worktree/README.md#bash-completion) for `wt` and `worktree`, with read-only current-project task-name lookup.
 Installation owns standard per-user completion entries for both names, discovered by an existing `bash-completion` loader without another installed executable or shell-startup ownership.

@@ -84,6 +84,23 @@ test("code checks reuse and integration impact before its one-test-at-a-time loo
   expect(code).toContain("Always review the change");
 });
 
+test("every commit runs its required checks and records only actual verification", () => {
+  const commit = readFileSync(join(directory, "commit/SKILL.md"), "utf8");
+  expect(commit).toContain("Always run the required project checks for each commit");
+  expect(commit).toContain("Never use earlier verification to skip this commit's checks");
+  expect(commit).toContain("normal pre-commit hook");
+  expect(commit).toContain("Commit success alone is not proof");
+});
+
+test("code overlaps independent checks with restricted review without racing source changes", () => {
+  const code = readFileSync(join(directory, "code/SKILL.md"), "utf8");
+  expect(code).toContain("Overlap independent project checks with the required restricted review");
+  expect(code).toContain("source-producing build steps finish first");
+  expect(code).toContain("bounded subprocesses, not general shell-enabled subagents");
+  expect(code).toContain("Wait for both results before repairs or further edits");
+  expect(code).toContain("Record separate logs, exit status, commands, and the checked revision");
+});
+
 test("coach uses the shared reuse order for discussion without taking over implementation or cleanup", () => {
   const coach = readFileSync(join(directory, "coach/SKILL.md"), "utf8");
   expect(coach).toContain("Read `coding-style.md` through the baseline's rule-loading instructions");

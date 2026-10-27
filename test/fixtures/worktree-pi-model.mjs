@@ -8,13 +8,23 @@ export async function transitionModel(sdk, aiFile, onRequest) {
   let requests = 0;
   function stream(_model, context) {
     if (++requests > 20) throw Error("Unexpected continuation loop");
-    onRequest(structuredClone(context));
+    const choice = onRequest(structuredClone(context));
     const events = ai.createAssistantMessageEventStream();
     const message = { role: "assistant", content: [], api: model.api, provider: model.provider, model: model.id,
       usage: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0, totalTokens: 0,
         cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0, total: 0 } },
       stopReason: "pending", timestamp: Date.now() };
     events.push({ type: "start", partial: structuredClone(message) });
+    if (choice?.tool) {
+      const toolCall = { type: "toolCall", id: `fixture-${requests}`, name: choice.tool, arguments: choice.input };
+      message.content.push(toolCall);
+      events.push({ type: "toolcall_start", contentIndex: 0, partial: structuredClone(message) });
+      events.push({ type: "toolcall_end", contentIndex: 0, toolCall, partial: structuredClone(message) });
+      message.stopReason = "toolUse";
+      events.push({ type: "done", reason: "toolUse", message });
+      events.end();
+      return events;
+    }
     message.content.push({ type: "text", text: "" });
     events.push({ type: "text_start", contentIndex: 0, partial: structuredClone(message) });
     const text = "Continued in the verified destination.";
