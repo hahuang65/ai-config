@@ -14,6 +14,45 @@ fn empty_queries_and_help_do_not_create_state() {
 }
 
 #[test]
+fn bare_invocation_lists_every_incomplete_task_across_projects_outside_git() {
+    let world = World::new();
+    world.seed_notes(23);
+    world.ok(&["complete", "1"]);
+    world.ok(&["abandon", "2", "--summary", "No longer needed"]);
+    world.ok(&["start", "--task", "3"]);
+    let other = world.home.path().join("other");
+    std::fs::create_dir(&other).unwrap();
+    crate::support::git(&other, &["init", "-q"]);
+    world.ok(&[
+        "note",
+        "Other project",
+        "--project-path",
+        other.to_str().unwrap(),
+    ]);
+    world.ok(&["note", "Unassigned", "--unassigned"]);
+
+    let output = world
+        .command(&[])
+        .current_dir(world.home.path())
+        .output()
+        .unwrap();
+    assert!(
+        output.status.success(),
+        "{}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    assert!(output.stderr.is_empty());
+    let value: serde_json::Value = serde_json::from_slice(&output.stdout).unwrap();
+    assert_eq!(value, world.ok(&["list", "--all-projects", "--all"]));
+    assert_eq!(value["total"], 23);
+    assert_eq!(value["omitted"], 0);
+    assert_eq!(
+        world.ok(&["history", "--all-projects", "--all"])["total"],
+        28
+    );
+}
+
+#[test]
 fn queries_are_bounded_with_explicit_omission_and_period_filters() {
     let world = World::new();
     world.seed_notes(23);
@@ -85,6 +124,23 @@ fn oversized_summaries_and_relative_storage_roots_are_rejected_before_mutation()
     assert_eq!(output.status.code(), Some(2));
     assert!(!world.root.exists());
     assert!(!world.repo.join("relative-state").exists());
+}
+
+#[test]
+fn bare_text_lists_only_id_state_project_and_title_without_commentary() {
+    let world = World::new();
+    world.ok(&["note", "Readable reminder"]);
+    let output = std::process::Command::new(env!("CARGO_BIN_EXE_wl"))
+        .env("WL_ROOT", &world.root)
+        .current_dir(world.home.path())
+        .output()
+        .unwrap();
+    assert!(output.status.success());
+    assert!(output.stderr.is_empty());
+    assert_eq!(
+        String::from_utf8(output.stdout).unwrap(),
+        "#1 planned [\"project\"] \"Readable reminder\"\n"
+    );
 }
 
 #[test]

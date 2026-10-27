@@ -19,6 +19,7 @@
     { "destination": ".pi/agent/extensions/todo.ts", "target": "harnesses/pi/todo.bundle.ts" },
     { "destination": ".pi/agent/extensions/specialists.ts", "target": "harnesses/pi/specialists.bundle.ts" },
     { "destination": ".pi/agent/extensions/subagent/config.json", "target": "harnesses/pi/specialists/policy.json" },
+    { "destination": ".pi/agent/extensions/worklog.ts", "target": "harnesses/pi/worklog.bundle.ts" },
     { "destination": ".pi/agent/themes/catppuccin-mocha.json", "target": "harnesses/pi/themes/catppuccin-mocha.json" },
     { "destination": ".claude/commands/deliver.md", "target": "commands/deliver.md" },
     { "destination": ".claude/commands/wt.md", "target": "harnesses/claude/commands/wt.md" },

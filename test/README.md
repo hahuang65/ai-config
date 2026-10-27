@@ -75,6 +75,7 @@ Restricted-reviewer offline settings and synthetic-provider boundaries remain un
 - `package-pi-checklist.test.ts` uses native Pi tool wrapping, disposable session managers, and a bounded synthetic provider to check the owned current-task checklist.
   It covers typed bounded replacements, one-active-step validation, read-only operations, native reload/tree/compaction/resume, aborts, terminal safety, corrupted snapshots, compact width-aware widgets, and RPC/headless bindings.
   Its six-process schema test composes its case budget from the unchanged 20s child deadline plus one child-sized setup/cleanup margin.
+  It also checks active/upcoming and completed sections, completed-step folding, finished-task hiding, and fresh checklist replacement for the next task.
   The native worktree suite also verifies checklist carry, original-session isolation, saved-task resume, leave, and cleanup through real native session replacement.
   `package-install-checklist.test.ts` checks fresh ownership, recorded upgrades, personal-resource/settings preservation, and refusal to adopt an unowned matching extension.
   These tests do not prove real keyboard/rendering behavior or every conditional native task-tool declaration.
@@ -82,6 +83,10 @@ Restricted-reviewer offline settings and synthetic-provider boundaries remain un
   It checks host identity, bundle parity, inherited role/context, read-only tools, credential refusal, forbidden controls, and failed/changed policy or guard registration.
   `package-install-specialists.test.ts` retains recorded upgrades and refuses unowned matching adapter/policy files while preserving model and unrelated extension settings.
   These checks do not establish real-provider quality, snapshot confinement, every SDK/platform, or live installation.
+- `package-pi-worklog.test.ts` uses the installed Node/Pi loader, a manifest-linked bundle, a disposable store, and a held synthetic response to verify out-of-band reminder capture during a busy run.
+  It checks one model request/completion, unchanged session entries, no abort or queued prompts, literal shell text, RPC, UI failure, invalid input, missing executable, empty queries, and headless rejection.
+  `package-install-worklog.test.ts` checks recorded upgrades, ownership refusals, and preservation of personal settings/extensions.
+  These checks do not prove live terminal interaction, RPC-client rendering, or Herdr notification behavior.
 - `package-tool-inventory.test.ts` checks catalogue coverage for manifest CLI aliases, the current Rust executable source layout, literal Pi tool registrations, and bare Claude tool denials.
   It does not contact MCP servers or assert that a documented host tool is active in every session.
 - `package-harness-contracts.test.ts` checks every manifest resource destination-to-source mapping, settings destination/path, the complete registry policy matrix, and local source-reference links.

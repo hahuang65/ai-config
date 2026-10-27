@@ -14,6 +14,7 @@ export default function checklist(pi: ExtensionAPI) {
       "Use read to recover progress, or write with title and the complete items array. " +
       "Items have unique stable ids, short text, and pending/in_progress/completed status; at most one may be in progress. " +
       "Track meaningful steps only within the authorized task, not speculative tests or routine conversation. " +
+      "Keep completed steps only with that ongoing task; start a new authorized task with a fresh title and complete items array, never carried-over steps. " +
       "This is not Worklog, a backlog, a scheduler, approval, or authority to implement, commit, install, deliver, or publish.",
     parameters, outputSchema: output, renderCall: caption,
     async execute(_id, input, signal, _update, ctx) {

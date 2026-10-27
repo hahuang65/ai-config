@@ -9,7 +9,8 @@ It is not a long-term backlog or a durable job queue.
 
 **Project** is the Git repository associated with work.
 Its worktrees share the same identity and a readable name.
-A named project takes precedence over the current project; otherwise, the current project is the default.
+A named project takes precedence over the current project; otherwise, the current project is the default for explicit subcommands.
+The no-subcommand overview instead lists incomplete tasks across all projects, including unassigned work.
 Unknown or ambiguous project names require clarification rather than guessed association.
 
 **Task** is a piece of work that can be noted for later, started, completed, or abandoned.

@@ -28,7 +28,10 @@ The installed package provides:
   Terminal dialogs report waiting status to the independent Herdr observer; completion remains tied to Pi settlement.
   Shared skills use it only when useful and fall back to ordinary chat; see [clarification contracts and limits](docs/clarification.md).
 - A small Pi `todo` tool and `/todos` command for a branch-aware session checklist, with a compact editor panel and RPC/headless fallbacks.
+  Ongoing work appears first, completed steps fold underneath, and a finished checklist hides until a new task replaces it.
   It tracks the current task, not Worklog reminders or action authority; see [session checklist contracts](docs/session-checklist.md).
+- Pi `/worklog REMINDER` capture during an active run without steering, aborting, queueing a prompt, or another model/completion event.
+  Empty `/worklog`, the empty shared work-log skill, and bare `wl` list incomplete work across projects; see [Worklog capture contracts](docs/worklog-capture.md).
 - Explicit `/deliver` and `/rebase` commands in both harnesses; `/resolve-conflicts` is the shared skill for a rebase already in progress.
 - An explicit allowance for Claude's native `AskUserQuestion` to clarify requirements and preferences, without changing artifact review or action-authorization boundaries.
   An approved installation removes its formerly owned denial; independently configured personal, project, or managed deny rules remain effective.
@@ -117,7 +120,7 @@ make lint
 make test
 ```
 
-`make build` creates the Pi guard, status-footer, worktree, LSP, clarification, checklist, and specialist bundles, the shared catalogue's Claude plugin projection, and Rust release binaries; it **does not provision tools or install harness resources**.
+`make build` creates the Pi guard, status-footer, worktree, LSP, clarification, checklist, specialist, and Worklog bundles, the shared catalogue's Claude plugin projection, and Rust release binaries; it **does not provision tools or install harness resources**.
 Cargo build, test, and lint commands retain `--locked` but may fetch missing dependencies from the network.
 The guard-parser build likewise restores frozen Bun library dependencies with lifecycle scripts disabled and regenerates the local WASM/runtime/license assets in `guard/vendor/`.
 The Pele build bundles its pinned library and license into the artifact helper; only the explicit authoring command starts Node, never the review server.

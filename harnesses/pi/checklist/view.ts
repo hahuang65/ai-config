@@ -17,23 +17,30 @@ export function caption(args: unknown, theme: Theme): Text {
 }
 
 export function full(value: Snapshot): string {
-  return value.items.length ? [heading(value), ...value.items.map(row)].join("\n") : "No session checklist.";
+  if (!value.items.some(item => item.status !== "completed")) return "No ongoing session checklist.";
+  const active = value.items.filter(item => item.status === "in_progress");
+  const pending = value.items.filter(item => item.status === "pending");
+  const completed = value.items.filter(item => item.status === "completed");
+  return [heading(value), "Active and upcoming", ...active.map(row), ...pending.map(row),
+    ...(completed.length ? ["Completed", ...completed.map(row)] : [])].join("\n");
 }
 
 function compact(value: Snapshot): string[] {
   const active = value.items.filter(item => item.status === "in_progress");
   const pending = value.items.filter(item => item.status === "pending");
   const completed = value.items.filter(item => item.status === "completed");
-  const shown = [...active, ...pending, ...completed].slice(0, 4);
+  const ongoing = [...active, ...pending];
+  const shown = ongoing.slice(0, completed.length ? 3 : 4);
   const lines = [heading(value), ...shown.map(row)];
-  if (value.items.length > shown.length) lines.push(`+${value.items.length - shown.length} more — /todos`);
+  if (ongoing.length > shown.length) lines.push(`+${ongoing.length - shown.length} more — /todos`);
+  if (completed.length) lines.push(`Completed: ${completed.length} — /todos`);
   return lines;
 }
 
 export function show(ctx: ExtensionContext, value: Snapshot): void {
   try {
     if (!ctx.hasUI) return;
-    if (!value.items.length) { ctx.ui.setWidget(key, undefined); return; }
+    if (!value.items.some(item => item.status !== "completed")) { ctx.ui.setWidget(key, undefined); return; }
     if (ctx.mode !== "tui") { ctx.ui.setWidget(key, compact(value), { placement: "aboveEditor" }); return; }
     ctx.ui.setWidget(key, (_tui, theme: Theme) => ({
       invalidate() {},

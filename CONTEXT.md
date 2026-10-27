@@ -64,6 +64,7 @@ A5 projects keep these records private.
 **Session checklist**:
 A short progress display for one authorized task on the current conversation branch.
 It is separate from Worklog reminders and history, not a backlog, scheduler, competing specification, or approval record.
+Completed steps remain visible only with ongoing work, and a new authorized task replaces the current checklist instead of carrying old steps forward.
 Pending steps grant no authority to start work, and completed steps are reported progress rather than proof of verification.
 
 **Review feedback**:

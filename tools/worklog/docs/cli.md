@@ -30,7 +30,9 @@ The store is for one trusted local user, not for hostile concurrent filesystem a
 
 ## Project selection
 
-The current directory selects the Git project by default.
+The current directory selects the Git project by default for explicit subcommands.
+Without a subcommand, `wl` queries incomplete work across all projects, including unassigned work, even outside Git.
+An explicit scope option still narrows that default listing.
 All subdirectories and worktrees of that repository share its project identity.
 Use exactly one explicit scope option when needed:
 
@@ -122,6 +124,8 @@ No command edits or deletes an original entry.
 ## Query commands
 
 ```sh
+wl
+wl --json
 wl list
 wl list --state planned --project other
 wl list --state all --all-projects --all
@@ -129,6 +133,12 @@ wl history --task 1
 wl history --since 2026-01-01 --until 2026-01-31 --all-projects
 wl projects --all
 ```
+
+A bare `wl` invocation returns every incomplete task, with only ID, state, project, and title in text output.
+It has no per-task commentary or collection footer, and an empty result emits no text.
+`wl --json` keeps the normal collection schema with `total` and `omitted`, returning all matches with no omissions.
+This default query does not create a store or start work.
+Use an explicit `list` subcommand for bounded or state-filtered queries.
 
 `list` returns derived tasks, with planned and active tasks selected by default.
 `--state` accepts `open`, `planned`, `active`, `completed`, `abandoned`, or `all`.
@@ -143,7 +153,8 @@ Text output also identifies corrected original values.
 `projects` returns unique project IDs and their readable names, ordered by name and then ID.
 It accepts no scope option and excludes unassigned work.
 
-Every collection defaults to at most 20 rows.
+Every explicit collection subcommand defaults to at most 20 rows.
+The no-subcommand overview is the exception: it returns all incomplete work.
 Use `--limit N` for 1 to 10000 rows, or `--all` for every matching row.
 `--all` cannot be combined with `--limit`.
 `--all` changes only the row limit, not the selected project or task states.

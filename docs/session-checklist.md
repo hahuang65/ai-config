@@ -41,6 +41,9 @@ IDs are unique ASCII letters/digits/underscores/hyphens, starting with a letter 
 Statuses are `pending`, `in_progress`, and `completed`, with at most one active step.
 Invalid replacements leave the prior snapshot unchanged.
 Use an empty items array to clear the display; a new task starts only through an authorized request.
+When that request starts a different task, write a fresh title and complete items array instead of carrying over old steps.
+The new snapshot replaces the previous task's checklist, not Worklog history.
+The adapter does not infer task changes from conversation text.
 Checklist status is model-reported progress, not proof that tests ran or permission to take another action.
 
 Results carry `status: "ok"`, `"error"`, or `"cancelled"`, plus the version-one `checklist` snapshot in JSON text, `details`, and `structuredContent`.
@@ -58,10 +61,13 @@ Reload, resume, tree navigation, compaction, and native worktree carry use the s
 Malformed latest snapshots return an error instead of silently replaying older state; an explicit valid write can recover the list.
 Unrelated todo formats are not adopted.
 
-The [view](../harnesses/pi/checklist/view.ts) stays above the editor with a heading, up to four rows, and an overflow hint.
-It prioritizes the active step, then pending work, then completed steps, and fits native terminal column widths.
-Completed steps remain until explicitly replaced or cleared.
-`/todos` shows the complete list without changing it.
+The [view](../harnesses/pi/checklist/view.ts) stays above the editor with at most six width-safe lines.
+It shows active and pending steps first, then folds completed steps into a separate `Completed: N — /todos` summary.
+The compact view shows up to four ongoing rows, or three when the completed summary needs space, plus an overflow hint when needed.
+`/todos` expands the ongoing task into Active and upcoming and Completed sections without changing saved progress.
+A checklist with no ongoing steps hides from both displays, including after reload.
+Its snapshot remains in normal session history until a new task replaces the current checklist.
+There is no age threshold or separate Worklog todos screen.
 RPC receives plain widget lines rather than TUI factories; clients may ignore that presentation.
 Headless sessions still expose structured read/write results without UI calls.
 UI failures do not undo or misreport a saved snapshot.
@@ -77,6 +83,7 @@ Do not put credentials or sensitive customer data in checklist text: it remains 
 
 `test/package-pi-checklist.test.ts` uses the installed Pi SDK and Node loader with disposable sessions, synthetic model responses, schema checks, and controlled UI bindings.
 It verifies data operations, bounds, branch replay, native reload/compaction/resume, aborts, terminal safety, UI failure, and RPC/headless presentation contracts.
+It also checks operation-order sections, folded completed steps, finished-task hiding, and fresh replacement for the next task.
 The native worktree suite separately carries and resumes distinct checklist states through new, enter, leave, and cleanup.
 Installer tests cover fresh ownership, recorded upgrades, personal settings, and refusal to adopt a matching unowned extension.
 These checks do not prove real terminal keyboard/rendering behavior, real RPC client rendering, or availability of every conditional Claude task tool.

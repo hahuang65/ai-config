@@ -2,24 +2,30 @@ use crate::error::{Error, Result};
 use serde_json::Value;
 use std::io::{self, Write};
 
-pub fn print(value: &Value, json: bool) -> Result<()> {
+pub fn print(value: &Value, json: bool, brief: bool) -> Result<()> {
     let mut stdout = io::stdout().lock();
     let output = if json {
         serde_json::to_string(value).expect("JSON value serialization")
     } else {
-        render(value)
+        render(value, brief)
     };
+    if output.is_empty() {
+        return Ok(());
+    }
     writeln!(stdout, "{output}").map_err(|_| Error {
         code: 1,
         message: "cannot write output; inspect history before retrying a write command",
     })
 }
 
-fn render(value: &Value) -> String {
+fn render(value: &Value, brief: bool) -> String {
     let Some(items) = value.get("items").and_then(Value::as_array) else {
         return row(&value["entry"]);
     };
     let mut lines = items.iter().map(row).collect::<Vec<_>>();
+    if brief {
+        return lines.join("\n");
+    }
     lines.push(format!(
         "{} returned; {} total; {} omitted{}",
         items.len(),

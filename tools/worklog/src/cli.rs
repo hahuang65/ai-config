@@ -33,7 +33,7 @@ pub struct Cli {
     #[command(flatten)]
     pub scope: Scope,
     #[command(subcommand)]
-    pub command: Command,
+    pub command: Option<Command>,
 }
 
 #[derive(Args, Default)]
@@ -168,13 +168,23 @@ pub enum FilterState {
 }
 
 impl Cli {
+    pub fn command(&self) -> &Command {
+        self.command.as_ref().unwrap_or(&Command::List {
+            state: FilterState::Open,
+            page: Page {
+                limit: DEFAULT_LIMIT,
+                all: true,
+            },
+        })
+    }
+
     pub fn validate(&self) -> Result<()> {
-        if self.scope.all_projects && self.command.is_write() {
+        if self.scope.all_projects && self.command().is_write() {
             return Err(Error::usage(
                 "writes require one project; omit --all-projects",
             ));
         }
-        match &self.command {
+        match self.command() {
             Command::Projects { .. } if self.scope.is_explicit() => Err(Error::usage(
                 "projects shows all known projects; omit scope options",
             )),
@@ -183,7 +193,7 @@ impl Cli {
                 until: Some(until),
                 ..
             } if since > until => Err(Error::usage("--since must not be later than --until")),
-            _ => self.command.validate_text(),
+            _ => self.command().validate_text(),
         }
     }
 }

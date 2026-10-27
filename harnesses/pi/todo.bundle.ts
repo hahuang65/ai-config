@@ -76,24 +76,38 @@ function caption(args, theme) {
   return new Text(theme.fg("toolTitle", `Session checklist: ${label}`), 0, 0);
 }
 function full(value) {
-  return value.items.length ? [heading(value), ...value.items.map(row)].join(`
-`) : "No session checklist.";
+  if (!value.items.some((item2) => item2.status !== "completed"))
+    return "No ongoing session checklist.";
+  const active = value.items.filter((item2) => item2.status === "in_progress");
+  const pending = value.items.filter((item2) => item2.status === "pending");
+  const completed = value.items.filter((item2) => item2.status === "completed");
+  return [
+    heading(value),
+    "Active and upcoming",
+    ...active.map(row),
+    ...pending.map(row),
+    ...completed.length ? ["Completed", ...completed.map(row)] : []
+  ].join(`
+`);
 }
 function compact(value) {
   const active = value.items.filter((item2) => item2.status === "in_progress");
   const pending = value.items.filter((item2) => item2.status === "pending");
   const completed = value.items.filter((item2) => item2.status === "completed");
-  const shown = [...active, ...pending, ...completed].slice(0, 4);
+  const ongoing = [...active, ...pending];
+  const shown = ongoing.slice(0, completed.length ? 3 : 4);
   const lines = [heading(value), ...shown.map(row)];
-  if (value.items.length > shown.length)
-    lines.push(`+${value.items.length - shown.length} more — /todos`);
+  if (ongoing.length > shown.length)
+    lines.push(`+${ongoing.length - shown.length} more — /todos`);
+  if (completed.length)
+    lines.push(`Completed: ${completed.length} — /todos`);
   return lines;
 }
 function show(ctx, value) {
   try {
     if (!ctx.hasUI)
       return;
-    if (!value.items.length) {
+    if (!value.items.some((item2) => item2.status !== "completed")) {
       ctx.ui.setWidget(key, undefined);
       return;
     }
@@ -142,7 +156,7 @@ function checklist(pi) {
     label: "Session checklist",
     exposure: "model-only",
     executionMode: "sequential",
-    description: "Read or atomically replace the current task's short session checklist. " + "Use read to recover progress, or write with title and the complete items array. " + "Items have unique stable ids, short text, and pending/in_progress/completed status; at most one may be in progress. " + "Track meaningful steps only within the authorized task, not speculative tests or routine conversation. " + "This is not Worklog, a backlog, a scheduler, approval, or authority to implement, commit, install, deliver, or publish.",
+    description: "Read or atomically replace the current task's short session checklist. " + "Use read to recover progress, or write with title and the complete items array. " + "Items have unique stable ids, short text, and pending/in_progress/completed status; at most one may be in progress. " + "Track meaningful steps only within the authorized task, not speculative tests or routine conversation. " + "Keep completed steps only with that ongoing task; start a new authorized task with a fresh title and complete items array, never carried-over steps. " + "This is not Worklog, a backlog, a scheduler, approval, or authority to implement, commit, install, deliver, or publish.",
     parameters,
     outputSchema: output,
     renderCall: caption,

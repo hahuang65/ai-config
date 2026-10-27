@@ -54,6 +54,8 @@ Pi's [extension contract](https://github.com/earendil-works/pi/blob/main/package
 The WT extension registers one model tool and one `/wt` command, not two interchangeable tools.
 The LSP and clarification extensions each add a separate model tool.
 The session-checklist extension adds one model tool and a read-only `/todos` command.
+The separate [Worklog capture extension](worklog-capture.md) adds `/worklog` but no model tool.
+It captures a reminder during a busy run without steering, queueing another prompt, or emitting another completion.
 Guard and status-footer extensions register no tools.
 The [review-feedback extension](../harnesses/pi/review-feedback.ts) also registers no model tool.
 Its `/review-feedback` command resumes saved feedback after interruption; background native messages use the existing conversation and shared Rust queue.

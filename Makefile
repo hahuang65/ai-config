@@ -1,7 +1,7 @@
 # Ordinary Claude and Pi resources. Installing into a real home is an explicit,
 # separate ./install.sh invocation; this Makefile never retargets the live installation.
 .DEFAULT_GOAL := help
-.PHONY: help build test lint test-package test-worktree test-worklog test-artifact test-evaluation test-browser test-prepared build-evaluation-debug build-artifact-debug build-guard-parser build-guard-bundle build-language-servers build-pele build-pi-questions build-pi-checklist build-pi-specialists
+.PHONY: help build test lint test-package test-worktree test-worklog test-artifact test-evaluation test-browser test-prepared build-evaluation-debug build-artifact-debug build-guard-parser build-guard-bundle build-language-servers build-pele build-pi-questions build-pi-checklist build-pi-specialists build-pi-worklog
 .PHONY: _test-package-prepared _test-artifact-prepared _test-evaluation-prepared _test-browser-prepared
 # Keep suites serial even with make -j; common build prerequisites run once.
 # Ordinary package files, installers, WT parity, and native runtime groups use bounded workers.
@@ -57,7 +57,10 @@ build-pi-specialists: build-guard-parser
 	node tools/build-specialists.mjs
 	bun build harnesses/pi/specialists.ts --target node --format esm --external @earendil-works/pi-coding-agent --external typebox --outfile harnesses/pi/specialists.bundle.ts
 
-build: build-guard-bundle build-language-servers build-pele build-pi-questions build-pi-checklist build-pi-specialists
+build-pi-worklog:
+	bun build harnesses/pi/worklog.ts --target node --format esm --external @earendil-works/pi-coding-agent --external @earendil-works/pi-tui --outfile harnesses/pi/worklog.bundle.ts
+
+build: build-guard-bundle build-language-servers build-pele build-pi-questions build-pi-checklist build-pi-specialists build-pi-worklog
 	bun tools/build-status-footer.mjs
 	bun build harnesses/pi/worktree.ts --target node --format esm --external @earendil-works/pi-coding-agent --external @sinclair/typebox --outfile harnesses/pi/worktree.bundle.ts
 	bun build harnesses/pi/review-feedback.ts --target node --format esm --external @earendil-works/pi-coding-agent --outfile harnesses/pi/review-feedback.bundle.ts

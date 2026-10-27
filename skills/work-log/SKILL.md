@@ -14,6 +14,14 @@ Read its `--help` and the relevant command help; use structured output for autom
 Never use the original `work-log` CLI or edit its data as a fallback.
 If worklog is absent or a write fails, report that nothing was recorded; do not claim success or repeatedly retry an unavailable tool.
 
+## Empty invocation
+
+When invoked without a request or arguments, run `list --state open --all-projects --all --json` through the owned executable.
+Show every incomplete task across all projects, including unassigned work, with only ID, state, project, and title.
+Do not add commentary under any task, progress history, or next-task suggestions to this listing.
+Do not start or change a task merely because the skill was invoked.
+An empty result means no incomplete tasks; a failed query is not an empty result.
+
 ## Associate the work
 
 Use the project the user names; otherwise use the current Git project.

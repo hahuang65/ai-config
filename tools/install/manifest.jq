@@ -76,6 +76,7 @@ def bootstrap: {
   ".pi/agent/extensions/todo.ts": "harnesses/pi/todo.bundle.ts",
   ".pi/agent/extensions/specialists.ts": "harnesses/pi/specialists.bundle.ts",
   ".pi/agent/extensions/subagent/config.json": "harnesses/pi/specialists/policy.json",
+  ".pi/agent/extensions/worklog.ts": "harnesses/pi/worklog.bundle.ts",
   ".pi/agent/themes/catppuccin-mocha.json": "harnesses/pi/themes/catppuccin-mocha.json",
   ".claude/plugins/ai-local-lsp": "harnesses/claude/plugins/ai-local-lsp"};
 # Explicit construction avoids any catalogue dependency on a mutable manifest.
@@ -91,7 +92,7 @@ def catalogue:
 def support_files: [
   "harnesses/worktree-client.ts", "docs/worktree-transitions.md", "harnesses/pi/worktree.ts",
   "harnesses/review-feedback-client.ts", "harnesses/pi/review-feedback.ts",
-  "harnesses/pi/ask-user-question.ts", "harnesses/pi/todo.ts", "harnesses/pi/checklist/state.ts", "harnesses/pi/checklist/view.ts",
+  "harnesses/pi/ask-user-question.ts", "harnesses/pi/worklog.ts", "harnesses/pi/todo.ts", "harnesses/pi/checklist/state.ts", "harnesses/pi/checklist/view.ts",
   "harnesses/pi/specialists.ts", "harnesses/pi/specialists/runtime.ts", "harnesses/pi/specialists/policy.json",
   "target/pi-subagents/host.json", "target/pi-subagents/package/package.json", "target/pi-subagents/package/LICENSE",
   "target/pi-subagents/package/bundle/index.js",

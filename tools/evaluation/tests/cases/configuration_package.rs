@@ -159,6 +159,7 @@ fn ordinary_catalogue_selects_host_cli_and_completion_resources_only() {
                     | ".pi/agent/extensions/todo.ts"
                     | ".pi/agent/extensions/specialists.ts"
                     | ".pi/agent/extensions/subagent/config.json"
+                    | ".pi/agent/extensions/worklog.ts"
                     | ".claude/statusline.ts"
                     | ".claude/themes/catppuccin-mocha.json"
                     | ".pi/agent/themes/catppuccin-mocha.json"

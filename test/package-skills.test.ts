@@ -25,6 +25,14 @@ for (const skill of required) {
   });
 }
 
+test("an empty work-log invocation routes to all incomplete tasks with no per-task commentary", () => {
+  const skill = readFileSync(join(directory, "work-log/SKILL.md"), "utf8");
+  expect(skill).toContain("## Empty invocation");
+  expect(skill).toContain("list --state open --all-projects --all --json");
+  expect(skill).toContain("only ID, state, project, and title");
+  expect(skill).toContain("Do not add commentary under any task");
+});
+
 test("shared skills and advisory rules do not name particular harnesses", () => {
   for (const directoryName of ["skills", "rules"]) {
     for (const entry of new Bun.Glob("**/*.md").scanSync({ cwd: join(root, directoryName) })) {

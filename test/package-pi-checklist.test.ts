@@ -102,6 +102,36 @@ test("the native /todos command shows the full checklist without changing saved 
   expect(result.customEntries).toHaveLength(1);
 });
 
+test("/todos separates current and upcoming work from completed steps in operation order", () => {
+  const items = [
+    { id: "done", text: "Earlier completed step", status: "completed" },
+    { id: "next", text: "Upcoming step", status: "pending" },
+    { id: "active", text: "Current step", status: "in_progress" },
+  ];
+  const result = checklist([{ action: "write", title: "Ongoing task", items }, { command: "todos" }]);
+  expect(result.notifications[0].text).toBe("Steps 1/3: Ongoing task\nActive and upcoming\n◐ Current step\n○ Upcoming step\nCompleted\n✓ Earlier completed step");
+  expect(result.customEntries).toHaveLength(1);
+});
+
+test("the compact checklist keeps ongoing work first and folds completed steps underneath", () => {
+  const result = checklist([{ action: "write", ...current }]);
+  const rows = result.widgets.at(-1).rows;
+  expect(rows).toEqual(["Steps 1/3: Add the feature", "◐ Implement one tested behavior", "○ Run checks and review",
+    "Completed: 1 — /todos"]);
+});
+
+test("a finished checklist stops displaying and a new task replaces it rather than carrying old steps", () => {
+  const finished = current.items.map(item => ({ ...item, status: "completed" }));
+  const next = { title: "Different authorized task", items: [{ id: "first", text: "New task step", status: "pending" }] };
+  const result = checklist([{ action: "write", ...current }, { action: "write", title: current.title, items: finished },
+    { command: "todos" }, { reload: true }, { action: "write", ...next }, { action: "read" }]);
+  expect(result.notifications[0].text).toBe("No ongoing session checklist.");
+  expect(result.widgets[0].rows).toBe(null);
+  expect(result.widgets.at(-1).rows.join("\n")).toContain(next.title);
+  expect(result.widgets.at(-1).rows.join("\n")).not.toContain(current.items[0].text);
+  expect(result.results.at(-1).structuredContent.checklist).toEqual({ version: 1, ...next });
+});
+
 test("native reload restores both checklist data and the editor panel from the current branch", () => {
   const result = checklist([{ action: "write", ...current }, { reload: true }, { action: "read" }]);
   expect(result.results.at(-1).structuredContent.checklist).toEqual({ version: 1, ...current });

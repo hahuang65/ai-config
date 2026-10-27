@@ -18,7 +18,7 @@ use store::Store;
 
 fn main() -> ExitCode {
     let cli = Cli::parse();
-    match run(&cli).and_then(|value| output::print(&value, cli.json)) {
+    match run(&cli).and_then(|value| output::print(&value, cli.json, cli.command.is_none())) {
         Ok(()) => ExitCode::SUCCESS,
         Err(error) => {
             eprintln!("{}: {error}", cli::program_name());
@@ -31,15 +31,18 @@ fn run(cli: &Cli) -> Result<Value> {
     cli.validate()?;
     let store = Store::locate()?;
     let log = store.read()?;
-    let selection = if matches!(cli.command, Command::Projects { .. }) {
+    let command = cli.command();
+    let selection = if matches!(command, Command::Projects { .. })
+        || (cli.command.is_none() && !cli.scope.is_explicit())
+    {
         Selection::All
     } else {
         Selection::resolve(&cli.scope, &log)?
     };
-    if cli.command.is_write() {
+    if command.is_write() {
         let project = selection.project()?;
-        let entry = store.append(|log| actions::build(&cli.command, project.clone(), log))?;
+        let entry = store.append(|log| actions::build(command, project.clone(), log))?;
         return Ok(json!({ "entry": entry }));
     }
-    query::run(&cli.command, &selection, &log)
+    query::run(command, &selection, &log)
 }
