@@ -1,6 +1,8 @@
 //! Explicit creation and conservative removal; never commit or publish.
 use crate::{
-    Error, Result, git, github,
+    Error, Result,
+    cleanup_proof::Proof,
+    git,
     records::{Entry, Metadata},
     repository::Repository,
     text,
@@ -176,7 +178,7 @@ fn current_inside(repo: &Repository, entry: &Entry) -> bool {
     repo.cwd.starts_with(text::pathbuf(&entry.path))
 }
 
-fn validate_clean(repo: &Repository, task: &str) -> Result<(Entry, String, String)> {
+fn validate_clean(repo: &Repository, task: &str) -> Result<(Entry, Metadata, String, Proof)> {
     let entry = repo.selected(task)?;
     let path = &text::pathbuf(&entry.path);
     if entry.locked {
@@ -192,15 +194,8 @@ fn validate_clean(repo: &Repository, task: &str) -> Result<(Entry, String, Strin
     })?;
     let head = git::commit(path, "HEAD")?
         .ok_or_else(|| Error::new("The task has no valid commit. Cleanup stopped."))?;
-    let proof = if metadata.delivery == "github" {
-        format!(
-            "merged pull request #{}",
-            github::merged_pull_request(repo, &metadata, &head)?
-        )
-    } else {
-        local_proof(repo, &metadata, &head)?
-    };
-    Ok((entry, head, proof))
+    let proof = Proof::obtain(repo, &metadata, &head)?;
+    Ok((entry, metadata, head, proof))
 }
 
 fn validate_status(path: &Path) -> Result<()> {
@@ -236,19 +231,8 @@ fn validate_status(path: &Path) -> Result<()> {
     Ok(())
 }
 
-fn local_proof(repo: &Repository, metadata: &Metadata, head: &str) -> Result<String> {
-    if let Some(integrated) = git::commit(&repo.root, &format!("refs/heads/{}", metadata.base))?
-        && git::ancestor(&repo.root, head, &integrated)?
-    {
-        return Ok(format!("integrated into {}", metadata.base));
-    }
-    Err(Error::new(
-        "The exact task tip is not integrated into the local target branch. Worktree retained.",
-    ))
-}
-
 fn clean_one(repo: &Repository, task: &str, check: bool) -> Result<Value> {
-    let (entry, head, proof) = validate_clean(repo, task)?;
+    let (entry, metadata, head, proof) = validate_clean(repo, task)?;
     let inside = current_inside(repo, &entry);
     let mut result = outcome(
         repo,
@@ -257,11 +241,12 @@ fn clean_one(repo: &Repository, task: &str, check: bool) -> Result<Value> {
         if inside { "return-main" } else { "none" },
         if inside { &repo.root } else { &repo.cwd },
     );
-    result["proof"] = json!(proof);
+    result["proof"] = json!(proof.description);
     result["removed"] = json!(false);
     if check || inside {
         return Ok(result);
     }
+    proof.recheck(repo, &metadata, &head)?;
     // Git rechecks dirtiness and locks during removal. Never use --force.
     if repo.selected(task)? != entry
         || git::commit(&text::pathbuf(&entry.path), "HEAD")?.as_deref() != Some(&head)
@@ -270,9 +255,10 @@ fn clean_one(repo: &Repository, task: &str, check: bool) -> Result<Value> {
             "The worktree changed during cleanup. Nothing was removed; retry after activity stops.",
         ));
     }
+    validate_status(&text::pathbuf(&entry.path))?;
     git::git(&repo.root, &["worktree", "remove", &entry.path])?;
     result["removed"] = json!(true);
-    match remove_branch(repo, &entry, &head) {
+    match remove_branch(repo, &entry, &metadata, &head, &proof) {
         Ok(removed) => {
             result["branchRemoved"] = json!(removed);
             if !removed {
@@ -289,18 +275,20 @@ fn clean_one(repo: &Repository, task: &str, check: bool) -> Result<Value> {
     Ok(result)
 }
 
-fn remove_branch(repo: &Repository, entry: &Entry, head: &str) -> Result<bool> {
+fn remove_branch(
+    repo: &Repository,
+    entry: &Entry,
+    metadata: &Metadata,
+    head: &str,
+    proof: &Proof,
+) -> Result<bool> {
     let reference = format!("refs/heads/{}", entry.branch);
     if git::commit(&repo.root, &reference)?.as_deref() != Some(head) {
         return Err(Error::new(
             "The task branch changed during cleanup. Inspect it before deleting it.",
         ));
     }
-    let base = format!("refs/heads/{}", entry.base);
-    let Some(integrated) = git::commit(&repo.root, &base)? else {
-        return Ok(false);
-    };
-    if !git::ancestor(&repo.root, head, &integrated)? {
+    if !proof.permits_branch(repo, metadata, head)? {
         return Ok(false);
     }
     // Unlike branch -d, use the recorded target rather than an unrelated upstream.

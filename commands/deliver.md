@@ -38,7 +38,8 @@ Never deliver from the `~/.dotfiles` parent repository.
 5. After successful local integration, run the selected task's `wt clean TASK --check --json` safety check.
    Return the running harness to this project's primary directory through the [native transition](../docs/worktree-transitions.md), preserving the current conversation.
    Verify its actual directory, repository, and integration branch before removing anything.
-   Then run `wt clean TASK --json` from primary; WT rechecks safety and deletes the local branch only when integrated into the recorded local target.
+   Then run `wt clean TASK --json` from primary; WT rechecks safety and deletes the local branch only with exact-tip ancestry or [synchronized merged-PR proof](../tools/worktree/README.md#cleanup-safety).
+   Cleanup does not fetch or advance the integration branch.
    The native cleanup command may combine the verified return and cleanup in that order.
    If the session was already at primary, verify that location and clean directly.
    Never use a child shell `cd` as proof that the harness has left the worktree.

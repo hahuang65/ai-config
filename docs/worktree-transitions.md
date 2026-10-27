@@ -130,7 +130,10 @@ If native replacement fails after it starts, verify the actual host directory an
 Do not clean a worktree to repair a conversation problem.
 Claude native removal is blocked, including exit-time cleanup; only an explicitly authorized `wt clean` or successful local delivery may remove a task after its ordinary checks.
 The running harness must reach primary first; a shell command cannot prove that transition.
-Cleanup removes integrated local task branches too, but preserves branches not integrated into the recorded local target (including a squash-merged PR's original tip).
+Cleanup removes local task branches with exact-tip ancestry into the recorded local target or [synchronized merged-PR proof](../tools/worktree/README.md#cleanup-safety).
+Squash and rebase merges need a matching exact-head merged PR, identical task and target trees, and equal local, remote-tracking, and live remote target commits.
+Without either proof, the local branch remains.
+Cleanup does not fetch or advance the integration branch.
 A worktree removal followed by a branch-deletion failure is reported as partial cleanup with a nonzero exit status; never force the branch deletion.
 
 ## Verification and installation

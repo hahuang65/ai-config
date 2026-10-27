@@ -42,10 +42,16 @@ impl Project {
         String::from_utf8(out.stdout).unwrap().trim().into()
     }
     fn run(&self, cwd: &Path, args: &[&str]) -> Output {
+        let bin = self.root.parent().unwrap().join("bin");
+        let path = std::env::join_paths(
+            std::iter::once(bin).chain(std::env::split_paths(&std::env::var_os("PATH").unwrap())),
+        )
+        .unwrap();
         Command::new(env!("CARGO_BIN_EXE_wt"))
             .args(args)
             .current_dir(cwd)
             .env("WT_ROOT", &self.trees)
+            .env("PATH", path)
             .env("GIT_CONFIG_GLOBAL", "/dev/null")
             .env("GIT_CONFIG_NOSYSTEM", "1")
             .output()
@@ -62,6 +68,9 @@ impl Project {
         serde_json::from_slice(&out.stdout).unwrap()
     }
 }
+
+#[path = "merged_cleanup.rs"]
+mod merged;
 
 #[test]
 fn cleanup_deletes_the_integrated_local_branch_but_check_and_inside_do_not() {

@@ -74,8 +74,9 @@ The default limit is 50; use `--all` for every worktree.
 `--check` never removes anything.
 If invoked inside the worktree being removed, cleanup requests a return to the main checkout instead of deleting the current directory.
 Return through the harness's native controls before cleanup; the native cleanup flow can perform both steps under one explicit cleanup or local delivery request.
-After removing the worktree, WT deletes the local task branch only when its exact tip is integrated into the recorded local integration branch.
-A squash-merged PR can permit worktree removal without permitting local branch deletion.
+After removing the worktree, WT deletes the local task branch when its exact tip is integrated into the recorded local integration branch.
+For squash and rebase merges, an exact-head merged PR plus synchronized, matching-tree proof also permits branch deletion.
+GitHub-mode cleanup without that local proof still removes only the worktree and retains the branch.
 No remote branch is deleted, and branch deletion is never forced.
 Successful removal adds `branchRemoved` to JSON output; retained branches include `branchReason`.
 If branch deletion fails after worktree removal, `cleanupIncomplete` is true and the command exits nonzero, preserving the branch and reporting the partial result.
@@ -154,12 +155,28 @@ Do not change naming or root settings while managed tasks remain without first m
 
 ## Cleanup safety
 
-Local mode requires the task's exact HEAD to be an ancestor of the local integration branch.
+Local mode normally requires the task's exact HEAD to be an ancestor of the local integration branch.
+If ancestry does not hold, local mode can instead use the synchronized merged-PR proof below.
 GitHub mode requires a merged pull request whose head commit, source repository, branch, destination repository, and integration branch match the task.
 This supports squash and rebase merges without treating a merely closed PR as integrated.
 New commits after a PR merge prevent cleanup.
 Fork-based PRs are not currently supported; they fail closed.
 The GitHub query is read-only and bounded to 100 matching closed PRs; no match retains the task.
+
+For full cleanup after a squash or rebase merge, all of these conditions must hold:
+
+- The exact task tip has a matching merged GitHub PR as described above.
+- The recorded local integration branch and its remote-tracking branch have the same commit.
+- A bounded, read-only `git ls-remote` query confirms that the remote still advertises that exact commit.
+- The task tip and integration commit have identical Git trees, including file modes and submodule references.
+
+WT does not fetch or advance the integration branch during cleanup.
+Fetch and fast-forward it explicitly before retrying a synchronization refusal.
+This proof uses the task's recorded remote and integration branch, not an unrelated branch upstream.
+WT rechecks synchronized evidence and the task identity before worktree removal, then rechecks proof before compare-and-delete branch removal.
+A failed post-removal recheck retains the branch and reports partial cleanup.
+GitHub-mode cleanup without synchronized proof retains its existing worktree-only behavior.
+Local mode without either ancestry or synchronized merged-PR proof retains both the worktree and branch.
 
 Modified tracked files, non-ignored untracked files, in-progress Git operations, changed task branches, and locks prevent removal.
 Ignored files are deliberately disposable, including dependencies, generated files, and local ignored configuration.

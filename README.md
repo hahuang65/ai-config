@@ -95,7 +95,8 @@ Local delivery requires project checks and a verified fast-forward; provider rev
 Commits always run required checks; delivery reuses only proven results for an unchanged verified revision and reruns invalidated checks after rebase, before integration.
 Implementation completion can overlap independent checks and restricted review after source-producing builds finish, with bounded processes, separate logs, and a final source-freshness check.
 An explicit local delivery request also includes a native session return to the primary directory and safe worktree cleanup.
-Cleanup also deletes the local task branch only when integrated into the recorded local target; incomplete transitions retain the worktree, and incomplete branch deletion is reported separately.
+Cleanup also deletes the local task branch with exact-tip ancestry or [synchronized merged-PR proof](tools/worktree/README.md#cleanup-safety), including squash and rebase merges.
+Incomplete transitions retain the worktree, and incomplete branch deletion is reported separately.
 GitHub delivery retains the branch and worktree for a separately authorized PR workflow.
 Dated historical decision records may describe retired experiments; they are not part of this package.
 

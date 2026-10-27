@@ -1,4 +1,5 @@
 mod args;
+mod cleanup_proof;
 mod cli;
 mod completion;
 mod git;
