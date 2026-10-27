@@ -38,6 +38,7 @@ The installed package provides:
 - An explicit allowance for Claude's native `AskUserQuestion` to clarify requirements and preferences, without changing artifact review or action-authorization boundaries.
   An approved installation removes its formerly owned denial; independently configured personal, project, or managed deny rules remain effective.
 - Curated shared skills under `skills/`; the optional `review-change` skill selects the current harness's independently restricted reviewer.
+  Shared [handoff and pickup metadata](skills/handoff/references/format.md) distinguishes discovery from intended implementation projects, so target-repository pickup does not ask again about a known discovery-project difference.
 - Shared specialist roles: API designer, change reviewer, database reviewer, fact checker, and frontend architect.
   The source adds a guarded Pi `subagent` adapter for the four ordinary read-only roles, backed by pinned pi-subagents 0.83.0 and the installed host SDK.
   It preserves role bodies, inherited instructions/skills, mandatory guards, and the dedicated restricted review path; see [native specialist contracts](docs/native-specialists.md).

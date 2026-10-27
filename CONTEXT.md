@@ -36,6 +36,18 @@ A command either aliases a differently named skill or composes multiple skills, 
 It exists only when the shortcut or composition adds value beyond automatic skill discovery.
 Claude Code consumes commands from `~/.claude/commands/`, while pi consumes the same files as prompt templates from `~/.pi/agent/prompts/`.
 
+**Handoff**:
+A selective private routing summary for a later conversation, not a transcript, durable source of truth, or new authorization.
+The shared format records discovery and intended implementation projects separately so pickup can find work in its target repository.
+
+**Discovery project**:
+The project where the information summarized in a handoff was gathered.
+Its checkout, branch, and HEAD describe provenance, not the state an implementation checkout must reproduce.
+
+**Intended implementation project**:
+The verified project where the handoff's next work belongs.
+It can differ from the discovery project and supplies the project identity used for version-two pickup selection.
+
 **Agent** (subagent):
 A specialized sub-runtime invoked by the main session through its subagent tool.
 Shared role definitions live under `agents/` and restrict their tools in frontmatter.

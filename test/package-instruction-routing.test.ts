@@ -23,6 +23,69 @@ function withInstalledInstructions(check: (home: string, source: string) => void
   } finally { rmSync(home, { recursive: true, force: true }); }
 }
 
+test("installed handoffs record discovery and implementation projects separately", () => {
+  withInstalledInstructions(home => {
+    for (const harness of harnesses) {
+      const entry = realpathSync(join(home, harness, "skills/handoff/SKILL.md"));
+      const handoff = readFileSync(entry, "utf8");
+      const format = readFileSync(resolve(dirname(entry), "references/format.md"), "utf8");
+      expect(format).toContain("`format-version`: `2`");
+      for (const field of ["project-id", "checkout", "branch", "HEAD", "implementation-project-id",
+        "implementation-project-name", "implementation-checkout", "implementation-branch", "implementation-HEAD"]) {
+        expect(format).toContain(`- \`${field}\`:`);
+      }
+      expect(format).toContain("discovery project");
+      expect(format).toContain("intended implementation project");
+      expect(handoff).toContain("Resolve the intended implementation project separately");
+      expect(handoff).toContain("Do not infer an implementation project from a repository basename");
+      expect(handoff).toContain("run pickup from the intended implementation project");
+      expect(format).toContain("Default the implementation project to the discovery project only when the user has not named another target");
+    }
+  });
+});
+
+test("installed pickup finds cross-repository handoffs by implementation identity without a discovery mismatch gate", () => {
+  withInstalledInstructions(home => {
+    for (const harness of harnesses) {
+      const entry = realpathSync(join(home, harness, "skills/pickup/SKILL.md"));
+      const pickup = readFileSync(entry, "utf8");
+      const format = readFileSync(resolve(dirname(entry), "../handoff/references/format.md"), "utf8");
+      expect(pickup).toContain("Filter by implementation project identity before sorting");
+      expect(pickup).toContain("Apply the same project eligibility rules to explicit paths, topics, and empty invocation");
+      expect(pickup).toContain("Do not ask for confirmation solely because the discovery project differs");
+      expect(pickup).toContain("implementation-checkout");
+      expect(pickup).toContain("implementation-branch");
+      expect(pickup).toContain("implementation-HEAD");
+      expect(format).toContain("Version 2 matches the current project against `implementation-project-id`");
+      expect(format).toContain("A discovery-project match alone does not make a handoff eligible for a different implementation project");
+    }
+  });
+});
+
+test("installed cross-repository pickup preserves reference origins, legacy checks, and current authority", () => {
+  withInstalledInstructions(home => {
+    for (const harness of harnesses) {
+      const entry = realpathSync(join(home, harness, "skills/pickup/SKILL.md"));
+      const pickup = readFileSync(entry, "utf8");
+      const format = readFileSync(resolve(dirname(entry), "../handoff/references/format.md"), "utf8");
+      expect(format).toContain("discovery-relative");
+      expect(format).toContain("implementation-relative");
+      expect(format).toContain("Unqualified relative references remain relative to the discovery `checkout`");
+      expect(format).toContain("Version 1 has only `project-id`, `checkout`, `branch`, and `HEAD`");
+      expect(format).toContain("Do not infer an implementation target from version-one prose");
+      expect(format).toContain("unsupported format versions require clarification");
+      expect(format).toContain("Verify that the recorded `implementation-checkout` resolves to `implementation-project-id`");
+      expect(format).toContain("An identity claim alone does not authorize reading a different checkout");
+      expect(pickup).toContain("An explicit path does not authorize overriding a conflicting or unknown target identity");
+      expect(pickup).toContain("implementation checkout or branch mismatch");
+      expect(pickup).toContain("historical permission does not authorize new actions");
+      expect(pickup).toContain("Do not switch branches or restore files");
+      expect(pickup).toContain("Ask before reading unrelated or sensitive paths");
+      expect(pickup).toContain("Do not automatically invoke a suggested skill");
+    }
+  });
+});
+
 test("both installed bootstraps keep authorized work moving across checkpoints without widening permission", () => {
   withInstalledInstructions((home, source) => {
     for (const bootstrap of [".claude/CLAUDE.md", ".pi/agent/AGENTS.md"]) {

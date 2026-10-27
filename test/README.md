@@ -13,6 +13,7 @@ Restricted-reviewer offline settings and synthetic-provider boundaries remain un
 - `package-instruction-routing.test.ts` follows consolidated instructions through disposable manifest-declared skill and bootstrap links for both harnesses.
   It checks that both bootstraps receive the ordinary-work continuation policy, code/work-log checkpoints route back to that same policy, and existing approval and completion boundaries remain explicit.
   It also checks that finding-decision safeguards and documentation conventions remain reachable from their source-owned references, and that the package overview points to the full native transition contract.
+  Installed handoff/pickup contracts cover separate discovery and implementation metadata, implementation-based selection, no discovery-only mismatch gate, legacy handling, reference origins, and genuine target/authority checks.
   `package-commands.test.ts` checks that a needed provider review asks only for missing scope-specific authorization while delivery still cannot start a provider review.
   These are routing and content checks, not proof that a model will obey the instructions.
 - `reviewer-runtime.test.ts` checks the restricted Pi reviewer with a synthetic provider and a private source snapshot.
