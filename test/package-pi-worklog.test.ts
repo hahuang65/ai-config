@@ -55,6 +55,28 @@ test("empty /worklog lists incomplete tasks across projects without a model turn
   expect(worklog("list")).toEqual({ listed: true, requests: 0 });
 }, 25_000);
 
+test("/worklog routes an existing-task request after current work instead of capturing another reminder", () => {
+  expect(worklog("operation")).toEqual({ routed: true, classifications: 1, requests: 2 });
+}, 25_000);
+
+test("uncertain, low-confidence, malformed, failed, and unavailable classifications never capture a reminder", () => {
+  for (const scenario of ["uncertain", "low-confidence", "malformed", "classifier-error", "classifier-missing"]) {
+    expect(worklog(scenario)).toEqual({ routed: true, classifications: scenario === "classifier-missing" ? 0 : 1, requests: 2 });
+  }
+}, 25_000);
+
+test("idle Worklog operations start a normal skill request instead of writing directly", () => {
+  expect(worklog("idle-operation")).toEqual({ routed: true, classifications: 1, requests: 1 });
+}, 25_000);
+
+test("a classifier deadline delegates safely even when a late result says reminder", () => {
+  expect(worklog("classifier-timeout")).toEqual({ routed: true, classifications: 1, requests: 2 });
+}, 25_000);
+
+test("reloading during classification cancels the old command without a write or model turn", () => {
+  expect(worklog("reload")).toEqual({ cancelled: true, requests: 0 });
+}, 25_000);
+
 test("installed /worklog captures a reminder during a native busy run without steering or another completion", () => {
   expect(worklog()).toEqual({ captured: true, requests: 1, starts: 1, completions: 1, settled: 1 });
 }, 25_000);

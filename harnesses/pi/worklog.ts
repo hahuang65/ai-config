@@ -5,6 +5,7 @@ import { realpathSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { promisify } from "node:util";
+import { isReminder } from "./worklog-intent";
 
 const execute = promisify(execFile);
 const safe = (text: string) => stripTerminalSequences(text).replace(/[\p{Cc}\p{Bidi_Control}\u2028\u2029]/gu, " ");
@@ -51,14 +52,25 @@ async function list(ctx: ExtensionContext) {
 }
 
 export default function worklog(pi: ExtensionAPI) {
+  const lifetime = new AbortController();
+  pi.on("session_shutdown", async () => { lifetime.abort(); });
   pi.registerCommand("worklog", {
-    description: "List incomplete Worklog tasks, or /worklog REMINDER to capture without interrupting the current run",
+    description: "List incomplete tasks; classify reminders for background capture or route other Worklog requests to the skill",
     handler: async (args, ctx) => {
       if (!ctx.hasUI) throw new Error("/worklog requires an interactive or RPC UI; use the owned Worklog CLI instead.");
       const title = args.trim();
       if (!title) return list(ctx);
       if (Buffer.byteLength(title) > 2048 || /\p{Cc}/u.test(title)) {
         notify(ctx, "Use /worklog REMINDER with a nonblank, single-line title of at most 2048 bytes.", "error");
+        return;
+      }
+      const signal = AbortSignal.any([lifetime.signal, AbortSignal.timeout(5_000)]);
+      const reminder = await isReminder(ctx, title, signal);
+      if (lifetime.signal.aborted) return;
+      if (!reminder || signal.aborted) {
+        pi.sendUserMessage(`Use the work-log skill for this user request; clarify ambiguous intent before changing tasks:\n${title}`,
+          { deliverAs: "followUp" });
+        notify(ctx, "Worklog request sent to the work-log skill (after current work if busy).", "info");
         return;
       }
       try {

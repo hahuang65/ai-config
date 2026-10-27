@@ -30,7 +30,9 @@ The installed package provides:
 - A small Pi `todo` tool and `/todos` command for a branch-aware session checklist, with a compact editor panel and RPC/headless fallbacks.
   Ongoing work appears first, completed steps fold underneath, and a finished checklist hides until a new task replaces it.
   It tracks the current task, not Worklog reminders or action authority; see [session checklist contracts](docs/session-checklist.md).
-- Pi `/worklog REMINDER` capture during an active run without steering, aborting, queueing a prompt, or another model/completion event.
+- Pi `/worklog REQUEST` uses the existing Jev connection to distinguish background reminders from other Worklog operations.
+  Clear reminders capture during an active run without steering, aborting, queueing a prompt, or another conversation-model/completion event.
+  Other requests and uncertain classifications go to the work-log skill after current work.
   Empty `/worklog`, the empty shared work-log skill, and bare `wl` list incomplete work across projects; see [Worklog capture contracts](docs/worklog-capture.md).
 - Explicit `/deliver` and `/rebase` commands in both harnesses; `/resolve-conflicts` is the shared skill for a rebase already in progress.
 - An explicit allowance for Claude's native `AskUserQuestion` to clarify requirements and preferences, without changing artifact review or action-authorization boundaries.

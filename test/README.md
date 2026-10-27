@@ -83,7 +83,8 @@ Restricted-reviewer offline settings and synthetic-provider boundaries remain un
   It checks host identity, bundle parity, inherited role/context, read-only tools, credential refusal, forbidden controls, and failed/changed policy or guard registration.
   `package-install-specialists.test.ts` retains recorded upgrades and refuses unowned matching adapter/policy files while preserving model and unrelated extension settings.
   These checks do not establish real-provider quality, snapshot confinement, every SDK/platform, or live installation.
-- `package-pi-worklog.test.ts` uses the installed Node/Pi loader, a manifest-linked bundle, a disposable store, and a held synthetic response to verify out-of-band reminder capture during a busy run.
+- `package-pi-worklog.test.ts` uses the installed Node/Pi loader, a manifest-linked bundle, a disposable store, and held synthetic chat/classifier responses to verify out-of-band reminder capture during a busy run.
+  It checks skill routing for existing-task requests, idle dispatch, uncertain/invalid/unavailable classifications, deadline expiry, and cancellation on reload without contacting Jev.
   It checks one model request/completion, unchanged session entries, no abort or queued prompts, literal shell text, RPC, UI failure, invalid input, missing executable, empty queries, and headless rejection.
   `package-install-worklog.test.ts` checks recorded upgrades, ownership refusals, and preservation of personal settings/extensions.
   These checks do not prove live terminal interaction, RPC-client rendering, or Herdr notification behavior.

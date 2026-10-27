@@ -15,10 +15,13 @@ const model = { id: "fixture", name: "Worklog busy fixture", provider: "worklog-
 let release, started;
 const busy = new Promise(resolve => { started = resolve; });
 const requests = [];
+const routed = ["operation", "uncertain", "low-confidence", "malformed", "classifier-error", "classifier-missing", "classifier-timeout", "idle-operation"].includes(scenario);
+let classificationStarted;
+const classifying = new Promise(resolve => { classificationStarted = resolve; });
 let aborted = false;
 function stream(_model, context, options) {
   requests.push(structuredClone(context));
-  assert.equal(requests.length, 1, "Reminder capture must not request another model response");
+  assert.ok(requests.length <= (routed ? 2 : 1), "Unexpected model response");
   const events = ai.createAssistantMessageEventStream();
   const message = { role: "assistant", content: [{ type: "text", text: "Working" }], api: model.api,
     provider: model.provider, model: model.id, timestamp: Date.now(), stopReason: "stop",
@@ -26,7 +29,9 @@ function stream(_model, context, options) {
       cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0, total: 0 } } };
   options?.signal?.addEventListener("abort", () => { aborted = true; });
   events.push({ type: "start", partial: structuredClone(message) });
-  release = () => { events.push({ type: "done", reason: "stop", message }); events.end(); };
+  const finish = () => { events.push({ type: "done", reason: "stop", message }); events.end(); };
+  if (requests.length > 1 || scenario === "idle-operation") finish();
+  else release = finish;
   started();
   return events;
 }
@@ -35,7 +40,35 @@ const modelRuntime = await sdk.ModelRuntime.create({ modelsPath: null, allowMode
   credentials: { read: async () => undefined, list: async () => [], modify: forbidden, delete: forbidden } });
 modelRuntime.registerNativeProvider({ id: model.provider, name: model.name, getModels: () => [model],
   auth: { apiKey: { name: "No credentials", resolve: async () => ({ auth: {} }) } }, stream, streamSimple: stream });
-await modelRuntime.refresh({ providers: [model.provider], allowNetwork: false });
+const classifications = [];
+const jev = { type: "classifier", provider: "typesafe", id: "jev-latest", name: "Synthetic Jev",
+  api: "typesafe-system-one", baseUrl: "http://unused.invalid", input: ["text"], contextWindow: 8192 };
+modelRuntime.registerNativeProvider({ id: "typesafe", name: "Synthetic TypeSafe", getModels: () => [],
+  getAllModels: () => scenario === "classifier-missing" ? [] : [jev],
+  auth: { apiKey: { name: "No credentials", resolve: async () => ({ auth: {} }) } },
+  classify: async (_model, context, options) => {
+    classifications.push(structuredClone(context));
+    classificationStarted();
+    if (["classifier-timeout", "reload"].includes(scenario)) {
+      await new Promise(resolve => {
+        const guard = setTimeout(() => { throw Error("Classification was not cancelled"); }, 10_000);
+        options.signal.addEventListener("abort", () => { clearTimeout(guard); resolve(); }, { once: true });
+      });
+      // A provider finishing after cancellation cannot authorize a write.
+      return { provider: jev.provider, model: jev.id, stopReason: "stop", answers: {
+        intent: { type: "choice", choice: "reminder", confidence: 1, probabilities: { reminder: 1, operation: 0, uncertain: 0 } },
+      } };
+    }
+    if (scenario === "classifier-error") throw new Error("PRIVATE_CLASSIFIER_FAILURE");
+    const choice = scenario === "uncertain" ? "uncertain" : routed && !["low-confidence", "malformed"].includes(scenario) ? "operation" : "reminder";
+    return { provider: jev.provider, model: jev.id, stopReason: "stop", answers: {
+      intent: { type: "choice", choice, confidence: scenario === "low-confidence" ? 0.2 : 1,
+        probabilities: scenario === "malformed" ? { reminder: 1 } : {
+          reminder: choice === "reminder" ? 1 : 0, operation: choice === "operation" ? 1 : 0, uncertain: choice === "uncertain" ? 1 : 0 }, },
+    } };
+  },
+});
+await modelRuntime.refresh({ providers: [model.provider, "typesafe"], allowNetwork: false });
 const settingsManager = sdk.SettingsManager.inMemory({ cacheWarming: "off", retry: { enabled: false },
   compaction: { enabled: false } });
 settingsManager.setProjectTrusted(true);
@@ -84,6 +117,45 @@ try {
     assert.deepEqual(manager.getBranch(), initial);
     assert.equal(requests.length, 0);
     console.log(JSON.stringify({ rejected: notices.length, requests: 0 }));
+  } else if (scenario === "reload") {
+    const pending = session.prompt("/worklog Capture only in this session");
+    await classifying;
+    await session.reload();
+    await pending;
+    assert.equal(existsSync(process.env.WL_ROOT), false);
+    assert.equal(requests.length, 0);
+    assert.deepEqual(notices, []);
+    console.log(JSON.stringify({ cancelled: true, requests: 0 }));
+  } else if (scenario === "idle-operation") {
+    await session.prompt("/worklog complete 600");
+    await busy;
+    await session.waitForIdle();
+    assert.equal(existsSync(process.env.WL_ROOT), false);
+    assert.equal(classifications.length, 1);
+    assert.equal(requests.length, 1);
+    assert.ok(JSON.stringify(requests[0].messages).includes("complete 600"));
+    console.log(JSON.stringify({ routed: true, classifications: 1, requests: 1 }));
+  } else if (routed) {
+    const running = session.prompt("Finish the authorized implementation.");
+    await busy;
+    await session.prompt("/worklog let's do 600");
+    assert.equal(existsSync(process.env.WL_ROOT), false, "An existing-task request must not create a reminder");
+    const expectedClassifications = scenario === "classifier-missing" ? 0 : 1;
+    assert.equal(classifications.length, expectedClassifications);
+    if (expectedClassifications) assert.deepEqual(classifications[0].state, { request: "let's do 600" });
+    assert.ok(!JSON.stringify(notices).includes("PRIVATE_CLASSIFIER_FAILURE"));
+    assert.deepEqual(session.getSteeringMessages(), []);
+    assert.equal(aborted, false);
+    assert.equal(requests.length, 1, "Operations wait for the current response");
+    assert.equal(session.getFollowUpMessages().length, 1);
+    assert.match(session.getFollowUpMessages()[0], /work-log/);
+    assert.ok(session.getFollowUpMessages()[0].includes("let's do 600"));
+    release();
+    await running;
+    await session.waitForIdle();
+    assert.equal(requests.length, 2);
+    assert.equal(existsSync(process.env.WL_ROOT), false);
+    console.log(JSON.stringify({ routed: true, classifications: classifications.length, requests: requests.length }));
   } else if (scenario === "list") {
     const cli = args => execFileSync(binary, args, { cwd, encoding: "utf8" });
     cli(["note", "Completed work"]);
@@ -110,6 +182,8 @@ try {
   const title = "Fix shell quoting $(touch MUST_NOT_EXIST); preserve 'literal' text";
   await session.prompt(`/worklog ${title}`);
   assert.equal(session.isStreaming, true);
+  assert.equal(classifications.length, 1);
+  assert.deepEqual(classifications[0].state, { request: title });
   assert.equal(aborted, false);
   assert.deepEqual(session.getSteeringMessages(), []);
   assert.deepEqual(session.getFollowUpMessages(), []);
