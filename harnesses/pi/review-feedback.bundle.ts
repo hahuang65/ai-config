@@ -181,7 +181,7 @@ class FeedbackSession {
     }
   }
   async toolResult(event, ctx) {
-    if (event.toolName !== "bash" || event.isError || !this.origin)
+    if (event.toolName !== "bash" || !this.origin)
       return;
     const receipt = openReceipt(event.content.filter((part) => part.type === "text").map((part) => part.text).join(`
 `));

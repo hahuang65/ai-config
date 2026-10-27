@@ -4,13 +4,13 @@ import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { installedAiFile, installedSdkFile } from "./fixtures/installed-pi-sdk";
 
-test("the native Pi adapter attaches reviews and answers idle and busy feedback without a foreground wait", async () => {
+test.each(["successful", "failed"])("the native Pi adapter attaches receipts from %s shell calls and answers idle and busy feedback", async (shellOutcome) => {
   const home = realpathSync(mkdtempSync(join(tmpdir(), "review-feedback-adapter-")));
   const cwd = join(home, "project");
   mkdirSync(cwd);
   const sdkFile = installedSdkFile();
   const run = Bun.spawn(["node", resolve("test/fixtures/review-feedback-runtime.mjs"), sdkFile, installedAiFile(sdkFile), cwd,
-    resolve("harnesses/pi/review-feedback.bundle.ts"), resolve("tools/artifact-review/target/release/review-artifact")], {
+    resolve("harnesses/pi/review-feedback.bundle.ts"), resolve("tools/artifact-review/target/release/review-artifact"), shellOutcome], {
     cwd, env: { PATH: process.env.PATH, HOME: home, PI_CODING_AGENT_DIR: join(home, ".pi/agent"),
       AR_ROOT: join(home, "reviews"), PI_OFFLINE: "1", TERM: "dumb", LANG: "en_US.UTF-8" }, stdout: "pipe", stderr: "pipe",
   });

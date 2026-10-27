@@ -96,6 +96,7 @@ Completion saves one idempotent reply and distinguishes Answered from changed ar
 Change-report wording updates use the owned `revise` command and retain the same artifact path.
 Verified wording updates refresh decided and ended reports without reopening decisions or approval.
 
+Pi validates attachment receipts even when a later command makes the same shell call fail.
 Pi queues native follow-ups and claims only when feedback reaches model context.
 Claude uses native `asyncRewake` hooks and re-arms them after feedback or a 55-minute idle maintenance turn.
 Maintenance can add visible activity and token usage, but grants no new task authority.

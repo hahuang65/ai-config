@@ -125,6 +125,7 @@ Restricted-reviewer offline settings and synthetic-provider boundaries remain un
   `tests/wait.rs` covers manual compatibility waiting, transport heartbeats, terminal state, replay/retry, interruption/shutdown, and fresh revision checks despite render reuse.
   `feedback*.rs` cover durable jobs, exact origin routing, receipt validation, attempt fencing, native listener notification, and active lease renewal.
   Native Pi and Claude feedback fixtures prove idle delivery, busy sequencing, browser replies, Markdown-safe completion, and orphaned-claim recovery with synthetic providers.
+  Pi runs its receipt-to-reply scenario for both successful shell calls and calls that fail after opening the review.
   Claude adapter cases copy only the public hook, client, manifest, and CLI into each disposable home; the sandbox still denies the live home and installed source.
   A fixture regression verifies independent file copies and relative helper discovery, while native worktree probes keep literal executable paths and explicit task directories.
   Evaluation's `feedback_response.rs` covers restricted standalone responses, cancellation, no idle model call, retained discussion context, and CLI launch-mode selection.

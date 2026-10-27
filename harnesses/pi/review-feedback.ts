@@ -45,7 +45,8 @@ class FeedbackSession {
   }
 
   async toolResult(event: ToolResultEvent, ctx: ExtensionContext) {
-    if (event.toolName !== "bash" || event.isError || !this.origin) return;
+    if (event.toolName !== "bash" || !this.origin) return;
+    // A later shell command can fail after open has issued a valid receipt.
     const receipt = openReceipt(event.content.filter(part => part.type === "text").map(part => part.text).join("\n"));
     if (!receipt) return;
     try {

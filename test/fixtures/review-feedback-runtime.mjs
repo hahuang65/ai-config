@@ -4,7 +4,7 @@ import { createHash } from "node:crypto";
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { feedbackModel } from "./review-feedback-model.mjs";
-const [sdkFile, aiFile, cwd, extension, cli] = process.argv.slice(2);
+const [sdkFile, aiFile, cwd, extension, cli, shellOutcome] = process.argv.slice(2);
 const sdk = await import(sdkFile);
 const file = join(cwd, "artifact.html");
 writeFileSync(file, "<h1>Review feedback fixture</h1>");
@@ -16,7 +16,7 @@ const busy = Promise.withResolvers();
 let requests = 0;
 const { modelRuntime, model } = await feedbackModel(sdk, aiFile, (request, count) => {
   requests = count;
-  if (count === 1) return { tool: { name: "bash", arguments: { command: `${quote(cli)} open ${quote(file)} --no-browser; printf '%s\\n' 'DONE Open browser' 'TOTAL Review complete' >&2` } } };
+  if (count === 1) return { tool: { name: "bash", arguments: { command: `${quote(cli)} open ${quote(file)} --no-browser; printf '%s\\n' 'DONE Open browser' 'TOTAL Review complete' >&2; ${shellOutcome === "failed" ? "false" : "true"}` } } };
   if (count === 2) return { text: "Review is ready; the agent is free for other prompts." };
   if (count === 3) {
     assert.equal(status().processing.state, "working");
@@ -68,6 +68,8 @@ try {
   assert.equal(process.env.AI_REVIEW_AGENT_LAUNCHED, "pi", "Native shell commands need the agent-launch marker");
   await session.prompt("Open the synthetic artifact review.");
   assert.equal(requests, 2);
+  assert.equal(session.messages.find(message => message.role === "toolResult" && message.toolName === "bash")?.isError,
+    shellOutcome === "failed", "The receipt must survive a later command's failure in the same shell call");
   const attached = command(["attached", "--harness", "pi", "--conversation", session.sessionFile, "--workspace", cwd]);
   assert.deepEqual(attached.artifacts, [obsolete, file], "Opening through a native tool result must attach the originating conversation");
   await submit("native-idle-feedback-0001", "Explain the idle feedback.");
