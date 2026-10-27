@@ -44,6 +44,7 @@ Restricted-reviewer offline settings and synthetic-provider boundaries remain un
   Transaction failure tests inject a failing rename; the lock test waits for a real process barrier, not an elapsed-time guess.
   GNU coreutils are required; the macOS system find is also exercised.
   Multi-step ownership, transaction, rollback and modified-link scenarios compose their whole-case watchdogs from the temporary 60s per-installer limit plus setup/cleanup headroom.
+  The GNU coreutils prerequisite test uses the same composition for its six installer probes instead of Bun's five-second default.
   `package-install-budgets.test.ts` checks that composition; [timing evidence](timings.md#shell-installer-fixtures) records the reproduced cumulative-deadline failure.
   `package-install-performance.test.ts` verifies bounded support/skill metadata batching, one skill-parser process, independent UTF-8 checks, existing-parent reuse, shared staging, cleanup, and file-versus-directory traversal in one instrumented installation.
   That same installation accepts a skill at exactly 65536 bytes; no extra successful-installation fixture is added.
@@ -67,11 +68,13 @@ Restricted-reviewer offline settings and synthetic-provider boundaries remain un
   Both native harness discovery checks retain the real shell fixture, without skipping when an obsolete binary is absent.
 - `package-pi-questions.test.ts` loads the manifest-linked clarification bundle with the installed Node/Pi loader and controlled native TUI/RPC dialog responses.
   It checks source-to-bundle parity, bounded schemas, choice and free-text answers, cancellation/abort, hidden headless behavior, private UI failures, invalid responses, and terminal-control neutralization.
+  Shared event-bus checks also cover balanced Herdr waiting/clear events around terminal dialogs, continuous custom-input waits, failure cleanup, RPC/headless/already-aborted exclusions, and operation without the independent observer.
   `package-install-pi-questions.test.ts` checks recorded resource upgrades, personal-settings/extension preservation, and refusal to adopt an unowned matching bundle.
   Shared-skill tests check useful clarification guidance without extra approval gates or coaching takeover.
   These checks do not establish live installation, actual keyboard interaction, or RPC client transport/rendering.
 - `package-pi-checklist.test.ts` uses native Pi tool wrapping, disposable session managers, and a bounded synthetic provider to check the owned current-task checklist.
   It covers typed bounded replacements, one-active-step validation, read-only operations, native reload/tree/compaction/resume, aborts, terminal safety, corrupted snapshots, compact width-aware widgets, and RPC/headless bindings.
+  Its six-process schema test composes its case budget from the unchanged 20s child deadline plus one child-sized setup/cleanup margin.
   The native worktree suite also verifies checklist carry, original-session isolation, saved-task resume, leave, and cleanup through real native session replacement.
   `package-install-checklist.test.ts` checks fresh ownership, recorded upgrades, personal-resource/settings preservation, and refusal to adopt an unowned matching extension.
   These tests do not prove real keyboard/rendering behavior or every conditional native task-tool declaration.

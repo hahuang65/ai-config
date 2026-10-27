@@ -1,7 +1,9 @@
 import { expect, test } from "bun:test";
 import { existsSync, linkSync, mkdirSync, readFileSync, readlinkSync, renameSync, symlinkSync, unlinkSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
-import { installFixture } from "./fixtures/install-script";
+import { installFixture, installerScenarioGuard } from "./fixtures/install-script";
+
+const coreutilsTools = ["mv", "stat", "dd", "sync", "head", "readlink"];
 
 test("install.sh accepts Cargo hard-linked executables at the exact generated tool paths", () => {
   const setup = installFixture();
@@ -83,7 +85,7 @@ test("install.sh refuses a missing mise before building or changing the home", (
 test("install.sh refuses missing GNU coreutils before building or installing", () => {
   const setup = installFixture();
   try {
-    for (const tool of ["mv", "stat", "dd", "sync", "head", "readlink"]) {
+    for (const tool of coreutilsTools) {
       writeFileSync(join(setup.bin, tool), "#!/bin/sh\nexit 64\n", { mode: 0o755 });
       const result = setup.run();
       expect(result.status).toBe(1);
@@ -94,7 +96,7 @@ test("install.sh refuses missing GNU coreutils before building or installing", (
       unlinkSync(join(setup.bin, tool));
     }
   } finally { setup.clean(); }
-});
+}, installerScenarioGuard(coreutilsTools.length));
 
 test("install.sh manages ownership and settings in a disposable home without touching unrelated resources", () => {
   const setup = installFixture();

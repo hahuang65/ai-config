@@ -37,6 +37,20 @@ Headless sessions withdraw its declaration; stale execution returns `unavailable
 The tool starts no processes, opens no external editor, and adds no answer channel, service, or separate state store.
 Normal tool results remain in the conversation, so do not request secrets.
 
+### Herdr status
+
+Terminal questions emit `herdr:blocked` with `active: true` and the fixed label `Waiting for your answer` before opening a dialog.
+One matching `active: false` event clears that wait after an answer, dismissal, abort, invalid response, or UI failure.
+The wait spans both choice and custom-text dialogs without an intermediate clear.
+Question and answer text are not included in these status events.
+RPC, headless, and already-aborted calls emit no Herdr status events.
+
+The independently configured Herdr observer owns terminal state reporting and notifications.
+It reports `blocked` while waiting, returns to `working` when the dialog finishes, and reports `idle` only when Pi emits `agent_settled`.
+Finishing a question does not mean the agent has finished its work.
+The question tool does not synthesize completion events, contact Herdr directly, or require the observer to be installed.
+Herdr configuration remains separately owned and unchanged.
+
 ## Results and limits
 
 Pi returns the same data in model-facing JSON text, `details`, and `structuredContent`, with a declared output schema:
@@ -56,7 +70,8 @@ Tabs, previews, multi-select, notes, external editing, and package-defined progr
 
 ## Verification
 
-The adapter was checked against installed Pi 1.3.0 documentation and its Node resource loader.
+The adapter was checked against installed Pi 1.4.0 documentation and its Node resource loader.
 `test/package-pi-questions.test.ts` uses disposable manifest links, controlled TUI/RPC dialog responses, schema checks, and source-to-bundle parity.
+Its shared event-bus checks cover balanced waiting events, continuous custom-answer waits, failure cleanup, mode exclusions, and operation without a Herdr observer.
 Installer tests cover recorded upgrades, preservation of personal settings/extensions, and refusal to adopt an unowned matching file.
 These tests do not establish live installation, keyboard layout, or a real RPC client's rendering or response transport.

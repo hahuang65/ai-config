@@ -25,6 +25,7 @@ The installed package provides:
   Claude consumes a generated language-server-only plugin; Pi provides an on-demand `lsp` tool for navigation and diagnostics.
   Server tools are declared in `mise.toml` and provisioned explicitly, never by the harness adapters.
 - An owned Pi `ask_user_question` tool for one choice or free-text clarification, using native TUI/RPC dialogs and explicit cancellation/unavailability.
+  Terminal dialogs report waiting status to the independent Herdr observer; completion remains tied to Pi settlement.
   Shared skills use it only when useful and fall back to ordinary chat; see [clarification contracts and limits](docs/clarification.md).
 - A small Pi `todo` tool and `/todos` command for a branch-aware session checklist, with a compact editor panel and RPC/headless fallbacks.
   It tracks the current task, not Worklog reminders or action authority; see [session checklist contracts](docs/session-checklist.md).

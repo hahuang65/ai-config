@@ -5,6 +5,8 @@ import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { installedAiFile, installedSdkFile } from "./fixtures/installed-pi-sdk";
 
+const CHECKLIST_COMMAND_GUARD_MS = 20_000;
+
 function checklist(actions: unknown[], options: Record<string, unknown> = {}) {
   const root = realpathSync(mkdtempSync(join(tmpdir(), "pi-checklist-")));
   try {
@@ -16,7 +18,7 @@ function checklist(actions: unknown[], options: Record<string, unknown> = {}) {
     if (link) symlinkSync(fileURLToPath(new URL(`../${link.target}`, import.meta.url)), join(extensions, "todo.ts"));
     const sdk = installedSdkFile();
     const run = Bun.spawnSync(["node", fileURLToPath(new URL("./fixtures/pi-checklist.mjs", import.meta.url)),
-      sdk, installedAiFile(sdk), root, join(root, "scenario.json")], { cwd: root, timeout: 20_000,
+      sdk, installedAiFile(sdk), root, join(root, "scenario.json")], { cwd: root, timeout: CHECKLIST_COMMAND_GUARD_MS,
       env: { HOME: join(root, "home"), PATH: process.env.PATH, PI_CODING_AGENT_DIR: join(root, "home/.pi/agent"), PI_OFFLINE: "1" },
       stdout: "pipe", stderr: "pipe" });
     expect(run.exitCode, run.stderr.toString()).toBe(0);
@@ -31,20 +33,22 @@ test("the shipped checklist bundle matches the reviewed source", async () => {
   expect(await build.outputs[0].text()).toBe(readFileSync(new URL("../harnesses/pi/todo.bundle.ts", import.meta.url), "utf8"));
 });
 
+const invalidSchemaInputs = [
+  { action: "write", title: " ", items: [] },
+  { action: "write", title: "x".repeat(161), items: [] },
+  { action: "write", title: "Goal", items: Array(25).fill({ id: "same", text: "Step", status: "pending" }) },
+  { action: "write", title: "Goal", items: [{ id: "a", text: "x".repeat(241), status: "pending" }] },
+  { action: "write", title: "Goal", items: [{ id: "a", text: "Step", status: "pending", owner: "someone" }] },
+  { action: "delete", id: "a" },
+];
+
 test("the public schema bounds the list and text without adding owners or dependency graphs", () => {
-  for (const input of [
-    { action: "write", title: " ", items: [] },
-    { action: "write", title: "x".repeat(161), items: [] },
-    { action: "write", title: "Goal", items: Array(25).fill({ id: "same", text: "Step", status: "pending" }) },
-    { action: "write", title: "Goal", items: [{ id: "a", text: "x".repeat(241), status: "pending" }] },
-    { action: "write", title: "Goal", items: [{ id: "a", text: "Step", status: "pending", owner: "someone" }] },
-    { action: "delete", id: "a" },
-  ]) {
+  for (const input of invalidSchemaInputs) {
     const result = checklist([input]);
     expect(result.results).toEqual([{ validationError: true }]);
     expect(result.customEntries).toEqual([]);
   }
-});
+}, (invalidSchemaInputs.length + 1) * CHECKLIST_COMMAND_GUARD_MS);
 
 const current = { title: "Add the feature", items: [
   { id: "inspect", text: "Inspect current behavior", status: "completed" },

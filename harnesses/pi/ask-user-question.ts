@@ -67,11 +67,15 @@ export default function questions(pi: ExtensionAPI) {
         "Ask in ordinary chat if unavailable. Never treat cancellation as an answer or repeatedly reopen a dismissed question.",
       parameters, outputSchema: output, executionMode: "sequential",
       async execute(_id, input, signal, _update, ctx) {
+        const waiting = ctx.mode === "tui" && ctx.hasUI && !signal?.aborted;
+        if (waiting) pi.events.emit("herdr:blocked", { active: true, label: "Waiting for your answer" });
         try { return await choose(input, signal, ctx); }
         catch {
           return signal?.aborted
             ? respond({ status: "cancelled", question: input.question, reason: "aborted" })
             : respond({ status: "unavailable", question: input.question, reason: "ui_error" });
+        } finally {
+          if (waiting) pi.events.emit("herdr:blocked", { active: false });
         }
       },
     });

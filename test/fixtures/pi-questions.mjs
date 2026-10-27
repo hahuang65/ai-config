@@ -6,7 +6,10 @@ const sdk = await import(sdkPath);
 const { Check } = await import(createRequire(sdkPath).resolve("typebox/value"));
 const scenario = JSON.parse(readFileSync(scenarioFile, "utf8"));
 const agentDir = join(root, "home/.pi/agent");
-const loader = new sdk.DefaultResourceLoader({ cwd: root, agentDir, settingsManager: sdk.SettingsManager.inMemory() });
+const eventBus = sdk.createEventBus();
+const statusEvents = [];
+if (scenario.observer !== false) eventBus.on("herdr:blocked", data => statusEvents.push({ type: "blocked", ...data }));
+const loader = new sdk.DefaultResourceLoader({ cwd: root, agentDir, eventBus, settingsManager: sdk.SettingsManager.inMemory() });
 await loader.reload();
 const { extensions, errors } = loader.getExtensions();
 if (errors.length) throw new Error(JSON.stringify(errors));
@@ -14,12 +17,14 @@ const controller = new AbortController();
 const dialogs = [];
 const ui = {
   async select(title, options, opts) {
+    statusEvents.push({ type: "dialog", method: "select" });
     dialogs.push({ method: "select", title, options, hasSignal: opts?.signal === controller.signal });
     if (scenario.abort === "select") controller.abort();
     if (scenario.failure === "select") throw new Error("PRIVATE_UI_FAILURE");
     return Object.hasOwn(scenario, "selection") ? scenario.selection : options[scenario.choice ?? 0];
   },
   async input(title, placeholder, opts) {
+    statusEvents.push({ type: "dialog", method: "input" });
     dialogs.push({ method: "input", title, hasSignal: opts?.signal === controller.signal });
     if (scenario.abort === "input") controller.abort();
     if (scenario.failure === "input") throw new Error("PRIVATE_UI_FAILURE");
@@ -39,4 +44,4 @@ if (tool) {
     : { validationError: true };
   if (result.structuredContent && !Check(tool.outputSchema, result.structuredContent)) throw new Error("Invalid output schema");
 }
-console.log(JSON.stringify({ found: !!tool, exposure: tool?.exposure, executionMode: tool?.executionMode, dialogs, result }));
+console.log(JSON.stringify({ found: !!tool, exposure: tool?.exposure, executionMode: tool?.executionMode, dialogs, statusEvents, result }));

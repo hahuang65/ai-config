@@ -62,10 +62,23 @@ test("the installed Pi question tool shows trade-offs and returns a model-only s
   expect(JSON.parse(result.result.content[0].text)).toEqual(result.result.structuredContent);
 });
 
+test("a terminal question reports pending before its dialog and clears it before returning", () => {
+  const result = ask();
+  expect(result.statusEvents).toEqual([
+    { type: "blocked", active: true, label: "Waiting for your answer" },
+    { type: "dialog", method: "select" },
+    { type: "blocked", active: false },
+  ]);
+  expect(result.result.structuredContent.status).toBe("answered");
+});
+
 test("dismissing either native dialog returns cancelled without an answer", () => {
   for (const scenario of [{ choice: -1 }, { choice: 2 }]) {
     const result = ask(scenario);
     expect(result.result.structuredContent).toEqual({ status: "cancelled", question: question.question, reason: "dismissed" });
+    expect(result.statusEvents.filter((event: { type: string }) => event.type === "blocked")).toEqual([
+      { type: "blocked", active: true, label: "Waiting for your answer" }, { type: "blocked", active: false },
+    ]);
   }
 });
 
@@ -73,6 +86,7 @@ test("headless Pi withdraws the question tool and reports unavailable without op
   const result = ask({ mode: "print", hasUI: false });
   expect(result.exposure).toBe("hidden");
   expect(result.dialogs).toEqual([]);
+  expect(result.statusEvents).toEqual([]);
   expect(result.result.structuredContent).toEqual({ status: "unavailable", question: question.question, reason: "no_ui" });
 });
 
@@ -80,6 +94,10 @@ test("abort before or during a native dialog never accepts a late answer", () =>
   for (const scenario of [{ abort: "before" }, { abort: "select" }, { abort: "input", choice: 2, text: "Late answer" }]) {
     const result = ask(scenario);
     expect(result.result.structuredContent).toEqual({ status: "cancelled", question: question.question, reason: "aborted" });
+    expect(result.statusEvents.filter((event: { type: string }) => event.type === "blocked")).toEqual(
+      scenario.abort === "before" ? [] : [
+        { type: "blocked", active: true, label: "Waiting for your answer" }, { type: "blocked", active: false },
+      ]);
     if (scenario.abort === "before") expect(result.dialogs).toEqual([]);
   }
 });
@@ -89,12 +107,18 @@ test("a failing UI returns unavailable without leaking private exception details
     const result = ask(scenario);
     expect(result.result.structuredContent).toEqual({ status: "unavailable", question: question.question, reason: "ui_error" });
     expect(JSON.stringify(result)).not.toContain("PRIVATE_UI_FAILURE");
+    expect(result.statusEvents.at(-1)).toEqual({ type: "blocked", active: false });
   }
 });
 
 test("an open question needs no artificial choices and uses native text input", () => {
   const result = ask({ input: { question: "What should this be called?" }, text: "Workspace" });
   expect(result.dialogs.map((dialog: { method: string }) => dialog.method)).toEqual(["input"]);
+  expect(result.statusEvents).toEqual([
+    { type: "blocked", active: true, label: "Waiting for your answer" },
+    { type: "dialog", method: "input" },
+    { type: "blocked", active: false },
+  ]);
   expect(result.result.structuredContent).toEqual({ status: "answered", question: "What should this be called?",
     answer: { kind: "text", text: "Workspace" } });
 });
@@ -134,10 +158,27 @@ test("model-provided terminal controls cannot reach the native dialog", () => {
   expect(result.result.structuredContent.status).toBe("answered");
 });
 
+test("pending status spans choice and custom input without an intermediate clear", () => {
+  const result = ask({ choice: 2, text: "A plain file" });
+  expect(result.statusEvents).toEqual([
+    { type: "blocked", active: true, label: "Waiting for your answer" },
+    { type: "dialog", method: "select" },
+    { type: "dialog", method: "input" },
+    { type: "blocked", active: false },
+  ]);
+});
+
+test("terminal questions still work when the independent Herdr observer is absent", () => {
+  const result = ask({ observer: false });
+  expect(result.result.structuredContent.status).toBe("answered");
+  expect(result.statusEvents).toEqual([{ type: "dialog", method: "select" }]);
+});
+
 test("Pi RPC supports a custom answer through native select and input dialogs", () => {
   const result = ask({ mode: "rpc", choice: 2, text: "Use a plain file for the prototype." });
   expect(result.dialogs.map((dialog: { method: string }) => dialog.method)).toEqual(["select", "input"]);
   expect(result.dialogs.every((dialog: { hasSignal: boolean }) => dialog.hasSignal)).toBe(true);
+  expect(result.statusEvents).toEqual([{ type: "dialog", method: "select" }, { type: "dialog", method: "input" }]);
   expect(result.result.structuredContent).toEqual({ status: "answered", question: question.question,
     answer: { kind: "text", text: "Use a plain file for the prototype." } });
 });
