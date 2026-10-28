@@ -74,7 +74,8 @@ The same source supplies both harnesses wherever two routes are listed.
 | [Deliver](../commands/deliver.md) | `.claude/commands/deliver.md`, `.pi/agent/prompts/deliver.md`. |
 | [Rebase](../commands/rebase.md) | `.claude/commands/rebase.md`, `.pi/agent/prompts/rebase.md`. |
 | [Claude WT prompt](../harnesses/claude/commands/wt.md) | `.claude/commands/wt.md`; guidance, unlike Pi's executable `/wt` handler. |
-| [WT executable](../tools/worktree/target/release/wt) | `.local/bin/wt`, `.local/bin/worktree`; [source contract](../tools/worktree/README.md). |
+| [WT executable](../tools/worktree/target/release/wt) | `.local/bin/wt`, `.local/bin/worktree`; [source contract](../tools/worktree/README.md). Opt-in `shell-init bash` prints functions that change the calling shell directory for plain `enter`, never the harness session; no startup-file installation. |
+| [WT Bash integration](../tools/worktree/src/shell.bash) | `.local/share/ai-config/bash/wt.bash`; installer-owned functions for a guarded loader in separately managed Bash startup configuration; no startup-file rewrite. |
 | [WT Bash completion](../tools/worktree/src/completion.bash) | `.local/share/bash-completion/completions/wt`, `.local/share/bash-completion/completions/worktree`; discovered by an existing `bash-completion` loader without startup-file edits. |
 | [WL executable](../tools/worklog/target/release/wl) | `.local/bin/wl`, `.local/bin/worklog`; [CLI contract](../tools/worklog/docs/cli.md). |
 | [Review executable](../tools/evaluation/target/release/review-change) | `.local/bin/review-change`; [review contract](review-change-cli.md). |

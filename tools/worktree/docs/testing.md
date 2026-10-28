@@ -56,11 +56,26 @@ Use `cargo test --locked --offline --test cli -- --test-threads=1` for serial di
 `tests/cases/completions.rs` runs the Rust-produced setup in clean Bash processes with disposable homes.
 Cases cover both installed names, executable paths with spaces, current-project task names, typed-flag positions without flag suggestions, `--`, literal shell metacharacters, quiet failures, and managed names beyond the list display limit.
 A held WT operation lock, file-content/modification-time snapshots, and Git process traces check that completion does not lock, mutate, fetch, or invoke cleanup.
-The retained Python oracle gains only the help note identifying the Rust-only setup command; its lifecycle assertions remain unchanged.
+The retained Python oracle gains only the help note identifying the Rust-only setup commands; its lifecycle assertions remain unchanged.
 The component lint gate syntax-checks and ShellChecks the embedded Bash source.
 
 ```sh
 cargo test --locked --test cli completions::
+```
+
+## Bash directory switching
+
+`tests/cases/shell.rs` sources the Rust-produced shell integration in disposable Bash processes with both command names on a controlled PATH.
+Cases verify that plain entry changes the same shell's directory, while JSON output, help, invalid input, missing tasks, and Git-locked tasks do not.
+They preserve executable output and exit status, exercise `command` bypass, and prove that `new` does not automatically enter.
+Paths with spaces, quotes, shell syntax, and newlines stay literal, including with a custom `cd` function, `CDPATH`, strict shell options, and repeated setup.
+Completion still works through the wrapped names.
+Setup validation runs outside Git without installing resources or editing startup files.
+The component lint gate syntax-checks and ShellChecks both embedded Bash sources.
+These tests do not enable integration in the live user shell or prove other-shell compatibility.
+
+```sh
+cargo test --locked --test cli shell::
 ```
 
 ## Branch-syntax reuse

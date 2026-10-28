@@ -39,6 +39,9 @@ Restricted-reviewer offline settings and synthetic-provider boundaries remain un
 - `package-commit.test.ts` checks the commit skill's explicit authority, protected-path policy, and real Worklog CLI commands in a disposable home.
   Its 25-command scenario retains a 10s limit per command and composes a finite whole-case budget with cleanup headroom through `fixtures/commit-log.ts`.
   Regressions pin the budget and actual command count while retaining default-list omission, full-list lookup, and synthetic commit-recording assertions.
+- `package-install-shell.test.ts` checks the installer-owned WT Bash fragment, startup-file preservation, idempotence, recorded upgrades, source switches, refusal of personal resources, and directory switching after a new Bash process sources the installed file.
+  The rollback suite includes fragment replacement and failed first-install cleanup.
+  These AI-package tests do not prove that an independently managed Bash startup configuration loads the fragment.
 - `package-install-*.test.ts` exercises the shell installer with disposable homes and source copies, fake mise/build/tool executables, and real jq/coreutils processes.
   It covers missing dependencies, provisioning-before-build ordering and failure exit status, source/HOME separation, exact numeric preservation, ownership refusals, recorded alias upgrades, live lock contention, rollback, concurrent-edit refusal, and private record permissions.
   Cargo-style executable hard links are accepted only at catalogue paths; hard-linked source files and redirected private tool parents/files remain refused.

@@ -17,7 +17,7 @@ def task_argument(value):
 
 def parser():
     cli = argparse.ArgumentParser(prog="wt", description="Create, resume, and safely remove task worktrees. Never commits or publishes.",
-                                  epilog="Bash completion (Rust CLI): wt completions bash", allow_abbrev=False)
+                                  epilog="Bash completion (Rust CLI): wt completions bash; shell: wt shell-init bash", allow_abbrev=False)
     commands = cli.add_subparsers(dest="command", required=True)
     for name, help_text in [("new", "Create a task branch and worktree"), ("enter", "Print an existing task's path"),
                             ("list", "List this project's worktrees without network access"),

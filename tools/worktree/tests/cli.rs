@@ -9,3 +9,5 @@ mod completions;
 mod repository;
 #[path = "cases/sessions.rs"]
 mod sessions;
+#[path = "cases/shell.rs"]
+mod shell;

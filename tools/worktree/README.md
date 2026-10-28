@@ -46,7 +46,7 @@ From a project with an initial commit:
 
 ```sh
 wt new invoice-search
-cd -- "$(wt enter invoice-search)"
+cd -- "$(command wt enter invoice-search)"
 wt list
 wt clean invoice-search --check
 wt clean invoice-search
@@ -56,7 +56,7 @@ wt clean invoice-search
 It creates `~/.worktrees/<project>/<task>` on `<initials>/<task>` and prints the path to standard output.
 Initials come from Git's user name unless `wt.initials` is set.
 It never switches or changes files in the main checkout.
-A command cannot change its parent shell's directory; use `cd` as shown, or the Pi adapter.
+The executable cannot change its parent shell's directory; use `cd` as shown, the opt-in Bash integration below, or the Pi adapter.
 
 `enter` prints an existing managed task's path.
 An explicitly Git-locked task is not entered by this standalone command; inspect its lock reason before changing that protection.
@@ -85,6 +85,46 @@ All lifecycle commands support `--json` for protocol-version-1 output.
 Diagnostics stay on standard error.
 Exit codes are 0 for success, 1 for an operational failure or incomplete single/batch cleanup, 2 for invalid arguments, and 130 for interruption.
 A successful empty batch explicitly reports zero managed tasks.
+
+## Bash directory switching
+
+Enable directory switching for the current Bash shell:
+
+```bash
+source <(wt shell-init bash)
+wt enter invoice-search
+# The same shell now runs in the selected worktree.
+```
+
+This defines shell functions for both `wt` and `worktree`.
+Only successful plain `enter TASK` changes directory, using Bash's built-in `cd` with the returned path as literal data.
+It prints no path on successful entry.
+`--json`, help, errors, and every other subcommand pass through to the executable without changing directory.
+In particular, `new` still creates a worktree without entering it, and cleanup behavior is unchanged.
+Git locks and normal entry validation remain effective.
+
+Use `command wt enter TASK` or `command worktree enter TASK` to bypass the function and print the path.
+The `cd -- "$(command wt enter TASK)"` idiom therefore works with or without the integration.
+Machine consumers and harness adapters can keep invoking the executable directly.
+Shell functions cannot change an already-running harness session; use its native transition controls instead.
+
+The setup command works outside a Git repository and changes no files or settings.
+It is separate from completion setup and supports Bash only.
+
+Package installation also owns `~/.local/share/ai-config/bash/wt.bash`, a link to the same function source.
+Independently managed Bash configuration can load this installed fragment without invoking WT during startup:
+
+```bash
+if [[ -x "$HOME/.local/bin/wt" &&
+      -r "$HOME/.local/share/ai-config/bash/wt.bash" ]]; then
+  source "$HOME/.local/share/ai-config/bash/wt.bash"
+fi
+```
+
+With that loader in place, installation makes the functions available in new shells, and missing files are silently ignored.
+Existing shells still need to source the fragment or run the manual setup command.
+The installer owns only its fragment link, preserving unrelated files and recorded ownership through upgrades and rollback.
+It never edits shell startup files or adds a loader to another repository.
 
 ## Bash completion
 

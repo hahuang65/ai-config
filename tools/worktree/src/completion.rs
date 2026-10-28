@@ -1,34 +1,45 @@
-//! Opt-in Bash setup and quiet, read-only completion requests.
+//! Opt-in Bash integration/completion setup and quiet, read-only completion requests.
 use crate::{Result, repository::Repository};
 use std::io::Write;
 
 pub fn dispatch(values: &[String]) -> Option<Result<i32>> {
     match values.first()?.as_str() {
-        "completions" => Some(setup(&values[1..])),
+        "completions" => Some(setup(
+            &values[1..],
+            "completions",
+            "Print Bash completion setup for wt and worktree.",
+            include_bytes!("completion.bash"),
+        )),
+        "shell-init" => Some(setup(
+            &values[1..],
+            "shell-init",
+            "Print opt-in Bash directory switching for wt and worktree.",
+            include_bytes!("shell.bash"),
+        )),
         "__complete" => Some(request(&values[1..])),
         _ => None,
     }
 }
 
-fn setup(values: &[String]) -> Result<i32> {
+fn setup(values: &[String], command: &str, description: &str, script: &[u8]) -> Result<i32> {
     if values
         .iter()
         .any(|value| matches!(value.as_str(), "-h" | "--help"))
     {
         println!(
-            "Usage: {} completions bash\n\nPrint Bash completion setup for wt and worktree. No installation is performed.",
+            "Usage: {} {command} bash\n\n{description} No installation is performed.",
             crate::args::program_name()
         );
         return Ok(0);
     }
     match values {
         [shell] if shell == "bash" => {
-            std::io::stdout().write_all(include_bytes!("completion.bash"))?;
+            std::io::stdout().write_all(script)?;
             Ok(0)
         }
         _ => {
             eprintln!(
-                "Usage: {} completions bash\nOnly Bash is supported. Source the output to enable completion.",
+                "Usage: {} {command} bash\nOnly Bash is supported. Source the output to enable this integration.",
                 crate::args::program_name()
             );
             Ok(2)
@@ -58,7 +69,7 @@ fn request(values: &[String]) -> Result<i32> {
 
 fn candidates(words: &[String], index: usize, current: &str) -> Vec<String> {
     if index == 1 {
-        return ["new", "enter", "list", "clean", "completions"]
+        return ["new", "enter", "list", "clean", "completions", "shell-init"]
             .map(str::to_owned)
             .to_vec();
     }
@@ -75,7 +86,7 @@ fn candidates(words: &[String], index: usize, current: &str) -> Vec<String> {
         if matches!(command.as_str(), "enter" | "clean") {
             values.extend(tasks().unwrap_or_default());
         }
-        if command == "completions" {
+        if matches!(command.as_str(), "completions" | "shell-init") {
             values.push("bash".into());
         }
     }
@@ -126,7 +137,7 @@ fn options(command: &str) -> &'static [&'static str] {
         "enter" => &["-h", "--help", "--json"],
         "list" => &["-h", "--help", "--json", "--all"],
         "clean" => &["-h", "--help", "--json", "--check"],
-        "completions" => &["-h", "--help"],
+        "completions" | "shell-init" => &["-h", "--help"],
         _ => &[],
     }
 }

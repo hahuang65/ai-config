@@ -35,6 +35,13 @@ This permits full cleanup after a squash or rebase merge without treating tree e
 Native harness adapters do not acquire or release it.
 WT's ordinary entry and cleanup commands respect existing Git locks without treating them as proof of an active session.
 
+**Shell integration** is the opt-in Bash function layer printed by `wt shell-init bash` for both command names.
+A successful plain `enter TASK` changes the calling shell's directory, while machine output, help, failures, and other commands retain executable behavior.
+The executable still prints paths, and neither a child shell nor this integration moves a running harness session.
+Package installation also owns a link to the same functions at `~/.local/share/ai-config/bash/wt.bash`.
+A guarded loader in separately managed Bash configuration can source the installed fragment in new shells.
+No startup file is changed automatically.
+
 **Shell completion** suggests public commands and current-project managed task names, not flags, without performing a lifecycle operation.
 The CLI prints manual Bash setup on request, and package installation owns standard per-user `bash-completion` entries for both command names.
 An existing loader can discover them without startup-file edits.

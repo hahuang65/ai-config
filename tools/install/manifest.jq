@@ -11,7 +11,8 @@ def link_destination:
     or test("^\\.claude/(skills|commands|agents|hooks|themes)/.+$")
     or test("^\\.pi/agent/(skills|prompts|agents|extensions|themes)/.+$")
     or test("^\\.local/bin/[^/]+$")
-    or ([".local/share/bash-completion/completions/wt", ".local/share/bash-completion/completions/worktree"] | index($path)) != null;
+    or ([".local/share/bash-completion/completions/wt", ".local/share/bash-completion/completions/worktree",
+      ".local/share/ai-config/bash/wt.bash"] | index($path)) != null;
 
 def allowed_setting:
   . as $s | .value as $v | .path as $p
@@ -60,6 +61,7 @@ def public_tools: {
 def bash_completions: {
   ".local/share/bash-completion/completions/wt": "tools/worktree/src/completion.bash",
   ".local/share/bash-completion/completions/worktree": "tools/worktree/src/completion.bash"};
+def bash_integration: {".local/share/ai-config/bash/wt.bash": "tools/worktree/src/shell.bash"};
 def private_tools: ["tools/artifact-review/target/release/review-artifact", "tools/evaluation/target/release/consult"];
 def bootstrap: {
   ".claude/CLAUDE.md": "baseline.md", ".pi/agent/AGENTS.md": "baseline.md",
@@ -81,7 +83,7 @@ def bootstrap: {
   ".claude/plugins/ai-local-lsp": "harnesses/claude/plugins/ai-local-lsp"};
 # Explicit construction avoids any catalogue dependency on a mutable manifest.
 def catalogue:
-  (bootstrap + public_tools + bash_completions | to_entries | map({destination: .key, target: .value}))
+  (bootstrap + public_tools + bash_completions + bash_integration | to_entries | map({destination: .key, target: .value}))
   + [skills[] as $name | [".claude", ".pi/agent"][] as $h
       | {destination: "\($h)/skills/\($name)", target: "skills/\($name)"}]
   + [agents[] as $name | [".claude", ".pi/agent"][] as $h
@@ -111,7 +113,7 @@ def support_files: [
   "rules/a5.md", "rules/cli-ergonomics.md", "rules/coding-style.md", "rules/documentation.md", "rules/git-commit.md",
   "rules/html-routing.md", "rules/mise.md", "rules/performance.md", "rules/security.md", "rules/testing.md", "rules/writing.md"]
   + (bootstrap | [.[] | select(. != "harnesses/claude/plugins/ai-local-lsp")])
-  + (public_tools | [.[]]) + (bash_completions | [.[]]) + private_tools + [skills[] | "skills/\(.)/SKILL.md"]
+  + (public_tools | [.[]]) + (bash_completions | [.[]]) + (bash_integration | [.[]]) + private_tools + [skills[] | "skills/\(.)/SKILL.md"]
   + [agents[] | "agents/\(.).md"] + ["commands/deliver.md", "commands/rebase.md"];
 
 def worktree_hook($event):
@@ -159,7 +161,8 @@ def native_package($permissions):
       or (.destination | startswith(".claude/")) and (.target | startswith("harnesses/claude/"))
       or (.destination | startswith(".pi/agent/")) and (.target | startswith("harnesses/pi/"))
       or (public_tools[$link.destination] == $link.target)
-      or (bash_completions[$link.destination] == $link.target)); "Package crosses harness module boundaries")
+      or (bash_completions[$link.destination] == $link.target)
+      or (bash_integration[$link.destination] == $link.target)); "Package crosses harness module boundaries")
   | require(all(.settings[]; selected_setting and (.value | tojson | contains(".dotfiles/ai") | not));
       "Package claims unrelated harness settings")
   | require(all($permissions | to_entries[]; . as $group | all(.value[]; . as $value

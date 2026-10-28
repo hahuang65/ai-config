@@ -176,6 +176,7 @@ fn ordinary_catalogue_selects_host_cli_and_completion_resources_only() {
                     | ".local/bin/review-change"
                     | ".local/share/bash-completion/completions/wt"
                     | ".local/share/bash-completion/completions/worktree"
+                    | ".local/share/ai-config/bash/wt.bash"
             ) && !path.starts_with(".claude/skills/")
                 && !path.starts_with(".pi/agent/skills/")
                 && !path.starts_with(".claude/agents/")

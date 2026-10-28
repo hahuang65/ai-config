@@ -16,7 +16,7 @@ export function copyPackageFiles(destination: string) {
     cpSync(join(source, directory), join(destination, directory), { recursive: true });
   }
   for (const file of ["manifest.json", "language-servers.json", "baseline.md", "reviewer.md", "docs/worktree-transitions.md",
-    "tools/worktree/src/completion.bash", "target/pi-subagents/host.json", "target/pi-subagents/package/package.json",
+    "tools/worktree/src/completion.bash", "tools/worktree/src/shell.bash", "target/pi-subagents/host.json", "target/pi-subagents/package/package.json",
     "target/pi-subagents/package/LICENSE", "target/pi-subagents/package/bundle/index.js"]) {
     const target = join(destination, file);
     mkdirSync(dirname(target), { recursive: true });

@@ -14,7 +14,12 @@ Public commands remain symlinks to built binaries in the installed source, prese
 The guarded ordinary Pi `subagent` facade is a model tool, not another CLI or a replacement for the restricted reviewer; see [native specialist contracts](native-specialists.md).
 Its pinned engine is built against the existing host SDK without provisioning Pi.
 WT and WL retain their existing alias pairs and targets listed below.
-WT's Rust executable also prints manual [Bash completion setup](../tools/worktree/README.md#bash-completion) for `wt` and `worktree`, with read-only current-project task-name lookup.
+WT's Rust executable also prints opt-in [Bash directory switching](../tools/worktree/README.md#bash-directory-switching) through `shell-init bash` for both names.
+Sourcing it makes successful plain `enter TASK` change the calling shell's directory; `command wt` and `command worktree` bypass the functions.
+It does not move a running harness, change machine-mode behavior, or edit startup files.
+Installation additionally owns `~/.local/share/ai-config/bash/wt.bash`, linked to the same [function source](../tools/worktree/src/shell.bash).
+A separately managed Bash startup loader can source this fragment when present; it is not another executable or a claim over `.bashrc`.
+The separate [Bash completion setup](../tools/worktree/README.md#bash-completion) provides read-only current-project task-name lookup.
 Installation owns standard per-user completion entries for both names, discovered by an existing `bash-completion` loader without another installed executable or shell-startup ownership.
 The agreed installer is `install.sh` alone, not a wrapper around a Rust/Python installer.
 The `ai-config` executable has been removed and its fixture consumers now invoke the shell installer.
@@ -80,7 +85,7 @@ Skills resolve the replacement-owned executable from their own absolute source r
 
 | CLI | Operations | Effects and limits |
 | --- | --- | --- |
-| WT | `new`, `enter`, `list`, `clean`; adapter `session` protocol | `new` can fetch the configured integration branch and creates a task branch/worktree; `enter` only selects it; `list` observes Git inventory; `clean --check` checks eligibility, while `clean` can remove an integrated worktree and safely delete its local branch. Session operations store harness-specific conversation references, not transcripts. Neither shell entry point moves a running harness by itself. |
+| WT | `new`, `enter`, `list`, `clean`; opt-in `shell-init bash` and `completions bash`; adapter `session` protocol | `new` can fetch the configured integration branch and creates a task branch/worktree; executable `enter` only selects it, while the opt-in Bash function enters its directory; `list` observes Git inventory; `clean --check` checks eligibility, while `clean` can remove an integrated worktree and safely delete its local branch. Session operations store harness-specific conversation references, not transcripts. Neither shell entry point moves a running harness by itself. |
 | WL | `note`, `start`, `progress`, `commit`, `complete`, `abandon`, `correct`; `list`, `history`, `projects` | Lifecycle commands append private records; queries derive state without rewriting history. No scheduler, background wakeup, or automatic import. The current store is distinct from retired Work log implementations; inventory work must not query or import their history. |
 | artifact-review | `open`, `wait`, `poll`, `stop`; internal `_serve` | `open` starts/reconnects a local server and normally opens a browser; `--findings REPORT.json` binds finding decisions. `wait` renews transport holds indefinitely; `poll` is bounded compatibility behavior. `stop` stops serving without approval or event deletion. `_serve` is the internal daemon entry, not an ordinary workflow command. |
 | review-change-eval | `review local`, `review range BASE..HEAD`, `review pr URL`; `post REPORT` | Review captures immutable source and invokes a selected restricted Pi or Claude engine; it does not execute reviewed source. `post` is a separate provider mutation requiring real human terminal confirmation. There is no automatic engine fallback or permission to publish from a review result. |

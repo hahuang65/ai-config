@@ -17,6 +17,7 @@ rust-test:
 
 lint:
 	bash -n src/completion.bash
-	shellcheck --shell=bash src/completion.bash
+	bash -n src/shell.bash
+	shellcheck --shell=bash src/completion.bash src/shell.bash
 	cargo fmt --check
 	cargo clippy --all-targets --locked -- -D warnings

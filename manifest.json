@@ -74,6 +74,7 @@
     { "destination": ".pi/agent/agents/frontend-architect.md", "target": "agents/frontend-architect.md" },
     { "destination": ".local/share/bash-completion/completions/wt", "target": "tools/worktree/src/completion.bash" },
     { "destination": ".local/share/bash-completion/completions/worktree", "target": "tools/worktree/src/completion.bash" },
+    { "destination": ".local/share/ai-config/bash/wt.bash", "target": "tools/worktree/src/shell.bash" },
     { "destination": ".local/bin/wt", "target": "tools/worktree/target/release/wt" },
     { "destination": ".local/bin/worktree", "target": "tools/worktree/target/release/wt" },
     { "destination": ".local/bin/wl", "target": "tools/worklog/target/release/wl" },

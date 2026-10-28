@@ -11,6 +11,8 @@ The installed `wt` and `worktree` aliases invoke this executable; read its comma
 WT manages Git worktrees and harness-specific saved-conversation references.
 Task transitions do not acquire session locks or require an exclusive session owner.
 The native harness adapter moves the current session; a child shell cannot.
+The optional [Bash shell integration](../../tools/worktree/README.md#bash-directory-switching) makes plain `wt enter` change a human terminal shell's directory.
+It does not replace a native harness transition; agent invocations still use the owned executable directly.
 Read [native task transitions](../../docs/worktree-transitions.md) before creating or entering a task through a harness.
 
 ## Before the first repository write
@@ -30,7 +32,7 @@ Read [native task transitions](../../docs/worktree-transitions.md) before creati
 4. Do not move, stash, reset, or copy existing changes into a new checkout.
    If the checkout is dirty, the repository lacks an initial commit, the base is ambiguous, a task is locked, or the worktree cannot be verified, pause for a decision before writing.
 5. Confirm that the **current session** runs in the chosen task checkout before editing.
-   WT prints a path but cannot change the parent shell or a running session's working directory.
+   WT's executable prints a path but cannot change the parent shell or a running session's working directory.
    Without a verified session transition, report the path and ask the user to open or resume a session there; never keep editing the original checkout via absolute paths or a temporary shell `cd`.
    Confirm the adapter verified the repository, task branch, saved conversation, and actual working directory before continuing after a transition.
    Conversations stay harness-specific; do not convert them or infer success from a printed path.

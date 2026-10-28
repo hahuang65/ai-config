@@ -288,7 +288,7 @@ pub fn help(command: &str) -> String {
         }
     };
     let completion = if command.is_empty() {
-        "\nBash completion (Rust CLI): wt completions bash\n"
+        "\nBash completion (Rust CLI): wt completions bash; shell: wt shell-init bash\n"
     } else {
         ""
     };
