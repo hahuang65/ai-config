@@ -225,7 +225,7 @@ fn prepared_package_refuses_redirected_bootstrap_rules_and_wrong_adapter_targets
 fn catalogue_requires_every_ordinary_harness_resource_link() {
     for destination in [
         ".claude/skills/plan",
-        ".pi/agent/skills/work-log",
+        ".pi/agent/skills/worklog",
         ".claude/agents/api-designer.md",
         ".pi/agent/agents/fact-checker.md",
         ".pi/agent/extensions/guard-policies.ts",

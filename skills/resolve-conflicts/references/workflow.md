@@ -79,5 +79,5 @@ An unavailable review is incomplete verification, even if Git finished successfu
 Let the user select findings to repair; use code for selected repairs or coach when the user retains implementation ownership.
 Verify selected repairs and obtain fresh review before claiming the operation is checked.
 Any separate repair commit needs separate authorization; continuation permission is not a general commit permission.
-Record the operation outcome through [work-log](../../work-log/SKILL.md), including unresolved limits.
+Record the operation outcome through [worklog](../../worklog/SKILL.md), including unresolved limits.
 Do not mark the whole task complete merely because its rebase finished.

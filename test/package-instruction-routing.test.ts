@@ -139,10 +139,10 @@ test("both installed bootstraps load one STE-inspired rule for every prose surfa
   });
 });
 
-test("installed code and work-log skills return from checkpoints to the shared continuation policy", () => {
+test("installed code and worklog skills return from checkpoints to the shared continuation policy", () => {
   withInstalledInstructions((home, source) => {
     for (const harness of harnesses) {
-      for (const skill of ["code", "work-log"]) {
+      for (const skill of ["code", "worklog"]) {
         const entry = realpathSync(join(home, harness, "skills", skill, "SKILL.md"));
         const caller = readFileSync(entry, "utf8");
         const reference = caller.match(/\[continuation policy\]\(([^)#]+)#keep-work-moving\)/);
@@ -153,7 +153,7 @@ test("installed code and work-log skills return from checkpoints to the shared c
         expect(caller).toContain("next authorized step");
         expect(caller).not.toContain("## Keep work moving");
       }
-      const worklog = readFileSync(join(home, harness, "skills/work-log/SKILL.md"), "utf8");
+      const worklog = readFileSync(join(home, harness, "skills/worklog/SKILL.md"), "utf8");
       expect(worklog).toContain("A logging failure does not block otherwise authorized work");
       expect(worklog).toContain("Never start it automatically");
       const code = readFileSync(join(home, harness, "skills/code/SKILL.md"), "utf8");

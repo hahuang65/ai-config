@@ -26,6 +26,6 @@ Suggest a mockup, prototype, or specialist review when it would answer a real op
 Explain the question it would answer; do not make it a prerequisite or silently import the old agent catalog.
 
 Finish with a concise summary of agreements and any open questions.
-Use [work-log](../work-log/SKILL.md) for one meaningful-progress entry when the discussion has advanced a task or project, not for every answer.
+Use [worklog](../worklog/SKILL.md) for one meaningful-progress entry when the discussion has advanced a task or project, not for every answer.
 Discussion does not itself start implementation or a queued task.
 Suggest a spec only when a written description would help; never automatically start another workflow.

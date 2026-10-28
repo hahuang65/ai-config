@@ -17,7 +17,7 @@ Restricted-reviewer offline settings and synthetic-provider boundaries remain un
 
 - `package-*.test.ts` verifies the retained skills, specialist roles, ordinary Claude and Pi discovery, guard adapters, shared commands, status displays, themes, LSP plugin separation, and review boundaries.
 - `package-instruction-routing.test.ts` follows consolidated instructions through disposable manifest-declared skill and bootstrap links for both harnesses.
-  It checks that both bootstraps receive the ordinary-work continuation policy, code/work-log checkpoints route back to that same policy, and existing approval and completion boundaries remain explicit.
+  It checks that both bootstraps receive the ordinary-work continuation policy, code/worklog checkpoints route back to that same policy, and existing approval and completion boundaries remain explicit.
   It also checks that finding-decision safeguards and documentation conventions remain reachable from their source-owned references, and that the package overview points to the full native transition contract.
   Installed handoff/pickup contracts cover separate discovery and implementation metadata, implementation-based selection, no discovery-only mismatch gate, legacy handling, reference origins, and genuine target/authority checks.
   `package-commands.test.ts` checks that a needed provider review asks only for missing scope-specific authorization while delivery still cannot start a provider review.
@@ -98,6 +98,7 @@ Restricted-reviewer offline settings and synthetic-provider boundaries remain un
   It checks skill routing for existing-task requests, idle dispatch, uncertain/invalid/unavailable classifications, deadline expiry, and cancellation on reload without contacting Jev.
   It checks one model request/completion, unchanged session entries, no abort or queued prompts, literal shell text, RPC, UI failure, invalid input, missing executable, empty queries, and headless rejection.
   `package-install-worklog.test.ts` checks recorded upgrades, ownership refusals, and preservation of personal settings/extensions.
+  Skill-name upgrades replace both recorded `work-log` links with `worklog`, preserve private Worklog data and unowned old skills, refuse new-name conflicts before removing old links, and restore old links and records after an injected transaction failure.
   These checks do not prove live terminal interaction, RPC-client rendering, or Herdr notification behavior.
 - `package-tool-inventory.test.ts` checks catalogue coverage for manifest CLI aliases, the current Rust executable source layout, literal Pi tool registrations, and bare Claude tool denials.
   It does not contact MCP servers or assert that a documented host tool is active in every session.

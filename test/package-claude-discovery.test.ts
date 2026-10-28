@@ -122,9 +122,11 @@ claudeTest("public MVP installation loads the five evaluation agents and skills 
     });
     const init = events.find((event) => event.subtype === "init");
     expect(init?.skills).toContain("personal");
-    for (const name of ["3d", "code", "commit", "model-domain", "review-change", "work-log"]) {
+    for (const name of ["3d", "code", "commit", "model-domain", "review-change", "worklog"]) {
       expect(init?.skills).toContain(name);
     }
+    expect(init?.skills).not.toContain("work-log");
+    expect(init?.slash_commands).not.toContain("work-log");
     expect(init?.slash_commands).toContain("deliver");
     expect(init?.slash_commands).toContain("rebase");
     expect(init?.slash_commands).toContain("wt");

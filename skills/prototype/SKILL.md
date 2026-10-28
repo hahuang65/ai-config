@@ -27,7 +27,7 @@ Use [mockup](../mockup/SKILL.md) instead when static appearance is the only ques
   A runnable demonstration does not establish production correctness, performance, or security.
 
 Capture the answer concisely and reference any existing issue or design document rather than duplicating it.
-Use [model-domain](../model-domain/SKILL.md) for agreed durable terms or architecture decisions, and [work-log](../work-log/SKILL.md) for one meaningful checkpoint.
+Use [model-domain](../model-domain/SKILL.md) for agreed durable terms or architecture decisions, and [worklog](../worklog/SKILL.md) for one meaningful checkpoint.
 Ask for permission before deleting or adopting any prototype files, including files created during this experiment.
 Adoption requires production constraints and tests; never silently promote the prototype shell.
 Do not commit, publish, launch another session, or start implementation as an implied next step.

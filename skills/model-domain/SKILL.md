@@ -26,4 +26,4 @@ Do not invent decisions or present unresolved proposals as agreed facts.
 Create files only when there is useful content to record.
 When another skill calls this one, apply the modeling discipline within its current conversation.
 When called directly, work only on the requested domain scope and finish by identifying the files updated and any unresolved questions.
-Use [work-log](../work-log/SKILL.md) for meaningful progress unless the calling skill already records the same outcome.
+Use [worklog](../worklog/SKILL.md) for meaningful progress unless the calling skill already records the same outcome.

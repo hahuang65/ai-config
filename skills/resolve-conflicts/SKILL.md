@@ -21,4 +21,4 @@ Run the project's checks and continue only the verified active rebase.
 After it finishes, use [review-change](../review-change/SKILL.md) for the complete rebased task, including any remaining task edits.
 Review findings do not authorize automatic repairs.
 In coach mode, preserve user ownership instead of taking over implementation.
-Record the operation outcome through [work-log](../work-log/SKILL.md); resolving a rebase does not by itself complete the owning task.
+Record the operation outcome through [worklog](../worklog/SKILL.md); resolving a rebase does not by itself complete the owning task.

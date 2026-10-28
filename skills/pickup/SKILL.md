@@ -49,4 +49,4 @@ Do not guess a task, broaden to another project, or recreate missing history.
 
 Do not automatically invoke a suggested skill, start another session, or begin the next task from the handoff alone.
 Do not delete the handoff after reading it.
-Use [work-log](../work-log/SKILL.md) to record a task start only when work actually resumes, not merely when this summary is read.
+Use [worklog](../worklog/SKILL.md) to record a task start only when work actually resumes, not merely when this summary is read.

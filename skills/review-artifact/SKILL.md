@@ -128,4 +128,4 @@ An uncertain outcome is reconciled from the same report with Check publication s
 This same-user browser capability is not proof against arbitrary code running as that OS user.
 The retired publisher and protected legacy state remain off limits.
 
-The calling task records the review outcome through [work-log](../work-log/SKILL.md), without a duplicate progress entry here.
+The calling task records the review outcome through [worklog](../worklog/SKILL.md), without a duplicate progress entry here.

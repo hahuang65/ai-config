@@ -75,7 +75,7 @@ Repair the cause, regenerate every affected output and its evidence, and rerun t
 
 If browser review cannot start, report that limit and conduct the same evidence review in chat with explicit approval.
 Closing, ending, disconnecting, or timing out is not approval.
-Record approved design checkpoints through [work-log](../../work-log/SKILL.md), without duplicate entries.
+Record approved design checkpoints through [worklog](../../worklog/SKILL.md), without duplicate entries.
 
 ## 5. Deliver the project
 
@@ -105,6 +105,6 @@ Keep the final render and documentation in the product directory.
 Remove temporary review sheets and intermediate checkpoint renders created by this workflow unless the user requests design history.
 Never delete pre-existing or user-authored files as cleanup.
 At delivery, list every output, summarize computed evidence, name every unresolved physical test, and offer adjustments to key parameters.
-Record final completion through [work-log](../../work-log/SKILL.md) only when delivery requirements are met; describe remaining physical tests honestly.
+Record final completion through [worklog](../../worklog/SKILL.md) only when delivery requirements are met; describe remaining physical tests honestly.
 Never claim software checks prove physical fit or strength.
 Do not commit or publish without an explicit request.

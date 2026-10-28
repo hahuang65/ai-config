@@ -59,6 +59,6 @@ test("completed rebases still require whole-task review and selected repair owne
     /review-change\/SKILL\.md/, /target.*\.\..*(?:tip|HEAD)/i,
     /committed.*uncommitted/i, /unavailable.*incomplete/i,
     /selected.*repairs/i, /fresh review/i, /coach.*user/i,
-    /work-log\/SKILL\.md/, /not.*(?:owning|whole).*task.*complete/i,
+    /worklog\/SKILL\.md/, /not.*(?:owning|whole).*task.*complete/i,
   ]);
 });

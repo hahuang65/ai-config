@@ -52,7 +52,7 @@ def record:
       and allowed_setting); "Unsupported managed settings field or value");
 
 def skills: ["3d", "coach", "code", "commit", "grill", "handoff", "mockup", "model-domain", "pickup",
-  "plan", "prototype", "resolve-conflicts", "review-artifact", "review-change", "spec", "visualize", "work-log", "worktree"];
+  "plan", "prototype", "resolve-conflicts", "review-artifact", "review-change", "spec", "visualize", "worklog", "worktree"];
 def agents: ["api-designer", "change-reviewer", "database-reviewer", "fact-checker", "frontend-architect"];
 def public_tools: {
   ".local/bin/wt": "tools/worktree/target/release/wt", ".local/bin/worktree": "tools/worktree/target/release/wt",

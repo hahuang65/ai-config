@@ -61,5 +61,5 @@ Standalone CLI reviews use on-demand restricted responders for discussion, clari
 A CLI command invoked inside this conversation is agent-launched, not standalone.
 Do not pass `--standalone` to replace this conversation with another responder.
 The reviewer does not edit, install, commit, push, or publish changes.
-Keep authentication private and record only meaningful progress through [work-log](../work-log/SKILL.md).
+Keep authentication private and record only meaningful progress through [worklog](../worklog/SKILL.md).
 See the [CLI contract and limits](../../docs/review-change-cli.md) for scope and retained-state recovery.

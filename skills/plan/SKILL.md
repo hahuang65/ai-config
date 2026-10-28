@@ -45,4 +45,4 @@ Report an unavailable review tool instead of claiming approval.
 Summarize task order, unresolved choices, and the chosen planning location.
 Plan approval does not authorize implementation, merging, or publication.
 The user can request [code](../code/SKILL.md) or [coach](../coach/SKILL.md); do not start either automatically.
-Record meaningful planning progress once through [work-log](../work-log/SKILL.md).
+Record meaningful planning progress once through [worklog](../worklog/SKILL.md).

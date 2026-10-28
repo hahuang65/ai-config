@@ -148,7 +148,7 @@ try {
     assert.equal(aborted, false);
     assert.equal(requests.length, 1, "Operations wait for the current response");
     assert.equal(session.getFollowUpMessages().length, 1);
-    assert.match(session.getFollowUpMessages()[0], /work-log/);
+    assert.match(session.getFollowUpMessages()[0], /^Use the worklog skill for this user request;/);
     assert.ok(session.getFollowUpMessages()[0].includes("let's do 600"));
     release();
     await running;

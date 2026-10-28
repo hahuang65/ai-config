@@ -1,7 +1,7 @@
 # Worklog
 
 A bundled Rust CLI for short-term reminders and append-only work history.
-Agents invoke `tools/worklog/target/release/wl` through the root `skills/work-log/` instructions; the installed shell shortcut is `wl`.
+Agents invoke `tools/worklog/target/release/wl` through the root `skills/worklog/` instructions; the installed shell shortcut is `wl`.
 Both use the same executable.
 See [the domain model](CONTEXT.md), [the scope decision](docs/adr/0001-keep-a-small-append-only-work-log.md), and [the CLI reference](docs/cli.md).
 
@@ -49,7 +49,7 @@ Use `--unassigned` only when deliberately noting work without a project.
 Pi's `/worklog REMINDER` command captures a literal reminder in the current Git project through this owned CLI.
 It acknowledges the write in the UI without steering, aborting, queueing a prompt, or starting a model turn.
 Empty `/worklog` lists incomplete work across all projects without a model turn.
-The separate shared work-log skill recognizes clear later-work remarks and records semantic events.
+The shared `worklog` skill recognizes clear later-work remarks and records semantic events.
 An empty skill invocation lists incomplete tasks across all projects with only ID, state, project, and title.
 See [adapter contracts and limits](../../docs/worklog-capture.md).
 After completion, it suggests the oldest unstarted reminder in the current project without starting it.

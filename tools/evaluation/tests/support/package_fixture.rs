@@ -22,7 +22,7 @@ const SKILLS: &[&str] = &[
     "review-change",
     "spec",
     "visualize",
-    "work-log",
+    "worklog",
     "worktree",
 ];
 const AGENTS: &[&str] = &[

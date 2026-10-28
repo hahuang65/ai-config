@@ -9,7 +9,22 @@ const root = fileURLToPath(new URL("../", import.meta.url));
 const directory = join(root, "skills");
 const required = ["3d", "coach", "code", "commit", "grill", "handoff", "mockup",
   "model-domain", "pickup", "plan", "prototype", "resolve-conflicts",
-  "review-artifact", "review-change", "spec", "visualize", "work-log", "worktree"];
+  "review-artifact", "review-change", "spec", "visualize", "worklog", "worktree"];
+
+test("Worklog exposes one shared skill name matching the native worklog command", () => {
+  const manifest = JSON.parse(readFileSync(join(root, "manifest.json"), "utf8"));
+  const links = manifest.links.filter((link: { target: string }) => /^skills\/work-?log$/.test(link.target));
+  expect(links).toEqual([
+    { destination: ".claude/skills/worklog", target: "skills/worklog" },
+    { destination: ".pi/agent/skills/worklog", target: "skills/worklog" },
+  ]);
+  for (const link of links) {
+    expect(readFileSync(join(root, link.target, "SKILL.md"), "utf8")).toMatch(/^---\nname: worklog\n/);
+  }
+  const wrappers = [".claude/commands/worklog.md", ".claude/commands/work-log.md",
+    ".pi/agent/prompts/worklog.md", ".pi/agent/prompts/work-log.md"];
+  expect(manifest.links.some((link: { destination: string }) => wrappers.includes(link.destination))).toBe(false);
+});
 
 for (const skill of required) {
   test(`replacement ${skill} skill keeps valid local references without the previous source`, () => {
@@ -25,8 +40,8 @@ for (const skill of required) {
   });
 }
 
-test("an empty work-log invocation routes to all incomplete tasks with no per-task commentary", () => {
-  const skill = readFileSync(join(directory, "work-log/SKILL.md"), "utf8");
+test("an empty worklog invocation routes to all incomplete tasks with no per-task commentary", () => {
+  const skill = readFileSync(join(directory, "worklog/SKILL.md"), "utf8");
   expect(skill).toContain("## Empty invocation");
   expect(skill).toContain("list --state open --all-projects --all --json");
   expect(skill).toContain("only ID, state, project, and title");
@@ -223,7 +238,7 @@ test("change-review decisions authorize only accepted findings without replacing
 
 test("skill binaries resolve within the replacement checkout", () => {
   const targets: Record<string, string> = {
-    "work-log": "../../tools/worklog/target/release/wl",
+    "worklog": "../../tools/worklog/target/release/wl",
     "review-artifact": "../../tools/artifact-review/target/release/review-artifact",
     "review-change": "../../tools/evaluation/target/release/review-change",
   };
@@ -239,7 +254,7 @@ test("copied skills execute validated Rust binaries without any auxiliary bin li
   try {
     const source = join(home, "replacement");
     for (const [skill, target] of [
-      ["work-log", "tools/worklog/target/release/wl"],
+      ["worklog", "tools/worklog/target/release/wl"],
       ["review-artifact", "tools/artifact-review/target/release/review-artifact"],
     ]) {
       const destination = join(source, "skills", skill, "SKILL.md");

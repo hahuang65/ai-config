@@ -57,6 +57,6 @@ After the user signals that repairs are ready, rerun affected checks and obtain 
 Do not mark the task complete while blocking findings or required evidence remain unresolved.
 
 Summarize behavior, test evidence, review outcome, and remaining limits.
-Update an existing plan only from verified evidence, and use [work-log](../work-log/SKILL.md) for meaningful progress once.
+Update an existing plan only from verified evidence, and use [worklog](../worklog/SKILL.md) for meaningful progress once.
 Do not stage, commit, push, merge, or publish by implication.
 Do not automatically start another task or change coaching mode.

@@ -32,5 +32,5 @@ Read [the shared handoff format](references/format.md) and use its discovery and
 Do not launch a session, change worktrees, automatically invoke another skill, or continue the handed-off work by implication.
 Do not delete handoffs or clean up source files.
 The temp file is disposable and may disappear; durable knowledge belongs in the referenced project documents.
-If this handoff pauses active work, record that meaningful checkpoint through [work-log](../work-log/SKILL.md), including the next action.
+If this handoff pauses active work, record that meaningful checkpoint through [worklog](../worklog/SKILL.md), including the next action.
 Do not mark continuing or unrelated work paused, and do not maintain another Work log store.

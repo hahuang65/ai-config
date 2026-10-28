@@ -108,9 +108,9 @@ function worklog(pi) {
       if (lifetime.signal.aborted)
         return;
       if (!reminder || signal.aborted) {
-        pi.sendUserMessage(`Use the work-log skill for this user request; clarify ambiguous intent before changing tasks:
+        pi.sendUserMessage(`Use the worklog skill for this user request; clarify ambiguous intent before changing tasks:
 ${title}`, { deliverAs: "followUp" });
-        notify(ctx, "Worklog request sent to the work-log skill (after current work if busy).", "info");
+        notify(ctx, "Worklog request sent to the worklog skill (after current work if busy).", "info");
         return;
       }
       try {

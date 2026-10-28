@@ -74,7 +74,7 @@ fn production_manifest_is_relocatable_and_covers_both_complete_harness_catalogue
         "review-change",
         "spec",
         "visualize",
-        "work-log",
+        "worklog",
         "worktree",
     ] {
         for directory in [".claude", ".pi/agent"] {

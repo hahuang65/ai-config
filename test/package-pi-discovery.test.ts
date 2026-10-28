@@ -99,9 +99,10 @@ test("the installed MVP keeps ordinary Pi skills, its guard, and project discove
     expect(discovered.prompts).toContain("rebase");
     expect(discovered.themeErrors).toBe(0);
     expect(discovered.skills).toContain("personal");
-    for (const name of ["3d", "code", "commit", "model-domain", "review-change", "work-log"]) {
+    for (const name of ["3d", "code", "commit", "model-domain", "review-change", "worklog"]) {
       expect(discovered.skills).toContain(name);
     }
+    expect(discovered.skills).not.toContain("work-log");
     expect(discovered.paths).toContain(join(agentDir, "extensions/guard-policies.ts"));
     expect(discovered.paths).toContain(join(agentDir, "extensions/status-footer.ts"));
     expect(discovered.paths).toContain(join(agentDir, "extensions/worktree.ts"));

@@ -1,19 +1,22 @@
 # Worklog capture without interrupting a run
 
-Pi's owned `/worklog` command is separate from the model-driven [work-log skill](../skills/work-log/SKILL.md) and the current-task [session checklist](session-checklist.md).
-It does not change Herdr configuration or emit another agent completion for a reminder.
+Worklog has one public name: `/worklog`.
+Claude exposes the shared [worklog skill](../skills/worklog/SKILL.md) directly, without another command wrapper.
+Pi's native command adds capture without interrupting a run and delegates other requests to that same skill.
+Both use the same CLI and private store, not the current-task [session checklist](session-checklist.md).
+The Pi command does not change Herdr configuration or emit another agent completion for a reminder.
 
 ## Commands
 
 - `/worklog REQUEST` uses Jev to distinguish a new reminder from another Worklog request.
   A clear new reminder records the literal text as a planned reminder in the current Git project through the package-owned `wl note` executable.
   The UI acknowledges its returned ID, project, and title.
-- Other requests, such as `/worklog let's do 600`, `/worklog complete 600`, or `/worklog history`, go to the shared work-log skill as a normal user message.
+- Other requests, such as `/worklog let's do 600`, `/worklog complete 600`, or `/worklog history`, go to the shared `worklog` skill as a normal user message.
   While busy, Pi queues that message after current work instead of steering or aborting it.
   Uncertain, low-confidence, unavailable, malformed, or failed classifications take this same path without a direct write.
 - Empty `/worklog` lists all incomplete tasks across projects, including unassigned work, with only ID, state, project, and title.
   An empty result displays `No incomplete Worklog tasks.`
-- Empty invocation of the shared work-log skill requests the same incomplete-task listing through the model.
+- Empty invocation of the shared `worklog` skill requests the same incomplete-task listing through the model.
   The skill adds no per-task commentary or task-start action.
 - Bare `wl` provides the same all-project incomplete-task overview in the shell.
   Its text output contains only task rows; an empty result emits no text.
@@ -34,6 +37,15 @@ The adapter itself never starts, completes, abandons, deduplicates, or updates e
 The skill interprets those requests under its normal authorization and clarification rules.
 Nonempty input must be single-line and no more than 2048 UTF-8 bytes.
 Do not include credentials or private customer data.
+
+## Skill-name upgrades
+
+The shared skill's directory and frontmatter name are both `worklog`.
+An approved installation upgrades recorded `.claude/skills/work-log` and `.pi/agent/skills/work-log` links to the `worklog` destinations.
+It removes only the recorded old links, without retaining a second slash-command alias.
+Unowned personal resources remain untouched, and an unowned resource at a new destination still blocks installation.
+The rename changes no Worklog data, project identities, task IDs, or history.
+It does not authorize a live installation.
 
 ## Runtime and failure boundaries
 

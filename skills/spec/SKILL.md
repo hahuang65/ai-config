@@ -35,4 +35,4 @@ Apply feedback to the same file so the open view stays current.
 If the review tool is unavailable, report that limit and do not claim a browser review or approval occurred.
 
 Approval covers the reviewed spec, not automatic implementation, task creation, or delivery.
-After review, summarize its outcome and use [work-log](../work-log/SKILL.md) for meaningful progress without marking implementation complete.
+After review, summarize its outcome and use [worklog](../worklog/SKILL.md) for meaningful progress without marking implementation complete.

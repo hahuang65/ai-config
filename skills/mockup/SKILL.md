@@ -31,5 +31,5 @@ Neither is a prerequisite for the other.
 
 Use [model-domain](../model-domain/SKILL.md) when the design exposes an unresolved domain term or agreed durable decision.
 Report the artifact path, review outcome, and unresolved questions.
-Record meaningful progress once through [work-log](../work-log/SKILL.md).
+Record meaningful progress once through [worklog](../worklog/SKILL.md).
 Approval accepts this design; it does not authorize implementation or start another skill.

@@ -1,5 +1,5 @@
 ---
-name: work-log
+name: worklog
 description: Capture later-work remarks, record task starts, meaningful progress, commits, completion or abandonment, and recall short-term tasks and work history through worklog.
 ---
 
