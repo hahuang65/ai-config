@@ -18,6 +18,10 @@ pub(crate) struct Stream {
 impl Stream {
     fn session(&self, event: &Value) -> Result<()> {
         ensure!(
+            self.session.is_some(),
+            "Claude reviewer work preceded initialization"
+        );
+        ensure!(
             event["session_id"].as_str() == self.session.as_deref(),
             "Claude reviewer session identity changed"
         );
@@ -165,11 +169,8 @@ impl Stream {
         match (event["type"].as_str(), event["subtype"].as_str()) {
             (Some("system"), Some("init")) => self.init(&event, root).map(|()| None),
             (Some("system"), _) => Ok(None),
+            (Some("rate_limit_event"), _) => self.session(&event).map(|()| None),
             (Some("assistant" | "user" | "result"), _) => {
-                ensure!(
-                    self.session.is_some(),
-                    "Claude reviewer work preceded initialization"
-                );
                 self.session(&event)?;
                 match event["type"].as_str() {
                     Some("assistant") => self.assistant(&event).map(|()| None),

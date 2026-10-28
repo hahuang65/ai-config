@@ -36,6 +36,11 @@ fn events(snapshot: &Path) -> Vec<Value> {
     ]
 }
 
+fn rate_limit(session: &str) -> Value {
+    json!({"type":"rate_limit_event","session_id":session,"uuid":"rate-limit-1",
+        "rate_limit_info":{"status":"allowed","rateLimitType":"overage","isUsingOverage":false}})
+}
+
 fn run(trial: &Trial, snapshot: &Path, events: &[Value]) -> std::process::Output {
     let stream = trial.temporary.path().join("claude-events.jsonl");
     let bytes = events
@@ -66,6 +71,19 @@ fn accepts_only_a_completed_native_read_and_never_requires_pi() {
     assert_eq!(result["filesRead"], json!(["source.txt"]));
     assert!(!trial.log.exists());
     assert!(!trial.profile().exists());
+}
+
+#[test]
+fn accepts_informational_rate_limit_events_from_the_reviewer_session() {
+    let (trial, snapshot) = fixture();
+    let mut stream = events(&snapshot);
+    stream.insert(1, rate_limit("fixture-session"));
+    stream.insert(5, rate_limit("fixture-session"));
+    let output = run(&trial, &snapshot, &stream);
+    assert_eq!(output.status.code(), Some(0));
+    let result: Value = serde_json::from_slice(&output.stdout).unwrap();
+    assert_eq!(result["response"], "Reviewed the source.\n");
+    assert_eq!(result["filesRead"], json!(["source.txt"]));
 }
 
 #[test]
@@ -183,6 +201,10 @@ fn incomplete_or_unsafe_native_streams_cannot_create_verified_evidence() {
         "malformed",
         "empty-text",
         "wrong-session",
+        "rate-limit-before-init",
+        "rate-limit-wrong-session",
+        "rate-limit-after-result",
+        "unknown-event",
     ] {
         let mut stream = events(&snapshot);
         match mode {
@@ -210,6 +232,13 @@ fn incomplete_or_unsafe_native_streams_cannot_create_verified_evidence() {
                 stream[4]["result"] = json!(" ");
             }
             "wrong-session" => stream[2]["session_id"] = json!("other-session"),
+            "rate-limit-before-init" => stream.insert(0, rate_limit("fixture-session")),
+            "rate-limit-wrong-session" => stream.insert(1, rate_limit("other-session")),
+            "rate-limit-after-result" => stream.push(rate_limit("fixture-session")),
+            "unknown-event" => stream.insert(
+                1,
+                json!({"type":"tool_progress","session_id":"fixture-session"}),
+            ),
             _ => unreachable!(),
         }
         let output = run(&trial, &snapshot, &stream);
