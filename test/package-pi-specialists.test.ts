@@ -6,6 +6,7 @@ import { tmpdir } from "node:os";
 import { spawnSync } from "node:child_process";
 import { projectPiPackage } from "../tools/project-pi.mjs";
 import { installedAiFile, installedSdkFile } from "./fixtures/installed-pi-sdk";
+import { writeSdkTree } from "./fixtures/pi-sdk-tree.mjs";
 
 const root = fileURLToPath(new URL("../", import.meta.url));
 
@@ -56,7 +57,7 @@ function hoistedBuildFixture(temporary: string) {
   const project = join(temporary, "project"), bin = join(temporary, "bin");
   mkdirSync(join(project, "tools"), { recursive: true });
   mkdirSync(bin);
-  for (const file of ["build-specialists.mjs", "project-pi.mjs"]) {
+  for (const file of ["build-specialists.mjs", "project-pi.mjs", "pi-sdk-cache.mjs"]) {
     cpSync(join(root, "tools", file), join(project, "tools", file));
   }
   const engine = fakePackage(join(project, "node_modules/pi-subagents"), "pi-subagents", { version: "0.83.0" });
@@ -101,6 +102,32 @@ test("runtime packaging resolves canonical hoisted import-only SDK peers without
     for (const [name, path] of Object.entries(setup.peers)) {
       expect(realpathSync(join(runtime, "node_modules", name))).toBe(path);
     }
+    expect(existsSync(setup.invoked)).toBe(false);
+  } finally { rmSync(temporary, { recursive: true, force: true }); }
+});
+
+test("standalone runtime packaging preserves a locked alias for a host peer", () => {
+  const temporary = realpathSync(mkdtempSync(join(tmpdir(), "pi-aliased-host-build-")));
+  try {
+    const setup = hoistedBuildFixture(temporary), directory = join(setup.project, "target/pi-sdk/1.4.0");
+    const sdk = writeSdkTree(directory), name = "@earendil-works/pi-ai";
+    const peer = join(directory, "node_modules", name), file = join(peer, "package.json");
+    writeFileSync(file, JSON.stringify({ ...JSON.parse(readFileSync(file, "utf8")), name: "actual-pi-ai" }));
+    const sdkFile = join(sdk, "package.json"), sdkMetadata = JSON.parse(readFileSync(sdkFile, "utf8"));
+    sdkMetadata.dependencies[name] = "npm:actual-pi-ai@1.4.0";
+    writeFileSync(sdkFile, JSON.stringify(sdkMetadata));
+    const lockFile = join(directory, "package-lock.json"), lock = JSON.parse(readFileSync(lockFile, "utf8"));
+    lock.packages[`node_modules/${name}`].name = "actual-pi-ai";
+    lock.packages["node_modules/@earendil-works/pi-coding-agent"].dependencies = sdkMetadata.dependencies;
+    writeFileSync(lockFile, JSON.stringify(lock));
+    rmSync(join(setup.bin, "pi"));
+    writeFileSync(join(setup.bin, "pi"), '#!/bin/sh\nprintf "1.4.0\\n"\n', { mode: 0o755 });
+    const run = spawnSync("node", [join(setup.project, "tools/build-specialists.mjs")], {
+      cwd: setup.project, encoding: "utf8", timeout: 10000,
+      env: { ...process.env, HOME: temporary, PATH: `${setup.bin}${delimiter}${process.env.PATH ?? ""}` },
+    });
+    expect(run.status, run.stderr).toBe(0);
+    expect(realpathSync(join(setup.project, "target/pi-subagents/node_modules", name))).toBe(peer);
     expect(existsSync(setup.invoked)).toBe(false);
   } finally { rmSync(temporary, { recursive: true, force: true }); }
 });

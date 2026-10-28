@@ -1,9 +1,11 @@
-import { getAgentDir, getPackageDir, VERSION } from "@earendil-works/pi-coding-agent";
+import * as sdk from "@earendil-works/pi-coding-agent";
 import { readFileSync, realpathSync, statSync } from "node:fs";
 import { join } from "node:path";
 import { pathToFileURL } from "node:url";
 import { isDeepStrictEqual } from "node:util";
 import policy from "./policy.json";
+
+const { getAgentDir, getPackageDir, VERSION } = sdk;
 
 export const roles = ["api-designer", "database-reviewer", "fact-checker", "frontend-architect"] as const;
 export const tools = ["read", "grep", "find", "ls"];
@@ -33,7 +35,12 @@ function requireMatchingHost(root: string) {
 export function checkRuntime(source: string) {
   const directory = join(source, "target/pi-subagents");
   const host = JSON.parse(readBounded(join(directory, "host.json")));
-  if (host.engineVersion !== "0.83.0" || host.sdkRoot !== realpathSync(getPackageDir()) || host.sdkVersion !== VERSION) {
+  const activeRoot = realpathSync(getPackageDir());
+  const matchesBinary = host.standalone === true && host.packageRoot === activeRoot
+    && host.executable === realpathSync(process.execPath);
+  const sdk = JSON.parse(readBounded(join(host.sdkRoot, "package.json")));
+  if (host.engineVersion !== "0.83.0" || (!matchesBinary && host.sdkRoot !== activeRoot)
+    || host.sdkVersion !== VERSION || sdk.name !== "@earendil-works/pi-coding-agent" || sdk.version !== VERSION) {
     throw Error("Specialist runtime does not match this Pi host; rebuild this configuration with the current Pi installation");
   }
   requireMatchingHost(host.sdkRoot);
@@ -43,7 +50,16 @@ export function checkRuntime(source: string) {
 
 export async function loadRuntime(source: string) {
   const directory = checkRuntime(source);
-  const load = (name: string) => import(pathToFileURL(join(directory, "package/bundle", `${name}.js`)).href);
+  const host = JSON.parse(readBounded(join(directory, "host.json")));
+  let load = (name: string): Promise<any> => import(pathToFileURL(join(directory, "package/bundle", `${name}.js`)).href);
+  if (host.standalone && host.executable === realpathSync(process.execPath)) {
+    const { createJiti } = await import(pathToFileURL(join(directory, "node_modules/jiti/lib/jiti.mjs")).href);
+    const entry = join(host.sdkRoot, "dist/index.js");
+    // Native Bun imports bypass Pi's embedded SDK. Keep foreground children on the host SDK.
+    const jiti = createJiti(import.meta.url, { tryNative: false, moduleCache: false,
+      virtualModules: { "@earendil-works/pi-coding-agent": sdk, [entry]: sdk, [pathToFileURL(entry).href]: sdk } });
+    load = (name: string) => jiti.import(join(directory, "package/bundle", `${name}.js`));
+  }
   const [engine, agents, required, ceiling] = await Promise.all([
     load("index"), load("agents"), load("required-child-extensions"), load("capability-ceiling"),
   ]);

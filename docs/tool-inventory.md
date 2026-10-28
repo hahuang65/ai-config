@@ -12,7 +12,7 @@ Public commands remain symlinks to built binaries in the installed source, prese
 | Source-local `consult` | `tools/evaluation/target/release/consult`; [source](../tools/evaluation/src/consult_main.rs) | Harness-invoked specialist advice, including before a change exists. |
 
 The guarded ordinary Pi `subagent` facade is a model tool, not another CLI or a replacement for the restricted reviewer; see [native specialist contracts](native-specialists.md).
-Its pinned engine is built against the existing host SDK without provisioning Pi.
+Its pinned engine uses the existing host SDK, with an exact-version checkout-local SDK restored for standalone builds and Node tests without provisioning a Pi command.
 WT and WL retain their existing alias pairs and targets listed below.
 WT's Rust executable also prints opt-in [Bash directory switching](../tools/worktree/README.md#bash-directory-switching) through `shell-init bash` for both names.
 Sourcing it makes successful plain `enter TASK` change the calling shell's directory; `command wt` and `command worktree` bypass the functions.
@@ -31,7 +31,9 @@ The current installation contract is [manifest.json](../manifest.json), validate
 `install.sh` now performs the transaction itself, using JSON-only filters under `tools/install/` rather than invoking an installer binary.
 The platform prerequisites are mise, jq, GNU coreutils, make, Bash, iconv, and find; missing checked commands produce a clear error before provisioning or building.
 Explicit installation runs `mise install` against active configuration, then `mise exec -- make build`; Cargo may fetch locked dependencies.
-Build/test SDK lookup and footer bundling discover a pre-installed Pi on absolute PATH entries, skipping mise shims without executing them; Pi installation and updates remain outside this package.
+Build/test SDK lookup and footer bundling discover a pre-installed Pi on absolute PATH entries, skipping mise shims without executing them.
+Standalone discovery runs only the selected binary's `--version`, and `make build-pi-sdk` restores matching checkout-local libraries without scripts or executable links.
+Pi command installation and updates remain outside this package.
 Cargo-generated catalogue executables may have multiple hard links, but still require safe parents, regular non-symlink files, size bounds, and execute permission.
 The shell installer uses an atomic lock directory and retains private recovery files when rollback cannot safely restore concurrent edits.
 It is not crash-atomic, and its lock must not be bypassed or combined with stale Rust installation binaries retained in other checkouts.

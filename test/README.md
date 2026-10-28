@@ -4,8 +4,14 @@ Run `make test` from the package checkout.
 Tests use disposable homes and fake providers; they must not install into the live home, import old Work log history, contact a real provider, or read saved credentials.
 Provision declared tools explicitly before testing; build/test commands may fetch locked Cargo and Bun dependencies but never run mise installation themselves.
 SDK tests and footer bundling discover the first pre-installed executable `pi` on an absolute PATH entry, skipping mise shims without executing them.
-Pi must be installed separately (for example through Homebrew or AUR); failed discovery gives installation guidance without invoking mise or candidate programs.
-Fixtures cover native CLI symlinks, supported launchers, mise shim shadowing, and missing or unusable PATH candidates without assuming a Homebrew installation.
+Pi must be installed separately (for example through Homebrew or AUR).
+An installed Node SDK is reused, while standalone SDK discovery reads only the selected binary's `--version` with a bounded deadline.
+The `make build-pi-sdk` prerequisite restores that exact SDK release into ignored checkout-local dependencies with npm scripts and executable links disabled.
+Each explicit SDK build recreates the dependency tree with `npm ci` after the first `npm install`.
+Tests check real loading/build behavior, exact-version selection, interruption, and filesystem safety, not a custom package-tree validator.
+Test assertions never download an SDK, and unavailable or incomplete restores fail without a version fallback.
+Fixtures cover native CLI symlinks, supported launchers, mise shim shadowing, exact-version restoration, interrupted restores, and missing or unusable PATH candidates without assuming Homebrew.
+`package-pi-standalone-runtime.test.ts` additionally exercises a real standalone host with a synthetic provider when that installation format is present.
 Restricted Pi runners also skip mise shims during executable discovery while retaining reviewed-source exclusions; a Rust CLI regression and the native synthetic-provider cases cover that path.
 Restricted-reviewer offline settings and synthetic-provider boundaries remain unchanged.
 
@@ -72,6 +78,7 @@ Restricted-reviewer offline settings and synthetic-provider boundaries remain un
   Both native harness discovery checks retain the real shell fixture, without skipping when an obsolete binary is absent.
 - `package-pi-questions.test.ts` loads the manifest-linked clarification bundle with the installed Node/Pi loader and controlled native TUI/RPC dialog responses.
   It checks source-to-bundle parity, bounded schemas, choice and free-text answers, cancellation/abort, hidden headless behavior, private UI failures, invalid responses, and terminal-control neutralization.
+  Its seven-process schema case composes the whole-case watchdog from the unchanged 15-second child deadlines plus one child-sized cleanup margin.
   Shared event-bus checks also cover balanced Herdr waiting/clear events around terminal dialogs, continuous custom-input waits, failure cleanup, RPC/headless/already-aborted exclusions, and operation without the independent observer.
   `package-install-pi-questions.test.ts` checks recorded resource upgrades, personal-settings/extension preservation, and refusal to adopt an unowned matching bundle.
   Shared-skill tests check useful clarification guidance without extra approval gates or coaching takeover.

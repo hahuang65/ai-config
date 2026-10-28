@@ -5,7 +5,7 @@ import { dirname, join as join2, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 // harnesses/pi/specialists/runtime.ts
-import { getAgentDir, getPackageDir, VERSION } from "@earendil-works/pi-coding-agent";
+import * as sdk from "@earendil-works/pi-coding-agent";
 import { readFileSync, realpathSync, statSync } from "node:fs";
 import { join } from "node:path";
 import { pathToFileURL } from "node:url";
@@ -54,6 +54,7 @@ var policy_default = {
 };
 
 // harnesses/pi/specialists/runtime.ts
+var { getAgentDir, getPackageDir, VERSION } = sdk;
 var roles = ["api-designer", "database-reviewer", "fact-checker", "frontend-architect"];
 var tools = ["read", "grep", "find", "ls"];
 var runtimeName = (name) => `ai-config-${name}`;
@@ -87,7 +88,10 @@ function requireMatchingHost(root) {
 function checkRuntime(source) {
   const directory = join(source, "target/pi-subagents");
   const host = JSON.parse(readBounded(join(directory, "host.json")));
-  if (host.engineVersion !== "0.83.0" || host.sdkRoot !== realpathSync(getPackageDir()) || host.sdkVersion !== VERSION) {
+  const activeRoot = realpathSync(getPackageDir());
+  const matchesBinary = host.standalone === true && host.packageRoot === activeRoot && host.executable === realpathSync(process.execPath);
+  const sdk2 = JSON.parse(readBounded(join(host.sdkRoot, "package.json")));
+  if (host.engineVersion !== "0.83.0" || !matchesBinary && host.sdkRoot !== activeRoot || host.sdkVersion !== VERSION || sdk2.name !== "@earendil-works/pi-coding-agent" || sdk2.version !== VERSION) {
     throw Error("Specialist runtime does not match this Pi host; rebuild this configuration with the current Pi installation");
   }
   requireMatchingHost(host.sdkRoot);
@@ -96,7 +100,18 @@ function checkRuntime(source) {
 }
 async function loadRuntime(source) {
   const directory = checkRuntime(source);
-  const load = (name) => import(pathToFileURL(join(directory, "package/bundle", `${name}.js`)).href);
+  const host = JSON.parse(readBounded(join(directory, "host.json")));
+  let load = (name) => import(pathToFileURL(join(directory, "package/bundle", `${name}.js`)).href);
+  if (host.standalone && host.executable === realpathSync(process.execPath)) {
+    const { createJiti } = await import(pathToFileURL(join(directory, "node_modules/jiti/lib/jiti.mjs")).href);
+    const entry = join(host.sdkRoot, "dist/index.js");
+    const jiti = createJiti(import.meta.url, {
+      tryNative: false,
+      moduleCache: false,
+      virtualModules: { "@earendil-works/pi-coding-agent": sdk, [entry]: sdk, [pathToFileURL(entry).href]: sdk }
+    });
+    load = (name) => jiti.import(join(directory, "package/bundle", `${name}.js`));
+  }
   const [engine, agents, required, ceiling] = await Promise.all([
     load("index"),
     load("agents"),

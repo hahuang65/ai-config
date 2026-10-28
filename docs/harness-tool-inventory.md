@@ -61,7 +61,8 @@ The [review-feedback extension](../harnesses/pi/review-feedback.ts) also registe
 Its `/review-feedback` command resumes saved feedback after interruption; background native messages use the existing conversation and shared Rust queue.
 Specialist files alone do not add delegation.
 The current source adds the guarded `subagent` adapter above, independently of the restricted snapshot reviewer and source-local `consult` helper.
-Its built runtime shares the installed host SDK rather than installing another Pi client.
+Its runtime shares the active host SDK rather than installing another Pi command.
+Standalone builds and Node tests use an exact-version checkout-local SDK restored by `make build-pi-sdk`.
 
 MCP tools default to codemode exposure in this Pi version, not direct declaration.
 `codemode`, `deferred`, `direct`, and `hidden` exposure differ; not seeing a tool in the current declarations does not generally prove it is unreachable.

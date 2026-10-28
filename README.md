@@ -115,8 +115,22 @@ The npm backend uses npm rather than selecting a package manager implicitly.
 Provision missing tools explicitly with `mise install` before development.
 That command uses active configuration, including global tools and the shared language servers; review the selection before running it.
 Install and update Pi separately using your preferred package manager, such as Homebrew on macOS or AUR on Arch Linux.
-Build/test SDK discovery and footer bundling use the first executable `pi` on an absolute PATH entry, skipping mise shims without invoking mise or Pi during discovery.
-Discovery follows CLI symlinks and supported launchers to locate the installed SDK and terminal helpers, without assuming a package-manager-specific location.
+Build/test SDK discovery and footer bundling use the first executable `pi` on an absolute PATH entry, skipping mise shims without invoking mise.
+Discovery follows CLI symlinks and supported launchers to reuse an installed Node SDK.
+For standalone binaries, it runs only `pi --version` with a hard-kill deadline.
+`make build-pi-sdk`, included in `make build`, restores that exact SDK release into ignored `target/pi-sdk/VERSION/` using npm with lifecycle scripts and executable links disabled.
+Each explicit SDK build recreates the dependency tree with `npm ci`, using the checkout-local lockfile after the initial `npm install`.
+Restoration explicitly enables local lockfile generation and requires the lockfile before marking the SDK ready.
+These are disposable build files, not a separately managed package installation.
+Discovery checks the successful-restoration marker, SDK package name/version, and SDK entry file.
+It does not inspect dependency graphs or reproduce Node's export resolution.
+The real build and SDK-loading tests check integration, while npm and Node own package integrity and module resolution.
+Rerun `make build-pi-sdk` to rebuild damaged SDK files from the retained lockfile.
+Unsafe cache-root directories, root metadata links, and a linked root `node_modules` are refused before writes or npm execution.
+SDK restoration also uses a hard-kill deadline.
+Discovery and test assertions never download an SDK themselves.
+No global package, PATH entry, installed Pi binary, or harness setting changes.
+An unpublished version fails with guidance rather than selecting a different release.
 Missing Pi produces installation guidance; builds/tests never provision or update it, and the toolchain does not pin its version.
 Restricted reviewers discover their native executable independently on absolute PATH entries, also skipping mise Pi shims while preserving reviewed-source exclusions.
 Removing the project declaration does not uninstall an existing mise Pi or remove its shim; any previously installed copy needs separate cleanup after this change is integrated.
@@ -131,8 +145,9 @@ make test
 Cargo build, test, and lint commands retain `--locked` but may fetch missing dependencies from the network.
 The guard-parser build likewise restores frozen Bun library dependencies with lifecycle scripts disabled and regenerates the local WASM/runtime/license assets in `guard/vendor/`.
 The Pele build bundles its pinned library and license into the artifact helper; only the explicit authoring command starts Node, never the review server.
-The specialist build preserves the pinned engine and licenses in ignored `target/pi-subagents/`, using runtime dependencies copied from the locked install and peer links to the existing Pi SDK.
-Library restoration omits peers and lifecycle scripts, so builds do not provision another Pi client.
+The specialist build preserves the pinned engine and licenses in ignored `target/pi-subagents/`, using runtime dependencies copied from the locked install and peer links to the selected Pi SDK.
+Standalone foreground specialists use Pi's embedded SDK through its virtual-module loader, not native Bun imports of the downloaded SDK.
+The exact-version SDK supplies Node tests, build helpers, and library peers without installing another command-line client.
 Rebuild this checkout after changing the installed Pi host; the adapter rejects a mismatched runtime.
 `package.json` and `bun.lock` pin web-tree-sitter and tree-sitter-bash; ordinary harness execution needs neither network access nor `node_modules` for parsing.
 Restricted-reviewer offline flags and synthetic-provider isolation are unchanged.

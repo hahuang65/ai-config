@@ -10,6 +10,14 @@ const question = { question: "Which storage approach?", options: [
   { label: "Postgres", description: "Shared writes; requires a service." },
 ] };
 
+const processTimeoutMs = 15_000;
+const invalidQuestions = [
+  { ...question, question: " " }, { ...question, question: "x".repeat(2001) },
+  { ...question, options: [question.options[0]] }, { ...question, options: Array(5).fill(question.options[0]) },
+  { ...question, options: [{ label: "Missing trade-off" }, question.options[1]] },
+  { ...question, multiSelect: true }, { ...question, notes: "Unrequested feature" },
+];
+
 function ask(scenario: Record<string, unknown> = {}) {
   const root = realpathSync(mkdtempSync(join(tmpdir(), "pi-questions-")));
   try {
@@ -20,7 +28,7 @@ function ask(scenario: Record<string, unknown> = {}) {
     const link = manifest.links.find((entry: { destination: string }) => entry.destination === ".pi/agent/extensions/ask-user-question.ts");
     if (link) symlinkSync(fileURLToPath(new URL(`../${link.target}`, import.meta.url)), join(extensions, "ask-user-question.ts"));
     const run = Bun.spawnSync(["node", fileURLToPath(new URL("./fixtures/pi-questions.mjs", import.meta.url)),
-      installedSdkFile(), root, join(root, "scenario.json")], { cwd: root, timeout: 15_000,
+      installedSdkFile(), root, join(root, "scenario.json")], { cwd: root, timeout: processTimeoutMs,
       env: { HOME: join(root, "home"), PATH: process.env.PATH, PI_CODING_AGENT_DIR: join(root, "home/.pi/agent"), PI_OFFLINE: "1" },
       stdout: "pipe", stderr: "pipe" });
     expect(run.exitCode, run.stderr.toString()).toBe(0);
@@ -36,17 +44,12 @@ test("the shipped Pi question bundle matches its reviewed source", async () => {
 });
 
 test("the public schema bounds questions and choices without accepting questionnaire features", () => {
-  for (const input of [
-    { ...question, question: " " }, { ...question, question: "x".repeat(2001) },
-    { ...question, options: [question.options[0]] }, { ...question, options: Array(5).fill(question.options[0]) },
-    { ...question, options: [{ label: "Missing trade-off" }, question.options[1]] },
-    { ...question, multiSelect: true }, { ...question, notes: "Unrequested feature" },
-  ]) {
+  for (const input of invalidQuestions) {
     const result = ask({ input });
     expect(result.result).toEqual({ validationError: true });
     expect(result.dialogs).toEqual([]);
   }
-});
+}, (invalidQuestions.length + 1) * processTimeoutMs);
 
 test("the installed Pi question tool shows trade-offs and returns a model-only single choice", () => {
   const result = ask();

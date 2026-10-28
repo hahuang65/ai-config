@@ -67,7 +67,7 @@ The same source supplies both harnesses wherever two routes are listed.
 | [Pi LSP bundle](../harnesses/pi/lsp.bundle.ts) | `.pi/agent/extensions/lsp.ts`; authored in [lsp.ts](../harnesses/pi/lsp.ts) and its [client modules](../harnesses/pi/lsp). |
 | [Pi clarification bundle](../harnesses/pi/ask-user-question.bundle.ts) | `.pi/agent/extensions/ask-user-question.ts`; authored in [ask-user-question.ts](../harnesses/pi/ask-user-question.ts). |
 | [Pi checklist bundle](../harnesses/pi/todo.bundle.ts) | `.pi/agent/extensions/todo.ts`; authored in [todo.ts](../harnesses/pi/todo.ts) and [state/view modules](../harnesses/pi/checklist). |
-| [Pi specialist bundle](../harnesses/pi/specialists.bundle.ts) | `.pi/agent/extensions/specialists.ts`; authored in [specialists.ts](../harnesses/pi/specialists.ts), with pinned source-local engine data and installed SDK peers. |
+| [Pi specialist bundle](../harnesses/pi/specialists.bundle.ts) | `.pi/agent/extensions/specialists.ts`; authored in [specialists.ts](../harnesses/pi/specialists.ts), with pinned source-local engine data and selected exact-version SDK peers. |
 | [Pi specialist policy](../harnesses/pi/specialists/policy.json) | `.pi/agent/extensions/subagent/config.json`; owned read-only engine configuration, not adoption of an existing personal file. |
 | [Pi Worklog bundle](../harnesses/pi/worklog.bundle.ts) | `.pi/agent/extensions/worklog.ts`; authored in [worklog.ts](../harnesses/pi/worklog.ts), with [out-of-band capture contracts](worklog-capture.md). |
 | [Pi theme](../harnesses/pi/themes/catppuccin-mocha.json) | `.pi/agent/themes/catppuccin-mocha.json`; same palette intent, different schema. |
@@ -238,7 +238,10 @@ The shared semantic display is not identical token accounting or billing evidenc
 No memory service or transcript reading is needed for the Claude status line.
 
 Provision fixed tools explicitly through mise; builds/tests never install or upgrade Pi.
-Pi SDK discovery uses a pre-installed CLI on absolute PATH entries, skipping mise shims without invoking candidate programs.
+Pi SDK discovery uses a pre-installed CLI on absolute PATH entries, skipping mise shims without invoking them.
+Standalone discovery runs only the selected binary's `--version` with a bounded deadline.
+The `make build-pi-sdk` prerequisite restores that exact SDK release locally with scripts and executable links disabled.
+Ordinary discovery and test assertions do not download dependencies or select a fallback version.
 Build only the task checkout during development; rebuilding the live source can replace binaries already targeted by installed links.
 TypeSafe, Herdr, independent MCP/plugin resources and private histories remain separately owned.
 Do not connect, adopt, delete, or enable them merely to demonstrate parity.
@@ -260,7 +263,7 @@ These suite references identify checks to run, not a claim that every future env
 | Status and theme | `test/package-claude-statusline.test.ts`, `test/package-pi-footer.test.ts`, discovery and manifest tests | Identical host billing, native badge placement, or every terminal's rendering. |
 | Clarification | `test/package-pi-questions.test.ts`, `test/package-install-pi-questions.test.ts`, Claude installer questions, discovery and shared-skill tests | Live tool availability, real keyboard/RPC rendering, human presence, or action authorization. |
 | Session checklist | `test/package-pi-checklist.test.ts`, `test/package-install-checklist.test.ts`, native worktree carry and shared-skill checks | Live rendering, RPC client display, verified task completion from a status alone, or action authority. |
-| Native specialists | `test/package-pi-specialists.test.ts`, `test/package-install-specialists.test.ts`, ordinary discovery | Snapshot confinement, malicious-extension isolation, real-provider quality, every SDK/platform, or live installation. |
+| Native specialists | `test/package-pi-specialists.test.ts`, `test/package-pi-standalone.test.ts`, `test/package-pi-standalone-runtime.test.ts`, `test/package-install-specialists.test.ts`, ordinary discovery | Snapshot confinement, malicious-extension isolation, real-provider quality, every SDK/platform, or live installation. |
 | Language catalogue and clients | `test/package-claude-lsp.test.ts`, `test/package-pi-lsp.test.ts`, `test/package-pi-lsp-transport.test.ts`, native discovery | Provisioned real servers, identical diagnostics, or Windows process-tree cleanup. |
 | Restricted review and diagnostics | `test/reviewer-runtime.test.ts`, `test/package-claude-reviewer.test.ts`, `tools/evaluation/tests/runners.rs`, `tools/evaluation/tests/change.rs` | Reviewer execution of project checks or automatic clean results after a runner failure. |
 | Artifact decisions, feedback and publication | `tools/artifact-review/tests`, `tools/evaluation/tests/feedback_response.rs`, native feedback runtime tests, serial bounded browser suite | Same-user tamper resistance, automatic publication authority, closed-client wake-up, or live-provider eligibility. |

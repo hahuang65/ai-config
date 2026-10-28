@@ -2,6 +2,7 @@
 # separate ./install.sh invocation; this Makefile never retargets the live installation.
 .DEFAULT_GOAL := help
 .PHONY: help build test lint test-package test-worktree test-worklog test-artifact test-evaluation test-browser test-prepared build-evaluation-debug build-artifact-debug build-guard-parser build-guard-bundle build-language-servers build-pele build-pi-questions build-pi-checklist build-pi-specialists build-pi-worklog
+.PHONY: build-pi-sdk
 .PHONY: _test-package-prepared _test-artifact-prepared _test-evaluation-prepared _test-browser-prepared
 # Keep suites serial even with make -j; common build prerequisites run once.
 # Ordinary package files, installers, WT parity, and native runtime groups use bounded workers.
@@ -53,7 +54,10 @@ build-pi-questions:
 build-pi-checklist:
 	bun build harnesses/pi/todo.ts --target node --format esm --external @earendil-works/pi-coding-agent --external @earendil-works/pi-tui --external typebox --outfile harnesses/pi/todo.bundle.ts
 
-build-pi-specialists: build-guard-parser
+build-pi-sdk:
+	node tools/build-pi-sdk.mjs
+
+build-pi-specialists: build-guard-parser build-pi-sdk
 	node tools/build-specialists.mjs
 	bun build harnesses/pi/specialists.ts --target node --format esm --external @earendil-works/pi-coding-agent --external typebox --outfile harnesses/pi/specialists.bundle.ts
 

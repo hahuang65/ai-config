@@ -1,5 +1,6 @@
 import path from "node:path";
 import { mkdirSync, writeFileSync } from "node:fs";
+import { projectPiPeer } from "../../tools/project-pi.mjs";
 
 const [sdkFile, agentDir, cwd] = process.argv.slice(2);
 if (![sdkFile, agentDir, cwd].every((value) => value && path.isAbsolute(value))) {
@@ -7,7 +8,7 @@ if (![sdkFile, agentDir, cwd].every((value) => value && path.isAbsolute(value)))
 }
 
 const sdk = await import(sdkFile);
-const ai = await import(path.resolve(path.dirname(sdkFile), "../node_modules/@earendil-works/pi-ai/dist/index.js"));
+const ai = await import(path.join(projectPiPeer(path.dirname(path.dirname(sdkFile)), "@earendil-works/pi-ai"), "dist/index.js"));
 const settingsManager = sdk.SettingsManager.inMemory({ retry: { enabled: false }, cacheWarming: "off" });
 settingsManager.setProjectTrusted(true); // Simulate a user-approved project, not an automatic trust grant.
 const loader = new sdk.DefaultResourceLoader({ cwd, agentDir, settingsManager });
@@ -83,4 +84,7 @@ try {
       toolResult.content.some((part) => part.type === "text" && part.text.includes("credential file read")),
     leaked: JSON.stringify(session.messages).includes(marker),
   }));
-} finally { session.dispose(); }
+} finally {
+  if (session.extensionRunner) await session.extensionRunner.emit({ type: "session_shutdown" });
+  session.dispose();
+}

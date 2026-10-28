@@ -63,11 +63,32 @@ No parent discovery allowlist is introduced.
 `make build` restores locked library dependencies with lifecycle scripts and peer installation disabled.
 It copies the pinned engine and runtime dependencies into ignored `target/pi-subagents/`, preserving the upstream layout and licenses.
 The engine installer is not run.
-Runtime peer links point to the already installed Pi SDK, agent core, AI, terminal, and TypeBox packages.
-No second Pi client is installed or upgraded.
-The owned adapter itself is bundled for the installed Node loader.
+Runtime peer links point to the selected Pi SDK, agent core, AI, terminal, and TypeBox packages.
+An installed Node SDK is reused directly.
+For a standalone binary, `make build-pi-sdk` reads `pi --version` and restores that exact SDK release under ignored `target/pi-sdk/VERSION/`.
+It uses npm with lifecycle scripts and executable links disabled, retaining a local lockfile and marking only successful restores ready.
+Each explicit SDK build runs `npm ci` after the initial `npm install`, replacing the dependency tree instead of diagnosing arbitrary cache corruption.
+Discovery checks only the restoration marker, SDK package identity/version, and SDK entry file.
+Node and npm own module resolution and dependency integrity.
+Builds and real SDK-loading tests check the consumed interfaces.
+Cached runtime peer links stay within the restored tree.
+Unsafe cache-root directories and root metadata links are refused before writes or npm execution.
+The root `node_modules` must be an actual directory before restoration can start.
+Retained SDK metadata reads require contained regular files.
+Rerun `make build-pi-sdk` if these disposable files are damaged.
+Version discovery and npm restoration use hard-kill deadlines.
+Missing releases fail rather than falling back to another version.
+Ordinary discovery and test assertions do not download dependencies.
+No second command-line client is installed or upgraded, and no live settings or PATH entries change.
 
-The runtime records its SDK root/version and refuses a different active host.
+Inside a standalone host, the adapter loads the engine through Jiti with virtual-module bindings to Pi's embedded SDK.
+Both bare SDK imports and the selected absolute SDK entry resolve to that host module.
+This avoids native Bun imports bypassing Pi's embedded extension loader.
+The downloaded SDK still supplies build helpers, Node-based tests, and library peers.
+The owned adapter remains bundled for the installed loader.
+
+The runtime records the binary path, package root, and SDK root/version.
+It checks the active binary identity or selected SDK root and the exact SDK release before delegation.
 Rebuild this checkout after changing the Pi installation and restart an older client process.
 An incompatible explicit subagent SDK override is rejected without changing the environment.
 Native tests currently exercise Pi **1.4.0** with a synthetic, credential-free provider.
@@ -105,6 +126,10 @@ There is no new verification cache, hook bypass, automatic repair, or publicatio
 ## Evidence and limits
 
 - `test/package-pi-specialists.test.ts` exercises the actual adapter, native child, role/context inheritance, tool declarations, guard refusal, and failed-startup containment.
+- `test/package-pi-standalone.test.ts` checks exact-version discovery, fresh locked restoration, interrupted restores, hard deadlines, bounded diagnostics, and private-SDK footer bundling.
+- `test/package-pi-standalone-runtime.test.ts` exercises a real installed standalone binary and read-only specialist with a synthetic provider, when that installation format is available.
+- `test/package-pi-sdk-cache.test.ts` checks restoration locks and filesystem refusals that preserve external files.
+- Export-map emulation, dependency-graph inspection, and arbitrary cache-corruption detection are deliberately outside this design.
 - `test/package-install-specialists.test.ts` checks recorded upgrades, preference preservation, and unowned-resource refusal.
 - Discovery tests retain ordinary personal/project resources.
 - Shared workflow tests cover parallel completion guidance and nonduplicative delivery policy.
