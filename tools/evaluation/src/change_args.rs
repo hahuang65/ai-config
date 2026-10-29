@@ -12,7 +12,8 @@ pub const HELP: &str = "Usage: review-change [SUBJECT] [options]
   review-change
 
 SUBJECT is a PR URL, branch/worktree name or path, GitHub branch/repository URL,
-or a two-dot Git revision range. With no subject, review the current branch and
+or a two-dot Git revision range. A github.com/ prefix is normalized to HTTPS.
+With no subject, review the current branch and
 outstanding changes from its merge base with trunk. Branch/worktree subjects
 include working changes only when that branch has a selected registered worktree.
 Trunk uses the remote default (origin preferred), then unambiguous main/master.
@@ -149,6 +150,9 @@ fn target(values: &mut std::iter::Peekable<impl Iterator<Item = String>>) -> Res
             _ => bail!("Choose review local, range BASE..HEAD, or pr URL"),
         },
         Some(subject) if subject.starts_with("https://") => Target::Github(subject.into()),
+        Some(subject) if subject.starts_with("github.com/") => {
+            Target::Github(format!("https://{subject}"))
+        }
         Some(subject) if subject.contains("..") => range(subject)?,
         Some(subject) => {
             text(subject, 4096)?;

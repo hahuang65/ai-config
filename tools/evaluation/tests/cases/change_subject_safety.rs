@@ -2,6 +2,36 @@ use crate::support::{change::*, *};
 use serde_json::Value;
 
 #[test]
+fn scheme_less_github_urls_keep_url_validation_before_external_commands() {
+    let trial = Trial::new();
+    let marker = trial.temporary.path().join("external-command");
+    for program in ["git", "gh", "pi"] {
+        executable(
+            trial.fake_bin.join(program),
+            "#!/bin/sh\ntouch \"$SUBJECT_COMMAND_MARKER\"\nexit 1\n",
+        );
+    }
+    for subject in [
+        "github.com/fixture/repo/pull/0",
+        "github.com/fixture/repo/pull/nope",
+        "github.com/fixture/repo/pull/7/unsupported",
+        "github.com/fixture@other.example/repo/pull/7",
+        "github.com/../repo/pull/7",
+    ] {
+        let output = command(&trial)
+            .env("SUBJECT_COMMAND_MARKER", &marker)
+            .arg(subject)
+            .arg("--json")
+            .output()
+            .unwrap();
+        assert_eq!(output.status.code(), Some(2), "{subject}");
+        assert!(output.stdout.is_empty(), "{subject}");
+        assert!(!marker.exists(), "{subject}");
+    }
+    assert!(!trial.home.join(".local/state").exists());
+}
+
+#[test]
 fn detached_worktree_attached_at_the_same_commit_is_a_changed_binding() {
     let trial = fixture();
     git(&trial, &["branch", "same-head"]);

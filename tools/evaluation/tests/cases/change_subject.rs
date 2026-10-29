@@ -97,6 +97,35 @@ fn human_pr_from_outside_git_acquires_objects_without_touching_the_development_r
     assert_eq!(fs::read(repo.join(".git/index")).unwrap(), index);
 }
 
+#[test]
+fn scheme_less_pr_url_acquires_and_freezes_the_canonical_pull_request() {
+    let trial = fixture();
+    let provider = provider(&trial);
+    let output = remote_command(&trial)
+        .env("CHANGE_PROVIDER", &provider)
+        .arg("github.com/fixture/repo/pull/7")
+        .arg("--json")
+        .output()
+        .unwrap();
+    success(output.clone());
+    let receipt: Value = serde_json::from_slice(&output.stdout).unwrap();
+    let record = read_json(receipt["record"].as_str().unwrap());
+    assert_eq!(
+        record["scope"]["pull_request"]["url"],
+        "https://github.com/fixture/repo/pull/7"
+    );
+    let snapshot = Path::new(receipt["snapshot"].as_str().unwrap());
+    assert_eq!(
+        fs::read(snapshot.join("before/source.txt")).unwrap(),
+        b"before\n"
+    );
+    assert_eq!(
+        fs::read(snapshot.join("after/source.txt")).unwrap(),
+        b"after\n"
+    );
+    assert_eq!(read_json(provider)["posts"], 0);
+}
+
 fn remote_command(trial: &Trial) -> std::process::Command {
     let outside = trial.temporary.path().join("outside");
     fs::create_dir_all(&outside).unwrap();

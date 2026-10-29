@@ -20,6 +20,7 @@ An exact branch takes precedence over a worktree-name match.
 A selected registered worktree includes its outstanding changes, while an unchecked-out branch uses committed changes only.
 A worktree whose branch or HEAD changes during selection is refused.
 An explicit `X..Y` range uses Git revision expressions and exact endpoints, including omitted endpoints defaulting to HEAD; three-dot ranges are not supported.
+Human GitHub URL subjects can omit `https://` when they start with `github.com/`; the CLI normalizes them to HTTPS before URL validation.
 PR URLs use the provider's exact declared base/head and their unique merge base.
 GitHub branch and repository URLs use that repository's default branch, independently of the invocation directory.
 Missing GitHub objects are fetched only into an unmaterialized private temporary repository, bounded to 256 commits of history and the normal Git command timeout; insufficient history fails explicitly.
