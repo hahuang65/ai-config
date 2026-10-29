@@ -342,22 +342,27 @@ The larger test-only watchdog does not add sleeps, remove assertions or change n
 
 ## WT subprocesses
 
-All six settings live in [process.rs](../tools/worktree/tests/support/process.rs).
+All seven settings live in [process.rs](../tools/worktree/tests/support/process.rs).
 
 | Check | Constant | Current value | Purpose |
 | --- | --- | --- | --- |
-| [x] Timeout deadline | `TIMEOUT_DEADLINE` | 100ms | Inherited-pipe and cancellation deadlines |
-| [x] Cancelled descendant's write delay | `CANCELLED_WRITE_DELAY` | 200ms | Schedule a write after cancellation should occur |
-| [x] Cancellation observation | `CANCELLED_WRITE_OBSERVATION` | 200ms | Detect a writer that escaped cancellation |
+| [x] Timeout deadline | `TIMEOUT_DEADLINE` | 100ms | Inherited-pipe deadline |
+| [x] Cancellation deadline | `CANCELLATION_DEADLINE` | 1s | Cancel a started descendant; startup must fit before this deadline |
+| [x] Cancelled descendant's write delay | `CANCELLED_WRITE_DELAY` | 1.2s | Schedule a write after cancellation should occur |
+| [x] Cancellation observation | `CANCELLED_WRITE_OBSERVATION` | 400ms | Detect a writer that escaped cancellation |
 | [x] Exited leader's descendant write delay | `EXITED_WRITE_DELAY` | 100ms | Delayed write after successful or failed leader exit |
 | [x] Leader-exit observation | `EXITED_WRITE_OBSERVATION` | 200ms | Detect a writer that escaped leader-exit cleanup |
 | [x] Descendant-readiness polling | `DESCENDANT_READY_POLL` | 5ms | Leader waits for the descendant to start before exiting |
 
 Keep these relationships, with scheduling headroom rather than equality:
 
-- `TIMEOUT_DEADLINE < CANCELLED_WRITE_DELAY < TIMEOUT_DEADLINE + CANCELLED_WRITE_OBSERVATION`.
+- `CANCELLATION_DEADLINE < CANCELLED_WRITE_DELAY < CANCELLATION_DEADLINE + CANCELLED_WRITE_OBSERVATION`.
 - `DESCENDANT_READY_POLL < EXITED_WRITE_DELAY < EXITED_WRITE_OBSERVATION`.
 - The descendant-start checks must continue to pass; killing an unstarted fixture is not cancellation coverage.
+
+The cancellation case formerly shared the 100ms `TIMEOUT_DEADLINE`.
+Its descendant wrote its readiness marker after about 38ms when run alone, but never started within the deadline when all 21 WT unit tests ran in parallel on 11 threads.
+Its leader now waits for that marker before exiting, as the leader-exit cases do, and the separate deadline leaves startup headroom under parallel load.
 
 The relationships are necessary budget checks, not a substitute for testing under load.
 A missing marker only proves the descendant did not write during the observed interval.

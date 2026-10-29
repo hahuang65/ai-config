@@ -4,8 +4,9 @@ use std::time::{Duration, Instant};
 
 // See test/timings.md before tuning these coupled fixture timings.
 const TIMEOUT_DEADLINE: Duration = Duration::from_millis(100);
-const CANCELLED_WRITE_DELAY: Duration = Duration::from_millis(200);
-const CANCELLED_WRITE_OBSERVATION: Duration = Duration::from_millis(200);
+const CANCELLATION_DEADLINE: Duration = Duration::from_secs(1);
+const CANCELLED_WRITE_DELAY: Duration = Duration::from_millis(1200);
+const CANCELLED_WRITE_OBSERVATION: Duration = Duration::from_millis(400);
 const EXITED_WRITE_DELAY: Duration = Duration::from_millis(100);
 const EXITED_WRITE_OBSERVATION: Duration = Duration::from_millis(200);
 const DESCENDANT_READY_POLL: Duration = Duration::from_millis(5);
@@ -41,20 +42,24 @@ fn cancellation_prevents_a_descendant_from_writing_after_the_lock_is_released() 
     let directory = tempfile::tempdir().unwrap();
     let marker = directory.path().join("late-write");
     let ready = directory.path().join("ready");
-    // The leader exits while its started descendant keeps the output pipe open.
+    // The leader exits after its descendant starts; the descendant keeps the output pipe open.
     let result = run_with_timeout(
         Path::new("/"),
         &[
             "sh",
             "-c",
-            "(printf ready > \"$2\"; sleep \"$3\"; printf late > \"$1\") & exit 0",
+            concat!(
+                "(printf ready > \"$2\"; sleep \"$3\"; printf late > \"$1\") & ",
+                "while [ ! -f \"$2\" ]; do sleep \"$4\"; done; exit 0"
+            ),
             "sh",
             marker.to_str().unwrap(),
             ready.to_str().unwrap(),
             &CANCELLED_WRITE_DELAY.as_secs_f64().to_string(),
+            &DESCENDANT_READY_POLL.as_secs_f64().to_string(),
         ],
         false,
-        TIMEOUT_DEADLINE,
+        CANCELLATION_DEADLINE,
     );
     assert!(
         ready.exists(),
