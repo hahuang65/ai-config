@@ -144,6 +144,27 @@ fn local_review_includes_staged_unstaged_and_new_files_without_using_git_filters
 }
 
 #[test]
+fn one_fenced_answer_creates_a_report_without_the_surrounding_prose() {
+    let trial = fixture();
+    let output = command(&trial)
+        .env("CHANGE_TEST_MODE", "fenced")
+        .args(["review", "range", "HEAD~1..HEAD", "--repo"])
+        .arg(trial.temporary.path().join("repo"))
+        .args(["--intent", "fixture", "--json"])
+        .output()
+        .unwrap();
+    success(output.clone());
+    let receipt: Value = serde_json::from_slice(&output.stdout).unwrap();
+    let record = read_json(receipt["record"].as_str().unwrap());
+    assert_eq!(record["summary"], "A scoped review.");
+    assert_eq!(record["findings"].as_array().unwrap().len(), 1);
+    for path in ["record", "report"] {
+        let text = fs::read_to_string(receipt[path].as_str().unwrap()).unwrap();
+        assert!(!text.contains("PRIVATE_TEST_SECRET"), "{path}");
+    }
+}
+
+#[test]
 fn invalid_model_output_cannot_create_a_publishable_report() {
     let trial = fixture();
     for mode in [
@@ -153,6 +174,7 @@ fn invalid_model_output_cannot_create_a_publishable_report() {
         "unsafe-path",
         "no-evidence",
         "body-only",
+        "two-fenced",
     ] {
         let output = command(&trial)
             .env("CHANGE_TEST_MODE", mode)

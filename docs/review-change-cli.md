@@ -154,12 +154,19 @@ Malformed or unverified completion evidence, including failure to read either `s
 On a runner or completion-validation failure, the change-review command exits 1 with empty stdout and prints a `Failure diagnostic: PATH` line on stderr.
 The private review directory retains its frozen snapshot and a mode-600 `failure.json`, but no successful report, HTML, or publication signature.
 The version-1 diagnostic contains only an allowlisted category, engine, known stop reason, and observed process metadata; unavailable exit, signal, or byte counts are null.
+The reviewer answer must be the findings JSON itself or exactly one Markdown-fenced block containing it; prose outside that block is discarded, and two or more fenced blocks are rejected.
+A rejected answer uses the `invalid_answer` category, keeps the completed process's exit status and byte counts, and adds an `answer` shape.
+Its `stage` names the first check that failed: `parse` when the candidate is not JSON, `schema` when it is JSON but not the findings schema, and `content` when it fits the schema but fails the text, path, count, or explanation checks.
+That shape inspects the same candidate the parser falls back to: the only fenced block when there is exactly one, otherwise the whole response.
+It records only the response byte count, how many Markdown fence lines it contains, whether non-fence text surrounds the candidate's outermost JSON object, whether that object exists and parses, which expected top-level fields are missing, and how many unexpected fields it has.
+It never records response text or model-chosen field names.
 Counts describe captured bytes, capped at the relevant limit plus one, not the child's total output.
 Timeout, interruption, and overflow diagnostics preserve observed counts, which can be partial, even when a pipe has not closed.
 An already-observed exit status is preserved; forced cleanup does not supply an inferred exit status.
 Raw stderr, provider error messages, model response text, prompts, and credentials are not included in the diagnostic.
 A model/API category does not establish the provider's underlying cause; check authentication or provider availability without copying secrets into the report.
-Failures before runner invocation or during findings-schema validation do not produce this diagnostic record.
+Failures before runner invocation do not produce this diagnostic record.
+Neither does an otherwise valid answer whose refactoring or reuse suggestion is not anchored to a changed line; its stderr error names that reason.
 No automatic retry, engine fallback, installation, or publication follows a failure.
 
 ## Retained reports and publication

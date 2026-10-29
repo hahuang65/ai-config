@@ -103,7 +103,7 @@ fn missing_required_reads_retain_completion_failure_and_process_metadata() {
 }
 
 #[test]
-fn each_required_read_is_checked_but_findings_schema_errors_are_not_retained() {
+fn each_required_read_is_checked() {
     let trial = fixture();
     for names in ["['scope.json']", "['patch.diff']"] {
         executable(
@@ -114,14 +114,80 @@ fn each_required_read_is_checked_but_findings_schema_errors_are_not_retained() {
         assert_eq!(diagnostic["category"], "invalid_completion");
         assert_eq!(diagnostic["process"]["exit_code"], 0);
     }
+}
+
+#[test]
+fn findings_schema_errors_retain_only_the_answer_shape() {
+    let trial = fixture();
     executable(trial.fake_bin.join("pi"), MODEL);
-    let output = request(&trial)
-        .env("CHANGE_TEST_MODE", "malformed")
-        .output()
-        .unwrap();
-    assert_eq!(output.status.code(), Some(1));
-    assert!(output.stdout.is_empty());
-    assert!(!String::from_utf8_lossy(&output.stderr).contains("Failure diagnostic:"));
+    for (mode, fences, outside, found, valid, missing, extra) in [
+        ("malformed", 0, true, false, false, vec![], 0),
+        ("two-fenced", 4, true, true, false, vec![], 0),
+        ("destination", 0, false, true, true, vec![], 1),
+        ("missing-risk", 0, false, true, true, vec!["risk"], 0),
+        (
+            "prose-fenced-missing-risk",
+            2,
+            true,
+            true,
+            true,
+            vec!["risk"],
+            0,
+        ),
+    ] {
+        let output = request(&trial)
+            .env("CHANGE_TEST_MODE", mode)
+            .output()
+            .unwrap();
+        let diagnostic = retained(output);
+        assert_eq!(diagnostic["category"], "invalid_answer", "{mode}");
+        let shape = &diagnostic["answer"];
+        assert!(shape["response_bytes"].as_u64().unwrap() > 0, "{mode}");
+        assert_eq!(shape["fence_lines"], fences, "{mode}");
+        assert_eq!(shape["text_outside_json"], outside, "{mode}");
+        assert_eq!(shape["json_object_found"], found, "{mode}");
+        assert_eq!(shape["json_object_valid"], valid, "{mode}");
+        assert_eq!(
+            shape["missing_fields"],
+            serde_json::json!(missing),
+            "{mode}"
+        );
+        assert_eq!(shape["extra_field_count"], extra, "{mode}");
+    }
+}
+
+#[test]
+fn rejected_answers_record_which_check_failed_without_the_failing_text() {
+    let trial = fixture();
+    executable(trial.fake_bin.join("pi"), MODEL);
+    for (mode, stage) in [
+        ("malformed", "parse"),
+        ("two-fenced", "parse"),
+        ("destination", "schema"),
+        ("missing-risk", "schema"),
+        ("prose-fenced-missing-risk", "schema"),
+        ("control", "content"),
+        ("unsafe-path", "content"),
+        ("body-only", "content"),
+    ] {
+        let output = request(&trial)
+            .env("CHANGE_TEST_MODE", mode)
+            .output()
+            .unwrap();
+        let diagnostic = retained(output);
+        assert_eq!(diagnostic["category"], "invalid_answer", "{mode}");
+        assert_eq!(diagnostic["answer"]["stage"], stage, "{mode}");
+        assert_eq!(diagnostic["process"]["exit_code"], 0, "{mode}");
+        assert!(
+            diagnostic["process"]["stdout_bytes"].as_u64().unwrap() > 0,
+            "{mode}"
+        );
+        assert_eq!(diagnostic["process"]["stderr_bytes"], 0, "{mode}");
+        let text = diagnostic.to_string();
+        for private in ["../outside", "elsewhere/repo", "repository"] {
+            assert!(!text.contains(private), "{mode}: {private}");
+        }
+    }
 }
 
 #[test]

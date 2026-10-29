@@ -2,6 +2,7 @@
 use crate::{
     option_pairs,
     paths::{Paths, is_text, real_directory},
+    reviewer_diagnostics::ProcessEvidence,
     reviewer_process, settings,
 };
 use anyhow::{Context, Result, ensure};
@@ -49,6 +50,15 @@ enum Engine {
     Claude,
 }
 
+impl Engine {
+    fn name(self) -> &'static str {
+        match self {
+            Self::Pi => "pi",
+            Self::Claude => "claude",
+        }
+    }
+}
+
 pub struct Request {
     pub(crate) progress: Option<std::sync::Arc<crate::change_progress::Progress>>,
     pub(crate) cancellation: Option<std::sync::Arc<std::sync::atomic::AtomicBool>>,
@@ -63,6 +73,10 @@ pub struct Request {
 }
 
 impl Request {
+    pub(crate) fn engine_name(&self) -> &'static str {
+        self.engine.name()
+    }
+
     fn run(
         &self,
         command: Command,
@@ -329,6 +343,14 @@ fn configure_claude(
 }
 
 pub fn collect(paths: &Paths, request: Request) -> Result<serde_json::Value> {
+    collect_with_evidence(paths, request).map(|(response, _)| response)
+}
+
+/// Like `collect`, but also returns the completed process's evidence for later diagnostics.
+pub(crate) fn collect_with_evidence(
+    paths: &Paths,
+    request: Request,
+) -> Result<(serde_json::Value, ProcessEvidence)> {
     if request.engine == Engine::Pi {
         check_sources(paths)?;
     }

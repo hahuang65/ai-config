@@ -8,6 +8,7 @@ use crate::{
     change_types::{self, Finding, Report},
     paths::Paths,
     reviewer,
+    reviewer_diagnostics::{AnswerShape, Failure},
 };
 use anyhow::{Context, Result};
 use std::{ffi::OsString, os::unix::fs::PermissionsExt, path::Path};
@@ -247,13 +248,16 @@ fn response(
         .excluding(repository)
         .requiring_reads(&["scope.json", "patch.diff"]);
     request.progress = (!args.json).then(|| progress.clone());
-    let response = reviewer::collect(paths, request)?;
+    let engine = request.engine_name();
+    let (response, process) = reviewer::collect_with_evidence(paths, request)?;
     progress.start(Stage::Validate);
-    let answer = change_types::answer(
-        response["response"]
-            .as_str()
-            .context("Missing reviewer response")?,
-    )?;
+    let text = response["response"]
+        .as_str()
+        .context("Missing reviewer response")?;
+    let answer = change_types::answer(text).map_err(|error| {
+        let shape = AnswerShape::of(text, &change_types::ANSWER_FIELDS);
+        Failure::answer(error, engine, process, shape)
+    })?;
     let reads: Vec<String> = serde_json::from_value(response["filesRead"].clone())?;
     Ok((answer, reads))
 }

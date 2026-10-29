@@ -1,6 +1,7 @@
 use anyhow::{Result, ensure};
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
+use std::ops::Range;
 
 pub const MAX_REPORT_BYTES: usize = 25 * 1024 * 1024;
 
@@ -94,6 +95,14 @@ pub struct Proposal {
     pub line: Option<u64>,
     pub side: Side,
 }
+
+pub const ANSWER_FIELDS: [&str; 5] = [
+    "summary",
+    "intent_summary",
+    "risk",
+    "uncertainties",
+    "findings",
+];
 
 #[derive(Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -211,8 +220,36 @@ pub fn private_path(path: &str) -> bool {
     })
 }
 
+pub(crate) fn is_fence(line: &str) -> bool {
+    line.trim_start().starts_with("```")
+}
+
+/// The byte ranges of a response's Markdown fence lines.
+pub(crate) fn fence_lines(value: &str) -> Vec<Range<usize>> {
+    let mut offset = 0;
+    let mut fences = Vec::new();
+    for line in value.split_inclusive('\n') {
+        if is_fence(line) {
+            fences.push(offset..offset + line.len());
+        }
+        offset += line.len();
+    }
+    fences
+}
+
+/// The byte range of a response's only Markdown-fenced block, ignoring prose around it.
+pub(crate) fn fenced(value: &str) -> Option<Range<usize>> {
+    match &fence_lines(value)[..] {
+        [open, close] => Some(open.end..close.start),
+        _ => None,
+    }
+}
+
 pub fn answer(value: &str) -> Result<Answer> {
-    let mut answer: Answer = serde_json::from_str(value)
+    let parsed = serde_json::from_str::<Answer>(value).or_else(|error| {
+        fenced(value).map_or(Err(error), |block| serde_json::from_str(&value[block]))
+    });
+    let mut answer = parsed
         .map_err(|_| anyhow::anyhow!("Reviewer did not return the required finding schema"))?;
     text(&answer.summary, 8000)?;
     text(&answer.intent_summary, 600)?;

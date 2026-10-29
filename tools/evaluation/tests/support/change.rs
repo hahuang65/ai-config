@@ -125,9 +125,13 @@ if os.environ.get('CHANGE_TEST_KIND'): answer['findings'][0]['kind'] = os.enviro
 if mode == 'unchanged-suggestion': answer['findings'][0]['line'] = 99
 if mode == 'two': answer['findings'].append(dict(answer['findings'][0], title='Excluded finding'))
 if mode == 'destination': answer['repository'] = 'elsewhere/repo'
+if mode in ('missing-risk', 'prose-fenced-missing-risk'): del answer['risk']
 if mode == 'control': answer['summary'] = '\x1b[2J'
 if mode == 'unsafe-path': answer['findings'][0]['path'] = '../outside'
 text = 'not JSON' if mode == 'malformed' else json.dumps(answer)
+if mode == 'fenced': text = 'PRIVATE_TEST_SECRET\n```json\n' + text + '\n```'
+if mode == 'prose-fenced-missing-risk': text = 'See {notes}; an inline ``` mention\n```json\n' + text + '\n```'
+if mode == 'two-fenced': text = 'PRIVATE_TEST_SECRET\n```json\n' + text + '\n```\n```json\n' + text + '\n```'
 print(json.dumps({'type':'entry_appended','entry':{'customType':'review-scope-ready','data':{'root':root,'tools':['read']}}}))
 if mode != 'no-evidence':
     for name in ['scope.json', 'patch.diff']:

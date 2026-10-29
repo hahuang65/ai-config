@@ -1,6 +1,6 @@
 use super::Engine;
 use crate::{
-    reviewer_diagnostics::{Category, Failure},
+    reviewer_diagnostics::{Category, Failure, ProcessEvidence},
     reviewer_process, reviewer_stream,
 };
 use anyhow::{Context, Result, ensure};
@@ -11,11 +11,8 @@ pub(super) fn completed(
     engine: Engine,
     snapshot: &Path,
     required_reads: &[&str],
-) -> Result<serde_json::Value> {
-    let name = match engine {
-        Engine::Pi => "pi",
-        Engine::Claude => "claude",
-    };
+) -> Result<(serde_json::Value, ProcessEvidence)> {
+    let name = engine.name();
     let output = output.map_err(|error| Failure::process(error, name))?;
     if output.evidence.exit_code != Some(0) {
         return Err(Failure::annotate(
@@ -40,5 +37,8 @@ pub(super) fn completed(
         );
         Ok(response)
     });
-    result.map_err(|error| Failure::annotate(error, name, output.evidence))
+    match result {
+        Ok(response) => Ok((response, output.evidence)),
+        Err(error) => Err(Failure::annotate(error, name, output.evidence)),
+    }
 }
