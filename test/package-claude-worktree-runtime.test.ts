@@ -40,10 +40,10 @@ runtimeTest.each(["external", "native"])("native Claude carries, leaves, and che
     (deny file-write* (subpath ${JSON.stringify(homedir())}))
     (deny file-read* ${[".claude", ".pi", ".ssh", ".aws", ".config/gcloud", ".dotfiles/ai"]
       .map(p => `(subpath ${JSON.stringify(join(homedir(), p))})`).join(" ")})`;
-  async function run(port: number, args: string[]) {
+  async function run(port: number, args: string[], cwd = root) {
     const child = Bun.spawn(["/usr/bin/sandbox-exec", "-p", profile, claude!, "--permission-mode", "dontAsk",
       "--allowedTools", "EnterWorktree,ExitWorktree,Bash", "--model", "claude-sonnet-4-6", "--verbose", "--output-format", "stream-json",
-      ...args], { cwd: root, env: { ...env, ANTHROPIC_BASE_URL: `http://127.0.0.1:${port}` }, stdout: "pipe", stderr: "pipe" });
+      ...args], { cwd, env: { ...env, ANTHROPIC_BASE_URL: `http://127.0.0.1:${port}` }, stdout: "pipe", stderr: "pipe" });
     const timer = setTimeout(() => child.kill("SIGKILL"), 45_000);
     try {
       const [output, error, status] = await Promise.all([new Response(child.stdout).text(), new Response(child.stderr).text(), child.exited]);
@@ -112,5 +112,24 @@ runtimeTest.each(["external", "native"])("native Claude carries, leaves, and che
       expect(JSON.stringify(results.at(-1))).toContain(layout === "external" ? root : target);
       expect(JSON.stringify(reenter.requests)).toContain("LEAVE_CLAUDE_HISTORY");
     } finally { reenter.server.stop(true); }
+    if (layout === "native") {
+      const clean = startFakeClaudeApi([...leaveCalls,
+        { name: "EnterWorktree", input: { path: target } },
+        { name: "Bash", input: { command: "pwd -P" } },
+        { name: "ExitWorktree", input: { action: "keep" } },
+        { name: "Bash", input: { command: `"${join(source, "tools/worktree/target/release/wt")}" clean feature --json` } },
+        { name: "Bash", input: { command: "pwd -P" } }]);
+      try {
+        // Start the process in the task so CLAUDE_PROJECT_DIR outlives its cleanup.
+        await run(clean.server.port, ["--resume", id!, "-p", "CLEAN_STARTING_CLAUDE_WORKTREE"], target);
+        expect(clean.requests).toHaveLength(4);
+        const results = toolResults(clean.requests.at(-1)!);
+        expect(results).toHaveLength(10);
+        for (const result of results.slice(-3)) expect(result.is_error, JSON.stringify(result)).not.toBe(true);
+        expect(JSON.stringify(results.at(-1))).toContain(root);
+        expect(existsSync(target)).toBe(false);
+        expect(JSON.stringify(clean.requests.at(-1)).split("[WT continuation v1]").length - 1).toBe(4);
+      } finally { clean.server.stop(true); }
+    }
   } finally { rmSync(home, { recursive: true, force: true }); }
 }, 200_000);

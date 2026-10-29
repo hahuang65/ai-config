@@ -103,6 +103,10 @@ After a departed conversation is resumed at primary, `/wt enter TASK` guides tha
 A failed departure record leaves the old location checks in force; stop and inspect the actual directory and saved reference rather than manually overwriting it.
 For authorized delivery cleanup, verify native exit and then run `wt clean TASK --json` from primary.
 
+`CLAUDE_PROJECT_DIR` can still name the process's starting worktree after native return and authorized cleanup.
+If that directory no longer exists, the hook uses the native event's current directory for repository lookup and applies normal saved-conversation checks.
+Other path errors and a missing current directory still fail closed; the hook never recreates removed directories.
+
 ## Saved references and recovery
 
 Each task has separate `wt-session-pi.json` and `wt-session-claude.json` references in its Git administrative directory.
@@ -142,8 +146,10 @@ A worktree removal followed by a branch-deletion failure is reported as partial 
 It captures actual provider requests, checks their effective destination instructions, saved history, tool declarations, and notice-count increments for new, enter, leave, and clean.
 It also checks cancellation, verification and cleanup failures, no-op leave, and history replay, and proves cleanup finishes before continuation.
 `test/package-claude-worktree.test.ts` exercises Claude hook events against real disposable Git worktrees and WT, including unbound fork exits that preserve the original task reference.
+`test/package-claude-worktree-cleanup.test.ts` runs the hook process after deleting its starting worktree and checks that recovery preserves saved-location enforcement and native-removal protection.
 `test/package-claude-worktree-runtime.test.ts` exercises native Claude entry and CLI resume on macOS with a bounded sandbox and synthetic provider.
 It verifies one notice in the automatic post-entry/post-exit request, no duplicate turn, no replay on CLI resume, and no new notice after denied entry.
+It also starts native Claude in a task, returns to primary, cleans that task, and verifies another tool succeeds without recreating the removed directory.
 Its prompted CLI resume does not prove automatic interactive `/resume`; that mode remains explicitly unsupported.
 `tools/worktree/tests/cases/sessions.rs`, included by `tests/cli.rs`, checks the session protocol through its process boundary.
 The package build bundles local Pi imports; the installed loader supplies its own SDK and TypeBox exports.

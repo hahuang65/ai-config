@@ -4,6 +4,15 @@ import { packageWorktrees, requireClean, WORKTREE_CONTINUATION, type Task, type 
 type Hook = { hook_event_name: string; cwd: string; session_id: string; agent_id?: string;
   tool_name?: string; tool_input?: { path?: string; name?: string; action?: string }; name?: string };
 
+function repositoryOrigin(origin: string, cwd: string): string {
+  try { return realpathSync(origin); }
+  catch (error) {
+    if ((error as NodeJS.ErrnoException).code !== "ENOENT") throw error;
+    // CLAUDE_PROJECT_DIR can retain a starting worktree after authorized cleanup.
+    return realpathSync(cwd);
+  }
+}
+
 function locate(wt: Worktrees, origin: string, id: string): Task | undefined {
   return wt.run(origin, ["session", "locate", "--harness", "claude", "--conversation", id]).worktree ?? undefined;
 }
@@ -48,6 +57,7 @@ function beforeEntry(event: Hook, wt: Worktrees, origin: string) {
 export function handleWorktreeHook(event: Hook, wt: Worktrees, origin = event.cwd): string {
   if (!/^[a-zA-Z0-9-]{1,100}$/.test(event.session_id) || !event.cwd) throw new Error("Missing Claude session identity or cwd.");
   if (event.hook_event_name === "WorktreeRemove") throw new Error("Worktrees are persistent. Use a separately authorized wt clean; native cleanup is disabled.");
+  origin = repositoryOrigin(origin, event.cwd);
   if (event.hook_event_name === "WorktreeCreate") {
     if (event.agent_id) throw new Error("Task conversations require the main Claude session, not a subagent.");
     beforeEntry(event, wt, origin);
