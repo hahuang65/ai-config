@@ -62,6 +62,10 @@ Follow the [native transition instructions](../../docs/worktree-transitions.md) 
 Cleanup deletes the local task branch only with exact-tip ancestry into the recorded local target or [synchronized merged-PR proof](../../tools/worktree/README.md#cleanup-safety).
 The latter requires a matching exact-head merged GitHub PR, identical task and target trees, and equal local, remote-tracking, and live remote integration tips.
 Cleanup never fetches or advances the integration branch itself.
+Before removal, WT copies ignored regular `docs/` files into the primary checkout at the same paths, without overwriting or staging them, and verifies their bytes.
+A different existing destination or failed verification retains the task; `--check` never copies files.
+Non-ignored untracked docs still block cleanup and native return under the existing dirty-worktree checks.
+Report preserved docs and any resulting untracked primary files separately from worktree and branch removal.
 Remote branches are never deleted.
 PR preparation alone is not successful integration and must retain the worktree and branch.
 Report integration, session return, worktree removal, and branch removal separately when any step fails.

@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import { cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, realpathSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
+import { appendFileSync, cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, realpathSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
 import { homedir, tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { startFakeClaudeApi, toolResults } from "./fixtures/claude-api";
@@ -120,6 +120,12 @@ runtimeTest.each(["external", "native"])("native Claude carries, leaves, and che
         { name: "Bash", input: { command: `"${join(source, "tools/worktree/target/release/wt")}" clean feature --json` } },
         { name: "Bash", input: { command: "pwd -P" } }]);
       try {
+        // Native cleanup must preserve private docs without weakening the clean-return check.
+        for (const directory of [root, target]) mkdirSync(join(directory, "docs"));
+        appendFileSync(join(root, ".git/info/exclude"), "/docs/\n");
+        writeFileSync(join(target, "docs/ignored.bin"), Buffer.from([0, 1, 255]));
+        writeFileSync(join(target, "docs/untracked.md"), "private notes\n");
+        for (const directory of [root, target]) writeFileSync(join(directory, "docs/same.md"), "same notes\n");
         // Start the process in the task so CLAUDE_PROJECT_DIR outlives its cleanup.
         await run(clean.server.port, ["--resume", id!, "-p", "CLEAN_STARTING_CLAUDE_WORKTREE"], target);
         expect(clean.requests).toHaveLength(4);
@@ -128,6 +134,9 @@ runtimeTest.each(["external", "native"])("native Claude carries, leaves, and che
         for (const result of results.slice(-3)) expect(result.is_error, JSON.stringify(result)).not.toBe(true);
         expect(JSON.stringify(results.at(-1))).toContain(root);
         expect(existsSync(target)).toBe(false);
+        expect(readFileSync(join(root, "docs/ignored.bin"))).toEqual(Buffer.from([0, 1, 255]));
+        expect(readFileSync(join(root, "docs/untracked.md"), "utf8")).toBe("private notes\n");
+        expect(readFileSync(join(root, "docs/same.md"), "utf8")).toBe("same notes\n");
         expect(JSON.stringify(clean.requests.at(-1)).split("[WT continuation v1]").length - 1).toBe(4);
       } finally { clean.server.stop(true); }
     }

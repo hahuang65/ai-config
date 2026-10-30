@@ -56,6 +56,21 @@ test.each(["feature", "Task_123-xyz", `A${"_".repeat(63)}`])("native Pi carries 
   } finally { rmSync(p.home, { recursive: true, force: true }); }
 }, 30_000);
 
+test("native Pi cleanup preserves ignored docs after verified return", async () => {
+  const p = project();
+  try {
+    const sdk = installedSdkFile();
+    const run = Bun.spawn(["node", resolve("test/fixtures/worktree-pi.mjs"), sdk, p.cwd,
+      resolve("harnesses/pi/worktree.bundle.ts"), "private-docs", installedAiFile(sdk)], {
+      cwd: p.cwd, env: { ...p.env, WT_TEST_PRIVATE_DOCS: "1" }, timeout: 45_000, stdout: "pipe", stderr: "pipe",
+    });
+    const [output, errors, status] = await Promise.all([new Response(run.stdout).text(),
+      new Response(run.stderr).text(), run.exited]);
+    expect(status, errors).toBe(0);
+    expect(JSON.parse(output).privateDocsPreserved).toBe(true);
+  } finally { rmSync(p.home, { recursive: true, force: true }); }
+}, 60_000);
+
 test("native task carry, saved-task resume, leave, and cleanup preserve the selected checklist branch", async () => {
   const p = project();
   try {

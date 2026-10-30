@@ -233,6 +233,7 @@ fn validate_status(path: &Path) -> Result<()> {
 
 fn clean_one(repo: &Repository, task: &str, check: bool) -> Result<Value> {
     let (entry, metadata, head, proof) = validate_clean(repo, task)?;
+    let docs = crate::cleanup_docs::Documents::prepare(&text::pathbuf(&entry.path), &repo.root)?;
     let inside = current_inside(repo, &entry);
     let mut result = outcome(
         repo,
@@ -244,21 +245,57 @@ fn clean_one(repo: &Repository, task: &str, check: bool) -> Result<Value> {
     result["proof"] = json!(proof.description);
     result["removed"] = json!(false);
     if check || inside {
+        if docs.count() > 0 {
+            result["docsToPreserve"] = json!(docs.count());
+        }
         return Ok(result);
     }
-    proof.recheck(repo, &metadata, &head)?;
-    // Git rechecks dirtiness and locks during removal. Never use --force.
-    if repo.selected(task)? != entry
-        || git::commit(&text::pathbuf(&entry.path), "HEAD")?.as_deref() != Some(&head)
+    recheck_clean(repo, &entry, &metadata, &head, &proof)?;
+    docs.preserve()?;
+    if docs.count() > 0 {
+        recheck_clean(repo, &entry, &metadata, &head, &proof)?;
+    }
+    docs.verify()?;
+    git::git(&repo.root, &["worktree", "remove", &entry.path]).map_err(|error| {
+        if docs.count() == 0 { error } else {
+            Error::new(format!("{error} Verified private docs remain in the primary checkout; inspect wt list before retrying."))
+        }
+    })?;
+    result["removed"] = json!(true);
+    if docs.count() > 0 {
+        result["docsPreserved"] = json!(docs.count());
+    }
+    finish_branch(repo, &entry, &metadata, &head, &proof, &mut result);
+    Ok(result)
+}
+
+fn recheck_clean(
+    repo: &Repository,
+    entry: &Entry,
+    metadata: &Metadata,
+    head: &str,
+    proof: &Proof,
+) -> Result<()> {
+    proof.recheck(repo, metadata, head)?;
+    if repo.selected(&entry.task)? != *entry
+        || git::commit(&text::pathbuf(&entry.path), "HEAD")?.as_deref() != Some(head)
     {
         return Err(Error::new(
             "The worktree changed during cleanup. Nothing was removed; retry after activity stops.",
         ));
     }
-    validate_status(&text::pathbuf(&entry.path))?;
-    git::git(&repo.root, &["worktree", "remove", &entry.path])?;
-    result["removed"] = json!(true);
-    match remove_branch(repo, &entry, &metadata, &head, &proof) {
+    validate_status(&text::pathbuf(&entry.path))
+}
+
+fn finish_branch(
+    repo: &Repository,
+    entry: &Entry,
+    metadata: &Metadata,
+    head: &str,
+    proof: &Proof,
+    result: &mut Value,
+) {
+    match remove_branch(repo, entry, metadata, head, proof) {
         Ok(removed) => {
             result["branchRemoved"] = json!(removed);
             if !removed {
@@ -272,7 +309,6 @@ fn clean_one(repo: &Repository, task: &str, check: bool) -> Result<Value> {
             result["cleanupIncomplete"] = json!(true);
         }
     }
-    Ok(result)
 }
 
 fn remove_branch(

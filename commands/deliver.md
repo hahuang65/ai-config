@@ -40,6 +40,9 @@ Never deliver from the `~/.dotfiles` parent repository.
    Verify its actual directory, repository, and integration branch before removing anything.
    Then run `wt clean TASK --json` from primary; WT rechecks safety and deletes the local branch only with exact-tip ancestry or [synchronized merged-PR proof](../tools/worktree/README.md#cleanup-safety).
    Cleanup does not fetch or advance the integration branch.
+   Before removal, WT copies ignored regular `docs/` files into primary at the same paths without overwriting and verifies the copies.
+   Non-ignored untracked docs still block cleanup under its existing safety checks.
+   A conflicting destination or failed verification retains the task; `--check` never copies, and preserved files must not be staged by implication.
    The native cleanup command may combine the verified return and cleanup in that order.
    If the session was already at primary, verify that location and clean directly.
    Never use a child shell `cd` as proof that the harness has left the worktree.

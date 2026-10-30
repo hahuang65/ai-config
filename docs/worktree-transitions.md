@@ -56,7 +56,7 @@ It does not resume an older primary conversation, overwrite the saved task refer
 Both source and destination must be clean; running it at primary is a no-op.
 `/wt enter TASK` can still resume the saved task conversation after leaving.
 `/wt clean TASK` requires explicit cleanup or successful-local-delivery authorization: it checks cleanup safety, carries the conversation to primary, verifies the replacement session, then reruns WT cleanup there.
-A cancelled or failed transition never runs cleanup.
+A cancelled or failed transition never runs cleanup or copies private docs.
 After a successful native return, `/wt clean` continues only after cleanup succeeds; a cleanup failure reports the incomplete operation without starting a turn.
 Running leave or cleanup while already at primary does not replace the session or schedule a continuation.
 The model-facing transition tool supports `leave` without a task and `clean` with an exact task, in addition to `new` and `enter`.
@@ -134,6 +134,9 @@ If native replacement fails after it starts, verify the actual host directory an
 Do not clean a worktree to repair a conversation problem.
 Claude native removal is blocked, including exit-time cleanup; only an explicitly authorized `wt clean` or successful local delivery may remove a task after its ordinary checks.
 The running harness must reach primary first; a shell command cannot prove that transition.
+Actual cleanup copies ignored regular `docs/` files into primary at the same paths and verifies their bytes without overwriting.
+Non-ignored untracked docs still block cleanup and native return under the existing dirty-worktree checks.
+Conflicts or failed verification retain the task; preservation never stages the copied files.
 Cleanup removes local task branches with exact-tip ancestry into the recorded local target or [synchronized merged-PR proof](../tools/worktree/README.md#cleanup-safety).
 Squash and rebase merges need a matching exact-head merged PR, identical task and target trees, and equal local, remote-tracking, and live remote target commits.
 Without either proof, the local branch remains.
@@ -147,9 +150,10 @@ It captures actual provider requests, checks their effective destination instruc
 It also checks cancellation, verification and cleanup failures, no-op leave, and history replay, and proves cleanup finishes before continuation.
 `test/package-claude-worktree.test.ts` exercises Claude hook events against real disposable Git worktrees and WT, including unbound fork exits that preserve the original task reference.
 `test/package-claude-worktree-cleanup.test.ts` runs the hook process after deleting its starting worktree and checks that recovery preserves saved-location enforcement and native-removal protection.
+It also checks ignored-doc preservation through cleanup and refusal to return with non-ignored untracked docs.
 `test/package-claude-worktree-runtime.test.ts` exercises native Claude entry and CLI resume on macOS with a bounded sandbox and synthetic provider.
 It verifies one notice in the automatic post-entry/post-exit request, no duplicate turn, no replay on CLI resume, and no new notice after denied entry.
-It also starts native Claude in a task, returns to primary, cleans that task, and verifies another tool succeeds without recreating the removed directory.
+It also starts native Claude in a task, returns to primary, copies ignored docs, cleans that task, and verifies another tool succeeds without recreating the removed directory.
 Its prompted CLI resume does not prove automatic interactive `/resume`; that mode remains explicitly unsupported.
 `tools/worktree/tests/cases/sessions.rs`, included by `tests/cli.rs`, checks the session protocol through its process boundary.
 The package build bundles local Pi imports; the installed loader supplies its own SDK and TypeBox exports.

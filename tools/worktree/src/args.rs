@@ -284,7 +284,7 @@ pub fn help(command: &str) -> String {
             "\npositional arguments:\n  task\n\noptions:\n  -h, --help  show this help message and exit\n  --json      Emit protocol version 1 JSON; diagnostics stay on stderr\n  --check     Check safety without removing anything\n"
         }
         _ => {
-            "\nCreate, resume, and safely remove task worktrees. Never commits or publishes.\n\npositional arguments:\n  {new,enter,list,clean}\n    new                 Create a task branch and worktree\n    enter               Print an existing task's path\n    list                List this project's worktrees without network access\n    clean               Remove integrated, clean tasks; ignored files are\n                        disposable\n\noptions:\n  -h, --help            show this help message and exit\n"
+            "\nCreate, resume, and safely remove task worktrees. Never commits or publishes.\n\npositional arguments:\n  {new,enter,list,clean}\n    new                 Create a task branch and worktree\n    enter               Print an existing task's path\n    list                List this project's worktrees without network access\n    clean               Remove integrated tasks; preserve private docs first\n\noptions:\n  -h, --help            show this help message and exit\n"
         }
     };
     let completion = if command.is_empty() {

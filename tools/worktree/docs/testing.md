@@ -51,6 +51,22 @@ There is no persistent fixture cache or cached test result.
 Use `cargo test --locked --offline --test cli cleanup::` or `--test cli sessions::` from this component directory to select one group.
 Use `cargo test --locked --offline --test cli -- --test-threads=1` for serial diagnosis.
 
+## Private docs during cleanup
+
+Rust cleanup copies ignored regular `docs/` files into the main checkout without overwriting or staging them.
+Non-ignored untracked docs still block cleanup under the unchanged safety checks.
+The retained Python implementation intentionally keeps its historical cleanup behavior.
+`rust_support.current_cleanup_help` projects only the changed cleanup description when comparing help and invalid-invocation output; all other bytes and exit statuses remain exact comparisons.
+Rust process cases in `tests/cases/preserve_docs.rs` and `preserve_docs_edges.rs` verify the new behavior independently of that reference.
+They cover read-only checks, ignored-doc copying, untracked-doc refusal, identical and conflicting destinations, binary and unusual file names, unsafe paths, changed integration evidence, and copy failures.
+A tracked CR-name and ignored LF-name collision checks that Git filename enumeration preserves exact bytes.
+The native Pi and bounded Claude fixtures verify return-before-copy and the unchanged dirty-worktree checks.
+Concurrent writers and bind-mounted aliases are outside this copy step's supported conditions; stop other work before cleanup.
+
+```sh
+cargo test --locked --test cli preserve_docs
+```
+
 ## Bash completion
 
 `tests/cases/completions.rs` runs the Rust-produced setup in clean Bash processes with disposable homes.

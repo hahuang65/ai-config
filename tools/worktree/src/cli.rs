@@ -159,19 +159,32 @@ fn render_batch(result: &Value) -> String {
 fn render_clean(result: &Value) -> String {
     let task = text(&result["worktree"], "task");
     let proof = text(result, "proof");
+    let docs = render_docs(result);
     if result["removed"] == true {
         let branch = if result["branchRemoved"] == true {
             "Local branch deleted.".to_string()
         } else {
             format!("Branch retained: {}", text(result, "branchReason"))
         };
-        return format!("Removed {task}; {proof}. {branch}\n");
+        return format!("Removed {task}; {proof}. {branch}{docs}\n");
     }
     if result["transition"]["kind"] == "return-main" {
         return format!(
-            "Return to {}, then run wt clean {task}. Nothing removed yet.\n",
+            "Return to {}, then run wt clean {task}. Nothing removed yet.{docs}\n",
             text(&result["project"], "root")
         );
     }
-    format!("Safe to remove {task}; {proof}. Nothing removed in check mode.\n")
+    format!("Safe to remove {task}; {proof}. Nothing removed in check mode.{docs}\n")
+}
+
+fn render_docs(result: &Value) -> String {
+    for (key, label) in [
+        ("docsPreserved", "Private docs preserved in primary"),
+        ("docsToPreserve", "Private docs to preserve"),
+    ] {
+        if let Some(count) = result[key].as_u64() {
+            return format!(" {label}: {count}.");
+        }
+    }
+    String::new()
 }

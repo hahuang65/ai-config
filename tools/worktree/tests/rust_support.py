@@ -11,6 +11,13 @@ ROOT = Path(__file__).resolve().parents[1]
 BINARY = Path(os.environ.get("WT_RUST_BINARY", ROOT / "target/debug/wt")).resolve()
 
 
+def current_cleanup_help(output):
+    """Project only the deliberate Rust docs-preservation help change."""
+    return output.replace(
+        "Remove integrated, clean tasks; ignored files are\n                        disposable",
+        "Remove integrated tasks; preserve private docs first")
+
+
 class RustFixture(test_remote.GitFixture):
     def command(self, arguments, *, cwd=None, original=False, timeout=20):
         executable = [sys.executable, str(ROOT / "bin/wt")] if original else [str(BINARY)]
@@ -29,11 +36,11 @@ class RustFixture(test_remote.GitFixture):
         original = self.command(arguments, cwd=cwd, original=True)
         rust = self.command(arguments, cwd=cwd)
         self.assertEqual(rust.returncode, original.returncode)
-        self.assertEqual(rust.stderr, original.stderr)
+        self.assertEqual(rust.stderr, current_cleanup_help(original.stderr))
         if "--json" in arguments and original.returncode == 0:
             self.assertEqual(json.loads(rust.stdout), json.loads(original.stdout))
         else:
-            self.assertEqual(rust.stdout, original.stdout)
+            self.assertEqual(rust.stdout, current_cleanup_help(original.stdout))
         return rust
 
     def delivery(self, task):

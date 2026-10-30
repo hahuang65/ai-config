@@ -20,10 +20,15 @@ Other worktrees appear in the inventory but WT does not remove them.
 **Integration branch** is the branch where the task's work must arrive before cleanup.
 A different starting revision does not change this destination.
 
+**Private docs** are ignored regular files under a task's `docs/` directory that are absent from its Git index.
+Cleanup preserves their verified copies at the same paths in the main checkout without replacing existing files or staging them.
+
 **Cleanup** removes a managed worktree only after proving integration of its exact branch tip and verifying its non-ignored files are unchanged.
 Integration proof is local ancestry or an exact-head merged GitHub PR.
 Local mode without ancestry also requires **synchronized merged-PR proof**.
-Ignored files are disposable.
+Private docs must be copied or matched byte-for-byte in the main checkout before ordinary worktree removal.
+Non-ignored untracked docs still prevent cleanup.
+Other ignored files are disposable.
 Cleanup deletes the local task branch only with local ancestry or synchronized merged-PR proof.
 GitHub-mode worktree-only cleanup can retain the branch when local proof is absent.
 

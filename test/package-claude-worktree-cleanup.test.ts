@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import { existsSync, mkdirSync, mkdtempSync, realpathSync, rmSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, realpathSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 
@@ -53,6 +53,47 @@ test("Claude tools still work after cleanup deletes the session's starting workt
       expect(result.stdout.toString()).toBe("");
       expect(existsSync(task.path)).toBe(false);
     }
+  } finally { rmSync(home, { recursive: true, force: true }); }
+}, 120_000);
+
+test("Claude keeps private docs through native return and verified cleanup", () => {
+  const { home, root, run, hook } = trial();
+  try {
+    const task = JSON.parse(run([executable, "new", "private-docs", "--local", "--json"])).worktree;
+    run([executable, "session", "bind", "private-docs", "--harness", "claude", "--conversation", session], task.path);
+    mkdirSync(join(root, ".git/info"), { recursive: true });
+    writeFileSync(join(root, ".git/info/exclude"), "/docs/\n");
+    for (const path of [task.path, root]) mkdirSync(join(path, "docs"));
+    writeFileSync(join(task.path, "docs/untracked.md"), "private task notes\n");
+    for (const path of [task.path, root]) writeFileSync(join(path, "docs/same.md"), "same notes\n");
+    const exit = { tool_name: "ExitWorktree", tool_input: { action: "keep" } };
+    const before = hook(task.path, "PreToolUse", task.path, exit);
+    expect(before.exitCode, before.stderr.toString()).toBe(0);
+    expect(existsSync(join(root, "docs/untracked.md"))).toBe(false);
+    const left = hook(task.path, "PostToolUse", root, exit);
+    expect(left.exitCode, left.stderr.toString()).toBe(0);
+    expect(left.stdout.toString()).toContain("[WT continuation v1]");
+    const cleaned = JSON.parse(run([executable, "clean", "private-docs", "--json"]));
+    expect(cleaned).toMatchObject({ removed: true, branchRemoved: true, docsPreserved: 2 });
+    expect(readFileSync(join(root, "docs/untracked.md"), "utf8")).toBe("private task notes\n");
+    expect(readFileSync(join(root, "docs/same.md"), "utf8")).toBe("same notes\n");
+    expect(existsSync(task.path)).toBe(false);
+  } finally { rmSync(home, { recursive: true, force: true }); }
+}, 120_000);
+
+test("Claude return still blocks non-ignored untracked docs", () => {
+  const { home, root, run, hook } = trial();
+  try {
+    const task = JSON.parse(run([executable, "new", "private-docs", "--local", "--json"])).worktree;
+    run([executable, "session", "bind", "private-docs", "--harness", "claude", "--conversation", session], task.path);
+    mkdirSync(join(task.path, "docs"));
+    writeFileSync(join(task.path, "docs/private.md"), "task notes\n");
+    const blocked = hook(task.path, "PreToolUse", task.path,
+      { tool_name: "ExitWorktree", tool_input: { action: "keep" } });
+    expect(blocked.exitCode).toBe(2);
+    expect(blocked.stderr.toString()).toContain("changes");
+    expect(existsSync(join(root, "docs"))).toBe(false);
+    expect(readFileSync(join(task.path, "docs/private.md"), "utf8")).toBe("task notes\n");
   } finally { rmSync(home, { recursive: true, force: true }); }
 }, 120_000);
 

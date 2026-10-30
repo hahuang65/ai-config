@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { existsSync, mkdirSync, unlinkSync, writeFileSync } from "node:fs";
+import { appendFileSync, existsSync, mkdirSync, readFileSync, unlinkSync, writeFileSync } from "node:fs";
 import { execFileSync } from "node:child_process";
 import { join } from "node:path";
 import { transitionModel } from "./worktree-pi-model.mjs";
@@ -183,9 +183,30 @@ try {
   }
   unlinkSync(join(target, "notes.txt"));
   await runtime.switchSession(file);
+  const preserveDocs = process.env.WT_TEST_PRIVATE_DOCS === "1";
+  if (preserveDocs) {
+    mkdirSync(join(target, "docs"));
+    mkdirSync(join(cwd, "docs"));
+    appendFileSync(join(cwd, ".git/info/exclude"), "\n/docs/\n");
+    writeFileSync(join(target, "docs/ignored.bin"), Buffer.from([0, 1, 255]));
+    writeFileSync(join(target, "docs/untracked.md"), "private task notes\n");
+    for (const root of [target, cwd]) writeFileSync(join(root, "docs/same.md"), "existing matching notes\n");
+    writeFileSync(join(cwd, "docs/same.md"), "conflicting primary notes\n");
+    await runtime.session.prompt(`/wt clean ${task}`);
+    assert.equal(runtime.session.sessionFile, file, "Conflicts stop before native return");
+    assert.ok(errors.pop()?.includes("Resolve the conflict"));
+    assert.equal(existsSync(join(cwd, "docs/untracked.md")), false);
+    writeFileSync(join(cwd, "docs/same.md"), "existing matching notes\n");
+    cancelSwitch = true;
+    await runtime.session.prompt(`/wt clean ${task}`);
+    assert.equal(runtime.session.sessionFile, file);
+    assert.ok(errors.pop()?.includes("cancelled"));
+    assert.equal(existsSync(join(cwd, "docs/untracked.md")), false, "Cancellation never copies docs");
+    cancelSwitch = false;
+  }
   await runtime.session.prompt(`/wt clean ${task}`);
   if (turns.length !== 6 || turns[5].cwd !== cwd || turns[5].taskExists !== false) {
-    throw Error("Cleanup must finish before exactly one primary continuation");
+    throw Error(`Cleanup must finish before exactly one primary continuation: ${JSON.stringify({ turns: turns.length, errors })}`);
   }
   assertRequest(5, cwd, 4); // Cleanup carries the task branch, not an older primary conversation.
   await checkChecklist(taskChecklist);
@@ -197,5 +218,11 @@ try {
     throw Error("Cleanup retained an integrated task branch");
   }
   if (errors.length) throw Error(`Unexpected command errors: ${JSON.stringify(errors)}`);
+  if (preserveDocs) {
+    assert.deepEqual(readFileSync(join(cwd, "docs/ignored.bin")), Buffer.from([0, 1, 255]));
+    assert.equal(readFileSync(join(cwd, "docs/untracked.md"), "utf8"), "private task notes\n");
+    assert.equal(readFileSync(join(cwd, "docs/same.md"), "utf8"), "existing matching notes\n");
+    evidence.privateDocsPreserved = true;
+  }
   console.log(JSON.stringify(evidence));
 } finally { await runtime.dispose(); }

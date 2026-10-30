@@ -34,6 +34,8 @@ pub fn interrupted() -> bool {
 pub struct Output {
     pub code: i32,
     pub stdout: String,
+    /// Unnormalized output for NUL-delimited filenames.
+    pub raw_stdout: Vec<u8>,
 }
 
 pub fn run(cwd: &Path, arguments: &[&str], check: bool, seconds: u64) -> Result<Output> {
@@ -79,7 +81,11 @@ fn run_with_timeout(
             arguments[0], arguments[1]
         )));
     }
-    Ok(Output { code, stdout })
+    Ok(Output {
+        code,
+        stdout,
+        raw_stdout: bytes,
+    })
 }
 
 fn spawn(cwd: &Path, arguments: &[&str]) -> Result<Child> {

@@ -71,6 +71,10 @@ impl Project {
 
 #[path = "merged_cleanup.rs"]
 mod merged;
+#[path = "preserve_docs.rs"]
+mod preserve_docs;
+#[path = "preserve_docs_edges.rs"]
+mod preserve_docs_edges;
 
 #[test]
 fn cleanup_deletes_the_integrated_local_branch_but_check_and_inside_do_not() {

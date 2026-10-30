@@ -13,6 +13,7 @@ Orchard is not required and existing Orchard worktrees are left alone.
 The user approved a Rust rewrite, recorded in [ADR 0002](docs/adr/0002-reimplement-the-cli-in-rust.md).
 The Rust implementation is built in this checkout; installing or switching the ai-config source is a separate explicit operation.
 The previous Python implementation remains as a compatibility reference.
+It does not preserve private docs; do not use it for ordinary task cleanup.
 Shared regression tests track deliberate behavior changes, including removal of the legacy PID-based session-lock exception.
 Rust 1.99.0 is pinned through mise.
 The Rust checks cover existing command behavior, saved ownership-record compatibility, and cleanup safety.
@@ -71,7 +72,7 @@ The default limit is 50; use `--all` for every worktree.
 
 `clean TASK` verifies and removes one task.
 `clean` checks all managed tasks, removes eligible ones, and reports why others remain.
-`--check` never removes anything.
+`--check` never copies or removes anything.
 If invoked inside the worktree being removed, cleanup requests a return to the main checkout instead of deleting the current directory.
 Return through the harness's native controls before cleanup; the native cleanup flow can perform both steps under one explicit cleanup or local delivery request.
 After removing the worktree, WT deletes the local task branch when its exact tip is integrated into the recorded local integration branch.
@@ -79,6 +80,8 @@ For squash and rebase merges, an exact-head merged PR plus synchronized, matchin
 GitHub-mode cleanup without that local proof still removes only the worktree and retains the branch.
 No remote branch is deleted, and branch deletion is never forced.
 Successful removal adds `branchRemoved` to JSON output; retained branches include `branchReason`.
+When private docs exist, checks include `docsToPreserve` and successful removal includes `docsPreserved`, both file counts.
+Human output distinguishes planned preservation from verified copies in the primary checkout.
 If branch deletion fails after worktree removal, `cleanupIncomplete` is true and the command exits nonzero, preserving the branch and reporting the partial result.
 
 All lifecycle commands support `--json` for protocol-version-1 output.
@@ -219,9 +222,16 @@ GitHub-mode cleanup without synchronized proof retains its existing worktree-onl
 Local mode without either ancestry or synchronized merged-PR proof retains both the worktree and branch.
 
 Modified tracked files, non-ignored untracked files, in-progress Git operations, changed task branches, and locks prevent removal.
-Ignored files are deliberately disposable, including dependencies, generated files, and local ignored configuration.
-No ignored file content is inspected to make that decision.
-Git rechecks dirtiness and locks during removal, which never uses `--force`.
+This includes non-ignored untracked docs; cleanup and native return have no docs exception.
+Before otherwise-safe removal, WT copies ignored regular `docs/` files into the primary checkout at the same relative paths.
+It skips tracked docs, never overwrites existing files, and verifies copies byte-for-byte.
+An identical existing file is left unchanged; a different file stops cleanup before copying.
+Symlinks, special files, and nested Git metadata under `docs/` require manual preservation.
+Copy or verification failure retains the task; copies already made can remain in primary and are never staged.
+WT rechecks integration and working state after copying, then uses ordinary `git worktree remove` without `--force`.
+It does not unlink individual source docs, quarantine the task, or audit unrelated ignored directories.
+Other ignored files remain disposable; their contents are not inspected for preservation.
+Use ordinary local checkout directories, not bind-mounted aliases of the task's files.
 Nested submodules or concurrent external Git changes may cause removal to fail; inspect the retained worktree rather than forcing it.
 
 WT serializes its own operations with a short-lived OS file lock.
