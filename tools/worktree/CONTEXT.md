@@ -41,7 +41,9 @@ Native harness adapters do not acquire or release it.
 WT's ordinary entry and cleanup commands respect existing Git locks without treating them as proof of an active session.
 
 **Shell integration** is the opt-in Bash function layer printed by `wt shell-init bash` for both command names.
-A successful plain `enter TASK` changes the calling shell's directory, while machine output, help, failures, and other commands retain executable behavior.
+Successful plain `enter TASK` changes the calling shell to a task, and `leave` returns it to this repository's primary checkout.
+Shell navigation leaves task files and branches unchanged, including unfinished work.
+Machine output, help, failures, and other commands retain executable behavior.
 The executable still prints paths, and neither a child shell nor this integration moves a running harness session.
 Package installation also owns a link to the same functions at `~/.local/share/ai-config/bash/wt.bash`.
 A guarded loader in separately managed Bash configuration can source the installed fragment in new shells.

@@ -30,9 +30,10 @@ pub fn usage(command: &str) -> String {
     let suffix = match command {
         "new" => "new [-h] [--json] [--base BASE] [--local] task",
         "enter" => "enter [-h] [--json] task",
+        "leave" => "leave [-h] [--json]",
         "list" => "list [-h] [--json] [--all]",
         "clean" => "clean [-h] [--json] [--check] [task]",
-        _ => "[-h] {new,enter,list,clean} ...",
+        _ => "[-h] {new,enter,leave,list,clean} ...",
     };
     format!("usage: {} {suffix}", program_name())
 }
@@ -84,13 +85,13 @@ fn command(pending: &mut Pending, unknown: &mut Vec<String>) -> std::result::Res
             unknown.push(value);
             continue;
         }
-        if ["new", "enter", "list", "clean"].contains(&value.as_str()) {
+        if ["new", "enter", "leave", "list", "clean"].contains(&value.as_str()) {
             return Ok(value);
         }
         return Err(error(
             "",
             &format!(
-                "argument command: invalid choice: {} (choose from 'new', 'enter', 'list', 'clean')",
+                "argument command: invalid choice: {} (choose from 'new', 'enter', 'leave', 'list', 'clean')",
                 quoted(&value)
             ),
         ));
@@ -112,7 +113,7 @@ fn command_arguments(
             continue;
         }
         if positional_only || !is_option(&value) {
-            if args.command != "list" && args.task.is_none() {
+            if !matches!(args.command.as_str(), "list" | "leave") && args.task.is_none() {
                 if !task_name(&value) {
                     return Some(error(
                         &args.command,
@@ -277,6 +278,9 @@ pub fn help(command: &str) -> String {
         "enter" => {
             "\npositional arguments:\n  task\n\noptions:\n  -h, --help  show this help message and exit\n  --json      Emit protocol version 1 JSON; diagnostics stay on stderr\n"
         }
+        "leave" => {
+            "\nPrint this repository's primary checkout path without removing anything.\n\noptions:\n  -h, --help  show this help message and exit\n  --json      Emit protocol version 1 JSON; diagnostics stay on stderr\n"
+        }
         "list" => {
             "\noptions:\n  -h, --help  show this help message and exit\n  --json      Emit protocol version 1 JSON; diagnostics stay on stderr\n  --all       Show every worktree instead of the first 50\n"
         }
@@ -284,7 +288,7 @@ pub fn help(command: &str) -> String {
             "\npositional arguments:\n  task\n\noptions:\n  -h, --help  show this help message and exit\n  --json      Emit protocol version 1 JSON; diagnostics stay on stderr\n  --check     Check safety without removing anything\n"
         }
         _ => {
-            "\nCreate, resume, and safely remove task worktrees. Never commits or publishes.\n\npositional arguments:\n  {new,enter,list,clean}\n    new                 Create a task branch and worktree\n    enter               Print an existing task's path\n    list                List this project's worktrees without network access\n    clean               Remove integrated tasks; preserve private docs first\n\noptions:\n  -h, --help            show this help message and exit\n"
+            "\nCreate, resume, and safely remove task worktrees. Never commits or publishes.\n\npositional arguments:\n  {new,enter,leave,list,clean}\n    new                 Create a task branch and worktree\n    enter               Print an existing task's path\n    leave               Print this repository's primary checkout path\n    list                List this project's worktrees without network access\n    clean               Remove integrated tasks; preserve private docs first\n\noptions:\n  -h, --help            show this help message and exit\n"
         }
     };
     let completion = if command.is_empty() {

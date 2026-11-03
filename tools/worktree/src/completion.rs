@@ -69,9 +69,17 @@ fn request(values: &[String]) -> Result<i32> {
 
 fn candidates(words: &[String], index: usize, current: &str) -> Vec<String> {
     if index == 1 {
-        return ["new", "enter", "list", "clean", "completions", "shell-init"]
-            .map(str::to_owned)
-            .to_vec();
+        return [
+            "new",
+            "enter",
+            "leave",
+            "list",
+            "clean",
+            "completions",
+            "shell-init",
+        ]
+        .map(str::to_owned)
+        .to_vec();
     }
     if index < 2 {
         return Vec::new();
@@ -121,7 +129,7 @@ fn position(command: &str, prior: &[String]) -> Option<Position> {
             value if !position.positional && options(command).contains(&value) => {}
             value if !position.positional && value.starts_with('-') => return None,
             _ => {
-                if position.task || command == "list" {
+                if position.task || matches!(command, "list" | "leave") {
                     return None;
                 }
                 position.task = true;
@@ -134,7 +142,7 @@ fn position(command: &str, prior: &[String]) -> Option<Position> {
 fn options(command: &str) -> &'static [&'static str] {
     match command {
         "new" => &["-h", "--help", "--json", "--base", "--local"],
-        "enter" => &["-h", "--help", "--json"],
+        "enter" | "leave" => &["-h", "--help", "--json"],
         "list" => &["-h", "--help", "--json", "--all"],
         "clean" => &["-h", "--help", "--json", "--check"],
         "completions" | "shell-init" => &["-h", "--help"],

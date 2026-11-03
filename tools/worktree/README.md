@@ -43,12 +43,14 @@ No shell startup changes or background services are installed.
 
 ## Use
 
-From a project with an initial commit:
+From a project with an initial commit, in Bash:
 
-```sh
+```bash
+source <(wt shell-init bash)
 wt new invoice-search
-cd -- "$(command wt enter invoice-search)"
+wt enter invoice-search
 wt list
+wt leave
 wt clean invoice-search --check
 wt clean invoice-search
 ```
@@ -57,11 +59,17 @@ wt clean invoice-search
 It creates `~/.worktrees/<project>/<task>` on `<initials>/<task>` and prints the path to standard output.
 Initials come from Git's user name unless `wt.initials` is set.
 It never switches or changes files in the main checkout.
-The executable cannot change its parent shell's directory; use `cd` as shown, the opt-in Bash integration below, or the Pi adapter.
+The executable cannot change its parent shell's directory.
+Use the Bash functions shown above or the harness's native transition controls to change directory.
 
 `enter` prints an existing managed task's path.
 An explicitly Git-locked task is not entered by this standalone command; inspect its lock reason before changing that protection.
 Native session transitions do not acquire or release Git locks.
+
+`leave` prints this repository's primary checkout path, including when called from a task subdirectory.
+It never removes a worktree or branch, changes files, or requires unfinished work to be committed.
+It needs no write access to the Git administrative directory and does not acquire the WT operation lock.
+For a submodule, it returns that submodule's main checkout, not its parent repository or Git administrative directory.
 
 `list` shows this project's registered Git worktrees, including unmanaged ones.
 For a submodule, the main checkout is its working directory, not the administrative directory under the parent repository's `.git/modules`.
@@ -97,17 +105,22 @@ Enable directory switching for the current Bash shell:
 source <(wt shell-init bash)
 wt enter invoice-search
 # The same shell now runs in the selected worktree.
+wt leave
+# Back in this repository's primary checkout. The task remains available.
 ```
 
 This defines shell functions for both `wt` and `worktree`.
-Only successful plain `enter TASK` changes directory, using Bash's built-in `cd` with the returned path as literal data.
-It prints no path on successful entry.
+Successful plain `enter TASK` and `leave` change directory, using Bash's built-in `cd` with the returned path as literal data.
+They print no path on success.
+`leave` returns to the primary checkout, not the task directory's filesystem parent, and is a no-op when already there.
 `--json`, help, errors, and every other subcommand pass through to the executable without changing directory.
 In particular, `new` still creates a worktree without entering it, and cleanup behavior is unchanged.
 Git locks and normal entry validation remain effective.
 
 Use `command wt enter TASK` or `command worktree enter TASK` to bypass the function and print the path.
-The `cd -- "$(command wt enter TASK)"` idiom therefore works with or without the integration.
+Use `command wt leave` to print the primary path without changing directory.
+Use the sourced functions for exact-path navigation.
+Do not put printed paths in command substitution for navigation: Bash removes trailing newlines from the path.
 Machine consumers and harness adapters can keep invoking the executable directly.
 Shell functions cannot change an already-running harness session; use its native transition controls instead.
 
@@ -234,7 +247,8 @@ Other ignored files remain disposable; their contents are not inspected for pres
 Use ordinary local checkout directories, not bind-mounted aliases of the task's files.
 Nested submodules or concurrent external Git changes may cause removal to fail; inspect the retained worktree rather than forcing it.
 
-WT serializes its own operations with a short-lived OS file lock.
+WT serializes `new`, `enter`, `list`, and `clean` with a short-lived OS file lock.
+Read-only `leave` does not create or acquire that lock.
 Git's inventory remains the list of worktrees; a small record in each Git administrative directory identifies WT ownership and the selected integration policy.
 There is no global task database or watcher.
 WT cannot detect every external editor or shell writing into a worktree.

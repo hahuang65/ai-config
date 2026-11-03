@@ -388,6 +388,7 @@ fn root_help_explains_the_opt_in_bash_setup_command() {
 fn bash_setup_registers_both_names_and_completes_subcommands_outside_a_repository() {
     let shell = Shell::new();
     assert_eq!(candidates(shell.complete(&["en"])), ["enter"]);
+    assert_eq!(candidates(shell.complete(&["le"])), ["leave"]);
     assert!(!shell.cwd.join(".git").exists());
     assert!(!shell.home.path().join("trees").exists());
 }

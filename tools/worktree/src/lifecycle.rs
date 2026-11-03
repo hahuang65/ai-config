@@ -174,6 +174,15 @@ pub fn enter(repo: &Repository, task: &str) -> Result<Value> {
     ))
 }
 
+pub fn leave(repo: &Repository) -> Result<Value> {
+    let kind = if repo.cwd == repo.root {
+        "none"
+    } else {
+        "return-main"
+    };
+    Ok(outcome(repo, "leave", None, kind, &repo.root))
+}
+
 fn current_inside(repo: &Repository, entry: &Entry) -> bool {
     repo.cwd.starts_with(text::pathbuf(&entry.path))
 }

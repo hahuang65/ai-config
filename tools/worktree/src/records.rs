@@ -87,8 +87,7 @@ impl Repository {
         {
             return Ok(None);
         }
-        let record =
-            text::pathbuf(&git::git(path, &["rev-parse", "--absolute-git-dir"])?).join("wt.json");
+        let record = git::path_output(path, &["rev-parse", "--absolute-git-dir"])?.join("wt.json");
         if record.is_symlink() {
             return Ok(None);
         }

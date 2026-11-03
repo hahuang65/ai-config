@@ -5,6 +5,9 @@ use std::{
     process::{Command, Output},
 };
 
+#[path = "shell_leave.rs"]
+mod leave;
+
 struct Shell {
     home: tempfile::TempDir,
     cwd: PathBuf,
@@ -113,6 +116,14 @@ fn machine_output_help_and_errors_pass_through_without_changing_directory() {
             vec!["enter", "missing"],
             vec!["enter"],
             vec!["enter", "$(touch injected)"],
+            vec!["leave", "--json"],
+            vec!["leave", "--help"],
+            vec!["leave", "-hh"],
+            vec!["leave", "unexpected"],
+            vec!["leave", "--check"],
+            vec!["leave", "--json=value"],
+            vec!["leave", "$(touch injected)"],
+            vec!["leave", "--", "unexpected"],
             vec!["list", "--json"],
             vec![],
         ] {

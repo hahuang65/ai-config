@@ -56,7 +56,7 @@ test("a recorded upgrade adds the previously missing WT Bash fragment", () => {
   } finally { setup.clean(); }
 }, installerScenarioGuard(2));
 
-test("a new Bash process sources the installed fragment and enters using either command name", () => {
+test("a new Bash process sources the installed fragment and enters and leaves using either name", () => {
   const setup = installFixture();
   try {
     copyFileSync(resolve("tools/worktree/target/release/wt"), join(setup.source, "tools/worktree/target/release/wt"));
@@ -79,10 +79,10 @@ test("a new Bash process sources the installed fragment and enters using either 
     const path = JSON.parse(created.stdout).worktree.path;
     for (const name of ["wt", "worktree"]) {
       const shell = spawnSync("bash", ["--noprofile", "--norc", "-c",
-        'source "$HOME/.local/share/ai-config/bash/wt.bash"; "$1" enter feature || exit; printf "%s\\n" "$PWD"',
+        'source "$HOME/.local/share/ai-config/bash/wt.bash"; "$1" enter feature || exit; printf "%s\\n" "$PWD"; "$1" leave || exit; printf "%s\\n" "$PWD"',
         "installed-shell-test", name], { cwd: project, env, encoding: "utf8", timeout: 15_000 });
       expect({ status: shell.status, stdout: shell.stdout, stderr: shell.stderr }).toEqual({
-        status: 0, stdout: `${path}\n`, stderr: "",
+        status: 0, stdout: `${path}\n${project}\n`, stderr: "",
       });
     }
   } finally { setup.clean(); }

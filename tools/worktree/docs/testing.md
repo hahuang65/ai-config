@@ -56,7 +56,8 @@ Use `cargo test --locked --offline --test cli -- --test-threads=1` for serial di
 Rust cleanup copies ignored regular `docs/` files into the main checkout without overwriting or staging them.
 Non-ignored untracked docs still block cleanup under the unchanged safety checks.
 The retained Python implementation intentionally keeps its historical cleanup behavior.
-`rust_support.current_cleanup_help` projects only the changed cleanup description when comparing help and invalid-invocation output; all other bytes and exit statuses remain exact comparisons.
+`rust_support.current_rust_help` projects the Rust-only cleanup description and `leave` command-list additions when comparing reference help and diagnostics.
+All other bytes and exit statuses remain exact comparisons.
 Rust process cases in `tests/cases/preserve_docs.rs` and `preserve_docs_edges.rs` verify the new behavior independently of that reference.
 They cover read-only checks, ignored-doc copying, untracked-doc refusal, identical and conflicting destinations, binary and unusual file names, unsafe paths, changed integration evidence, and copy failures.
 A tracked CR-name and ignored LF-name collision checks that Git filename enumeration preserves exact bytes.
@@ -81,13 +82,22 @@ cargo test --locked --test cli completions::
 
 ## Bash directory switching
 
-`tests/cases/shell.rs` sources the Rust-produced shell integration in disposable Bash processes with both command names on a controlled PATH.
+`tests/cases/shell.rs` and its `shell_leave.rs` cases source the Rust-produced shell integration in disposable Bash processes with both command names on a controlled PATH.
 Cases verify that plain entry changes the same shell's directory, while JSON output, help, invalid input, missing tasks, and Git-locked tasks do not.
+`leave` returns from task subdirectories, preserves unfinished work and task branches, and is harmless at primary.
+Submodule cases verify the destination is the submodule's working checkout.
+Fresh-repository cases verify that `leave` needs no administrative write access, creates no lock file, and does not contend with mutation locking.
+Other commands still respect the WT operation lock.
 They preserve executable output and exit status, exercise `command` bypass, and prove that `new` does not automatically enter.
 Paths with spaces, quotes, shell syntax, and newlines stay literal, including with a custom `cd` function, `CDPATH`, strict shell options, and repeated setup.
+A primary path ending in newlines returns to that exact directory, even when its newline-free prefix is another existing directory.
+A README quickstart case executes the documented commands and checks task entry and exact return from a newline-ending primary path.
+Git destination discovery also preserves carriage returns.
+Submodule cases retain trailing newlines, spaces, tabs, and CR/LF when the whitespace-free prefix is another valid checkout.
 Completion still works through the wrapped names.
 Setup validation runs outside Git without installing resources or editing startup files.
 The component lint gate syntax-checks and ShellChecks both embedded Bash sources.
+The disposable installer fixture also sources the installed fragment and checks both entry and return through each command name.
 These tests do not enable integration in the live user shell or prove other-shell compatibility.
 
 ```sh

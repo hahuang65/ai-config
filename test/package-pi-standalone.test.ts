@@ -86,6 +86,7 @@ import { syncBuiltinESMExports } from 'node:module';
 import { writeFileSync } from 'node:fs';
 const spawn = childProcess.spawnSync;
 childProcess.spawnSync = (command, args, options) => {
+  if (command !== ${JSON.stringify(operation === "version" ? setup.executable : "npm")}) return spawn(command, args, options);
   writeFileSync(${JSON.stringify(join(setup.root, "deadline-options"))}, JSON.stringify(options));
   return spawn(command, args, { ...options, timeout: 100 });
 };

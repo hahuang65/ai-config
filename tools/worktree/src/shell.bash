@@ -2,7 +2,7 @@
 _wt_shell() {
     local program=$1
     shift
-    if [[ ${1-} != enter ]]; then
+    if [[ ${1-} != enter && ${1-} != leave ]]; then
         command "$program" "$@"
         return $?
     fi
@@ -15,7 +15,10 @@ _wt_shell() {
                 ;;
         esac
     done
-    target=$(command "$program" "$@") || return $?
+    # Keep path newlines by removing a sentinel and only the output delimiter.
+    target=$(command "$program" "$@" && builtin printf '.') || return $?
+    target=${target%.}
+    target=${target%$'\n'}
     builtin cd -- "$target" || return
 }
 wt() { _wt_shell wt "$@"; }

@@ -19,6 +19,20 @@ pub fn git(cwd: &Path, arguments: &[&str]) -> Result<String> {
     Ok(process::run(cwd, &command, true, 30)?.stdout.trim().into())
 }
 
+pub fn raw(cwd: &Path, arguments: &[&str]) -> Result<Vec<u8>> {
+    let mut command = vec!["git", "--no-pager"];
+    command.extend_from_slice(arguments);
+    Ok(process::run(cwd, &command, true, 30)?.raw_stdout)
+}
+
+pub fn path_output(cwd: &Path, arguments: &[&str]) -> Result<PathBuf> {
+    let output = raw(cwd, arguments)?;
+    let path = output.strip_suffix(b"\n").ok_or_else(|| {
+        Error::new("Invalid Git path response; check repository access and state.")
+    })?;
+    Ok(text::pathbuf(&text::decode(path)))
+}
+
 pub fn unchecked(cwd: &Path, arguments: &[&str]) -> Result<String> {
     Ok(result(cwd, arguments)?.stdout.trim().into())
 }
@@ -51,7 +65,7 @@ pub fn ancestor(cwd: &Path, older: &str, newer: &str) -> Result<bool> {
 }
 
 pub fn inventory(cwd: &Path) -> Result<Vec<BTreeMap<String, String>>> {
-    let output = git(cwd, &["worktree", "list", "--porcelain", "-z"])?;
+    let output = text::decode(&raw(cwd, &["worktree", "list", "--porcelain", "-z"])?);
     let mut entries: Vec<_> = output
         .split("\0\0")
         .filter_map(|entry| {
@@ -77,24 +91,24 @@ fn resolve_main_checkout(cwd: &Path, entries: &mut [BTreeMap<String, String>]) -
     else {
         return Ok(());
     };
-    let common = git(
+    let common = path_output(
         cwd,
         &["rev-parse", "--path-format=absolute", "--git-common-dir"],
     )?;
-    if first["worktree"] == common {
+    if first["worktree"] == text::path(&common) {
         // Git can report a submodule's administrative directory as its main worktree.
         // Resolve that entry in its own context, never from the current linked task.
-        let checkout = git(&text::pathbuf(&common), &["rev-parse", "--show-toplevel"])?;
-        first.insert("worktree".into(), checkout);
+        let checkout = path_output(&common, &["rev-parse", "--show-toplevel"])?;
+        first.insert("worktree".into(), text::path(&checkout));
     }
     Ok(())
 }
 
 pub fn path(cwd: &Path, name: &str) -> Result<PathBuf> {
-    Ok(text::pathbuf(&git(
+    path_output(
         cwd,
         &["rev-parse", "--path-format=absolute", "--git-path", name],
-    )?))
+    )
 }
 
 pub fn repository_lock(common: &Path) -> Result<File> {

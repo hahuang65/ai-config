@@ -31,10 +31,10 @@ pub struct Repository {
 impl Repository {
     pub fn new(cwd: &Path) -> Result<Self> {
         let cwd = cwd.canonicalize()?;
-        let common = text::pathbuf(&git::git(
+        let common = git::path_output(
             &cwd,
             &["rev-parse", "--path-format=absolute", "--git-common-dir"],
-        )?);
+        )?;
         let entries = git::inventory(&cwd)?;
         let first = entries
             .first()

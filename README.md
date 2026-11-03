@@ -45,6 +45,7 @@ The installed package provides:
   It preserves role bodies, inherited instructions/skills, mandatory guards, and the dedicated restricted review path; see [native specialist contracts](docs/native-specialists.md).
 - Public `wt`/`worktree`, `wl`/`worklog`, and `review-change` symlinks, plus source-local `review-artifact` and `consult` helpers resolved by their consumers without PATH aliases.
   Opt-in [Bash directory switching](tools/worktree/README.md#bash-directory-switching), enabled with `source <(wt shell-init bash)`, makes plain `wt enter TASK` and `worktree enter TASK` change the calling shell's directory.
+  Plain `wt leave` and `worktree leave` return that shell to the repository's primary checkout without removing the task.
   JSON, help, failures, and other subcommands retain executable behavior; this does not move a running harness session or edit startup files.
   Installation owns `~/.local/share/ai-config/bash/wt.bash` so separately managed Bash startup configuration can load the same functions directly when present.
   Installation includes [Bash completion entries](tools/worktree/README.md#bash-completion) for both WT names, with read-only managed task-name completion for `enter` and `clean`.

@@ -1,8 +1,9 @@
 """WT returns to the checkout, not a submodule's administrative directory."""
 import json
 from pathlib import Path
+import subprocess
 
-from rust_support import RustFixture
+from rust_support import BINARY, RustFixture
 
 
 class SubmoduleCheckoutTest(RustFixture):
@@ -27,10 +28,41 @@ class SubmoduleCheckoutTest(RustFixture):
         retained = self.parent / "retained-component"
         self.repo.rename(retained)
         self.wt("list", "--json", cwd=tree, ok=False)
+        self.wt("leave", "--json", cwd=tree, ok=False)
         self.wt("clean", "feature", "--json", cwd=tree, ok=False)
         self.assertTrue(tree.is_dir())
         self.assertTrue(retained.is_dir())
         self.assertEqual(self.git("rev-parse", "HEAD", cwd=self.parent), self.parent_head)
+
+    def test_leave_preserves_whitespace_in_submodule_primary_paths(self):
+        setup = self.home / "integration.bash"
+        setup.write_text(self.wt("shell-init", "bash").stdout)
+        for index, suffix in enumerate(("\n\n", " \t", "\r\n")):
+            with self.subTest(suffix=repr(suffix)):
+                name = f"whitespace-{index}"
+                primary = self.repo.with_name(self.repo.name + suffix)
+                self.git("-c", "protocol.file.allow=always", "submodule", "add",
+                         "--name", name, str(self.repo), primary.name, cwd=self.parent)
+                self.git("config", "wt.project", name, cwd=primary)
+                task = self.home / name
+                self.git("worktree", "add", "--detach", str(task), cwd=primary)
+                result = json.loads(self.wt("leave", "--json", cwd=task).stdout)
+                self.assertEqual(result["project"]["root"], str(primary))
+                self.assertEqual(result["transition"],
+                                 {"kind": "return-main", "targetPath": str(primary)})
+                output = subprocess.run(
+                    ["bash", "--noprofile", "--norc", "-c",
+                     'source "$1"; _wt_shell "$2" leave || exit; '
+                     'builtin printf "%s\\0" "$PWD"',
+                     "wt-submodule", str(setup), str(BINARY)],
+                    cwd=task, env=self.env, capture_output=True, timeout=20)
+                self.assertEqual(output.returncode, 0, output.stderr)
+                self.assertEqual(output.stdout, str(primary).encode() + b"\0")
+                self.assertEqual(output.stderr, b"")
+                self.assertTrue(task.is_dir())
+                self.assertTrue(self.repo.is_dir())
+                self.assertEqual(self.git("rev-parse", "HEAD", cwd=self.parent),
+                                 self.parent_head)
 
     def test_submodule_tasks_list_enter_and_return_to_the_real_main_checkout(self):
         listing = json.loads(self.wt("list", "--json").stdout)
@@ -45,6 +77,9 @@ class SubmoduleCheckoutTest(RustFixture):
         self.assertEqual(listing["worktrees"][0]["path"], str(self.repo))
         entered = json.loads(self.wt("enter", "feature", "--json", cwd=tree).stdout)
         self.assertEqual(entered["worktree"], created["worktree"])
+        left = json.loads(self.wt("leave", "--json", cwd=tree).stdout)
+        self.assertEqual(left["transition"],
+                         {"kind": "return-main", "targetPath": str(self.repo)})
         returning = json.loads(self.wt("clean", "feature", "--json", cwd=tree).stdout)
         self.assertEqual(returning["transition"],
                          {"kind": "return-main", "targetPath": str(self.repo)})

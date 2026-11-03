@@ -11,11 +11,17 @@ ROOT = Path(__file__).resolve().parents[1]
 BINARY = Path(os.environ.get("WT_RUST_BINARY", ROOT / "target/debug/wt")).resolve()
 
 
-def current_cleanup_help(output):
-    """Project only the deliberate Rust docs-preservation help change."""
+def current_rust_help(output):
+    """Project explicit Rust-only help additions from the Python oracle."""
     return output.replace(
         "Remove integrated, clean tasks; ignored files are\n                        disposable",
-        "Remove integrated tasks; preserve private docs first")
+        "Remove integrated tasks; preserve private docs first").replace(
+        "{new,enter,list,clean}", "{new,enter,leave,list,clean}").replace(
+        "    list                List this project's worktrees without network access",
+        "    leave               Print this repository's primary checkout path\n"
+        "    list                List this project's worktrees without network access").replace(
+        "(choose from 'new', 'enter', 'list', 'clean')",
+        "(choose from 'new', 'enter', 'leave', 'list', 'clean')")
 
 
 class RustFixture(test_remote.GitFixture):
@@ -36,11 +42,11 @@ class RustFixture(test_remote.GitFixture):
         original = self.command(arguments, cwd=cwd, original=True)
         rust = self.command(arguments, cwd=cwd)
         self.assertEqual(rust.returncode, original.returncode)
-        self.assertEqual(rust.stderr, current_cleanup_help(original.stderr))
+        self.assertEqual(rust.stderr, current_rust_help(original.stderr))
         if "--json" in arguments and original.returncode == 0:
             self.assertEqual(json.loads(rust.stdout), json.loads(original.stdout))
         else:
-            self.assertEqual(rust.stdout, current_cleanup_help(original.stdout))
+            self.assertEqual(rust.stdout, current_rust_help(original.stdout))
         return rust
 
     def delivery(self, task):

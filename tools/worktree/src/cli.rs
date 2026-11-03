@@ -26,21 +26,7 @@ pub fn main() -> Result<i32> {
     };
     process::install_interrupt_handler()?;
     let repo = Repository::new(&std::env::current_dir()?)?;
-    let result = {
-        let _lock = git::repository_lock(&repo.common)?;
-        match args.command.as_str() {
-            "new" => lifecycle::new(
-                &repo,
-                args.task.as_deref().expect("required task"),
-                args.base.as_deref(),
-                args.local,
-            ),
-            "enter" => lifecycle::enter(&repo, args.task.as_deref().expect("required task")),
-            "clean" => lifecycle::clean(&repo, args.task.as_deref(), args.check),
-            "list" => lifecycle::list(&repo, args.all),
-            _ => unreachable!(),
-        }?
-    };
+    let result = execute(&repo, &args)?;
     let output = if args.json {
         format!("{}\n", ascii_json(&result)?)
     } else {
@@ -55,6 +41,25 @@ pub fn main() -> Result<i32> {
                     .any(|item| item.get("reason").is_some() || item["cleanupIncomplete"] == true)
             }),
     ))
+}
+
+fn execute(repo: &Repository, args: &args::Arguments) -> Result<Value> {
+    if args.command == "leave" {
+        return lifecycle::leave(repo);
+    }
+    let _lock = git::repository_lock(&repo.common)?;
+    match args.command.as_str() {
+        "new" => lifecycle::new(
+            repo,
+            args.task.as_deref().expect("required task"),
+            args.base.as_deref(),
+            args.local,
+        ),
+        "enter" => lifecycle::enter(repo, args.task.as_deref().expect("required task")),
+        "clean" => lifecycle::clean(repo, args.task.as_deref(), args.check),
+        "list" => lifecycle::list(repo, args.all),
+        _ => unreachable!(),
+    }
 }
 
 fn ascii_json(value: &Value) -> Result<String> {
@@ -95,6 +100,7 @@ fn text<'a>(value: &'a Value, key: &str) -> &'a str {
 pub fn render(result: &Value) -> String {
     match text(result, "command") {
         "new" | "enter" => format!("{}\n", text(&result["worktree"], "path")),
+        "leave" => format!("{}\n", text(&result["project"], "root")),
         "list" => render_list(result),
         _ if result.get("results").is_some() => render_batch(result),
         _ => render_clean(result),
