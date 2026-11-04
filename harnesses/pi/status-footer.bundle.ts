@@ -577,6 +577,9 @@ class AnsiCodeTracker {
     if (this.underline) {
       result += "\x1B[24m";
     }
+    if (this.strikethrough) {
+      result += "\x1B[29m";
+    }
     if (this.activeHyperlink) {
       result += formatOsc8Close(this.activeHyperlink.terminator);
     }

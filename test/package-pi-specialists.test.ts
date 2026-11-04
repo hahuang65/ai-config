@@ -28,7 +28,7 @@ test("the package owns both the specialist adapter and its read-only engine poli
 
 test("the installed specialist bundle matches its owned source", async () => {
   const built = await Bun.build({ entrypoints: [join(root, "harnesses/pi/specialists.ts")],
-    target: "node", format: "esm", external: ["@earendil-works/pi-coding-agent", "typebox"] });
+    target: "node", format: "esm", external: ["@earendil-works/*", "typebox*"] });
   expect(built.success).toBe(true);
   expect(await built.outputs[0].text()).toBe(readFileSync(join(root, "harnesses/pi/specialists.bundle.ts"), "utf8"));
 });
@@ -168,7 +168,7 @@ function runFixture(mode = "normal") {
         PI_OFFLINE: "1", PATH: process.env.PATH, GIT_CONFIG_GLOBAL: "/dev/null", GIT_CONFIG_NOSYSTEM: "1",
         ...(mode === "host-override" ? { PI_SUBAGENTS_PI_CODING_AGENT_PACKAGE_ROOT: join(temporary, "foreign-sdk") } : {}) } });
     expect(result.status, result.stderr).toBe(0);
-    return JSON.parse(result.stdout);
+    return { ...JSON.parse(result.stdout), diagnostics: result.stderr };
   } finally { rmSync(temporary, { recursive: true, force: true }); }
 }
 
@@ -186,6 +186,35 @@ test("native specialists preserve the role body, context and a read-only tool fl
   expect(Object.keys(evidence.schema.properties)).toEqual(["agent", "task"]);
   expect(evidence.executionMode).toBe("sequential");
   expect(evidence.result.isError).not.toBe(true);
+}, 50000);
+
+test("specialists use the active host after the build-time Pi installation is removed", () => {
+  const evidence = runFixture("removed-build-host");
+  expect(evidence.registered, JSON.stringify(evidence.errors)).toBe(true);
+  expect(evidence.errors).toEqual([]);
+  expect(evidence.requests).toHaveLength(1);
+  expect(evidence.requests[0].tools).toEqual(["read", "grep", "find", "ls"]);
+  expect(evidence.requests[0].system).toContain("# API designer");
+  expect(evidence.result.isError).not.toBe(true);
+}, 50000);
+
+test("specialists never mix retained build-time host modules into a new host", () => {
+  const evidence = runFixture("retained-build-host");
+  expect(evidence.registered, JSON.stringify(evidence.errors)).toBe(true);
+  expect(evidence.errors).toEqual([]);
+  expect(evidence.error, JSON.stringify(evidence)).toBeUndefined();
+  expect(evidence.result?.isError, JSON.stringify(evidence)).not.toBe(true);
+  expect(evidence.requests).toHaveLength(1);
+}, 50000);
+
+test("a missing specialist runtime warns without failing extension startup or exposing a tool", () => {
+  const evidence = runFixture("missing-runtime");
+  expect(evidence.errors).toEqual([]);
+  expect(evidence.registered).toBe(false);
+  expect(evidence.requests).toHaveLength(0);
+  expect(evidence.tools).toContain("read");
+  expect(evidence.diagnostics).toContain("Read-only specialists unavailable");
+  expect(evidence.diagnostics).toContain("make build");
 }, 50000);
 
 test("the actual child guard permits source reading but refuses credentials", () => {

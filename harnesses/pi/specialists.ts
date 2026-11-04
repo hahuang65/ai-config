@@ -4,7 +4,7 @@ import { Type } from "typebox";
 import { realpathSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import { checkRuntime, loadRuntime, roleDefinition, roles, runtimeName, tools } from "./specialists/runtime";
+import { checkRuntime, loadRuntime, roleDefinition, roles, runtimeName, SpecialistRuntimeUnavailable, tools } from "./specialists/runtime";
 
 type Registration = { dispose(): void };
 const source = resolve(dirname(realpathSync(fileURLToPath(import.meta.url))), "../..");
@@ -44,7 +44,17 @@ function registerFloor(runtime: Awaited<ReturnType<typeof loadRuntime>>, session
 }
 
 export default async function specialists(pi: ExtensionAPI) {
-  const runtime = await loadRuntime(source);
+  let runtime: Awaited<ReturnType<typeof loadRuntime>>;
+  try { runtime = await loadRuntime(source); }
+  catch (error) {
+    if (!(error instanceof SpecialistRuntimeUnavailable)) throw error;
+    const warning = `Read-only specialists unavailable. ${error.message}`;
+    pi.on("session_start", (_event, ctx) => {
+      if (ctx.hasUI) ctx.ui.notify(warning, "warning");
+      else console.error(warning);
+    });
+    return;
+  }
   let native: ToolDefinition | undefined;
   const owner = proxyApi(pi, tool => { native = tool; });
   await runtime.register(owner);

@@ -1,8 +1,33 @@
 // Exercise the actual adapter and native child SDK with a credential-free provider.
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { cpSync, existsSync, mkdirSync, readFileSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { transitionModel } from "./worktree-pi-model.mjs";
-const [sdkFile, aiFile, source, cwd, mode = "normal"] = process.argv.slice(2);
+let [sdkFile, aiFile, source, cwd, mode = "normal"] = process.argv.slice(2);
+if (["removed-build-host", "retained-build-host", "missing-runtime"].includes(mode)) {
+  const copy = join(cwd, "configuration");
+  for (const path of ["harnesses/pi", "agents", "guard/vendor", "target/pi-subagents"]) {
+    cpSync(join(source, path), join(copy, path), { recursive: true });
+  }
+  source = copy;
+  const runtime = join(source, "target/pi-subagents"), removed = join(cwd, "removed-pi/1.4.0");
+  const host = JSON.parse(readFileSync(join(runtime, "host.json"), "utf8"));
+  host.sdkRoot = host.packageRoot = removed;
+  host.sdkVersion = "1.4.0";
+  for (const name of Object.keys(host.peers)) {
+    const peer = join(runtime, "node_modules", name);
+    rmSync(peer);
+    const oldPeer = join(removed, "node_modules", name);
+    symlinkSync(oldPeer, peer, "dir");
+    if (mode === "retained-build-host") {
+      mkdirSync(join(oldPeer, "dist"), { recursive: true });
+      writeFileSync(join(oldPeer, "package.json"), JSON.stringify({ name, version: "1.4.0",
+        type: "module", exports: "./dist/index.js" }));
+      writeFileSync(join(oldPeer, "dist/index.js"), "throw Error('OLD_HOST_MUST_NOT_LOAD');\n");
+    }
+  }
+  writeFileSync(join(runtime, "host.json"), JSON.stringify(host));
+  if (mode === "missing-runtime") rmSync(join(runtime, "package"), { recursive: true });
+}
 const adapter = join(source, "harnesses/pi/specialists.bundle.ts");
 if (!existsSync(adapter)) {
   console.log(JSON.stringify({ registered: false }));

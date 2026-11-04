@@ -59,7 +59,7 @@ build-pi-sdk:
 
 build-pi-specialists: build-guard-parser build-pi-sdk
 	node tools/build-specialists.mjs
-	bun build harnesses/pi/specialists.ts --target node --format esm --external @earendil-works/pi-coding-agent --external typebox --outfile harnesses/pi/specialists.bundle.ts
+	bun build harnesses/pi/specialists.ts --target node --format esm --external '@earendil-works/*' --external 'typebox*' --outfile harnesses/pi/specialists.bundle.ts
 
 build-pi-worklog:
 	bun build harnesses/pi/worklog.ts --target node --format esm --external @earendil-works/pi-coding-agent --external @earendil-works/pi-tui --outfile harnesses/pi/worklog.bundle.ts

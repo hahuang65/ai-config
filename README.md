@@ -150,7 +150,10 @@ The Pele build bundles its pinned library and license into the artifact helper; 
 The specialist build preserves the pinned engine and licenses in ignored `target/pi-subagents/`, using runtime dependencies copied from the locked install and peer links to the selected Pi SDK.
 Standalone foreground specialists use Pi's embedded SDK through its virtual-module loader, not native Bun imports of the downloaded SDK.
 The exact-version SDK supplies Node tests, build helpers, and library peers without installing another command-line client.
-Rebuild this checkout after changing the installed Pi host; the adapter rejects a mismatched runtime.
+Specialists bind to the running Pi's modules rather than a historical build's installation path, so compatible host upgrades do not require a rebuild solely for a version change.
+Incompatible APIs or damaged build outputs can still require rebuilding.
+Restart older Pi processes after upgrading; retain their installation files until they exit to avoid missing lazy provider imports.
+See [upgrade guidance](docs/native-specialists.md#upgrade-without-breaking-running-processes).
 `package.json` and `bun.lock` pin web-tree-sitter and tree-sitter-bash; ordinary harness execution needs neither network access nor `node_modules` for parsing.
 Restricted-reviewer offline flags and synthetic-provider isolation are unchanged.
 `make lint` checks that generated Claude LSP definitions still match the catalogue.

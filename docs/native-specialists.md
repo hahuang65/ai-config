@@ -53,7 +53,9 @@ Installation owns two resources:
 
 Existing unrecorded files are refused, even when their bytes match.
 Private model/authentication settings and unrelated extensions remain independently configured.
-The adapter checks the runtime and policy at startup and before every delegation.
+The adapter checks the pinned engine, active host override, and policy at startup and before every delegation.
+Missing build outputs or an engine-loading incompatibility disable specialists with an actionable warning, without registering the specialist tool.
+Policy and guard failures still fail closed.
 It refuses a missing or changed policy and does not quote malformed private configuration in errors.
 Do not separately register the full upstream extension alongside this adapter.
 No parent discovery allowlist is introduced.
@@ -81,20 +83,42 @@ Missing releases fail rather than falling back to another version.
 Ordinary discovery and test assertions do not download dependencies.
 No second command-line client is installed or upgraded, and no live settings or PATH entries change.
 
-Inside a standalone host, the adapter loads the engine through Jiti with virtual-module bindings to Pi's embedded SDK.
-Both bare SDK imports and the selected absolute SDK entry resolve to that host module.
-This avoids native Bun imports bypassing Pi's embedded extension loader.
-The downloaded SDK still supplies build helpers, Node-based tests, and library peers.
+In Node and standalone hosts, the adapter loads the engine through Jiti with virtual-module bindings to the running Pi's SDK, agent core, AI, terminal, and TypeBox modules.
+Bare SDK imports and absolute SDK entries resolve to that host module, including an entry from a retained build-time installation.
+This avoids native imports bypassing Pi's extension loader or mixing two host versions.
+The downloaded SDK still supplies build helpers, Node-based tests, and build-time library peers.
 The owned adapter remains bundled for the installed loader.
 
-The runtime records the binary path, package root, and SDK root/version.
-It checks the active binary identity or selected SDK root and the exact SDK release before delegation.
-Rebuild this checkout after changing the Pi installation and restart an older client process.
+The build records the binary path, package root, and SDK root/version.
+Those records and peer links describe the build, not a runtime version requirement.
+Compatible Pi upgrades do not require rebuilding solely because their version or installation path changed.
+Future incompatible host APIs can still require an adapter update or rebuild.
+Startup does not rewrite peer links, download dependencies, or run a build.
 An incompatible explicit subagent SDK override is rejected without changing the environment.
-Native tests currently exercise Pi **1.4.0** with a synthetic, credential-free provider.
+See [the host-binding decision](adr/0049-bind-specialists-to-the-running-pi-host.md).
+Native tests exercise Pi **1.5.0** with a synthetic, credential-free provider.
 This does not certify every future SDK or platform.
 `make build` does not install or retarget live resources.
 Live installation still needs the explicit installer and separate authorization.
+
+### Upgrade without breaking running processes
+
+A running Pi process can lazily import provider and OAuth modules from its original installation.
+Deleting that installation can produce `OAuth auth derivation failed` with `Cannot find module`, independently of this adapter.
+An extension reload does not restart Node or replace its existing module graph.
+Do not redirect an old version's chunk paths to a new version or change credentials to address missing code.
+
+The safest workflow is to exit Pi before upgrading, then restart it and resume the saved conversation.
+If old processes must remain open during a Homebrew upgrade, suppress automatic cleanup for that command:
+
+```sh
+HOMEBREW_NO_INSTALL_CLEANUP=1 brew upgrade pi-coding-agent
+```
+
+Restart those processes before a later cleanup or another Homebrew operation can remove the retained files.
+From the same working directory, use `pi --continue` for the newest saved session or `pi --resume` to select one.
+Already deleted files cannot be restored by this adapter.
+This guidance does not change Homebrew settings or run an upgrade, and does not guarantee hot-upgrade support inside Pi.
 
 ## Verification and review concurrency
 
@@ -126,6 +150,8 @@ There is no new verification cache, hook bypass, automatic repair, or publicatio
 ## Evidence and limits
 
 - `test/package-pi-specialists.test.ts` exercises the actual adapter, native child, role/context inheritance, tool declarations, guard refusal, and failed-startup containment.
+  Upgrade cases replace all build-time host peers with missing or deliberately failing old modules and verify guarded delegation through the active SDK.
+  A missing-runtime case verifies a warning, no specialist tool, and continued ordinary tool availability.
 - `test/package-pi-standalone.test.ts` checks exact-version discovery, fresh locked restoration, interrupted restores, hard deadlines, bounded diagnostics, and private-SDK footer bundling.
 - `test/package-pi-standalone-runtime.test.ts` exercises a real installed standalone binary and read-only specialist with a synthetic provider, when that installation format is available.
 - `test/package-pi-sdk-cache.test.ts` checks restoration locks and filesystem refusals that preserve external files.

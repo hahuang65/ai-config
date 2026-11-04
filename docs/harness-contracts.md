@@ -10,7 +10,8 @@ This document completes the wider inventory requested by task #158; it does not 
 Inspected source: `cb683c00089ca721348362f66fb68fe73fc1669d`, on 2026-10-19.
 The tables describe source and its verification suites, not a fresh audit of installed links or effective live settings.
 The clarification and [session-checklist](session-checklist.md) entries reflect subsequent source changes checked against Pi 1.3.0.
-The [native specialist](native-specialists.md) and verification-workflow entries reflect later source work with Pi 1.4.0 and synthetic child-model tests.
+The [native specialist](native-specialists.md) entries include Pi 1.5.0 upgrade regressions with synthetic child-model tests.
+The verification-workflow entries originated with Pi 1.4.0.
 The earlier tool inventories retain explicitly dated pre-pruning observations; their historical executable names are not current entry points.
 Pi's installed 1.3.0 extension, configuration, settings, skills, prompt, theme, SDK, and TUI documentation was also consulted.
 The native WT contract records its original Pi 1.1.0 and Claude 2.1.296 API checks; this inventory does not claim a new live Claude smoke test.
@@ -67,7 +68,7 @@ The same source supplies both harnesses wherever two routes are listed.
 | [Pi LSP bundle](../harnesses/pi/lsp.bundle.ts) | `.pi/agent/extensions/lsp.ts`; authored in [lsp.ts](../harnesses/pi/lsp.ts) and its [client modules](../harnesses/pi/lsp). |
 | [Pi clarification bundle](../harnesses/pi/ask-user-question.bundle.ts) | `.pi/agent/extensions/ask-user-question.ts`; authored in [ask-user-question.ts](../harnesses/pi/ask-user-question.ts). |
 | [Pi checklist bundle](../harnesses/pi/todo.bundle.ts) | `.pi/agent/extensions/todo.ts`; authored in [todo.ts](../harnesses/pi/todo.ts) and [state/view modules](../harnesses/pi/checklist). |
-| [Pi specialist bundle](../harnesses/pi/specialists.bundle.ts) | `.pi/agent/extensions/specialists.ts`; authored in [specialists.ts](../harnesses/pi/specialists.ts), with pinned source-local engine data and selected exact-version SDK peers. |
+| [Pi specialist bundle](../harnesses/pi/specialists.bundle.ts) | `.pi/agent/extensions/specialists.ts`; authored in [specialists.ts](../harnesses/pi/specialists.ts), with pinned source-local engine data, runtime bindings to the running host's modules, and exact-version build-time SDK discovery. |
 | [Pi specialist policy](../harnesses/pi/specialists/policy.json) | `.pi/agent/extensions/subagent/config.json`; owned read-only engine configuration, not adoption of an existing personal file. |
 | [Pi Worklog bundle](../harnesses/pi/worklog.bundle.ts) | `.pi/agent/extensions/worklog.ts`; authored in [worklog.ts](../harnesses/pi/worklog.ts), with [out-of-band capture contracts](worklog-capture.md). |
 | [Pi theme](../harnesses/pi/themes/catppuccin-mocha.json) | `.pi/agent/themes/catppuccin-mocha.json`; same palette intent, different schema. |

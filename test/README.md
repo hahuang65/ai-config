@@ -91,7 +91,7 @@ Restricted-reviewer offline settings and synthetic-provider boundaries remain un
   `package-install-checklist.test.ts` checks fresh ownership, recorded upgrades, personal-resource/settings preservation, and refusal to adopt an unowned matching extension.
   These tests do not prove real keyboard/rendering behavior or every conditional native task-tool declaration.
 - `package-pi-specialists.test.ts` exercises the pinned engine through the real native adapter and child SDK with a credential-free provider.
-  It checks host identity, bundle parity, inherited role/context, read-only tools, credential refusal, forbidden controls, and failed/changed policy or guard registration.
+  It checks active-host binding after removed or retained old installations, missing-runtime warnings, bundle parity, inherited role/context, read-only tools, credential refusal, forbidden controls, and failed/changed policy or guard registration.
   `package-install-specialists.test.ts` retains recorded upgrades and refuses unowned matching adapter/policy files while preserving model and unrelated extension settings.
   These checks do not establish real-provider quality, snapshot confinement, every SDK/platform, or live installation.
 - `package-pi-worklog.test.ts` uses the installed Node/Pi loader, a manifest-linked bundle, a disposable store, and held synthetic chat/classifier responses to verify out-of-band reminder capture during a busy run.

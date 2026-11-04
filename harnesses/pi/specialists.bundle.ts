@@ -6,6 +6,13 @@ import { fileURLToPath } from "node:url";
 
 // harnesses/pi/specialists/runtime.ts
 import * as sdk from "@earendil-works/pi-coding-agent";
+import * as core from "@earendil-works/pi-agent-core";
+import * as ai from "@earendil-works/pi-ai";
+import * as compat from "@earendil-works/pi-ai/compat";
+import * as tui from "@earendil-works/pi-tui";
+import * as typebox from "typebox";
+import * as typeboxCompile from "typebox/compile";
+import * as typeboxValue from "typebox/value";
 import { readFileSync, realpathSync, statSync } from "node:fs";
 import { join } from "node:path";
 import { pathToFileURL } from "node:url";
@@ -54,10 +61,13 @@ var policy_default = {
 };
 
 // harnesses/pi/specialists/runtime.ts
-var { getAgentDir, getPackageDir, VERSION } = sdk;
+var { getAgentDir, getPackageDir } = sdk;
 var roles = ["api-designer", "database-reviewer", "fact-checker", "frontend-architect"];
 var tools = ["read", "grep", "find", "ls"];
 var runtimeName = (name) => `ai-config-${name}`;
+
+class SpecialistRuntimeUnavailable extends Error {
+}
 function readBounded(path) {
   const stat = statSync(path);
   if (!stat.isFile() || stat.size > 65536)
@@ -87,43 +97,77 @@ function requireMatchingHost(root) {
 }
 function checkRuntime(source) {
   const directory = join(source, "target/pi-subagents");
-  const host = JSON.parse(readBounded(join(directory, "host.json")));
-  const activeRoot = realpathSync(getPackageDir());
-  const matchesBinary = host.standalone === true && host.packageRoot === activeRoot && host.executable === realpathSync(process.execPath);
-  const sdk2 = JSON.parse(readBounded(join(host.sdkRoot, "package.json")));
-  if (host.engineVersion !== "0.83.0" || !matchesBinary && host.sdkRoot !== activeRoot || host.sdkVersion !== VERSION || sdk2.name !== "@earendil-works/pi-coding-agent" || sdk2.version !== VERSION) {
-    throw Error("Specialist runtime does not match this Pi host; rebuild this configuration with the current Pi installation");
+  let engine;
+  try {
+    engine = JSON.parse(readBounded(join(directory, "package/package.json")));
+  } catch {}
+  if (engine?.name !== "pi-subagents" || engine?.version !== "0.83.0") {
+    throw new SpecialistRuntimeUnavailable("Run make build in the configuration source to restore the pinned engine");
   }
-  requireMatchingHost(host.sdkRoot);
+  let activeRoot;
+  try {
+    activeRoot = realpathSync(getPackageDir());
+  } catch {
+    throw new SpecialistRuntimeUnavailable("This Pi installation was removed; restart Pi and resume the saved conversation");
+  }
+  requireMatchingHost(activeRoot);
   requireOwnedPolicy();
   return directory;
 }
 async function loadRuntime(source) {
   const directory = checkRuntime(source);
-  const host = JSON.parse(readBounded(join(directory, "host.json")));
-  let load = (name) => import(pathToFileURL(join(directory, "package/bundle", `${name}.js`)).href);
-  if (host.standalone && host.executable === realpathSync(process.execPath)) {
-    const { createJiti } = await import(pathToFileURL(join(directory, "node_modules/jiti/lib/jiti.mjs")).href);
-    const entry = join(host.sdkRoot, "dist/index.js");
-    const jiti = createJiti(import.meta.url, {
-      tryNative: false,
-      moduleCache: false,
-      virtualModules: { "@earendil-works/pi-coding-agent": sdk, [entry]: sdk, [pathToFileURL(entry).href]: sdk }
-    });
-    load = (name) => jiti.import(join(directory, "package/bundle", `${name}.js`));
+  try {
+    return await loadEngine(directory);
+  } catch {
+    throw new SpecialistRuntimeUnavailable("Run make build with the current Pi installation, then restart Pi and resume the saved conversation");
   }
+}
+async function loadEngine(directory) {
+  const { createJiti } = await import(pathToFileURL(join(directory, "node_modules/jiti/lib/jiti.mjs")).href);
+  const entry = join(getPackageDir(), "dist/index.js");
+  const sdkModules = {
+    "@earendil-works/pi-coding-agent": sdk,
+    [entry]: sdk,
+    [pathToFileURL(entry).href]: sdk
+  };
+  try {
+    const retained = realpathSync(join(directory, "node_modules/@earendil-works/pi-coding-agent/dist/index.js"));
+    sdkModules[retained] = sdk;
+    sdkModules[pathToFileURL(retained).href] = sdk;
+  } catch (error) {
+    if (error.code !== "ENOENT")
+      throw error;
+  }
+  const jiti = createJiti(import.meta.url, {
+    tryNative: false,
+    moduleCache: false,
+    virtualModules: {
+      ...sdkModules,
+      "@earendil-works/pi-agent-core": core,
+      "@earendil-works/pi-ai": ai,
+      "@earendil-works/pi-ai/compat": compat,
+      "@earendil-works/pi-tui": tui,
+      typebox,
+      "typebox/compile": typeboxCompile,
+      "typebox/value": typeboxValue
+    }
+  });
+  const load = (name) => jiti.import(join(directory, "package/bundle", `${name}.js`));
   const [engine, agents, required, ceiling] = await Promise.all([
     load("index"),
     load("agents"),
     load("required-child-extensions"),
     load("capability-ceiling")
   ]);
-  return {
+  const runtime = {
     register: engine.default,
     registerAgent: agents.registerAgent,
     required: required.registerRequiredChildExtensions,
     ceiling: ceiling.registerSubagentCapabilityCeiling
   };
+  if (Object.values(runtime).some((value) => typeof value !== "function"))
+    throw Error("Incompatible specialist engine");
+  return runtime;
 }
 function roleDefinition(source, name) {
   const text = readBounded(join(source, "agents", `${name}.md`)).replace(/\r\n/g, `
@@ -201,7 +245,21 @@ function registerFloor(runtime, sessionId) {
   }
 }
 async function specialists(pi) {
-  const runtime = await loadRuntime(source);
+  let runtime;
+  try {
+    runtime = await loadRuntime(source);
+  } catch (error) {
+    if (!(error instanceof SpecialistRuntimeUnavailable))
+      throw error;
+    const warning = `Read-only specialists unavailable. ${error.message}`;
+    pi.on("session_start", (_event, ctx) => {
+      if (ctx.hasUI)
+        ctx.ui.notify(warning, "warning");
+      else
+        console.error(warning);
+    });
+    return;
+  }
   let native;
   const owner = proxyApi(pi, (tool) => {
     native = tool;
