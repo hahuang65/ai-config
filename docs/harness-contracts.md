@@ -230,6 +230,9 @@ Initialize long-lived services only when needed, not merely because an extension
 Language servers start lazily; shutdown/reload/session replacement must release resources idempotently.
 Pi footer rendering is TUI-only and disposes its branch listener.
 WT transitions require interactive native transport; a shell cwd change is never proof of session entry or return.
+WT `new` supports [repository-local file links](../tools/worktree/README.md#local-file-links) through direct local `wt.link` settings, without rewriting tracked files or running setup commands.
+These links share the primary file rather than copying it.
+Tracked collisions, unsafe paths, and `.terraform` components are refused, and Terraform initialization remains manual.
 
 Both displays sanitize untrusted terminal text and fit visible columns, including wide characters and narrow terminals.
 Claude emits exactly two occupied rows with no trailing newline and reserves its existing four-column margin.

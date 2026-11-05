@@ -76,7 +76,9 @@ pub fn new(repo: &Repository, task: &str, base: Option<&str>, local: bool) -> Re
     }
     let branch = branch_name(repo, task)?;
     let delivery = repo.delivery()?;
+    let links = crate::local_links::Links::prepare(repo)?;
     let start = repo.starting_commit(base, local)?;
+    links.check_start(repo, &start)?;
     repo.claim_directory()?;
     git::git(
         &repo.root,
@@ -99,13 +101,15 @@ pub fn new(repo: &Repository, task: &str, base: Option<&str>, local: bool) -> Re
         remote: repo.remote.clone(),
         delivery,
     };
-    let record = git::path(&target, "wt.json")?;
-    if save_record(&record, &metadata).is_err() {
-        return Err(Error::new(format!(
+    save_record(&git::path(&target, "wt.json")?, &metadata).map_err(|_| {
+        Error::new(format!(
             "Worktree created at {}, but its wt record could not be saved. It remains visible as unmanaged; inspect it before retrying.",
             text::path(&target)
-        )));
-    }
+        ))
+    })?;
+    links.install(&repo.root, &target).map_err(|error| {
+        Error::new(format!("Worktree created at {}, but wt.link setup failed: {error} The managed worktree and branch remain; inspect them before retrying.", text::path(&target)))
+    })?;
     let mut result = outcome(repo, "new", None, "enter-worktree", &target);
     result["worktree"] = json!({"path": metadata.path, "task": metadata.task, "branch": metadata.branch, "base": metadata.base, "managed": true});
     result["inventory"] = existing;

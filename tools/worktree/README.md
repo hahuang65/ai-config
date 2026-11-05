@@ -59,6 +59,7 @@ wt clean invoice-search
 It creates `~/.worktrees/<project>/<task>` on `<initials>/<task>` and prints the path to standard output.
 Initials come from Git's user name unless `wt.initials` is set.
 It never switches or changes files in the main checkout.
+Repository-local `wt.link` entries can opt individual untracked files into [local file links](#local-file-links).
 The executable cannot change its parent shell's directory.
 Use the Bash functions shown above or the harness's native transition controls to change directory.
 
@@ -208,6 +209,69 @@ An explicit `wt.delivery` setting selects the workflow without any dependency on
 For project-name collisions, set a unique `wt.project`; WT never adopts another repository's directory.
 Set `WT_ROOT` only when you intentionally want a different worktree root, such as in tests.
 Do not change naming or root settings while managed tasks remain without first moving or cleaning those tasks deliberately.
+
+## Local file links
+
+Opt individual untracked files into new worktrees through this repository's local Git configuration:
+
+```sh
+git config --local --add wt.link terraform/aws/application/terraform.tfvars
+git config --local --add wt.link path/to/another-local-file
+git config --local --get-all wt.link
+wt new invoice-search
+```
+
+Each value is one literal path relative to the primary checkout, including when `wt new` runs from another linked checkout.
+Repeat `--add` for multiple files.
+Repeated identical entries create only one link.
+There is no shell, glob, environment-variable, or home-directory expansion.
+Only values stored directly in the repository-local config are used, not global, system, included, or per-worktree config values.
+WT never changes tracked project files, ignore rules, or Git configuration to enable links.
+
+Sources must already exist as regular, untracked files in the primary checkout.
+Directories, source symlinks, symlinked parents, absolute paths, parent traversal, and `.git` or `.terraform` components are refused.
+A link cannot replace tracked content in the starting revision, including a parent file, symlink, or submodule.
+Checks also reject filesystem aliases of tracked paths, such as different casing on a case-insensitive checkout, regardless of `core.ignoreCase`.
+Keep local files excluded through existing ignore rules or the repository-local `.git/info/exclude` when they should not appear in status.
+The same shared exclusion file applies to linked worktrees.
+Non-ignored links remain untracked and trigger the normal dirty-worktree protections.
+Links under `docs/` remain subject to the existing manual-preservation requirement for symlinks.
+
+**These are shared files, not isolated copies.**
+An edit through any link changes the primary file and is visible to every worktree that links it.
+WT reads file metadata, not file contents, to create the links.
+It creates missing destination parent directories, but never overwrites an existing file or follows a destination-parent symlink.
+Invalid settings and tracked collisions stop creation before a worktree or branch is made.
+If a later checkout hook or filesystem change causes link setup to fail, the managed worktree and branch remain for inspection.
+No successful path or JSON receipt is printed for that failure, and WT does not force a rollback.
+
+Only `new` adds links.
+Changing `wt.link` does not retrofit existing tasks, and `enter` does not repair incomplete links.
+To stop linking files into future tasks:
+
+```sh
+git config --local --unset-all wt.link
+```
+
+### Terraform stays on demand
+
+WT never runs `terraform init`, `make init`, or a `wt.setup` command.
+Most tasks do not need Terraform.
+Run the project's documented initialization command manually, from its Terraform directory, only when needed.
+Each worktree keeps its own `.terraform` directory because it records backend and selected-workspace information, including dev/prod selection.
+Never link that directory between worktrees.
+
+To avoid repeated provider downloads, configure a personal provider cache in `~/.terraformrc`, outside the repository:
+
+```hcl
+plugin_cache_dir = "/absolute/path/to/terraform-plugin-cache"
+```
+
+Create that cache directory yourself before initialization.
+The cache shares provider packages, not `.terraform` workspace or backend state.
+It does not eliminate backend/module initialization or the need to select the correct workspace.
+Serialize initialization runs that use the same provider cache unless your Terraform version explicitly supports concurrent cache writes.
+WT does not create the cache, edit `~/.terraformrc`, initialize Terraform, or install providers.
 
 ## Cleanup safety
 

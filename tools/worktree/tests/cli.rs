@@ -5,6 +5,8 @@ mod branch_validation;
 mod cleanup;
 #[path = "cases/completions.rs"]
 mod completions;
+#[path = "cases/local_links.rs"]
+mod local_links;
 #[path = "support/repository.rs"]
 mod repository;
 #[path = "cases/sessions.rs"]

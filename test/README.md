@@ -114,6 +114,7 @@ Restricted-reviewer offline settings and synthetic-provider boundaries remain un
 - `tools/evaluation/tests/cases/change_progress.rs` checks timestamped step starts/ends and durations, live Pi/Claude evidence-read activity, elapsed-time updates, bounded output, private-output filtering, and silent JSON mode.
   `change_progress_terminal.rs` verifies the running log and overall stage/time bar through a real pseudo-terminal.
 - Rust tests and `tools/worktree/tests/rust_parity.py` check the standalone worktree CLI, including the process-level ownership, cleanup, interruption, and submodule cases; Rust tests also check Worklog.
+  Rust-only `local_links` cases verify opt-in repository-local file links, literal paths, primary-source selection, source and destination safety, retained tasks on late failure, and no automatic Terraform or setup execution.
   WT's completion cases run the printed setup in Bash and verify current-project names, typed-flag context without flag suggestions, aliases, literal input handling, and read-only lookup while the operation lock is held.
   `package-install-completions.test.ts` checks owned completion entries, independent alias loading, upgrades, source switches, idempotency, and unowned-file refusal without startup-file edits.
   Its optional system-loader case exercises actual lazy discovery when `bash-completion` is already available; no completion package is provisioned.

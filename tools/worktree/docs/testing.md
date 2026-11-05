@@ -51,6 +51,25 @@ There is no persistent fixture cache or cached test result.
 Use `cargo test --locked --offline --test cli cleanup::` or `--test cli sessions::` from this component directory to select one group.
 Use `cargo test --locked --offline --test cli -- --test-threads=1` for serial diagnosis.
 
+## Repository-local file links
+
+Rust process cases in `tests/cases/local_links.rs` and `local_links_safety.rs` check `wt.link` through the CLI.
+They cover literal multiple entries, duplicate values, primary-checkout selection from linked tasks, shared edits, cleanup without source removal, and neighboring tracked files.
+Global and included settings cannot opt a repository into links.
+Unsafe paths, `.git` and `.terraform` components, missing or non-regular sources, source symlinks, tracked collisions, and incompatible starting revisions are refused before task creation.
+Filesystem-gated case-insensitive regressions cover tracked-source aliases and starting-tree aliases, even with `core.ignoreCase=false`.
+They must reject the alias before task or branch creation; filesystems that distinguish those names do not run these cases.
+A post-checkout collision leaves a managed task, prints no successful receipt, and overwrites nothing.
+A fake Terraform executable proves that neither Terraform nor a configured `wt.setup` command runs during creation.
+The retained Python reference does not implement local links, so these cases remain Rust-only rather than changing parity expectations.
+Unit regressions in `tests/support/local_link_identities.rs` count identity-metadata reads within each collision-validation pass, not wall-clock speed.
+The original fixture read one path prefix 16 times; validation now reads each literal prefix once per pass and discards those observations afterward.
+A changed-source test confirms that later validation and installation do not reuse a prior pass's observations.
+
+```sh
+cargo test --locked --test cli local_links::
+```
+
 ## Private docs during cleanup
 
 Rust cleanup copies ignored regular `docs/` files into the main checkout without overwriting or staging them.

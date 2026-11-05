@@ -6,6 +6,7 @@ mod completion;
 mod git;
 mod github;
 mod lifecycle;
+mod local_links;
 mod process;
 mod records;
 mod repository;

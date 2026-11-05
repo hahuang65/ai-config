@@ -48,6 +48,8 @@ The installed package provides:
   Plain `wt leave` and `worktree leave` return that shell to the repository's primary checkout without removing the task.
   JSON, help, failures, and other subcommands retain executable behavior; this does not move a running harness session or edit startup files.
   Installation owns `~/.local/share/ai-config/bash/wt.bash` so separately managed Bash startup configuration can load the same functions directly when present.
+  Repository-local [`wt.link` settings](tools/worktree/README.md#local-file-links) can share selected untracked files with new tasks without editing shared project files or running setup commands.
+  Terraform initialization stays manual, with separate `.terraform` state for each worktree.
   Installation includes [Bash completion entries](tools/worktree/README.md#bash-completion) for both WT names, with read-only managed task-name completion for `enter` and `clean`.
   An existing `bash-completion` loader discovers them automatically; WT also prints manual setup without that package.
 - `review-change [SUBJECT]` for a PR URL, branch/worktree, GitHub branch URL, Git range, or the current branch plus outstanding changes; human reviews open directly in `review-artifact` without a manual intent field.
