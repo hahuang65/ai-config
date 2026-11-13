@@ -7,6 +7,7 @@ mod output;
 mod query;
 mod scope;
 mod store;
+mod text_input;
 
 use clap::Parser;
 use cli::{Cli, Command};
@@ -17,8 +18,8 @@ use std::process::ExitCode;
 use store::Store;
 
 fn main() -> ExitCode {
-    let cli = Cli::parse();
-    match run(&cli).and_then(|value| output::print(&value, cli.json, cli.command.is_none())) {
+    let mut cli = Cli::parse();
+    match run(&mut cli).and_then(|value| output::print(&value, cli.json, cli.command.is_none())) {
         Ok(()) => ExitCode::SUCCESS,
         Err(error) => {
             eprintln!("{}: {error}", cli::program_name());
@@ -27,7 +28,8 @@ fn main() -> ExitCode {
     }
 }
 
-fn run(cli: &Cli) -> Result<Value> {
+fn run(cli: &mut Cli) -> Result<Value> {
+    cli.resolve_text_files()?;
     cli.validate()?;
     let store = Store::locate()?;
     let log = store.read()?;

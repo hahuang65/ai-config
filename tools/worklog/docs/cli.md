@@ -72,12 +72,15 @@ Existing entries retain their recorded identity; WL does not guess identity migr
 wl note 'Check report totals'
 wl note 'Check another project' --project other
 wl note 'Choose a project later' --unassigned
+wl note --text-file /private/path/reminder.txt
 wl start 'Investigate report totals'
 wl start --task 1
 wl progress 'Agreed on the calculation' --task 1
 wl progress 'Compared two project designs'
+wl progress --task 1 --text-file /private/path/progress.txt
 wl commit --task 1 --hash abcdef0 --subject 'Add calculation'
 wl complete 1 --summary 'Report totals verified'
+wl finish 1 --summary 'Report totals verified'
 wl complete 1 --hash abcdef0 --subject 'Finish report totals'
 wl abandon 1 --summary 'No longer needed'
 wl correct 1 --text 'Check the monthly report totals'
@@ -91,6 +94,39 @@ A task's ID is the ID of its initial `note` or new-task `start` entry.
 Commit hashes must contain 7 to 64 hexadecimal characters; WL does not verify that the commit exists.
 `--hash` and `--subject` must appear together.
 Text must be nonblank, single-line, free of control characters, and no more than 2048 UTF-8 bytes.
+
+### File input
+
+`note` and `progress` accept either positional text or `--text-file PATH`, never both.
+The file must be a readable regular UTF-8 file.
+A relative path resolves from the command's working directory.
+Worklog removes one terminal LF or CRLF, then applies the same nonblank, single-line, control-character and 2048-byte limits as positional text.
+Other whitespace is retained, not trimmed.
+Reads are bounded, and the file is read once before storage access.
+Invalid input does not append an entry or create a store.
+An unreadable file reports an operational error without echoing its contents.
+
+File contents are literal data, never shell code or an instruction file.
+Use only short, nonsensitive text, with the same privacy rules as positional input.
+File input is not a route for importing transcripts, credentials, or old Work log history.
+
+### Claude Code worktree compatibility
+
+Claude Code 2.1.319's native isolation classifier can mistake `complete` arguments for the shell completion builtin.
+It can also misclassify quoted note or progress text as executable code.
+These failures reproduce without custom hooks.
+
+Use `worklog finish ID` (or `wl finish ID`) in affected sessions.
+`finish` is a visible alias of `complete`, with identical options, validation, completion events and task transitions.
+The original command remains supported for existing callers.
+For misclassified note or progress text, use `--text-file PATH` instead of embedding prose in shell arguments.
+An agent can create a private temporary text file with its write tool, then invoke the CLI with only that path.
+Do not disable isolation, rewrite blocked Git commands, or wrap commands in an opaque interpreter.
+These paths change Worklog input syntax, not Claude's Git isolation policy.
+
+The native-process test covers agent Bash calls with no custom hooks and confirms shell-completion and cross-worktree Git denials remain active.
+Interactive user bang commands still need a manual UI check with the updated executable.
+Building a candidate does not replace the installed Worklog executable or configuration.
 
 ### Task states
 

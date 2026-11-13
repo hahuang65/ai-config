@@ -11,6 +11,11 @@ The default store is `~/.worklog/`, shared across projects and source checkouts.
 `WL_ROOT` explicitly selects another store for tests or a controlled cutover; never change stores merely because a query is empty.
 The shell shortcut is `wl`; agent invocations use `worklog`.
 Read its `--help` and the relevant command help; use structured output for automation.
+In affected worktree sessions, prefer `finish ID`, the alias of `complete ID`, to avoid the native classifier's false shell-completion block.
+If the native classifier misclassifies note or progress prose, use the write tool to create a private temporary UTF-8 file and call `note --text-file PATH` or `progress --task ID --text-file PATH`.
+File text has the same 2048-byte, nonblank, single-line limit, with one terminal LF or CRLF permitted.
+Keep file contents nonsensitive, and never disable isolation or hide Git operations inside a wrapper.
+See the [CLI compatibility contract](../../tools/worklog/docs/cli.md#claude-code-worktree-compatibility).
 Never use the original `work-log` CLI or edit its data as a fallback.
 If worklog is absent or a write fails, report that nothing was recorded; do not claim success or repeatedly retry an unavailable tool.
 

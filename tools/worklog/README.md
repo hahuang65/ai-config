@@ -46,6 +46,12 @@ Use `--all` when you need every matching row; bounded responses report omitted c
 Use known project names from `wl projects`, or an explicit repository path; ambiguous names are errors.
 Use `--unassigned` only when deliberately noting work without a project.
 
+In affected Claude Code worktree sessions, use `wl finish ID`, an alias with the same behavior as `complete`.
+`note --text-file PATH` and `progress --text-file PATH` read literal UTF-8 text without placing prose in shell arguments.
+The normal text limits still apply, with one terminal LF or CRLF allowed.
+See [file input and native Claude compatibility](docs/cli.md#file-input) for the contract and verification limits.
+These paths leave Claude's isolation checks enabled.
+
 Pi's `/worklog REMINDER` command captures a literal reminder in the current Git project through this owned CLI.
 It acknowledges the write in the UI without steering, aborting, queueing a prompt, or starting a model turn.
 Empty `/worklog` lists incomplete work across all projects without a model turn.
@@ -71,6 +77,6 @@ See the CLI reference for exact durability, concurrency, and error behavior.
 
 ## Validation
 
-The process-level suite and storage tests cover identity across worktrees, unrelated projects with similar origin names, combined commit/completion, corrections, bounded queries, invalid input, concurrent writes, interrupted publication, private storage, sync failures, and no-subcommand listings across projects.
+The process-level suite and storage tests cover identity across worktrees, unrelated projects with similar origin names, combined commit/completion, the `finish` alias, bounded file input, corrections, bounded queries, invalid input, concurrent writes, interrupted publication, private storage, sync failures, and no-subcommand listings across projects.
 The package suite separately checks the installed Pi adapter with a synthetic busy run and disposable Worklog storage.
 Sync sequencing is tested through injected filesystem operations; physical power-loss behavior is not claimed as tested.

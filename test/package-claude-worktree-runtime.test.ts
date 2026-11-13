@@ -3,7 +3,9 @@ import { appendFileSync, cpSync, existsSync, mkdirSync, mkdtempSync, readFileSyn
 import { homedir, tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { startFakeClaudeApi, toolResults } from "./fixtures/claude-api";
+import { runWorklogRuntime, worklogRuntime } from "./fixtures/claude-worklog";
 
+const quote = (text: string) => `'${text.replaceAll("'", "'\\''")}'`;
 const claude = Bun.which("claude");
 const runtimeTest = process.platform === "darwin" && claude && existsSync("/usr/bin/sandbox-exec") ? test : test.skip;
 runtimeTest.each(["external", "native"])("native Claude carries, leaves, and checks re-entry permissions for %s task paths", async (layout) => {
@@ -142,3 +144,38 @@ runtimeTest.each(["external", "native"])("native Claude carries, leaves, and che
     }
   } finally { rmSync(home, { recursive: true, force: true }); }
 }, 200_000);
+
+runtimeTest("native Claude permits Worklog compatibility commands without weakening isolation", async () => {
+  const fixture = worklogRuntime();
+  try {
+    const note = join(fixture.home, "note.txt"), progress = join(fixture.home, "progress.txt");
+    const sentinel = join(fixture.home, "must-not-exist");
+    const text = `Worktree-isolation blocks \`worklog complete\`: git, \"quotes\", apostrophe's — $(touch ${sentinel})`;
+    writeFileSync(note, `${text}\n`);
+    writeFileSync(progress, `${text}\r\n`);
+    const results = await runWorklogRuntime(fixture, [
+      { name: "EnterWorktree", input: { name: "worklog-compatibility" } },
+      ...["worklog start Task --unassigned --json",
+        `worklog note --text-file ${quote(note)} --unassigned --json`,
+        `worklog progress --task 1 --text-file ${quote(progress)} --unassigned --json`,
+        "worklog finish --help", "worklog --json finish 1 --unassigned --summary Verified",
+        "git status --short", "complete -C 'git status' worklog",
+        `git -C ${quote(fixture.root)} status --short`]
+        .map(command => ({ name: "Bash", input: { command } })),
+    ]);
+    for (const result of results.slice(0, 7)) expect(result.is_error, JSON.stringify(result)).not.toBe(true);
+    const entry = (index: number) => JSON.parse(String(results[index].content).split("\n")[0]).entry;
+    expect(entry(2).kind).toBe("note");
+    expect(entry(2).text).toBe(text);
+    expect(entry(3).kind).toBe("progress");
+    expect(entry(3).text).toBe(text);
+    expect(entry(3).task).toBe(1);
+    expect(entry(5).kind).toBe("complete");
+    expect(entry(5).task).toBe(1);
+    expect(existsSync(sentinel)).toBe(false);
+    expect(results[7].is_error).toBe(true);
+    expect(JSON.stringify(results[7])).toContain("runs a string through complete");
+    expect(results[8].is_error).toBe(true);
+    expect(JSON.stringify(results[8])).toContain("shared checkout");
+  } finally { fixture.dispose(); }
+}, 60_000);

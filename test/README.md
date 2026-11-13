@@ -102,6 +102,9 @@ Restricted-reviewer offline settings and synthetic-provider boundaries remain un
   These checks do not prove live terminal interaction, RPC-client rendering, or Herdr notification behavior.
 - `package-tool-inventory.test.ts` checks catalogue coverage for manifest CLI aliases, the current Rust executable source layout, literal Pi tool registrations, and bare Claude tool denials.
   It does not contact MCP servers or assert that a documented host tool is active in every session.
+- `package-claude-worktree-runtime.test.ts` also checks Worklog's `finish` alias and literal UTF-8 note/progress file input in a no-custom-hook native worktree session, with shell-completion and cross-worktree Git denials retained.
+  The fixture uses a disposable store and loopback-only synthetic provider, not live credentials.
+  Interactive user bang commands still require a manual UI check.
 - `package-harness-contracts.test.ts` checks every manifest resource destination-to-source mapping, settings destination/path, the complete registry policy matrix, and local source-reference links.
   It rejects undocumented added/renamed routes reusing existing sources and preserves the positive local-documentation contract without the retired external destination.
   These are documentation completeness and navigation checks, not semantic parity, live-installation verification, or model-compliance evidence.

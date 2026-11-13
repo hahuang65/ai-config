@@ -44,6 +44,7 @@ The installed package provides:
   The source adds a guarded Pi `subagent` adapter for the four ordinary read-only roles, backed by pinned pi-subagents 0.83.0 and the installed host SDK.
   It preserves role bodies, inherited instructions/skills, mandatory guards, and the dedicated restricted review path; see [native specialist contracts](docs/native-specialists.md).
 - Public `wt`/`worktree`, `wl`/`worklog`, and `review-change` symlinks, plus source-local `review-artifact` and `consult` helpers resolved by their consumers without PATH aliases.
+  Worklog's [`finish` alias and file input](tools/worklog/docs/cli.md#claude-code-worktree-compatibility) avoid native Claude worktree-classifier false positives without disabling isolation.
   Opt-in [Bash directory switching](tools/worktree/README.md#bash-directory-switching), enabled with `source <(wt shell-init bash)`, makes plain `wt enter TASK` and `worktree enter TASK` change the calling shell's directory.
   Plain `wt leave` and `worktree leave` return that shell to the repository's primary checkout without removing the task.
   JSON, help, failures, and other subcommands retain executable behavior; this does not move a running harness session or edit startup files.

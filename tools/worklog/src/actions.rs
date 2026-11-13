@@ -33,7 +33,7 @@ type Fields = (Kind, Option<u64>, String, Option<Commit>, Option<u64>);
 
 fn fields(command: &Command, log: &Log, id: u64) -> Result<Fields> {
     let fields = match command {
-        Command::Note { title } => (Kind::Note, Some(id), title.clone(), None, None),
+        Command::Note { title } => (Kind::Note, Some(id), title.value()?.to_owned(), None, None),
         Command::Start {
             title: Some(title), ..
         } => (Kind::Start, Some(id), title.clone(), None, None),
@@ -46,7 +46,13 @@ fn fields(command: &Command, log: &Log, id: u64) -> Result<Fields> {
             None,
             None,
         ),
-        Command::Progress { summary, task } => (Kind::Progress, *task, summary.clone(), None, None),
+        Command::Progress { summary, task } => (
+            Kind::Progress,
+            *task,
+            summary.value()?.to_owned(),
+            None,
+            None,
+        ),
         Command::Commit { task, commit } => (
             Kind::Commit,
             *task,

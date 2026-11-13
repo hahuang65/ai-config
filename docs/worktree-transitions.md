@@ -91,6 +91,8 @@ Do not reuse one conversation ID for multiple tasks or overwrite a saved binding
 These APIs were checked against Claude Code 2.1.296.
 A sandboxed native-process test uses a loopback-only synthetic provider to verify entry, persisted history, resume, and the actual Bash working directory without live credentials.
 Interactive `/branch` and `/resume` UI actions still require a human smoke test.
+Claude Code 2.1.319 can also falsely classify Worklog subcommands and prose as executable shell code after native entry.
+Use Worklog's [`finish` alias and note/progress file input](../tools/worklog/docs/cli.md#claude-code-worktree-compatibility), not a disabled isolation check.
 Native resume restores its worktree before `PreToolUse` verifies the saved conversation's directory.
 No startup or shutdown hook tracks a session owner.
 A manual conversation that is not a saved task reference is not rejected merely because it uses a task checkout.
@@ -155,6 +157,8 @@ It also checks ignored-doc preservation through cleanup and refusal to return wi
 It verifies one notice in the automatic post-entry/post-exit request, no duplicate turn, no replay on CLI resume, and no new notice after denied entry.
 It also starts native Claude in a task, returns to primary, copies ignored docs, cleans that task, and verifies another tool succeeds without recreating the removed directory.
 Its prompted CLI resume does not prove automatic interactive `/resume`; that mode remains explicitly unsupported.
+A no-custom-hook scenario also verifies Worklog's `finish` alias and literal note/progress file input under native isolation, while real shell-completion and cross-worktree Git operations remain denied.
+That process test does not exercise the interactive user bang-command UI.
 `tools/worktree/tests/cases/sessions.rs`, included by `tests/cli.rs`, checks the session protocol through its process boundary.
 The package build bundles local Pi imports; the installed loader supplies its own SDK and TypeBox exports.
 Normal user/project discovery remains enabled.

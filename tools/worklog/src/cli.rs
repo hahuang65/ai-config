@@ -1,4 +1,5 @@
 use crate::error::{Error, Result};
+use crate::text_input::TextInput;
 use clap::{Args, Parser, Subcommand, ValueEnum};
 use std::path::PathBuf;
 use time::Date;
@@ -84,7 +85,10 @@ pub struct CommitArgs {
 #[derive(Subcommand)]
 pub enum Command {
     /// Capture a planned reminder without starting it
-    Note { title: String },
+    Note {
+        #[command(flatten)]
+        title: TextInput,
+    },
     /// Start a new task by title, or an existing planned task by ID
     Start {
         #[arg(required_unless_present = "task", conflicts_with = "task")]
@@ -94,7 +98,8 @@ pub enum Command {
     },
     /// Record meaningful progress without changing task state
     Progress {
-        summary: String,
+        #[command(flatten)]
+        summary: TextInput,
         #[arg(long, value_parser = parse_id)]
         task: Option<u64>,
     },
@@ -106,6 +111,7 @@ pub enum Command {
         commit: CommitArgs,
     },
     /// Complete a planned or active task; optionally include its finishing commit
+    #[command(visible_alias = "finish")]
     Complete {
         #[arg(value_parser = parse_id)]
         task: u64,
@@ -178,6 +184,14 @@ impl Cli {
         })
     }
 
+    pub fn resolve_text_files(&mut self) -> Result<()> {
+        match self.command.as_mut() {
+            Some(Command::Note { title }) => title.resolve(),
+            Some(Command::Progress { summary, .. }) => summary.resolve(),
+            _ => Ok(()),
+        }
+    }
+
     pub fn validate(&self) -> Result<()> {
         if self.scope.all_projects && self.command().is_write() {
             return Err(Error::usage(
@@ -208,13 +222,12 @@ impl Command {
 
     fn validate_text(&self) -> Result<()> {
         match self {
-            Self::Note { title }
-            | Self::Start {
+            Self::Note { title } => validate_text(title.value()?),
+            Self::Start {
                 title: Some(title), ..
             } => validate_text(title),
-            Self::Progress { summary, .. } | Self::Abandon { summary, .. } => {
-                validate_text(summary)
-            }
+            Self::Progress { summary, .. } => validate_text(summary.value()?),
+            Self::Abandon { summary, .. } => validate_text(summary),
             Self::Commit { commit, .. } => {
                 validate_commit(commit)?;
                 if commit.hash.is_none() {

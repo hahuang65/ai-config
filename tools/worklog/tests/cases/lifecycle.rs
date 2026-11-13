@@ -36,6 +36,35 @@ fn lifecycle_progress_and_finishing_commit_remain_distinct() {
 }
 
 #[test]
+fn finish_alias_records_the_same_completion_and_validation_as_complete() {
+    let world = World::new();
+    world.ok(&["note", "Finish via alias"]);
+    let entry = world.ok(&[
+        "finish",
+        "1",
+        "--summary",
+        "Verified",
+        "--hash",
+        "abcdef0",
+        "--subject",
+        "Finish work",
+    ])["entry"]
+        .clone();
+    assert_eq!(entry["kind"], "complete");
+    assert_eq!(entry["task"], 1);
+    assert_eq!(entry["text"], "Verified");
+    assert_eq!(entry["commit"]["hash"], "abcdef0");
+    assert_eq!(
+        rows(&world.ok(&["list", "--state", "completed"]))[0]["id"],
+        1
+    );
+    world.fail(&["finish", "1"]);
+    world.ok(&["start", "Another task"]);
+    world.fail(&["finish", "3", "--hash", "abcdef0"]);
+    assert_eq!(world.ok(&["history"])["total"], 3);
+}
+
+#[test]
 fn direct_start_abandon_and_project_progress_need_no_registration() {
     let world = World::new();
     world.ok(&["progress", "Explored a design"]);
