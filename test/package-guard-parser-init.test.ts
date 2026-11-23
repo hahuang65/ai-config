@@ -15,7 +15,9 @@ async function fixture(runtime?: string) {
     cpSync(join(source, "guard"), join(copy, "guard"), { recursive: true });
     cpSync(join(source, "harnesses/claude"), join(copy, "harnesses/claude"), { recursive: true });
     mkdirSync(join(copy, "harnesses/pi"), { recursive: true });
+    cpSync(join(source, "harnesses/jev-client.ts"), join(copy, "harnesses/jev-client.ts"));
     cpSync(join(source, "harnesses/pi/guard-policies.ts"), join(copy, "harnesses/pi/guard-policies.ts"));
+    cpSync(join(source, "harnesses/pi/scope-clarifications.ts"), join(copy, "harnesses/pi/scope-clarifications.ts"));
     if (runtime) {
       cpSync(join(copy, "guard/vendor/tree-sitter.mjs"), join(copy, "guard/vendor/real-tree-sitter.mjs"));
       writeFileSync(join(copy, "guard/vendor/tree-sitter.mjs"), runtime);

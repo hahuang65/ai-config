@@ -35,6 +35,11 @@ The installed package provides:
   Other requests and uncertain classifications go to the `worklog` skill after current work.
   Claude's shared `worklog` skill exposes `/worklog` directly, without a second command wrapper.
   Empty `/worklog`, the empty shared `worklog` skill, and bare `wl` list incomplete work across projects; see [Worklog capture contracts](docs/worklog-capture.md).
+- Optional [Jev review assistance and scope objections](docs/jev-assistance.md), off by default.
+  `review-change --jev` shares bounded eligible evidence for reading priorities, focused checklists, and visible finding assessments.
+  `AI_JEV_SCOPE=1` adds native scope objections in both harnesses.
+  Pi includes successful owned clarification dialogs as branch-local context, never action authorization.
+  Neither feature filters required review coverage, discards findings, overrides deterministic denials, or grants approval.
 - Explicit `/deliver` and `/rebase` commands in both harnesses; `/resolve-conflicts` is the shared skill for a rebase already in progress.
 - An explicit allowance for Claude's native `AskUserQuestion` to clarify requirements and preferences, without changing artifact review or action-authorization boundaries.
   An approved installation removes its formerly owned denial; independently configured personal, project, or managed deny rules remain effective.

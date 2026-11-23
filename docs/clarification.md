@@ -36,6 +36,8 @@ It runs sequentially and is `model-only`, so codemode scripts and nested tool ca
 Headless sessions withdraw its declaration; stale execution returns `unavailable` without opening a dialog.
 The tool starts no processes, opens no external editor, and adds no answer channel, service, or separate state store.
 Normal tool results remain in the conversation, so do not request secrets.
+With the separate `AI_JEV_SCOPE=1` opt-in, successful owned dialogs also append branch-local native clarification records for [scope objections](jev-assistance.md).
+These records survive reopening, do not add user-role messages, and do not change any authorization gate.
 
 ### Herdr status
 

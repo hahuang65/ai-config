@@ -1,5 +1,39 @@
 // harnesses/pi/ask-user-question.ts
 import { Type } from "typebox";
+
+// harnesses/pi/scope-clarifications.ts
+var ENTRY = "ai-config.native-scope-clarification";
+var LIMIT = 4096;
+var INVALID = "Cannot establish native clarification evidence.";
+var text = (value, limit) => typeof value === "string" && value.length <= limit && !!value.trim();
+var keys = (value, allowed) => Object.keys(value).every((key) => allowed.includes(key));
+function valid(value) {
+  return value && typeof value === "object" && keys(value, ["version", "callEntryId", "toolCallId", "question", "answer", "choice_description"]) && value.version === 1 && text(value.callEntryId, 256) && text(value.toolCallId, 256) && text(value.question, 2000) && text(value.answer, 4000) && (value.choice_description === undefined || text(value.choice_description, 1000));
+}
+function isCall(entry, id) {
+  const content = entry?.type === "message" && entry.message?.role === "assistant" && entry.message.content;
+  return Array.isArray(content) && content.length <= 512 && content.some((block) => block?.type === "toolCall" && block.name === "ask_user_question" && block.id === id);
+}
+function retainClarification(pi, ctx, toolCallId, input, result) {
+  if (result.status !== "answered")
+    return;
+  const branch = ctx.sessionManager.getBranch().slice(-LIMIT);
+  const source = branch.findLast((entry) => isCall(entry, toolCallId));
+  const answer = result.answer;
+  const value = {
+    version: 1,
+    callEntryId: source?.id ?? "",
+    toolCallId,
+    question: result.question,
+    answer: answer.kind === "text" ? answer.text : answer.label,
+    ...answer.kind === "choice" ? { choice_description: input.options?.[answer.index]?.description } : {}
+  };
+  if (!valid(value))
+    throw Error(INVALID);
+  pi.appendEntry(ENTRY, value);
+}
+
+// harnesses/pi/ask-user-question.ts
 var parameters = Type.Object({
   question: Type.String({ minLength: 1, maxLength: 2000, pattern: "\\S" }),
   options: Type.Optional(Type.Array(Type.Object({
@@ -16,22 +50,22 @@ var output = Type.Union([
   Type.Object({ status: Type.Literal("unavailable"), question: Type.String(), reason: Type.String() })
 ]);
 function respond(value) {
-  const text = JSON.stringify(value).replace(/\p{Cc}/gu, (character) => `\\u${character.charCodeAt(0).toString(16).padStart(4, "0")}`);
-  return { content: [{ type: "text", text }], details: value, structuredContent: value };
+  const text2 = JSON.stringify(value).replace(/\p{Cc}/gu, (character) => `\\u${character.charCodeAt(0).toString(16).padStart(4, "0")}`);
+  return { content: [{ type: "text", text: text2 }], details: value, structuredContent: value };
 }
-var display = (text) => text.replace(/\p{Cc}/gu, " ");
+var display = (text2) => text2.replace(/\p{Cc}/gu, " ");
 async function textAnswer(question, signal, ctx) {
-  const text = await ctx.ui.input(display(question), "Your answer", { signal });
+  const text2 = await ctx.ui.input(display(question), "Your answer", { signal });
   if (signal?.aborted)
     return respond({ status: "cancelled", question, reason: "aborted" });
-  if (text === undefined)
+  if (text2 === undefined)
     return respond({ status: "cancelled", question, reason: "dismissed" });
-  if (typeof text !== "string" || text.length > 4000) {
+  if (typeof text2 !== "string" || text2.length > 4000) {
     return respond({ status: "unavailable", question, reason: "invalid_response" });
   }
-  if (!text.trim())
+  if (!text2.trim())
     return respond({ status: "cancelled", question, reason: "empty" });
-  return respond({ status: "answered", question, answer: { kind: "text", text } });
+  return respond({ status: "answered", question, answer: { kind: "text", text: text2 } });
 }
 async function choose(input, signal, ctx) {
   if (signal?.aborted)
@@ -63,6 +97,7 @@ async function choose(input, signal, ctx) {
   });
 }
 function questions(pi) {
+  const semanticEnabled = process.env.AI_JEV_SCOPE === "1";
   function register(exposure) {
     pi.registerTool({
       name: "ask_user_question",
@@ -72,12 +107,15 @@ function questions(pi) {
       parameters,
       outputSchema: output,
       executionMode: "sequential",
-      async execute(_id, input, signal, _update, ctx) {
+      async execute(id, input, signal, _update, ctx) {
         const waiting = ctx.mode === "tui" && ctx.hasUI && !signal?.aborted;
         if (waiting)
           pi.events.emit("herdr:blocked", { active: true, label: "Waiting for your answer" });
         try {
-          return await choose(input, signal, ctx);
+          const result = await choose(input, signal, ctx);
+          if (semanticEnabled && !signal?.aborted)
+            retainClarification(pi, ctx, id, input, result.details);
+          return result;
         } catch {
           return signal?.aborted ? respond({ status: "cancelled", question: input.question, reason: "aborted" }) : respond({ status: "unavailable", question: input.question, reason: "ui_error" });
         } finally {

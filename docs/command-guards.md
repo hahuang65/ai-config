@@ -84,6 +84,15 @@ Commands hidden in scripts, alternate tools, filesystem races, and unrecognized 
 Use operating-system isolation for a real execution boundary.
 Do not describe the guard as a sandbox or a comprehensive dangerous-command detector.
 
+## Optional semantic scope objections
+
+`AI_JEV_SCOPE=1` adds [Jev scope checks](jev-assistance.md#scope-objections) after existing deterministic denials.
+This separate opt-in shares bounded recent user requests and proposed-action metadata with TypeSafe.
+Scope concerns and unavailable judgments require clarification, while low drift returns no additional objection, never permission.
+Read tools and native clarification remain available without classifier calls.
+The deterministic registry, syntax budgets, protected paths, and native permissions remain authoritative.
+This optional classifier is not a replacement policy floor or a sandbox.
+
 ## Verification
 
 `test/package-dangerous-commands.test.ts` passes command strings to the Claude adapter, Pi source adapter, and generated Pi bundle, checking both denial and benign near misses.

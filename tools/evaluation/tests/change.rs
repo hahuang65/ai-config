@@ -1,5 +1,8 @@
 mod support;
 
+#[path = "cases/change_jev.rs"]
+mod change_jev;
+
 #[path = "cases/change_execution.rs"]
 mod change_execution;
 

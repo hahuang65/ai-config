@@ -3,18 +3,11 @@ import { redirects, wordValue } from "./bash-command";
 import { fields } from "./shell-parser";
 import type { ToolCall } from "./guard-core";
 
-// High-confidence credential formats; placeholder strings do not match.
-const SECRET_LITERAL_PATTERNS: RegExp[] = [
-  /\bsk-[A-Za-z0-9_-]{20,}/,
-  /\b(?:AKIA|ASIA)[0-9A-Z]{16}\b/,
-  /\bgh[pousra]_[A-Za-z0-9]{30,}/,
-  /\bgithub_pat_[A-Za-z0-9_]{20,}/,
-  /-----BEGIN (?:[A-Z0-9]+ )*PRIVATE KEY-----/,
-];
+import { containsSecretLiteral } from "./secret-literals.ts";
 
 export function detectHardcodedSecret(call: ToolCall): string | null {
   const content = call.content;
-  if (content && SECRET_LITERAL_PATTERNS.some((p) => p.test(content))) {
+  if (content && containsSecretLiteral(content)) {
     return "Refused — hardcoded secret literal in written content. Use an environment variable or a secrets manager; never commit a key. If one was staged, rotate it.";
   }
   return null;

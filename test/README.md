@@ -36,9 +36,27 @@ Restricted-reviewer offline settings and synthetic-provider boundaries remain un
   `package-guard-execution.test.ts` adds command-role, inherited-output, and protected-ancestor regressions through the same shared adapter fixture.
   Dangerous commands are evaluated only as strings, never executed; disposable paths cover cleanup exceptions and symlink refusal.
   `package-guard-parser.test.ts` verifies generated parser assets, native Node/Pi loading without `node_modules`, and fail-closed missing-parser and malformed-input behavior.
+  Guard and parser bundle parity use a fresh, five-second Bun CLI build, matching production and isolating an in-process resolution failure reproduced after native reviewer fixtures.
+  Their byte-for-byte source-to-bundle assertions remain unchanged.
   `package-guard-parser-init.test.ts` checks bounded initialization and file loading, including stalled/late loaders, oversized assets, and FIFOs through both native adapters.
   `package-github-guard.test.ts` checks Claude's syntax-based read-only GitHub permission shortcut.
   See [command guard boundaries](../docs/command-guards.md) for intentional allowances and remaining gaps.
+- `package-jev-client.test.ts` checks pinned numeric classification, malformed results, cancellation, input bounds, and local credential-literal rejection.
+  Its native Pi bridge uses a loopback synthetic TypeSafe service, temporary provider configuration, and a fake key, never saved credentials.
+  `package-jev-discovery.test.ts` checks inherited source exclusions through native aliases, launcher targets, SDK entry symlinks, and standalone caches.
+  `package-jev-hook-deadline.test.ts` exercises the actual Claude hook with stalled discovery/import/initialization, process termination, owned-worker cleanup, and a synthetic loopback success.
+  It also rejects project-controlled executables and SDK aliases without inherited context, including nested and symlinked workspaces.
+  `package-jev-workspace.test.ts` checks canonical repository roots, inherited-context validation, deduplication, and no global environment mutation.
+  `package-jev-process.test.ts` checks malformed worker results, bounded streams, preflight rejection, and active parent cancellation.
+  Its leader-exits-first cases verify helper cleanup with inherited and closed output streams, valid and missing results, and abrupt owner death.
+  `package-jev-scope.test.ts` checks both adapters, deterministic precedence, current-branch intent, ignored compact summaries, clarification availability, and no allow decisions.
+  `package-jev-clarifications.test.ts` uses the native Node/Pi loader, session manager, and controlled UI answers for denial-to-clarification-to-retry, narrowing cache invalidation, reopen/branch behavior, provenance rejection, default-off capture, and evidence limits.
+  `package-jev-redirections.test.ts` checks output-opening and redirect-only scope checks, benign descriptor copies, unavailable classification, and unchanged parser/guard denials through Claude, Pi source, and the generated Pi bundle.
+  Its string-only Git cases cover configured helpers, wrappers, nested shells, history display, unavailable judgments, and retained metadata-read exemptions without executing helpers.
+  It also distinguishes `file` compilation and unknown options from known inspection forms and literal filenames after `--`, without executing those commands.
+  Rust `tests/cases/change_jev.rs` exercises review assistance through the CLI, retained findings, unchanged snapshot access, unavailable fallback, and stale assessment invalidation.
+  Its synthetic SIGINT/SIGTERM cases verify that interrupted planning cannot start a reviewer and interrupted finding assessment cannot retain a report.
+  These checks establish wiring and boundaries, not real-provider semantic accuracy or cost savings.
 - `cli-links.test.ts` checks executable link ownership in disposable homes.
   The retired WT Python install/repeat/uninstall test was replaced by `package-install-entrypoints.test.ts`, which exercises foreign regular files and dangling links through the real shell installer and rejects the removed uninstall interface without side effects.
   Shell installation/repeat tests and the WT CLI suites retain successful installation, repeat ownership, and executable behavior coverage.

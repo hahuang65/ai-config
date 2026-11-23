@@ -170,6 +170,8 @@ pub struct Report {
     pub uncertainties: Vec<String>,
     pub findings: Vec<Finding>,
     pub files_read: Vec<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub jev: Option<crate::change_jev::Assistance>,
 }
 
 #[derive(PartialEq, Eq)]

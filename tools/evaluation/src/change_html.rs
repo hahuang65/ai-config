@@ -26,6 +26,7 @@ pub fn render(report: &Report) -> String {
     let mut html = String::from(HEADER);
     html.push_str(&format!("<header><h1>Change review</h1><p>{}</p><p class=badge>Risk: {:?} · {} findings</p></header>", escape(&report.summary), report.risk, report.findings.len()));
     scope(&mut html, report);
+    crate::change_jev_html::overview(&mut html, report);
     findings(&mut html, report);
     evidence(&mut html, report);
     html
@@ -90,6 +91,7 @@ fn findings(html: &mut String, report: &Report) {
             let p = &finding.proposal;
             html.push_str(&format!("<article id=\"{}\"><h4>{} · {}</h4><p class=location><code>{} · {:?} · line {}</code></p>", escape(&finding.id), escape(&finding.id), escape(&p.title), escape(&p.path), p.side, p.line.map(|n| n.to_string()).unwrap_or_else(|| "unspecified".into())));
             finding_body(html, p);
+            crate::change_jev_html::finding(html, report, &finding.id);
             html.push_str(&format!("<p class=location>{}</p>", p.kind.label()));
             if !finding.inline {
                 html.push_str("<p class=warning>This location is not proven by an added or removed diff line. It cannot be posted as an inline comment.</p>");

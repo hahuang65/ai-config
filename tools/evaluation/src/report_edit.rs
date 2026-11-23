@@ -85,6 +85,11 @@ pub fn apply(html: &Path, digest: &str, revision: &str, edit: &Revision) -> Resu
             finding.proposal.explanation = Some(explanation.clone());
         }
     }
+    if !edit.findings.is_empty()
+        && let Some(assistance) = &mut report.jev
+    {
+        assistance.invalidate_findings();
+    }
     let rendered = change_html::render(&report);
     report.html_digest = format!("{:x}", Sha256::digest(&rendered));
     let new_digest = change_post::digest(&report)?;

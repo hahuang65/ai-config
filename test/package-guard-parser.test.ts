@@ -4,10 +4,11 @@ import { cpSync, mkdirSync, mkdtempSync, readFileSync, rmSync, symlinkSync } fro
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { installedSdkFile } from "./fixtures/installed-pi-sdk";
+import { builtNodeBundle } from "./fixtures/build-bundle";
 
 const source = resolve(import.meta.dir, "..");
 
-test("the shipped parser assets and Pi bundle match their pinned build inputs", async () => {
+test("the shipped parser assets and Pi bundle match their pinned build inputs", () => {
   for (const [packageName, files] of [
     ["web-tree-sitter", [["web-tree-sitter.wasm", "web-tree-sitter.wasm"], ["LICENSE", "web-tree-sitter.LICENSE"]]],
     ["tree-sitter-bash", [["tree-sitter-bash.wasm", "tree-sitter-bash.wasm"], ["LICENSE", "tree-sitter-bash.LICENSE"]]],
@@ -19,11 +20,9 @@ test("the shipped parser assets and Pi bundle match their pinned build inputs", 
     ["node_modules/web-tree-sitter/web-tree-sitter.js", "guard/vendor/tree-sitter.mjs"],
     ["harnesses/pi/guard-policies.ts", "harnesses/pi/guard-policies.bundle.ts"],
   ]) {
-    const result = await Bun.build({ entrypoints: [join(source, input)], target: "node", format: "esm" });
-    expect(result.success).toBe(true);
-    expect(await result.outputs[0].text()).toBe(readFileSync(join(source, output), "utf8"));
+    expect(builtNodeBundle(join(source, input))).toBe(readFileSync(join(source, output), "utf8"));
   }
-});
+}, 15000);
 
 for (const missingGrammar of [false, true]) {
   test(`the symlinked Node/Pi guard ${missingGrammar ? "fails closed without its grammar" : "loads its local WASM parser without node_modules"}`, () => {
@@ -54,6 +53,7 @@ test("the Claude hook emits a refusal when the parser runtime itself is missing"
   try {
     cpSync(join(source, "guard"), join(root, "guard"), { recursive: true });
     cpSync(join(source, "harnesses/claude"), join(root, "harnesses/claude"), { recursive: true });
+    cpSync(join(source, "harnesses/jev-client.ts"), join(root, "harnesses/jev-client.ts"));
     rmSync(join(root, "guard/vendor/tree-sitter.mjs"));
     const result = spawnSync("bun", [join(root, "harnesses/claude/guard.ts")], {
       input: JSON.stringify({ tool_name: "Bash", tool_input: { command: "git status --short" }, cwd: root }),

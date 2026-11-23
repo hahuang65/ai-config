@@ -42,6 +42,14 @@ Retained private reports and signatures default to `~/.local/state/ai-config/cha
 `--state-dir` selects a separate private location, including when reviewing this source checkout.
 JSON mode never opens a browser or posts.
 
+### Optional Jev assistance
+
+`--jev` explicitly opts into sharing bounded eligible source excerpts and intent with TypeSafe through existing native Pi authentication.
+It adds supplemental reading priorities, focused checklist scores, and visible finding evidence/introduction/duplicate assessments.
+It never removes changed-file coverage, snapshot access, required checks, findings, or human decisions.
+Unavailable assistance preserves the full normal review, and finding wording changes mark old assessments stale.
+See [Jev assistance](jev-assistance.md) for privacy, status, budgets, and measurement limits.
+
 ### Terminal progress
 
 Human CLI runs keep a running log on stderr while stdout retains the final report summary.

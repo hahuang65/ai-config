@@ -24,6 +24,7 @@ No manual intent field is needed; available PR and commit context is unverified 
 Options: --repo DIR (default current directory), --path LITERAL_RELATIVE_PATH,
          --engine pi|claude (default pi), --provider NAME, --model ID, --thinking LEVEL,
          --timeout SECONDS (1..3600), --json, --no-browser, --state-dir ABSOLUTE_DIR.
+         --jev explicitly permits bounded eligible source/intent sharing with TypeSafe for advisory assistance.
 Human runs log timestamped step starts/ends, elapsed times and verified reads on stderr.
 Terminals also show an overall workflow-stage bar and total time, not analysis percentages.
 Redirected logs stay plain; quiet reviewer periods include elapsed-time updates.
@@ -61,6 +62,7 @@ pub struct Args {
     pub infer_intent: bool,
     pub json: bool,
     pub no_browser: bool,
+    pub jev: bool,
     pub model: Vec<String>,
 }
 
@@ -103,6 +105,7 @@ pub fn parse(values: Vec<String>) -> Result<Args> {
         infer_intent: human,
         json: false,
         no_browser: false,
+        jev: false,
         model: vec![],
     };
     let mut seen = BTreeSet::new();
@@ -121,6 +124,7 @@ pub fn parse(values: Vec<String>) -> Result<Args> {
         match name.as_str() {
             "--json" => args.json = true,
             "--no-browser" => args.no_browser = true,
+            "--jev" => args.jev = true,
             _ => option(
                 &mut args,
                 &name,

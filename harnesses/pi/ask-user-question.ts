@@ -1,5 +1,6 @@
 import type { ExtensionAPI, ExtensionToolContext } from "@earendil-works/pi-coding-agent";
 import { Type, type Static } from "typebox";
+import { retainClarification } from "./scope-clarifications";
 
 const parameters = Type.Object({
   question: Type.String({ minLength: 1, maxLength: 2000, pattern: "\\S" }),
@@ -16,7 +17,8 @@ const output = Type.Union([
   Type.Object({ status: Type.Literal("cancelled"), question: Type.String(), reason: Type.String() }),
   Type.Object({ status: Type.Literal("unavailable"), question: Type.String(), reason: Type.String() }),
 ]);
-type Result = Static<typeof output>;
+export type QuestionInput = Static<typeof parameters>;
+export type Result = Static<typeof output>;
 
 function respond(value: Result) {
   const text = JSON.stringify(value).replace(/\p{Cc}/gu, character =>
@@ -57,6 +59,7 @@ async function choose(input: Static<typeof parameters>, signal: AbortSignal | un
 }
 
 export default function questions(pi: ExtensionAPI) {
+  const semanticEnabled = process.env.AI_JEV_SCOPE === "1";
   function register(exposure: "hidden" | "model-only") {
     pi.registerTool({
       name: "ask_user_question", label: "Ask a question", exposure,
@@ -66,10 +69,14 @@ export default function questions(pi: ExtensionAPI) {
         "Do not request secrets. Not an artifact approval, finding decision, or authorization to commit, install, deliver, or publish. " +
         "Ask in ordinary chat if unavailable. Never treat cancellation as an answer or repeatedly reopen a dismissed question.",
       parameters, outputSchema: output, executionMode: "sequential",
-      async execute(_id, input, signal, _update, ctx) {
+      async execute(id, input, signal, _update, ctx) {
         const waiting = ctx.mode === "tui" && ctx.hasUI && !signal?.aborted;
         if (waiting) pi.events.emit("herdr:blocked", { active: true, label: "Waiting for your answer" });
-        try { return await choose(input, signal, ctx); }
+        try {
+          const result = await choose(input, signal, ctx);
+          if (semanticEnabled && !signal?.aborted) retainClarification(pi, ctx, id, input, result.details);
+          return result;
+        }
         catch {
           return signal?.aborted
             ? respond({ status: "cancelled", question: input.question, reason: "aborted" })

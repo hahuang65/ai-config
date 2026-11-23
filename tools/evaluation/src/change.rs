@@ -95,6 +95,16 @@ fn review(paths: &Paths, args: &Args, progress: &std::sync::Arc<Progress>) -> Re
     } else {
         progress.skip(Stage::Verify, "Not a pull-request review");
     }
+    let mut jev = args
+        .jev
+        .then(|| {
+            crate::change_jev::Assistance::prepare(paths, repo, &evidence, &args.intent, &patch)
+        })
+        .transpose()?;
+    let guidance = jev
+        .as_ref()
+        .map(|value| value.guidance())
+        .unwrap_or_default();
     let response = response(
         paths,
         &args,
@@ -102,13 +112,18 @@ fn review(paths: &Paths, args: &Args, progress: &std::sync::Arc<Progress>) -> Re
         repo,
         patch.is_empty(),
         progress,
+        &guidance,
     );
     let (answer, reads) = match response {
         Ok(response) => response,
         Err(error) => return Err(retain_failure(pending, error)),
     };
     validate_findings(&answer, &frozen_lines)?;
-    let report = assemble(&args, evidence, digest, answer, reads, &proven, display);
+    if let Some(assistance) = &mut jev {
+        assistance.assess(paths, repo, &evidence, &answer.findings)?;
+    }
+    let mut report = assemble(&args, evidence, digest, answer, reads, &proven, display);
+    report.jev = jev;
     progress.start(Stage::Save);
     save_report(paths, &store, pending, report, &args, progress)
 }
@@ -206,6 +221,7 @@ fn assemble(
         uncertainties,
         findings,
         files_read: reads,
+        jev: None,
     }
 }
 
@@ -216,6 +232,7 @@ fn response(
     repository: &Path,
     empty: bool,
     progress: &std::sync::Arc<Progress>,
+    guidance: &str,
 ) -> Result<(change_types::Answer, Vec<String>)> {
     if empty {
         progress.skip(Stage::Review, "No reviewable text changes");
@@ -233,8 +250,8 @@ fn response(
         ));
     }
     let prompt = format!(
-        "Review the frozen before/ and after/ source trees. Read scope.json and patch.diff first. Intent: {}\n{}",
-        args.intent, SCHEMA
+        "Review the frozen before/ and after/ source trees. Read scope.json and patch.diff first. Intent: {}\n{}\n{}",
+        args.intent, guidance, SCHEMA
     );
     let mut options: Vec<OsString> = vec![
         "--snapshot".into(),

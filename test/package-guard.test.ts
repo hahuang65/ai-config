@@ -119,6 +119,8 @@ test("the Pi guard loads when only the inactive native package is present", asyn
     const source = fileURLToPath(new URL("../", import.meta.url));
     cpSync(join(source, "guard"), join(root, "guard"), { recursive: true });
     cpSync(join(source, "harnesses/pi/guard-policies.ts"), join(root, "harnesses/pi/guard-policies.ts"), { recursive: true });
+    cpSync(join(source, "harnesses/pi/scope-clarifications.ts"), join(root, "harnesses/pi/scope-clarifications.ts"));
+    cpSync(join(source, "harnesses/jev-client.ts"), join(root, "harnesses/jev-client.ts"));
     const loaded = await import(pathToFileURL(join(root, "harnesses/pi/guard-policies.ts")).href);
     expect(typeof loaded.default).toBe("function");
     expect(typeof loaded.createGuardPoliciesExtension).toBe("function");
@@ -131,6 +133,7 @@ test("a disposable Claude home executes the linked native guard without the old 
     const source = fileURLToPath(new URL("../", import.meta.url));
     cpSync(join(source, "guard"), join(home, "replacement/guard"), { recursive: true });
     cpSync(join(source, "harnesses/claude"), join(home, "replacement/harnesses/claude"), { recursive: true });
+    cpSync(join(source, "harnesses/jev-client.ts"), join(home, "replacement/harnesses/jev-client.ts"));
     mkdirSync(join(home, ".claude/hooks"), { recursive: true });
     symlinkSync(join(home, "replacement/harnesses/claude/guard.ts"), join(home, ".claude/hooks/guard.ts"));
     const guard = Bun.spawn(["bun", join(home, ".claude/hooks/guard.ts")], {

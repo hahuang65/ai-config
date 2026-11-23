@@ -5,18 +5,20 @@
 
 import { evaluateClaudePayload } from "./guard-verdict";
 import { initializeShellParser } from "../../guard/shell-parser";
+import { evaluateSemanticScope } from "./semantic-scope";
 
 const raw = await Bun.stdin.text();
 let payload: unknown;
 try {
   payload = JSON.parse(raw);
 } catch {
-  process.exit(0);
+  if (process.env.AI_JEV_SCOPE !== "1") process.exit(0);
+  payload = null;
 }
 
 if ((payload as { tool_input?: { command?: unknown } } | null)?.tool_input?.command != null) {
   await initializeShellParser();
 }
-const verdict = evaluateClaudePayload(payload);
+const verdict = evaluateClaudePayload(payload) ?? (process.env.AI_JEV_SCOPE === "1" ? await evaluateSemanticScope(payload) : null);
 if (verdict) console.log(JSON.stringify(verdict));
 process.exit(0);

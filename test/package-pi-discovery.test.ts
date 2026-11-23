@@ -1,4 +1,5 @@
 import { expect, test } from "bun:test";
+import { builtNodeBundle } from "./fixtures/build-bundle";
 import { cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, realpathSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
@@ -7,13 +8,11 @@ import { installedSdkFile } from "./fixtures/installed-pi-sdk";
 import { installFixture } from "./fixtures/install-script";
 import { copySpecialistRuntime } from "./fixtures/inactive-package";
 
-test("the Node-compatible Pi guard bundle matches the reviewed source", async () => {
+test("the Node-compatible Pi guard bundle matches the reviewed source", () => {
   const source = fileURLToPath(new URL("../harnesses/pi/guard-policies.ts", import.meta.url));
   const bundle = fileURLToPath(new URL("../harnesses/pi/guard-policies.bundle.ts", import.meta.url));
-  const built = await Bun.build({ entrypoints: [source], target: "node", format: "esm" });
-  expect(built.success).toBe(true);
-  expect(await built.outputs[0].text()).toBe(readFileSync(bundle, "utf8"));
-});
+  expect(builtNodeBundle(source)).toBe(readFileSync(bundle, "utf8"));
+}, 10000);
 
 test("the Pi SDK follows its installed CLI package through a launcher without assuming Homebrew", () => {
   const root = realpathSync(mkdtempSync(join(tmpdir(), "pi-package-")));
@@ -142,6 +141,8 @@ test("ordinary Pi discovers a linked guard and shared commit skill without the o
     cpSync(join(replacement, "guard"), join(source, "guard"), { recursive: true });
     cpSync(join(replacement, "skills/commit"), join(source, "skills/commit"), { recursive: true });
     cpSync(join(replacement, "harnesses/pi/guard-policies.ts"), join(source, "harnesses/pi/guard-policies.ts"), { recursive: true });
+    cpSync(join(replacement, "harnesses/jev-client.ts"), join(source, "harnesses/jev-client.ts"));
+    cpSync(join(replacement, "harnesses/pi/scope-clarifications.ts"), join(source, "harnesses/pi/scope-clarifications.ts"));
     symlinkSync(join(source, "skills/commit"), join(agentDir, "skills/commit"));
     const destination = join(agentDir, "extensions/guard-policies.ts");
     symlinkSync(join(source, "harnesses/pi/guard-policies.ts"), destination);
