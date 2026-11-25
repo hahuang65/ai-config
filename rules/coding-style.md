@@ -32,3 +32,8 @@ A smaller diff is not complete if requested behavior or integration is missing.
 Do not add speculative features, abstractions, configuration, or dependencies.
 Preserve validation, error handling, security, and accessibility when moving or simplifying code.
 Choose readable, complete solutions rather than minimizing line count.
+
+## Terraform
+
+Never hardcode values for pre-existing infrastructure in Terraform blocks.
+Look up existing resources using `data` blocks and reference their attributes.

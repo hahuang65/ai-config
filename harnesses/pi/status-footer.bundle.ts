@@ -196,14 +196,23 @@ function finalizeTruncatedResult(prefix, prefixWidth, ellipsis, ellipsisWidth, m
   }
   return pad ? result + " ".repeat(Math.max(0, maxWidth - visibleWidth)) : result;
 }
+var singleUnitWidths = new Map;
 function graphemeWidth(segment) {
-  if (segment.length === 1) {
-    const code = segment.charCodeAt(0);
-    if (code >= 32 && code <= 126)
-      return 1;
-    if (code === 9)
-      return 3;
+  if (segment.length !== 1)
+    return clusterWidth(segment);
+  const code = segment.charCodeAt(0);
+  if (code >= 32 && code <= 126)
+    return 1;
+  if (code === 9)
+    return 3;
+  let width = singleUnitWidths.get(code);
+  if (width === undefined) {
+    width = clusterWidth(segment);
+    singleUnitWidths.set(code, width);
   }
+  return width;
+}
+function clusterWidth(segment) {
   if (terminalSpacingMarkRegex.test(segment)) {
     return [...segment].length;
   }

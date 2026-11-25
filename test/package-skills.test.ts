@@ -98,6 +98,13 @@ test("coding guidance orders reuse before new code without dropping required beh
   expect(rule).toContain("rather than minimizing line count");
 });
 
+test("Terraform guidance looks up pre-existing infrastructure instead of hardcoding its values", () => {
+  const rule = readFileSync(join(root, "rules/coding-style.md"), "utf8");
+  const terraform = rule.split("## Terraform")[1] ?? "";
+  expect(terraform).toContain("Never hardcode values for pre-existing infrastructure in Terraform blocks.");
+  expect(terraform).toContain("Look up existing resources using `data` blocks and reference their attributes.");
+});
+
 test("code checks reuse and integration impact before its one-test-at-a-time loop", () => {
   const code = readFileSync(join(directory, "code/SKILL.md"), "utf8");
   expect(code).toContain("Read `coding-style.md` through the baseline's rule-loading instructions");
